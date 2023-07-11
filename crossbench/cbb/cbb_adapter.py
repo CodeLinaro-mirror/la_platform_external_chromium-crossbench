@@ -120,7 +120,6 @@ def run_benchmark(output_folder: Union[str, pathlib.Path],
       out_dir=pathlib.Path(output_folder),
       browsers=browser_list,
       benchmark=benchmark,
-      env_validation_mode=crossbench.env.ValidationMode.SKIP,
-      throw=True)
+      env_validation_mode=crossbench.env.ValidationMode.SKIP)
 
   runner.run()
