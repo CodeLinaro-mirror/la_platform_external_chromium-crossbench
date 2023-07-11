@@ -238,7 +238,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStory]):
     for name in self._known_names:
       assert name, "Invalid empty story name"
       assert not name.startswith("-"), (
-          f"Known story names cannot start with '-', but got {name}.")
+          f"Known story names cannot start with '-', but got '{name}'.")
       assert not name == "all", "Known story name cannot match 'all'."
 
   def process_all(self, patterns: Sequence[str]) -> None:
@@ -305,6 +305,14 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStory]):
     substories = [
         substory for substory in self._known_names if regexp.fullmatch(substory)
     ]
+    if not substories:
+      logging.warning(
+          "No matching stories, using case-insensitive fallback regexp.")
+      iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
+      substories = [
+          substory for substory in self._known_names
+          if iregexp.fullmatch(substory)
+      ]
     if not substories:
       raise ValueError(f"'{original_pattern}' didn't match any stories.")
     if len(substories) == len(self._known_names) and self._selected_names:
