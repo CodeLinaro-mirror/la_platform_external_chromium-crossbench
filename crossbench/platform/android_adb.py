@@ -15,10 +15,25 @@ from .platform import MachineArch, Platform
 from .posix import PosixPlatform
 
 
+def adb_devices(platform: Platform) -> Dict[str, Dict[str, str]]:
+  raw_lines = platform.sh_stdout("adb", "devices", "-l").strip().split("\n")[1:]
+  result: Dict[str, Dict[str, str]] = {}
+  for line in raw_lines:
+    serial_id, details = line.split(" ", maxsplit=1)
+    result[serial_id.strip()] = _parse_adb_device_info(details.strip())
+  return result
+
+
+def _parse_adb_device_info(value: str) -> Dict[str, str]:
+  parts = value.split(" ")
+  assert parts[0], "device"
+  return dict(part.split(":") for part in parts[1:])
+
+
 class Adb:
 
   _serial_id: str
-  _device_info: str
+  _device_info: Dict[str, str]
 
   def __init__(self,
                host_platform: Platform,
@@ -30,9 +45,9 @@ class Adb:
                   self._device_info)
     assert self._serial_id
 
-  def _find_serial_id(self,
-                      device_identifier: Optional[str] = None
-                     ) -> Tuple[str, str]:
+  def _find_serial_id(
+      self,
+      device_identifier: Optional[str] = None) -> Tuple[str, Dict[str, str]]:
     devices = self.devices()
     if not devices:
       raise ValueError("adb could not find any attached devices."
@@ -60,14 +75,14 @@ class Adb:
     return matches[0], devices[matches[0]]
 
   def __str__(self) -> str:
-    return f"adb({self._serial_id})"
+    return f"adb(serial={self._serial_id}, info='{self._device_info}')"
 
   @property
   def serial_id(self) -> str:
     return self._serial_id
 
   @property
-  def device_info(self) -> str:
+  def device_info(self) -> Dict[str, str]:
     return self._device_info
 
   def _adb(self,
@@ -153,14 +168,8 @@ class Adb:
   def kill_server(self) -> None:
     self._adb_stdout("kill-server", use_serial_id=False)
 
-  def devices(self) -> Dict[str, str]:
-    raw_lines = self._adb_stdout(
-        "devices", "-l", use_serial_id=False).strip().split("\n")[1:]
-    result = {}
-    for line in raw_lines:
-      serial_id, details = line.split(" ", maxsplit=1)
-      result[serial_id.strip()] = details.strip()
-    return result
+  def devices(self) -> Dict[str, Dict[str, str]]:
+    return adb_devices(self._host_platform)
 
   def pull(self, device_src_path: pathlib.Path,
            local_dest_path: pathlib.Path) -> None:

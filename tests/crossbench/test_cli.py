@@ -35,7 +35,7 @@ class SysExitException(Exception):
 class CliTestCase(BaseCrossbenchTestCase):
 
   def run_cli(self, *args, raises=None) -> Tuple[MockCLI, str, str]:
-    cli = MockCLI()
+    cli = MockCLI(platform=self.platform)
     with mock.patch(
         "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
             "sys.stderr", new_callable=io.StringIO) as mock_stderr, mock.patch(
@@ -46,7 +46,12 @@ class CliTestCase(BaseCrossbenchTestCase):
           cli.run(args)
       else:
         cli.run(args)
-    return cli, mock_stdout.getvalue(), mock_stderr.getvalue()
+    stdout = mock_stdout.getvalue()
+    stderr = mock_stderr.getvalue()
+    # Make sure we don't accidentally reuse the buffers across run_cli calls.
+    mock_stdout.close()
+    mock_stderr.close()
+    return cli, stdout, stderr
 
   def test_invalid(self):
     with self.assertRaises(SysExitException):

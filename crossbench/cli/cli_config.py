@@ -12,18 +12,19 @@ import pathlib
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
                     TextIO, Tuple, Type, Union)
+from frozendict import frozendict
 
 import hjson
 
 import crossbench.browsers.all as browsers
 from crossbench import cli_helper, exception, helper
+from crossbench import platform as cb_platform
 from crossbench.browsers.browser import convert_flags_to_label
 from crossbench.browsers.chrome import ChromeDownloader
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.env import HostEnvironment, HostEnvironmentConfig
 from crossbench.exception import ExceptionAnnotator
 from crossbench.flags import ChromeFlags, Flags
-from crossbench import platform
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
 if TYPE_CHECKING:
@@ -128,7 +129,7 @@ class BrowserDriverType(helper.EnumWithHelp):
       return BrowserDriverType.ANDROID
     if identifier == "ios":
       return BrowserDriverType.IOS
-    raise argparse.ArgumentTypeError(f"Unknown driver type: {identifier}")
+    raise argparse.ArgumentTypeError(f"Unknown driver type: {value}")
 
 
 def try_resolve_existing_path(value: str) -> Optional[pathlib.Path]:
@@ -143,11 +144,22 @@ def try_resolve_existing_path(value: str) -> Optional[pathlib.Path]:
   return None
 
 
+class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
+  pass
+
+
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
   path: Optional[pathlib.Path] = None
-  settings: Optional[Any] = None
+  settings: Optional[frozendict] = None
+
+  def __post_init__(self):
+    try:
+      hash(self.settings)
+    except ValueError as e:
+      raise ValueError(
+          f"settings must be hashable but got: {self.settings}") from e
 
   @classmethod
   def default(cls) -> DriverConfig:
@@ -163,7 +175,16 @@ class DriverConfig(ConfigObject):
     if not path:
       # Variant 2: $DRIVER_TYPE
       if "{" != value[0]:
-        driver_type = BrowserDriverType.parse(value)
+        try:
+          driver_type = BrowserDriverType.parse(value)
+        except argparse.ArgumentTypeError as original_error:
+          try:
+            return cls.load_short_settings(value, cb_platform.PLATFORM)
+          except AmbiguousDriverIdentifier:  # pylint: disable=try-except-raise
+            raise
+          except ValueError as e:
+            logging.debug("Parsing short inline driver config failed: %s", e)
+            raise original_error from e
       else:
         # Variant 2: full hjson config
         data = parse_inline_hjson(value)
@@ -171,6 +192,44 @@ class DriverConfig(ConfigObject):
     if path and path.stat().st_size == 0:
       raise argparse.ArgumentTypeError(f"Driver path is empty file: {path}")
     return DriverConfig(driver_type, path)
+
+  @classmethod
+  def load_short_settings(cls, value: str,
+                          platform: cb_platform.Platform) -> DriverConfig:
+    """Check for short versions and multiple candidates"""
+    logging.debug("Looking for driver candidates: %s", value)
+    candidate: Optional[DriverConfig]
+    if candidate := cls.try_load_adb_settings(value, platform):
+      return candidate
+    # TODO: add more custom parsing here
+    raise ValueError("Unknown setting")
+
+  @classmethod
+  def try_load_adb_settings(
+      cls, value: str,
+      platform: cb_platform.Platform) -> Optional[DriverConfig]:
+    candidate_serials: List[str] = []
+    pattern: re.Pattern = re.compile(value)
+    for serial, info in cb_platform.adb_devices(platform).items():
+      if pattern.fullmatch(serial):
+        candidate_serials.append(serial)
+        continue
+      for key, info_value in info.items():
+        if pattern.fullmatch(f"{key}:{info_value}") or pattern.fullmatch(
+            info_value):
+          candidate_serials.append(serial)
+          break
+    if len(candidate_serials) > 1:
+      raise AmbiguousDriverIdentifier(
+          f"Found more than one adb devices matching '{value}': {candidate_serials}"
+      )
+    if len(candidate_serials) == 0:
+      logging.debug("No matching adb devices found.")
+      return None
+    assert len(candidate_serials) == 1
+    return DriverConfig(
+        BrowserDriverType.ANDROID,
+        settings=frozendict(serial=candidate_serials[0]))
 
   @classmethod
   def load_dict(cls,
@@ -184,9 +243,18 @@ class DriverConfig(ConfigObject):
     parser.add_argument("type", type=BrowserDriverType.parse)
     parser.add_argument(
         "settings",
-        type=dict,
+        type=frozendict,
         help="Additional driver settings (Driver dependent).")
     return parser
+
+  def get_platform(self) -> cb_platform.Platform:
+    if self.type == BrowserDriverType.ANDROID:
+      device_identifier = None
+      if self.settings:
+        device_identifier = self.settings.get("serial", None)
+      return cb_platform.AndroidAdbPlatform(cb_platform.PLATFORM,
+                                            device_identifier)
+    return cb_platform.PLATFORM
 
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
@@ -264,7 +332,8 @@ class BrowserConfig(ConfigObject):
       return browsers.Firefox.developer_edition_path()
     if identifier in ("firefox-nightly", "ff-nightly", "ff-trunk"):
       return browsers.Firefox.nightly_path()
-    if ChromeDownloader.is_valid(maybe_path_or_identifier, platform.PLATFORM):
+    if ChromeDownloader.is_valid(maybe_path_or_identifier,
+                                 cb_platform.PLATFORM):
       # We have a valid version identifier for chrome.
       return maybe_path_or_identifier
     path = try_resolve_existing_path(maybe_path_or_identifier)
@@ -287,7 +356,8 @@ class BrowserConfig(ConfigObject):
   def _parse_inline_driver(
       cls, value: str) -> Tuple[DriverConfig, Union[str, pathlib.Path]]:
     # Split inputs like "applescript:/out/x64.release/chrome"
-    driver_path_or_identifier, _, path_or_identifier = value.partition(":")
+    driver_path_or_identifier, path_or_identifier = value.rsplit(
+        ":", maxsplit=1)
     driver = DriverConfig.parse(driver_path_or_identifier)
     path: Union[str, pathlib.Path] = cls._parse_path_or_identifier(
         path_or_identifier, driver.type)
@@ -320,6 +390,9 @@ class BrowserConfig(ConfigObject):
   def path(self) -> pathlib.Path:
     assert isinstance(self.browser, pathlib.Path)
     return self.browser
+
+  def get_platform(self) -> cb_platform.Platform:
+    return self.driver.get_platform()
 
 
 BrowserLookupTableT = Dict[str, Tuple[Type[browsers.Browser], BrowserConfig]]
@@ -577,12 +650,9 @@ class BrowserVariantsConfig:
       return browsers.EdgeWebDriver
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
-  def _get_browser_platform(self,
-                            browser_config: BrowserConfig) -> platform.Platform:
-    # TODO: support more custom platform properties (serial-id...)
-    if browser_config.driver.type == BrowserDriverType.ANDROID:
-      return platform.AndroidAdbPlatform(platform.PLATFORM)
-    return platform.PLATFORM
+  def _get_browser_platform(
+      self, browser_config: BrowserConfig) -> cb_platform.Platform:
+    return browser_config.get_platform()
 
   def _ensure_unique_browser_names(self) -> None:
     if self._has_unique_variant_names():
@@ -641,7 +711,7 @@ class BrowserVariantsConfig:
     if isinstance(path_or_identifier, pathlib.Path):
       return browser_config
     downloaded = ChromeDownloader.load(
-        path_or_identifier, platform.PLATFORM, cache_dir=self._cache_dir)
+        path_or_identifier, cb_platform.PLATFORM, cache_dir=self._cache_dir)
     return BrowserConfig(downloaded, browser_config.driver)
 
   def _append_browser(self, args: argparse.Namespace,

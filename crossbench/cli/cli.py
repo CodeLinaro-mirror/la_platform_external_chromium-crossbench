@@ -55,6 +55,7 @@ class CrossBenchCLI:
   RUNNER_CLS: Type[Runner] = Runner
 
   def __init__(self) -> None:
+    self._console_handler: Optional[logging.StreamHandler] = None
     self._subparsers: Dict[BenchmarkClsT,
                            cli_helper.CrossBenchArgumentParser] = {}
     self.parser = cli_helper.CrossBenchArgumentParser(
@@ -688,6 +689,7 @@ class CrossBenchCLI:
         **runner_kwargs)
 
   def run(self, argv: Sequence[str]) -> None:
+    self._init_logging(argv)
     unprocessed_argv = []
     try:
       # Manually check for unprocessed_argv to print nicer error messages.
@@ -702,8 +704,12 @@ class CrossBenchCLI:
       self.error(f"unrecognized arguments: {unprocessed_argv}\n"
                  f"Use `{self.parser.prog} {self.args.subcommand} --help` "
                  "for more details.")
-    self._initialize_logging()
-    self.args.subcommand_fn(self.args)
+    # Properly initialize logging after having parsed all args
+    self._setup_logging()
+    try:
+      self.args.subcommand_fn(self.args)
+    finally:
+      self._teardown_logging()
 
   def handle_late_argument_error(self, e: cli_helper.LateArgumentError) -> None:
     self.error(f"error argument {e.flag}: {e.message}")
@@ -725,17 +731,33 @@ class CrossBenchCLI:
     else:
       parser.fail(message)
 
-  def _initialize_logging(self) -> None:
+  def _init_logging(self, argv: Sequence[str]) -> None:
+    assert self._console_handler is None
+    self._console_handler = logging.StreamHandler(sys.stderr)
+    self._console_handler.addFilter(logging.Filter("root"))
+    self._console_handler.setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
-    console_handler = logging.StreamHandler()
-    if self.args.verbosity == -1:
-      console_handler.setLevel(logging.ERROR)
-    elif self.args.verbosity == 0:
-      console_handler.setLevel(logging.INFO)
-    elif self.args.verbosity >= 1:
-      console_handler.setLevel(logging.DEBUG)
+    logging.getLogger().addHandler(self._console_handler)
+
+    # Manually extract values to allow logging for failing arguments.
+    if "-v" in argv or "-vv" in argv or "-vvv" in argv:
+      self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
-    console_handler.addFilter(logging.Filter("root"))
+
+  def _setup_logging(self) -> None:
+    assert self._console_handler
+    if self.args.verbosity == -1:
+      self._console_handler.setLevel(logging.ERROR)
+    elif self.args.verbosity == 0:
+      self._console_handler.setLevel(logging.INFO)
+    elif self.args.verbosity >= 1:
+      self._console_handler.setLevel(logging.DEBUG)
+      logging.getLogger().setLevel(logging.DEBUG)
     if self.args.color:
-      console_handler.setFormatter(helper.ColoredLogFormatter())
-    logging.getLogger().addHandler(console_handler)
+      self._console_handler.setFormatter(helper.ColoredLogFormatter())
+
+  def _teardown_logging(self) -> None:
+    assert self._console_handler
+    self._console_handler.flush()
+    logging.getLogger().removeHandler(self._console_handler)
+    self._console_handler = None

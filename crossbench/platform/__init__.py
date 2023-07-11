@@ -7,12 +7,11 @@ from __future__ import annotations
 import sys
 from typing import Final
 
-from .platform import MachineArch, Platform, SubprocessError
-
+from .android_adb import Adb, AndroidAdbPlatform, adb_devices
 from .linux import LinuxPlatform
 from .macos import MacOSPlatform
+from .platform import MachineArch, Platform, SubprocessError
 from .win import WinPlatform
-from .android_adb import AndroidAdbPlatform, Adb
 
 
 def _get_default() -> Platform:
@@ -28,10 +27,11 @@ def _get_default() -> Platform:
 PLATFORM: Final[Platform] = _get_default()
 
 __all__ = (
-    "PLATFORM",
-    "Platform",
-    "MachineArch",
-    "SubprocessError",
-    "AndroidAdbPlatform",
+    "adb_devices",
     "Adb",
+    "AndroidAdbPlatform",
+    "MachineArch",
+    "Platform",
+    "PLATFORM",
+    "SubprocessError",
 )

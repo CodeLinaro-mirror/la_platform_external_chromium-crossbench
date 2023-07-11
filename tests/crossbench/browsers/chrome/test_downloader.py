@@ -2,11 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import abc
 import pathlib
 import sys
 from unittest import mock
+
 import pytest
-import abc
 
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
@@ -18,7 +19,8 @@ class AbstractChromeDownloaderTestCase(
 
   def setUp(self) -> None:
     super().setUp()
-    self.platform = mock.Mock(is_remote=False, is_linux=False, is_macos=False)
+    self.platform = mock.Mock(
+        is_remote=False, is_linux=False, is_macos=False, sh_results=[])
     self.platform.which = lambda x: True
     self.cache_dir = pathlib.Path("crossbench/.browser_cache")
     self.fs.create_dir(self.cache_dir)

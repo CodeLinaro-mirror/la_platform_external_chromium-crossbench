@@ -6,16 +6,18 @@ from __future__ import annotations
 
 import abc
 import pathlib
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Type
+import platform
+from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
+                    Tuple, Type, Union)
 from unittest import mock
 
 import psutil
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench
+from crossbench import platform
 from crossbench.benchmarks.benchmark import SubStoryBenchmark
 from crossbench.cli import CrossBenchCLI
-from crossbench.platform import PLATFORM, Platform
 from crossbench.platform.platform import MachineArch
 from crossbench.stories import Story
 
@@ -26,7 +28,7 @@ from . import mock_browser
 
 GIB = 1014**3
 
-ActivePlatformClass: Type[Platform] = type(PLATFORM)
+ActivePlatformClass: Type[platform.Platform] = type(platform.PLATFORM)
 
 
 class MockPlatform(ActivePlatformClass):
@@ -34,8 +36,10 @@ class MockPlatform(ActivePlatformClass):
   def __init__(self, is_battery_powered=False):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self._key = PLATFORM.key
-    self._machine: MachineArch = PLATFORM.machine
+    self._key = platform.PLATFORM.key
+    self._machine: MachineArch = platform.PLATFORM.machine
+    self.sh_cmds: List[Tuple[Union[str, pathlib.Path]]] = []
+    self.sh_results: List[str] = []
 
   @property
   def key(self) -> str:
@@ -93,8 +97,30 @@ class MockPlatform(ActivePlatformClass):
   def foreground_process(self):
     return None
 
+  def sh_stdout(self,
+                *args: Union[str, pathlib.Path],
+                shell: bool = False,
+                quiet: bool = False,
+                encoding: str = "utf-8",
+                env: Optional[Mapping[str, str]] = None) -> str:
+    del shell, quiet, encoding, env
+    self.sh_cmds.append(args)
+    if not self.sh_results:
+      raise ValueError("MockPlatform has no more sh outputs.")
+    return self.sh_results.pop()
 
-mock_platform = MockPlatform()  # pytype: disable=not-instantiable
+  def sh(self,
+         *args: Union[str, pathlib.Path],
+         shell: bool = False,
+         capture_output: bool = False,
+         stdout=None,
+         stderr=None,
+         stdin=None,
+         env: Optional[Mapping[str, str]] = None,
+         quiet: bool = False,
+         check: bool = False):
+    raise NotImplementedError("MockPlatform does not support generic sh().")
+
 
 
 class MockStory(Story):
@@ -107,6 +133,11 @@ class MockBenchmark(SubStoryBenchmark):
 
 class MockCLI(CrossBenchCLI):
   runner: Runner
+  platform: MockPlatform
+
+  def __init__(self, *args, **kwargs) -> None:
+    self.platform = kwargs.pop("platform")
+    super().__init__(*args, **kwargs)
 
   def _get_runner(self, args, benchmark, env_config, env_validation_mode,
                   timing):
@@ -122,7 +153,7 @@ class MockCLI(CrossBenchCLI):
         timing=timing,
         **runner_kwargs,
         # Use custom platform
-        platform=mock_platform)
+        platform=self.platform)
     return self.runner
 
 
@@ -133,12 +164,15 @@ class BaseCrossbenchTestCase(
     return [url for url in urls if not url.startswith("data:")]
 
   def setUp(self):
+    # Instantiate MockPlatform before setting up fake_filesystem so we can
+    # still interact with the original, real Platform object for extracting
+    # basic system information.
+    self.platform = MockPlatform()  # pytype: disable=not-instantiable
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser])
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs)
       self.assertTrue(mock_browser_cls.APP_PATH.exists())
-    self.platform = mock_platform
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.browsers = [
@@ -147,9 +181,14 @@ class BaseCrossbenchTestCase(
     ]
     self.sleep_patcher = mock.patch('time.sleep', return_value=None)
     self.sleep_patcher.start()
+    self._mock_platform_patcher = mock.patch.object(platform, "PLATFORM",
+                                                    self.platform)
+    self._mock_platform_patcher.start()
     for browser in self.browsers:
       self.assertListEqual(browser.js_side_effects, [])
 
   def tearDown(self) -> None:
     self.sleep_patcher.stop()
+    self._mock_platform_patcher.stop()
+    self.assertListEqual(self.platform.sh_results, [])
     super().tearDown()
