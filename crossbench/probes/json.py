@@ -15,7 +15,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
 
 from tabulate import tabulate
 
-from crossbench.probes import helper
+from crossbench.probes import helper, metric
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 
@@ -33,7 +33,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   Tje `to_json` is provided by subclasses. A typical examples includes just
   running a JS script on the page.
   Multiple JSON result files for RepetitionsRunGroups are merged with the
-  ValuesMerger. Custom merging for other RunGroups can be defined in the
+  MetricsMerger. Custom merging for other RunGroups can be defined in the
   subclass.
   """
 
@@ -64,7 +64,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       self,
       group: RepetitionsRunGroup,
   ) -> ProbeResult:
-    merger = helper.ValuesMerger()
+    merger = metric.MetricsMerger()
     for run in group.runs:
       if self not in run.results:
         raise ProbeMissingDataError(
@@ -113,7 +113,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def write_group_result(
       self,
       group: RunGroup,
-      merged_data: Union[Dict, List, helper.ValuesMerger],
+      merged_data: Union[Dict, List, metric.MetricsMerger],
       write_csv: bool = False,
       value_fn: Optional[Callable[[Any], Any]] = None) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)
@@ -124,8 +124,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         json.dump(merged_data.to_json(), f, indent=2)
     if not write_csv:
       return LocalProbeResult(json=(merged_json_path,))
-    if not isinstance(merged_data, helper.ValuesMerger):
-      raise ValueError("write_csv is only supported for ValuesMerger, "
+    if not isinstance(merged_data, metric.MetricsMerger):
+      raise ValueError("write_csv is only supported for MetricsMerger, "
                        f"but found {type(merged_data)}'.")
     if not value_fn:
       value_fn = value_geomean
@@ -133,7 +133,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
                                        value_fn)
 
   def write_group_csv_result(self, group: RunGroup,
-                             merged_data: helper.ValuesMerger,
+                             merged_data: metric.MetricsMerger,
                              merged_json_path: pathlib.Path,
                              value_fn: Callable[[Any], Any]) -> ProbeResult:
     merged_csv_path = merged_json_path.with_suffix(".csv")

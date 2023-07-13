@@ -232,42 +232,6 @@ class ConcatFilesTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
     self.assertEqual(output.read_text(encoding="utf-8"), "AAABBB")
 
 
-class FormatMetricTestCase(unittest.TestCase):
-
-  def test_no_stdev(self):
-    self.assertEqual(helper.format_metric(100), "100")
-    self.assertEqual(helper.format_metric(0), "0")
-    self.assertEqual(helper.format_metric(1.5), "1.5")
-    self.assertEqual(helper.format_metric(100, 0), "100")
-    self.assertEqual(helper.format_metric(0, 0), "0")
-    self.assertEqual(helper.format_metric(1.5, 0), "1.5")
-
-  def test_stdev(self):
-    self.assertEqual(helper.format_metric(100, 10), "100 ± 10%")
-    self.assertEqual(helper.format_metric(100, 1), "100.0 ± 1.0%")
-    self.assertEqual(helper.format_metric(100, 1.5), "100.0 ± 1.5%")
-    self.assertEqual(helper.format_metric(100, 0.1), "100.00 ± 0.10%")
-    self.assertEqual(helper.format_metric(100, 0.12), "100.00 ± 0.12%")
-    self.assertEqual(helper.format_metric(100, 0.125), "100.00 ± 0.12%")
-
-  def test_round_stdev(self):
-    value = 100.123456789
-    percent = value / 100
-    self.assertEqual(
-        helper.format_metric(value, percent * 10.1234), "100 ± 10%")
-    self.assertEqual(
-        helper.format_metric(value, percent * 1.2345), "100.1 ± 1.2%")
-    self.assertEqual(
-        helper.format_metric(value, percent * 0.12345), "100.12 ± 0.12%")
-    self.assertEqual(
-        helper.format_metric(value, percent * 0.012345), "100.123 ± 0.012%")
-    self.assertEqual(
-        helper.format_metric(value, percent * 0.0012345), "100.1235 ± 0.0012%")
-    self.assertEqual(
-        helper.format_metric(value, percent * 0.00012345),
-        "100.12346 ± 0.00012%")
-
-
 class EnumWithHelpTestCase(unittest.TestCase):
 
   class TestEnum(helper.EnumWithHelp):

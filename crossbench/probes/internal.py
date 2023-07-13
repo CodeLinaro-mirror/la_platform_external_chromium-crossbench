@@ -9,7 +9,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional
 
 from crossbench.probes import probe
-from crossbench.probes.helper import ValuesMerger
+from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeScope
 from crossbench.probes.results import EmptyProbeResult, ProbeResult, ProbeResultDict
 
@@ -151,7 +151,7 @@ class DurationsProbe(InternalJsonResultProbe):
     return actions.run.durations.to_json()
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = ValuesMerger.merge_json_list(
+    merged = MetricsMerger.merge_json_list(
         (repetitions_group.results[self].json
          for repetitions_group in group.repetitions_groups),
         merge_duplicate_paths=True)
@@ -161,7 +161,7 @@ class DurationsProbe(InternalJsonResultProbe):
     )
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    merged = ValuesMerger.merge_json_list(
+    merged = MetricsMerger.merge_json_list(
         (story_group.results[self].json for story_group in group.story_groups),
         merge_duplicate_paths=True)
     return self.write_group_result(group, merged)

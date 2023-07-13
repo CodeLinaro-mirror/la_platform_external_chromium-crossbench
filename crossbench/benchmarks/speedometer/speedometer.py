@@ -10,6 +10,7 @@ import logging
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
                     Tuple, Type)
+from crossbench.probes import metric as cb_metric
 
 import crossbench.probes.helper as probes_helper
 from crossbench import cli_helper, helper
@@ -43,13 +44,13 @@ class SpeedometerProbe(JsonResultProbe, metaclass=abc.ABCMeta):
   def flatten_json_data(self, json_data: Sequence) -> Dict[str, Any]:
     # json_data may contain multiple iterations, merge those first
     assert isinstance(json_data, list)
-    merged = probes_helper.ValuesMerger(
+    merged = cb_metric.MetricsMerger(
         json_data, key_fn=_probe_remove_tests_segments).to_json(
             value_fn=lambda values: values.geomean)
     return probes_helper.Flatten(merged).data
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = probes_helper.ValuesMerger.merge_json_list(
+    merged = cb_metric.MetricsMerger.merge_json_list(
         repetitions_group.results[self].json
         for repetitions_group in group.repetitions_groups)
     return self.write_group_result(group, merged, write_csv=True)
@@ -89,12 +90,12 @@ class SpeedometerProbe(JsonResultProbe, metaclass=abc.ABCMeta):
       if len(parts) != 2 or parts[-1] != "total":
         continue
       table[metric_key].append(
-          helper.format_metric(metric["average"], metric["stddev"]))
+          cb_metric.format_metric(metric["average"], metric["stddev"]))
       # Separate runs don't produce a score
     if "score" in metrics:
       metric = metrics["score"]
       table["Score"].append(
-          helper.format_metric(metric["average"], metric["stddev"]))
+          cb_metric.format_metric(metric["average"], metric["stddev"]))
 
 
 class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, Final, List, Tuple, Type
 
 from crossbench import helper
 from crossbench.benchmarks.benchmark import PressBenchmark
-from crossbench.probes import helper as probes_helper
+from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories import PressBenchmarkStory
@@ -67,11 +67,11 @@ class JetStream2Probe(JsonResultProbe, metaclass=abc.ABCMeta):
         accumulated_metrics[metric].append(value)
     total: Dict[str, float] = {}
     for metric, values in accumulated_metrics.items():
-      total[metric] = probes_helper.geomean(values)
+      total[metric] = cb_metric.geomean(values)
     return total
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = probes_helper.ValuesMerger.merge_json_list(
+    merged = cb_metric.MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
     return self.write_group_result(group, merged, write_csv=True)
@@ -106,17 +106,19 @@ class JetStream2Probe(JsonResultProbe, metaclass=abc.ABCMeta):
 
   def _extract_result_metrics_table(self, metrics: Dict[str, Any],
                                     table: Dict[str, List[str]]) -> None:
-    for metric_key, metric in metrics.items():
+    for metric_key, metric_value in metrics.items():
       parts = metric_key.split("/")
       if len(parts) != 2 or parts[0] == "Total" or parts[1] != "score":
         continue
       table[metric_key].append(
-          helper.format_metric(metric["average"], metric["stddev"]))
+          cb_metric.format_metric(metric_value["average"],
+                                  metric_value["stddev"]))
       # Separate runs don't produce a score
     if "Total/score" in metrics:
-      metric = metrics["Total/score"]
+      metric_value = metrics["Total/score"]
       table["Score"].append(
-          helper.format_metric(metric["average"], metric["stddev"]))
+          cb_metric.format_metric(metric_value["average"],
+                                  metric_value["stddev"]))
 
 
 class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):

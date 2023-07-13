@@ -6,7 +6,7 @@ import logging
 
 from typing import TYPE_CHECKING, Any, Dict
 
-from crossbench.probes import helper as probes_helper
+from crossbench.probes import metric
 from crossbench.probes.json import JsonResultProbe
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ class PerformanceEntriesProbe(JsonResultProbe):
           "%s: Merging performance.entries from %d possibly unrelated pages %s",
           group.browser.unique_name, len(stories),
           ", ".join(story.name for story in stories))
-    merged = probes_helper.ValuesMerger.merge_json_list(
+    merged = metric.MetricsMerger.merge_json_list(
         (story_group.results[self].json
          for story_group in group.repetitions_groups),
         merge_duplicate_paths=True)

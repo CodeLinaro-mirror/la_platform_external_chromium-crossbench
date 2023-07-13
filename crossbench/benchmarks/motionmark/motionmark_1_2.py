@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import itertools
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from crossbench.probes import metric
 
 import crossbench.probes.helper as probes_helper
 from crossbench.benchmarks.benchmark import PressBenchmark
@@ -45,7 +46,7 @@ class MotionMark12Probe(JsonResultProbe):
         json_data[0], key_fn=_probe_skip_data_segments).data
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = probes_helper.ValuesMerger.merge_json_list(
+    merged = metric.MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
     return self.write_group_result(group, merged, write_csv=True)

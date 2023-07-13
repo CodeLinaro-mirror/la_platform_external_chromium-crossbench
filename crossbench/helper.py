@@ -18,7 +18,6 @@ import urllib
 import urllib.error
 import urllib.parse as urlparse
 import urllib.request
-from math import floor, log10
 from typing import (Any, Callable, Dict, Final, Iterable, Iterator, List,
                     Optional, Sequence, Tuple, Type, TypeVar, Union)
 
@@ -102,27 +101,6 @@ def group_by(collection: Iterable[InputT],
   else:
     items = groups.items()
   return dict(items)
-
-
-def format_metric(value: Union[float, int],
-                  stddev: Optional[float] = None) -> str:
-  """Format value and stdev to only expose significant + 1 digits.
-  Example outputs:
-    100 ± 10%
-    100.1 ± 1.2%
-    100.12 ± 0.12%
-    100.123 ± 0.012%
-    100.1235 ± 0.0012%
-  """
-  if not stddev:
-    return str(value)
-  stddev = float(stddev)
-  stddev_significant_digit = int(floor(log10(abs(stddev))))
-  value_width = max(0, 1 - stddev_significant_digit)
-  percent = stddev / value * 100
-  percent_significant_digit = int(floor(log10(abs(percent))))
-  percent_width = max(0, 1 - percent_significant_digit)
-  return f"{value:.{value_width}f} ± {percent:.{percent_width}f}%"
 
 
 def sort_by_file_size(files: Iterable[pathlib.Path]) -> List[pathlib.Path]:

@@ -25,7 +25,7 @@ class ProbeResult(abc.ABC):
     self._file_list = tuple(file) if file else ()
     self._json_list = tuple(json) if json else ()
     self._csv_list = tuple(csv) if csv else ()
-    # TODO: Add Values object for keeping metrics in-memory instead of reloading
+    # TODO: Add Metric object for keeping metrics in-memory instead of reloading
     # them from serialized JSON files for merging.
     self._values = None
     self._validate()
