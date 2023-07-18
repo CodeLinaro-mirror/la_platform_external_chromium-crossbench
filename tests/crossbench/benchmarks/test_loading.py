@@ -5,23 +5,30 @@
 # pytype: disable=attribute-error
 
 from __future__ import annotations
+
 import argparse
 import json
-
+import pathlib
 import sys
 import unittest
-import pathlib
+from typing import Sequence, cast
 from unittest import mock
+
 import hjson
 import pyfakefs.fake_filesystem_unittest
-from typing import Sequence, cast
-
 import pytest
 
 import crossbench
 import crossbench.env
 import crossbench.runner
-from crossbench.benchmarks import loading
+from crossbench.benchmarks.loading import PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
+from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
+                                                CombinedPage, InteractivePage,
+                                                LivePage)
+from crossbench.benchmarks.loading.page_config import PageConfig
+from crossbench.benchmarks.loading.playback_controller import (
+    PlaybackController, RepeatPlaybackController, TimeoutPlaybackController)
 from crossbench.stories import Story
 from tests.crossbench.benchmarks import helper
 
@@ -38,54 +45,54 @@ class PlaybackControllerTest(unittest.TestCase):
     ]:
       with self.subTest(pattern=invalid):
         with self.assertRaises((argparse.ArgumentTypeError, ValueError)):
-          loading.PlaybackController.parse(invalid)
+          PlaybackController.parse(invalid)
 
   def test_parse_repeat(self):
-    playback = loading.PlaybackController.parse("once")
-    self.assertIsInstance(playback, loading.RepeatPlaybackController)
-    assert isinstance(playback, loading.RepeatPlaybackController)
+    playback = PlaybackController.parse("once")
+    self.assertIsInstance(playback, RepeatPlaybackController)
+    assert isinstance(playback, RepeatPlaybackController)
     self.assertEqual(playback.count, 1)
     self.assertEqual(len(list(playback)), 1)
 
-    playback = loading.PlaybackController.parse("1x")
-    self.assertIsInstance(playback, loading.RepeatPlaybackController)
-    assert isinstance(playback, loading.RepeatPlaybackController)
+    playback = PlaybackController.parse("1x")
+    self.assertIsInstance(playback, RepeatPlaybackController)
+    assert isinstance(playback, RepeatPlaybackController)
     self.assertEqual(playback.count, 1)
     self.assertEqual(len(list(playback)), 1)
 
-    playback = loading.PlaybackController.parse("11x")
-    self.assertIsInstance(playback, loading.RepeatPlaybackController)
-    assert isinstance(playback, loading.RepeatPlaybackController)
+    playback = PlaybackController.parse("11x")
+    self.assertIsInstance(playback, RepeatPlaybackController)
+    assert isinstance(playback, RepeatPlaybackController)
     self.assertEqual(playback.count, 11)
     self.assertEqual(len(list(playback)), 11)
 
   def test_parse_forever(self):
-    playback = loading.PlaybackController.parse("forever")
-    self.assertIsInstance(playback, loading.PlaybackController)
-    playback = loading.PlaybackController.parse("inf")
-    self.assertIsInstance(playback, loading.PlaybackController)
-    playback = loading.PlaybackController.parse("infinity")
-    self.assertIsInstance(playback, loading.PlaybackController)
+    playback = PlaybackController.parse("forever")
+    self.assertIsInstance(playback, PlaybackController)
+    playback = PlaybackController.parse("inf")
+    self.assertIsInstance(playback, PlaybackController)
+    playback = PlaybackController.parse("infinity")
+    self.assertIsInstance(playback, PlaybackController)
 
   def test_parse_duration(self):
-    playback = loading.PlaybackController.parse("5s")
-    self.assertIsInstance(playback, loading.TimeoutPlaybackController)
-    assert isinstance(playback, loading.TimeoutPlaybackController)
+    playback = PlaybackController.parse("5s")
+    self.assertIsInstance(playback, TimeoutPlaybackController)
+    assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, 5)
 
-    playback = loading.PlaybackController.parse("5m")
-    self.assertIsInstance(playback, loading.TimeoutPlaybackController)
-    assert isinstance(playback, loading.TimeoutPlaybackController)
+    playback = PlaybackController.parse("5m")
+    self.assertIsInstance(playback, TimeoutPlaybackController)
+    assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, 5 * 60)
 
-    playback = loading.PlaybackController.parse("5.5m")
-    self.assertIsInstance(playback, loading.TimeoutPlaybackController)
-    assert isinstance(playback, loading.TimeoutPlaybackController)
+    playback = PlaybackController.parse("5.5m")
+    self.assertIsInstance(playback, TimeoutPlaybackController)
+    assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, 5.5 * 60)
 
-    playback = loading.PlaybackController.parse("5.5m")
-    self.assertIsInstance(playback, loading.TimeoutPlaybackController)
-    assert isinstance(playback, loading.TimeoutPlaybackController)
+    playback = PlaybackController.parse("5.5m")
+    self.assertIsInstance(playback, TimeoutPlaybackController)
+    assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, 5.5 * 60)
 
 
@@ -93,45 +100,44 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
   @property
   def benchmark_cls(self):
-    return loading.PageLoadBenchmark
+    return PageLoadBenchmark
 
   def story_filter(self, patterns: Sequence[str],
-                   **kwargs) -> loading.LoadingPageFilter:
-    return cast(loading.LoadingPageFilter,
-                super().story_filter(patterns, **kwargs))
+                   **kwargs) -> LoadingPageFilter:
+    return cast(LoadingPageFilter, super().story_filter(patterns, **kwargs))
 
   def test_all_stories(self):
     stories = self.story_filter(["all"]).stories
     self.assertGreater(len(stories), 1)
     for story in stories:
-      self.assertIsInstance(story, loading.LivePage)
+      self.assertIsInstance(story, LivePage)
     names = set(story.name for story in stories)
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(names, set(page.name for page in loading.PAGE_LIST))
+    self.assertEqual(names, set(page.name for page in PAGE_LIST))
 
   def test_default_stories(self):
     stories = self.story_filter(["default"]).stories
     self.assertGreater(len(stories), 1)
     for story in stories:
-      self.assertIsInstance(story, loading.LivePage)
+      self.assertIsInstance(story, LivePage)
     names = set(story.name for story in stories)
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(names, set(page.name for page in loading.PAGE_LIST_SMALL))
+    self.assertEqual(names, set(page.name for page in PAGE_LIST_SMALL))
 
   def test_combined_stories(self):
     stories = self.story_filter(["all"], separate=False).stories
     self.assertEqual(len(stories), 1)
     combined = stories[0]
-    self.assertIsInstance(combined, loading.CombinedPage)
+    self.assertIsInstance(combined, CombinedPage)
 
   def test_filter_by_name(self):
-    for page in loading.PAGE_LIST:
+    for page in PAGE_LIST:
       stories = self.story_filter([page.name]).stories
       self.assertListEqual([p.url for p in stories], [page.url])
     self.assertListEqual(self.story_filter([]).stories, [])
 
   def test_filter_by_name_with_duration(self):
-    pages = loading.PAGE_LIST
+    pages = PAGE_LIST
     filtered_pages = self.story_filter([pages[0].name, pages[1].name,
                                         "1001"]).stories
     self.assertListEqual([p.url for p in filtered_pages],
@@ -161,32 +167,31 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     stories = self.story_filter([url1, url2], separate=False).stories
     self.assertEqual(len(stories), 1)
     combined = stories[0]
-    self.assertIsInstance(combined, loading.CombinedPage)
+    self.assertIsInstance(combined, CombinedPage)
 
   def test_run_combined(self):
     stories = [
-        loading.CombinedPage(loading.PAGE_LIST),
+        CombinedPage(PAGE_LIST),
     ]
     self._test_run(stories)
-    self._assert_urls_loaded([story.url for story in loading.PAGE_LIST])
+    self._assert_urls_loaded([story.url for story in PAGE_LIST])
 
   def test_run_default(self):
-    stories = loading.PAGE_LIST
+    stories = PAGE_LIST
     self._test_run(stories)
     self._assert_urls_loaded([story.url for story in stories])
 
   def test_run_throw(self):
-    stories = loading.PAGE_LIST
+    stories = PAGE_LIST
     self._test_run(stories, throw=True)
     self._assert_urls_loaded([story.url for story in stories])
 
   def test_run_repeat(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
-    stories = self.story_filter(
-        [url1, url2],
-        separate=False,
-        playback=loading.PlaybackController.repeat(3)).stories
+    stories = self.story_filter([url1, url2],
+                                separate=False,
+                                playback=PlaybackController.repeat(3)).stories
     self._test_run(stories, throw=True)
     urls = [url1, url2] * 3
     self._assert_urls_loaded(urls)
@@ -194,10 +199,9 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
   def test_run_repeat_separate(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
-    stories = self.story_filter(
-        [url1, url2],
-        separate=True,
-        playback=loading.PlaybackController.repeat(3)).stories
+    stories = self.story_filter([url1, url2],
+                                separate=True,
+                                playback=PlaybackController.repeat(3)).stories
     self._test_run(stories, throw=True)
     urls = [url1] * 3 + [url2] * 3
     self._assert_urls_loaded(urls)
@@ -238,11 +242,11 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
     if not example_config_file.exists():
       raise unittest.SkipTest(f"Test file {example_config_file} does not exist")
     with example_config_file.open(encoding="utf-8") as f:
-      file_config = loading.PageConfig()
+      file_config = PageConfig()
       file_config.load(f)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
-    dict_config = loading.PageConfig()
+    dict_config = PageConfig()
     dict_config.load_dict(data)
     self.assertTrue(dict_config.stories)
     self.assertTrue(file_config.stories)
@@ -267,7 +271,7 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
             ],
         }
     }
-    config = loading.PageConfig()
+    config = PageConfig()
     config.load_dict(config_data, throw=True)
     self.assert_single_google_story(config.stories)
     # Loading the same config from a file should result in the same actions.
@@ -275,22 +279,22 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
     assert not file.exists()
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    stories = loading.PageConfig.parse(str(file))
+    stories = PageConfig.parse(str(file))
     self.assert_single_google_story(stories)
 
   def assert_single_google_story(self, stories: Sequence[Story]):
     self.assertTrue(len(stories), 1)
     story = stories[0]
-    assert isinstance(story, loading.InteractivePage)
+    assert isinstance(story, InteractivePage)
     self.assertEqual(story.name, "Google Story")
     self.assertListEqual([action.TYPE for action in story.actions],
                          ["get", "wait", "scroll"])
 
   def test_no_scenarios(self):
     with self.assertRaises(ValueError):
-      loading.PageConfig().load_dict({}, throw=True)
+      PageConfig().load_dict({}, throw=True)
     with self.assertRaises(ValueError):
-      loading.PageConfig().load_dict({"pages": {}}, throw=True)
+      PageConfig().load_dict({"pages": {}}, throw=True)
 
   def test_scenario_invalid_actions(self):
     invalid_actions = [None, "", [], {}, "invalid string", 12]
@@ -298,11 +302,11 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
       config_dict = {"pages": {"name": invalid_action}}
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(ValueError):
-          loading.PageConfig().load_dict(config_dict, throw=True)
+          PageConfig().load_dict(config_dict, throw=True)
 
   def test_missing_action(self):
     with self.assertRaises(ValueError):
-      loading.PageConfig().load_dict(
+      PageConfig().load_dict(
           {"pages": {
               "TEST": [{
                   "action___": "wait",
@@ -324,11 +328,11 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(ValueError):
-          loading.PageConfig().load_dict(config_dict, throw=True)
+          PageConfig().load_dict(config_dict, throw=True)
 
   def test_missing_get_action_scenario(self):
     with self.assertRaises(AssertionError):
-      loading.PageConfig().load_dict(
+      PageConfig().load_dict(
           {"pages": {
               "TEST": [{
                   "action": "wait",
@@ -367,7 +371,7 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
     ]
     for input_value, duration in durations:
       with self.subTest(duration=duration):
-        page_config = loading.PageConfig()
+        page_config = PageConfig()
         page_config.load_dict({
             "pages": {
                 "TEST": [
@@ -384,7 +388,7 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
         })
         self.assertEqual(len(page_config.stories), 1)
         story = page_config.stories[0]
-        assert isinstance(story, loading.InteractivePage)
+        assert isinstance(story, InteractivePage)
         self.assertEqual(len(story.actions), 2)
         self.assertEqual(story.actions[1].duration, duration)
 
@@ -412,7 +416,7 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
     for invalid_duration in invalid_durations:
       with self.subTest(duration=invalid_duration), self.assertRaises(
           (AssertionError, ValueError, argparse.ArgumentTypeError)):
-        loading.PageConfig().load_dict(
+        PageConfig().load_dict(
             {
                 "pages": {
                     "TEST": [
