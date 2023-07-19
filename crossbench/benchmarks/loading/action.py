@@ -3,11 +3,11 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import abc
-import math
-import time
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
+import abc
+import datetime as dt
+import time
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from crossbench import compat
 
@@ -44,12 +44,14 @@ class Action(abc.ABC):
 
   def __init__(self,
                value: Optional[str] = None,
-               duration: Union[float, int] = 0.0):
+               duration: dt.timedelta = dt.timedelta()):
     self.value = value
-    assert isinstance(duration, (float, int))
-    self.duration = duration
-    assert duration >= 0 and not math.isinf(duration), (
-        f"Invalid duration: {duration}")
+    assert isinstance(duration, dt.timedelta)
+    self._duration = duration
+
+  @property
+  def duration(self) -> dt.timedelta:
+    return self._duration
 
   @abc.abstractmethod
   def run(self, run: Run, story: Story) -> None:
@@ -77,7 +79,7 @@ class GetAction(Action):
 
   def __init__(self,
                value: Optional[str] = None,
-               duration: Union[float, int] = 0.0,
+               duration: dt.timedelta = dt.timedelta(),
                ready_state: ReadyState = ReadyState.ANY):
     self._ready_state = ready_state
     super().__init__(value, duration)
@@ -117,7 +119,7 @@ class WaitAction(Action):
           f"{self._story.name}. Argument 'duration' is not provided")
 
   def details_json(self) -> Dict[str, Any]:
-    return {"action": str(self.TYPE), "duration": self.duration}
+    return {"action": str(self.TYPE), "duration": self.duration.total_seconds()}
 
 
 class ScrollAction(Action):
@@ -126,7 +128,7 @@ class ScrollAction(Action):
   def run(self, run: Run, story: Story) -> None:
     self._story = story
     self._validate_action()
-    time_end = self.duration + time.time()
+    time_end = time.time() + self.duration.total_seconds()
     direction = 1 if self.value == Scroll.UP else -1
 
     start = 0
@@ -151,7 +153,7 @@ class ScrollAction(Action):
     return {
         "action": str(self.TYPE),
         "value": self.value,
-        "duration": self.duration
+        "duration": self.duration.total_seconds(),
     }
 
 
@@ -160,7 +162,7 @@ class ClickAction(Action):
 
   def __init__(self,
                value: Optional[str] = None,
-               duration: Union[float, int] = 0.0,
+               duration: dt.timedelta = dt.timedelta(),
                scroll_into_view: bool = False):
     self._scroll_into_view = scroll_into_view
     super().__init__(value, duration)
@@ -188,7 +190,7 @@ class ClickAction(Action):
     return {
         "action": str(self.TYPE),
         "value": self.value,
-        "duration": self.duration
+        "duration": self.duration.total_seconds(),
     }
 
 

@@ -15,7 +15,6 @@ import logging
 import pathlib
 import sys
 import threading
-from collections.abc import Callable, Iterable, Mapping
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, Iterator, List,
                     Optional, Sequence, Tuple, Type, Union)
 
@@ -60,6 +59,8 @@ class Timing:
       if isinstance(time_unit, dt.timedelta):
         return time_unit
       return dt.timedelta(seconds=time_unit)
+    if isinstance(time_unit, dt.timedelta):
+      time_unit = time_unit.total_seconds()
     assert isinstance(time_unit, (float, int))
     assert time_unit >= 0
     return time_unit * self.unit
@@ -726,7 +727,7 @@ class Run:
         "repetition": self.repetition,
         "temperature": self.temperature,
         "story": str(self.story),
-        "duration": dt.timedelta(seconds=self.story.duration),
+        "duration": self.story.duration.total_seconds(),
         "probes": [probe.name for probe in self.probes]
     }
     return details
@@ -1110,8 +1111,9 @@ class Actions(helper.TimeScope):
         delta,
         arguments=arguments)
 
-  def wait_js_condition(self, js_code: str, min_wait: float,
-                        timeout: float) -> None:
+  def wait_js_condition(self, js_code: str, min_wait: Union[dt.timedelta,
+                                                            float],
+                        timeout: Union[dt.timedelta, float]) -> None:
     wait_range = helper.WaitRange(
         self.timing.timedelta(min_wait), self.timing.timedelta(timeout))
     assert "return" in js_code, (
@@ -1131,6 +1133,8 @@ class Actions(helper.TimeScope):
         self._runner,  # pytype: disable=wrong-arg-types
         url)
 
-  def wait(self, seconds: float = 1) -> None:
+  def wait(
+      self, seconds: Union[dt.timedelta,
+                           float] = dt.timedelta(seconds=1)) -> None:
     self._assert_is_active()
     self.platform.sleep(seconds)

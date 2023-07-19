@@ -99,7 +99,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         # Use the last created page and set the duration on it
         assert page is not None, (
             f"Duration '{value}' has to follow a URL or page-name.")
-        page.duration = cli_helper.Duration.parse(value)
+        page.set_duration(cli_helper.Duration.parse(value))
         continue
       self.stories.append(page)
 

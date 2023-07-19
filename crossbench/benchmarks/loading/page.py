@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import datetime as dt
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 from crossbench.stories import Story
@@ -26,7 +27,7 @@ class Page(Story, metaclass=abc.ABCMeta):
 
   def __init__(self,
                name: str,
-               duration: float,
+               duration: dt.timedelta = dt.timedelta(seconds=15),
                playback: Optional[PlaybackController] = None):
     self._playback = playback or PlaybackController.once()
     super().__init__(name, duration)
@@ -43,11 +44,14 @@ class LivePage(Page):
   def __init__(self,
                name: str,
                url: str,
-               duration: float = 15,
+               duration: dt.timedelta = dt.timedelta(seconds=15),
                playback: Optional[PlaybackController] = None) -> None:
     super().__init__(name, duration, playback)
     assert url, "Invalid page url"
     self.url: str = url
+
+  def set_duration(self, duration: dt.timedelta) -> None:
+    self._duration = duration
 
   def details_json(self) -> Dict[str, Any]:
     result = super().details_json()
@@ -57,7 +61,7 @@ class LivePage(Page):
   def run(self, run: Run) -> None:
     for _ in self._playback:
       run.browser.show_url(run.runner, self.url)
-      run.runner.wait(self.duration + 1)
+      run.runner.wait(self.duration + dt.timedelta(seconds=1))
 
   def __str__(self) -> str:
     return f"Page(name={self.name}, url={self.url})"
@@ -72,9 +76,10 @@ class CombinedPage(Page):
     assert len(pages), "No sub-pages provided for CombinedPage"
     assert len(pages) > 1, "Combined Page needs more than one page"
     self._pages = pages
+    duration = dt.timedelta()
     for page in self._pages:
       page.set_parent(self)
-    duration = sum(page.duration for page in pages)
+      duration += page.duration
     super().__init__(name, duration, playback)
     self.url = None
 
@@ -120,8 +125,8 @@ class InteractivePage(Page):
     result["actions"] = list(action.details_json() for action in self._actions)
     return result
 
-  def _get_duration(self) -> float:
-    duration: float = 0
+  def _get_duration(self) -> dt.timedelta:
+    duration = dt.timedelta()
     for action in self._actions:
       if action.duration is not None:
         duration += action.duration
@@ -129,19 +134,28 @@ class InteractivePage(Page):
 
 
 PAGE_LIST = (
-    LivePage("amazon", "https://www.amazon.de/s?k=heizkissen", 5),
-    LivePage("bing", "https://www.bing.com/images/search?q=not+a+squirrel", 5),
-    LivePage("caf", "http://www.caf.fr", 6),
-    LivePage("cnn", "https://cnn.com/", 7),
-    LivePage("ecma262", "https://tc39.es/ecma262/#sec-numbers-and-dates", 10),
-    LivePage("expedia", "https://www.expedia.com/", 7),
-    LivePage("facebook", "https://facebook.com/shakira", 8),
-    LivePage("maps", "https://goo.gl/maps/TEZde4y4Hc6r2oNN8", 10),
-    LivePage("microsoft", "https://microsoft.com/", 6),
-    LivePage("provincial", "http://www.provincial.com", 6),
-    LivePage("sueddeutsche", "https://www.sueddeutsche.de/wirtschaft", 8),
-    LivePage("timesofindia", "https://timesofindia.indiatimes.com/", 8),
-    LivePage("twitter", "https://twitter.com/wernertwertzog?lang=en", 6),
+    LivePage("amazon", "https://www.amazon.de/s?k=heizkissen",
+             dt.timedelta(seconds=5)),
+    LivePage("bing", "https://www.bing.com/images/search?q=not+a+squirrel",
+             dt.timedelta(seconds=5)),
+    LivePage("caf", "http://www.caf.fr", dt.timedelta(seconds=6)),
+    LivePage("cnn", "https://cnn.com/", dt.timedelta(seconds=7)),
+    LivePage("ecma262", "https://tc39.es/ecma262/#sec-numbers-and-dates",
+             dt.timedelta(seconds=10)),
+    LivePage("expedia", "https://www.expedia.com/", dt.timedelta(seconds=7)),
+    LivePage("facebook", "https://facebook.com/shakira",
+             dt.timedelta(seconds=8)),
+    LivePage("maps", "https://goo.gl/maps/TEZde4y4Hc6r2oNN8",
+             dt.timedelta(seconds=10)),
+    LivePage("microsoft", "https://microsoft.com/", dt.timedelta(seconds=6)),
+    LivePage("provincial", "http://www.provincial.com",
+             dt.timedelta(seconds=6)),
+    LivePage("sueddeutsche", "https://www.sueddeutsche.de/wirtschaft",
+             dt.timedelta(seconds=8)),
+    LivePage("timesofindia", "https://timesofindia.indiatimes.com/",
+             dt.timedelta(seconds=8)),
+    LivePage("twitter", "https://twitter.com/wernertwertzog?lang=en",
+             dt.timedelta(seconds=6)),
 )
 PAGES = {page.name: page for page in PAGE_LIST}
 PAGE_LIST_SMALL = (PAGES["facebook"], PAGES["maps"], PAGES["timesofindia"],

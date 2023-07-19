@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, ABCMeta, abstractmethod
 import abc
+import datetime as dt
 from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING, Tuple, Type, TypeVar
 
 if TYPE_CHECKING:
@@ -21,19 +22,25 @@ class Story(ABC):
   def all_story_names(cls) -> Sequence[str]:
     pass
 
-  def __init__(self, name: str, duration: float = 15):
+  def __init__(self,
+               name: str,
+               duration: dt.timedelta = dt.timedelta(seconds=15)):
     assert name, "Invalid page name"
     self._name = name
-    assert duration > 0, (
-        f"Duration must be a positive number, but got: {duration}")
-    self.duration = duration
+    self._duration = duration
+    assert self._duration.total_seconds() > 0, (
+        f"Duration must be non-empty, but got: {duration}")
 
   @property
   def name(self) -> str:
     return self._name
 
+  @property
+  def duration(self) -> dt.timedelta:
+    return self._duration
+
   def details_json(self) -> Dict[str, Any]:
-    return {"name": self.name, "duration": self.duration}
+    return {"name": self.name, "duration": self.duration.total_seconds()}
 
   @abstractmethod
   def run(self, run: Run) -> None:
@@ -138,19 +145,19 @@ class PressBenchmarkStory(Story, metaclass=ABCMeta):
       name = name[:220] + hex(hash(name))[2:10]
     return name
 
-  def _get_initial_duration(self) -> float:
+  def _get_initial_duration(self) -> dt.timedelta:
     # Fixed delay for startup costs
-    startup_delay = 2
+    startup_delay = dt.timedelta(seconds=2)
     # Add some slack due to different story lengths
     story_factor = 0.5 + 1.1 * len(self._substories)
-    return startup_delay + story_factor * self.substory_duration
+    return startup_delay + (story_factor * self.substory_duration)
 
   @property
   def substories(self) -> List[str]:
     return list(self._substories)
 
   @property
-  def fast_duration(self) -> float:
+  def fast_duration(self) -> dt.timedelta:
     """Expected benchmark duration on fast machines.
     Keep this low enough to not have to wait needlessly at the end of a
     benchmark.
@@ -158,17 +165,17 @@ class PressBenchmarkStory(Story, metaclass=ABCMeta):
     return self.duration / 3
 
   @property
-  def slow_duration(self) -> float:
+  def slow_duration(self) -> dt.timedelta:
     """Max duration that covers run-times on slow machines and/or
     debug-mode browsers.
     Making this number too large might cause needless wait times on broken
     browsers/benchmarks.
     """
-    return 15 + self.duration * 5
+    return dt.timedelta(seconds=15) + self.duration * 5
 
   @property
   @abc.abstractmethod
-  def substory_duration(self) -> float:
+  def substory_duration(self) -> dt.timedelta:
     pass
 
   @property

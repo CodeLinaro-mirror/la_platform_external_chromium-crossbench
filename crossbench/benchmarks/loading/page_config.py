@@ -7,6 +7,8 @@ from __future__ import annotations
 import abc
 from typing import Any, Dict, List, Optional, TextIO, TypeVar
 
+import datetime as dt
+
 import hjson
 
 from crossbench import cli_helper
@@ -106,8 +108,7 @@ class PageConfig(AbstractPageConfig):
         action_type = step["action"]
         if not action_type:
           raise ValueError("Empty 'action' property")
-        if action_duration := step.get("duration", 0.0):
-          action_duration = cli_helper.Duration.parse(action_duration)
+        action_duration = cli_helper.Duration.parse(step.get("duration", 0.0))
         value = step.get("url") or step.get("value")
         actions_list.append(
             self._create_action(action_type, value, action_duration))
@@ -118,7 +119,7 @@ class PageConfig(AbstractPageConfig):
     return actions_list
 
   def _create_action(self, action_type: action.ActionType, value,
-                     duration) -> ActionT:
+                     duration: dt.timedelta) -> ActionT:
     if action_type not in action.ACTION_FACTORY:
       raise ValueError(f"Unknown action name: '{action_type}'")
     return action.ACTION_FACTORY[action_type](value, duration)
@@ -141,12 +142,12 @@ class DevToolsRecorderPageConfig(AbstractPageConfig):
       if maybe_actions:
         actions.append(maybe_actions)
         # TODO(cbruni): make this configurable
-        actions.append(action.WaitAction(duration=1))
+        actions.append(action.WaitAction(duration=dt.timedelta(seconds=1)))
     return actions
 
   def _parse_step(self, step: Dict[str, Any]) -> Optional[action.Action]:
     step_type: str = step["type"]
-    default_timeout = 10
+    default_timeout = dt.timedelta(seconds=10)
     if step_type == "navigate":
       return action.GetAction(
           step["url"], default_timeout, ready_state=action.ReadyState.COMPLETE)

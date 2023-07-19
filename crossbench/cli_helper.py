@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import datetime as dt
 import json
 import math
+import pathlib
 import re
 import sys
-import pathlib
 from typing import Any, Generator, Optional, Union
 
 import hjson
@@ -177,40 +178,34 @@ def late_argument_type_error_wrapper(flag: str) -> Generator[None, None, None]:
 class Duration:
   _DURATION_RE = re.compile(r"(?P<value>(\d+(\.\d+)?)) ?(?P<unit>[^0-9\.]+)?")
 
-  _MILLISECONDS_MULTIPLIER = 0.001
-  _SECONDS_MULTIPLIER = 1
-  _MINUTES_MULTIPLIER = 60
-  _HOURS_MULTIPLIER = 3600
-
   @classmethod
-  def get_multiplier(cls, suffix: str) -> float:
+  def _to_timedelta(cls, value: float, suffix: str) -> dt.timedelta:
     if suffix in {"ms", "millis", "milliseconds"}:
-      return cls._MILLISECONDS_MULTIPLIER
+      return dt.timedelta(milliseconds=value)
     if suffix in {"s", "sec", "secs", "second", "seconds"}:
-      return cls._SECONDS_MULTIPLIER
+      return dt.timedelta(seconds=value)
     if suffix in {"m", "min", "mins", "minute", "minutes"}:
-      return cls._MINUTES_MULTIPLIER
+      return dt.timedelta(minutes=value)
     if suffix in {"h", "hrs", "hour", "hours"}:
-      return cls._HOURS_MULTIPLIER
+      return dt.timedelta(hours=value)
     raise ValueError(f"Error: {suffix} is not support for duration. "
                      "Make sure to use a supported time unit/suffix")
 
   @classmethod
-  def parse(cls, time_value: Union[float, int, str]) -> float:
+  def parse(cls, time_value: Union[float, int, str]) -> dt.timedelta:
     """
     This function will parse the measurement and the value from string value.
-    Keep in mind the return is in seconds.
 
     For example:
-    5s => 5
-    5m => 5*60 = 300
+    5s => dt.timedelta(seconds=5)
+    5m => 5*60 = dt.timedelta(minutes=5)
 
     """
     if isinstance(time_value, (int, float)):
       if time_value < 0:
         raise argparse.ArgumentTypeError(
             f"Duration must be positive, but got: {time_value}")
-      return float(time_value)
+      return dt.timedelta(seconds=time_value)
 
     if not time_value:
       raise argparse.ArgumentTypeError("duration.")
@@ -233,7 +228,8 @@ class Duration:
     if time_value < 0 or math.isnan(time_value) or math.isinf(time_value):
       raise argparse.ArgumentTypeError(
           f"Duration must be positive, but got: {time_value}")
+
     if not time_unit:
       # If no time unit provided we assume it is in seconds.
-      return time_value
-    return time_value * cls.get_multiplier(time_unit)
+      return dt.timedelta(seconds=time_value)
+    return cls._to_timedelta(time_value, time_unit)

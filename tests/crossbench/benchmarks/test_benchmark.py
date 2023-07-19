@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import unittest
+import datetime as dt
 
 from crossbench.benchmarks.benchmark import PressBenchmarkStoryFilter
 from crossbench.runner import Run
@@ -20,8 +21,8 @@ class TestStory(PressBenchmarkStory):
   )
 
   @property
-  def substory_duration(self):
-    return 0.1
+  def substory_duration(self) -> dt.timedelta:
+    return dt.timedelta(seconds=0.1)
 
   def run(self, run: Run) -> None:
     pass

@@ -4,18 +4,19 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import itertools
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
-from crossbench.probes import metric
 
 import crossbench.probes.helper as probes_helper
 from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.probes import metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult
 from crossbench.stories import PressBenchmarkStory
 
 if TYPE_CHECKING:
-  from crossbench.runner import BrowsersRunGroup, Run, StoriesRunGroup, Actions
+  from crossbench.runner import Actions, BrowsersRunGroup, Run, StoriesRunGroup
 
 
 def _probe_skip_data_segments(path: Tuple[str, ...]) -> Optional[str]:
@@ -160,8 +161,8 @@ class MotionMark12Story(PressBenchmarkStory):
     return cls.ALL_STORIES["MotionMark"]
 
   @property
-  def substory_duration(self) -> float:
-    return 35
+  def substory_duration(self) -> dt.timedelta:
+    return dt.timedelta(seconds=35)
 
   def run(self, run: Run) -> None:
     with run.actions("Setup") as actions:

@@ -5,16 +5,17 @@
 from __future__ import annotations
 
 import abc
+import datetime as dt
 import json
 import logging
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
                     Tuple, Type)
-from crossbench.probes import metric as cb_metric
 
 import crossbench.probes.helper as probes_helper
 from crossbench import cli_helper, helper
 from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories import PressBenchmarkStory
@@ -22,8 +23,7 @@ from crossbench.stories import PressBenchmarkStory
 if TYPE_CHECKING:
   import argparse
 
-  from crossbench.runner import (Actions, BrowsersRunGroup, Run,
-                                 StoriesRunGroup)
+  from crossbench.runner import Actions, BrowsersRunGroup, Run, StoriesRunGroup
 
 
 def _probe_remove_tests_segments(path: Tuple[str, ...]) -> str:
@@ -109,8 +109,8 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
     super().__init__(url=url, substories=substories)
 
   @property
-  def substory_duration(self) -> float:
-    return self.iterations * 0.4
+  def substory_duration(self) -> dt.timedelta:
+    return self.iterations * dt.timedelta(seconds=0.4)
 
   def run(self, run: Run) -> None:
     updated_url = helper.update_url_query(

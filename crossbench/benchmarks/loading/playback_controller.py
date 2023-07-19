@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import Iterator, Optional
+from typing import Iterator
 
 from crossbench import cli_helper
 
@@ -36,7 +36,7 @@ class PlaybackController:
         return cls.repeat(loops)
       except ValueError:
         pass
-    duration: float = 0.0
+    duration = dt.timedelta()
     try:
       duration = cli_helper.Duration.parse(value)
     except argparse.ArgumentTypeError as e:
@@ -56,7 +56,7 @@ class PlaybackController:
     return PlaybackController()
 
   @classmethod
-  def timeout(cls, duration: float) -> TimeoutPlaybackController:
+  def timeout(cls, duration: dt.timedelta) -> TimeoutPlaybackController:
     return TimeoutPlaybackController(duration)
 
   def __iter__(self) -> Iterator[None]:
@@ -66,16 +66,16 @@ class PlaybackController:
 
 class TimeoutPlaybackController(PlaybackController):
 
-  def __init__(self, duration: float) -> None:
+  def __init__(self, duration: dt.timedelta) -> None:
     # TODO: support --time-unit
     self._duration = duration
 
   @property
-  def duration(self) -> float:
+  def duration(self) -> dt.timedelta:
     return self._duration
 
   def __iter__(self) -> Iterator[None]:
-    end = dt.datetime.now() + dt.timedelta(seconds=self._duration)
+    end = dt.datetime.now() + self.duration
     while dt.datetime.now() <= end:
       yield None
 

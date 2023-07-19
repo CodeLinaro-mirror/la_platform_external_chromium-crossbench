@@ -7,12 +7,11 @@
 from __future__ import annotations
 
 import argparse
-import json
+import datetime as dt
 import pathlib
 import sys
 import unittest
 from typing import Sequence, cast
-from unittest import mock
 
 import hjson
 import pyfakefs.fake_filesystem_unittest
@@ -78,22 +77,22 @@ class PlaybackControllerTest(unittest.TestCase):
     playback = PlaybackController.parse("5s")
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
-    self.assertEqual(playback.duration, 5)
+    self.assertEqual(playback.duration, dt.timedelta(seconds=5))
 
     playback = PlaybackController.parse("5m")
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
-    self.assertEqual(playback.duration, 5 * 60)
+    self.assertEqual(playback.duration, dt.timedelta(minutes=5))
 
     playback = PlaybackController.parse("5.5m")
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
-    self.assertEqual(playback.duration, 5.5 * 60)
+    self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
 
     playback = PlaybackController.parse("5.5m")
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
-    self.assertEqual(playback.duration, 5.5 * 60)
+    self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
 
 
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
@@ -143,7 +142,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self.assertListEqual([p.url for p in filtered_pages],
                          [pages[0].url, pages[1].url])
     self.assertEqual(filtered_pages[0].duration, pages[0].duration)
-    self.assertEqual(filtered_pages[1].duration, 1001)
+    self.assertEqual(filtered_pages[1].duration, dt.timedelta(seconds=1001))
 
   def test_page_by_url(self):
     url1 = "http://example.com/test1"
@@ -390,7 +389,8 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
         story = page_config.stories[0]
         assert isinstance(story, InteractivePage)
         self.assertEqual(len(story.actions), 2)
-        self.assertEqual(story.actions[1].duration, duration)
+        self.assertEqual(story.actions[1].duration,
+                         dt.timedelta(seconds=duration))
 
   def test_action_invalid_duration(self):
     invalid_durations = [

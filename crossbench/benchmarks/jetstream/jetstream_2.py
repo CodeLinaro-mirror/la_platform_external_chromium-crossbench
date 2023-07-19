@@ -8,10 +8,10 @@ import abc
 import json
 import logging
 import pathlib
+import datetime as dt
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Final, List, Tuple, Type
 
-from crossbench import helper
 from crossbench.benchmarks.benchmark import PressBenchmark
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
@@ -191,8 +191,8 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
   )
 
   @property
-  def substory_duration(self) -> float:
-    return 2
+  def substory_duration(self) -> dt.timedelta:
+    return dt.timedelta(seconds=2)
 
   def run(self, run: Run) -> None:
     with run.actions("Setup") as actions:
@@ -211,7 +211,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
       actions.wait_js_condition(
           """
         return document.querySelectorAll("#results>.benchmark").length > 0;
-      """, 1, 30 + self.duration)
+      """, 1, self.duration + dt.timedelta(seconds=30))
     with run.actions("Running") as actions:
       actions.js("JetStream.start()")
       actions.wait(self.fast_duration)
