@@ -11,7 +11,7 @@ import logging
 import pathlib
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
-                    TextIO, Tuple, Type, Union)
+                    TextIO, Tuple, Type, Union, cast)
 from frozendict import frozendict
 
 import hjson
@@ -358,7 +358,7 @@ class BrowserConfig(ConfigObject):
     # Split inputs like "applescript:/out/x64.release/chrome"
     driver_path_or_identifier, path_or_identifier = value.rsplit(
         ":", maxsplit=1)
-    driver = DriverConfig.parse(driver_path_or_identifier)
+    driver = cast(DriverConfig, DriverConfig.parse(driver_path_or_identifier))
     path: Union[str, pathlib.Path] = cls._parse_path_or_identifier(
         path_or_identifier, driver.type)
     return (driver, path)
@@ -517,7 +517,7 @@ class BrowserVariantsConfig:
           path_or_identifier]
     else:
       browser_config = self._maybe_downloaded_binary(
-          BrowserConfig.parse(path_or_identifier))
+          cast(BrowserConfig, BrowserConfig.parse(path_or_identifier)))
       browser_cls = self._get_browser_cls(browser_config)
     if browser_config.driver.type != BrowserDriverType.ANDROID and (
         not browser_config.path.exists()):

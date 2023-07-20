@@ -229,7 +229,10 @@ class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
     self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
     path = pathlib.Path(__file__)
     self.assertFalse(path.exists())
-    fake_chrome_root = path.parents[4]
+    if "google3" in path.parts:
+      fake_chrome_root = path.parents[5]
+    else:
+      fake_chrome_root = path.parents[4]
     checkout_dir = fake_chrome_root / "v8"
     self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
     self._add_v8_checkout_files(checkout_dir)
