@@ -149,7 +149,7 @@ class DevToolsRecorderPageConfig(AbstractPageConfig):
     step_type: str = step["type"]
     default_timeout = dt.timedelta(seconds=10)
     if step_type == "navigate":
-      return action.GetAction(
+      return action.GetAction(    # type: ignore
           step["url"], default_timeout, ready_state=action.ReadyState.COMPLETE)
     if step_type == "click":
       selectors: List[List[str]] = step["selectors"]
