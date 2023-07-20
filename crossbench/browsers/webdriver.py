@@ -9,10 +9,12 @@ import logging
 import pathlib
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 
 import selenium.common.exceptions
 from selenium import webdriver
+
+from crossbench import helper
 
 from .browser import Browser
 
@@ -125,9 +127,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                     driver_path: pathlib.Path) -> webdriver.Remote:
     pass
 
-  def details_json(self) -> Dict[str, Any]:
-    details: Dict[str, Any] = super().details_json()
-    details["log"]["driver"] = str(self.driver_log_file)
+  def details_json(self) -> helper.JsonDict:
+    details: helper.JsonDict = super().details_json()
+    log = cast(helper.JsonDict, details["log"])
+    log["driver"] = str(self.driver_log_file)
     return details
 
   def show_url(self, runner: Runner, url: str) -> None:
@@ -236,11 +239,11 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     # External code that started the driver is responsible for shutting it down.
     self._is_running = False
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {
         "label": self.label,
         "app_name": "remote webdriver",
-        "flags": (),
-        "js_flags": (),
+        "flags": [],
+        "js_flags": [],
         "log": {},
     }

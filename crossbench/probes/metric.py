@@ -8,10 +8,13 @@ import json
 import logging
 import math
 import pathlib
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Sequence,
-                    Set, Tuple, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
+                    Optional, Sequence, Set, Tuple, Union)
 from math import floor, log10
 from . import helper
+
+if TYPE_CHECKING:
+  from crossbench.helper import JsonDict
 
 
 def format_metric(value: Union[float, int],
@@ -46,7 +49,7 @@ class Metric:
   """
 
   @classmethod
-  def from_json(cls, json_data: Dict[str, Any]) -> Metric:
+  def from_json(cls, json_data: JsonDict) -> Metric:
     return cls(json_data["values"])
 
   def __init__(self, values: Optional[List] = None):
@@ -101,8 +104,8 @@ class Metric:
     self.values.append(value)
     self._is_numeric = self._is_numeric and is_number(value)
 
-  def to_json(self) -> Dict[str, Any]:
-    json_data: Dict[str, Any] = {"values": self.values}
+  def to_json(self) -> JsonDict:
+    json_data: JsonDict = {"values": self.values}
     if not self.values:
       return json_data
     if self.is_numeric:
@@ -252,8 +255,7 @@ class MetricsMerger:
           values.append(value)
 
   def to_json(self,
-              value_fn: Optional[Callable[[Any],
-                                          Any]] = None) -> Dict[str, Any]:
+              value_fn: Optional[Callable[[Any], Any]] = None) -> JsonDict:
     items = []
     for key, value in self._data.items():
       assert isinstance(value, Metric)

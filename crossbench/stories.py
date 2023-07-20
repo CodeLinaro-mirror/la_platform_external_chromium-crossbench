@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING, Tuple, Ty
 if TYPE_CHECKING:
   from crossbench.probes import Probe
   from crossbench.runner import Run
+  from crossbench import helper
 
 
 class Story(ABC):
@@ -39,7 +40,7 @@ class Story(ABC):
   def duration(self) -> dt.timedelta:
     return self._duration
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {"name": self.name, "duration": self.duration.total_seconds()}
 
   @abstractmethod

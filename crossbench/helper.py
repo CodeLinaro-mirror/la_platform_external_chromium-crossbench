@@ -29,6 +29,12 @@ assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
 
 
+JSON = Union["JsonDict", "JsonList", "JsonTuple", str, int, float, bool, None]
+JsonDict = Dict[str, "JSON"]
+JsonList = List["JSON"]
+JsonTuple = Tuple["JSON"]
+
+
 class TTYColor:
   CYAN = "\033[1;36;6m"
   PURPLE = "\033[1;35;5m"

@@ -12,7 +12,7 @@ import math
 import pathlib
 import re
 import sys
-from typing import Any, Generator, Optional, Union
+from typing import Any, Iterator, Union
 
 import hjson
 
@@ -165,7 +165,7 @@ class LateArgumentError(argparse.ArgumentTypeError):
 
 
 @contextlib.contextmanager
-def late_argument_type_error_wrapper(flag: str) -> Generator[None, None, None]:
+def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
   """Converts raised ValueError and ArgumentTypeError to LateArgumentError
   that are associated with the given flag.
   """

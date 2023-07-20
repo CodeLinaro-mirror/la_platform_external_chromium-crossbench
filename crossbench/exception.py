@@ -211,7 +211,7 @@ class ExceptionAnnotator:
   def error_messages(self) -> List[str]:
     return [self.format_exception(entry) for entry in self._exceptions]
 
-  def to_json(self) -> List[Dict[str, Any]]:
+  def to_json(self) -> List[helper.JsonDict]:
     return [{
         "info_stack": entry.info_stack,
         "type": helper.type_name(type(entry.exception)),

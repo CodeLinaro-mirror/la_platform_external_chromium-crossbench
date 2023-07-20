@@ -38,10 +38,10 @@ class SpeedometerProbe(JsonResultProbe, metaclass=abc.ABCMeta):
   IS_GENERAL_PURPOSE: Final[bool] = False
   JS: Final[str] = "return window.suiteValues;"
 
-  def to_json(self, actions: Actions) -> Dict[str, Any]:
+  def to_json(self, actions: Actions) -> helper.JSON:
     return actions.js(self.JS)
 
-  def flatten_json_data(self, json_data: Sequence) -> Dict[str, Any]:
+  def flatten_json_data(self, json_data: Sequence) -> helper.JSON:
     # json_data may contain multiple iterations, merge those first
     assert isinstance(json_data, list)
     merged = cb_metric.MetricsMerger(

@@ -24,6 +24,7 @@ from .probe import Probe, ProbeMissingDataError, ProbeScope
 if TYPE_CHECKING:
   from crossbench.runner import (Actions, BrowsersRunGroup, RepetitionsRunGroup,
                                  Run, RunGroup)
+  from crossbench.helper import JSON
 
 
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
@@ -44,7 +45,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return f"{self.name}.json"
 
   @abc.abstractmethod
-  def to_json(self, actions: Actions) -> Any:
+  def to_json(self, actions: Actions) -> JSON:
     """
     Override in subclasses.
     Returns json-serializable data.
@@ -180,7 +181,7 @@ class JsonResultProbeScope(ProbeScope[JsonResultProbeT],
   def probe(self) -> JsonResultProbeT:
     return super().probe
 
-  def to_json(self, actions: Actions) -> Any:
+  def to_json(self, actions: Actions) -> JSON:
     return self.probe.to_json(actions)
 
   def start(self, run: Run) -> None:
@@ -195,14 +196,14 @@ class JsonResultProbeScope(ProbeScope[JsonResultProbeT],
     self._json_data = self.process_json_data(self._json_data)
     return self.write_json(run, self._json_data)
 
-  def extract_json(self, run: Run) -> Union[Dict, List]:
+  def extract_json(self, run: Run) -> JSON:
     with run.actions(f"Extracting Probe name={self.probe.name}") as actions:
       json_data = self.to_json(actions)
       assert json_data is not None, (
           "Probe name=={self.probe.name} produced no data")
       return json_data
 
-  def write_json(self, run: Run, json_data: Any) -> ProbeResult:
+  def write_json(self, run: Run, json_data: JSON) -> ProbeResult:
     flattened_file = None
     with run.actions(f"Writing Probe name={self.probe.name}"):
       assert json_data is not None, (
@@ -220,10 +221,10 @@ class JsonResultProbeScope(ProbeScope[JsonResultProbeT],
       return LocalProbeResult(json=(flattened_file,), file=(raw_file,))
     return LocalProbeResult(json=(raw_file,))
 
-  def process_json_data(self, json_data: Any) -> Any:
+  def process_json_data(self, json_data: JSON) -> JSON:
     return self.probe.process_json_data(json_data)
 
-  def flatten_json_data(self, json_data: Any) -> Dict[str, Any]:
+  def flatten_json_data(self, json_data: JSON) -> JSON:
     return self.probe.flatten_json_data(json_data)
 
 

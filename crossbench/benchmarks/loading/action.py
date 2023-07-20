@@ -14,6 +14,7 @@ from crossbench import compat
 if TYPE_CHECKING:
   from crossbench.runner import Run
   from crossbench.stories import Story
+  from crossbench import helper
 
 
 class Scroll(compat.StrEnum):
@@ -62,7 +63,7 @@ class Action(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     pass
 
 
@@ -100,7 +101,7 @@ class GetAction(Action):
       raise ValueError(self._EXCEPTION_BASE_STR +
                        f"{self._story.name}. Argument 'value' is not provided")
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {"action": str(self.TYPE), "value": self.value}
 
 
@@ -118,7 +119,7 @@ class WaitAction(Action):
           self._EXCEPTION_BASE_STR +
           f"{self._story.name}. Argument 'duration' is not provided")
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {"action": str(self.TYPE), "duration": self.duration.total_seconds()}
 
 
@@ -149,7 +150,7 @@ class ScrollAction(Action):
           self._EXCEPTION_BASE_STR +
           f"{self._story.name}. Argument 'duration' is not provided")
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {
         "action": str(self.TYPE),
         "value": self.value,
@@ -186,7 +187,7 @@ class ClickAction(Action):
   def _validate_action(self) -> None:
     pass
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {
         "action": str(self.TYPE),
         "value": self.value,

@@ -9,7 +9,7 @@ import logging
 import pathlib
 import re
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from crossbench import helper
 from crossbench.browsers.browser import Browser, convert_flags_to_label
@@ -180,11 +180,12 @@ class Chromium(Browser):
   def features(self) -> ChromeFeatures:
     return self._flags.features
 
-  def details_json(self) -> Dict[str, Any]:
-    details = super().details_json()
+  def details_json(self) -> helper.JsonDict:
+    details: helper.JsonDict = super().details_json()
     if self.log_file:
-      details["log"][self.type] = str(self.chrome_log_file)
-      details["log"]["stdout"] = str(self.stdout_log_file)
+      log = cast(helper.JsonDict, details["log"])
+      log[self.type] = str(self.chrome_log_file)
+      log["stdout"] = str(self.stdout_log_file)
     details["js_flags"] = tuple(self.js_flags.get_list())
     return details
 

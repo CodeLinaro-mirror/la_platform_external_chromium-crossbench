@@ -10,6 +10,7 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
 
 if TYPE_CHECKING:
+  from crossbench.helper import JsonDict
   from crossbench.probes.probe import Probe
   from crossbench.runner import Run
 
@@ -63,8 +64,8 @@ class ProbeResult(abc.ABC):
       if not path.exists():
         raise ValueError(f"ProbeResult path does not exist: {path}")
 
-  def to_json(self) -> Dict[str, Any]:
-    result: Dict[str, Any] = {}
+  def to_json(self) -> JsonDict:
+    result: JsonDict = {}
     if self._url_list:
       result["url"] = self._url_list
     if self._file_list:
@@ -202,8 +203,8 @@ class ProbeResultDict:
     # Use bracket `results[probe]` or `results.get(probe)` instead.
     return self._dict.get(name, default)
 
-  def to_json(self) -> Dict[str, Any]:
-    data: Dict[str, Any] = {}
+  def to_json(self) -> JsonDict:
+    data: JsonDict = {}
     for probe_name, results in self._dict.items():
       if isinstance(results, (pathlib.Path, str)):
         data[probe_name] = str(results)

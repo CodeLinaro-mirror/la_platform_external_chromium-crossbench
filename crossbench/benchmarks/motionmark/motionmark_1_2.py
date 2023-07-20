@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import itertools
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import crossbench.probes.helper as probes_helper
 from crossbench.benchmarks.benchmark import PressBenchmark
@@ -17,6 +17,7 @@ from crossbench.stories import PressBenchmarkStory
 
 if TYPE_CHECKING:
   from crossbench.runner import Actions, BrowsersRunGroup, Run, StoriesRunGroup
+  from crossbench import helper
 
 
 def _probe_skip_data_segments(path: Tuple[str, ...]) -> Optional[str]:
@@ -37,10 +38,10 @@ class MotionMark12Probe(JsonResultProbe):
     return window.benchmarkRunnerClient.results.results;
   """
 
-  def to_json(self, actions: Actions) -> Dict[str, Any]:
+  def to_json(self, actions: Actions) -> helper.JSON:
     return actions.js(self.JS)
 
-  def flatten_json_data(self, json_data: List) -> Dict[str, Any]:
+  def flatten_json_data(self, json_data: List) -> helper.JSON:
     assert isinstance(json_data, list) and len(json_data) == 1, (
         "Motion12MarkProbe requires a results list.")
     return probes_helper.Flatten(

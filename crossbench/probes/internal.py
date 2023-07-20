@@ -16,6 +16,7 @@ from crossbench.probes.results import EmptyProbeResult, ProbeResult, ProbeResult
 if TYPE_CHECKING:
   from crossbench.runner import (Actions, RepetitionsRunGroup, Run,
                                  StoriesRunGroup, BrowsersRunGroup)
+  from crossbench import helper
 
 
 class InternalProbe(probe.Probe):
@@ -87,7 +88,7 @@ class SystemDetailsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.system.details"
 
-  def to_json(self, actions: Actions) -> Any:
+  def to_json(self, actions: Actions) -> helper.JSON:
     return actions.run.browser_platform.system_details()
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
@@ -101,7 +102,7 @@ class ErrorsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.errors"
 
-  def to_json(self, actions: Actions) -> Any:
+  def to_json(self, actions: Actions) -> helper.JSON:
     return actions.run.exceptions.to_json()
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
@@ -147,7 +148,7 @@ class DurationsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.durations"
 
-  def to_json(self, actions: Actions) -> Any:
+  def to_json(self, actions: Actions) -> helper.JSON:
     return actions.run.durations.to_json()
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
@@ -181,7 +182,7 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
   def is_attached(self) -> bool:
     return True
 
-  def to_json(self, actions: Actions) -> Dict[str, Any]:
+  def to_json(self, actions: Actions) -> helper.JsonDict:
     run = actions.run
     return {
         "name": run.name,
@@ -213,7 +214,7 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
           "errors": repetition_data["errors"],
       })
 
-    merged_data = {
+    merged_data: helper.JsonDict = {
         "cwd": str(group.path),
         "story": group.story.details_json(),
         "browser": browser,
@@ -243,7 +244,7 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
           "errors": merged_story_data["errors"],
       }
 
-    merged_data = {
+    merged_data: helper.JsonDict = {
         "cwd": str(group.path),
         "browser": browser,
         "stories": stories,
@@ -267,7 +268,7 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
           "errors": merged_browser_data["errors"],
       }
 
-    merged_data = {
+    merged_data: helper.JsonDict = {
         "cwd": str(group.path),
         "browsers": browsers,
         "probes": group.results.to_json(),

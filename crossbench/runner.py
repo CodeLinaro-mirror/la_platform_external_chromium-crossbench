@@ -721,8 +721,8 @@ class Run:
         f"repetition={self.repetition}",
     )
 
-  def details_json(self) -> Dict[str, Any]:
-    details = {
+  def details_json(self) -> helper.JsonDict:
+    return {
         "name": self.name,
         "repetition": self.repetition,
         "temperature": self.temperature,
@@ -730,7 +730,6 @@ class Run:
         "duration": self.story.duration.total_seconds(),
         "probes": [probe.name for probe in self.probes]
     }
-    return details
 
   @property
   def temperature(self) -> Optional[int]:
@@ -844,7 +843,7 @@ class Run:
                        ) -> exception.ExceptionAnnotationScope:
     return self._exceptions.capture(*stack_entries, exceptions=exceptions)
 
-  def get_browser_details_json(self) -> Dict[str, Any]:
+  def get_browser_details_json(self) -> helper.JsonDict:
     details_json = self.browser.details_json()
     details_json["js_flags"] += tuple(self.extra_js_flags.get_list())
     details_json["flags"] += tuple(self.extra_flags.get_list())

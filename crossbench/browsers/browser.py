@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
   from crossbench.probes.probe import Probe
   from crossbench.runner import Run, Runner
+  from crossbench import helper
 
 # =============================================================================
 
@@ -163,7 +164,7 @@ class Browser(abc.ABC):
     self._probes.add(probe)
     probe.attach(self)
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     return {
         "label": self.label,
         "browser": self.type,
@@ -171,7 +172,7 @@ class Browser(abc.ABC):
         "app_name": self.app_name,
         "version": self.version,
         "flags": tuple(self.flags.get_list()),
-        "js_flags": tuple(),
+        "js_flags": [],
         "path": str(self.path),
         "clear_cache_dir": self.clear_cache_dir,
         "major_version": self.major_version,

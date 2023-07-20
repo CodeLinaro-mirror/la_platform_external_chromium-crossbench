@@ -251,7 +251,7 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
       BrowserConfig.parse("{path:something}")
 
   def test_parse_inline_hjson(self):
-    config_dict = {
+    config_dict: helper.JsonDict = {
         "browser": "chrome",
         "driver": {
             "type": 'adb',
@@ -310,7 +310,7 @@ class TestProbeConfig(fake_filesystem_unittest.TestCase):
   def test_from_cli_args(self):
     file = pathlib.Path("probe.config.hjson")
     js_flags = ["--log-maps", "--log-function-events"]
-    config_data = {
+    config_data: helper.JsonDict = {
         "probes": {
             "v8.log": {
                 "prof": True,

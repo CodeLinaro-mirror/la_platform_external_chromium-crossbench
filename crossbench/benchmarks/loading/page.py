@@ -15,6 +15,7 @@ from .playback_controller import PlaybackController
 
 if TYPE_CHECKING:
   from crossbench.runner import Run
+  from crossbench import helper
 
 
 class Page(Story, metaclass=abc.ABCMeta):
@@ -53,7 +54,7 @@ class LivePage(Page):
   def set_duration(self, duration: dt.timedelta) -> None:
     self._duration = duration
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     result = super().details_json()
     result["url"] = str(self.url)
     return result
@@ -83,7 +84,7 @@ class CombinedPage(Page):
     super().__init__(name, duration, playback)
     self.url = None
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     result = super().details_json()
     result["pages"] = list(page.details_json() for page in self._pages)
     return result
@@ -120,7 +121,7 @@ class InteractivePage(Page):
       for action in self._actions:
         action.run(run, self)
 
-  def details_json(self) -> Dict[str, Any]:
+  def details_json(self) -> helper.JsonDict:
     result = super().details_json()
     result["actions"] = list(action.details_json() for action in self._actions)
     return result

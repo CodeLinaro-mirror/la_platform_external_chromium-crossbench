@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import (Dict, Final, Generator, Iterable, Optional, Set, Tuple,
+from typing import (Dict, Final, Iterable, Iterator, Optional, Set, Tuple,
                     Union)
 
 
@@ -85,7 +85,7 @@ class Flags(collections.UserDict):
       return flag_name
     return f"{flag_name}={value}"
 
-  def get_list(self) -> Generator[str, None, None]:
+  def get_list(self) -> Iterator[str]:
     return (k if v is None else f"{k}={v}" for k, v in self.items())
 
   def __str__(self) -> str:
