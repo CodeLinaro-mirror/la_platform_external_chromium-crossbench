@@ -139,7 +139,7 @@ class Runner:
     out_dir_xor_group.add_argument(
         "--label",
         "--name",
-        type=str,
+        type=cli_helper.parse_non_empty_str,
         default=benchmark_cls.NAME,
         help=("Add a name to the default output directory. "
               "Defaults to the benchmark name"))

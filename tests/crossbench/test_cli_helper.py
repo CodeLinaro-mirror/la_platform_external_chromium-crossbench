@@ -3,11 +3,15 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import unittest
+
 import argparse
 import datetime as dt
+import unittest
 
-from crossbench.cli_helper import Duration
+from crossbench.cli_helper import (Duration, parse_httpx_url_str,
+                                   parse_non_empty_str, parse_positive_int,
+                                   parse_positive_zero_int,
+                                   parse_positive_zero_float)
 
 
 class DurationTestCase(unittest.TestCase):
@@ -54,3 +58,44 @@ class DurationTestCase(unittest.TestCase):
     self.assertEqual(Duration.parse("27.5 hrs"), dt.timedelta(hours=27.5))
     self.assertEqual(Duration.parse("1 hour"), dt.timedelta(hours=1))
     self.assertEqual(Duration.parse("27.5 hours"), dt.timedelta(hours=27.5))
+
+
+class ArgParserHelperTestCase(unittest.TestCase):
+
+  def test_parse_non_empty_str(self):
+    self.assertEqual(parse_non_empty_str("a string"), "a string")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_non_empty_str("")
+    self.assertIn("empty", str(cm.exception))
+
+  def test_parse_httpx_url_str(self):
+    for valid in ("http://foo.com", "https://foo.com", "http://localhost:800"):
+      self.assertEqual(parse_httpx_url_str(valid), valid)
+    for invalid in ("", "ftp://localhost:32", "http://///"):
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        _ = parse_httpx_url_str(invalid)
+      self.assertIn(invalid, str(cm.exception))
+
+  def test_parse_positive_int(self):
+    self.assertEqual(parse_positive_int("1"), 1)
+    self.assertEqual(parse_positive_int("123"), 123)
+    for invalid in ("", "0", "-1", "-1.2", "1.2", "Nan", "inf", "-inf",
+                    "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = parse_positive_int(invalid)
+
+  def test_parse_positive_zero_int(self):
+    self.assertEqual(parse_positive_zero_int("1"), 1)
+    self.assertEqual(parse_positive_zero_int("0"), 0)
+    for invalid in ("", "-1", "-1.2", "1.2", "NaN", "inf", "-inf", "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = parse_positive_zero_int(invalid)
+
+  def test_parse_positive_zero_float(self):
+    self.assertEqual(parse_positive_zero_float("1"), 1)
+    self.assertEqual(parse_positive_zero_float("0"), 0)
+    self.assertEqual(parse_positive_zero_float("0.0"), 0)
+    self.assertEqual(parse_positive_zero_float("1.23"), 1.23)
+    for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = parse_positive_zero_float(invalid)

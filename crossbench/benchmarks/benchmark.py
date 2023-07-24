@@ -391,6 +391,7 @@ class PressBenchmark(SubStoryBenchmark):
     benchmark_url_group.add_argument(
         "--local",
         "--custom-benchmark-url",
+        type=cli_helper.parse_httpx_url_str,
         nargs="?",
         dest="custom_benchmark_url",
         const=default_local_url,

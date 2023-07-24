@@ -13,6 +13,7 @@ import pathlib
 import re
 import sys
 from typing import Any, Iterator, Union
+from urllib.parse import urlparse
 
 import hjson
 
@@ -79,16 +80,21 @@ def parse_json_file(str_value: str) -> Any:
     return json.load(f)
 
 
-def parse_positive_float(value: str) -> float:
-  value_f = float(value)
+def parse_positive_zero_float(value: str) -> float:
+  try:
+    value_f = float(value)
+  except ValueError as e:
+    raise argparse.ArgumentTypeError(f"Invalid float: '{value}'") from e
   if not math.isfinite(value_f) or value_f < 0:
-    raise argparse.ArgumentTypeError(
-        f"Expected positive value, but got: {value_f}")
+    raise argparse.ArgumentTypeError(f"Expected float >= 0, but got: {value_f}")
   return value_f
 
 
 def parse_positive_zero_int(value: str) -> int:
-  positive_int = int(value)
+  try:
+    positive_int = int(value)
+  except ValueError as e:
+    raise argparse.ArgumentTypeError(f"Invalid integer: '{value}'") from e
   if positive_int < 0:
     raise argparse.ArgumentTypeError(
         f"Expected int >= 0, but got: {positive_int}")
@@ -96,11 +102,34 @@ def parse_positive_zero_int(value: str) -> int:
 
 
 def parse_positive_int(value: str, msg: str = "") -> int:
-  value_i = int(value)
-  if not math.isfinite(value_i) or value_i < 0:
+  try:
+    value_i = int(value)
+  except ValueError as e:
+    raise argparse.ArgumentTypeError(f"Invalid integer: '{value}'") from e
+  if not math.isfinite(value_i) or value_i <= 0:
     raise argparse.ArgumentTypeError(
-        f"Expected int > 0 {msg},but got: {value_i}")
+        f"Expected int > 0 {msg}, but got: {value_i}")
   return value_i
+
+
+def parse_non_empty_str(value: str) -> str:
+  if not value:
+    raise argparse.ArgumentTypeError("Non-empty string expected.")
+  return value
+
+
+def parse_httpx_url_str(value: str) -> str:
+  try:
+    parsed = urlparse(value)
+    if parsed.scheme not in ("http", "https"):
+      raise argparse.ArgumentTypeError(
+          "Expected 'http' or 'https' scheme, "
+          f"but got '{parsed.scheme}' for url '{value}'")
+    if not parsed.hostname:
+      raise argparse.ArgumentTypeError(f"Missing hostname in url: '{value}'")
+  except ValueError as e:
+    raise argparse.ArgumentTypeError(f"Invalid URL: {value}, {e}") from e
+  return value
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):

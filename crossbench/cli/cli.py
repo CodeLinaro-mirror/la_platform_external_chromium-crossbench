@@ -253,13 +253,13 @@ class CrossBenchCLI:
         "Defaults to .browser_cache")
     runner_group.add_argument(
         "--cool-down-time",
-        type=cli_helper.parse_positive_float,
+        type=cli_helper.parse_positive_zero_float,
         default=2,
         help="Time the runner waits between different runs or repetitions. "
         "Increase this to let the CPU cool down between runs.")
     runner_group.add_argument(
         "--time-unit",
-        type=cli_helper.parse_positive_float,
+        type=cli_helper.parse_positive_zero_float,
         default=1,
         help="Absolute duration of 1 time unit in the runner. "
         "Increase this for slow builds or machines. "
@@ -331,7 +331,7 @@ class CrossBenchCLI:
         "Version mismatches might cause crashes.")
     browser_group.add_argument(
         "--config",
-        type=cli_helper.parse_file_path,
+        type=cli_helper.parse_hjson_file_path,
         help="Specify a common config for "
         "--probe-config, --browser-config and --env-config.")
 
