@@ -43,14 +43,6 @@ class SpeedometerBaseTestCase(
   def name(self) -> str:
     pass
 
-  def test_iterations(self):
-    with self.assertRaises(AssertionError):
-      self.benchmark_cls(iterations=-1)  # pytype: disable=not-instantiable
-    benchmark = self.benchmark_cls(iterations=123)  # pytype: disable=not-instantiable
-    for story in benchmark.stories:
-      assert isinstance(story, self.story_cls)
-      self.assertEqual(story.iterations, 123)
-
   @dataclass
   class Namespace(argparse.Namespace):
     stories = "all"
@@ -70,10 +62,13 @@ class SpeedometerBaseTestCase(
   def test_iterations_kwargs(self):
     args = self.Namespace()
     self.benchmark_cls.from_cli_args(args)
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(TypeError):
       args.iterations = "-10"
       self.benchmark_cls.from_cli_args(args)
-    args.iterations = "1234"
+    with self.assertRaises(TypeError):
+      args.iterations = "1234"
+      benchmark = self.benchmark_cls.from_cli_args(args)
+    args.iterations = 1234
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
@@ -81,7 +76,7 @@ class SpeedometerBaseTestCase(
 
   def test_story_filtering_cli_args_all_separate(self):
     stories = self.story_cls.default(separate=True)
-    args = mock.Mock()
+    args = self.Namespace()
     args.stories = "all"
     args.separate = True
     stories_all = self.benchmark_cls.stories_from_cli_args(args)
@@ -92,10 +87,11 @@ class SpeedometerBaseTestCase(
 
   def test_story_filtering_cli_args_all(self):
     stories = self.story_cls.default(separate=False)
-    args = mock.Mock()
+    args = self.Namespace()
     args.stories = "all"
     args.custom_benchmark_url = self.story_cls.URL_LOCAL
     args.separate = False
+    args.iterations = 503
     stories_all = self.benchmark_cls.stories_from_cli_args(args)
     self.assertEqual(len(stories), 1)
     self.assertEqual(len(stories_all), 1)
@@ -106,15 +102,18 @@ class SpeedometerBaseTestCase(
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, self.name)
     self.assertEqual(story.url, self.story_cls.URL_LOCAL)
+    self.assertEqual(story.iterations, 503)
 
     args.custom_benchmark_url = None
     args.separate = False
+    args.iterations = 701
     stories_all = self.benchmark_cls.stories_from_cli_args(args)
     self.assertEqual(len(stories_all), 1)
     story = stories_all[0]
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, self.name)
     self.assertEqual(story.url, self.story_cls.URL)
+    self.assertEqual(story.iterations, 701)
 
   def test_story_filtering(self):
     with self.assertRaises(ValueError):

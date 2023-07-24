@@ -14,7 +14,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
 
 import crossbench.probes.helper as probes_helper
 from crossbench import cli_helper, helper
-from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.benchmarks import PressBenchmark, PressBenchmarkStoryFilter
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict
@@ -105,8 +105,13 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
                substories: Sequence[str] = (),
                iterations: int = 10,
                url: Optional[str] = None):
-    self.iterations = iterations or 10
+    self._iterations = iterations or 10
+    assert self.iterations >= 1, f"Invalid iterations count: '{iterations}'."
     super().__init__(url=url, substories=substories)
+
+  @property
+  def iterations(self) -> int:
+    return self._iterations
 
   @property
   def substory_duration(self) -> dt.timedelta:
@@ -175,22 +180,13 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 ProbeClsTupleT = Tuple[Type[SpeedometerProbe], ...]
 
 
-class SpeedometerBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
-
-  DEFAULT_STORY_CLS = SpeedometerStory
-
-  @classmethod
-  def short_base_name(cls) -> str:
-    return "sp"
-
-  @classmethod
-  def base_name(cls) -> str:
-    return "speedometer"
+class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
+  __doc__ = PressBenchmarkStoryFilter.__doc__
 
   @classmethod
   def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
+      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser = super().add_cli_parser(parser)
     parser.add_argument(
         "--iterations",
         "--iteration-count",
@@ -206,18 +202,34 @@ class SpeedometerBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
-    kwargs["iterations"] = int(args.iterations)
+    kwargs["iterations"] = args.iterations
     return kwargs
 
   def __init__(self,
-               stories: Optional[Sequence[SpeedometerStory]] = None,
-               iterations: Optional[int] = None,
-               custom_url: Optional[str] = None):
-    if stories is None:
-      stories = self.DEFAULT_STORY_CLS.default()
-    for story in stories:
-      assert isinstance(story, self.DEFAULT_STORY_CLS)
-      if iterations is not None:
-        assert iterations >= 1
-        story.iterations = iterations
-    super().__init__(stories, custom_url=custom_url)
+               story_cls: Type[SpeedometerStory],
+               patterns: Sequence[str],
+               separate: bool = False,
+               url: Optional[str] = None,
+               iterations: Optional[int] = None):
+    self.iterations = iterations
+    assert issubclass(story_cls, SpeedometerStory)
+    super().__init__(story_cls, patterns, separate, url)
+
+  def create_stories_from_names(self, names: List[str],
+                                separate: bool) -> Sequence[SpeedometerStory]:
+    return self.story_cls.from_names(
+        names, separate=separate, url=self.url, iterations=self.iterations)
+
+
+class SpeedometerBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
+
+  DEFAULT_STORY_CLS = SpeedometerStory
+  STORY_FILTER_CLS = SpeedometerBenchmarkStoryFilter
+
+  @classmethod
+  def short_base_name(cls) -> str:
+    return "sp"
+
+  @classmethod
+  def base_name(cls) -> str:
+    return "speedometer"

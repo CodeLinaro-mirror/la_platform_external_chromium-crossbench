@@ -75,14 +75,16 @@ class PressBenchmarkStory(Story, metaclass=ABCMeta):
   @classmethod
   def all(cls: Type[PressBenchmarkStoryT],
           separate: bool = False,
-          url: Optional[str] = None) -> List[PressBenchmarkStoryT]:
-    return cls.from_names(cls.all_story_names(), separate, url)
+          url: Optional[str] = None,
+          **kwargs) -> List[PressBenchmarkStoryT]:
+    return cls.from_names(cls.all_story_names(), separate, url, **kwargs)
 
   @classmethod
   def default(cls: Type[PressBenchmarkStoryT],
               separate: bool = False,
-              url: Optional[str] = None) -> List[PressBenchmarkStoryT]:
-    return cls.from_names(cls.default_story_names(), separate, url)
+              url: Optional[str] = None,
+              **kwargs) -> List[PressBenchmarkStoryT]:
+    return cls.from_names(cls.default_story_names(), separate, url, **kwargs)
 
   @classmethod
   def from_names(cls: Type[PressBenchmarkStoryT],

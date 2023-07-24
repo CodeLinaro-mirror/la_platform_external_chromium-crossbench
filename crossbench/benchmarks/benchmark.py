@@ -107,6 +107,11 @@ StoryT = TypeVar("StoryT", bound=Story)
 class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
   @classmethod
+  def add_cli_parser(
+      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    return parser
+
+  @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     return {"patterns": args.stories.split(",")}
 
@@ -146,6 +151,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   def add_cli_parser(
       cls, subparsers, aliases: Sequence[str] = ()) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
+    # TODO: move these args to a dedicated SubStoryFilter class.
     parser.add_argument(
         "--stories",
         "--story",
@@ -176,7 +182,8 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
     desc += ", ".join(cls.all_story_names())
     desc += "\n\n"
     desc += "Filtering (for --stories): "
-    assert cls.STORY_FILTER_CLS.__doc__
+    assert cls.STORY_FILTER_CLS.__doc__, (
+        f"{cls.STORY_FILTER_CLS} has no doc string.")
     desc += cls.STORY_FILTER_CLS.__doc__.strip()
 
     return desc
@@ -203,7 +210,12 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
     return sorted(cls.DEFAULT_STORY_CLS.all_story_names())
 
 
-class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStory]):
+PressBenchmarkStoryT = TypeVar(
+    "PressBenchmarkStoryT", bound=PressBenchmarkStory)
+
+
+class PressBenchmarkStoryFilter(Generic[PressBenchmarkStoryT],
+                                StoryFilter[PressBenchmarkStoryT]):
   """
   Filter stories by name or regexp.
 
@@ -226,7 +238,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStory]):
     return kwargs
 
   def __init__(self,
-               story_cls: Type[PressBenchmarkStory],
+               story_cls: Type[PressBenchmarkStoryT],
                patterns: Sequence[str],
                separate: bool = False,
                url: Optional[str] = None):
@@ -320,10 +332,14 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStory]):
                        "previously filtered story names.")
     return substories
 
-  def create_stories(self, separate: bool) -> Sequence[StoryT]:
+  def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
     logging.info("SELECTED STORIES: %s",
                  str(list(map(str, self._selected_names))))
     names = list(self._selected_names.keys())
+    return self.create_stories_from_names(names, separate)
+
+  def create_stories_from_names(
+      self, names: List[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
     return self.story_cls.from_names(names, separate=separate, url=self.url)
 
 
@@ -362,6 +378,7 @@ class PressBenchmark(SubStoryBenchmark):
   def add_cli_parser(
       cls, subparsers, aliases: Sequence[str] = ()) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
+    # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     benchmark_url_group = parser.add_mutually_exclusive_group()
     default_live_url = cls.DEFAULT_STORY_CLS.URL
     default_local_url = cls.DEFAULT_STORY_CLS.URL_LOCAL
@@ -379,6 +396,7 @@ class PressBenchmark(SubStoryBenchmark):
         const=default_local_url,
         help=(f"Use custom or locally (default={default_local_url}) "
               "hosted benchmark url."))
+    cls.STORY_FILTER_CLS.add_cli_parser(parser)
     return parser
 
   @classmethod

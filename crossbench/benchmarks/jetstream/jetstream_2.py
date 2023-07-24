@@ -12,7 +12,7 @@ import datetime as dt
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Final, List, Tuple, Type
 
-from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.benchmarks import PressBenchmark
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict
