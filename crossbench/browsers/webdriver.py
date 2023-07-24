@@ -238,12 +238,3 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   def quit(self, runner: Runner) -> None:
     # External code that started the driver is responsible for shutting it down.
     self._is_running = False
-
-  def details_json(self) -> helper.JsonDict:
-    return {
-        "label": self.label,
-        "app_name": "remote webdriver",
-        "flags": [],
-        "js_flags": [],
-        "log": {},
-    }
