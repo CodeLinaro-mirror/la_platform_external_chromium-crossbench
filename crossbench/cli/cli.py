@@ -562,7 +562,7 @@ class CrossBenchCLI:
     for log_file in candidates[:limit]:
       try:
         log_file = log_file.relative_to(pathlib.Path.cwd())
-      finally:
+      except Exception:
         pass
       logging.error("  - %s", log_file)
     if (pending := len(candidates) - limit) > 0:
