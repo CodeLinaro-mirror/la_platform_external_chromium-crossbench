@@ -143,7 +143,7 @@ class CLIEnd2EndTestCase(End2EndTestCase):
       self.skipTest("Test requires Safari, skipping on non macOS devices.")
     results_dir = self.output_dir / "results"
     self.assertFalse(results_dir.exists())
-    self.run_cli("sp21", "--browser=chrome", "--browser=safari",
+    self.run_cli("sp2.1", "--browser=chrome", "--browser=safari",
                  "--splashscreen=none", "--iterations=1", "--repeat=2",
                  "--env-validation=skip", "--verbose",
                  f"--out-dir={results_dir}", f"--cache-dir={self.cache_dir}",
