@@ -30,18 +30,26 @@ class PerformanceEntriesProbe(JsonResultProbe):
 
   def to_json(self, actions: Actions) -> helper.JSON:
     return actions.js("""
-      let data = { __proto__: null, paint: {}, mark: {}};
+      let data = { __proto__: null, paint: {}, mark: {} };
       for (let entryType of Object.keys(data)) {
         for (let entry of performance.getEntriesByType(entryType)) {
            const typeData = data[entryType];
            let values = typeData[entry.name];
            if (values === undefined) {
-             values = typeData[entry.name] = {startTime:[], duration:[]};
+             values = typeData[entry.name] = { startTime: [], duration: [] };
            }
            for (let metricName of Object.keys(values)) {
             values[metricName].push(entry[metricName]);
           }
         }
+      }
+      data.navigation = {};
+      const navigationTiming = performance.getEntriesByType("navigation")[0];
+      for (let name in navigationTiming) {
+        const value = navigationTiming[name];
+        if (typeof value !== "number") continue;
+        // TODO: enable detailed navigation metrics once merging is fixed
+        // data.navigation[name] = value;
       }
       return data;
       """)
@@ -60,5 +68,8 @@ class PerformanceEntriesProbe(JsonResultProbe):
     return self.write_group_result(group, merged, write_csv=True)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    # TODO: recreate the CSV from the merged JSON files since we might not
+    # get the same values in all browsers.
+    # TODO: Add merged browser data with separate stories.
     return self.merge_browsers_json_list(group).merge(
         self.merge_browsers_csv_list(group))

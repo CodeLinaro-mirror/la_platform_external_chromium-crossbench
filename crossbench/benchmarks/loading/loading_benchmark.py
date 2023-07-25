@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-import re
+import pathlib
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type
 from urllib.parse import urlparse
 from crossbench import cli_helper
@@ -90,8 +90,13 @@ class LoadingPageFilter(StoryFilter[Page]):
           url = f"https://{value}"
         else:
           url = value
+
         if use_hostname:
-          name = urlparse(url).hostname
+          parse_result = urlparse(url)
+          if parse_result.scheme == "file":
+            name = pathlib.Path(parse_result.path).name
+          else:
+            name = parse_result.hostname
         if not name:
           raise argparse.ArgumentTypeError(f"Invalid url: {url}")
         page = LivePage(name, url, playback=self._playback)
