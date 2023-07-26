@@ -265,7 +265,12 @@ def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
 
 
 class Duration:
-  _DURATION_RE = re.compile(r"(?P<value>(\d+(\.\d+)?)) ?(?P<unit>[^0-9\.]+)?")
+
+  @classmethod
+  def help(cls) -> str:
+    return "'12.5' == '12.5s',  units=['ms', 's', 'm', 'h']"
+
+  _DURATION_RE = re.compile(r"(?P<value>(-?\d+(\.\d+)?)) ?(?P<unit>[^0-9\.]+)?")
 
   @classmethod
   def _to_timedelta(cls, value: float, suffix: str) -> dt.timedelta:
@@ -283,6 +288,26 @@ class Duration:
 
   @classmethod
   def parse(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+    return cls.parse_non_zero(time_value)
+
+  @classmethod
+  def parse_non_zero(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+    duration: dt.timedelta = cls.parse_any(time_value)
+    if duration.total_seconds() <= 0:
+      raise argparse.ArgumentTypeError(
+          f"Expected non-zero duration, but got {duration}")
+    return duration
+
+  @classmethod
+  def parse_zero(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+    duration: dt.timedelta = cls.parse_any(time_value)
+    if duration.total_seconds() < 0:
+      raise argparse.ArgumentTypeError(
+          f"Expected positive duration, but got {duration}")
+    return duration
+
+  @classmethod
+  def parse_any(cls, time_value: Union[float, int, str]) -> dt.timedelta:
     """
     This function will parse the measurement and the value from string value.
 
@@ -315,7 +340,7 @@ class Duration:
       time_value = float(value)
     except ValueError as e:
       raise argparse.ArgumentTypeError(f"Duration must be a valid number, {e}")
-    if time_value < 0 or math.isnan(time_value) or math.isinf(time_value):
+    if math.isnan(time_value) or math.isinf(time_value):
       raise argparse.ArgumentTypeError(
           f"Duration must be positive, but got: {time_value}")
 

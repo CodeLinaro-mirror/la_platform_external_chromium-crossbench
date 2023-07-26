@@ -197,17 +197,17 @@ class JsonResultProbeScope(ProbeScope[JsonResultProbeT],
     return self.write_json(run, self._json_data)
 
   def extract_json(self, run: Run) -> JSON:
-    with run.actions(f"Extracting Probe name={self.probe.name}") as actions:
+    with run.actions(f"Extracting Probe({self.probe.name})") as actions:
       json_data = self.to_json(actions)
       assert json_data is not None, (
-          "Probe name=={self.probe.name} produced no data")
+          f"Probe({self.probe.name}) produced no data")
       return json_data
 
   def write_json(self, run: Run, json_data: JSON) -> ProbeResult:
     flattened_file = None
-    with run.actions(f"Writing Probe name={self.probe.name}"):
+    with run.actions(f"Writing Probe({self.probe.name})"):
       assert json_data is not None, (
-          f"Probe {self.probe.name} produced no JSON data.")
+          f"Probe({self.probe.name}) produced no JSON data.")
       raw_file = self.result_path
       if self.probe.FLATTEN:
         raw_file = raw_file.with_suffix(".json.raw")

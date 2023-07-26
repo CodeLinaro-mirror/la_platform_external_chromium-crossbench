@@ -204,10 +204,15 @@ class TimeScope:
     self._message = message
     self._level = level
     self._start: Optional[dt.datetime] = None
+    self._duration = dt.timedelta()
 
   @property
   def message(self) -> str:
     return self._message
+
+  @property
+  def duration(self) -> dt.timedelta:
+    return self._duration
 
   def __enter__(self) -> TimeScope:
     self._start = dt.datetime.now()
@@ -215,8 +220,8 @@ class TimeScope:
 
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
     assert self._start
-    diff = dt.datetime.now() - self._start
-    logging.log(self._level, "%s duration=%s", self._message, diff)
+    self._duration = dt.datetime.now() - self._start
+    logging.log(self._level, "%s duration=%s", self._message, self._duration)
 
 
 class WaitRange:

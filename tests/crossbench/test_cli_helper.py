@@ -29,11 +29,35 @@ class DurationTestCase(unittest.TestCase):
       Duration.parse(-1)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       Duration.parse("-1")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      Duration.parse_zero("-1")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      Duration.parse_non_zero("-1")
     self.assertIn("-1", str(cm.exception))
+    self.assertEqual(Duration.parse_any("-1.5").total_seconds(), -1.5)
+
+  def test_parse_zero(self):
+    self.assertEqual(Duration.parse_any("0").total_seconds(), 0)
+    self.assertEqual(Duration.parse_any("0s").total_seconds(), 0)
+    self.assertEqual(Duration.parse_any("0.0").total_seconds(), 0)
+    self.assertEqual(Duration.parse_zero("0.0").total_seconds(), 0)
+    for invalid in (-1, 0, "-1", "0", "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        Duration.parse(invalid)
+      self.assertIn(str(invalid), str(cm.exception))
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        Duration.parse_non_zero(invalid)
+      self.assertIn(str(invalid), str(cm.exception))
 
   def test_parse_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       Duration.parse("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      Duration.parse_any("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      Duration.parse_zero("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      Duration.parse_non_zero("")
 
   def test_invalid_suffix(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

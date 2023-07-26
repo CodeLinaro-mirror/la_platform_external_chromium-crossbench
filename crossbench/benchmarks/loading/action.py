@@ -88,7 +88,7 @@ class GetAction(Action):
   def run(self, run: Run, story: Story) -> None:
     self._story = story
     self._validate_action()
-    with run.actions("GetAction") as action:
+    with run.actions("GetAction", measure=False) as action:
       assert self.value
       action.show_url(self.value)
       if self._ready_state == ReadyState.ANY:

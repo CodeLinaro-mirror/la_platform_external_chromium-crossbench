@@ -108,7 +108,8 @@ class PageConfig(AbstractPageConfig):
         action_type = step["action"]
         if not action_type:
           raise ValueError("Empty 'action' property")
-        action_duration = cli_helper.Duration.parse(step.get("duration", 0.0))
+        action_duration = cli_helper.Duration.parse_zero(
+            step.get("duration", 0.0))
         value = step.get("url") or step.get("value")
         actions_list.append(
             self._create_action(action_type, value, action_duration))

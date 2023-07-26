@@ -38,9 +38,11 @@ class PlaybackController:
         pass
     duration = dt.timedelta()
     try:
-      duration = cli_helper.Duration.parse(value)
+      duration = cli_helper.Duration.parse_zero(value)
     except argparse.ArgumentTypeError as e:
       raise argparse.ArgumentTypeError(f"Invalid cycle argument: {e}") from e
+    if duration.total_seconds() == 0:
+      return cls.forever()
     return cls.timeout(duration)
 
   @classmethod

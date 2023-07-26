@@ -43,27 +43,40 @@ class RunnerException(exception.MultiException):
 class Timing:
   cool_down_time: dt.timedelta = dt.timedelta(seconds=1)
   unit: dt.timedelta = dt.timedelta(seconds=1)
+  run_timeout: dt.timedelta = dt.timedelta()
+
+  def __post_init__(self) -> None:
+    if self.cool_down_time.total_seconds() < 0:
+      raise ValueError(
+          f"Timing.cool_down_time must be >= 0, but got: {self.cool_down_time}")
+    if self.unit.total_seconds() <= 0:
+      raise ValueError(f"Timing.unit must be > 0, but got {self.unit}")
+    if self.run_timeout.total_seconds() < 0:
+      raise ValueError(
+          f"Timing.run_timeout, must be >= 0, but got {self.run_timeout}")
 
   def units(self, time: Union[float, int, dt.timedelta]) -> float:
     if isinstance(time, dt.timedelta):
       seconds = time.total_seconds()
     else:
       seconds = time
-    assert seconds > 0, f"Unexpected negative time: {seconds}s"
+    if seconds < 0:
+      raise ValueError(f"Unexpected negative time: {seconds}s")
     return seconds / self.unit.total_seconds()
 
   def timedelta(self,
-                time_unit: Union[float, int, dt.timedelta],
+                time_units: Union[float, int, dt.timedelta],
                 absolute: bool = False) -> dt.timedelta:
     if absolute:
-      if isinstance(time_unit, dt.timedelta):
-        return time_unit
-      return dt.timedelta(seconds=time_unit)
-    if isinstance(time_unit, dt.timedelta):
-      time_unit = time_unit.total_seconds()
-    assert isinstance(time_unit, (float, int))
-    assert time_unit >= 0
-    return time_unit * self.unit
+      if isinstance(time_units, dt.timedelta):
+        return time_units
+      return dt.timedelta(seconds=time_units)
+    if isinstance(time_units, dt.timedelta):
+      time_units = time_units.total_seconds()
+    assert isinstance(time_units, (float, int))
+    if time_units < 0:
+      raise ValueError(f"Time-units must be >= 0, but got {time_units}")
+    return time_units * self.unit
 
 
 class ThreadMode(helper.StrEnumWithHelp):
@@ -183,8 +196,8 @@ class Runner:
     self._validate_browsers()
     self._benchmark = benchmark
     self.stories = benchmark.stories
-    self.repetitions = repetitions
-    assert self.repetitions > 0, f"Invalid repetitions={self.repetitions}"
+    self._repetitions = repetitions
+    assert repetitions > 0, f"Invalid repetitions={repetitions}"
     self._probes: List[Probe] = []
     self._runs: List[Run] = []
     self._thread_mode = thread_mode
@@ -243,6 +256,10 @@ class Runner:
   @property
   def timing(self) -> Timing:
     return self._timing
+
+  @property
+  def repetitions(self) -> int:
+    return self._repetitions
 
   @property
   def probes(self) -> List[Probe]:
@@ -344,6 +361,7 @@ class Runner:
               index,
               self.out_dir,
               name=f"{story.name}[{repetition}]",
+              timeout=self.timing.run_timeout,
               throw=self._exceptions.throw)
           index += 1
 
@@ -678,6 +696,7 @@ class Run:
                root_dir: pathlib.Path,
                name: Optional[str] = None,
                temperature: Optional[int] = None,
+               timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
     self._state = RunState.INITIAL
     self._runner = runner
@@ -694,7 +713,9 @@ class Run:
     self._extra_js_flags = JSFlags()
     self._extra_flags = Flags()
     self._durations = helper.Durations()
+    self._start_datetime = dt.datetime.utcfromtimestamp(0)
     self._temperature = temperature
+    self._timeout = timeout
     self._exceptions = exception.Annotator(throw)
     self._browser_tmp_dir: Optional[pathlib.Path] = None
 
@@ -709,8 +730,11 @@ class Run:
   def group_dir(self) -> pathlib.Path:
     return self.out_dir.parent
 
-  def actions(self, name: str, verbose: bool = False) -> Actions:
-    return Actions(name, self, verbose=verbose)
+  def actions(self,
+              name: str,
+              verbose: bool = False,
+              measure: bool = True) -> Actions:
+    return Actions(name, self, verbose=verbose, measure=measure)
 
   @property
   def info_stack(self) -> exception.TInfoStack:
@@ -728,8 +752,10 @@ class Run:
         "repetition": self.repetition,
         "temperature": self.temperature,
         "story": str(self.story),
+        "probes": [probe.name for probe in self.probes],
         "duration": self.story.duration.total_seconds(),
-        "probes": [probe.name for probe in self.probes]
+        "startDateTime": str(self.start_datetime),
+        "timeout": self.timeout.total_seconds(),
     }
 
   @property
@@ -737,8 +763,25 @@ class Run:
     return self._temperature
 
   @property
+  def timing(self) -> Timing:
+    return self.runner.timing
+
+  @property
   def durations(self) -> helper.Durations:
     return self._durations
+
+  @property
+  def start_datetime(self) -> dt.datetime:
+    return self._start_datetime
+
+  def max_end_datetime(self) -> dt.datetime:
+    if not self._timeout:
+      return dt.datetime.max
+    return self._start_datetime + self._timeout
+
+  @property
+  def timeout(self) -> dt.timedelta:
+    return self._timeout
 
   @property
   def repetition(self) -> int:
@@ -751,10 +794,6 @@ class Run:
   @property
   def runner(self) -> Runner:
     return self._runner
-
-  @property
-  def timing(self) -> Timing:
-    return self.runner.timing
 
   @property
   def browser(self) -> Browser:
@@ -882,6 +921,7 @@ class Run:
 
   def run(self, is_dry_run: bool = False) -> None:
     self._advance_state(RunState.INITIAL, RunState.SETUP)
+    self._start_datetime = dt.datetime.now()
     self._out_dir.mkdir(parents=True, exist_ok=True)
     with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       assert not self._probe_scopes
@@ -930,13 +970,12 @@ class Run:
 
     with self.measure("probes-setup"):
       for probe_scope in probe_run_scopes:
-        with self.exception_info(f"Probe {probe_scope.name} setup"):
+        with self.measure(f"probes-setup {probe_scope.name}"):
           probe_scope.setup(self)  # pytype: disable=wrong-arg-types
     return probe_run_scopes
 
   def _setup_browser(self, is_dry_run: bool) -> None:
     assert self._state == RunState.SETUP
-
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
@@ -1058,7 +1097,9 @@ class Actions(helper.TimeScope):
                run: Run,
                runner: Optional[Runner] = None,
                browser: Optional[Browser] = None,
-               verbose: bool = False):
+               verbose: bool = False,
+               measure: bool = True,
+               timeout: dt.timedelta = dt.timedelta()):
     assert message, "Actions need a name"
     super().__init__(message)
     self._exception_annotation = run.exceptions.info(f"Action: {message}")
@@ -1067,6 +1108,12 @@ class Actions(helper.TimeScope):
     self._runner: Runner = runner or run.runner
     self._is_active: bool = False
     self._verbose: bool = verbose
+    self._measure = measure
+    if timeout:
+      self._max_end_datetime = min(dt.datetime.now() + timeout,
+                                   run.max_end_datetime())
+    else:
+      self._max_end_datetime = run.max_end_datetime()
 
   @property
   def timing(self) -> Timing:
@@ -1095,8 +1142,10 @@ class Actions(helper.TimeScope):
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
     self._is_active = False
     self._exception_annotation.__exit__(exc_type, exc_value, exc_traceback)
-    logging.debug("Action end: %s", self._message)
     super().__exit__(exc_type, exc_value, exc_traceback)
+    logging.debug("Action end: %s", self._message)
+    if self._measure:
+      self.run.durations[f"actions-duration {self.message}"] = self.duration
 
   def _assert_is_active(self) -> None:
     assert self._is_active, "Actions have to be used in a with scope"

@@ -253,17 +253,26 @@ class CrossBenchCLI:
         "Defaults to .browser_cache")
     runner_group.add_argument(
         "--cool-down-time",
-        type=cli_helper.parse_positive_zero_float,
-        default=2,
+        "--cool-down",
+        type=cli_helper.Duration.parse_zero,
+        default=dt.timedelta(seconds=2),
         help="Time the runner waits between different runs or repetitions. "
-        "Increase this to let the CPU cool down between runs.")
+        "Increase this to let the CPU cool down between runs. "
+        f"Format: {cli_helper.Duration.help()}")
     runner_group.add_argument(
         "--time-unit",
-        type=cli_helper.parse_positive_zero_float,
-        default=1,
+        type=cli_helper.Duration.parse,
+        default=dt.timedelta(seconds=1),
         help="Absolute duration of 1 time unit in the runner. "
         "Increase this for slow builds or machines. "
-        "Default 1 time unit == 1 second.")
+        f"Format: {cli_helper.Duration.help()}")
+    runner_group.add_argument(
+        "--run-timeout",
+        type=cli_helper.Duration.parse_zero,
+        default=dt.timedelta(),
+        help="Sets the same timeout per run on all browsers. "
+        "Runs will be aborted after the given timeout. "
+        f"Format: {cli_helper.Duration.help()}")
 
     env_group = subparser.add_argument_group("Environment Options", "")
     env_settings_group = env_group.add_mutually_exclusive_group()
@@ -670,11 +679,7 @@ class CrossBenchCLI:
       self,
       args: argparse.Namespace,
   ) -> Timing:
-    assert args.cool_down_time >= 0
-    cool_down_time = dt.timedelta(seconds=args.cool_down_time)
-    assert args.time_unit > 0, "--time-unit must be > 0"
-    unit = dt.timedelta(seconds=args.time_unit)
-    return Timing(cool_down_time, unit)
+    return Timing(args.cool_down_time, args.time_unit, args.run_timeout)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
                   env_config: HostEnvironmentConfig,
