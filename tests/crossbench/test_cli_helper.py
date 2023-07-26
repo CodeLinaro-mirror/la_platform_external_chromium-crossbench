@@ -6,12 +6,20 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
+import pathlib
+from typing import Any
 import unittest
 
-from crossbench.cli_helper import (Duration, parse_httpx_url_str,
-                                   parse_non_empty_str, parse_positive_int,
-                                   parse_positive_zero_int,
-                                   parse_positive_zero_float)
+from pyfakefs import fake_filesystem_unittest
+import crossbench
+
+from crossbench.cli_helper import (
+    Duration, parse_dir_path, parse_existing_file_path, parse_hjson_file_path,
+    parse_httpx_url_str, parse_inline_hjson, parse_json_file,
+    parse_json_file_path, parse_non_empty_file_path, parse_non_empty_str,
+    parse_path, parse_positive_int, parse_positive_zero_float,
+    parse_positive_zero_int)
 
 
 class DurationTestCase(unittest.TestCase):
@@ -26,6 +34,15 @@ class DurationTestCase(unittest.TestCase):
   def test_parse_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       Duration.parse("")
+
+  def test_invalid_suffix(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      Duration.parse("100XXX")
+    self.assertIn("not supported", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      Duration.parse("X0XX")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      Duration.parse("100X0XX")
 
   def test_no_unit(self):
     self.assertEqual(Duration.parse("200"), dt.timedelta(seconds=200))
@@ -60,7 +77,11 @@ class DurationTestCase(unittest.TestCase):
     self.assertEqual(Duration.parse("27.5 hours"), dt.timedelta(hours=27.5))
 
 
-class ArgParserHelperTestCase(unittest.TestCase):
+class ArgParserHelperTestCase(fake_filesystem_unittest.TestCase):
+
+  def setUp(self):
+    self.setUpPyfakefs(modules_to_reload=[crossbench])
+    self._json_test_data = {"int": 1, "array": [1, "2"]}
 
   def test_parse_non_empty_str(self):
     self.assertEqual(parse_non_empty_str("a string"), "a string")
@@ -99,3 +120,128 @@ class ArgParserHelperTestCase(unittest.TestCase):
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = parse_positive_zero_float(invalid)
+
+  def _json_file_test_helper(self, parser) -> Any:
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser("file")
+
+    path = pathlib.Path("file.json")
+    self.assertFalse(path.exists())
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser(path)
+
+    path.touch()
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser(path)
+
+    with path.open("w", encoding="utf-8") as f:
+      f.write("{invalid json data")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser(path)
+    # Test very long lines too.
+    with path.open("w", encoding="utf-8") as f:
+      f.write("{\n invalid json data" + "." * 100)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser(path)
+
+    with path.open("w", encoding="utf-8") as f:
+      f.write("""{
+              'a': {},
+              'c': }}
+              """)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser(path)
+
+    with path.open("w", encoding="utf-8") as f:
+      json.dump(self._json_test_data, f)
+    str_result = parser(str(path))
+    path_result = parser(path)
+    self.assertEqual(str_result, path_result)
+    return str_result
+
+  def test_parse_json_file(self):
+    result = self._json_file_test_helper(parse_json_file)
+    self.assertDictEqual(self._json_test_data, result)
+
+  def test_parse_json_file_path(self):
+    result = self._json_file_test_helper(parse_json_file_path)
+    self.assertEqual(pathlib.Path("file.json"), result)
+
+  def test_parse_hjson_file_path(self):
+    result = self._json_file_test_helper(parse_hjson_file_path)
+    self.assertEqual(pathlib.Path("file.json"), result)
+
+  def test_parse_inline_hjson(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_inline_hjson("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_inline_hjson("{invalid json}")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_inline_hjson("{'asdfas':'asdf}")
+    self.assertDictEqual(self._json_test_data,
+                         parse_inline_hjson(json.dumps(self._json_test_data)))
+
+  def test_parse_dir_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_dir_path("")
+    file = pathlib.Path("file")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_dir_path(file)
+    self.assertIn("does not exist", str(cm.exception))
+    file.touch()
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_dir_path(file)
+    self.assertIn("not a folder", str(cm.exception))
+    folder = pathlib.Path("folder")
+    folder.mkdir()
+    self.assertEqual(folder, parse_dir_path(folder))
+
+  def test_parse_non_empty_file_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_non_empty_file_path("")
+    folder = pathlib.Path("folder")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_non_empty_file_path(folder)
+    self.assertIn("does not exist", str(cm.exception))
+    folder.mkdir()
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_non_empty_file_path(folder)
+    self.assertIn("not a file", str(cm.exception))
+    file = pathlib.Path("file")
+    file.touch()
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      self.assertEqual(file, parse_non_empty_file_path(file))
+    self.assertIn("is empty", str(cm.exception))
+
+    with file.open("w") as f:
+      f.write("fooo")
+    self.assertEqual(file, parse_non_empty_file_path(file))
+
+  def test_parse_existing_file_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_existing_file_path("")
+    folder = pathlib.Path("folder")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_existing_file_path(folder)
+    self.assertIn("does not exist", str(cm.exception))
+    folder.mkdir()
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_existing_file_path(folder)
+    self.assertIn("not a file", str(cm.exception))
+    file = pathlib.Path("file")
+    file.touch()
+    self.assertEqual(file, parse_existing_file_path(file))
+
+  def test_parse_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_path("")
+    folder = pathlib.Path("folder")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_path(folder)
+    self.assertIn("does not exist", str(cm.exception))
+
+    folder.mkdir()
+    self.assertEqual(folder, parse_path(folder))
+    file = pathlib.Path("file")
+    file.touch()
+    self.assertEqual(file, parse_path(file))

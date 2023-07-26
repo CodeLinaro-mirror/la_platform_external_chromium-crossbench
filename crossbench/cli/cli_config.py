@@ -42,29 +42,6 @@ def _map_flag_group_item(flag_name: str,
   return (flag_name, flag_value)
 
 
-def parse_inline_hjson(value: str) -> Any:
-  if value[0] != "{" or value[-1] != "}":
-    raise argparse.ArgumentTypeError(
-        f"Invalid inline {hjson.__name__}, missing braces: '{value}'")
-  try:
-    return hjson.loads(value)
-  except ValueError as e:
-    message = _extract_decoding_error(value, e)
-    if "eof" in message:
-      message += "\n   Likely missing quotes."
-    raise argparse.ArgumentTypeError(message) from e
-
-
-def _extract_decoding_error(value: str, e: ValueError) -> str:
-  lineno = getattr(e, "lineno", -1) - 1
-  colno = getattr(e, "colno", -1) - 1
-  decode_message = "Could not decode inline config"
-  if lineno < 0 or colno < 0:
-    return f"{decode_message}: {value}\n    {str(e)}"
-  line = value.splitlines()[lineno - 1]
-  marker = (" " * colno) + "^"
-  return f"{decode_message}\n    {line}\n    {marker}\n({str(e)})"
-
 
 class ConfigFileError(argparse.ArgumentTypeError):
   pass
@@ -187,7 +164,7 @@ class DriverConfig(ConfigObject):
             raise original_error from e
       else:
         # Variant 2: full hjson config
-        data = parse_inline_hjson(value)
+        data = cli_helper.parse_inline_hjson(value)
         return cls.load_dict(data)
     if path and path.stat().st_size == 0:
       raise argparse.ArgumentTypeError(f"Driver path is empty file: {path}")
@@ -282,7 +259,7 @@ class BrowserConfig(ConfigObject):
       driver, path = cls._parse_inline_driver(value)
     else:
       # Variant 3: Full inline hjson
-      config = parse_inline_hjson(value)
+      config = cli_helper.parse_inline_hjson(value)
       with exception.annotate(f"Parsing inline {cls.__name__}"):
         return cls.load_dict(config)
     assert path, "Invalid path"
@@ -791,7 +768,7 @@ class SingleProbeConfig(ConfigObject):
       raise ProbeConfigError(f"Could not parse probe argument: {value}")
     config = {"name": match["probe_name"]}
     if match["config"]:
-      inline_config = parse_inline_hjson(match["config"])
+      inline_config = cli_helper.parse_inline_hjson(match["config"])
       assert "name" not in inline_config
       config.update(inline_config)
     return cls.load_dict(config)
@@ -893,7 +870,7 @@ def parse_inline_env_config(value: str) -> HostEnvironmentConfig:
   kwargs = None
   msg = ""
   try:
-    kwargs = parse_inline_hjson(value)
+    kwargs = cli_helper.parse_inline_hjson(value)
     return HostEnvironmentConfig(**kwargs)
   except Exception as e:
     msg = f"\n{e}"

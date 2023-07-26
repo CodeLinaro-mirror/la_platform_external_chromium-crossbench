@@ -18,66 +18,126 @@ from urllib.parse import urlparse
 import hjson
 
 
-def parse_path(str_value: str) -> pathlib.Path:
+def parse_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  if not value:
+    raise argparse.ArgumentTypeError("Invalid empty path.")
   try:
-    path = pathlib.Path(str_value).expanduser()
+    path = pathlib.Path(value).expanduser()
   except RuntimeError as e:
-    raise argparse.ArgumentTypeError(f"Invalid Path '{str_value}': {e}") from e
+    raise argparse.ArgumentTypeError(f"Invalid Path '{value}': {e}") from e
   if not path.exists():
     raise argparse.ArgumentTypeError(f"Path '{path}' does not exist.")
   return path
 
 
-def parse_existing_file_path(str_value: str) -> pathlib.Path:
-  path = parse_path(str_value)
+def parse_existing_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  path = parse_path(value)
   if not path.is_file():
     raise argparse.ArgumentTypeError(f"Path '{path}' is not a file.")
   return path
 
 
-def parse_non_empty_file_path(str_value: str) -> pathlib.Path:
-  path: pathlib.Path = parse_existing_file_path(str_value)
+def parse_non_empty_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  path: pathlib.Path = parse_existing_file_path(value)
   if path.stat().st_size == 0:
     raise argparse.ArgumentTypeError(f"Path '{path}' is empty.")
   return path
 
 
-def parse_file_path(str_value: str) -> pathlib.Path:
-  return parse_non_empty_file_path(str_value)
+def parse_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  return parse_non_empty_file_path(value)
 
 
-def parse_dir_path(str_value: str) -> pathlib.Path:
-  path = parse_path(str_value)
+def parse_dir_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  path = parse_path(value)
   if not path.is_dir():
-    raise argparse.ArgumentTypeError(f"Path '{path}', is not a file.")
+    raise argparse.ArgumentTypeError(f"Path '{path}', is not a folder.")
   return path
 
 
-def parse_json_file_path(str_value: str) -> pathlib.Path:
-  path = parse_file_path(str_value)
+def parse_inline_hjson(value: str) -> Any:
+  if not value or value[0] != "{" or value[-1] != "}":
+    raise argparse.ArgumentTypeError(
+        f"Invalid inline {hjson.__name__}, missing braces: '{value}'")
+  try:
+    return hjson.loads(value)
+  except ValueError as e:
+    message = _extract_decoding_error(
+        "Could not decode inline {hjson.__name__}", value, e)
+    if "eof" in message:
+      message += "\n   Likely missing quotes."
+    raise argparse.ArgumentTypeError(message) from e
+
+
+def _extract_decoding_error(message: str, value: Union[str, pathlib.Path],
+                            e: ValueError) -> str:
+  lineno = getattr(e, "lineno", -1) - 1
+  colno = getattr(e, "colno", -1) - 1
+  if lineno < 0 or colno < 0:
+    if isinstance(value, pathlib.Path):
+      return f"{message}\n    {str(e)}"
+    return f"{message}: {value}\n    {str(e)}"
+  if isinstance(value, pathlib.Path):
+    line = value.open().readlines()[lineno]
+  else:
+    line = value.splitlines()[lineno]
+  MAX_LEN = 70
+  if len(line) > MAX_LEN:
+    # Only show line around error:
+    start = colno - MAX_LEN // 2
+    end = colno + MAX_LEN // 2
+    prefix = "..."
+    suffix = "..."
+    if start < 0:
+      start = 0
+      end = MAX_LEN
+      prefix = ""
+    elif end > len(line):
+      end = len(line)
+      start = len(line) - MAX_LEN
+      suffix = ""
+    colno -= start
+    line = prefix + line[start:end] + suffix
+    marker_space = (" " * len(prefix)) + (" " * colno)
+  else:
+    marker_space = (" " * colno)
+  marker = "_▲_"
+  # Adjust line to be aligned with marker size
+  line = (" " * (len(marker) // 2)) + line
+  return f"{message}\n    {line}\n    {marker_space}{marker}\n({str(e)})"
+
+
+def parse_json_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
       json.load(f)
     except ValueError as e:
-      raise argparse.ArgumentTypeError(f"Invalid json file: {path}: {e}") from e
+      message = _extract_decoding_error(f"Invalid json file '{path}':", path, e)
+      raise argparse.ArgumentTypeError(message) from e
   return path
 
 
-def parse_hjson_file_path(str_value: str) -> pathlib.Path:
-  path = parse_file_path(str_value)
+def parse_hjson_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
       hjson.load(f)
     except ValueError as e:
-      raise argparse.ArgumentTypeError(
-          f"Invalid {hjson.__name__} file: {path}: {e}") from e
+      message = _extract_decoding_error(
+          f"Invalid {hjson.__name__} file '{path}':", path, e)
+      raise argparse.ArgumentTypeError(message) from e
   return path
 
 
-def parse_json_file(str_value: str) -> Any:
-  path = parse_file_path(str_value)
+def parse_json_file(value: Union[str, pathlib.Path]) -> Any:
+  path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
-    return json.load(f)
+    try:
+      return json.load(f)
+    except ValueError as e:
+      message = _extract_decoding_error(f"Invalid json file '{path}':", path, e)
+      raise argparse.ArgumentTypeError(message) from e
 
 
 def parse_positive_zero_float(value: str) -> float:
@@ -217,8 +277,9 @@ class Duration:
       return dt.timedelta(minutes=value)
     if suffix in {"h", "hrs", "hour", "hours"}:
       return dt.timedelta(hours=value)
-    raise ValueError(f"Error: {suffix} is not support for duration. "
-                     "Make sure to use a supported time unit/suffix")
+    raise argparse.ArgumentTypeError(
+        f"Error: {suffix} is not supported for duration. "
+        "Make sure to use a supported time unit/suffix")
 
   @classmethod
   def parse(cls, time_value: Union[float, int, str]) -> dt.timedelta:
