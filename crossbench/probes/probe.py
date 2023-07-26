@@ -21,6 +21,7 @@ if TYPE_CHECKING:
   from crossbench.platform import Platform
   from crossbench.runner import (BrowsersRunGroup, RepetitionsRunGroup, Run,
                                  Runner, StoriesRunGroup)
+  from selenium.webdriver.common.options import BaseOptions
 
 ProbeT = TypeVar("ProbeT", bound="Probe")
 
@@ -217,13 +218,13 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
   def __init__(self, probe: ProbeT, run: Run):
     self._probe: ProbeT = probe
     self._run: Run = run
-    self._default_result_path: pathlib.Path = self._get_default_result_path()
+    self._default_result_path: pathlib.Path = self.get_default_result_path()
     self._is_active: bool = False
     self._is_success: bool = False
     self._start_time: Optional[dt.datetime] = None
     self._stop_time: Optional[dt.datetime] = None
 
-  def _get_default_result_path(self) -> pathlib.Path:
+  def get_default_result_path(self) -> pathlib.Path:
     return self._run.get_default_probe_result_path(self._probe)
 
   def set_start_time(self, start_datetime: dt.datetime) -> None:
@@ -320,10 +321,16 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     """
     del run
 
+  def setup_selenium_options(self, options: BaseOptions) -> None:
+    """
+    Custom hook to change selenium options before starting the browser.
+    """
+    del options
+
   @abc.abstractmethod
   def start(self, run: Run) -> None:
     """
-    Called immediately before starting the given Run.
+    Called immediately before starting the given Run, after the browser started.
     This method should have as little overhead as possible. If possible,
     delegate heavy computation to the "SetUp" method.
     """
@@ -331,9 +338,10 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
   @abc.abstractmethod
   def stop(self, run: Run) -> None:
     """
-    Called immediately after finishing the given Run.
+    Called immediately after finishing the given Run with the browser still
+    running.
     This method should have as little overhead as possible. If possible,
-    delegate heavy computation to the "collect" method.
+    delegate heavy computation to the "tear_down" method.
     """
     return None
 

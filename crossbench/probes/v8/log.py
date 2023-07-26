@@ -211,8 +211,8 @@ class V8LogProbe(Probe):
 
 class V8LogProbeScope(ProbeScope[V8LogProbe]):
 
-  def _get_default_result_path(self) -> pathlib.Path:
-    log_dir = super()._get_default_result_path()
+  def get_default_result_path(self) -> pathlib.Path:
+    log_dir = super().get_default_result_path()
     self.browser_platform.mkdir(log_dir)
     return log_dir / self.probe.result_path_name
 

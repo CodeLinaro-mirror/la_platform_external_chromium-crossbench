@@ -11,7 +11,7 @@ from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.probe import Probe
-from crossbench.probes.profiling import ProfilingProbe
+from crossbench.probes.profiling import BrowserProfilingProbe, ProfilingProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.tracing import TracingProbe
 from crossbench.probes.v8 import (V8BuiltinsPGOProbe, V8LogProbe, V8RCSProbe,
@@ -37,6 +37,7 @@ GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     PerformanceEntriesProbe,
     PowerSamplerProbe,
     ProfilingProbe,
+    BrowserProfilingProbe,
     SystemStatsProbe,
     TracingProbe,
     V8BuiltinsPGOProbe,

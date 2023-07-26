@@ -9,10 +9,10 @@ import logging
 import pathlib
 import re
 import shutil
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Set, Tuple
 
 from crossbench.flags import Flags
-from crossbench.platform import Platform, PLATFORM
+from crossbench.platform import PLATFORM, Platform
 
 from .splash_screen import SplashScreen
 from .viewport import Viewport
@@ -20,9 +20,9 @@ from .viewport import Viewport
 if TYPE_CHECKING:
   import datetime as dt
 
+  from crossbench import helper
   from crossbench.probes.probe import Probe
   from crossbench.runner import Run, Runner
-  from crossbench import helper
 
 # =============================================================================
 
@@ -110,6 +110,10 @@ class Browser(abc.ABC):
   def viewport(self, value: Viewport) -> None:
     assert self._viewport.is_default
     self._viewport = value
+
+  @property
+  def probes(self) -> Set[Probe]:
+    return set(self._probes)
 
   @property
   def flags(self) -> Flags:

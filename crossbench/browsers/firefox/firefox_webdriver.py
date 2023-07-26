@@ -64,13 +64,20 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     for arg in args:
       options.add_argument(arg)
     options.binary_location = str(self.path)
+
+    for probe in run.probe_scopes:
+      probe.setup_selenium_options(options)
+
     logging.info("STARTING BROWSER: %s", self.path)
     logging.info("STARTING BROWSER: driver: %s", driver_path)
     logging.info("STARTING BROWSER: args: %s", shlex.join(args))
+    # Explicitly copy the env vars for FirefoxBrowserProfilerProbeScope
+    env_copy = dict(self.platform.environ)
     service = FirefoxService(
         executable_path=str(driver_path),
         log_path=str(self.driver_log_file),
-        service_args=[])
+        service_args=[],
+        env=env_copy)
     service.log_file = self.stdout_log_file.open("w", encoding="utf-8")
     driver = webdriver.Firefox(  # pytype: disable=wrong-keyword-args
         options=options, service=service)

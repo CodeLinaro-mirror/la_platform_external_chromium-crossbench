@@ -690,6 +690,7 @@ class Run:
     self._name = name
     self._out_dir = self.get_out_dir(root_dir).absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
+    self._probe_scopes: List[ProbeScope] = []
     self._extra_js_flags = JSFlags()
     self._extra_flags = Flags()
     self._durations = helper.Durations()
@@ -822,6 +823,10 @@ class Run:
   def is_success(self) -> bool:
     return self._exceptions.is_success
 
+  @property
+  def probe_scopes(self) -> Iterator[ProbeScope]:
+    return iter(self._probe_scopes)
+
   @contextlib.contextmanager
   def measure(
       self, label: str
@@ -879,20 +884,20 @@ class Run:
     self._advance_state(RunState.INITIAL, RunState.SETUP)
     self._out_dir.mkdir(parents=True, exist_ok=True)
     with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
-      probe_scopes: Sequence[ProbeScope] = []
+      assert not self._probe_scopes
       try:
-        probe_scopes = self._setup_probes(is_dry_run)
+        self._probe_scopes = self._setup_probes(is_dry_run)
         self._setup_browser(is_dry_run)
       except Exception as e:  # pylint: disable=broad-except
-        self._handle_setup_error(e, probe_scopes)
+        self._handle_setup_error(e)
         return
       try:
-        self._run(probe_scopes, is_dry_run)
+        self._run(is_dry_run)
       except Exception as e:  # pylint: disable=broad-except
         self._exceptions.append(e)
       finally:
         if not is_dry_run:
-          self.tear_down(probe_scopes)
+          self.tear_down()
 
   def _setup_probes(self, is_dry_run: bool) -> List[ProbeScope[Any]]:
     assert self._state == RunState.SETUP
@@ -950,25 +955,25 @@ class Run:
         self._browser.force_quit()
         raise
 
-  def _handle_setup_error(self, setup_exception: BaseException,
-                          probe_scopes: Sequence[ProbeScope]) -> None:
+  def _handle_setup_error(self, setup_exception: BaseException) -> None:
     self._advance_state(RunState.SETUP, RunState.DONE)
     self._exceptions.append(setup_exception)
     assert self._state == RunState.DONE
     assert not self._exceptions.is_success
     # Special handling for crucial runner probes
     internal_probe_scopes = [
-        scope for scope in probe_scopes
+        scope for scope in self._probe_scopes
         if isinstance(scope.probe, InternalProbe)
     ]
     self._tear_down_probe_scopes(internal_probe_scopes)
 
-  def _run(self, probe_scopes: Sequence[ProbeScope], is_dry_run: bool) -> None:
+  def _run(self, is_dry_run: bool) -> None:
     self._advance_state(RunState.SETUP, RunState.RUN)
+    assert self._probe_scopes
     probe_start_time = dt.datetime.now()
     probe_scope_manager = contextlib.ExitStack()
 
-    for probe_scope in probe_scopes:
+    for probe_scope in self._probe_scopes:
       probe_scope.set_start_time(probe_start_time)
       probe_scope_manager.enter_context(probe_scope)
 
@@ -1003,7 +1008,6 @@ class Run:
     self._state = next_state
 
   def tear_down(self,
-                probe_scopes: List[ProbeScope],
                 is_shutdown: bool = False) -> None:
     self._advance_state(RunState.RUN, RunState.DONE)
     with self.measure("browser-tear_down"):
@@ -1019,10 +1023,13 @@ class Run:
         with self._exceptions.capture("Quit browser"):
           self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
     with self.measure("probes-tear_down"):
-      self._tear_down_probe_scopes(probe_scopes)
+      self._tear_down_probe_scopes(self._probe_scopes)
+      self._probe_scopes = []
     self._rm_browser_tmp_dir()
 
   def _tear_down_probe_scopes(self, probe_scopes: List[ProbeScope]) -> None:
+    assert self._state == RunState.DONE
+    assert probe_scopes, "Expected non-empty probe_scopes list."
     logging.debug("PROBE SCOPE TEARDOWN")
     for probe_scope in reversed(probe_scopes):
       with self.exceptions.capture(f"Probe {probe_scope.name} teardown"):

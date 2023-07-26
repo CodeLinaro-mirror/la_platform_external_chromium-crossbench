@@ -41,12 +41,10 @@ class ProfilingProbe(Probe):
   """
   NAME = "profiling"
   RESULT_LOCATION = ResultLocation.BROWSER
-
-  JS_FLAGS_PERF = (
-      "--perf-prof",
-  )
-  _INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
   IS_GENERAL_PURPOSE = True
+
+  V8_PERF_PROF_FLAG = ("--perf-prof",)
+  V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -75,7 +73,7 @@ class ProfilingProbe(Probe):
         type=bool,
         default=True,
         help=(
-            f"Chrome-only: Sets the {cls._INTERPRETED_FRAMES_FLAG} flag for "
+            f"Chrome-only: Sets the {cls.V8_INTERPRETED_FRAMES_FLAG} flag for "
             "V8, which exposes interpreted frames as native frames. "
             "Note that this comes at an additional performance and memory cost."
         ))
@@ -162,9 +160,9 @@ class ProfilingProbe(Probe):
 
   def _attach_linux(self, browser: Chromium) -> None:
     if self._sample_js:
-      browser.js_flags.update(self.JS_FLAGS_PERF)
+      browser.js_flags.update(self.V8_PERF_PROF_FLAG)
       if self._expose_v8_interpreted_frames:
-        browser.js_flags.set(self._INTERPRETED_FRAMES_FLAG)
+        browser.js_flags.set(self.V8_INTERPRETED_FRAMES_FLAG)
     cmd = pathlib.Path(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
     assert not browser.platform.is_remote, (
         "Copying renderer command prefix to remote platform is "
@@ -225,8 +223,8 @@ class ProfilingScope(ProbeScope[ProfilingProbe], metaclass=abc.ABCMeta):
 class MacOSProfilingScope(ProfilingScope):
   _process: subprocess.Popen
 
-  def _get_default_result_path(self) -> pathlib.Path:
-    return super()._get_default_result_path().parent / "profile.trace"
+  def get_default_result_path(self) -> pathlib.Path:
+    return super().get_default_result_path().parent / "profile.trace"
 
   def start(self, run: Run) -> None:
     self._process = self.browser_platform.popen("xctrace", "record",

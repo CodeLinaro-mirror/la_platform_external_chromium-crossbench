@@ -14,8 +14,8 @@ import stat
 import tempfile
 import urllib.error
 import zipfile
-from typing import (TYPE_CHECKING, Dict, Final, List, Optional, Sequence, Tuple,
-                    Type, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
+                    Tuple, Type, cast)
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -86,7 +86,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     assert not self._is_running
     assert self.log_file
     args = self._get_browser_flags_for_run(run)
-    options = self._create_options(args)
+    options = self._create_options(run, args)
     logging.info("STARTING BROWSER: %s", self.path)
     logging.info("STARTING BROWSER: driver: %s", driver_path)
     logging.info("STARTING BROWSER: args: %s", shlex.join(args))
@@ -103,7 +103,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     driver.execute_cdp_cmd("Runtime.setMaxCallStackSizeToCapture", {"size": 0})
     return driver
 
-  def _create_options(self, args: Sequence[str]) -> ChromiumOptions:
+  def _create_options(self, run: Run, args: Sequence[str]) -> ChromiumOptions:
     assert not self._is_running
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
     options.set_capability("browserVersion", str(self.major_version))
@@ -112,6 +112,10 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     for arg in args:
       options.add_argument(arg)
     options.binary_location = str(self.path)
+
+    for probe in run.probe_scopes:
+      probe.setup_selenium_options(options)
+
     return options
 
   @abc.abstractmethod
@@ -123,6 +127,34 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     # TODO
     # version = self.platform.sh_stdout(self._driver_path, "--version")
     pass
+
+  def start_profiling(self) -> None:
+    assert isinstance(self._driver, ChromiumDriver)
+    # TODO: reuse the TraceProve categories,
+    self._driver.execute_cdp_cmd(
+        'Tracing.start', {
+            "transferMode":
+                "ReturnAsStream",
+            "includedCategories": [
+                'devtools.timeline',
+                'v8.execute',
+                'disabled-by-default-devtools.timeline',
+                'disabled-by-default-devtools.timeline.frame',
+                'toplevel',
+                'blink.console',
+                'blink.user_timing',
+                'latencyInfo',
+                'disabled-by-default-devtools.timeline.stack',
+                'disabled-by-default-v8.cpu_profiler',
+            ],
+        })
+
+  def stop_profiling(self) -> Any:
+    assert isinstance(self._driver, ChromiumDriver)
+    data = self._driver.execute_cdp_cmd("Tracing.tracingComplete", {})
+    # TODO: use webdriver bidi to get the async Tracing.end event.
+    # self._driver.execute_cdp_cmd('Tracing.end', {})
+    return data
 
 
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
@@ -156,8 +188,8 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                     flag_value)
     return chrome_flags
 
-  def _create_options(self, args: Sequence[str]) -> ChromiumOptions:
-    options: ChromiumOptions = super()._create_options(args)
+  def _create_options(self, run: Run, args: Sequence[str]) -> ChromiumOptions:
+    options: ChromiumOptions = super()._create_options(run, args)
     options.binary_location = ""
     package = self.platform.app_path_to_package(self.path)
     options.add_experimental_option("androidPackage", package)
