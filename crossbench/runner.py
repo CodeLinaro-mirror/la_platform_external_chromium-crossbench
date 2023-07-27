@@ -126,14 +126,17 @@ class Runner:
       cls, benchmark_cls: Type[Benchmark],
       parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
+        "--repetitions",
         "--repeat",
+        "--invocations",
         "-r",
         default=1,
         type=cli_helper.parse_positive_int,
-        help="Number of times each benchmark story is "
-        "repeated. Defaults to 1")
+        help=("Number of times each benchmark story is "
+              "repeated. Defaults to 1"))
 
     parser.add_argument(
+        "--thread-mode",
         "--parallel",
         default=ThreadMode.NONE,
         type=ThreadMode,
@@ -147,8 +150,8 @@ class Runner:
         "--output-directory",
         "-o",
         type=pathlib.Path,
-        help="Results will be stored in this directory. "
-        "Defaults to result/${DATE}_${LABEL}")
+        help=("Results will be stored in this directory. "
+              "Defaults to result/${DATE}_${LABEL}"))
     out_dir_xor_group.add_argument(
         "--label",
         "--name",
@@ -170,8 +173,8 @@ class Runner:
     return {
         "out_dir": out_dir,
         "browsers": args.browser,
-        "repetitions": args.repeat,
-        "thread_mode": args.parallel,
+        "repetitions": args.repetitions,
+        "thread_mode": args.thread_mode,
         "throw": args.throw,
     }
 

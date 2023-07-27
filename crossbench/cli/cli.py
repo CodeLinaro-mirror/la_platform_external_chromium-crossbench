@@ -447,7 +447,7 @@ class CrossBenchCLI:
         # We prevent running multiple stories in repetition OR if multiple
         # browsers are open when 'power' probes are used since it might distort
         # the data.
-        if len(args.browser) > 1 or args.repeat > 1:
+        if len(args.browser) > 1 or args.repetitions > 1:
           probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
           if probe_names:
             names_str = ",".join(probe_names)
