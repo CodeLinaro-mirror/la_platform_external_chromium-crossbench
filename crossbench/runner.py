@@ -18,7 +18,7 @@ import threading
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, Iterator, List,
                     Optional, Sequence, Tuple, Type, Union)
 
-from crossbench import cli_helper, exception, helper
+from crossbench import cli_helper, compat, exception, helper
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.flags import Flags, JSFlags
@@ -258,12 +258,12 @@ class Runner:
     return self._timing
 
   @property
-  def repetitions(self) -> int:
-    return self._repetitions
+  def probes(self) -> Iterable[Probe]:
+    return iter(self._probes)
 
   @property
-  def probes(self) -> List[Probe]:
-    return list(self._probes)
+  def repetitions(self) -> int:
+    return self._repetitions
 
   @property
   def exceptions(self) -> exception.Annotator:
@@ -282,8 +282,8 @@ class Runner:
     return self._env
 
   @property
-  def runs(self) -> List[Run]:
-    return self._runs
+  def runs(self) -> Iterable[Run]:
+    return iter(self._runs)
 
   @property
   def repetitions_groups(self) -> List[RepetitionsRunGroup]:
@@ -353,9 +353,11 @@ class Runner:
     for repetition in range(self.repetitions):
       for story in self.stories:
         for browser in self.browsers:
+          # TODO: respect temperature and create multi-run session
+          browser_session = BrowserSessionRunGroup(browser)
           yield Run(
               self,
-              browser,
+              browser_session,
               story,
               repetition,
               index,
@@ -368,7 +370,7 @@ class Runner:
   def assert_successful_runs(self) -> None:
     failed_runs = list(run for run in self.runs if not run.is_success)
     self._exceptions.assert_success(
-        f"Runs Failed: {len(failed_runs)}/{len(self.runs)} runs failed.",
+        f"Runs Failed: {len(failed_runs)}/{len(tuple(self.runs))} runs failed.",
         RunnerException)
 
   def _get_thread_groups(self) -> List[RunThreadGroup]:
@@ -429,17 +431,91 @@ class RunThreadGroup(threading.Thread):
     self._runner: Runner = runs[0].runner
     self._runs = runs
     self.is_dry_run: bool = False
+    self._verify_contains_all_browser_session_runs()
+
+  def _verify_contains_all_browser_session_runs(self) -> None:
+    runs_set = set(self._runs)
+    for run in self._runs:
+      for session_run in run.browser_session.runs:
+        assert session_run in runs_set, (
+            f"BrowserSession {run.browser_session} is not allowed to have "
+            f"{session_run} in another RunThreadGroup.")
 
   def run(self) -> None:
+    total_run_count = len(tuple(self._runner.runs))
     for run in self._runs:
       logging.info("=" * 80)
-      logging.info("RUN %s/%s", run.index + 1, len(self._runner.runs))
+      logging.info("RUN %s/%s", run.index + 1, total_run_count)
       logging.info("=" * 80)
       run.run(self.is_dry_run)
       if run.is_success:
         run.log_results()
       else:
         self._runner.exceptions.extend(run.exceptions)
+
+
+class BrowserSessionRunGroup:
+  """
+  Groups Run objects together that are run within the same browser session.
+  At the beginning of a new session the caches are cleared and the
+  browser is (re-)started.
+  """
+
+  class State(compat.StrEnum):
+    READY = "ready"
+    STARTING = "starting"
+    RUNNING = "running"
+    STOPPING = "stopping"
+    DONE = "done"
+
+  def __init__(self, browser: Browser):
+    self._browser = browser
+    self._runs: List[Run] = []
+    self._state = self.State.READY
+
+  def append(self, run: Run) -> None:
+    assert self._state == self.State.READY
+    assert run.browser_session == self
+    self._runs.append(run)
+
+  @property
+  def browser(self) -> Browser:
+    return self._browser
+
+  @property
+  def runs(self) -> Iterable[Run]:
+    return iter(self._runs)
+
+  @contextlib.contextmanager
+  def open(self) -> Iterator[BrowserSessionRunGroup]:
+    self._setup()
+    try:
+      yield self
+    finally:
+      self._teardown()
+
+  def _setup(self) -> None:
+    assert self._state == self.State.READY
+    self._state = self.State.STARTING
+    self._start_browser()
+    self._state = self.State.RUNNING
+
+  def _start_browser(self) -> None:
+    assert self._state == self.State.STARTING
+    # TODO: implement
+
+  def _teardown(self) -> None:
+    assert self._state == self.State.RUNNING
+    self._state = self.State.STOPPING
+    try:
+      self._stop_browser()
+    finally:
+      assert self._state == self.State.STOPPING
+      self._state = self.State.DONE
+
+  def _stop_browser(self) -> None:
+    assert self._state == self.State.STOPPING
+    # TODO: implement
 
 
 class RunGroup(abc.ABC):
@@ -494,7 +570,7 @@ class RunGroup(abc.ABC):
   def merge(self, runner: Runner) -> None:
     assert self._merged_probe_results
     with self._exceptions.info(*self.info_stack):
-      for probe in reversed(runner.probes):
+      for probe in reversed(tuple(runner.probes)):
         with self._exceptions.capture(f"Probe {probe.name} merge results"):
           results = self._merge_probe_results(probe)
           if results is None:
@@ -540,7 +616,7 @@ class RepetitionsRunGroup(RunGroup):
 
   @property
   def runs(self) -> Iterable[Run]:
-    return self._runs
+    return iter(self._runs)
 
   @property
   def story(self) -> Story:
@@ -689,7 +765,7 @@ class Run:
 
   def __init__(self,
                runner: Runner,
-               browser: Browser,
+               browser_session: BrowserSessionRunGroup,
                story: Story,
                repetition: int,
                index: int,
@@ -699,8 +775,10 @@ class Run:
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
     self._state = RunState.INITIAL
+    self._browser_session = browser_session
+    browser_session.append(self)
     self._runner = runner
-    self._browser = browser
+    self._browser = browser_session.browser
     self._story = story
     assert repetition >= 0
     self._repetition = repetition
@@ -794,6 +872,14 @@ class Run:
   @property
   def runner(self) -> Runner:
     return self._runner
+
+  @property
+  def timing(self) -> Timing:
+    return self.runner.timing
+
+  @property
+  def browser_session(self) -> BrowserSessionRunGroup:
+    return self._browser_session
 
   @property
   def browser(self) -> Browser:

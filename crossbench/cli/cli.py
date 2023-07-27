@@ -27,7 +27,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.internal import ErrorsProbe
-from crossbench.runner import Runner, Timing
+from crossbench.runner import Runner, Run, Timing
 
 from . import cli_config
 from .devtools_recorder_proxy import CrossbenchDevToolsRecorderProxy
@@ -592,34 +592,35 @@ class CrossBenchCLI:
 
   def _update_results_symlinks(self, runner: Runner) -> None:
     results_root = runner.out_dir.parent
-    latest = results_root / "latest"
-    if latest.is_symlink():
-      latest.unlink()
-    if not latest.exists():
-      latest.symlink_to(
+    latest_link = results_root / "latest"
+    if latest_link.is_symlink():
+      latest_link.unlink()
+    if not latest_link.exists():
+      latest_link.symlink_to(
           runner.out_dir.relative_to(results_root), target_is_directory=True)
     else:
-      logging.error("Could not create %s", latest)
+      logging.error("Could not create %s", latest_link)
     if not runner.runs:
       return
     out_dir = runner.out_dir
-    first_run = out_dir / "first_run"
-    last_run = out_dir / "last_run"
-    if first_run.exists():
-      logging.error("Cannot create first_run symlink: %s", first_run)
+    first_run_dir = out_dir / "first_run"
+    last_run_dir = out_dir / "last_run"
+    runs: List[Run] = list(runner.runs)
+    if first_run_dir.exists():
+      logging.error("Cannot create first_run symlink: %s", first_run_dir)
     else:
-      first_run.symlink_to(runner.runs[0].out_dir.relative_to(out_dir))
-    if last_run.exists():
-      logging.error("Cannot create last_run symlink: %s", last_run)
+      first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
+    if last_run_dir.exists():
+      logging.error("Cannot create last_run symlink: %s", last_run_dir)
     else:
-      last_run.symlink_to(runner.runs[-1].out_dir.relative_to(out_dir))
-    runs = out_dir / "runs"
-    runs.mkdir()
-    for run in runner.runs:
+      last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
+    runs_dir = out_dir / "runs"
+    runs_dir.mkdir()
+    for run in runs:
       if not run.out_dir.exists():
         continue
       relative = pathlib.Path("..") / run.out_dir.relative_to(out_dir)
-      (runs / str(run.index)).symlink_to(relative)
+      (runs_dir / str(run.index)).symlink_to(relative)
 
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:

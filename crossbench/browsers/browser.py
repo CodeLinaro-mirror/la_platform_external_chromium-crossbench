@@ -9,7 +9,7 @@ import logging
 import pathlib
 import re
 import shutil
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Tuple
 
 from crossbench.flags import Flags
 from crossbench.platform import PLATFORM, Platform
@@ -112,8 +112,8 @@ class Browser(abc.ABC):
     self._viewport = value
 
   @property
-  def probes(self) -> Set[Probe]:
-    return set(self._probes)
+  def probes(self) -> Iterable[Probe]:
+    return iter(self._probes)
 
   @property
   def flags(self) -> Flags:
