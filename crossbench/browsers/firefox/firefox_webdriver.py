@@ -92,15 +92,16 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
 class FirefoxDriverFinder:
   RELEASES_URL = "https://api.github.com/repos/mozilla/geckodriver/releases"
 
-  def __init__(self, browser: FirefoxWebDriver):
+  def __init__(self,
+               browser: FirefoxWebDriver,
+               cache_dir: pathlib.Path = BROWSERS_CACHE):
     self.browser = browser
     self.platform = browser.platform
     self.extension = ""
     if self.platform.is_win:
       self.extension = ".exe"
     self.driver_path = (
-        BROWSERS_CACHE /
-        f"geckodriver-{self.browser.major_version}{self.extension}")
+        cache_dir / f"geckodriver-{self.browser.major_version}{self.extension}")
 
   def download(self) -> pathlib.Path:
     if not self.driver_path.exists():
@@ -118,7 +119,7 @@ class FirefoxDriverFinder:
       shutil.unpack_archive(tar_file, unpack_dir)
       driver = unpack_dir / f"geckodriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
-      BROWSERS_CACHE.mkdir(parents=True, exist_ok=True)
+      self.driver_path.parent.mkdir(parents=True, exist_ok=True)
       driver.rename(self.driver_path)
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 

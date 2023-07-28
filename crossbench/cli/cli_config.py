@@ -12,15 +12,16 @@ import pathlib
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
                     TextIO, Tuple, Type, Union, cast)
-from frozendict import frozendict
 
 import hjson
+from frozendict import frozendict
 
 import crossbench.browsers.all as browsers
 from crossbench import cli_helper, exception, helper
 from crossbench import platform as cb_platform
 from crossbench.browsers.browser import convert_flags_to_label
-from crossbench.browsers.chrome import ChromeDownloader
+from crossbench.browsers.chrome.downloader import ChromeDownloader
+from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.env import HostEnvironment, HostEnvironmentConfig
 from crossbench.exception import ExceptionAnnotator
@@ -311,7 +312,9 @@ class BrowserConfig(ConfigObject):
       return browsers.Firefox.nightly_path()
     if ChromeDownloader.is_valid(maybe_path_or_identifier,
                                  cb_platform.PLATFORM):
-      # We have a valid version identifier for chrome.
+      return maybe_path_or_identifier
+    if FirefoxDownloader.is_valid(maybe_path_or_identifier,
+                                  cb_platform.PLATFORM):
       return maybe_path_or_identifier
     path = try_resolve_existing_path(maybe_path_or_identifier)
     if not path:
@@ -687,8 +690,16 @@ class BrowserVariantsConfig:
     path_or_identifier = browser_config.browser
     if isinstance(path_or_identifier, pathlib.Path):
       return browser_config
-    downloaded = ChromeDownloader.load(
-        path_or_identifier, cb_platform.PLATFORM, cache_dir=self._cache_dir)
+    platform = cb_platform.PLATFORM
+    if ChromeDownloader.is_valid(path_or_identifier, platform):
+      downloaded = ChromeDownloader.load(
+          path_or_identifier, platform, cache_dir=self._cache_dir)
+    elif FirefoxDownloader.is_valid(path_or_identifier, platform):
+      downloaded = FirefoxDownloader.load(
+          path_or_identifier, platform, cache_dir=self._cache_dir)
+    else:
+      raise ValueError(
+          f"No version-download support for browser: {path_or_identifier}")
     return BrowserConfig(downloaded, browser_config.driver)
 
   def _append_browser(self, args: argparse.Namespace,
