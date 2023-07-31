@@ -696,7 +696,7 @@ class CrossBenchCLI:
 
   def run(self, argv: Sequence[str]) -> None:
     self._init_logging(argv)
-    unprocessed_argv = []
+    unprocessed_argv: List[str] = []
     try:
       # Manually check for unprocessed_argv to print nicer error messages.
       self.args, unprocessed_argv = self.parser.parse_known_args(argv)

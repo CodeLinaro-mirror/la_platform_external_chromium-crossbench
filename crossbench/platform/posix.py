@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import abc
 import pathlib
-from functools import lru_cache
 from typing import Iterator, List, Optional, Union
 
 from .platform import Environ, Platform
@@ -15,14 +14,20 @@ from .platform import Environ, Platform
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   # pylint: disable=locally-disabled, redefined-builtin
 
+  def __init__(self) -> None:
+    self._version = ""
+    self._device = ""
+    self._cpu = ""
+
   def app_version(self, app_or_bin: pathlib.Path) -> str:
     assert app_or_bin.exists(), f"Binary {app_or_bin} does not exist."
     return self.sh_stdout(app_or_bin, "--version")
 
   @property
-  @lru_cache
   def version(self) -> str:
-    return self.sh_stdout("uname", "-r").strip()
+    if not self._version:
+      self._version = self.sh_stdout("uname", "-r").strip()
+    return self._version
 
   def cat(self, file: Union[str, pathlib.Path], encoding: str = "utf-8") -> str:
     if self.is_remote:

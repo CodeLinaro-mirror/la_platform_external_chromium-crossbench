@@ -285,11 +285,11 @@ class ChromeDriverFinder:
       maybe_driver.rename(self.driver_path)
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
-  CHROME_FOR_TESTING_DOWNLOAD_URL: Final[str] = (
+  CHROME_FOR_TESTING_DOWNLOAD_URL: str = (
       "https://edgedl.me.gvt1.com/"
       "edgedl/chrome/chrome-for-testing/"
       "{version}/{platform}/chromedriver-{platform}.zip")
-  CHROME_FOR_TESTING_MILESTONE_URL: Final[str] = (
+  CHROME_FOR_TESTING_MILESTONE_URL: str = (
       "https://googlechromelabs.github.io/"
       "chrome-for-testing/latest-versions-per-milestone-with-downloads.json")
   CHROME_FOR_TESTING_PLATFORM: Final[Dict[Tuple[str, str], str]] = {
@@ -330,11 +330,11 @@ class ChromeDriverFinder:
       return (None, None)
     downloads: helper.JsonList = milestone["downloads"].get("chromedriver", [])
     for download in downloads:
-      if download["platform"] == platform_name:
+      if isinstance(download, dict) and download["platform"] == platform_name:
         return (self.CHROME_FOR_TESTING_MILESTONE_URL, download["url"])
     return (None, None)
 
-  PRE_115_STABLE_URL: Final[str] = "http://chromedriver.storage.googleapis.com"
+  PRE_115_STABLE_URL: str = "http://chromedriver.storage.googleapis.com"
 
   def _find_pre_115_stable_url(
       self, major_version: int) -> Tuple[Optional[str], Optional[str]]:
@@ -394,9 +394,8 @@ class ChromeDriverFinder:
            f"chromedriver_{arch_suffix}.zip")
     return listing_url, url
 
-  CHROMIUM_DASH_URL: Final[str] = (
-      "https://chromiumdash.appspot.com/fetch_releases")
-  CHROMIUM_LISTING_URL: Final[str] = (
+  CHROMIUM_DASH_URL: str = ("https://chromiumdash.appspot.com/fetch_releases")
+  CHROMIUM_LISTING_URL: str = (
       "https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/")
   CHROMIUM_DASH_PARAMS: Dict[Tuple[str, str], Dict] = {
       ("linux", "x64"): {

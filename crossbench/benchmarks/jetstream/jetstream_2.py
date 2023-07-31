@@ -28,9 +28,9 @@ class JetStream2Probe(JsonResultProbe, metaclass=abc.ABCMeta):
   JetStream2-specific Probe.
   Extracts all JetStream2 times and scores.
   """
-  IS_GENERAL_PURPOSE: Final[bool] = False
-  FLATTEN: Final[bool] = False
-  JS: Final[str] = """
+  IS_GENERAL_PURPOSE: bool = False
+  FLATTEN: bool = False
+  JS: str = """
   let results = Object.create(null);
   for (let benchmark of JetStream.benchmarks) {
     const data = { score: benchmark.score };
@@ -122,8 +122,8 @@ class JetStream2Probe(JsonResultProbe, metaclass=abc.ABCMeta):
 
 
 class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
-  URL_LOCAL: Final[str] = "http://localhost:8000/"
-  SUBSTORIES: Final[Tuple[str, ...]] = (
+  URL_LOCAL: str = "http://localhost:8000/"
+  SUBSTORIES: Tuple[str, ...] = (
       "WSL",
       "UniPoker",
       "uglify-js-wtb",

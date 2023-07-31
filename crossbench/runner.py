@@ -877,10 +877,6 @@ class Run:
     return self._runner
 
   @property
-  def timing(self) -> Timing:
-    return self.runner.timing
-
-  @property
   def browser_session(self) -> BrowserSessionRunGroup:
     return self._browser_session
 
@@ -978,7 +974,9 @@ class Run:
 
   def get_browser_details_json(self) -> helper.JsonDict:
     details_json = self.browser.details_json()
+    assert isinstance(details_json["js_flags"], (list, tuple))
     details_json["js_flags"] += tuple(self.extra_js_flags.get_list())
+    assert isinstance(details_json["flags"], (list, tuple))
     details_json["flags"] += tuple(self.extra_flags.get_list())
     return details_json
 

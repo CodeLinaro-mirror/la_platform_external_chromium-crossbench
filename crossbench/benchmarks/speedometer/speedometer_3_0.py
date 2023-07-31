@@ -15,15 +15,15 @@ class Speedometer30Probe(SpeedometerProbe):
   Speedometer3-specific probe (compatible with v3.0).
   Extracts all speedometer times and scores.
   """
-  NAME: Final[str] = "speedometer_3.0"
+  NAME: str = "speedometer_3.0"
 
 
 class Speedometer30Story(SpeedometerStory):
   __doc__ = SpeedometerStory.__doc__
-  NAME: Final[str] = "speedometer_3.0"
-  PROBES: Final[ProbeClsTupleT] = (Speedometer30Probe,)
+  NAME: str = "speedometer_3.0"
+  PROBES: ProbeClsTupleT = (Speedometer30Probe,)
   # TODO: Update once public version is available
-  URL: Final[str] = "https://sp3-alpha-testing.netlify.app/"
+  URL: str = "https://sp3-alpha-testing.netlify.app/"
   URL_LOCAL: str = "http://127.0.0.1:7000"
   SUBSTORIES = (
       "TodoMVC-JavaScript-ES5",
@@ -54,7 +54,7 @@ class Speedometer30Benchmark(SpeedometerBenchmark):
   """
   Benchmark runner for Speedometer 3.0
   """
-  NAME: Final[str] = "speedometer_3.0"
+  NAME: str = "speedometer_3.0"
   DEFAULT_STORY_CLS = Speedometer30Story
 
   @classmethod

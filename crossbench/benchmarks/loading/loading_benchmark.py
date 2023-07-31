@@ -85,7 +85,7 @@ class LoadingPageFilter(StoryFilter[Page]):
             template.duration,
             playback=self._playback)
       elif "://" in value or value.startswith("www."):
-        name = value
+        name: Optional[str] = value
         if value.startswith("www."):
           url = f"https://{value}"
         else:
@@ -139,7 +139,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
   @classmethod
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> argparse.ArgumentParser:
+  ) -> cli_helper.CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     page_config_group = parser.add_mutually_exclusive_group()
     # TODO: Migrate to dest="stories" using LoadingPageFilter.parse
@@ -192,10 +192,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
                            args.playback),)
     return super().stories_from_cli_args(args)
 
-  def __init__(self, stories: Sequence[Page], duration: Optional[float] = None):
+  def __init__(self, stories: Sequence[Page]):
     for story in stories:
       assert isinstance(story, Page)
-      if duration is not None:
-        assert duration > 0, f"Invalid page duration={duration}s"
-        story.duration = duration
     super().__init__(stories)

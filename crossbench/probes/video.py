@@ -10,7 +10,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
 
 import crossbench
 from crossbench import helper
@@ -177,8 +177,8 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
 
   def __init__(self, probe: VideoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._record_process = None
-    self._recorder_log_file = None
+    self._record_process: Optional[subprocess.Popen] = None
+    self._recorder_log_file: Optional[TextIO] = None
 
   def start(self, run: Run) -> None:
     browser = run.browser
@@ -222,6 +222,7 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
 
   def tear_down(self, run: Run) -> ProbeResult:
     assert self._record_process, "Screen recorder stopped early."
+    assert self._recorder_log_file, "No log file."
     self._recorder_log_file.close()
     if self._record_process.poll() is not None:
       self._record_process.wait(timeout=5)

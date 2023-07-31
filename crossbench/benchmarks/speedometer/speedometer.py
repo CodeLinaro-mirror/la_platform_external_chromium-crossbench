@@ -35,8 +35,8 @@ class SpeedometerProbe(JsonResultProbe, metaclass=abc.ABCMeta):
   Speedometer-specific probe (compatible with v2.X and v3.X).
   Extracts all speedometer times and scores.
   """
-  IS_GENERAL_PURPOSE: Final[bool] = False
-  JS: Final[str] = "return window.suiteValues;"
+  IS_GENERAL_PURPOSE: bool = False
+  JS: str = "return window.suiteValues;"
 
   def to_json(self, actions: Actions) -> helper.JSON:
     return actions.js(self.JS)

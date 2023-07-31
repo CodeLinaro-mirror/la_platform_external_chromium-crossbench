@@ -105,7 +105,7 @@ class Chromium(Browser):
         f"js_flags should be a list, but got: {repr(js_flags)}")
     assert not isinstance(
         flags, str), (f"flags should be a list, but got: {repr(flags)}")
-    self._flags: ChromeFlags = self.default_flags(self.DEFAULT_FLAGS)
+    self._flags = self.default_flags(self.DEFAULT_FLAGS)
     self._flags.update(flags)
 
     if "--allow-background-interventions" in self._flags.data:

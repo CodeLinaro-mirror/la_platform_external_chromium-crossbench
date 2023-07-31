@@ -149,7 +149,8 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()) -> argparse.ArgumentParser:
+      cls, subparsers, aliases: Sequence[str] = ()
+  ) -> cli_helper.CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     # TODO: move these args to a dedicated SubStoryFilter class.
     parser.add_argument(
@@ -376,7 +377,8 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()) -> argparse.ArgumentParser:
+      cls, subparsers, aliases: Sequence[str] = ()
+  ) -> cli_helper.CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     benchmark_url_group = parser.add_mutually_exclusive_group()

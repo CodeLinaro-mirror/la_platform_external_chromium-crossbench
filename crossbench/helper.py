@@ -191,7 +191,7 @@ class SystemSleepPreventer:
     # TODO: Add linux support
 
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
-    if self._process is not None:
+    if self._process:
       self._process.kill()
 
 
@@ -285,7 +285,7 @@ def wait_with_backoff(wait_range: WaitRange) -> Iterator[Tuple[float, float]]:
 class DurationMeasureContext:
 
   def __init__(self, durations: Durations, name: str) -> None:
-    self._start_time = None
+    self._start_time = dt.datetime.utcfromtimestamp(0)
     self._durations = durations
     self._name = name
 

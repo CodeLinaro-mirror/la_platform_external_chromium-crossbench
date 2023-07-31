@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-from functools import lru_cache
+import logging
 
 import os
 import pathlib
@@ -36,27 +36,30 @@ class LinuxPlatform(PosixPlatform):
     return True
 
   @property
-  @lru_cache
   def device(self) -> str:
-    vendor = self.cat("/sys/devices/virtual/dmi/id/sys_vendor").strip()
-    product = self.cat("/sys/devices/virtual/dmi/id/product_name").strip()
-    return f"{vendor} {product}"
+    if not self._device:
+      vendor = self.cat("/sys/devices/virtual/dmi/id/sys_vendor").strip()
+      product = self.cat("/sys/devices/virtual/dmi/id/product_name").strip()
+      self._device = f"{vendor} {product}"
+    return self._device
 
   @property
-  @lru_cache
   def cpu(self) -> str:
-    model = ""
+    if self._cpu:
+      return self._cpu
+
     for line in self.cat("/proc/cpuinfo").split("\n"):
       if line.startswith("model name"):
-        _, model = line.split(":", maxsplit=2)
+        _, self._cpu = line.split(":", maxsplit=2)
         break
     try:
       _, max_core = self.cat("/sys/devices/system/cpu/possible").strip().split(
           "-", maxsplit=1)
       cores = int(max_core) + 1
-      return f"{model} {cores} cores"
-    except Exception:
-      return model
+      self._cpu = f"{self._cpu} {cores} cores"
+    except Exception as e:
+      logging.debug("Failed to get detailed CPU stats: %s", e)
+    return self._cpu
 
   @property
   def has_display(self) -> bool:

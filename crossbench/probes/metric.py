@@ -50,7 +50,9 @@ class Metric:
 
   @classmethod
   def from_json(cls, json_data: JsonDict) -> Metric:
-    return cls(json_data["values"])
+    values = json_data["values"]
+    assert isinstance(values, list)
+    return cls(values)
 
   def __init__(self, values: Optional[List] = None):
     self.values = values or []

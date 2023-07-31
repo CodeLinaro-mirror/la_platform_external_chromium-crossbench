@@ -35,10 +35,10 @@ class AppleScript:
       unique_variable = f"cb_input_{variable}"
       replacements[variable] = unique_variable
       variables.append(f"set {unique_variable} to (item {len(args)} of argv)")
-    variables = "\n".join(variables)
+    variables_str = "\n".join(variables)
     formatted_script = apple_script.strip() % replacements
     wrapper = f"""
-      {variables}
+      {variables_str}
       tell application "{app_path}"
         {formatted_script}
       end tell

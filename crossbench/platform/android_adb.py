@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 import pathlib
 import re
-from functools import lru_cache
 import subprocess
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
@@ -96,6 +95,7 @@ class Adb:
            quiet: bool = False,
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
+    adb_cmd: List[Union[str, pathlib.Path]] = []
     if use_serial_id:
       adb_cmd = ["adb", "-s", self._serial_id]
     else:
@@ -117,6 +117,7 @@ class Adb:
                   quiet: bool = False,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True) -> str:
+    adb_cmd: List[Union[str, pathlib.Path]] = []
     if use_serial_id:
       adb_cmd = ["adb", "-s", self._serial_id]
     else:
@@ -219,6 +220,7 @@ class AndroidAdbPlatform(PosixPlatform):
                host_platform: Platform,
                device_identifier: Optional[str] = None) -> None:
     super().__init__()
+    self._machine: Optional[MachineArch] = None
     self._host_platform = host_platform
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
@@ -241,18 +243,21 @@ class AndroidAdbPlatform(PosixPlatform):
     return self._host_platform
 
   @property
-  @lru_cache
   def version(self) -> str:
-    return self.adb.getprop("ro.build.version.release")
+    if not self._version:
+      self._version = self.adb.getprop("ro.build.version.release")
+    return self._version
 
   @property
-  @lru_cache
   def device(self) -> str:
-    return self.adb.getprop("ro.product.model")
+    if not self._device:
+      self._device = self.adb.getprop("ro.product.model")
+    return self._device
 
   @property
-  @lru_cache
   def cpu(self) -> str:
+    if self._cpu:
+      return self._cpu
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     try:
@@ -260,9 +265,11 @@ class AndroidAdbPlatform(PosixPlatform):
       _, max_core = self.cat("/sys/devices/system/cpu/possible").strip().split(
           "-", maxsplit=1)
       cores = int(max_core) + 1
-      return f"{variant} {platform} {cores} cores"
-    except Exception:
-      return f"{variant} {platform}"
+      self._cpu = f"{variant} {platform} {cores} cores"
+    except Exception as e:
+      logging.debug("Failed to get detailed CPU info: %s", e)
+      self._cpu = f"{variant} {platform}"
+    return self._cpu
 
   @property
   def adb(self) -> Adb:
@@ -276,13 +283,15 @@ class AndroidAdbPlatform(PosixPlatform):
   }
 
   @property
-  @lru_cache
   def machine(self) -> MachineArch:
+    if self._machine:
+      return self._machine
     cpu_abi = self.adb.getprop("ro.product.cpu.abi")
     arch = self._MACHINE_ARCH_LOOKUP.get(cpu_abi, None)
-    if arch is None:
+    if not arch:
       raise ValueError("Unknown android CPU ABI: {cpu_abi}")
-    return arch
+    self._machine = arch
+    return self._machine
 
   def app_path_to_package(self, app_path: pathlib.Path) -> str:
     if len(app_path.parts) > 1:

@@ -254,7 +254,7 @@ class LinuxProfilingScope(ProfilingScope):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._perf_process = None
+    self._perf_process: Optional[subprocess.Popen] = None
 
   def start(self, run: Run) -> None:
     if not self.probe.sample_browser_process:

@@ -202,7 +202,7 @@ class CrossbenchDevToolsRecorderProxy:
       self, stdout_str: Optional[str],
       stderr_str: Optional[str]) -> Optional[Tuple[Response, Dict[str, str]]]:
     if self._state != State.RUNNING:
-      return
+      return None
     if self._print_cmd_output:
       sys.stdout.write(stdout_str or "")
       sys.stderr.write(stderr_str or "")

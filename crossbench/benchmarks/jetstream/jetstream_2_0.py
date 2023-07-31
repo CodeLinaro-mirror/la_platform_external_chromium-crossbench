@@ -16,9 +16,9 @@ class JetStream20Probe(JetStream2Probe):
 
 class JetStream20Story(JetStream2Story):
   __doc__ = JetStream2Story.__doc__
-  NAME: Final[str] = "jetstream_2.0"
-  URL: Final[str] = "https://browserbench.org/JetStream2.0/"
-  PROBES: Final[ProbeClsTupleT] = (JetStream20Probe,)
+  NAME: str = "jetstream_2.0"
+  URL: str = "https://browserbench.org/JetStream2.0/"
+  PROBES: ProbeClsTupleT = (JetStream20Probe,)
 
 
 class JetStream20Benchmark(JetStream2Benchmark):
@@ -26,7 +26,7 @@ class JetStream20Benchmark(JetStream2Benchmark):
   Benchmark runner for JetStream 2.0.
   """
 
-  NAME: Final[str] = "jetstream_2.0"
+  NAME: str = "jetstream_2.0"
   DEFAULT_STORY_CLS = JetStream20Story
 
   @classmethod

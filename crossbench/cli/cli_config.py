@@ -558,11 +558,12 @@ class BrowserVariantsConfig:
         flag_group = FlagGroupConfig("temporary", {flag_name: flag_value})
         assert flag_group_name not in self.flag_groups
       else:
-        flag_group = self.flag_groups.get(flag_group_name, None)
-        if flag_group is None:
+        maybe_flag_group = self.flag_groups.get(flag_group_name, None)
+        if maybe_flag_group is None:
           raise ConfigFileError(f"group='{flag_group_name}' "
                                 f"for browser='{name}' does not exist.\n"
                                 f"Choices are: {list(self.flag_groups.keys())}")
+        flag_group = maybe_flag_group
       flags_variants += flag_group.get_variant_items()
     if len(flags_variants) == 0:
       # use empty default
