@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, cast
 from crossbench import helper
 from crossbench.browsers.chromium import Chromium
 from crossbench.probes.probe import Probe, ProbeScope, ResultLocation
-from crossbench.probes.results import LocalProbeResult, ProbeResult
+from crossbench.probes.results import BrowserProbeResult, LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -62,7 +62,12 @@ class V8TurbolizerProbeScope(ProbeScope[V8TurbolizerProbe]):
     pass
 
   def tear_down(self, run: Run) -> ProbeResult:
-    # TODO: support remote files.
     log_dir = self.result_path.parent
-    log_files = helper.sort_by_file_size(log_dir.glob("*"))
-    return LocalProbeResult(file=tuple(log_files))
+    # Copy the files from a potentially remote browser to a the local result
+    # dir.
+    result: BrowserProbeResult = self.browser_result(file=(log_dir,))
+    local_log_dir = result.file
+    assert local_log_dir.is_dir
+    # Sort files locally after transferring them.
+    log_files = helper.sort_by_file_size(local_log_dir.glob("*"))
+    return LocalProbeResult(file=(log_files))

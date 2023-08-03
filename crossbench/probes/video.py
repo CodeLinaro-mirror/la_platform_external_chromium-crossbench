@@ -12,15 +12,11 @@ import subprocess
 import tempfile
 from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
 
-import crossbench
 from crossbench import helper
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 
 from .probe import Probe, ProbeMissingDataError, ProbeScope, ResultLocation
-
-#TODO: fix imports
-cb = crossbench
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
@@ -248,7 +244,6 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
           f"{progress_dir}/%02d.{self.IMAGE_FORMAT}")
     # Extract at regular intervals of 100ms, assuming 60fps input
     every_nth_frame = 60 / 20
-    # TODO
     safe_duration = 10
     safe_duration = 2
     self.runner_platform.sh(

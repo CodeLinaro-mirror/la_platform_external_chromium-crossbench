@@ -116,10 +116,9 @@ class CLIEnd2EndTestCase(End2EndTestCase):
     if not self.platform.which("gsutil"):
       self.skipTest("Missing required 'gsutil', skipping test.")
     results_dir = self.output_dir / "results"
-    # TODO: speed up --browser=chrome-M111 and add it.
     self.assertEqual(len(list(self.cache_dir.iterdir())), 0)
     self.run_cli("sp2.1", f"--cache-dir={self.cache_dir}",
-                 "--browser=chrome-stable", "--browser=chrome-111.0.5563.110",
+                 "--browser=chrome-M113", "--browser=chrome-111.0.5563.110",
                  "--headless", "--iterations=1", "--env-validation=skip",
                  f"--out-dir={results_dir}", f"--cache-dir={self.cache_dir}",
                  "--stories=.*Vanilla.*")

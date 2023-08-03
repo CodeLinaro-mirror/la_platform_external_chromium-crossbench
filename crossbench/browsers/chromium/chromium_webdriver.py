@@ -130,7 +130,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
   def start_profiling(self) -> None:
     assert isinstance(self._driver, ChromiumDriver)
-    # TODO: reuse the TraceProve categories,
+    # TODO: reuse the TraceProbe categories,
     self._driver.execute_cdp_cmd(
         'Tracing.start', {
             "transferMode":

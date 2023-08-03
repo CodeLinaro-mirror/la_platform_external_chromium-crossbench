@@ -156,8 +156,8 @@ class Browser(abc.ABC):
       self.major_version = int(self.version.split(".")[0])
       self.unique_name = f"{self.type}_v{self.major_version}_{self.label}"
     else:
-      # TODO: separate out remote browser (selenium) without an explicit binary
-      # path.
+      # TODO: separate class for remote browser (selenium) without an explicit
+      # binary path.
       self.path = pathlib.Path()
       self.unique_name = f"{self.type}_{self.label}".lower()
     self._viewport = viewport or Viewport.DEFAULT

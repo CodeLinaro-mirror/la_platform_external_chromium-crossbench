@@ -85,7 +85,6 @@ FlagItemT = Tuple[str, Optional[str]]
 class BrowserDriverType(helper.EnumWithHelp):
   WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
   APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
-  # TODO: implement additional drivers
   ANDROID = ("Android",
              "Use Webdriver for android. Allows to specify additional settings")
   IOS = ("iOS", "Placeholder, unsupported at the moment")

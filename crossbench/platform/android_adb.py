@@ -261,7 +261,6 @@ class AndroidAdbPlatform(PosixPlatform):
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     try:
-      # TODO: add file_contents helper on platform
       _, max_core = self.cat("/sys/devices/system/cpu/possible").strip().split(
           "-", maxsplit=1)
       cores = int(max_core) + 1

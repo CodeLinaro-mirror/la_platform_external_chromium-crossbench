@@ -169,7 +169,6 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 JsonResultProbeT = TypeVar("JsonResultProbeT", bound="JsonResultProbe")
 
 
-# TODO: Remove Generic, once supported by pytype.
 class JsonResultProbeScope(ProbeScope[JsonResultProbeT],
                            Generic[JsonResultProbeT]):
 

@@ -347,7 +347,6 @@ class Runner:
       self._env.setup()
     with self._exceptions.capture(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
-      # TODO: rewrite all imports and hopefully fix this
       self._benchmark.setup(self)  # pytype:  disable=wrong-arg-types
     self._exceptions.assert_success()
 
@@ -641,7 +640,6 @@ class RepetitionsRunGroup(RunGroup):
     return {"story": str(self.story)}
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
-    # TODO: enable pytype again
     return probe.merge_repetitions(self)  # pytype: disable=wrong-arg-types
 
 
@@ -752,7 +750,6 @@ class BrowsersRunGroup(RunGroup):
     return {}
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
-    # TODO: enable pytype again
     return probe.merge_browsers(self)  # pytype: disable=wrong-arg-types
 
 

@@ -120,7 +120,6 @@ class Probe(abc.ABC):
 
   @property
   def runner_platform(self) -> Platform:
-    # TODO(cbruni): support remote platforms
     return helper.PLATFORM
 
   @property

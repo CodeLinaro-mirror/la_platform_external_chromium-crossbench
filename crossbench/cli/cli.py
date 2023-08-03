@@ -64,7 +64,6 @@ class CrossBenchCLI:
     self.help_parser = cli_helper.CrossBenchArgumentParser()
     self.describe_parser = cli_helper.CrossBenchArgumentParser()
     self.recorder_parser = cli_helper.CrossBenchArgumentParser()
-    # TODO: use self.args instead of passing it along as parameter.
     self.args = argparse.Namespace()
     self._setup_parser()
     self._setup_subparser()
