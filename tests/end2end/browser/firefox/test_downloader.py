@@ -6,16 +6,14 @@ from __future__ import annotations
 
 import pathlib
 import shutil
-import sys
 import unittest
 from typing import Union
-
-import pytest
 
 from crossbench import compat
 from crossbench.browsers.firefox import FirefoxDownloader, FirefoxWebDriver
 from crossbench.browsers.firefox.firefox_webdriver import FirefoxDriverFinder
 from crossbench.platform import PLATFORM
+from tests import test_helper
 
 
 @unittest.skipIf(not PLATFORM.is_macos, "Only supported on macOS")
@@ -135,4 +133,4 @@ class FirefoxDownloaderTestCase():
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

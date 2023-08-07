@@ -4,13 +4,12 @@
 
 import json
 import pathlib
-import sys
 import unittest
 
 import pyfakefs.fake_filesystem_unittest
-import pytest
 
 from crossbench.probes import metric
+from tests import test_helper
 
 
 class FormatMetricTestCase(unittest.TestCase):
@@ -242,4 +241,4 @@ class MetricsMergerTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

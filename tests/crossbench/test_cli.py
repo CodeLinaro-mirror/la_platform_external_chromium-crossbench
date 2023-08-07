@@ -6,12 +6,10 @@ import argparse
 import io
 import json
 import pathlib
-import sys
 from typing import Dict, List, Tuple, Type
 from unittest import mock
 
 import hjson
-import pytest
 
 from crossbench import cli_helper, platform
 from crossbench.browsers import splash_screen, viewport
@@ -21,6 +19,7 @@ from crossbench.cli.cli_config import (BrowserConfig, BrowserDriverType,
                                        ProbeConfigError)
 from crossbench.probes import internal
 from crossbench.runner import Runner
+from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase, MockCLI
 
@@ -937,4 +936,4 @@ class CliTestCase(BaseCrossbenchTestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

@@ -2,14 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import enum
 import unittest
+
 from crossbench import compat, helper
-
 from crossbench.probes import Probe, ProbeConfigParser
-
-import sys
-import pytest
+from tests import test_helper
 
 
 class MockProbe(Probe):
@@ -241,4 +238,4 @@ class ProbeConfigTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

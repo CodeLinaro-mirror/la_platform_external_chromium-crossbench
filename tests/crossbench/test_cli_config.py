@@ -4,18 +4,16 @@
 
 import argparse
 import pathlib
-import sys
 import unittest
 from typing import Dict, Tuple, Type
 from unittest import mock
-from frozendict import frozendict
 
 import hjson
-import pytest
+from frozendict import frozendict
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench
-from crossbench import helper, platform
+from crossbench import helper
 from crossbench.browsers.chrome import Chrome, ChromeWebDriver
 from crossbench.browsers.safari import Safari
 from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
@@ -25,9 +23,9 @@ from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
                                        SingleProbeConfig)
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
+from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
-
 
 ADB_SAMPLE_OUTPUT = """List of devices attached
 emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64
@@ -999,4 +997,4 @@ class TestFlagGroupConfig(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

@@ -2,12 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import sys
-import pytest
 import argparse
-from crossbench.browsers.chrome import ChromeWebDriver
-from tests.crossbench import mock_browser
 
+from crossbench.browsers.chrome import ChromeWebDriver
+from tests import test_helper
+from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
@@ -48,4 +47,4 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

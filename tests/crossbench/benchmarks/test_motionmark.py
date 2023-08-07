@@ -4,11 +4,9 @@
 
 import copy
 import csv
-import sys
 from typing import Optional
 from unittest import mock
 
-import pytest
 
 from crossbench.benchmarks.motionmark.motionmark_1_2 import (
     MotionMark12Benchmark, MotionMark12Probe, MotionMark12Story)
@@ -16,6 +14,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner import Runner
 from tests.crossbench.benchmarks import helper
+from tests import test_helper
 
 
 class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
@@ -149,4 +148,4 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

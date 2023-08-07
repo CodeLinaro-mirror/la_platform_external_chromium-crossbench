@@ -3,16 +3,15 @@
 # found in the LICENSE file.
 
 import pathlib
-import sys
 import unittest
 from unittest import mock
 
 import hjson
 import pyfakefs.fake_filesystem_unittest
-import pytest
 
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationError, ValidationMode)
+from tests import test_helper
 
 
 class HostEnvironmentConfigTestCase(unittest.TestCase):
@@ -327,4 +326,4 @@ class HostEnvironmentTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

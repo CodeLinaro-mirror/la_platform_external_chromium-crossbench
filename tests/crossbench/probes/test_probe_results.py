@@ -3,14 +3,13 @@
 # found in the LICENSE file.
 
 import pathlib
-import sys
 from unittest import mock
 
 import pyfakefs.fake_filesystem_unittest
-import pytest
 
 from crossbench.platform import PLATFORM
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
+from tests import test_helper
 
 
 class BrowserProbeResultTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
@@ -166,4 +165,4 @@ class ProbeResultTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

@@ -7,7 +7,6 @@ from __future__ import annotations
 import contextlib
 import io
 import pathlib
-import sys
 from typing import List, Tuple
 from unittest import mock
 
@@ -16,6 +15,7 @@ import pytest
 import crossbench.browsers.all as browsers
 from crossbench.cli import CrossBenchCLI
 from crossbench.platform import PLATFORM
+from tests import test_helper
 
 
 class SysExitException(Exception):
@@ -270,4 +270,4 @@ def test_loading_playback_firefox(output_dir, cache_dir) -> None:
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

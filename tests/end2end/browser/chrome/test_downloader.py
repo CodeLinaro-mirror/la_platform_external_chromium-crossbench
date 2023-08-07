@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import pathlib
 import shutil
-import sys
 from typing import Union
 
 import pytest
@@ -18,6 +17,7 @@ from crossbench.browsers.chromium.chromium_webdriver import (ChromeDriverFinder,
                                                              DriverNotFoundError
                                                             )
 from crossbench.platform import PLATFORM
+from tests import test_helper
 
 
 @pytest.mark.skipif(
@@ -155,4 +155,4 @@ class TestChromeDownloader:
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

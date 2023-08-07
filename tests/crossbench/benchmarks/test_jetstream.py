@@ -2,12 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import sys
-
-import pytest
-
-from crossbench.benchmarks.jetstream import jetstream_2_0
-from crossbench.benchmarks.jetstream import jetstream_2_1
+from crossbench.benchmarks.jetstream import jetstream_2_0, jetstream_2_1
+from tests import test_helper
 from tests.crossbench.benchmarks import jetstream_helper
 
 
@@ -50,4 +46,4 @@ class JetStream21TestCase(jetstream_helper.JetStream2BaseTestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

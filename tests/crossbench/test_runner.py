@@ -8,8 +8,7 @@ from crossbench.runner import Timing
 
 import datetime as dt
 
-import sys
-import pytest
+from tests import test_helper
 
 
 class TimingTestCase(unittest.TestCase):
@@ -114,4 +113,4 @@ class TimingTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

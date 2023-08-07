@@ -2,13 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import sys
 import unittest
 from unittest import mock
 
-import pytest
-
 from crossbench.exception import ExceptionAnnotator
+from tests import test_helper
 
 
 class ExceptionHandlerTestCase(unittest.TestCase):
@@ -156,4 +154,4 @@ class ExceptionHandlerTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

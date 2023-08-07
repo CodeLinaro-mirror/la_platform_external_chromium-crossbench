@@ -6,8 +6,7 @@ import unittest
 
 from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
 
-import sys
-import pytest
+from tests import test_helper
 
 
 class TestFlags(unittest.TestCase):
@@ -380,4 +379,4 @@ class ChromeFeaturesTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

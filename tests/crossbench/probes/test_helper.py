@@ -5,14 +5,13 @@
 import csv
 import os
 import pathlib
-import sys
 import unittest
 from unittest import mock
 
 import pyfakefs.fake_filesystem_unittest
-import pytest
 
 from crossbench.probes import helper
+from tests import test_helper
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
@@ -241,4 +240,4 @@ class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

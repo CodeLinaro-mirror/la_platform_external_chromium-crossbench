@@ -9,13 +9,11 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import pathlib
-import sys
 import unittest
 from typing import Sequence, cast
 
 import hjson
 import pyfakefs.fake_filesystem_unittest
-import pytest
 
 import crossbench
 import crossbench.env
@@ -29,6 +27,7 @@ from crossbench.benchmarks.loading.page_config import PageConfig
 from crossbench.benchmarks.loading.playback_controller import (
     PlaybackController, RepeatPlaybackController, TimeoutPlaybackController)
 from crossbench.stories import Story
+from tests import test_helper
 from tests.crossbench.benchmarks import helper
 
 #TODO: fix imports
@@ -435,4 +434,4 @@ class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

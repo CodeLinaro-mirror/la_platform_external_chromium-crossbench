@@ -4,14 +4,14 @@
 
 import json
 import pathlib
-from crossbench.benchmarks import all as benchmarks
 
 import pytest
-import sys
 
+from crossbench.benchmarks import all as benchmarks
 from crossbench.benchmarks.benchmark import PressBenchmark
 from crossbench.browsers import chrome
 from crossbench.cbb import cbb_adapter
+from tests import test_helper
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
@@ -81,4 +81,4 @@ def test_jetstream_21(output_dir, webdriver):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

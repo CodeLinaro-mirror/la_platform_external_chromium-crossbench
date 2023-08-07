@@ -2,12 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from argparse import ArgumentTypeError
-import sys
 import unittest
-import pytest
+from argparse import ArgumentTypeError
 
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
+from tests import test_helper
 
 
 class SplashScreenTestCase(unittest.TestCase):
@@ -38,4 +37,4 @@ class SplashScreenTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)

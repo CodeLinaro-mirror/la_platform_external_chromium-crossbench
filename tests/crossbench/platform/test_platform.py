@@ -4,15 +4,13 @@
 
 import datetime as dt
 import pathlib
-import sys
 import unittest
 
-import pytest
-
-from crossbench.platform import Platform, PLATFORM, MachineArch
+from crossbench.platform import PLATFORM, MachineArch, Platform
 from crossbench.platform.macos import MacOSPlatform
 from crossbench.platform.posix import PosixPlatform
 from crossbench.platform.win import WinPlatform
+from tests import test_helper
 
 
 class MachineArchTestCase(unittest.TestCase):
@@ -184,4 +182,4 @@ class MacOSPlatformHelperTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  sys.exit(pytest.main([__file__]))
+  test_helper.run_pytest(__file__)
