@@ -886,6 +886,11 @@ class Run:
     return self.browser_platform
 
   @property
+  def environment(self) -> HostEnvironment:
+    # TODO: replace with custom BrowserEnvironment
+    return self.runner.env
+
+  @property
   def browser_platform(self) -> Platform:
     return self._browser.platform
 
@@ -1112,18 +1117,7 @@ class Run:
         # Handle TimeoutError earlier since they might be caused by
         # throttled down non-foreground browser.
         self._exceptions.append(e)
-      self._check_browser_foreground()
-
-  def _check_browser_foreground(self) -> None:
-    if not self.browser.pid or self.browser.viewport.is_headless:
-      return
-    info = self.platform.foreground_process()
-    if not info:
-      return
-    assert info["pid"] == self.browser.pid, (
-        f"Browser(name={self.browser.unique_name} pid={self.browser.pid})) "
-        "was not in the foreground at the end of the benchmark. "
-        "Background apps and tabs can be heavily throttled.")
+      self.environment.check_browser_focused(self.browser)
 
   def _advance_state(self, expected: RunState, next_state: RunState) -> None:
     assert self._state == expected, (

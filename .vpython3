@@ -49,6 +49,11 @@ wheel: <
 >
 
 wheel: <
+  name: "infra/python/wheels/execnet-py3"
+  version: "version:2.0.2"
+>
+
+wheel: <
   name: "infra/python/wheels/pluggy-py3"
   version: "version:0.13.1"
 >
@@ -56,6 +61,11 @@ wheel: <
 wheel: <
   name: "infra/python/wheels/iniconfig-py3"
   version: "version:1.1.1"
+>
+
+wheel: <
+  name: "infra/python/wheels/pytest-xdist-py3"
+  version: "version:3.3.1"
 >
 
 wheel: <

@@ -2,36 +2,82 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import json
+import pathlib
 from crossbench.benchmarks import all as benchmarks
-from .helper import CBBTestCase
 
 import pytest
 import sys
 
+from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.browsers import chrome
+from crossbench.cbb import cbb_adapter
 
-class Speedometer20CBBTestCase(CBBTestCase):
-  benchmark_name = benchmarks.Speedometer20Benchmark.NAME
-  __test__ = True
-
-
-class Speedometer21CBBTestCase(CBBTestCase):
-  benchmark_name = benchmarks.Speedometer21Benchmark.NAME
-  __test__ = True
+# pytest.fixtures rely on params having the same name as the fixture function
+# pylint: disable=redefined-outer-name
 
 
-class MotionmarkCBBTestCase(CBBTestCase):
-  benchmark_name = benchmarks.MotionMark12Benchmark.NAME
-  __test__ = True
+def get_benchmark(benchmark_cls) -> PressBenchmark:
+  """Returns a benchmark instance for the corresponding benchmark_name"""
+  story_class = cbb_adapter.get_pressbenchmark_story_cls(benchmark_cls.NAME)
+  assert story_class
+  stories = story_class.default_story_names()[:1]
+  workload = story_class(  # pytype: disable=not-instantiable
+      substories=stories)
+  benchmark_cls_lookup = cbb_adapter.get_pressbenchmark_cls(benchmark_cls.NAME)
+  assert benchmark_cls_lookup, (
+      f"Could not find benchmark class for '{benchmark_cls.NAME}'")
+  assert benchmark_cls_lookup == benchmark_cls
+  benchmark = benchmark_cls_lookup(stories=[workload])  # pytype: disable=not-instantiable
+  return benchmark
 
 
-class Jetstream20CBBTestCase(CBBTestCase):
-  benchmark_name = benchmarks.JetStream20Benchmark.NAME
-  __test__ = True
+@pytest.fixture
+def webdriver(driver_path, browser_path):
+  return chrome.ChromeWebDriver("Chrome", browser_path, driver_path=driver_path)
 
 
-class Jetstream21CBBTestCase(CBBTestCase):
-  benchmark_name = benchmarks.JetStream21Benchmark.NAME
-  __test__ = True
+def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
+  """Tests that we can execute the specified benchmark and obtain result data post execution.
+  This test uses Chrome browser to run the benchmarks.
+  """
+  benchmark = get_benchmark(benchmark_cls)
+  assert benchmark
+  results_dir = output_dir / "result"
+
+  maybe_results_file = cbb_adapter.get_probe_result_file(
+      benchmark_cls.NAME, webdriver, results_dir)
+  assert maybe_results_file
+  results_file = pathlib.Path(maybe_results_file)
+  assert not results_file.exists()
+
+  cbb_adapter.run_benchmark(
+      output_folder=results_dir, browser_list=[webdriver], benchmark=benchmark)
+
+  assert results_file.exists()
+  with results_file.open(encoding="utf-8") as f:
+    benchmark_data = json.load(f)
+  assert benchmark_data
+
+
+def test_speedometer_20(output_dir, webdriver):
+  run_benchmark(output_dir, webdriver, benchmarks.Speedometer20Benchmark)
+
+
+def test_speedometer_21(output_dir, webdriver):
+  run_benchmark(output_dir, webdriver, benchmarks.Speedometer21Benchmark)
+
+
+def test_motionmark_12(output_dir, webdriver):
+  run_benchmark(output_dir, webdriver, benchmarks.MotionMark12Benchmark)
+
+
+def test_jetstream_20(output_dir, webdriver):
+  run_benchmark(output_dir, webdriver, benchmarks.JetStream20Benchmark)
+
+
+def test_jetstream_21(output_dir, webdriver):
+  run_benchmark(output_dir, webdriver, benchmarks.JetStream21Benchmark)
 
 
 if __name__ == "__main__":

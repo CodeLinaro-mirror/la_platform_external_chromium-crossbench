@@ -289,6 +289,7 @@ class CrossBenchCLI:
         "runner environment settings and requirements. "
         "See config/env.config.hjson for more details."
         "Mutually exclusive with --env")
+
     env_group.add_argument(
         "--env-validation",
         default=ValidationMode.PROMPT,

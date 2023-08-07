@@ -79,6 +79,7 @@ class HostEnvironmentConfig:
   cpu_min_relative_speed: Optional[float] = IGNORE
   system_allow_monitoring: Optional[bool] = IGNORE
   browser_allow_existing_process: Optional[bool] = IGNORE
+  browser_allow_background: Optional[bool] = IGNORE
   browser_is_headless: Optional[bool] = IGNORE
   require_probes: Optional[bool] = IGNORE
   system_forbidden_process_names: Optional[List[str]] = IGNORE
@@ -93,6 +94,7 @@ class HostEnvironmentConfig:
         "cpu_min_relative_speed": merge_number_max,
         "system_allow_monitoring": merge_bool,
         "browser_allow_existing_process": merge_bool,
+        "browser_allow_background": merge_bool,
         "browser_is_headless": merge_bool,
         "require_probes": merge_bool,
         "system_forbidden_process_names": merge_str_list,
@@ -189,7 +191,13 @@ class HostEnvironment:
     if delta > dt.timedelta(0):
       self._platform.sleep(delta)
 
-  def handle_warning(self, message: str) -> None:
+  def handle_validation_warning(self, message: str) -> None:
+    message = f"Runner/Host environment requests cannot be fulfilled: {message}"
+    self.handle_warning(message)
+
+  def handle_warning(self,
+                     message: str,
+                     allow_interactive: bool = True) -> None:
     """Process a warning, depending on the requested mode, this will
     - throw an error,
     - log a warning,
@@ -198,24 +206,21 @@ class HostEnvironment:
     If returned True (in the prompt mode) the env validation may continue.
     """
     if self._validation_mode == ValidationMode.SKIP:
-      logging.debug("Skipped Runner/Host environment warning: %s", message)
+      logging.debug("Ignoring %s", message)
       return
     if self._validation_mode == ValidationMode.WARN:
       logging.warning(message)
       return
-    if self._validation_mode == ValidationMode.THROW:
-      pass
-    elif self._validation_mode == ValidationMode.PROMPT:
+    if self._validation_mode == ValidationMode.PROMPT and allow_interactive:
       result = input(f"{helper.TTYColor.RED}{message} Continue?"
                      f"{helper.TTYColor.RESET} [Yn]")
       # Accept <enter> as default input to continue.
       if result.lower() != "n":
         return
-    else:
+    elif self._validation_mode != ValidationMode.THROW:
       raise ValueError(
-          f"Invalid environment validation mode={self._validation_mode}")
-    raise ValidationError(
-        f"Runner/Host environment requests cannot be fulfilled: {message}")
+          f"Unknown environment validation mode={self._validation_mode}")
+    raise ValidationError(message)
 
   def validate_url(self, url: str) -> bool:
     if self._validation_mode == ValidationMode.SKIP:
@@ -255,12 +260,12 @@ class HostEnvironment:
         # Add cool-down period, crowdstrike caused CPU usage spikes
         self._add_min_delay(5)
     except SubprocessError as e:
-      self.handle_warning(
+      self.handle_validation_warning(
           "Could not disable go/crowdstrike-falcon monitor which can cause"
           f" high background CPU usage: {e}")
       return
     if not is_disabled:
-      self.handle_warning(
+      self.handle_validation_warning(
           "Crowdstrike monitoring is running, "
           "which can impact startup performance drastically.\n"
           "Use the following command to disable it manually:\n"
@@ -274,7 +279,7 @@ class HostEnvironment:
     usage = self._platform.disk_usage(self._runner.out_dir)
     free_gib = round(usage.free / 1024 / 1024 / 1024, 2)
     if free_gib < limit:
-      self.handle_warning(
+      self.handle_validation_warning(
           f"Only {free_gib}GiB disk space left, expected at least {limit}GiB.")
 
   def _check_power(self) -> None:
@@ -288,11 +293,12 @@ class HostEnvironment:
         battery_probes.append(probe)
     if not use_battery and battery_probes:
       probes_str = ",".join(probe.name for probe in battery_probes)
-      self.handle_warning("Requested battery_power=False, "
-                          f"but probes={probes_str} require battery power.")
+      self.handle_validation_warning(
+          "Requested battery_power=False, "
+          f"but probes={probes_str} require battery power.")
     sys_use_battery = self._platform.is_battery_powered
     if sys_use_battery != use_battery:
-      self.handle_warning(
+      self.handle_validation_warning(
           f"Expected battery_power={use_battery}, "
           f"but the system reported battery_power={sys_use_battery}")
 
@@ -302,8 +308,9 @@ class HostEnvironment:
       return
     cpu_usage_percent = round(100 * self._platform.cpu_usage(), 1)
     if cpu_usage_percent > max_cpu_usage:
-      self.handle_warning(f"CPU usage={cpu_usage_percent}% is higher than "
-                          f"requested max={max_cpu_usage}%.")
+      self.handle_validation_warning(
+          f"CPU usage={cpu_usage_percent}% is higher than "
+          f"requested max={max_cpu_usage}%.")
 
   def _check_cpu_temperature(self) -> None:
     min_relative_speed = self._config.cpu_min_relative_speed
@@ -311,9 +318,10 @@ class HostEnvironment:
       return
     cpu_speed = self._platform.get_relative_cpu_speed()
     if cpu_speed < min_relative_speed:
-      self.handle_warning("CPU thermal throttling is active. "
-                          f"Relative speed is {cpu_speed}, "
-                          f"but expected at least {min_relative_speed}.")
+      self.handle_validation_warning(
+          "CPU thermal throttling is active. "
+          f"Relative speed is {cpu_speed}, "
+          f"but expected at least {min_relative_speed}.")
 
   def _check_forbidden_system_process(self) -> None:
     # Verify that no terminals are running.
@@ -324,16 +332,18 @@ class HostEnvironment:
     process_found = self._platform.process_running(
         system_forbidden_process_names)
     if process_found:
-      self.handle_warning(f"Process:{process_found} found."
-                          "Make sure not to have a terminal opened. Use SSH.")
+      self.handle_validation_warning(
+          f"Process:{process_found} found."
+          "Make sure not to have a terminal opened. Use SSH.")
 
   def _check_screen_autobrightness(self) -> None:
     auto_brightness = self._config.screen_allow_autobrightness
     if auto_brightness is not False:
       return
     if self._platform.check_autobrightness():
-      self.handle_warning("Auto-brightness was found to be ON. "
-                          "Deactivate it in 'System Preferences/Displays'")
+      self.handle_validation_warning(
+          "Auto-brightness was found to be ON. "
+          "Deactivate it in 'System Preferences/Displays'")
 
   def _check_cpu_power_mode(self) -> bool:
     # TODO Implement checks for performance mode
@@ -365,7 +375,7 @@ class HostEnvironment:
         logging.debug("PS status output:")
         logging.debug("proc(pid=%s, name=%s, cmd=%s)", proc_info["pid"],
                       proc_info["name"], cmdline)
-        self.handle_warning(
+        self.handle_validation_warning(
             f"{browser.app_name} {browser.version} seems to be already running."
         )
         # Avoid re-checking the same binary once we've allowed it to be running.
@@ -379,8 +389,9 @@ class HostEnvironment:
     self._platform.set_main_display_brightness(brightness)
     current = self._platform.get_main_display_brightness()
     if current != brightness:
-      self.handle_warning(f"Requested main display brightness={brightness}%, "
-                          "but got {brightness}%")
+      self.handle_validation_warning(
+          f"Requested main display brightness={brightness}%, "
+          "but got {brightness}%")
 
   def _check_headless(self) -> None:
     # TODO: migrate to full viewport support
@@ -390,12 +401,13 @@ class HostEnvironment:
     if self._platform.is_linux and not requested_headless:
       # Check that the system can run browsers with a UI.
       if not self._platform.has_display:
-        self.handle_warning("Requested browser_is_headless=False, "
-                            "but no DISPLAY is available to run with a UI.")
+        self.handle_validation_warning(
+            "Requested browser_is_headless=False, "
+            "but no DISPLAY is available to run with a UI.")
     # Check that browsers are running in the requested display mode:
     for browser in self._runner.browsers:
       if browser.viewport.is_headless != requested_headless:
-        self.handle_warning(
+        self.handle_validation_warning(
             f"Requested browser_is_headless={requested_headless},"
             f"but browser {browser.unique_name} has conflicting "
             f"headless={browser.viewport.is_headless}.")
@@ -411,7 +423,7 @@ class HostEnvironment:
     if require_probes is HostEnvironmentConfig.IGNORE:
       return
     if self._config.require_probes and not self._runner.probes:
-      self.handle_warning("No probes specified.")
+      self.handle_validation_warning("No probes specified.")
 
   def _check_results_dir(self) -> None:
     results_dir = self._runner.out_dir.parent
@@ -435,9 +447,23 @@ class HostEnvironment:
     any_not_headless = any(
         not browser.viewport.is_headless for browser in self._runner.browsers)
     if any_not_headless:
-      self.handle_warning(
+      self.handle_validation_warning(
           "Terminal.app does not launch apps in the foreground.\n"
           "Please use iTerm.app for a better experience.")
+
+  def check_browser_focused(self, browser: Browser) -> None:
+    if (self._config.browser_allow_background or not browser.pid or
+        browser.viewport.is_headless):
+      return
+    info = browser.platform.foreground_process()
+    if not info:
+      return
+    if info["pid"] != browser.pid:
+      self.handle_warning(
+          f"Browser(name={browser.unique_name} pid={browser.pid})) "
+          "was not in the foreground at the end of the benchmark. "
+          "Background apps and tabs can be heavily throttled.",
+          allow_interactive=False)
 
   def setup(self) -> None:
     self.validate()
@@ -475,7 +501,7 @@ class HostEnvironment:
     missing_binaries = list(
         binary for binary in binaries if not self._platform.which(binary))
     if missing_binaries:
-      self.handle_warning(message.format(missing_binaries))
+      self.handle_validation_warning(message.format(missing_binaries))
 
   def check_sh_success(self,
                        *args: Union[str, pathlib.Path],
@@ -484,4 +510,4 @@ class HostEnvironment:
     try:
       assert self._platform.sh_stdout(*args, quiet=True)
     except SubprocessError as e:
-      self.handle_warning(message.format(e))
+      self.handle_validation_warning(message.format(e))

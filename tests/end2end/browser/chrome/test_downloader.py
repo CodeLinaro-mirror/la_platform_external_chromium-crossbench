@@ -2,10 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import pathlib
 import shutil
 import sys
-import unittest
 from typing import Union
 
 import pytest
@@ -17,132 +18,140 @@ from crossbench.browsers.chromium.chromium_webdriver import (ChromeDriverFinder,
                                                              DriverNotFoundError
                                                             )
 from crossbench.platform import PLATFORM
-from tests.end2end.helper import End2EndTestCase
 
 
-class ChromeDownloaderTestCase(End2EndTestCase):
-  __test__ = True
+@pytest.mark.skipif(
+    PLATFORM.which("gsutil") is None,
+    reason="Missing required 'gsutil', skipping test.")
+class TestChromeDownloader:
 
-  def setUp(self) -> None:
-    super().setUp()
-    if not self.platform.which("gsutil"):
-      self.skipTest("Missing required 'gsutil', skipping test.")
-    self.archive_dir = self.output_dir / "archive"
-    self.assertFalse(self.archive_dir.exists())
-
-  def load_and_check_version(self,
-                             version_or_archive: Union[str, pathlib.Path],
-                             version_str: str,
-                             expect_archive: bool = True) -> pathlib.Path:
-    app_path: pathlib.Path = ChromeDownloader.load(version_or_archive,
-                                                   self.platform,
-                                                   self.output_dir)
-    self.assertTrue(compat.is_relative_to(app_path, self.output_dir))
-    self.assertTrue(self.archive_dir.exists())
-    self.assertTrue(app_path.exists())
-    if self.platform.is_macos:
-      self.assertSetEqual(
-          set(self.output_dir.iterdir()), {app_path, self.archive_dir})
-    self.assertIn(version_str, self.platform.app_version(app_path))
-    archives = list(self.archive_dir.iterdir())
+  def _load_and_check_version(self,
+                              output_dir: pathlib.Path,
+                              archive_dir: pathlib.Path,
+                              version_or_archive: Union[str, pathlib.Path],
+                              version_str: str,
+                              expect_archive: bool = True) -> pathlib.Path:
+    app_path: pathlib.Path = ChromeDownloader.load(version_or_archive, PLATFORM,
+                                                   output_dir)
+    assert compat.is_relative_to(app_path, output_dir)
+    assert archive_dir.exists()
+    assert app_path.exists()
+    if PLATFORM.is_macos:
+      assert set(output_dir.iterdir()) == {app_path, archive_dir}
+    assert version_str in PLATFORM.app_version(app_path)
+    archives = list(archive_dir.iterdir())
     if expect_archive:
-      self.assertEqual(len(archives), 1)
+      assert len(archives) == 1
     else:
-      self.assertListEqual(archives, [])
-    self.assertTrue(app_path.exists())
-    chrome = ChromeWebDriver("test-chrome", app_path, platform=self.platform)
-    self.assertIn(version_str, chrome.version)
-    self.load_and_check_chromedriver(chrome)
+      assert not archives
+    assert app_path.exists()
+    chrome = ChromeWebDriver("test-chrome", app_path, platform=PLATFORM)
+    assert version_str in chrome.version
+    self._load_and_check_chromedriver(output_dir, chrome)
     return app_path
 
-  def load_and_check_chromedriver(self, chrome: ChromeWebDriver) -> None:
-    driver_dir = self.output_dir / "chromedriver-binaries"
+  def _load_and_check_chromedriver(self, output_dir,
+                                   chrome: ChromeWebDriver) -> None:
+    driver_dir = output_dir / "chromedriver-binaries"
     driver_dir.mkdir()
     finder = ChromeDriverFinder(chrome, cache_dir=driver_dir)
-    self.assertListEqual(list(driver_dir.iterdir()), [])
-    with self.assertRaises(DriverNotFoundError):
+    assert not list(driver_dir.iterdir())
+    with pytest.raises(DriverNotFoundError):
       finder.find_local_build()
     driver_path: pathlib.Path = finder.download()
-    self.assertListEqual(list(driver_dir.iterdir()), [driver_path])
-    self.assertTrue(driver_path.is_file())
+    assert list(driver_dir.iterdir()) == [driver_path]
+    assert driver_path.is_file()
     # Downloading again should use the cache-version
     driver_path: pathlib.Path = finder.download()
-    self.assertListEqual(list(driver_dir.iterdir()), [driver_path])
-    self.assertTrue(driver_path.is_file())
+    assert list(driver_dir.iterdir()) == [driver_path]
+    assert driver_path.is_file()
     # Restore output dir state.
     driver_path.unlink()
     driver_dir.rmdir()
 
-  def test_download_major_version(self) -> None:
-    self.assertListEqual(list(self.output_dir.iterdir()), [])
-    self.load_and_check_version("chrome-M111", "111", expect_archive=False)
+  def test_download_major_version(self, output_dir, archive_dir) -> None:
+    assert not list(output_dir.iterdir())
+    self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M111", "111", expect_archive=False)
 
     # Re-downloading should reuse the extracted app.
-    app_path = self.load_and_check_version(
-        "chrome-M111", "111", expect_archive=False)
+    app_path = self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M111", "111", expect_archive=False)
 
     # Delete the extracted app and reload, can't reuse the cached archive since
     # we're requesting only a milestone that could have been updated
     # in the meantime.
-    if self.platform.is_macos:
+    if PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(self.output_dir / "M111")
-    self.assertFalse(app_path.exists())
-    self.load_and_check_version("chrome-M111", "111", expect_archive=False)
+      shutil.rmtree(output_dir / "M111")
+    assert not app_path.exists()
+    self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M111", "111", expect_archive=False)
 
-  def test_download_major_version_chrome_for_testing(self) -> None:
+  def test_download_major_version_chrome_for_testing(self, output_dir,
+                                                     archive_dir) -> None:
     # Post M114 we're relying on the new chrome-for-testing download
-    self.assertListEqual(list(self.output_dir.iterdir()), [])
-    self.load_and_check_version("chrome-M115", "115", expect_archive=False)
+    assert not list(output_dir.iterdir())
+    self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M115", "115", expect_archive=False)
 
     # Re-downloading should reuse the extracted app.
-    app_path = self.load_and_check_version(
-        "chrome-M115", "115", expect_archive=False)
+    app_path = self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M115", "115", expect_archive=False)
 
     # Delete the extracted app and reload, can't reuse the cached archive since
     # we're requesting only a milestone that could have been updated
     # in the meantime.
-    if self.platform.is_macos:
+    if PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(self.output_dir / "M115")
-    self.assertFalse(app_path.exists())
-    self.load_and_check_version("chrome-M115", "115", expect_archive=False)
+      shutil.rmtree(output_dir / "M115")
+    assert not app_path.exists()
+    self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M115", "115", expect_archive=False)
 
-  def test_download_specific_version(self) -> None:
-    self.assertListEqual(list(self.output_dir.iterdir()), [])
+  def test_download_specific_version(self, output_dir, archive_dir) -> None:
+    assert not list(output_dir.iterdir())
     version_str = "111.0.5563.110"
-    self.load_and_check_version(f"chrome-{version_str}", version_str)
+    self._load_and_check_version(output_dir, archive_dir,
+                                 f"chrome-{version_str}", version_str)
 
     # Re-downloading should work as well and hit the extracted app.
-    app_path = self.load_and_check_version(f"chrome-{version_str}", version_str)
+    app_path = self._load_and_check_version(output_dir, archive_dir,
+                                            f"chrome-{version_str}",
+                                            version_str)
 
     # Delete the extracted app and reload, should reuse the cached archive.
-    if self.platform.is_macos:
+    if PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(self.output_dir / version_str)
-    self.assertFalse(app_path.exists())
-    app_path = self.load_and_check_version(f"chrome-{version_str}", version_str)
+      shutil.rmtree(output_dir / version_str)
+    assert not app_path.exists()
+    app_path = self._load_and_check_version(output_dir, archive_dir,
+                                            f"chrome-{version_str}",
+                                            version_str)
 
     # Delete app and install from archive.
-    if self.platform.is_macos:
+    if PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(self.output_dir / version_str)
-    self.assertFalse(app_path.exists())
-    archives = list(self.archive_dir.iterdir())
-    self.assertEqual(len(archives), 1)
+      shutil.rmtree(output_dir / version_str)
+    assert not app_path.exists()
+    archives = list(archive_dir.iterdir())
+    assert len(archives) == 1
     archive = archives[0]
-    app_path = self.load_and_check_version(archive, version_str)
-    self.assertListEqual(list(self.archive_dir.iterdir()), [archive])
+    app_path = self._load_and_check_version(output_dir, archive_dir, archive,
+                                            version_str)
+    assert list(archive_dir.iterdir()) == [archive]
 
-  @unittest.skipIf(PLATFORM.is_macos and PLATFORM.is_arm64,
-                   "Old versions only supported on intel machines.")
-  def test_download_old_major_version(self) -> None:
-    self.assertListEqual(list(self.output_dir.iterdir()), [])
-    self.load_and_check_version("chrome-M68", "68", expect_archive=False)
+  @pytest.mark.skipif(
+      PLATFORM.is_macos and PLATFORM.is_arm64,
+      reason="Old versions only supported on intel machines.")
+  def test_download_old_major_version(self, output_dir, archive_dir) -> None:
+    assert not list(output_dir.iterdir())
+    self._load_and_check_version(
+        output_dir, archive_dir, "chrome-M68", "68", expect_archive=False)
 
 
 if __name__ == "__main__":
