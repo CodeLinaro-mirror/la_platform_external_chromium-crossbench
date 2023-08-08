@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import argparse
+import gettext
 import io
 import json
 import pathlib
@@ -30,14 +31,14 @@ class SysExitException(Exception):
     super().__init__("sys.exit")
     self.exit_code = exit_code
 
-
 class CliTestCase(BaseCrossbenchTestCase):
 
-  def run_cli(self, *args, raises=None) -> Tuple[MockCLI, str, str]:
-    cli = MockCLI(platform=self.platform)
+  def run_cli(self,
+              *args,
+              raises=None,
+              enable_logging: bool = False) -> MockCLI:
+    cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
     with mock.patch(
-        "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
-            "sys.stderr", new_callable=io.StringIO) as mock_stderr, mock.patch(
                 "sys.exit", side_effect=SysExitException), mock.patch.object(
                     platform, "PLATFORM", self.platform):
       if raises:
@@ -45,6 +46,16 @@ class CliTestCase(BaseCrossbenchTestCase):
           cli.run(args)
       else:
         cli.run(args)
+    return cli
+
+  def run_cli_output(self,
+                     *args,
+                     raises=None,
+                     enable_logging: bool = True) -> Tuple[MockCLI, str, str]:
+    with mock.patch(
+        "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
+            "sys.stderr", new_callable=io.StringIO) as mock_stderr:
+      cli = self.run_cli(*args, raises=raises, enable_logging=enable_logging)
     stdout = mock_stdout.getvalue()
     stderr = mock_stderr.getvalue()
     # Make sure we don't accidentally reuse the buffers across run_cli calls.
@@ -92,14 +103,14 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("describe", "all", "unknown probe or benchmark")
     self.assertEqual(cm.exception.exit_code, 0)
     with self.assertRaises(SysExitException) as cm:
-      self.run_cli("describe", "--json", "all", "unknown probe or benchmar")
+      self.run_cli("describe", "--json", "all", "unknown probe or benchmark")
     self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe(self):
     # Non-json output shouldn't fail
     self.run_cli("describe")
     self.run_cli("describe", "all")
-    _, stdout, stderr = self.run_cli("describe", "--json")
+    _, stdout, stderr = self.run_cli_output("describe", "--json")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertIn("benchmarks", data)
@@ -110,7 +121,7 @@ class CliTestCase(BaseCrossbenchTestCase):
   def test_describe_benchmarks(self):
     # Non-json output shouldn't fail
     self.run_cli("describe", "benchmarks")
-    _, stdout, stderr = self.run_cli("describe", "--json", "benchmarks")
+    _, stdout, stderr = self.run_cli_output("describe", "--json", "benchmarks")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertNotIn("benchmarks", data)
@@ -121,7 +132,7 @@ class CliTestCase(BaseCrossbenchTestCase):
   def test_describe_probes(self):
     # Non-json output shouldn't fail
     self.run_cli("describe", "probes")
-    _, stdout, stderr = self.run_cli("describe", "--json", "probes")
+    _, stdout, stderr = self.run_cli_output("describe", "--json", "probes")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertNotIn("benchmarks", data)
@@ -131,7 +142,7 @@ class CliTestCase(BaseCrossbenchTestCase):
 
   def test_describe_all(self):
     self.run_cli("describe", "probes")
-    _, stdout, stderr = self.run_cli("describe", "all")
+    _, stdout, stderr = self.run_cli_output("describe", "all")
     self.assertFalse(stderr)
     self.assertIn("benchmarks", stdout)
     self.assertIn("v8.log", stdout)
@@ -139,7 +150,7 @@ class CliTestCase(BaseCrossbenchTestCase):
 
   def test_describe_all_filtered(self):
     self.run_cli("describe", "probes")
-    _, stdout, stderr = self.run_cli("describe", "all", "v8.log")
+    _, stdout, stderr = self.run_cli_output("describe", "all", "v8.log")
     self.assertFalse(stderr)
     self.assertNotIn("benchmarks", stdout)
     self.assertIn("v8.log", stdout)
@@ -147,7 +158,7 @@ class CliTestCase(BaseCrossbenchTestCase):
 
   def test_describe_all_json(self):
     self.run_cli("describe", "probes")
-    _, stdout, stderr = self.run_cli("describe", "--json", "all")
+    _, stdout, stderr = self.run_cli_output("describe", "--json", "all")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertIsInstance(data, dict)
@@ -156,7 +167,8 @@ class CliTestCase(BaseCrossbenchTestCase):
 
   def test_describe_all_json_filtered(self):
     self.run_cli("describe", "probes")
-    _, stdout, stderr = self.run_cli("describe", "--json", "all", "v8.log")
+    _, stdout, stderr = self.run_cli_output("describe", "--json", "all",
+                                            "v8.log")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertIsInstance(data, dict)
@@ -168,7 +180,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     with self.assertRaises(SysExitException) as cm:
       self.run_cli("--help")
     self.assertEqual(cm.exception.exit_code, 0)
-    _, stdout, stderr = self.run_cli("--help", raises=SysExitException)
+    _, stdout, stderr = self.run_cli_output("--help", raises=SysExitException)
     self.assertFalse(stderr)
     self.assertIn("usage:", stdout)
     self.assertIn("Subcommands:", stdout)
@@ -180,7 +192,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     with self.assertRaises(SysExitException) as cm:
       self.run_cli("help")
     self.assertEqual(cm.exception.exit_code, 0)
-    _, stdout, stderr = self.run_cli("help", raises=SysExitException)
+    _, stdout, stderr = self.run_cli_output("help", raises=SysExitException)
     self.assertFalse(stderr)
     self.assertIn("usage:", stdout)
     self.assertIn("Subcommands:", stdout)
@@ -195,7 +207,7 @@ class CliTestCase(BaseCrossbenchTestCase):
         with self.assertRaises(SysExitException) as cm:
           self.run_cli(subcommand, "--help")
         self.assertEqual(cm.exception.exit_code, 0)
-        _, stdout, stderr = self.run_cli(
+        _, stdout, stderr = self.run_cli_output(
             subcommand, "--help", raises=SysExitException)
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
@@ -207,7 +219,7 @@ class CliTestCase(BaseCrossbenchTestCase):
         with self.assertRaises(SysExitException) as cm:
           self.run_cli(subcommand, "help")
         self.assertEqual(cm.exception.exit_code, 0)
-        _, stdout, stderr = self.run_cli(
+        _, stdout, stderr = self.run_cli_output(
             subcommand, "help", raises=SysExitException)
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
@@ -219,8 +231,10 @@ class CliTestCase(BaseCrossbenchTestCase):
         with self.assertRaises(SysExitException) as cm:
           self.run_cli(subcommand, "describe")
         self.assertEqual(cm.exception.exit_code, 0)
-        _, stdout, stderr = self.run_cli(
-            subcommand, "describe", raises=SysExitException)
+        _, stdout, stderr = self.run_cli_output(
+            subcommand,
+            "describe",
+            raises=SysExitException)
         self.assertIn("See `describe benchmark ", stderr)
         self.assertIn("| Benchmark ", stdout)
 
@@ -852,9 +866,8 @@ class CliTestCase(BaseCrossbenchTestCase):
         "_get_browser_cls",
         return_value=mock_browser.MockChromeStable):
       url = "http://test.com"
-      cli, _, _ = self.run_cli("loading", f"--urls={url}",
-                               "--env-validation=skip", "--throw",
-                               "--splash-screen=none")
+      cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
+                         "--throw", "--splash-screen=none")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.splash_screen, splash_screen.SplashScreen.NONE)
@@ -867,9 +880,8 @@ class CliTestCase(BaseCrossbenchTestCase):
         "_get_browser_cls",
         return_value=mock_browser.MockChromeStable):
       url = "http://test.com"
-      cli, _, _ = self.run_cli("loading", f"--urls={url}",
-                               "--env-validation=skip", "--throw",
-                               "--splash-screen=minimal")
+      cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
+                         "--throw", "--splash-screen=minimal")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.splash_screen,
@@ -885,9 +897,8 @@ class CliTestCase(BaseCrossbenchTestCase):
         return_value=mock_browser.MockChromeStable):
       splash_url = "http://splash.com"
       url = "http://test.com"
-      cli, _, _ = self.run_cli("loading", f"--urls={url}",
-                               "--env-validation=skip", "--throw",
-                               f"--splash-screen={splash_url}")
+      cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
+                         "--throw", f"--splash-screen={splash_url}")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIsInstance(browser.splash_screen,
@@ -910,9 +921,8 @@ class CliTestCase(BaseCrossbenchTestCase):
         "_get_browser_cls",
         return_value=mock_browser.MockChromeStable):
       url = "http://test.com"
-      cli, _, _ = self.run_cli("loading", f"--urls={url}",
-                               "--env-validation=skip", "--throw",
-                               "--viewport=maximized")
+      cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
+                         "--throw", "--viewport=maximized")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.viewport, viewport.Viewport.MAXIMIZED)

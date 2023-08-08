@@ -153,7 +153,7 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     assert len(self.story_cls.all_story_names()) > 1
     story_name = self.story_cls.all_story_names()[0]
     with self.assertRaises(ValueError):
-      # Add all stories again afer filtering out some
+      # Add all stories again after filtering out some
       self.story_filter([".*", f"-{story_name}", ".*|[^ ]+"])
 
   def test_remove_non_existent(self):

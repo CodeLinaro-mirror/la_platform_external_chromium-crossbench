@@ -13,7 +13,6 @@ import unittest
 from typing import Sequence, cast
 
 import hjson
-import pyfakefs.fake_filesystem_unittest
 
 import crossbench
 import crossbench.env
@@ -29,6 +28,7 @@ from crossbench.benchmarks.loading.playback_controller import (
 from crossbench.stories import Story
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
+from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 #TODO: fix imports
 cb = crossbench
@@ -92,7 +92,6 @@ class PlaybackControllerTest(unittest.TestCase):
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
-
 
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
@@ -227,11 +226,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self.assertEqual(browser_2_urls, story_urls)
 
 
-class TestPageConfig(pyfakefs.fake_filesystem_unittest.TestCase):
-
-  def setUp(self):
-    # TODO: Move to separate common helper class
-    self.setUpPyfakefs(modules_to_reload=[crossbench])
+class TestPageConfig(CrossbenchFakeFsTestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):

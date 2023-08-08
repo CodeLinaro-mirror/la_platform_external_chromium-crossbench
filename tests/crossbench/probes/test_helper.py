@@ -8,17 +8,13 @@ import pathlib
 import unittest
 from unittest import mock
 
-import pyfakefs.fake_filesystem_unittest
-
 from crossbench.probes import helper
 from tests import test_helper
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
+                                          CrossbenchFakeFsTestCase)
 
 
-class TestMergeCSV(pyfakefs.fake_filesystem_unittest.TestCase):
-
-  def setUp(self):
-    self.setUpPyfakefs()
+class TestMergeCSV(CrossbenchFakeFsTestCase):
 
   def test_merge_single(self):
     file = pathlib.Path("test.csv")

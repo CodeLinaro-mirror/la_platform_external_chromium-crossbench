@@ -2,14 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import datetime as dt
 import pathlib
 import unittest
-import datetime as dt
-import pyfakefs.fake_filesystem_unittest
 
 from crossbench import helper
-
 from tests import test_helper
+from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
 class WaitTestCase(unittest.TestCase):
@@ -97,10 +96,7 @@ class DurationsTestCase(unittest.TestCase):
     self.assertListEqual(list(durations.to_json().keys()), ["a", "b", "c"])
 
 
-class ChangeCWDTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
-
-  def setUp(self):
-    self.setUpPyfakefs()
+class ChangeCWDTestCase(CrossbenchFakeFsTestCase):
 
   def test_basic(self):
     old_cwd = pathlib.Path.cwd()
@@ -113,10 +109,7 @@ class ChangeCWDTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
     self.assertNotEqual(new_cwd, pathlib.Path.cwd())
 
 
-class FileSizeTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
-
-  def setUp(self):
-    self.setUpPyfakefs()
+class FileSizeTestCase(CrossbenchFakeFsTestCase):
 
   def test_empty(self):
     test_file = pathlib.Path("test.txt")
@@ -208,10 +201,10 @@ class GroupByTestCase(unittest.TestCase):
         }, grouped)
 
 
-class ConcatFilesTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
+class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
-    self.setUpPyfakefs()
+    super().setUp()
     self.platform = helper.PLATFORM
 
   def test_single(self):

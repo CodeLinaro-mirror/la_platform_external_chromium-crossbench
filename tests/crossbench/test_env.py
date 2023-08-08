@@ -7,11 +7,12 @@ import unittest
 from unittest import mock
 
 import hjson
-import pyfakefs.fake_filesystem_unittest
 
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationError, ValidationMode)
 from tests import test_helper
+
+from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
 class HostEnvironmentConfigTestCase(unittest.TestCase):
@@ -81,10 +82,10 @@ class HostEnvironmentConfigTestCase(unittest.TestCase):
     HostEnvironmentConfig(**data["env"])
 
 
-class HostEnvironmentTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
+class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
-    self.setUpPyfakefs()
+    super().setUp()
     self.mock_platform = mock.Mock()
     self.mock_platform.processes.return_value = []
     self.out_dir = pathlib.Path("results/current_benchmark_run_results")

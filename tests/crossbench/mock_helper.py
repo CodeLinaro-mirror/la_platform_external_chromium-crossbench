@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import logging
 import pathlib
 import platform
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
@@ -157,8 +158,26 @@ class MockCLI(CrossBenchCLI):
     return self.runner
 
 
-class BaseCrossbenchTestCase(
+class CrossbenchFakeFsTestCase(
     fake_filesystem_unittest.TestCase, metaclass=abc.ABCMeta):
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser])
+    # gettext is used extensively in argparse
+    self.gettext_patcher = mock.patch(
+        "gettext.dgettext", side_effect=lambda domain, message: message)
+    self.gettext_patcher.start()
+    self.sleep_patcher = mock.patch('time.sleep', return_value=None)
+    self.sleep_patcher.start()
+
+  def tearDown(self) -> None:
+    self.sleep_patcher.stop()
+    self.gettext_patcher.stop()
+    super().tearDown()
+
+
+class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def filter_data_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]
@@ -169,7 +188,8 @@ class BaseCrossbenchTestCase(
     # basic system information.
     self.platform = MockPlatform()  # pytype: disable=not-instantiable
     super().setUp()
-    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser])
+    self._default_log_level = logging.getLogger().getEffectiveLevel()
+    logging.getLogger().setLevel(logging.CRITICAL)
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs)
       self.assertTrue(mock_browser_cls.APP_PATH.exists())
@@ -179,8 +199,6 @@ class BaseCrossbenchTestCase(
         mock_browser.MockChromeDev("dev", platform=self.platform),
         mock_browser.MockChromeStable("stable", platform=self.platform)
     ]
-    self.sleep_patcher = mock.patch('time.sleep', return_value=None)
-    self.sleep_patcher.start()
     self._mock_platform_patcher = mock.patch.object(platform, "PLATFORM",
                                                     self.platform)
     self._mock_platform_patcher.start()
@@ -188,7 +206,7 @@ class BaseCrossbenchTestCase(
       self.assertListEqual(browser.js_side_effects, [])
 
   def tearDown(self) -> None:
-    self.sleep_patcher.stop()
+    logging.getLogger().setLevel(self._default_log_level)
     self._mock_platform_patcher.stop()
     self.assertListEqual(self.platform.sh_results, [])
     super().tearDown()

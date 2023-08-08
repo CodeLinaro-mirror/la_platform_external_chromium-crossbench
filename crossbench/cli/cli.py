@@ -53,7 +53,8 @@ class CrossBenchCLI:
 
   RUNNER_CLS: Type[Runner] = Runner
 
-  def __init__(self) -> None:
+  def __init__(self, enable_logging: bool = True) -> None:
+    self._enable_logging = enable_logging
     self._console_handler: Optional[logging.StreamHandler] = None
     self._subparsers: Dict[BenchmarkClsT,
                            cli_helper.CrossBenchArgumentParser] = {}
@@ -738,6 +739,9 @@ class CrossBenchCLI:
 
   def _init_logging(self, argv: Sequence[str]) -> None:
     assert self._console_handler is None
+    if not self._enable_logging:
+      logging.getLogger().setLevel(logging.CRITICAL)
+      return
     self._console_handler = logging.StreamHandler(sys.stderr)
     self._console_handler.addFilter(logging.Filter("root"))
     self._console_handler.setLevel(logging.INFO)
@@ -750,6 +754,8 @@ class CrossBenchCLI:
       logging.getLogger().setLevel(logging.DEBUG)
 
   def _setup_logging(self) -> None:
+    if not self._enable_logging:
+      return
     assert self._console_handler
     if self.args.verbosity == -1:
       self._console_handler.setLevel(logging.ERROR)
@@ -762,6 +768,9 @@ class CrossBenchCLI:
       self._console_handler.setFormatter(helper.ColoredLogFormatter())
 
   def _teardown_logging(self) -> None:
+    if not self._enable_logging:
+      assert self._console_handler is None
+      return
     assert self._console_handler
     self._console_handler.flush()
     logging.getLogger().removeHandler(self._console_handler)

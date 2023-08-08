@@ -5,14 +5,13 @@
 import pathlib
 from unittest import mock
 
-import pyfakefs.fake_filesystem_unittest
-
 from crossbench.platform import PLATFORM
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 from tests import test_helper
+from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
-class BrowserProbeResultTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
+class BrowserProbeResultTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
@@ -22,10 +21,7 @@ class BrowserProbeResultTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
 
 
 
-class ProbeResultTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
-
-  def setUp(self):
-    self.setUpPyfakefs()
+class ProbeResultTestCase(CrossbenchFakeFsTestCase):
 
   def create_file(self, path_str: str) -> pathlib.Path:
     path = pathlib.Path(path_str)

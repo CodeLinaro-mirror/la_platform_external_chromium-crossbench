@@ -11,8 +11,6 @@ import pathlib
 from typing import Any
 import unittest
 
-from pyfakefs import fake_filesystem_unittest
-import crossbench
 
 from crossbench.cli_helper import (
     Duration, parse_dir_path, parse_existing_file_path, parse_hjson_file_path,
@@ -20,6 +18,7 @@ from crossbench.cli_helper import (
     parse_json_file_path, parse_non_empty_file_path, parse_non_empty_str,
     parse_path, parse_positive_int, parse_positive_zero_float,
     parse_positive_zero_int)
+from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
 class DurationTestCase(unittest.TestCase):
@@ -101,10 +100,10 @@ class DurationTestCase(unittest.TestCase):
     self.assertEqual(Duration.parse("27.5 hours"), dt.timedelta(hours=27.5))
 
 
-class ArgParserHelperTestCase(fake_filesystem_unittest.TestCase):
+class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
-    self.setUpPyfakefs(modules_to_reload=[crossbench])
+    super().setUp()
     self._json_test_data = {"int": 1, "array": [1, "2"]}
 
   def test_parse_non_empty_str(self):

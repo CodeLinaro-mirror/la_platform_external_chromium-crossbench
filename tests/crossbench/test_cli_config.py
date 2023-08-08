@@ -10,9 +10,7 @@ from unittest import mock
 
 import hjson
 from frozendict import frozendict
-from pyfakefs import fake_filesystem_unittest
 
-import crossbench
 from crossbench import helper
 from crossbench.browsers.chrome import Chrome, ChromeWebDriver
 from crossbench.browsers.safari import Safari
@@ -25,7 +23,8 @@ from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
+                                          CrossbenchFakeFsTestCase)
 
 ADB_SAMPLE_OUTPUT = """List of devices attached
 emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64
@@ -269,12 +268,8 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
     self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
 
 
-class TestProbeConfig(fake_filesystem_unittest.TestCase):
+class TestProbeConfig(CrossbenchFakeFsTestCase):
   # pylint: disable=expression-not-assigned
-
-  def setUp(self):
-    # TODO: Move to separate common helper class
-    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser])
 
   def parse_config(self, config_data) -> ProbeConfig:
     probe_config_file = pathlib.Path("/probe.config.hjson")

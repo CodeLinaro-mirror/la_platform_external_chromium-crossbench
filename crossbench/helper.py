@@ -55,7 +55,7 @@ class ColoredLogFormatter(logging.Formatter):
   FORMAT = "%(message)s"
 
   FORMATS = {
-      logging.DEBUG: FORMAT + " (%(filename)s:%(lineno)d)",
+      logging.DEBUG: FORMAT,
       logging.INFO: TTYColor.GREEN + FORMAT + TTYColor.RESET,
       logging.WARNING: TTYColor.YELLOW + FORMAT + TTYColor.RESET,
       logging.ERROR: TTYColor.RED + FORMAT + TTYColor.RESET,
@@ -66,6 +66,12 @@ class ColoredLogFormatter(logging.Formatter):
     log_fmt = self.FORMATS.get(record.levelno)
     formatter = logging.Formatter(log_fmt)
     return formatter.format(record)
+
+  def formatException(self, ei):
+    return ""
+
+  def formatStack(self, stack_info):
+    return ""
 
 
 InputT = TypeVar("InputT")

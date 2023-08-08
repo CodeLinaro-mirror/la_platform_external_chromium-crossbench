@@ -6,10 +6,9 @@ import json
 import pathlib
 import unittest
 
-import pyfakefs.fake_filesystem_unittest
-
 from crossbench.probes import metric
 from tests import test_helper
+from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
 class FormatMetricTestCase(unittest.TestCase):
@@ -97,10 +96,7 @@ class MetricTestCase(unittest.TestCase):
     self.assertEqual(json_data["stddevPercent"], 0)
 
 
-class MetricsMergerTestCase(pyfakefs.fake_filesystem_unittest.TestCase):
-
-  def setUp(self):
-    self.setUpPyfakefs()
+class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
 
   def test_empty(self):
     merger = metric.MetricsMerger()
