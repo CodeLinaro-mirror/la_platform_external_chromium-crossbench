@@ -31,7 +31,7 @@ class Flatten:
   _key_fn: KeyFnType
   _accumulator: Dict[str, Any]
 
-  def __init__(self, *args: Dict, key_fn: Optional[KeyFnType] = None):
+  def __init__(self, *args: Dict, key_fn: Optional[KeyFnType] = None) -> None:
     """_summary_
 
     Args:

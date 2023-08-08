@@ -19,7 +19,7 @@ from typing import Any, Coroutine, Dict, List, Optional, Tuple, Union
 import websockets
 from websockets.server import WebSocketServerProtocol
 
-from crossbench import compat
+from crossbench import compat, helper
 
 
 class State(compat.StrEnum):
@@ -109,7 +109,11 @@ class CrossbenchDevToolsRecorderProxy:
   async def _send_message(
       self, coroutine: Coroutine[Any, Any, Optional[Tuple[Response,
                                                           Any]]]) -> None:
-    response = {"success": False, "payload": None, "error": None}
+    response: helper.JsonDict = {
+        "success": False,
+        "payload": None,
+        "error": None
+    }
     try:
       result: Optional[Tuple[Response, Any]] = await coroutine
       response["success"] = True
@@ -152,6 +156,7 @@ class CrossbenchDevToolsRecorderProxy:
     if command == "status":
       return await self._status_command()
     logging.error("Unknown command: %s", command)
+    return None
 
   async def _stop_command(self) -> Tuple[Response, str]:
     if self._crossbench_process:

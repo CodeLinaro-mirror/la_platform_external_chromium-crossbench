@@ -62,10 +62,12 @@ class DriverConfigTestCase(BaseCrossbenchTestCase):
 
   def test_parse_inline_json(self):
     config_dict = {"type": 'adb', "settings": {"serial": 1234}}
-    config: DriverConfig = DriverConfig.parse(hjson.dumps(config_dict))
+    config = DriverConfig.parse(hjson.dumps(config_dict))
+    assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.settings["serial"], 1234)
     config = DriverConfig.load_dict(config_dict)
+    assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.settings["serial"], 1234)
 
@@ -88,7 +90,8 @@ class DriverConfigTestCase(BaseCrossbenchTestCase):
   def test_parse_phone_identifier(self):
     self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
 
-    config: DriverConfig = DriverConfig.parse("Nexus_7")
+    config = DriverConfig.parse("Nexus_7")
+    assert isinstance(config, DriverConfig)
     self.assertEqual(len(self.platform.sh_cmds), 1)
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
@@ -97,7 +100,8 @@ class DriverConfigTestCase(BaseCrossbenchTestCase):
   def test_parse_phone_serial(self):
     self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
 
-    config: DriverConfig = DriverConfig.parse("0a388e93")
+    config = DriverConfig.parse("0a388e93")
+    assert isinstance(config, DriverConfig)
     self.assertEqual(len(self.platform.sh_cmds), 1)
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
@@ -216,7 +220,8 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
 
   def test_parse_phone_serial(self):
     self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
-    config: BrowserConfig = BrowserConfig.parse("0a388e93:chrome")
+    config = BrowserConfig.parse("0a388e93:chrome")
+    assert isinstance(config, BrowserConfig)
     self.assertEqual(len(self.platform.sh_cmds), 1)
     expected_driver = DriverConfig(
         BrowserDriverType.ANDROID, settings=frozendict(serial="0a388e93"))
@@ -256,9 +261,11 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
             "settings": {}
         }
     }
-    config: BrowserConfig = BrowserConfig.parse(hjson.dumps(config_dict))
+    config = BrowserConfig.parse(hjson.dumps(config_dict))
+    assert isinstance(config, BrowserConfig)
     self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
     config = BrowserConfig.load_dict(config_dict)
+    assert isinstance(config, BrowserConfig)
     self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
 
 

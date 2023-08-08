@@ -3,18 +3,18 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import abc
-from argparse import ArgumentTypeError
 import html
 import pathlib
-
+import urllib.parse
+from argparse import ArgumentTypeError
 from typing import TYPE_CHECKING, Dict
 
-import urllib.parse
-
 if TYPE_CHECKING:
-  from .browser import Browser
   from crossbench.runner import Run
+
+  from .browser import Browser
 
 
 class SplashScreen:
@@ -116,7 +116,7 @@ class MinimalSplashScreen(DetailedSplashScreen):
 
 class URLSplashScreen(BaseURLSplashScreen):
 
-  def __init__(self, url: str, timeout: float = 2):
+  def __init__(self, url: str, timeout: float = 2) -> None:
     super().__init__(timeout)
     self._url = url
 

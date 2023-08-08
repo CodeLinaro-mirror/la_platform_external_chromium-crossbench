@@ -32,7 +32,7 @@ class DriverException(RuntimeError):
   """Wrapper for more readable error messages than the default
   WebDriver exceptions."""
 
-  def __init__(self, msg: str, browser: Optional[Browser] = None):
+  def __init__(self, msg: str, browser: Optional[Browser] = None) -> None:
     self._browser = browser
     self._msg = msg
     super().__init__(msg)
@@ -202,7 +202,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 class RemoteWebDriver(WebDriverBrowser, Browser):
   """Represent a remote WebDriver that has already been started"""
 
-  def __init__(self, label: str, driver: webdriver.Remote):
+  def __init__(self, label: str, driver: webdriver.Remote) -> None:
     super().__init__(label=label, path=None, type="remote")
     self._driver = driver
     self.version: str = driver.capabilities["browserVersion"]

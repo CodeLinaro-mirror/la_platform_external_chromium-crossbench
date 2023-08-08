@@ -149,9 +149,10 @@ class _ConfigArg:
     return ("choices", ", ".join(map(str, choices)))
 
   def _enum_help_text(self) -> List[Tuple[str, str]]:
-    if hasattr(self.type, "help_text_items"):
+    if self.type and hasattr(self.type, "help_text_items"):
       # See helper.EnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
+    assert self.choices
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
   def parse(self, config_data: Dict[str, Any]) -> Any:
@@ -225,7 +226,7 @@ ConfigResultObjectT = TypeVar("ConfigResultObjectT", bound="object")
 
 class ConfigParser(Generic[ConfigResultObjectT]):
 
-  def __init__(self, title: str, cls: Type[ConfigResultObjectT]):
+  def __init__(self, title: str, cls: Type[ConfigResultObjectT]) -> None:
     self.title = title
     assert title, "No title provided"
     self._cls = cls

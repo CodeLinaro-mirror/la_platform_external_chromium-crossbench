@@ -27,7 +27,7 @@ class Flags(collections.UserDict):
       return (flag_name, flag_value)
     return (flag_str, None)
 
-  def __init__(self, initial_data: Flags.InitialDataType = None):
+  def __init__(self, initial_data: Flags.InitialDataType = None) -> None:
     super().__init__(initial_data)
 
   def __setitem__(self, flag_name: str, flag_value: Optional[str]) -> None:
@@ -156,7 +156,7 @@ class ChromeFlags(Flags):
   """
   _JS_FLAG = "--js-flags"
 
-  def __init__(self, initial_data: Flags.InitialDataType = None):
+  def __init__(self, initial_data: Flags.InitialDataType = None) -> None:
     self._features = ChromeFeatures()
     self._js_flags = JSFlags()
     super().__init__(initial_data)

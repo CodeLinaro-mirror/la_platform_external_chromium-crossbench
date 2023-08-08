@@ -7,12 +7,10 @@ from __future__ import annotations
 from .chrome import Chrome
 from .chrome_applescript import ChromeAppleScript
 from .chrome_webdriver import ChromeWebDriver, ChromeWebDriverAndroid
-from .downloader import ChromeDownloader
 
 __all__ = [
     "Chrome",
     "ChromeAppleScript",
-    "ChromeDownloader",
     "ChromeWebDriver",
     "ChromeWebDriverAndroid",
 ]

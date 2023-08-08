@@ -18,7 +18,7 @@ from selenium.webdriver.edge.service import Service as EdgeService
 import crossbench
 import crossbench.exception
 import crossbench.flags
-from crossbench.browsers.browser import BROWSERS_CACHE
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium import ChromiumWebDriver
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
@@ -73,7 +73,7 @@ class EdgeWebDriver(ChromiumWebDriver):
 class EdgeWebDriverDownloader:
   BASE_URL = "https://msedgedriver.azureedge.net"
 
-  def __init__(self, browser: EdgeWebDriver):
+  def __init__(self, browser: EdgeWebDriver) -> None:
     self.browser = browser
     self.platform = browser.platform
     assert self.browser.is_local, (

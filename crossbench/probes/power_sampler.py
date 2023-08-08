@@ -117,7 +117,7 @@ class PowerSamplerProbe(Probe):
 
 class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
 
-  def __init__(self, probe: PowerSamplerProbe, run: Run):
+  def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._bin_path = probe.bin_path
     self._active_user_process: Optional[subprocess.Popen] = None

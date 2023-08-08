@@ -28,7 +28,7 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 
 class ProbeConfigParser(ConfigParser[ProbeT]):
 
-  def __init__(self, probe_cls: Type[ProbeT]):
+  def __init__(self, probe_cls: Type[ProbeT]) -> None:
     super().__init__("Probe", probe_cls)
     self._probe_cls = probe_cls
 
@@ -214,7 +214,7 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     override tear_down() method
   """
 
-  def __init__(self, probe: ProbeT, run: Run):
+  def __init__(self, probe: ProbeT, run: Run) -> None:
     self._probe: ProbeT = probe
     self._run: Run = run
     self._default_result_path: pathlib.Path = self.get_default_result_path()

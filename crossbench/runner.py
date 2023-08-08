@@ -427,7 +427,7 @@ class Runner:
 
 class RunThreadGroup(threading.Thread):
 
-  def __init__(self, runs: List[Run]):
+  def __init__(self, runs: List[Run]) -> None:
     super().__init__()
     assert len(runs), "Got unexpected empty runs list"
     self._runner: Runner = runs[0].runner
@@ -470,7 +470,7 @@ class BrowserSessionRunGroup:
     STOPPING = "stopping"
     DONE = "done"
 
-  def __init__(self, browser: Browser):
+  def __init__(self, browser: Browser) -> None:
     self._browser = browser
     self._runs: List[Run] = []
     self._state = self.State.READY
@@ -522,7 +522,7 @@ class BrowserSessionRunGroup:
 
 class RunGroup(abc.ABC):
 
-  def __init__(self, throw: bool = False):
+  def __init__(self, throw: bool = False) -> None:
     self._exceptions = exception.Annotator(throw)
     self._path: Optional[pathlib.Path] = None
     self._merged_probe_results: Optional[ProbeResultDict] = None
@@ -648,7 +648,7 @@ class StoriesRunGroup(RunGroup):
   A group of StoryRepetitionsRunGroups for the same browser.
   """
 
-  def __init__(self, throw: bool = False):
+  def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._repetitions_groups: List[RepetitionsRunGroup] = []
     self._browser: Browser = None

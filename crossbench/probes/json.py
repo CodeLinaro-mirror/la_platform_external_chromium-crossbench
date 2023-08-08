@@ -172,7 +172,7 @@ JsonResultProbeT = TypeVar("JsonResultProbeT", bound="JsonResultProbe")
 class JsonResultProbeScope(ProbeScope[JsonResultProbeT],
                            Generic[JsonResultProbeT]):
 
-  def __init__(self, probe: JsonResultProbeT, run: Run):
+  def __init__(self, probe: JsonResultProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._json_data = None
 

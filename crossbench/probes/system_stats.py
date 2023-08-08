@@ -86,11 +86,11 @@ class CMDPoller(threading.Thread):
     self._interval = interval
     self._event = threading.Event()
 
-  def stop(self):
+  def stop(self) -> None:
     self._event.set()
     self.join()
 
-  def run(self):
+  def run(self) -> None:
     start_time = time.monotonic_ns()
     while not self._event.is_set():
       poll_start = dt.datetime.now()

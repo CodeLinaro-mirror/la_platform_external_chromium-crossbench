@@ -30,7 +30,7 @@ class AbstractPageConfig(abc.ABC):
       config.load(f)
       return config.stories
 
-  def __init__(self, raw_config_data: Optional[Dict] = None):
+  def __init__(self, raw_config_data: Optional[Dict] = None) -> None:
     self._exceptions = ExceptionAnnotator(throw=True)
     self.stories: List[InteractivePage] = []
     if raw_config_data:

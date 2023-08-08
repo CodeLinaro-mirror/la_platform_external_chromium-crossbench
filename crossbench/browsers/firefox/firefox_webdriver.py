@@ -18,7 +18,7 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
 from crossbench import exception, helper
-from crossbench.browsers.browser import BROWSERS_CACHE
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 from .firefox import Firefox

@@ -215,7 +215,7 @@ class CrossBenchArgumentError(argparse.ArgumentError):
 # behavior.
 class _BaseCrossBenchArgumentParser(argparse.ArgumentParser):
 
-  def fail(self, message):
+  def fail(self, message) -> None:
     super().error(message)
 
 
@@ -223,7 +223,7 @@ if sys.version_info < (3, 9, 0):
 
   class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
 
-    def error(self, message):
+    def error(self, message) -> None:
       # Let the CrossBenchCLI handle all errors and simplify testing.
       exception = sys.exc_info()[1]
       if isinstance(exception, BaseException):
@@ -234,7 +234,7 @@ else:
 
   class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
       kwargs["exit_on_error"] = False
       super().__init__(*args, **kwargs)
 
@@ -247,7 +247,7 @@ class LateArgumentError(argparse.ArgumentTypeError):
   more descriptive error messages.
   """
 
-  def __init__(self, flag: str, message: str):
+  def __init__(self, flag: str, message: str) -> None:
     super().__init__(message)
     self.flag = flag
     self.message = message

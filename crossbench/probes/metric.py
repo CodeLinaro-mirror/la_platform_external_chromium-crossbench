@@ -54,7 +54,7 @@ class Metric:
     assert isinstance(values, list)
     return cls(values)
 
-  def __init__(self, values: Optional[List] = None):
+  def __init__(self, values: Optional[List] = None) -> None:
     self.values = values or []
     self._is_numeric: bool = all(map(is_number, self.values))
 

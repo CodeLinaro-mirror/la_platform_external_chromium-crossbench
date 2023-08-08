@@ -26,12 +26,6 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
   from crossbench.runner import Run, Runner
 
-# =============================================================================
-
-BROWSERS_CACHE = pathlib.Path(__file__).parents[2] / ".browsers-cache"
-
-# =============================================================================
-
 
 class BrowserVersionChannel(compat.StrEnum):
   LTS = "lts"
@@ -107,7 +101,7 @@ class BrowserVersion(abc.ABC):
   def __str__(self) -> str:
     return f"{self._version_str} {self.channel_name}"
 
-  def __eq__(self, other: Any):
+  def __eq__(self, other: Any) -> bool:
     if not isinstance(other, BrowserVersion):
       return False
     return str(self) == str(other)
@@ -366,15 +360,3 @@ class Browser(abc.ABC):
     if self.platform.is_remote:
       platform_prefix = str(self.platform)
     return f"{platform_prefix}{self.type.capitalize()}:{self.label}"
-
-
-_FLAG_TO_PATH_RE = re.compile(r"[-/\\:\.]")
-
-
-def convert_flags_to_label(*flags: str, index: Optional[int] = None) -> str:
-  label = "default"
-  if flags:
-    label = _FLAG_TO_PATH_RE.sub("_", "_".join(flags).replace("--", ""))
-  if index is None:
-    return label
-  return f"{str(index).rjust(2,'0')}_{label}"

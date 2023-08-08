@@ -18,16 +18,15 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 from tabulate import tabulate
 
 import crossbench.benchmarks.all as benchmarks
-import crossbench.browsers.all as browsers
 from crossbench import cli_helper, helper
-from crossbench.benchmarks.benchmark import Benchmark
-from crossbench.browsers.splash_screen import SplashScreen
-from crossbench.browsers.viewport import Viewport, ViewportMode
+from crossbench.browsers import splash_screen, viewport
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.internal import ErrorsProbe
-from crossbench.runner import Runner, Run, Timing
+from crossbench.runner import Run, Runner, Timing
+from crossbench.benchmarks.benchmark import Benchmark
 
 from . import cli_config
 from .devtools_recorder_proxy import CrossbenchDevToolsRecorderProxy
@@ -36,7 +35,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   BenchmarkClsT = Type[Benchmark]
-  BrowserLookupTableT = Dict[str, Tuple[Type[browsers.Browser], pathlib.Path]]
+  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pathlib.Path]]
 
 argparse.ArgumentError = cli_helper.CrossBenchArgumentError
 
@@ -122,6 +121,7 @@ class CrossBenchCLI:
   def _setup_recorder_subparser(self) -> None:
     self.recorder_parser = CrossbenchDevToolsRecorderProxy.add_subcommand(
         self.subparsers)
+    assert isinstance(self.recorder_parser, cli_helper.CrossBenchArgumentParser)
     self._add_verbosity_argument(self.recorder_parser)
 
   def _setup_describe_subparser(self) -> None:
@@ -247,7 +247,7 @@ class CrossBenchCLI:
     runner_group.add_argument(
         "--cache-dir",
         type=pathlib.Path,
-        default=browsers.BROWSERS_CACHE,
+        default=BROWSERS_CACHE,
         help="Used for caching browser binaries and archives. "
         "Defaults to .browser_cache")
     runner_group.add_argument(
@@ -349,8 +349,8 @@ class CrossBenchCLI:
         "--splash-screen",
         "--splashscreen",
         "--splash",
-        type=SplashScreen.parse,
-        default=SplashScreen.DETAILED,
+        type=splash_screen.SplashScreen.parse,
+        default=splash_screen.SplashScreen.DETAILED,
         help=("Set the splashscreen shown before each run. "
               "Choices: 'default', 'none', 'minimal', 'detailed,' or "
               "a path or a URL."))
@@ -358,7 +358,7 @@ class CrossBenchCLI:
         "--no-splash",
         "--nosplash",
         dest="splash_screen",
-        const=SplashScreen.NONE,
+        const=splash_screen.SplashScreen.NONE,
         action="store_const",
         help="Shortcut for --splash-screen=none")
 
@@ -366,18 +366,18 @@ class CrossBenchCLI:
     # pytype: disable=missing-parameter
     viewport_group.add_argument(
         "--viewport",
-        default=Viewport.DEFAULT,
-        type=Viewport.parse,
+        default=viewport.Viewport.DEFAULT,
+        type=viewport.Viewport.parse,
         help=("Set the browser window position."
               "Options: size and position, "
-              f"{', '.join(str(e.value) for e in ViewportMode)}. "
+              f"{', '.join(str(e.value) for e in viewport.ViewportMode)}. "
               "Examples: --viewport=1550x300 --viewport=fullscreen. "
-              f"Default: {Viewport.DEFAULT}"))
+              f"Default: {viewport.Viewport.DEFAULT}"))
     # pytype: enable=missing-parameter
     viewport_group.add_argument(
         "--headless",
         dest="viewport",
-        const=Viewport.HEADLESS,
+        const=viewport.Viewport.HEADLESS,
         action="store_const",
         help="Start the browser in headless if supported. "
         "Equivalent to --viewport=headless.")
@@ -652,9 +652,8 @@ class CrossBenchCLI:
 
   def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:
     benchmark_cls = self._get_benchmark_cls(args)
-    assert issubclass(
-        benchmark_cls,
-        Benchmark), (f"benchmark_cls={benchmark_cls} is not subclass of Runner")
+    assert (issubclass(benchmark_cls, Benchmark)), (
+        f"benchmark_cls={benchmark_cls} is not subclass of Runner")
     return benchmark_cls.from_cli_args(args)
 
   def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:

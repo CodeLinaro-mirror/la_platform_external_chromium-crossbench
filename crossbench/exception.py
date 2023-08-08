@@ -94,7 +94,7 @@ class ExceptionAnnotator:
   ExceptionAnnotationScopes.
   """
 
-  def __init__(self, throw: bool = False):
+  def __init__(self, throw: bool = False) -> None:
     self._exceptions: List[Entry] = []
     self.throw: bool = throw
     # The info_stack adds additional meta information to handle exceptions.

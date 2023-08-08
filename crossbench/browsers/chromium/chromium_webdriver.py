@@ -22,7 +22,7 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
 from crossbench import exception, helper
-from crossbench.browsers.browser import BROWSERS_CACHE
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, Flags
 from crossbench.platform.android_adb import AndroidAdbPlatform

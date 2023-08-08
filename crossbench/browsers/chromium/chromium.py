@@ -9,12 +9,12 @@ import logging
 import pathlib
 import re
 import tempfile
-from typing import TYPE_CHECKING, Any, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from crossbench import helper
 from crossbench.browsers.browser import (Browser, BrowserVersion,
-                                         BrowserVersionChannel,
-                                         convert_flags_to_label)
+                                         BrowserVersionChannel)
+from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
 

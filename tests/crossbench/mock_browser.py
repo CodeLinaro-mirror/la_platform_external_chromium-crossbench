@@ -10,8 +10,8 @@ import pathlib
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, cast
 
 from crossbench import helper
-from crossbench.browsers.all import (Browser, Chrome, Chromium, Edge, Firefox,
-                                     Safari)
+from crossbench.browsers.all import (Chrome, Chromium, Edge, Firefox, Safari)
+from crossbench.browsers.browser import Browser
 from crossbench.flags import ChromeFlags, Flags, JSFlags
 
 if TYPE_CHECKING:
@@ -25,14 +25,14 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   VERSION: str = "100.22.33.44"
 
   @classmethod
-  def setup_fs(cls, fs):
+  def setup_fs(cls, fs) -> None:
     macos_bin_name = cls.APP_PATH.stem
     if cls.MACOS_BIN_NAME:
       macos_bin_name = cls.MACOS_BIN_NAME
     cls.setup_bin(fs, cls.APP_PATH, macos_bin_name)
 
   @classmethod
-  def setup_bin(cls, fs, bin_path: pathlib.Path, macos_bin_name: str):
+  def setup_bin(cls, fs, bin_path: pathlib.Path, macos_bin_name: str) -> None:
     if helper.PLATFORM.is_macos:
       assert bin_path.suffix == ".app"
       bin_path = bin_path / "Contents" / "MacOS" / macos_bin_name
@@ -66,15 +66,15 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.did_run: bool = False
     self.clear_cache_dir: bool = False
 
-  def clear_cache(self, runner: Runner):
+  def clear_cache(self, runner: Runner) -> None:
     pass
 
-  def start(self, run: Run):
+  def start(self, run: Run) -> None:
     assert not self._is_running
     self._is_running = True
     self.did_run = True
 
-  def force_quit(self):
+  def force_quit(self) -> None:
     # Assert that start() was called before force_quit()
     assert self._is_running
     self._is_running = False
@@ -85,7 +85,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def user_agent(self, runner: Runner) -> str:
     return f"Mock Browser {self.type}, {self.VERSION}"
 
-  def show_url(self, runner: Runner, url):
+  def show_url(self, runner: Runner, url) -> None:
     self.url_list.append(url)
 
   def js(self,

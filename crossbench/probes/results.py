@@ -178,7 +178,7 @@ class ProbeResultDict:
   Maps Probes to their result files Paths.
   """
 
-  def __init__(self, path: pathlib.Path):
+  def __init__(self, path: pathlib.Path) -> None:
     self._path = path
     self._dict: Dict[str, ProbeResult] = {}
 

@@ -19,7 +19,8 @@ from frozendict import frozendict
 import crossbench.browsers.all as browsers
 from crossbench import cli_helper, exception, helper
 from crossbench import platform as cb_platform
-from crossbench.browsers.browser import convert_flags_to_label
+from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
+                                                convert_flags_to_label)
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.config import ConfigObject, ConfigParser
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   FlagGroupItemT = Optional[Tuple[str, Optional[str]]]
+  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], "BrowserConfig"]]
 
 
 def _map_flag_group_item(flag_name: str,
@@ -324,7 +326,7 @@ class BrowserConfig(ConfigObject):
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
   @classmethod
-  def is_supported_browser_path(cls, path: pathlib.Path):
+  def is_supported_browser_path(cls, path: pathlib.Path) -> bool:
     path_str = str(path).lower()
     for short_name in SUPPORTED_BROWSER:
       if short_name in path_str:
@@ -374,7 +376,6 @@ class BrowserConfig(ConfigObject):
     return self.driver.get_platform()
 
 
-BrowserLookupTableT = Dict[str, Tuple[Type[browsers.Browser], BrowserConfig]]
 
 
 class BrowserVariantsConfig:
@@ -399,7 +400,7 @@ class BrowserVariantsConfig:
     self.flag_groups: Dict[str, FlagGroupConfig] = {}
     self._variants: List[Browser] = []
     self._browser_lookup_override = browser_lookup_override or {}
-    self._cache_dir: pathlib.Path = browsers.BROWSERS_CACHE
+    self._cache_dir: pathlib.Path = BROWSERS_CACHE
     self._exceptions = ExceptionAnnotator()
     if raw_config_data:
       assert args, "args object needed when loading from dict."

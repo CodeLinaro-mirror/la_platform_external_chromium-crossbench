@@ -78,7 +78,7 @@ class Benchmark(abc.ABC):
     kwargs = cls.kwargs_from_cli(args)
     return cls(**kwargs)
 
-  def __init__(self, stories: Sequence[Story]):
+  def __init__(self, stories: Sequence[Story]) -> None:
     assert self.NAME is not None, f"{self} has no .NAME property"
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")

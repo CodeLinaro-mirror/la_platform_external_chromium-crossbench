@@ -203,7 +203,7 @@ class SafariWebdriverBrowserProfilerProbeScope(BrowserProfilingProbeScope):
   def get_default_result_path(self) -> pathlib.Path:
     return super().get_default_result_path().parent / "safari.timeline.json"
 
-  def setup_selenium_options(self, options: BaseOptions):
+  def setup_selenium_options(self, options: BaseOptions) -> None:
     assert isinstance(options, SafariOptions)
     cast(SafariOptions, options).automatic_profiling = True
 

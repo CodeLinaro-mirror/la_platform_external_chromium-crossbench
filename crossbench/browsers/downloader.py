@@ -13,7 +13,7 @@ import shutil
 import tempfile
 from typing import Final, Optional, Tuple, Type, Union
 
-from crossbench.browsers.browser import BROWSERS_CACHE
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.platform import Platform
 
 

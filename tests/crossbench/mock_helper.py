@@ -62,7 +62,7 @@ class MockPlatform(ActivePlatformClass):
     return "Mega CPU @ 3.00GHz"
 
   @property
-  def is_battery_powered(self):
+  def is_battery_powered(self) -> bool:
     return self._is_battery_powered
 
   def is_thermal_throttled(self) -> bool:
@@ -163,7 +163,7 @@ class BaseCrossbenchTestCase(
   def filter_data_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]
 
-  def setUp(self):
+  def setUp(self) -> None:
     # Instantiate MockPlatform before setting up fake_filesystem so we can
     # still interact with the original, real Platform object for extracting
     # basic system information.

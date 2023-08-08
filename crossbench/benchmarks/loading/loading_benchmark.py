@@ -192,7 +192,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
                            args.playback),)
     return super().stories_from_cli_args(args)
 
-  def __init__(self, stories: Sequence[Page]):
+  def __init__(self, stories: Sequence[Page]) -> None:
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)
