@@ -67,6 +67,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._driver_path = driver_path
 
   @property
+  def driver(self):
+    return self._driver
+
+  @property
   def driver_log_file(self) -> pathlib.Path:
     log_file = self.log_file
     assert log_file

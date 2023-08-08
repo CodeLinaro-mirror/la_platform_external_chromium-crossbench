@@ -49,6 +49,7 @@ class CrossBenchCLI:
       benchmarks.JetStream20Benchmark,
       benchmarks.MotionMark12Benchmark,
       benchmarks.PageLoadBenchmark,
+      benchmarks.PowerBenchmark,
   )
 
   RUNNER_CLS: Type[Runner] = Runner

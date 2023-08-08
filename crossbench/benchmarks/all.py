@@ -11,6 +11,7 @@ from crossbench.benchmarks.motionmark import MotionMark12Benchmark
 from crossbench.benchmarks.speedometer import (Speedometer20Benchmark,
                                                Speedometer21Benchmark,
                                                Speedometer30Benchmark)
+from crossbench.benchmarks.experimental.power import PowerBenchmark
 
 __all__ = [
     "JetStream20Benchmark",
@@ -20,4 +21,5 @@ __all__ = [
     "Speedometer20Benchmark",
     "Speedometer21Benchmark",
     "Speedometer30Benchmark",
+    "PowerBenchmark",
 ]
