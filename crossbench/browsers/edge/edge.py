@@ -8,10 +8,10 @@ import pathlib
 from typing import TYPE_CHECKING, Optional
 
 import crossbench
+from crossbench.browsers.chromium.chromium import Chromium
 import crossbench.exception
 import crossbench.flags
 from crossbench import helper
-from crossbench.browsers.chromium import Chromium
 
 if TYPE_CHECKING:
   import crossbench.runner

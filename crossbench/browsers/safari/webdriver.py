@@ -21,7 +21,9 @@ from .safari import Safari, find_safaridriver
 if TYPE_CHECKING:
   from crossbench.flags import Flags
   from crossbench.platform.macos import MacOSPlatform
-  from crossbench.runner import Run, Runner
+  from crossbench.runner.runner import Runner
+  from crossbench.runner.run import Run
+
 
 class SafariWebDriver(WebDriverBrowser, Safari):
 

@@ -22,9 +22,11 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 from .probe import Probe, ProbeMissingDataError, ProbeScope
 
 if TYPE_CHECKING:
-  from crossbench.runner import (Actions, BrowsersRunGroup, RepetitionsRunGroup,
-                                 Run, RunGroup)
   from crossbench.helper import JSON
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
+                                        RunGroup)
+  from crossbench.runner.run import Run
 
 
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):

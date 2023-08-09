@@ -25,7 +25,8 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.internal import ErrorsProbe
-from crossbench.runner import Run, Runner, Timing
+from crossbench.runner.runner import Runner
+from crossbench.runner.timing import Timing
 from crossbench.benchmarks.benchmark import Benchmark
 
 from . import cli_config
@@ -34,6 +35,7 @@ from .devtools_recorder_proxy import CrossbenchDevToolsRecorderProxy
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
+  from crossbench.runner.run import Run
   BenchmarkClsT = Type[Benchmark]
   BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pathlib.Path]]
 

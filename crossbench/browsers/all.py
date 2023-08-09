@@ -4,32 +4,16 @@
 
 from __future__ import annotations
 
-from crossbench.browsers.chrome import (Chrome, ChromeAppleScript,
-                                        ChromeWebDriver, ChromeWebDriverAndroid)
-from crossbench.browsers.chromium import (Chromium, ChromiumAppleScript,
-                                          ChromiumWebDriver,
-                                          ChromiumWebDriverAndroid)
-from crossbench.browsers.edge import Edge, EdgeWebDriver
-from crossbench.browsers.firefox import Firefox, FirefoxWebDriver
-from crossbench.browsers.safari import (Safari, SafariAppleScript,
-                                        SafariWebDriver)
-from crossbench.browsers.webdriver import RemoteWebDriver
-
-__all__ = (
-    "Chrome",
-    "ChromeAppleScript",
-    "ChromeWebDriver",
-    "ChromeWebDriverAndroid",
-    "Chromium",
-    "ChromiumAppleScript",
-    "ChromiumWebDriver",
-    "ChromiumWebDriverAndroid",
-    "Edge",
-    "EdgeWebDriver",
-    "Firefox",
-    "FirefoxWebDriver",
-    "RemoteWebDriver",
-    "Safari",
-    "SafariAppleScript",
-    "SafariWebDriver",
-)
+from crossbench.browsers.chromium.chromium import Chromium
+from crossbench.browsers.chromium.applescript import ChromiumAppleScript
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, ChromiumWebDriverAndroid
+from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.chrome.applescript import ChromeAppleScript
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver, ChromeWebDriverAndroid
+from crossbench.browsers.edge.edge import Edge
+from crossbench.browsers.edge.webdriver import EdgeWebDriver
+from crossbench.browsers.firefox.firefox import Firefox
+from crossbench.browsers.firefox.webdriver import FirefoxWebDriver
+from crossbench.browsers.safari.safari import Safari
+from crossbench.browsers.safari.applescript import SafariAppleScript
+from crossbench.browsers.safari.webdriver import SafariWebDriver

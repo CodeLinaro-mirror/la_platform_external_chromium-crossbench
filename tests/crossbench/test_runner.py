@@ -4,7 +4,7 @@
 
 import unittest
 
-from crossbench.runner import Timing
+from crossbench.runner.timing import Timing
 
 import datetime as dt
 

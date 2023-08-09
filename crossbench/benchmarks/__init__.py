@@ -7,11 +7,3 @@ from __future__ import annotations
 from crossbench.benchmarks.benchmark import (Benchmark, PressBenchmark,
                                              PressBenchmarkStoryFilter,
                                              StoryFilter, SubStoryBenchmark)
-
-__all__ = [
-    "Benchmark",
-    "PressBenchmark",
-    "PressBenchmarkStoryFilter",
-    "StoryFilter",
-    "SubStoryBenchmark",
-]

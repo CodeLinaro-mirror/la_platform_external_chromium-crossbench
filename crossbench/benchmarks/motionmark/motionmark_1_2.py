@@ -13,10 +13,12 @@ from crossbench.benchmarks.benchmark import PressBenchmark
 from crossbench.probes import metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult
-from crossbench.stories import PressBenchmarkStory
+from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
-  from crossbench.runner import Actions, BrowsersRunGroup, Run, StoriesRunGroup
+  from crossbench.runner.run import Run
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.groups import (StoriesRunGroup, BrowsersRunGroup)
   from crossbench import helper
 
 

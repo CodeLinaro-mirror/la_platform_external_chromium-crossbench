@@ -9,7 +9,7 @@ import pytest
 
 from crossbench.benchmarks import all as benchmarks
 from crossbench.benchmarks.benchmark import PressBenchmark
-from crossbench.browsers import chrome
+from crossbench.browsers.chrome import webdriver as chrome_webdriver
 from crossbench.cbb import cbb_adapter
 from tests import test_helper
 
@@ -34,7 +34,8 @@ def get_benchmark(benchmark_cls) -> PressBenchmark:
 
 @pytest.fixture
 def webdriver(driver_path, browser_path):
-  return chrome.ChromeWebDriver("Chrome", browser_path, driver_path=driver_path)
+  return chrome_webdriver.ChromeWebDriver(
+      "Chrome", browser_path, driver_path=driver_path)
 
 
 def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:

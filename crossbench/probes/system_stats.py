@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.platform.platform import Platform
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 
 class SystemStatsProbe(probe.Probe):

@@ -21,8 +21,9 @@ from .probe import Probe, ProbeMissingDataError, ProbeScope, ResultLocation
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
-  from crossbench.runner import BrowsersRunGroup, RepetitionsRunGroup, Run
-  from crossbench.stories import Story
+  from crossbench.runner.run import Run
+  from crossbench.runner.groups import (RepetitionsRunGroup, BrowsersRunGroup)
+  from crossbench.stories.story import Story
 
 
 class VideoProbe(Probe):

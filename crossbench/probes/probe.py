@@ -16,12 +16,15 @@ from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        ProbeResult)
 
 if TYPE_CHECKING:
+  from selenium.webdriver.common.options import BaseOptions
+
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.platform import Platform
-  from crossbench.runner import (BrowsersRunGroup, RepetitionsRunGroup, Run,
-                                 Runner, StoriesRunGroup)
-  from selenium.webdriver.common.options import BaseOptions
+  from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
+                                        StoriesRunGroup)
+  from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 ProbeT = TypeVar("ProbeT", bound="Probe")
 

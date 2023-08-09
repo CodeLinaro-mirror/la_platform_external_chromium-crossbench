@@ -11,11 +11,14 @@ from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.probe import Probe
-from crossbench.probes.profiling import BrowserProfilingProbe, ProfilingProbe
+from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
+from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.tracing import TracingProbe
-from crossbench.probes.v8 import (V8BuiltinsPGOProbe, V8LogProbe, V8RCSProbe,
-                                  V8TurbolizerProbe)
+from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
+from crossbench.probes.v8.log import V8LogProbe
+from crossbench.probes.v8.rcs import V8RCSProbe
+from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 
 ABSTRACT_PROBES: Tuple[Type[Probe], ...] = (Probe, JsonResultProbe)

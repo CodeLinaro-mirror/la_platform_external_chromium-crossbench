@@ -19,9 +19,9 @@ import crossbench.benchmarks.all as benchmarks
 import crossbench.browsers.browser
 import crossbench.browsers.webdriver as cb_webdriver
 import crossbench.env
-import crossbench.runner
+import crossbench.runner.runner
 from crossbench.benchmarks.benchmark import PressBenchmark
-from crossbench.stories import PressBenchmarkStory
+from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 press_benchmarks = [
     benchmarks.Speedometer20Benchmark,
@@ -116,7 +116,7 @@ def run_benchmark(output_folder: Union[str, pathlib.Path],
     browser_list: List of browsers to run the benchmark on.
     benchmark: The Benchmark instance to run.
   """
-  runner = crossbench.runner.Runner(
+  runner = crossbench.runner.runner.Runner(
       out_dir=pathlib.Path(output_folder),
       browsers=browser_list,
       benchmark=benchmark,

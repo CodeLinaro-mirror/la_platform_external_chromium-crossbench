@@ -3,7 +3,3 @@
 # found in the LICENSE file.
 
 from .cli import CrossBenchCLI
-
-__all__ = [
-    "CrossBenchCLI",
-]

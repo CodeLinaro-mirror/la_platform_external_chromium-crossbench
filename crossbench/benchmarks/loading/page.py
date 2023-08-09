@@ -6,16 +6,16 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
-from crossbench.stories import Story
+from crossbench.stories.story import Story
 
 from .action import Action
 from .playback_controller import PlaybackController
 
 if TYPE_CHECKING:
-  from crossbench.runner import Run
   from crossbench import helper
+  from crossbench.runner.run import Run
 
 
 class Page(Story, metaclass=abc.ABCMeta):

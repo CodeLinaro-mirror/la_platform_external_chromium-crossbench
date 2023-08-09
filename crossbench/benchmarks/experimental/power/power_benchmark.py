@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 import abc
-import time
 import datetime as dt
+import time
+from typing import Sequence, Tuple
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
@@ -14,11 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from crossbench.benchmarks.benchmark import Benchmark
 from crossbench.browsers.webdriver import WebDriverBrowser
-from crossbench.runner import Run
-from crossbench.stories import Story
-from typing import (Any, Dict, Iterator, List, Optional, Sequence, TextIO,
-                    Tuple, Type, Union)
-
+from crossbench.runner.run import Run
+from crossbench.stories.story import Story
 
 STORY_LIST = [
   "YoutubeFullscreen",

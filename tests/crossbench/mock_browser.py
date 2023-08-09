@@ -16,7 +16,8 @@ from crossbench.flags import ChromeFlags, Flags, JSFlags
 
 if TYPE_CHECKING:
   import datetime as dt
-  from crossbench.runner import Run, Runner
+  from crossbench.runner.runner import Runner
+  from crossbench.runner.run import Run
 
 
 class MockBrowser(Browser, metaclass=abc.ABCMeta):

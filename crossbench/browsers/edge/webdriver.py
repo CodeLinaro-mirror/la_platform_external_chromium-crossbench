@@ -19,7 +19,7 @@ import crossbench
 import crossbench.exception
 import crossbench.flags
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
-from crossbench.browsers.chromium import ChromiumWebDriver
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
 

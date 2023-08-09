@@ -20,7 +20,7 @@ from crossbench.platform import SubprocessError
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
-  from crossbench.runner import Runner
+  from crossbench.runner.runner import Runner
 
 
 def merge_bool(name: str, left: Optional[bool],

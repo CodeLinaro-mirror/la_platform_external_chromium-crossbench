@@ -19,7 +19,7 @@ from .page import (PAGE_LIST, PAGE_LIST_SMALL, PAGES, CombinedPage, LivePage,
 from .playback_controller import PlaybackController
 
 if TYPE_CHECKING:
-  from crossbench.stories import Story
+  from crossbench.stories.story import Story
 
 
 class LoadingPageFilter(StoryFilter[Page]):

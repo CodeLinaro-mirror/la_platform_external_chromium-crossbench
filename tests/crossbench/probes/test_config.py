@@ -5,7 +5,8 @@
 import unittest
 
 from crossbench import compat, helper
-from crossbench.probes import Probe, ProbeConfigParser
+from crossbench.probes import Probe
+from crossbench.probes.probe import ProbeConfigParser
 from tests import test_helper
 
 

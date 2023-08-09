@@ -15,7 +15,7 @@ import time
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, cast
 
 from crossbench import helper
-from crossbench.browsers.chromium import Chromium
+from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.platform import Platform, SubprocessError
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeScope, ResultLocation
 from crossbench.probes.results import ProbeResult
@@ -24,7 +24,8 @@ from crossbench.probes.v8.log import V8LogProbe
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner import BrowsersRunGroup, Run
+  from crossbench.runner.run import Run
+  from crossbench.runner.groups import BrowsersRunGroup
 
 
 class ProfilingProbe(Probe):

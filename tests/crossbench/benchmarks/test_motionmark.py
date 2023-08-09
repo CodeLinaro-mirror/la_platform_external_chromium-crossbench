@@ -12,7 +12,7 @@ from crossbench.benchmarks.motionmark.motionmark_1_2 import (
     MotionMark12Benchmark, MotionMark12Probe, MotionMark12Story)
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
-from crossbench.runner import Runner
+from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 from tests import test_helper
 

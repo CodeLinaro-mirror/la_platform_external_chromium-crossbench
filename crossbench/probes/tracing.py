@@ -10,7 +10,7 @@ import pathlib
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
 
 from crossbench import cli_helper, compat, helper
-from crossbench.browsers.chromium import Chromium
+from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
                                      ResultLocation)
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.flags import ChromeFlags
   from crossbench.platform import Platform
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 MINIMAL_CONFIG = {
     "toplevel",

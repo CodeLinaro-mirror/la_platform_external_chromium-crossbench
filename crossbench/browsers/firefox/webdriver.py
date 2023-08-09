@@ -28,7 +28,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
   from crossbench.platform import Platform
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 
 class FirefoxWebDriver(WebDriverBrowser, Firefox):

@@ -25,7 +25,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
   from crossbench.platform.platform import Platform
-  from crossbench.runner import Run, Runner
+  from crossbench.runner.runner import Runner
+  from crossbench.runner.run import Run
 
 
 class DriverException(RuntimeError):

@@ -6,10 +6,3 @@ from __future__ import annotations
 
 from .benchmark import (Benchmark, PressBenchmark, StoryFilter,
                         SubStoryBenchmark)
-
-__all__ = [
-    "Benchmark",
-    "PressBenchmark",
-    "StoryFilter",
-    "SubStoryBenchmark",
-]

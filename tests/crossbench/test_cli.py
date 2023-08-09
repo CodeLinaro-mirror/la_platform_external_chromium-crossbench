@@ -19,7 +19,7 @@ from crossbench.cli.cli_config import (BrowserConfig, BrowserDriverType,
                                        BrowserVariantsConfig, DriverConfig,
                                        ProbeConfigError)
 from crossbench.probes import internal
-from crossbench.runner import Runner
+from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase, MockCLI

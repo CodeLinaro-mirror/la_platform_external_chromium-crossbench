@@ -18,7 +18,7 @@ from crossbench.probes.results import ProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 
 class SamplerType(helper.StrEnumWithHelp):

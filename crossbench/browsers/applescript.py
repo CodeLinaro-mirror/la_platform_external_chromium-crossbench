@@ -19,7 +19,8 @@ if TYPE_CHECKING:
   import datetime as dt
   import pathlib
 
-  from crossbench.runner import Run, Runner
+  from crossbench.runner.runner import Runner
+  from crossbench.runner.run import Run
 
 
 class AppleScript:

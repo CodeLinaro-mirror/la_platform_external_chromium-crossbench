@@ -4,7 +4,7 @@
 from __future__ import annotations
 import logging
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING
 
 from crossbench.probes import metric
 from crossbench.probes.json import JsonResultProbe
@@ -12,7 +12,8 @@ from crossbench.probes.json import JsonResultProbe
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.results import ProbeResult
-  from crossbench.runner import Actions, BrowsersRunGroup, StoriesRunGroup
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
   from crossbench import helper
 
 

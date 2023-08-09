@@ -12,9 +12,7 @@ from argparse import ArgumentTypeError
 from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
-  from crossbench.runner import Run
-
-  from .browser import Browser
+  from crossbench.runner.run import Run
 
 
 class SplashScreen:
@@ -63,7 +61,7 @@ class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):
 class DetailedSplashScreen(BaseURLSplashScreen):
 
   def get_url(self, run: Run) -> str:
-    browser: Browser = run.browser
+    browser = run.browser
     title = html.escape(browser.app_name.title())
     version = html.escape(browser.version)
     page = ("<html><head>"
@@ -96,7 +94,7 @@ class DetailedSplashScreen(BaseURLSplashScreen):
     return section
 
   def _render_browser_details(self, run: Run) -> str:
-    browser: Browser = run.browser
+    browser = run.browser
     properties = {
         "User Agent": browser.user_agent(run.runner),
         **browser.details_json()

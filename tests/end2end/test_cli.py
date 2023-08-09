@@ -36,7 +36,7 @@ def cli_test_context(browser_path, driver_path):
       # The CQ uses the latest canary, which might not have a easily publicly
       # accessible chromedriver available.
       with mock.patch(
-          "crossbench.browsers.chromium.chromium_webdriver.ChromeDriverFinder.download",
+          "crossbench.browsers.chromium.webdriver.ChromeDriverFinder.download",
           return_value=driver_path):
         yield
 

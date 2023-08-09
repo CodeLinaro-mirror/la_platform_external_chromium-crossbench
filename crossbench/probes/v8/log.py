@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, cast
 
 from crossbench import cli_helper, compat, helper
 from crossbench.browsers.browser import Browser
-from crossbench.browsers.chromium import Chromium
+from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags import JSFlags
 from crossbench.platform.linux import LinuxPlatform
 from crossbench.probes import helper as probe_helper
@@ -25,7 +25,8 @@ from crossbench.probes.results import ProbeResult
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.platform import Platform
-  from crossbench.runner import BrowsersRunGroup, Run
+  from crossbench.runner.run import Run
+  from crossbench.runner.groups import BrowsersRunGroup
 
 _PROF_FLAG = "--prof"
 _LOG_ALL_FLAG = "--log-all"

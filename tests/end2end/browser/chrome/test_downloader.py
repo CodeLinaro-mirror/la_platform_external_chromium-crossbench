@@ -11,11 +11,10 @@ from typing import Union
 import pytest
 
 from crossbench import compat
-from crossbench.browsers.chrome import ChromeWebDriver
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chrome.downloader import ChromeDownloader
-from crossbench.browsers.chromium.chromium_webdriver import (ChromeDriverFinder,
-                                                             DriverNotFoundError
-                                                            )
+from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
+                                                    DriverNotFoundError)
 from crossbench.platform import PLATFORM
 from tests import test_helper
 

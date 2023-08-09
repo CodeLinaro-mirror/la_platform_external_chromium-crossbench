@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
 if TYPE_CHECKING:
   from crossbench.helper import JsonDict
   from crossbench.probes.probe import Probe
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 
 class ProbeResult(abc.ABC):

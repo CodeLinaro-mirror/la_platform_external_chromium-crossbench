@@ -10,7 +10,7 @@ from ..applescript import AppleScriptBrowser
 from .safari import Safari
 
 if TYPE_CHECKING:
-  from crossbench.runner import Runner
+  from crossbench.runner.runner import Runner
 
 
 class SafariAppleScript(Safari, AppleScriptBrowser):

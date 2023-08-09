@@ -1,61 +1,20 @@
-# Copyright 2022 The Chromium Authors
+# Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 from __future__ import annotations
 
-from abc import ABC, ABCMeta, abstractmethod
-import abc
 import datetime as dt
-from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING, Tuple, Type, TypeVar
+import abc
+from typing import List, Optional, Sequence, Tuple, Type, TypeVar
 
-if TYPE_CHECKING:
-  from crossbench.probes import Probe
-  from crossbench.runner import Run
-  from crossbench import helper
-
-
-class Story(ABC):
-  PROBES: Tuple[Type[Probe], ...] = ()
-
-  @classmethod
-  @abstractmethod
-  def all_story_names(cls) -> Sequence[str]:
-    pass
-
-  def __init__(self,
-               name: str,
-               duration: dt.timedelta = dt.timedelta(seconds=15)):
-    assert name, "Invalid page name"
-    self._name = name
-    self._duration = duration
-    assert self._duration.total_seconds() > 0, (
-        f"Duration must be non-empty, but got: {duration}")
-
-  @property
-  def name(self) -> str:
-    return self._name
-
-  @property
-  def duration(self) -> dt.timedelta:
-    return self._duration
-
-  def details_json(self) -> helper.JsonDict:
-    return {"name": self.name, "duration": self.duration.total_seconds()}
-
-  @abstractmethod
-  def run(self, run: Run) -> None:
-    pass
-
-  def __str__(self) -> str:
-    return f"Story(name={self.name})"
-
+from .story import Story
 
 PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound="PressBenchmarkStory")
 
 
-class PressBenchmarkStory(Story, metaclass=ABCMeta):
+class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   NAME: str = ""
   URL: str = ""
   URL_LOCAL: str = ""
@@ -107,7 +66,6 @@ class PressBenchmarkStory(Story, metaclass=ABCMeta):
             substories=substories,
             **kwargs)
     ]
-
 
   _substories: Sequence[str]
   _url: str

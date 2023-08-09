@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench.probes import probe
 from crossbench.probes.metric import MetricsMerger
@@ -14,8 +14,10 @@ from crossbench.probes.json import JsonResultProbe, JsonResultProbeScope
 from crossbench.probes.results import EmptyProbeResult, ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
-  from crossbench.runner import (Actions, RepetitionsRunGroup, Run,
-                                 StoriesRunGroup, BrowsersRunGroup)
+  from crossbench.runner.run import Run
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.groups import (RepetitionsRunGroup, StoriesRunGroup,
+                                        BrowsersRunGroup)
   from crossbench import helper
 
 

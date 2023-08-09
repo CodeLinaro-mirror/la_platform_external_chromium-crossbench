@@ -4,20 +4,20 @@
 
 from __future__ import annotations
 
-import logging
 import pathlib
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 
-from crossbench.browsers.chromium import (ChromiumWebDriver,
-                                          ChromiumWebDriverAndroid)
-from crossbench.browsers.webdriver import DriverException
+from crossbench.browsers.chromium.applescript import ChromiumAppleScript
+
+from .helper import ChromePathMixin
 
 if TYPE_CHECKING:
+  from typing import Optional
+
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
   from crossbench.browsers.splash_screen import SplashScreen
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.platform import Platform
 
 
-class ChromeWebDriver(ChromiumWebDriver):
+class ChromeAppleScript(ChromePathMixin, ChromiumAppleScript):
 
   WEB_DRIVER_OPTIONS = ChromeOptions
   WEB_DRIVER_SERVICE = ChromeService
@@ -50,27 +50,12 @@ class ChromeWebDriver(ChromiumWebDriver):
         js_flags,
         cache_dir,
         type=type,
-        driver_path=driver_path,
+        driver_path=None,
         viewport=viewport,
         splash_screen=splash_screen,
         platform=platform)
+    del driver_path
 
-  def _create_driver(self, options: ChromeOptions,
-                     service: ChromeService) -> ChromiumDriver:
-    try:
-      return webdriver.Chrome(  # pytype: disable=wrong-keyword-args
-          options=options,
-          service=service)
-    except selenium.common.exceptions.WebDriverException as e:
-      msg = f"Could not start WebDriver: {e.msg}"
-      if self.platform.is_android:
-        msg += ("\nPossibly missing chrome settings on {self.platform}.\n"
-                "Please make sure to allow chrome-flags on "
-                "non-rooted android devices: \n"
-                "chrome://flags#enable-command-line-on-non-rooted-devices")
-      logging.error(msg)
-      raise DriverException(msg) from e
-
-
-class ChromeWebDriverAndroid(ChromiumWebDriverAndroid, ChromeWebDriver):
-  pass
+  def _create_driver(self, options, service) -> ChromiumDriver:
+    return webdriver.Chrome(  # pytype: disable=wrong-keyword-args
+        options=options, service=service)

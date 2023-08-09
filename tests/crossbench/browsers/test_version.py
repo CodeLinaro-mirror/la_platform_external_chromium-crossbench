@@ -3,15 +3,15 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import abc
+import unittest
 from typing import Optional, cast
 
-import unittest
-
-from crossbench.browsers.browser import BrowserVersion, BrowserVersionChannel
-from crossbench.browsers.chromium.chromium import ChromiumVersion
-from crossbench.browsers.firefox.firefox import FirefoxVersion
-from crossbench.browsers.safari.safari import SafariVersion
+from crossbench.browsers.chromium.version import ChromiumVersion
+from crossbench.browsers.firefox.version import FirefoxVersion
+from crossbench.browsers.safari.version import SafariVersion
+from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 
 class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):

@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 from crossbench import compat
 
 if TYPE_CHECKING:
-  from crossbench.runner import Run
-  from crossbench.stories import Story
+  from crossbench.runner.run import Run
+  from crossbench.stories.story import Story
   from crossbench import helper
 
 

@@ -20,10 +20,10 @@ from crossbench import platform
 from crossbench.benchmarks.benchmark import SubStoryBenchmark
 from crossbench.cli import CrossBenchCLI
 from crossbench.platform.platform import MachineArch
-from crossbench.stories import Story
+from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.runner import Runner
+  from crossbench.runner.runner import Runner
 
 from . import mock_browser
 

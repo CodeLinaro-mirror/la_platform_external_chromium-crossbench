@@ -7,14 +7,15 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional, cast
 
-from crossbench.browsers.chromium import Chromium
+from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes.probe import Probe, ProbeMissingDataError, ProbeScope
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.runner import (BrowsersRunGroup, RepetitionsRunGroup, Run,
-                                 StoriesRunGroup)
+  from crossbench.runner.run import Run
+  from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
+                                        StoriesRunGroup)
 
 
 class V8RCSProbe(Probe):

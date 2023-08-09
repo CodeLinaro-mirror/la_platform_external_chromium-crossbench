@@ -33,7 +33,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.platform import Platform
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):

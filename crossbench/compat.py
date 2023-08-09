@@ -31,6 +31,3 @@ else:
       return True
     except ValueError:
       return False
-
-
-__all__ = ("StrEnum", "is_relative_to")

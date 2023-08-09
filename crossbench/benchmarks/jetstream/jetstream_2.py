@@ -10,17 +10,18 @@ import logging
 import pathlib
 import datetime as dt
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Final, List, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type
 
 from crossbench.benchmarks import PressBenchmark
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict
-from crossbench.stories import PressBenchmarkStory
+from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
-  from crossbench.runner import (Actions, BrowsersRunGroup, Run,
-                                 StoriesRunGroup)
+  from crossbench.runner.run import Run
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.groups import (StoriesRunGroup, BrowsersRunGroup)
 
 
 class JetStream2Probe(JsonResultProbe, metaclass=abc.ABCMeta):

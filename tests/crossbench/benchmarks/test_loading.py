@@ -17,20 +17,19 @@ import hjson
 import crossbench
 import crossbench.env
 import crossbench.runner
-from crossbench.benchmarks.loading import PageLoadBenchmark
-from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
+from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter, PageLoadBenchmark
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, InteractivePage,
                                                 LivePage)
 from crossbench.benchmarks.loading.page_config import PageConfig
 from crossbench.benchmarks.loading.playback_controller import (
     PlaybackController, RepeatPlaybackController, TimeoutPlaybackController)
-from crossbench.stories import Story
+from crossbench.runner.runner import Runner
+from crossbench.stories.story import Story
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
-#TODO: fix imports
 cb = crossbench
 
 
@@ -92,6 +91,7 @@ class PlaybackControllerTest(unittest.TestCase):
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
+
 
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
@@ -206,7 +206,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
   def _test_run(self, stories, throw: bool = False):
     benchmark = self.benchmark_cls(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
-    runner = cb.runner.Runner(
+    runner = Runner(
         self.out_dir,
         self.browsers,
         benchmark,

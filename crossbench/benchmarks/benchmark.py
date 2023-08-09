@@ -10,12 +10,13 @@ import logging
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
                     Tuple, Type, TypeVar, cast)
-from crossbench import helper, cli_helper
 
-from crossbench.stories import PressBenchmarkStory, Story
+from crossbench import cli_helper, helper
+from crossbench.stories.press_benchmark import PressBenchmarkStory
+from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.runner import Runner
+  from crossbench.runner.runner import Runner
 
 
 class Benchmark(abc.ABC):

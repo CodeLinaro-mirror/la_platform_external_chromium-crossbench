@@ -12,8 +12,9 @@ import hjson
 from frozendict import frozendict
 
 from crossbench import helper
-from crossbench.browsers.chrome import Chrome, ChromeWebDriver
-from crossbench.browsers.safari import Safari
+from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver
+from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
                                        BrowserDriverType, BrowserVariantsConfig,
                                        ConfigFileError, DriverConfig,

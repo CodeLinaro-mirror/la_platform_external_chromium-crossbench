@@ -8,13 +8,13 @@ import pathlib
 from typing import TYPE_CHECKING, cast
 
 from crossbench import helper
-from crossbench.browsers.chromium import Chromium
+from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes.probe import Probe, ProbeScope, ResultLocation
 from crossbench.probes.results import BrowserProbeResult, LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.runner import Run
+  from crossbench.runner.run import Run
 
 
 class V8TurbolizerProbe(Probe):
