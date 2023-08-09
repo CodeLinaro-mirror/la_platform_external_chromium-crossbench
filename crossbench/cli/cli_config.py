@@ -46,7 +46,7 @@ def _map_flag_group_item(flag_name: str,
 
 
 
-class ConfigFileError(argparse.ArgumentTypeError):
+class ConfigError(argparse.ArgumentTypeError):
   pass
 
 
@@ -409,7 +409,7 @@ class BrowserVariantsConfig:
   @property
   def variants(self) -> List[Browser]:
     self._exceptions.assert_success(
-        "Could not create variants from config files: {}", ConfigFileError)
+        "Could not create variants from config files: {}", ConfigError)
     return self._variants
 
   def load(self, f: TextIO, args: argparse.Namespace) -> None:
@@ -426,9 +426,9 @@ class BrowserVariantsConfig:
         with self._exceptions.info("Parsing config['flags']"):
           self._parse_flag_groups(config["flags"])
       if "browsers" not in config:
-        raise ConfigFileError("Config does not provide a 'browsers' dict.")
+        raise ConfigError("Config does not provide a 'browsers' dict.")
       if not config["browsers"]:
-        raise ConfigFileError("Config contains empty 'browsers' dict.")
+        raise ConfigError("Config contains empty 'browsers' dict.")
       with self._exceptions.info("Parsing config['browsers']"):
         self._parse_browsers(config["browsers"], args)
     except Exception as e:  # pylint: disable=broad-except
@@ -457,11 +457,11 @@ class BrowserVariantsConfig:
   def _parse_flag_group(self, name: str,
                         raw_flag_group_data: Dict[str, Any]) -> None:
     if name in self.flag_groups:
-      raise ConfigFileError(f"flag-group flags['{name}'] exists already")
+      raise ConfigError(f"flag-group flags['{name}'] exists already")
     variants: Dict[str, List[str]] = {}
     for flag_name, values in raw_flag_group_data.items():
       if not flag_name.startswith("-"):
-        raise ConfigFileError(f"Invalid flag name: '{flag_name}'")
+        raise ConfigError(f"Invalid flag name: '{flag_name}'")
       if flag_name not in variants:
         flag_values = variants[flag_name] = []
       else:
@@ -470,13 +470,12 @@ class BrowserVariantsConfig:
         values = [values]
       for value in values:
         if value == "None,":
-          raise ConfigFileError(
+          raise ConfigError(
               f"Please use null instead of None for flag '{flag_name}' ")
         # O(n^2) check, assuming very few values per flag.
         if value in flag_values:
-          raise ConfigFileError(
-              "Same flag variant was specified more than once: "
-              f"'{value}' for entry '{flag_name}'")
+          raise ConfigError("Same flag variant was specified more than once: "
+                            f"'{value}' for entry '{flag_name}'")
         flag_values.append(value)
     self.flag_groups[name] = FlagGroupConfig(name, variants)
 
@@ -501,7 +500,7 @@ class BrowserVariantsConfig:
       browser_cls = self._get_browser_cls(browser_config)
     if browser_config.driver.type != BrowserDriverType.ANDROID and (
         not browser_config.path.exists()):
-      raise ConfigFileError(
+      raise ConfigError(
           f"browsers['{name}'].path='{browser_config.path}' does not exist.")
     raw_flags: List[Tuple[FlagItemT, ...]] = []
     with self._exceptions.info(f"Parsing browsers['{name}'].flags"):
@@ -540,11 +539,11 @@ class BrowserVariantsConfig:
     if isinstance(flag_group_names, str):
       flag_group_names = [flag_group_names]
     if not isinstance(flag_group_names, list):
-      raise ConfigFileError(f"'flags' is not a list for browser='{name}'")
+      raise ConfigError(f"'flags' is not a list for browser='{name}'")
     seen_flag_group_names = set()
     for flag_group_name in flag_group_names:
       if flag_group_name in seen_flag_group_names:
-        raise ConfigFileError(
+        raise ConfigError(
             f"Duplicate group name '{flag_group_name}' for browser='{name}'")
       seen_flag_group_names.add(flag_group_name)
       # Use temporary FlagGroupConfig for inline fixed flag definition
@@ -560,9 +559,9 @@ class BrowserVariantsConfig:
       else:
         maybe_flag_group = self.flag_groups.get(flag_group_name, None)
         if maybe_flag_group is None:
-          raise ConfigFileError(f"group='{flag_group_name}' "
-                                f"for browser='{name}' does not exist.\n"
-                                f"Choices are: {list(self.flag_groups.keys())}")
+          raise ConfigError(f"group='{flag_group_name}' "
+                            f"for browser='{name}' does not exist.\n"
+                            f"Choices are: {list(self.flag_groups.keys())}")
         flag_group = maybe_flag_group
       flags_variants += flag_group.get_variant_items()
     if len(flags_variants) == 0:
@@ -774,14 +773,15 @@ class SingleProbeConfig(ConfigObject):
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
-    # 2. variant: inline hjson
+    # 2. variant, inline hjson: "name:{hjson}"
     match = _PROBE_CONFIG_RE.fullmatch(value)
     if match is None:
       raise ProbeConfigError(f"Could not parse probe argument: {value}")
     config = {"name": match["probe_name"]}
-    if match["config"]:
-      inline_config = cli_helper.parse_inline_hjson(match["config"])
-      assert "name" not in inline_config
+    if config_str := match["config"]:
+      inline_config = cli_helper.parse_inline_hjson(config_str)
+      if "name" in inline_config:
+        raise ProbeConfigError("Inline hjson cannot redefine 'name'.")
       config.update(inline_config)
     return cls.load_dict(config)
 
@@ -832,8 +832,7 @@ class ProbeConfig:
 
   @property
   def probes(self) -> List[Probe]:
-    self._exceptions.assert_success("Could not load probes: {}",
-                                    ConfigFileError)
+    self._exceptions.assert_success("Could not load probes: {}", ConfigError)
     return self._probes
 
   def add_probe(self, probe_config: SingleProbeConfig) -> None:

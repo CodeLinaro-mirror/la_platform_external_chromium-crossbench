@@ -17,7 +17,7 @@ from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
                                        BrowserDriverType, BrowserVariantsConfig,
-                                       ConfigFileError, DriverConfig,
+                                       ConfigError, DriverConfig,
                                        FlagGroupConfig, ProbeConfig,
                                        SingleProbeConfig)
 from crossbench.probes.power_sampler import PowerSamplerProbe
@@ -451,7 +451,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertGreaterEqual(len(config.variants), 1)
 
   def test_flag_combination_invalid(self):
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "flags": {
@@ -473,7 +473,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertIn("invalid-flag-name", message)
 
   def test_flag_combination_none(self):
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "flags": {
@@ -493,7 +493,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertIn("None", str(cm.exception))
 
   def test_flag_combination_duplicate(self):
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "flags": {
@@ -516,13 +516,13 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertIn("--duplicate-flag", str(cm.exception))
 
   def test_empty(self):
-    with self.assertRaises(ConfigFileError):
+    with self.assertRaises(ConfigError):
       BrowserVariantsConfig({"other": {}}, args=self.mock_args).variants
-    with self.assertRaises(ConfigFileError):
+    with self.assertRaises(ConfigError):
       BrowserVariantsConfig({"browsers": {}}, args=self.mock_args).variants
 
   def test_unknown_group(self):
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "browsers": {
@@ -536,7 +536,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertIn("unknown-flag-group", str(cm.exception))
 
   def test_duplicate_group(self):
-    with self.assertRaises(ConfigFileError):
+    with self.assertRaises(ConfigError):
       BrowserVariantsConfig(
           {
               "flags": {
@@ -566,7 +566,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args).variants
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "flags": {
@@ -584,7 +584,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertIn("chrome-stable", str(cm.exception))
     self.assertIn("flags", str(cm.exception))
 
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "flags": {
@@ -605,7 +605,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertIn("flags", str(cm.exception))
 
   def test_duplicate_flag_variant_value(self):
-    with self.assertRaises(ConfigFileError) as cm:
+    with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {
               "flags": {

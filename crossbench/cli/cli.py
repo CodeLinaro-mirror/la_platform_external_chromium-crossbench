@@ -413,6 +413,8 @@ class CrossBenchCLI:
         "This argument can be specified multiple times to add more probes. "
         "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
         "to configure probes. "
+        "Individual probe configs can be specified in files as well: "
+        "--probe='path/to/config.hjson'."
         "Use 'describe probes' or 'describe probe $NAME' for probe "
         "configuration details."
         "Cannot be used together with --probe-config."

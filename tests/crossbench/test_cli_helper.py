@@ -234,7 +234,7 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     file.touch()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       self.assertEqual(file, parse_non_empty_file_path(file))
-    self.assertIn("is empty", str(cm.exception))
+    self.assertIn("is an empty file", str(cm.exception))
 
     with file.open("w") as f:
       f.write("fooo")

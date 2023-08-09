@@ -40,7 +40,7 @@ def parse_existing_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
 def parse_non_empty_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   path: pathlib.Path = parse_existing_file_path(value)
   if path.stat().st_size == 0:
-    raise argparse.ArgumentTypeError(f"Path '{path}' is empty.")
+    raise argparse.ArgumentTypeError(f"Path '{path}' is an empty file.")
   return path
 
 
@@ -137,6 +137,17 @@ def parse_json_file(value: Union[str, pathlib.Path]) -> Any:
       return json.load(f)
     except ValueError as e:
       message = _extract_decoding_error(f"Invalid json file '{path}':", path, e)
+      raise argparse.ArgumentTypeError(message) from e
+
+
+def parse_hjson_file(value: Union[str, pathlib.Path]) -> Any:
+  path = parse_file_path(value)
+  with path.open(encoding="utf-8") as f:
+    try:
+      return hjson.load(f)
+    except ValueError as e:
+      message = _extract_decoding_error(
+          f"Invalid {hjson.__name__} file '{path}':", path, e)
       raise argparse.ArgumentTypeError(message) from e
 
 

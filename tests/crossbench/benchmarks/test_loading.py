@@ -92,7 +92,6 @@ class PlaybackControllerTest(unittest.TestCase):
     assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
 
-
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
   @property

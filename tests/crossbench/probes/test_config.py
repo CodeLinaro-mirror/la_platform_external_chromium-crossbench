@@ -57,7 +57,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_config_defaults(self):
     parser = ProbeConfigParser(MockProbe)
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       parser.add_argument("bool", type=bool, default=1)
     parser.add_argument("any", type=object, default=1)
 
@@ -67,25 +67,14 @@ class ProbeConfigTestCase(unittest.TestCase):
       parser.add_argument("bool", type=bool, is_list=True, default=True)
     with self.assertRaises(AssertionError):
       parser.add_argument("str", type=str, is_list=True, default="str")
-    with self.assertRaises(AssertionError):
-      parser.add_argument(
-          "bool", type=bool, is_list=True, default=(
-              1,
-              1,
-          ))
-    parser.add_argument(
-        "bool", type=bool, is_list=True, default=(
-            True,
-            False,
-        ))
+    with self.assertRaises(ValueError):
+      parser.add_argument("bool", type=bool, is_list=True, default=(1, 1))
+    parser.add_argument("bool", type=bool, is_list=True, default=(True, False))
     parser.add_argument(
         "custom_list",
         type=lambda x: x + 1,
         is_list=True,
-        default=(
-            True,
-            False,
-        ))
+        default=(True, False))
 
   def test_bool_missing_property(self):
     parser = ProbeConfigParser(MockProbe)
