@@ -144,14 +144,17 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         f"Cannot override existing CSV result: {merged_csv_path}")
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       writer = csv.writer(f, delimiter="\t")
-      csv_data = merged_data.to_csv(value_fn, list(group.info.items()))
+      csv_data = merged_data.to_csv(value_fn, headers=list(group.info.items()))
       writer.writerows(csv_data)
     return LocalProbeResult(json=(merged_json_path,), csv=(merged_csv_path,))
+
+  LOG_SUMMARY_KEYS = ("label", "browser", "version", "os", "device", "cpu",
+                      "runs", "failed runs")
 
   def _log_result_metrics(self, data: Dict) -> None:
     table: Dict[str, List[str]] = defaultdict(list)
     for browser_result in data.values():
-      for info_key in ("label", "browser", "version", "os", "device", "cpu"):
+      for info_key in self.LOG_SUMMARY_KEYS:
         table[info_key].append(browser_result["info"][info_key])
       data = browser_result["data"]
       self._extract_result_metrics_table(data, table)

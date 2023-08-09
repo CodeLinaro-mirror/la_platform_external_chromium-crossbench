@@ -59,8 +59,19 @@ class RunGroup(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def info(self) -> Dict[str, str]:
+  def info(self) -> helper.JsonDict:
     pass
+
+  @property
+  @abc.abstractmethod
+  def runs(self) -> Iterable[Run]:
+    pass
+
+  @property
+  def failed_runs(self) -> Iterable[Run]:
+    for run in self.runs:
+      if not run.is_success:
+        yield run
 
   def get_local_probe_result_path(self,
                                   probe: Probe,
@@ -139,8 +150,12 @@ class RepetitionsRunGroup(RunGroup):
             f"browser={self.browser.unique_name}", f"story={self.story}")
 
   @property
-  def info(self) -> Dict[str, str]:
-    return {"story": str(self.story)}
+  def info(self) -> helper.JsonDict:
+    return {
+        "story": str(self.story),
+        "runs": len(tuple(self.runs)),
+        "failed runs": len(tuple(self.failed_runs))
+    }
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_repetitions(self)  # pytype: disable=wrong-arg-types
@@ -196,7 +211,7 @@ class StoriesRunGroup(RunGroup):
     )
 
   @property
-  def info(self) -> Dict[str, str]:
+  def info(self) -> helper.JsonDict:
     return {
         "label": self.browser.label,
         "browser": self.browser.app_name.title(),
@@ -205,7 +220,9 @@ class StoriesRunGroup(RunGroup):
         "device": self.browser.platform.device,
         "cpu": self.browser.platform.cpu,
         "binary": str(self.browser.path),
-        "flags": str(self.browser.flags)
+        "flags": str(self.browser.flags),
+        "runs": len(tuple(self.runs)),
+        "failed runs": len(tuple(self.failed_runs))
     }
 
   @property
@@ -249,8 +266,11 @@ class BrowsersRunGroup(RunGroup):
     return ("Merging results from multiple browsers",)
 
   @property
-  def info(self) -> Dict[str, str]:
-    return {}
+  def info(self) -> helper.JsonDict:
+    return {
+        "runs": len(tuple(self.runs)),
+        "failed runs": len(tuple(self.failed_runs))
+    }
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_browsers(self)  # pytype: disable=wrong-arg-types

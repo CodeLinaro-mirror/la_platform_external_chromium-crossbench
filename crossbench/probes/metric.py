@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import datetime as dt
 
 import json
 import logging
@@ -271,24 +272,24 @@ class MetricsMerger:
     items.sort()
     return dict(items)
 
-  def to_csv(
-      self,
-      value_fn: Optional[Callable[[Any], Any]] = None,
-      headers: Sequence[Sequence[Any]] = ()
-  ) -> List[Sequence[Any]]:
+  def to_csv(self,
+             value_fn: Optional[Callable[[Any], Any]] = None,
+             headers: Sequence[Sequence[Any]] = (),
+             include_path: bool = False) -> List[Sequence[Any]]:
     """
     Input: {
         "VanillaJS-TodoMVC/Adding100Items/Async": 1
         "VanillaJS-TodoMVC/Adding100Items/Sync": 2
+        "VanillaJS-TodoMVC/Total": 3
         "Total": 3
       }
     output: [
-      ["VanillaJS-TodoMVC"],
-      ["Adding100Items"],
-      ["Async", 1]
-      [],
-      ["Sync", 2]
-      ["Total", 3]
+      ["VanillaJS-TodoMVC",                      "VanillaJS-TodoMVC"],
+      ["VanillaJS-TodoMVC/Adding100Items",       "Adding100Items"],
+      ["VanillaJS-TodoMVC/Adding100Items/Async", "Async", 1]
+      ["VanillaJS-TodoMVC/Adding100Items/Sync",  "Sync",  2]
+      ["VanillaJS-TodoMVC/Total",                "Total", 3]
+      ["Total"                                   "Total", 3]
     ]
     """
     converted = self.to_json(value_fn)
@@ -319,11 +320,20 @@ class MetricsMerger:
         continue
       name = path.split("/")[-1]
       if value is None:
-        csv_data.append([name])
+        if include_path:
+          csv_data.append([path, name])
+        else:
+          csv_data.append([name])
       else:
-        csv_data.append([name, value])
+        if include_path:
+          csv_data.append([path, name, value])
+        else:
+          csv_data.append([name, value])
     # Write toplevel entries last
     for key in toplevel:
-      csv_data.append([key, lookup[key]])
+      if include_path:
+        csv_data.append([key, key, lookup[key]])
+      else:
+        csv_data.append([key, lookup[key]])
 
     return csv_data

@@ -5,6 +5,7 @@
 import csv
 import os
 import pathlib
+from typing import Optional, List
 import unittest
 from unittest import mock
 
@@ -16,53 +17,57 @@ from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
 
 class TestMergeCSV(CrossbenchFakeFsTestCase):
 
+  def merge(self,
+            *args,
+            delimiter: str = "\t",
+            headers: Optional[List[str]] = None,
+            row_header_len: int = 1):
+    csv_files = []
+    for index, content in enumerate(args):
+      csv_file = pathlib.Path(f"test.{index}.csv")
+      with csv_file.open("w", newline="", encoding="utf-8") as f:
+        csv.writer(f, delimiter=delimiter).writerows(content)
+      csv_files.append(csv_file)
+    return helper.merge_csv(
+        csv_files,
+        delimiter=delimiter,
+        headers=headers,
+        row_header_len=row_header_len)
+
   def test_merge_single(self):
-    file = pathlib.Path("test.csv")
     data = [
         ["Metric", "Run1"],
         ["Total", "200"],
     ]
     for delimiter in ["\t", ","]:
-      with file.open("w", newline="", encoding="utf-8") as f:
-        csv.writer(f, delimiter=delimiter).writerows(data)
-      merged = helper.merge_csv([file], delimiter=delimiter)
+      merged = self.merge(data, delimiter=delimiter)
       self.assertListEqual(merged, data)
 
   def test_merge_single_padding(self):
-    file = pathlib.Path("test.csv")
     data = [
         ["Metric", "Run1", "Run2"],
         ["marker"],
         ["Total", "200", "300"],
     ]
-    with file.open("w", newline="", encoding="utf-8") as f:
-      csv.writer(f, delimiter="\t").writerows(data)
-    merged = helper.merge_csv([file], headers=None)
+    merged = self.merge(data, headers=None)
     self.assertListEqual(merged, [
         ["Metric", "Run1", "Run2"],
-        ["marker", "", ""],
+        ["marker", None, None],
         ["Total", "200", "300"],
     ])
 
   def test_merge_single_file_header(self):
-    file = pathlib.Path("test.csv")
     data = [
         ["Total", "200"],
     ]
     for delimiter in ["\t", ","]:
-      with file.open("w", newline="", encoding="utf-8") as f:
-        csv.writer(f, delimiter=delimiter).writerows(data)
-      merged = helper.merge_csv([file],
-                                delimiter=delimiter,
-                                headers=[file.name])
+      merged = self.merge(data, delimiter=delimiter, headers=["custom"])
       self.assertListEqual(merged, [
-          ["", file.name],
+          [None, "custom"],
           ["Total", "200"],
       ])
 
   def test_merge_two_padding(self):
-    file_1 = pathlib.Path("test_1.csv")
-    file_2 = pathlib.Path("test_2.csv")
     data_1 = [
         ["marker"],
         ["Total", "101", "102"],
@@ -71,15 +76,117 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["marker"],
         ["Total", "201"],
     ]
-    with file_1.open("w", newline="", encoding="utf-8") as f:
-      csv.writer(f, delimiter="\t").writerows(data_1)
-    with file_2.open("w", newline="", encoding="utf-8") as f:
-      csv.writer(f, delimiter="\t").writerows(data_2)
-    merged = helper.merge_csv([file_1, file_2], headers=["col_1", "col_2"])
+    merged = self.merge(data_1, data_2, headers=["col_1", "col_2"])
     self.assertListEqual(merged, [
-        ["", "col_1", "", "col_2"],
-        ["marker", "", "", ""],
+        [None, "col_1", None, "col_2"],
+        ["marker", None, None, None],
         ["Total", "101", "102", "201"],
+    ])
+
+  def test_merge_two_long_row_header(self):
+    data_1 = [
+        ["full-marker", "marker"],
+        ["Full/Total", "Total", "101", "102"],
+    ]
+    data_2 = [
+        ["full-marker", "marker"],
+        ["Full/Total", "Total", "201"],
+    ]
+    merged = self.merge(
+        data_1, data_2, headers=["col_1", "col_2"], row_header_len=2)
+    self.assertListEqual(merged, [
+        [None, None, "col_1", None, "col_2"],
+        ["full-marker", "marker", None, None, None],
+        ["Full/Total", "Total", "101", "102", "201"],
+    ])
+
+  def test_merge_two_disjoint(self):
+    data_1 = [
+        ["marker"],
+        ["A", "101", "102"],
+        ["B", "101", "102"],
+    ]
+    data_2 = [
+        ["marker"],
+        ["C", "201"],
+        ["D", "201"],
+    ]
+    merged = self.merge(data_1, data_2)
+    self.assertListEqual(merged, [
+        ["marker", None, None, None],
+        ["A", "101", "102", None],
+        ["C", None, None, "201"],
+        ["B", "101", "102", None],
+        ["D", None, None, "201"],
+    ])
+
+  def test_merge_two_missing(self):
+    data_1 = [
+        ["marker"],
+        ["Total-A0"],
+        ["Total-A1", "101"],
+        ["Total-A2", "111", "112"],
+        ["Total", "201", "202"],
+        ["Total-A3", "301", "302"],
+    ]
+    data_2 = [
+        ["marker"],
+        ["Total-B1", "401", "402"],
+        ["Total", "203"],
+        ["Total-B2", "501"],
+        ["Total-B3", "601", "602"],
+        ["Total-B4", "701"],
+    ]
+    merged = self.merge(data_1, data_2, headers=["col_1", "col_2"])
+    self.assertListEqual(merged, [
+        [None, "col_1", None, "col_2", None],
+        ["marker", None, None, None, None],
+        ["Total-A0", None, None, None, None],
+        ["Total-B1", None, None, "401", "402"],
+        ["Total-A1", "101", None, None, None],
+        ["Total-A2", "111", "112", None, None],
+        ["Total", "201", "202", "203", None],
+        ["Total-A3", "301", "302", None, None],
+        ["Total-B2", None, None, "501", None],
+        ["Total-B3", None, None, "601", "602"],
+        ["Total-B4", None, None, "701", None],
+    ])
+
+  def test_merge_two_duplicate(self):
+    data_1 = [
+        ["A", "101"],
+        ["A", "201"],
+    ]
+    data_2 = [
+        ["A", "301"],
+        ["A", "401"],
+    ]
+    merged = self.merge(data_1, data_2)
+    self.assertListEqual(merged, [
+        ["A", "101", "301"],
+        ["A", "201", "401"],
+    ])
+
+  def test_merge_two_partial_duplicate(self):
+    data_1 = [
+        ["marker"],
+        ["A", "101"],
+        ["A", "201"],
+        ["B", "B01"],
+    ]
+    data_2 = [
+        ["marker"],
+        ["A", "301"],
+        ["A", "401"],
+        ["C", "C01"],
+    ]
+    merged = self.merge(data_1, data_2)
+    self.assertListEqual(merged, [
+        ["marker", None, None],
+        ["A", "101", "301"],
+        ["A", "201", "401"],
+        ["B", "B01", None],
+        ["C", None, "C01"],
     ])
 
 

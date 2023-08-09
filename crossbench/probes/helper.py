@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 import csv
+import logging
 
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
@@ -79,27 +80,33 @@ class Flatten:
       else:
         self._flatten(path, item)
 
-def _ljust(sequence: List, n: int, fillvalue: Any = "") -> List:
+
+def _ljust_row(sequence: List, n: int, fillvalue: Any = None) -> List:
   return sequence + ([fillvalue] * (n - len(sequence)))
 
 
 def merge_csv(csv_list: Sequence[pathlib.Path],
               headers: Optional[List[str]] = None,
+              row_header_len: int = 1,
               delimiter: str = "\t") -> List[List[Any]]:
   """
   Merge multiple CSV files.
   File 1:
     Header,     Col Header 1.1, Col Header  1.2
+    ...
     Row Header, Data 1.1,       Data 1.2
+
   File 2:
-    Header,     Col Header 2.1, Col Header 2.2
-    Row Header, Data 2.1,       Data 2.2
+    Header,     Col Header 2.1,
+    ...
+    Row Header, Data 2.1,
 
   The first Col has to contain the same data:
 
   Merged:
-    Header,     Col Header 1.1, Col Header 1.2,  Col Header 2.1, Col Header 2.2
-    Row Header, Data 1.1,       Data 1.2,        Data 2.1,       Data 2.2
+    Header,     Col Header 1.1, Col Header 1.2,  Col Header 2.1,
+    ...
+    Row Header, Data 1.1,       Data 1.2,        Data 2.1,
 
 
   If no column header is available, filename_as_header=True can be used.
@@ -111,34 +118,99 @@ def merge_csv(csv_list: Sequence[pathlib.Path],
   # Fill in the header column taken from the first file
   table: List[List[Any]] = []
   if headers:
-    table_headers = [""]
+    table_headers = [None] * row_header_len
   else:
     table_headers = []
-  with csv_list[0].open(encoding="utf-8") as first_file:
-    for row in csv.reader(first_file, delimiter=delimiter):
-      assert row, "Mergeable CSV files musth have row names."
-      metric_name = row[0]
-      table.append([metric_name])
 
+  # Initial row-headers from the first csv file.
+  known_row_headers = set()
+  _merge_csv_prepare_row_headers(table, known_row_headers, csv_list[0],
+                                 row_header_len, delimiter)
+
+  table_row_len = row_header_len
   for csv_file in csv_list:
     with csv_file.open(encoding="utf-8") as f:
       csv_data = list(csv.reader(f, delimiter=delimiter))
-      # Find the max width
-      max_rows_with_row_header = max(len(row) for row in csv_data)
-      max_rows = max_rows_with_row_header - 1
-      if headers:
-        col_header = [headers.pop(0)]
-        table_headers.extend(_ljust(col_header, max_rows))
-      for table_row, row in zip(table, csv_data):
-        metric_name = row[0]
-        padded_row = _ljust(row[1:], max_rows)
-        assert table_row[0] == metric_name, (f"{table_row[0]} != {metric_name}"
-                                             f"\n{csv_data}\n{table}")
-        table_row.extend(padded_row)
+    table_row_len = _merge_csv_append(csv_data, table, table_headers,
+                                      row_header_len, headers,
+                                      known_row_headers, table_row_len)
 
   if table_headers:
     return [table_headers] + table
   return table
+
+
+def _merge_csv_prepare_row_headers(table, known_row_headers, csv_file,
+                                   row_header_len, delimiter):
+  with csv_file.open(encoding="utf-8") as first_file:
+    for csv_row in csv.reader(first_file, delimiter=delimiter):
+      assert csv_row, "Mergeable CSV files must have row names."
+      row_headers = csv_row[:row_header_len]
+      table.append(row_headers)
+      csv_row_header_key = tuple(row_headers)
+      known_row_headers.add(csv_row_header_key)
+
+
+def _merge_csv_append(csv_data, table, table_headers, row_header_len, headers,
+                      known_row_headers, table_row_len):
+  # Find the max row width in added csv_data.
+  max_row_len = max(len(row) for row in csv_data) - row_header_len
+  if table:
+    table_row_len = len(table[0]) + max_row_len
+  else:
+    table_row_len = max_row_len
+
+  if headers:
+    col_header = [headers.pop(0)]
+    table_headers.extend(_ljust_row(col_header, max_row_len))
+
+  table_index = 0
+  for csv_row in csv_data:
+    csv_row_header = tuple(csv_row[:row_header_len])
+    csv_padded_row = _ljust_row(csv_row[row_header_len:], max_row_len)
+
+    if table_index >= len(table):
+      # Append all additional rows to the end of the table.
+      padding = [None] * (table_row_len - row_header_len - max_row_len)
+      table.append(list(csv_row_header) + padding + csv_padded_row)
+      table_index += 1
+      continue
+
+    table_row = table[table_index]
+    table_row_header = tuple(table_row[:row_header_len])
+
+    if table_row_header == csv_row_header:
+      # Simple case, row-headers are matching the current table.
+      table_row.extend(csv_padded_row)
+      table_index += 1
+      continue
+
+    csv_row_header_key = tuple(csv_row_header)
+    # Current table_row is not matching, pad it to max_rows length
+    table_row_padding = [None] * max_row_len
+    table_row.extend(table_row_padding)
+    table_index += 1
+
+    if csv_row_header_key not in known_row_headers:
+      # csv_data contains a new row-header, insert it at the current index
+      padding = [None] * (table_row_len - row_header_len - max_row_len)
+      new_table_row = list(csv_row_header) + padding + csv_padded_row
+      table.insert(table_index, new_table_row)
+      table_index += 1
+      known_row_headers.add(csv_row_header_key)
+      continue
+
+    # csv_data does not contain the current table_row_header, continue
+    # until we find the next matching table-row-header.
+    while table_index < len(table):
+      table_row = table[table_index]
+      table_row_header = tuple(table_row[:row_header_len])
+      table_index += 1
+      if table_row_header == csv_row_header:
+        table_row.extend(csv_padded_row)
+        break
+      table_row.extend(table_row_padding)
+  return table_row_len
 
 
 class V8CheckoutFinder:

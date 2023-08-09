@@ -6,6 +6,8 @@ import json
 import pathlib
 import unittest
 
+from frozendict import frozendict
+
 from crossbench.probes import metric
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
@@ -161,37 +163,29 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertListEqual(data["b"].values, [3, 3])
     self.assertListEqual(data["c/cc/ccc"].values, [4, 4])
 
+  BASIC_NESTED_DATA = {
+      "a": {
+          "a": {
+              "a": 1,
+              "b": 2
+          }
+      },
+      "b": 3,
+  }
+
   def test_custom_key_fn(self):
-    input_data = {
-        "a": {
-            "a": {
-                "a": 1,
-                "b": 2
-            }
-        },
-        "b": 2,
-    }
 
     def under_join(segments):
       return "_".join(segments)
 
     merger = metric.MetricsMerger(key_fn=under_join)
-    merger.add(input_data)
+    merger.add(self.BASIC_NESTED_DATA)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a_a_a", "a_a_b", "b"])
 
   def test_merge_serialized_same(self):
-    input_data = {
-        "a": {
-            "a": {
-                "a": 1,
-                "b": 2
-            }
-        },
-        "b": 3,
-    }
     merger = metric.MetricsMerger()
-    merger.add(input_data)
+    merger.add(self.BASIC_NESTED_DATA)
     self.assertListEqual(list(merger.data.keys()), ["a/a/a", "a/a/b", "b"])
     path_a = pathlib.Path("merged_a.json")
     path_b = pathlib.Path("merged_b.json")
@@ -234,6 +228,46 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
                                                   merge_duplicate_paths=False)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a/a", "a/b"])
+
+  def test_to_csv_no_path(self) -> None:
+    merger = metric.MetricsMerger()
+    merger.add(self.BASIC_NESTED_DATA)
+    csv = merger.to_csv(lambda metric: metric.geomean, include_path=False)
+    self.assertListEqual(csv, [
+        ["a"],
+        ["a"],
+        ["a", 1.0],
+        ["b", 2.0],
+        ["b", 3.0],
+    ])
+
+  def test_to_csv_path(self) -> None:
+    merger = metric.MetricsMerger()
+    merger.add(self.BASIC_NESTED_DATA)
+    csv = merger.to_csv(lambda metric: metric.geomean, include_path=True)
+    self.assertListEqual(csv, [
+        ["a", "a"],
+        ["a/a", "a"],
+        ["a/a/a", "a", 1.0],
+        ["a/a/b", "b", 2.0],
+        ["b", "b", 3.0],
+    ])
+
+  def test_to_csv_header(self) -> None:
+    merger = metric.MetricsMerger()
+    merger.add({"a": 1, "b": 2})
+    headers = [
+        ["a", "custom", "header", "line"],
+        [1, 2, 3, 4, 5],
+    ]
+    csv = merger.to_csv(
+        lambda metric: metric.geomean, headers=headers, include_path=True)
+    self.assertListEqual(csv, [
+        ["a", "custom", "header", "line"],
+        [1, 2, 3, 4, 5],
+        ["a", "a", 1.0],
+        ["b", "b", 2.0],
+    ])
 
 
 if __name__ == "__main__":
