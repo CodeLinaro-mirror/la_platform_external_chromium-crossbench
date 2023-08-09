@@ -85,7 +85,7 @@ class YoutubeFullscreenStory(PowerBenchmarkStory):
     else:
       raise TypeError("Power benchmark only supports WebDriverBrowser.")
 
-    self._driver.get("https://www.youtube.com/watch?v=nP-nMZpLM1A")
+    self._driver.get("https://www.youtube.com/watch?v=rV_ERKtNyNA?t=1")
     time.sleep(10)
 
     # If the video is playing, stop it.
