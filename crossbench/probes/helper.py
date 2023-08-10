@@ -3,9 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import csv
-import logging
 
+import csv
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
@@ -154,25 +153,29 @@ def _merge_csv_prepare_row_headers(table, known_row_headers, csv_file,
 def _merge_csv_append(csv_data, table, table_headers, row_header_len, headers,
                       known_row_headers, table_row_len):
   # Find the max row width in added csv_data.
-  max_row_len = max(len(row) for row in csv_data) - row_header_len
+  max_csv_row_len = max(len(row) for row in csv_data) - row_header_len
   if table:
-    table_row_len = len(table[0]) + max_row_len
+    table_row_len = len(table[0]) + max_csv_row_len
   else:
-    table_row_len = max_row_len
+    table_row_len = max_csv_row_len
 
   if headers:
     col_header = [headers.pop(0)]
-    table_headers.extend(_ljust_row(col_header, max_row_len))
+    table_headers.extend(_ljust_row(col_header, max_csv_row_len))
+
+  # Pre-computed potential padding lists.
+  skipped_table_row_padding = [None] * max_csv_row_len
+  new_row_padding = [None] * (table_row_len - row_header_len - max_csv_row_len)
 
   table_index = 0
   for csv_row in csv_data:
     csv_row_header = tuple(csv_row[:row_header_len])
-    csv_padded_row = _ljust_row(csv_row[row_header_len:], max_row_len)
+    csv_padded_row = _ljust_row(csv_row[row_header_len:], max_csv_row_len)
 
     if table_index >= len(table):
       # Append all additional rows to the end of the table.
-      padding = [None] * (table_row_len - row_header_len - max_row_len)
-      table.append(list(csv_row_header) + padding + csv_padded_row)
+      new_row = list(csv_row_header) + new_row_padding + csv_padded_row
+      table.append(new_row)
       table_index += 1
       continue
 
@@ -186,30 +189,33 @@ def _merge_csv_append(csv_data, table, table_headers, row_header_len, headers,
       continue
 
     csv_row_header_key = tuple(csv_row_header)
-    # Current table_row is not matching, pad it to max_rows length
-    table_row_padding = [None] * max_row_len
-    table_row.extend(table_row_padding)
-    table_index += 1
-
-    if csv_row_header_key not in known_row_headers:
-      # csv_data contains a new row-header, insert it at the current index
-      padding = [None] * (table_row_len - row_header_len - max_row_len)
-      new_table_row = list(csv_row_header) + padding + csv_padded_row
-      table.insert(table_index, new_table_row)
-      table_index += 1
-      known_row_headers.add(csv_row_header_key)
-      continue
 
     # csv_data does not contain the current table_row_header, continue
-    # until we find the next matching table-row-header.
-    while table_index < len(table):
+    # to find a proper insertion point:
+    # - if the know the row-header exists, loop until we find the matching one,
+    # - otherwise insert before the next row, whose row-header would be
+    #   after csv_row_header when using alpha-compare
+    try_insert_alpha_sorted = csv_row_header_key not in known_row_headers
+    while True:
       table_row = table[table_index]
       table_row_header = tuple(table_row[:row_header_len])
-      table_index += 1
       if table_row_header == csv_row_header:
         table_row.extend(csv_padded_row)
         break
-      table_row.extend(table_row_padding)
+      if try_insert_alpha_sorted and csv_row_header_key < table_row_header:
+        new_row = list(csv_row_header) + new_row_padding + csv_padded_row
+        # Try maintaining alpha-sorting by inserting before the next row.
+        table.insert(table_index, new_row)
+        known_row_headers.add(csv_row_header_key)
+        break
+      table_row.extend(skipped_table_row_padding)
+      table_index += 1
+      if table_index >= len(table):
+        # Append all additional rows to the end of the table.
+        new_row = list(csv_row_header) + new_row_padding + csv_padded_row
+        table.append(new_row)
+        break
+    table_index += 1
   return table_row_len
 
 

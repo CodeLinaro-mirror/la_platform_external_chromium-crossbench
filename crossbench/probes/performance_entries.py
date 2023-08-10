@@ -49,8 +49,7 @@ class PerformanceEntriesProbe(JsonResultProbe):
       for (let name in navigationTiming) {
         const value = navigationTiming[name];
         if (typeof value !== "number") continue;
-        // TODO: enable detailed navigation metrics once merging is fixed
-        // data.navigation[name] = value;
+        data.navigation[name] = value;
       }
       return data;
       """)

@@ -259,9 +259,9 @@ class SpeedometerBaseTestCase(
       rows = list(reader)
     self.assertListEqual(list(rows[0].keys()), ["label", "dev", "stable"])
     self.assertDictEqual(rows[1], {
-        'label': 'version',
-        'dev': '102.22.33.44',
-        'stable': '100.22.33.44'
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
     })
     return rows
 

@@ -100,7 +100,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["Full/Total", "Total", "101", "102", "201"],
     ])
 
-  def test_merge_two_disjoint(self):
+  def test_merge_two_disjoint_consecutive(self):
     data_1 = [
         ["marker"],
         ["A", "101", "102"],
@@ -115,9 +115,29 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
     self.assertListEqual(merged, [
         ["marker", None, None, None],
         ["A", "101", "102", None],
-        ["C", None, None, "201"],
         ["B", "101", "102", None],
+        ["C", None, None, "201"],
         ["D", None, None, "201"],
+    ])
+
+  def test_merge_two_disjoint_interleaved(self):
+    data_1 = [
+        ["marker"],
+        ["B", "101", "102"],
+        ["C", "201"],
+    ]
+    data_2 = [
+        ["marker"],
+        ["A", "101", "102"],
+        ["D", "201"],
+    ]
+    merged = self.merge(data_1, data_2)
+    self.assertListEqual(merged, [
+        ["marker", None, None, None, None],
+        ["A", None, None, "101", "102"],
+        ["B", "101", "102", None, None],
+        ["C", "201", None, None, None],
+        ["D", None, None, "201", None],
     ])
 
   def test_merge_two_missing(self):
@@ -126,30 +146,33 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["Total-A0"],
         ["Total-A1", "101"],
         ["Total-A2", "111", "112"],
-        ["Total", "201", "202"],
         ["Total-A3", "301", "302"],
+        ["Total-B", "01"],
+        ["Total-X", "201", "202"],
     ]
     data_2 = [
         ["marker"],
-        ["Total-B1", "401", "402"],
-        ["Total", "203"],
-        ["Total-B2", "501"],
-        ["Total-B3", "601", "602"],
-        ["Total-B4", "701"],
+        ["Total-B", "02"],
+        ["Total-C1", "401", "402"],
+        ["Total-C2", "501"],
+        ["Total-C3", "601", "602"],
+        ["Total-C4", "701"],
+        ["Total-X", "203"],
     ]
     merged = self.merge(data_1, data_2, headers=["col_1", "col_2"])
     self.assertListEqual(merged, [
         [None, "col_1", None, "col_2", None],
         ["marker", None, None, None, None],
         ["Total-A0", None, None, None, None],
-        ["Total-B1", None, None, "401", "402"],
         ["Total-A1", "101", None, None, None],
         ["Total-A2", "111", "112", None, None],
-        ["Total", "201", "202", "203", None],
         ["Total-A3", "301", "302", None, None],
-        ["Total-B2", None, None, "501", None],
-        ["Total-B3", None, None, "601", "602"],
-        ["Total-B4", None, None, "701", None],
+        ["Total-B", "01", None, "02", None],
+        ["Total-C1", None, None, "401", "402"],
+        ["Total-C2", None, None, "501", None],
+        ["Total-C3", None, None, "601", "602"],
+        ["Total-C4", None, None, "701", None],
+        ["Total-X", "201", "202", "203", None],
     ])
 
   def test_merge_two_duplicate(self):

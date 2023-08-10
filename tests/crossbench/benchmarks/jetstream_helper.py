@@ -102,14 +102,14 @@ class JetStream2BaseTestCase(
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.probe_cls.JS, browser.js_list)
 
-    with (self.out_dir /
-          f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
+    csv_file = self.out_dir / f"{self.probe_cls.NAME}.csv"
+    with csv_file.open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
     self.assertListEqual(list(csv_data[0].keys()), ["label", "dev", "stable"])
     self.assertDictEqual(csv_data[1], {
-        'label': 'version',
-        'dev': '102.22.33.44',
-        'stable': '100.22.33.44'
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
     })
 
     with self.assertLogs(level='INFO') as cm:

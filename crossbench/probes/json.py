@@ -99,12 +99,12 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return LocalProbeResult(json=(merged_json_path,))
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_list: List[pathlib.Path] = []
+    csv_file_list: List[pathlib.Path] = []
     headers: List[str] = []
     for story_group in group.story_groups:
-      csv_list.append(story_group.results[self].csv)
+      csv_file_list.append(story_group.results[self].csv)
       headers.append(story_group.browser.unique_name)
-    merged_table = helper.merge_csv(csv_list)
+    merged_table = helper.merge_csv(csv_file_list, row_header_len=2)
     merged_json_path = group.get_local_probe_result_path(self, exists_ok=True)
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
@@ -142,9 +142,19 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
         f"Cannot override existing CSV result: {merged_csv_path}")
+    # Create a CSV table:
+    # header 0: label 0,            label 0,             info_value 0
+    # ...                                                ...
+    # header N: label 0,            label N,             info_value N
+    # data 0:   metric 0 full path, metric 0 short name, metric 0 value
+    # ...
+    # data N:   ...
+    headers = []
+    for label, info_value in group.info.items():
+      headers.append((label, label, info_value))
+    csv_data = merged_data.to_csv(value_fn, headers=headers)
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       writer = csv.writer(f, delimiter="\t")
-      csv_data = merged_data.to_csv(value_fn, headers=list(group.info.items()))
       writer.writerows(csv_data)
     return LocalProbeResult(json=(merged_json_path,), csv=(merged_csv_path,))
 

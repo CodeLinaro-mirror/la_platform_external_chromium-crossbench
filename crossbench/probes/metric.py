@@ -275,7 +275,8 @@ class MetricsMerger:
   def to_csv(self,
              value_fn: Optional[Callable[[Any], Any]] = None,
              headers: Sequence[Sequence[Any]] = (),
-             include_path: bool = False) -> List[Sequence[Any]]:
+             include_path: bool = True,
+             sort: bool = True) -> List[Sequence[Any]]:
     """
     Input: {
         "VanillaJS-TodoMVC/Adding100Items/Async": 1
@@ -296,7 +297,10 @@ class MetricsMerger:
     lookup: Dict[str, Any] = {}
     # Use Dict as ordered-set
     toplevel: Dict[str, None] = {}
-    for key, value in converted.items():
+    items = converted.items()
+    if sort:
+      items = sorted(items)
+    for key, value in items:
       path = None
       segments = key.split("/")
       for segment in segments:

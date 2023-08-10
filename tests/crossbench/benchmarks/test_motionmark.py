@@ -141,9 +141,9 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
       csv_data = list(csv.DictReader(f, delimiter="\t"))
     self.assertListEqual(list(csv_data[0].keys()), ["label", "dev", "stable"])
     self.assertDictEqual(csv_data[1], {
-        'label': 'version',
-        'dev': '102.22.33.44',
-        'stable': '100.22.33.44'
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
     })
 
 
