@@ -179,7 +179,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   def cli_description(cls) -> str:
     desc = super().cli_description()
     desc += "\n\n"
-    desc += ("Stories (alternatively use 'the describe benchmark "
+    desc += ("Stories (alternatively use the 'describe benchmark "
              f"{cls.NAME}' command):\n")
     desc += ", ".join(cls.all_story_names())
     desc += "\n\n"
