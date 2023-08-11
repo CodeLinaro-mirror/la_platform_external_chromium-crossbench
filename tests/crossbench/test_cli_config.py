@@ -144,18 +144,35 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
         BrowserConfig.parse(str(path)),
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())))
 
-  def test_parse_invalid_name_or_path(self):
+  def test_parse_invalid_name(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = BrowserConfig.parse("")
-    with self.assertRaises(argparse.ArgumentTypeError):
-      _ = BrowserConfig.parse("foo/bar")
-    with self.assertRaises(argparse.ArgumentTypeError):
-      _ = BrowserConfig.parse("selenium/bar")
+      BrowserConfig.parse("")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("a-random-name")
+    self.assertIn("a-random-name", str(cm.exception))
+
+  def test_parse_invalid_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("foo/bar")
+    self.assertIn("foo/bar", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("selenium/bar")
+    self.assertIn("selenium/bar", str(cm.exception))
+
+  def test_parse_invalid_windows_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("selenium\\bar")
+    self.assertIn("selenium\\bar", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("C:\\selenium\\bar")
+    self.assertIn("C:\\selenium\\bar", str(cm.exception))
+
+  def test_parse_simple_missing_driver(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse(":chrome")
+    self.assertIn("driver", str(cm.exception))
 
   def test_parse_simple_with_driver(self):
-    with self.assertRaises(argparse.ArgumentTypeError):
-      _ = BrowserConfig.parse(":chrome")
-
     self.assertEqual(
         BrowserConfig.parse("selenium:chrome"),
         BrowserConfig(Chrome.stable_path(),
@@ -219,7 +236,7 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
       _ = BrowserConfig.parse("selenium:chrome-116.845.4")
     self.assertIn("116.845.4", str(cm.exception))
 
-  def test_parse_phone_serial(self):
+  def test_parse_adb_phone_serial(self):
     self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
     config = BrowserConfig.parse("0a388e93:chrome")
     assert isinstance(config, BrowserConfig)
@@ -230,7 +247,7 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
         config,
         BrowserConfig(pathlib.Path("com.android.chrome"), expected_driver))
 
-  def test_parse_phone_serial_invalid(self):
+  def test_parse_adb_phone_serial_invalid(self):
     self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = BrowserConfig.parse("0XXXXXX:chrome")

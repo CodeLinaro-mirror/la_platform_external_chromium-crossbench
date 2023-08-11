@@ -126,7 +126,6 @@ def try_resolve_existing_path(value: str) -> Optional[pathlib.Path]:
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
   pass
 
-
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
@@ -152,6 +151,8 @@ class DriverConfig(ConfigObject):
     path: Optional[pathlib.Path] = try_resolve_existing_path(value)
     driver_type: BrowserDriverType = BrowserDriverType.default()
     if not path:
+      if cls.value_has_path_prefix(value):
+        raise argparse.ArgumentTypeError(f"Driver path does not exist: {value}")
       # Variant 2: $DRIVER_TYPE
       if "{" != value[0]:
         try:
@@ -193,14 +194,14 @@ class DriverConfig(ConfigObject):
         candidate_serials.append(serial)
         continue
       for key, info_value in info.items():
-        if pattern.fullmatch(f"{key}:{info_value}") or pattern.fullmatch(
-            info_value):
+        if (pattern.fullmatch(f"{key}:{info_value}") or
+            pattern.fullmatch(info_value)):
           candidate_serials.append(serial)
           break
     if len(candidate_serials) > 1:
       raise AmbiguousDriverIdentifier(
-          f"Found more than one adb devices matching '{value}': {candidate_serials}"
-      )
+          "Found more than one adb devices matching "
+          f"'{value}': {candidate_serials}")
     if len(candidate_serials) == 0:
       logging.debug("No matching adb devices found.")
       return None
@@ -251,11 +252,11 @@ class BrowserConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     driver = DriverConfig.default()
     path: Optional[Union[pathlib.Path, str]] = None
-    if ":" not in value:
+    if ":" not in value or cls.value_has_path_prefix(value):
       # Variant 1: $PATH_OR_IDENTIFIER
       path = cls._parse_path_or_identifier(value)
     elif value[0] != "{":
-      # Variant 2: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER
+      # Variant 2: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}
       driver, path = cls._parse_inline_driver(value)
     else:
       # Variant 3: Full inline hjson
@@ -315,6 +316,10 @@ class BrowserConfig(ConfigObject):
       return maybe_path_or_identifier
     path = try_resolve_existing_path(maybe_path_or_identifier)
     if not path:
+      if (cls.value_has_path_prefix(maybe_path_or_identifier) or
+          "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier):
+        raise argparse.ArgumentTypeError(
+            f"Browser path does not exist: {maybe_path_or_identifier}")
       raise argparse.ArgumentTypeError(
           f"Unknown browser path or short name: '{maybe_path_or_identifier}'")
     if cls.is_supported_browser_path(path):
@@ -332,9 +337,11 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def _parse_inline_driver(
       cls, value: str) -> Tuple[DriverConfig, Union[str, pathlib.Path]]:
+    assert ":" in value
     # Split inputs like "applescript:/out/x64.release/chrome"
-    driver_path_or_identifier, path_or_identifier = value.rsplit(
-        ":", maxsplit=1)
+    driver_path_or_identifier, path_or_identifier = value.split(":", maxsplit=1)
+    if not driver_path_or_identifier:
+      raise argparse.ArgumentTypeError(f"Missing driver name: '{value}'")
     driver = cast(DriverConfig, DriverConfig.parse(driver_path_or_identifier))
     path: Union[str, pathlib.Path] = cls._parse_path_or_identifier(
         path_or_identifier, driver.type)
@@ -769,6 +776,10 @@ class SingleProbeConfig(ConfigObject):
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
+    if cls.value_has_path_prefix(value):
+      # ConfigObject.parse handles .hjson paths already, additional paths are
+      # not supported in SingleProbeConfig.loads.
+      raise ProbeConfigError(f"Probe config path does not exist: {value}")
     # 2. variant, inline hjson: "name:{hjson}"
     match = _PROBE_CONFIG_RE.fullmatch(value)
     if match is None:

@@ -10,6 +10,7 @@ import collections
 import enum
 import inspect
 import pathlib
+import re
 import textwrap
 from typing import (Any, Callable, Dict, Generic, Iterable, List, Optional,
                     Tuple, Type, TypeVar, Union, cast)
@@ -208,11 +209,20 @@ class _ConfigArg:
     raise ValueError("Expected enum {self.type}, but got {data}")
 
 
+_PATH_PREFIX = re.compile(r"(\./|/|[a-zA-Z]:\\)[^\\/]")
+
+
 class ConfigObject(abc.ABC):
   VALID_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
 
   @classmethod
+  def value_has_path_prefix(cls, value: str) -> bool:
+    return _PATH_PREFIX.match(value) is not None
+
+  @classmethod
   def parse(cls, value: Any) -> ConfigObject:
+    if not value:
+      raise argparse.ArgumentTypeError("Empty config value")
     if isinstance(value, dict):
       return cls.load_dict(value)
     if isinstance(value, (str, pathlib.Path)):
@@ -222,7 +232,7 @@ class ConfigObject(abc.ABC):
     if isinstance(value, str):
       return cls.loads(value)
     raise argparse.ArgumentTypeError(
-        f"Invalid config input {type(value).__name__}: {value}")
+        f"Invalid config input type {type(value).__name__}: {value}")
 
   @classmethod
   @abc.abstractmethod

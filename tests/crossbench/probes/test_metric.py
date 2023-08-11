@@ -6,8 +6,6 @@ import json
 import pathlib
 import unittest
 
-from frozendict import frozendict
-
 from crossbench.probes import metric
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase

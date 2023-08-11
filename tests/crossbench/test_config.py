@@ -76,14 +76,12 @@ class CustomConfigObject(ConfigObject):
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
   def test_load_invalid_str(self):
-    for invalid in (None, 1, []):
+    for invalid in ("", None, 1, []):
       with self.assertRaises(argparse.ArgumentTypeError):
         CustomConfigObject.parse(invalid)
-    with self.assertRaises(ValueError):
-      CustomConfigObject.parse("")
 
   def test_load_dict_invalid(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({})
     with self.assertRaises(ValueError):
       CustomConfigObject.parse({"name": "foo", "array": 1})
