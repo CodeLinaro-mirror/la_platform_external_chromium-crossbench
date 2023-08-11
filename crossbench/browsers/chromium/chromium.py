@@ -16,12 +16,13 @@ from crossbench.browsers.browser import Browser
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
+from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
-  from crossbench.platform import Platform
-  from crossbench.runner.runner import Runner
+  from crossbench import plt
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 
@@ -77,7 +78,7 @@ class Chromium(Browser):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[Platform] = None):
+      platform: Optional[plt.Platform] = None):
     super().__init__(
         label,
         path,
@@ -183,10 +184,10 @@ class Chromium(Browser):
   def features(self) -> ChromeFeatures:
     return self._flags.features
 
-  def details_json(self) -> helper.JsonDict:
-    details: helper.JsonDict = super().details_json()
+  def details_json(self) -> JsonDict:
+    details: JsonDict = super().details_json()
     if self.log_file:
-      log = cast(helper.JsonDict, details["log"])
+      log = cast(JsonDict, details["log"])
       log[self.type] = str(self.chrome_log_file)
       log["stdout"] = str(self.stdout_log_file)
     details["js_flags"] = tuple(self.js_flags.get_list())

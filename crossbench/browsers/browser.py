@@ -12,7 +12,7 @@ import shutil
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Tuple
 
 from crossbench.flags import Flags
-from crossbench.platform import PLATFORM, Platform
+from crossbench import plt
 
 from .splash_screen import SplashScreen
 from .viewport import Viewport
@@ -20,10 +20,10 @@ from .viewport import Viewport
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench import helper
   from crossbench.probes.probe import Probe
-  from crossbench.runner.runner import Runner
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
+  from crossbench.types import JsonDict
 
 
 class Browser(abc.ABC):
@@ -43,8 +43,8 @@ class Browser(abc.ABC):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[Platform] = None):
-    self._platform = platform or PLATFORM
+      platform: Optional[plt.Platform] = None):
+    self._platform = platform or plt.PLATFORM
     # Marked optional to make subclass constructor calls easier with pytype.
     assert type
     assert not driver_path, "driver_path not supported by base Browser"
@@ -80,7 +80,7 @@ class Browser(abc.ABC):
     self.log_file: Optional[pathlib.Path] = None
 
   @property
-  def platform(self) -> Platform:
+  def platform(self) -> plt.Platform:
     return self._platform
 
   @property
@@ -163,7 +163,7 @@ class Browser(abc.ABC):
     self._probes.add(probe)
     probe.attach(self)
 
-  def details_json(self) -> helper.JsonDict:
+  def details_json(self) -> JsonDict:
     return {
         "label": self.label,
         "browser": self.type,

@@ -15,7 +15,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
 from crossbench import cli_helper, exception, helper
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
-from crossbench.platform import PLATFORM, Platform
+from crossbench import plt
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 
@@ -141,7 +141,7 @@ class Runner:
       browsers: Sequence[Browser],
       benchmark: Benchmark,
       additional_probes: Iterable[Probe] = (),
-      platform: Platform = PLATFORM,
+      platform: plt.Platform = plt.PLATFORM,
       env_config: Optional[HostEnvironmentConfig] = None,
       env_validation_mode: ValidationMode = ValidationMode.THROW,  # pytype: disable=annotation-type-mismatch
       repetitions: int = 1,
@@ -232,7 +232,7 @@ class Runner:
     return len(self._runs) > 0 and self._exceptions.is_success
 
   @property
-  def platform(self) -> Platform:
+  def platform(self) -> plt.Platform:
     return self._platform
 
   @property

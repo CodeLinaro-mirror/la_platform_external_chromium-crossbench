@@ -25,9 +25,10 @@ from .timing import Timing
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.platform.platform import Platform
+  from crossbench import plt
   from crossbench.probes.probe import Probe, ProbeScope
   from crossbench.stories.story import Story
+  from crossbench.types import JsonDict
 
   from .groups import BrowserSessionRunGroup
   from .runner import Runner
@@ -104,7 +105,7 @@ class Run:
         f"repetition={self.repetition}",
     )
 
-  def details_json(self) -> helper.JsonDict:
+  def details_json(self) -> JsonDict:
     return {
         "name": self.name,
         "repetition": self.repetition,
@@ -162,7 +163,7 @@ class Run:
     return self._browser
 
   @property
-  def platform(self) -> Platform:
+  def platform(self) -> plt.Platform:
     return self.browser_platform
 
   @property
@@ -171,11 +172,11 @@ class Run:
     return self.runner.env
 
   @property
-  def browser_platform(self) -> Platform:
+  def browser_platform(self) -> plt.Platform:
     return self._browser.platform
 
   @property
-  def runner_platform(self) -> Platform:
+  def runner_platform(self) -> plt.Platform:
     return self.runner.platform
 
   @property
@@ -255,7 +256,7 @@ class Run:
   ) -> exception.ExceptionAnnotationScope:
     return self._exceptions.capture(*stack_entries, exceptions=exceptions)
 
-  def get_browser_details_json(self) -> helper.JsonDict:
+  def get_browser_details_json(self) -> JsonDict:
     details_json = self.browser.details_json()
     assert isinstance(details_json["js_flags"], (list, tuple))
     details_json["js_flags"] += tuple(self.extra_js_flags.get_list())

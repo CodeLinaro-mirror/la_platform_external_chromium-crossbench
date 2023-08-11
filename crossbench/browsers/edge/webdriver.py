@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
   import crossbench.runner
-  from crossbench.platform import Platform
+  from crossbench import plt
 
 FlagsInitialDataType = crossbench.flags.Flags.InitialDataType
 
@@ -48,7 +48,7 @@ class EdgeWebDriver(ChromiumWebDriver):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[Platform] = None):
+      platform: Optional[plt.Platform] = None):
     super().__init__(
         label,
         path,

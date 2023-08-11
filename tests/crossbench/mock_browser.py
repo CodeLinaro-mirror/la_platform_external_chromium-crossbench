@@ -13,6 +13,7 @@ from crossbench import helper
 from crossbench.browsers.all import (Chrome, Chromium, Edge, Firefox, Safari)
 from crossbench.browsers.browser import Browser
 from crossbench.flags import ChromeFlags, Flags, JSFlags
+from crossbench import plt
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -34,10 +35,10 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @classmethod
   def setup_bin(cls, fs, bin_path: pathlib.Path, macos_bin_name: str) -> None:
-    if helper.PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       assert bin_path.suffix == ".app"
       bin_path = bin_path / "Contents" / "MacOS" / macos_bin_name
-    elif helper.PLATFORM.is_win:
+    elif plt.PLATFORM.is_win:
       assert bin_path.suffix == ".exe"
     fs.create_file(bin_path)
 
@@ -108,9 +109,9 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return copy.deepcopy(result)
 
 
-if helper.PLATFORM.is_macos:
+if plt.PLATFORM.is_macos:
   APP_ROOT = pathlib.Path("/Applications")
-elif helper.PLATFORM.is_win:
+elif plt.PLATFORM.is_win:
   APP_ROOT = pathlib.Path("C:/Program Files")
 else:
   APP_ROOT = pathlib.Path("/usr/bin")
@@ -145,9 +146,9 @@ if not TYPE_CHECKING:
 
 
 class MockChromeStable(MockChromeBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Google Chrome.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Google/Chrome/Application/chrome.exe"
   else:
     APP_PATH = APP_ROOT / "google-chrome"
@@ -160,9 +161,9 @@ if not TYPE_CHECKING:
 
 class MockChromeBeta(MockChromeBrowser):
   VERSION = "101.22.33.44"
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Google Chrome Beta.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Google/Chrome Beta/Application/chrome.exe"
   else:
     APP_PATH = APP_ROOT / "google-chrome-beta"
@@ -170,9 +171,9 @@ class MockChromeBeta(MockChromeBrowser):
 
 class MockChromeDev(MockChromeBrowser):
   VERSION = "102.22.33.44"
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Google Chrome Dev.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Google/Chrome Dev/Application/chrome.exe"
   else:
     APP_PATH = APP_ROOT / "google-chrome-unstable"
@@ -180,9 +181,9 @@ class MockChromeDev(MockChromeBrowser):
 
 class MockChromeCanary(MockChromeBrowser):
   VERSION = "103.22.33.44"
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Google Chrome Canary.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Google/Chrome SxS/Application/chrome.exe"
   else:
     APP_PATH = APP_ROOT / "google-chrome-canary"
@@ -205,9 +206,9 @@ if not TYPE_CHECKING:
 
 
 class MockEdgeStable(MockEdgeBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Microsoft Edge.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Microsoft/Edge/Application/msedge.exe"
   else:
     APP_PATH = APP_ROOT / "microsoft-edge"
@@ -215,9 +216,9 @@ class MockEdgeStable(MockEdgeBrowser):
 
 class MockEdgeBeta(MockEdgeBrowser):
   VERSION = "101.22.33.44"
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Microsoft Edge Beta.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Microsoft/Edge Beta/Application/msedge.exe"
   else:
     APP_PATH = APP_ROOT / "microsoft-edge-beta"
@@ -225,9 +226,9 @@ class MockEdgeBeta(MockEdgeBrowser):
 
 class MockEdgeDev(MockEdgeBrowser):
   VERSION = "102.22.33.44"
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Microsoft Edge Dev.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Microsoft/Edge Dev/Application/msedge.exe"
   else:
     APP_PATH = APP_ROOT / "microsoft-edge-dev"
@@ -235,9 +236,9 @@ class MockEdgeDev(MockEdgeBrowser):
 
 class MockEdgeCanary(MockEdgeBrowser):
   VERSION = "103.22.33.44"
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Microsoft Edge Canary.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Microsoft/Edge SxS/Application/msedge.exe"
   else:
     APP_PATH = APP_ROOT / "unsupported/msedge-canary"
@@ -259,18 +260,18 @@ if not TYPE_CHECKING:
 
 
 class MockSafari(MockSafariBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Safari.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Unsupported/Safari.exe"
   else:
     APP_PATH = pathlib.Path("/unsupported-platform/Safari")
 
 
 class MockSafariTechnologyPreview(MockSafariBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Safari Technology Preview.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Unsupported/Safari Technology Preview.exe"
   else:
     APP_PATH = pathlib.Path("/unsupported-platform/Safari Technology Preview")
@@ -292,27 +293,27 @@ if not TYPE_CHECKING:
 
 
 class MockFirefox(MockFirefoxBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Firefox.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Mozilla Firefox/firefox.exe"
   else:
     APP_PATH = APP_ROOT / "firefox"
 
 
 class MockFirefoxDeveloperEdition(MockFirefoxBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Firefox Developer Edition.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Firefox Developer Edition/firefox.exe"
   else:
     APP_PATH = APP_ROOT / "firefox-developer-edition"
 
 
 class MockFirefoxNightly(MockFirefoxBrowser):
-  if helper.PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     APP_PATH = APP_ROOT / "Firefox Nightly.app"
-  elif helper.PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     APP_PATH = APP_ROOT / "Firefox Nightly/firefox.exe"
   else:
     APP_PATH = APP_ROOT / "firefox-trunk"

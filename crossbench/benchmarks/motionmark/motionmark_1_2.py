@@ -16,10 +16,10 @@ from crossbench.probes.results import ProbeResult
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
-  from crossbench.runner.run import Run
   from crossbench.runner.actions import Actions
-  from crossbench.runner.groups import (StoriesRunGroup, BrowsersRunGroup)
-  from crossbench import helper
+  from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
+  from crossbench.runner.run import Run
+  from crossbench.types import JSON
 
 
 def _probe_skip_data_segments(path: Tuple[str, ...]) -> Optional[str]:
@@ -40,10 +40,10 @@ class MotionMark12Probe(JsonResultProbe):
     return window.benchmarkRunnerClient.results.results;
   """
 
-  def to_json(self, actions: Actions) -> helper.JSON:
+  def to_json(self, actions: Actions) -> JSON:
     return actions.js(self.JS)
 
-  def flatten_json_data(self, json_data: List) -> helper.JSON:
+  def flatten_json_data(self, json_data: List) -> JSON:
     assert isinstance(json_data, list) and len(json_data) == 1, (
         "Motion12MarkProbe requires a results list.")
     return probes_helper.Flatten(

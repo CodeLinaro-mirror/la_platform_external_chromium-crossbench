@@ -5,7 +5,7 @@
 import pathlib
 from unittest import mock
 
-from crossbench.platform import PLATFORM
+from crossbench import plt
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
@@ -15,7 +15,7 @@ class BrowserProbeResultTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.run = mock.Mock(platform=PLATFORM)
+    self.run = mock.Mock(platform=plt.PLATFORM)
 
   # TODO add remote platform test
 

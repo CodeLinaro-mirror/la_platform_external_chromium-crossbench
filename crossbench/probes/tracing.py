@@ -19,7 +19,7 @@ from crossbench.probes.results import ProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.flags import ChromeFlags
-  from crossbench.platform import Platform
+  from crossbench import plt
   from crossbench.runner.run import Run
 
 MINIMAL_CONFIG = {
@@ -293,7 +293,7 @@ class TracingProbeScope(ProbeScope[TracingProbe]):
 
 class TraceconvFinder(probe_helper.V8CheckoutFinder):
 
-  def __init__(self, platform: Platform) -> None:
+  def __init__(self, platform: plt.Platform) -> None:
     super().__init__(platform)
     self.traceconv: Optional[pathlib.Path] = None
     if self.v8_checkout:

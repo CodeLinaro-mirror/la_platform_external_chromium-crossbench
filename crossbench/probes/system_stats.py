@@ -17,7 +17,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.platform.platform import Platform
+  from crossbench import plt
   from crossbench.runner.run import Run
 
 
@@ -74,8 +74,8 @@ class SystemStatsProbeScope(probe.ProbeScope[SystemStatsProbe]):
 
 class CMDPoller(threading.Thread):
 
-  def __init__(self, platform: Platform, cmd: Sequence[str], interval: float,
-               path: pathlib.Path):
+  def __init__(self, platform: plt.Platform, cmd: Sequence[str],
+               interval: float, path: pathlib.Path):
     super().__init__()
     self._platform = platform
     self._cmd = cmd

@@ -9,17 +9,19 @@ import contextlib
 import logging
 import pathlib
 import threading
-from typing import Dict, Iterable, Iterator, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional
 
 from crossbench import compat, exception, helper
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
-  from .runner import Runner
-  from .run import Run
   from crossbench.browsers.browser import Browser
-  from crossbench.stories.story import Story
   from crossbench.probes.probe import Probe
+  from crossbench.stories.story import Story
+  from crossbench.types import JsonDict
+
+  from .run import Run
+  from .runner import Runner
 
 
 class RunGroup(abc.ABC):
@@ -59,7 +61,7 @@ class RunGroup(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def info(self) -> helper.JsonDict:
+  def info(self) -> JsonDict:
     pass
 
   @property
@@ -150,7 +152,7 @@ class RepetitionsRunGroup(RunGroup):
             f"browser={self.browser.unique_name}", f"story={self.story}")
 
   @property
-  def info(self) -> helper.JsonDict:
+  def info(self) -> JsonDict:
     return {
         "story": str(self.story),
         "runs": len(tuple(self.runs)),
@@ -211,7 +213,7 @@ class StoriesRunGroup(RunGroup):
     )
 
   @property
-  def info(self) -> helper.JsonDict:
+  def info(self) -> JsonDict:
     return {
         "label": self.browser.label,
         "browser": self.browser.app_name.title(),
@@ -266,7 +268,7 @@ class BrowsersRunGroup(RunGroup):
     return ("Merging results from multiple browsers",)
 
   @property
-  def info(self) -> helper.JsonDict:
+  def info(self) -> JsonDict:
     return {
         "runs": len(tuple(self.runs)),
         "failed runs": len(tuple(self.failed_runs))

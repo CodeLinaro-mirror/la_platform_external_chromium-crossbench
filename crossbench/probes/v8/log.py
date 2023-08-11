@@ -16,7 +16,7 @@ from crossbench import cli_helper, compat, helper
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags import JSFlags
-from crossbench.platform.linux import LinuxPlatform
+from crossbench import plt
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
                                      ResultLocation)
@@ -24,7 +24,6 @@ from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
-  from crossbench.platform import Platform
   from crossbench.runner.run import Run
   from crossbench.runner.groups import BrowsersRunGroup
 
@@ -127,7 +126,7 @@ class V8LogProbe(Probe):
       return True
     if not browser.platform.is_linux or browser.major_version <= 106:
       return True
-    for search_path in cast(LinuxPlatform, browser.platform).SEARCH_PATHS:
+    for search_path in cast(plt.LinuxPlatform, browser.platform).SEARCH_PATHS:
       if compat.is_relative_to(browser.path, search_path):
         logging.error(
             "Probe with V8 --prof might not work with enterprise profiles")
@@ -166,7 +165,7 @@ class V8LogProbe(Probe):
           _process_profview_json(finder.d8_binary, finder.tick_processor,
                                  log_file) for log_file in log_files
       ]
-    assert platform == helper.PLATFORM
+    assert platform == plt.PLATFORM
     with multiprocessing.Pool(processes=4) as pool:
       return list(
           pool.starmap(_process_profview_json,
@@ -246,7 +245,7 @@ def _process_profview_json(d8_binary: pathlib.Path,
   env["D8_PATH"] = str(d8_binary.parent.resolve())
   result_json = log_file.with_suffix(".profview.json")
   with result_json.open("w", encoding="utf-8") as f:
-    helper.PLATFORM.sh(
+    plt.PLATFORM.sh(
         tick_processor,
         "--preprocess",
         log_file,
@@ -261,7 +260,7 @@ class V8ToolsFinder(probe_helper.V8CheckoutFinder):
   If no explicit d8 and checkout path are given, $D8_PATH and common v8 and
   chromium installation directories are checked."""
 
-  def __init__(self, platform: Platform, d8_binary: Optional[pathlib.Path],
+  def __init__(self, platform: plt.Platform, d8_binary: Optional[pathlib.Path],
                v8_checkout: Optional[pathlib.Path]) -> None:
     super().__init__(platform)
     self.d8_binary: Optional[pathlib.Path] = d8_binary

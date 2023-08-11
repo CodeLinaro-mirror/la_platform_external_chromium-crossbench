@@ -9,9 +9,12 @@ import sys
 import traceback as tb
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from crossbench import helper
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 TInfoStack = Tuple[str, ...]
 
@@ -211,7 +214,7 @@ class ExceptionAnnotator:
   def error_messages(self) -> List[str]:
     return [self.format_exception(entry) for entry in self._exceptions]
 
-  def to_json(self) -> List[helper.JsonDict]:
+  def to_json(self) -> List[JsonDict]:
     return [{
         "info_stack": entry.info_stack,
         "type": helper.type_name(type(entry.exception)),

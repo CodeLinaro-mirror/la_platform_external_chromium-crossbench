@@ -14,7 +14,7 @@ import pytest
 
 import crossbench.browsers.all as browsers
 from crossbench.cli import CrossBenchCLI
-from crossbench.platform import PLATFORM
+from crossbench import plt
 from tests import test_helper
 
 
@@ -103,7 +103,7 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
 def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
   # - Custom chrome version downloads
   # - headless
-  if not PLATFORM.which("gsutil"):
+  if not plt.PLATFORM.which("gsutil"):
     pytest.skip("Missing required 'gsutil', skipping test.")
   results_dir = output_dir / "results"
   # TODO: speed up --browser=chrome-M111 and add it.
@@ -129,7 +129,8 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
   # This fails on the CQ bot, so make sure we skip it there:
   if driver_path:
     pytest.skip("Skipping test on CQ.")
-  if not PLATFORM.is_macos and (not browsers.Safari.default_path().exists()):
+  if not plt.PLATFORM.is_macos and (
+      not browsers.Safari.default_path().exists()):
     pytest.skip("Test requires Safari, skipping on non macOS devices.")
   results_dir = output_dir / "results"
   assert not results_dir.exists()

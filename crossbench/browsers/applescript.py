@@ -10,7 +10,7 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
-from crossbench import platform
+from crossbench import plt
 from crossbench.env import ValidationError
 
 from .browser import Browser
@@ -96,7 +96,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   def _check_js_from_apple_script_allowed(self, run: Run) -> None:
     try:
       self.js(run.runner, "return 1")
-    except platform.SubprocessError as e:
+    except plt.SubprocessError as e:
       logging.error("Browser does not allow JS from AppleScript!")
       logging.debug("    SubprocessError: %s", e)
       run.runner.env.handle_warning(
@@ -104,7 +104,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
           f"'{self.APPLE_SCRIPT_ALLOW_JS_MENU}'")
     try:
       self.js(run.runner, "return 1;")
-    except platform.SubprocessError as e:
+    except plt.SubprocessError as e:
       raise ValidationError(
           " JavaScript from Apple Script Events was not enabled") from e
     self._is_running = True

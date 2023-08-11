@@ -15,7 +15,7 @@ from math import floor, log10
 from . import helper
 
 if TYPE_CHECKING:
-  from crossbench.helper import JsonDict
+  from crossbench.types import JsonDict
 
 
 def format_metric(value: Union[float, int],

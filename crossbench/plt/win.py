@@ -8,7 +8,7 @@ import os
 import pathlib
 from typing import Optional
 
-from .platform import Platform
+from .base import Platform
 
 
 class WinPlatform(Platform):

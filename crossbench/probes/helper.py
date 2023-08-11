@@ -8,7 +8,7 @@ import csv
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from crossbench.platform import Platform
+from crossbench import plt
 
 KeyFnType = Callable[[Tuple[str, ...]], Optional[str]]
 
@@ -221,7 +221,7 @@ def _merge_csv_append(csv_data, table, table_headers, row_header_len, headers,
 
 class V8CheckoutFinder:
 
-  def __init__(self, platform: Platform) -> None:
+  def __init__(self, platform: plt.Platform) -> None:
     self.platform = platform
     # A generous list of potential locations of a V8 or chromium checkout
     self.checkout_candidates = [

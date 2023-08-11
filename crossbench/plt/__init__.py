@@ -7,10 +7,12 @@ from __future__ import annotations
 import sys
 from typing import Final
 
-from .android_adb import Adb, AndroidAdbPlatform, adb_devices
+from .android_adb import AndroidAdbPlatform, adb_devices
+from .arch import MachineArch
+from .base import Platform, SubprocessError
 from .linux import LinuxPlatform
 from .macos import MacOSPlatform
-from .platform import MachineArch, Platform, SubprocessError
+from .posix import PosixPlatform
 from .win import WinPlatform
 
 

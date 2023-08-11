@@ -14,7 +14,7 @@ import tempfile
 from typing import Final, Optional, Tuple, Type, Union
 
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
-from crossbench.platform import Platform
+from crossbench import plt
 
 
 class Downloader(abc.ABC):
@@ -24,18 +24,18 @@ class Downloader(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def _get_loader_cls(cls, platform: Platform) -> Type[Downloader]:
+  def _get_loader_cls(cls, platform: plt.Platform) -> Type[Downloader]:
     pass
 
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
-               platform: Platform) -> bool:
+               platform: plt.Platform) -> bool:
     return cls._get_loader_cls(platform).is_valid(path_or_identifier, platform)
 
   @classmethod
   def load(cls,
            archive_path_or_version_identifier: Union[str, pathlib.Path],
-           platform: Platform,
+           platform: plt.Platform,
            cache_dir: Optional[pathlib.Path] = None) -> pathlib.Path:
     loader_cls: Type[Downloader] = cls._get_loader_cls(platform)
     loader: Downloader = loader_cls(archive_path_or_version_identifier, "", "",
@@ -46,7 +46,7 @@ class Downloader(abc.ABC):
                archive_path_or_version_identifier: Union[str, pathlib.Path],
                browser_type: str,
                platform_name: str,
-               platform: Platform,
+               platform: plt.Platform,
                cache_dir: Optional[pathlib.Path] = None):
     assert browser_type, "Missing browser_type"
     self._browser_type = browser_type
@@ -232,7 +232,7 @@ class ArchiveHelper(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def extract(cls, platform: Platform, archive_path: pathlib.Path,
+  def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
               dest_path: pathlib.Path) -> pathlib.Path:
     pass
 
@@ -240,7 +240,7 @@ class ArchiveHelper(abc.ABC):
 class RPMArchiveHelper():
 
   @classmethod
-  def extract(cls, platform: Platform, archive_path: pathlib.Path,
+  def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
               dest_path: pathlib.Path) -> pathlib.Path:
     assert platform.which("rpm2cpio"), (
         "Need rpm2cpio to extract downloaded .rpm archive")
@@ -269,7 +269,7 @@ class RPMArchiveHelper():
 class DMGArchiveHelper:
 
   @classmethod
-  def extract(cls, platform: Platform, archive_path: pathlib.Path,
+  def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
               dest_path: pathlib.Path) -> pathlib.Path:
     assert platform.is_macos, "DMG are only supported on macOS."
     assert not platform.is_remote, "Remote platform not supported yet"

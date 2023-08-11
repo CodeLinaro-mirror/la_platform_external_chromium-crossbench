@@ -14,9 +14,8 @@ import subprocess
 import time
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, cast
 
-from crossbench import helper
+from crossbench import helper, plt
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.platform import Platform, SubprocessError
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeScope, ResultLocation
 from crossbench.probes.results import ProbeResult
 from crossbench.probes.v8.log import V8LogProbe
@@ -152,7 +151,7 @@ class ProfilingProbe(Probe):
       try:
         browser_platform.sh(browser_platform.which("gcertstatus"))
         return
-      except SubprocessError:
+      except plt.SubprocessError:
         env.handle_warning("Please run gcert for generating pprof results")
     # Only Linux-perf results can be merged
     if browser_platform.is_macos and env.runner.repetitions > 1:
@@ -324,7 +323,7 @@ class LinuxProfilingScope(ProfilingScope):
             for file in perf_files
         ]
       else:
-        assert self.browser_platform == helper.PLATFORM
+        assert self.browser_platform == plt.PLATFORM
         with multiprocessing.Pool() as pool:
           perf_jitted_files = list(
               pool.imap(linux_perf_probe_inject_v8_symbols, perf_files))
@@ -353,7 +352,7 @@ class LinuxProfilingScope(ProfilingScope):
           if url:
             urls.append(url)
       else:
-        assert self.browser_platform == helper.PLATFORM
+        assert self.browser_platform == plt.PLATFORM
         with multiprocessing.Pool() as pool:
           urls = [
               url for url in pool.starmap(linux_perf_probe_pprof, items) if url
@@ -374,7 +373,7 @@ class LinuxProfilingScope(ProfilingScope):
         file.unlink()
 
 
-def prepare_linux_perf_env(platform: Platform,
+def prepare_linux_perf_env(platform: plt.Platform,
                            cwd: pathlib.Path) -> Dict[str, str]:
   env: Dict[str, str] = dict(platform.environ)
   env["JITDUMPDIR"] = str(cwd.absolute())
@@ -383,11 +382,11 @@ def prepare_linux_perf_env(platform: Platform,
 
 def linux_perf_probe_inject_v8_symbols(
     perf_data_file: pathlib.Path,
-    platform: Optional[Platform] = None) -> Optional[pathlib.Path]:
+    platform: Optional[plt.Platform] = None) -> Optional[pathlib.Path]:
   assert perf_data_file.is_file()
   output_file = perf_data_file.with_suffix(".data.jitted")
   assert not output_file.exists()
-  platform = platform or helper.PLATFORM
+  platform = platform or plt.PLATFORM
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
   try:
     platform.sh(
@@ -397,7 +396,7 @@ def linux_perf_probe_inject_v8_symbols(
         f"--input={perf_data_file}",
         f"--output={output_file}",
         env=env)
-  except SubprocessError as e:
+  except plt.SubprocessError as e:
     KB = 1024
     if perf_data_file.stat().st_size > 200 * KB:
       logging.warning("Failed processing: %s\n%s", perf_data_file, e)
@@ -413,9 +412,9 @@ def linux_perf_probe_inject_v8_symbols(
 def linux_perf_probe_pprof(
     perf_data_file: pathlib.Path,
     run_details: str,
-    platform: Optional[Platform] = None) -> Optional[str]:
+    platform: Optional[plt.Platform] = None) -> Optional[str]:
   size = helper.get_file_size(perf_data_file)
-  platform = platform or helper.PLATFORM
+  platform = platform or plt.PLATFORM
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
   url = ""
   try:
@@ -426,7 +425,7 @@ def linux_perf_probe_pprof(
         perf_data_file,
         env=env,
     ).strip()
-  except SubprocessError as e:
+  except plt.SubprocessError as e:
     # Occasionally small .jitted files fail, likely due perf inject silently
     # failing?
     raw_perf_data_file = perf_data_file.with_suffix("")
@@ -443,7 +442,7 @@ def linux_perf_probe_pprof(
             f"-add_comment={run_details}",
             raw_perf_data_file,
         ).strip()
-      except SubprocessError as e2:
+      except plt.SubprocessError as e2:
         logging.debug("pprof -flame failed: %s", e2)
     if not url:
       logging.warning("Failed processing: %s\n%s", perf_data_file, e)

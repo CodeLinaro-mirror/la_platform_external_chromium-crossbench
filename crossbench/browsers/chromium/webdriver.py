@@ -21,19 +21,18 @@ from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
-from crossbench import exception, helper
+from crossbench import exception, helper, plt
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, Flags
-from crossbench.platform.android_adb import AndroidAdbPlatform
 
 from .chromium import Chromium
 
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
-  from crossbench.platform import Platform
   from crossbench.runner.run import Run
+  from crossbench.types import JsonDict, JsonList
 
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
@@ -52,7 +51,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[Platform] = None):
+      platform: Optional[plt.Platform] = None):
     super().__init__(label, path, flags, js_flags, cache_dir, type, driver_path,
                      viewport, splash_screen, platform)
 
@@ -160,11 +159,11 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   @property
-  def platform(self) -> AndroidAdbPlatform:
+  def platform(self) -> plt.AndroidAdbPlatform:
     assert isinstance(
         self._platform,
-        AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
-    return cast(AndroidAdbPlatform, self._platform)
+        plt.AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
+    return cast(plt.AndroidAdbPlatform, self._platform)
 
   def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
     return path
@@ -323,12 +322,12 @@ class ChromeDriverFinder:
         "ChromeDriverFinder: Invalid direct download %s, using milestone %s",
         direct_download_url, major_version)
     with helper.urlopen(self.CHROME_FOR_TESTING_MILESTONE_URL) as response:
-      milestones: helper.JsonDict = json.loads(
+      milestones: JsonDict = json.loads(
           response.read().decode("utf-8"))["milestones"]
-    milestone: Optional[helper.JsonDict] = milestones.get(str(major_version))
+    milestone: Optional[JsonDict] = milestones.get(str(major_version))
     if not milestone:
       return (None, None)
-    downloads: helper.JsonList = milestone["downloads"].get("chromedriver", [])
+    downloads: JsonList = milestone["downloads"].get("chromedriver", [])
     for download in downloads:
       if isinstance(download, dict) and download["platform"] == platform_name:
         return (self.CHROME_FOR_TESTING_MILESTONE_URL, download["url"])

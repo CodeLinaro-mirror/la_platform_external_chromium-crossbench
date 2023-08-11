@@ -23,16 +23,10 @@ from typing import (Any, Callable, Dict, Final, Iterable, Iterator, List,
 
 import tabulate
 
-from crossbench.platform import PLATFORM
+from crossbench import plt
 
 assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
-
-
-JSON = Union["JsonDict", "JsonList", "JsonTuple", str, int, float, bool, None]
-JsonDict = Dict[str, "JSON"]
-JsonList = List["JSON"]
-JsonTuple = Tuple["JSON"]
 
 
 class TTYColor:
@@ -137,21 +131,21 @@ def search_app_or_executable(name: str,
                              win: Sequence[str] = (),
                              linux: Sequence[str] = ()) -> pathlib.Path:
   executables: Sequence[str] = []
-  if PLATFORM.is_macos:
+  if plt.PLATFORM.is_macos:
     executables = macos
-  elif PLATFORM.is_win:
+  elif plt.PLATFORM.is_win:
     executables = win
-  elif PLATFORM.is_linux:
+  elif plt.PLATFORM.is_linux:
     executables = linux
 
   if not executables:
-    raise ValueError(
-        f"Executable {name} not supported on platform {PLATFORM.name}")
+    raise ValueError(f"Executable {name} not supported "
+                     f"on platform {plt.PLATFORM.name}")
   for name_or_path in executables:
-    binary = PLATFORM.search_app(pathlib.Path(name_or_path))
+    binary = plt.PLATFORM.search_app(pathlib.Path(name_or_path))
     if binary and binary.exists():
       return binary
-  raise ValueError(f"Executable {name} not found on {PLATFORM.name}")
+  raise ValueError(f"Executable {name} not found on {plt.PLATFORM.name}")
 
 # =============================================================================
 
@@ -192,8 +186,8 @@ class SystemSleepPreventer:
     self._process = None
 
   def __enter__(self) -> None:
-    if PLATFORM.is_macos:
-      self._process = PLATFORM.popen("caffeinate", "-imdsu")
+    if plt.PLATFORM.is_macos:
+      self._process = plt.PLATFORM.popen("caffeinate", "-imdsu")
     # TODO: Add linux support
 
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
@@ -285,7 +279,7 @@ def wait_with_backoff(wait_range: WaitRange) -> Iterator[Tuple[float, float]]:
       raise TimeoutError(f"Waited for {duration}")
     time_left = timeout - duration
     yield duration.total_seconds(), time_left.total_seconds()
-    PLATFORM.sleep(sleep_for.total_seconds())
+    plt.PLATFORM.sleep(sleep_for.total_seconds())
 
 
 class DurationMeasureContext:

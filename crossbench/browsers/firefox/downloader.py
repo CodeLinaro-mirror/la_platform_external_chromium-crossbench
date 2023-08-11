@@ -11,9 +11,9 @@ import urllib.parse
 from typing import Dict, Final, Optional, Tuple, Type, Union
 
 from crossbench.browsers.downloader import DMGArchiveHelper, Downloader
-from crossbench.platform import Platform
+from crossbench import plt
 
-PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
+_PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
     ("win", "ia32"): "win32",
     ("win", "x64"): "win64",
     ("win", "arm64"): "win-aarch64",
@@ -31,7 +31,7 @@ class FirefoxDownloader(Downloader):
   STORAGE_URL: Final = "https://ftp.mozilla.org/pub/firefox/releases/"
 
   @classmethod
-  def _get_loader_cls(cls, platform: Platform) -> Type[FirefoxDownloader]:
+  def _get_loader_cls(cls, platform: plt.Platform) -> Type[FirefoxDownloader]:
     if platform.is_macos:
       return FirefoxDownloaderMacOS
     if platform.is_linux:
@@ -44,11 +44,11 @@ class FirefoxDownloader(Downloader):
                version_identifier: Union[str, pathlib.Path],
                browser_type: str,
                platform_name: str,
-               platform: Platform,
+               platform: plt.Platform,
                cache_dir: Optional[pathlib.Path] = None):
     assert not browser_type
     assert not platform_name
-    firefox_platform_name = PLATFORM_NAME_LOOKUP.get(platform.key)
+    firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(platform.key)
     if not firefox_platform_name:
       raise ValueError(
           "Unsupported macOS architecture for downloading Firefox: "
@@ -114,7 +114,7 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
-               platform: Platform) -> bool:
+               platform: plt.Platform) -> bool:
     if cls.VERSION_RE.fullmatch(str(path_or_identifier)):
       return True
     path = pathlib.Path(path_or_identifier)
@@ -138,7 +138,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
-               platform: Platform) -> bool:
+               platform: plt.Platform) -> bool:
     if cls.VERSION_RE.fullmatch(str(path_or_identifier)):
       return True
     path = pathlib.Path(path_or_identifier)

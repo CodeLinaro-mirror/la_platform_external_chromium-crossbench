@@ -8,10 +8,15 @@ import logging
 import pathlib
 import re
 import subprocess
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
+                    Union)
 
-from .platform import MachineArch, Platform
+from .arch import MachineArch
 from .posix import PosixPlatform
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
+  from .base import Platform
 
 
 def adb_devices(platform: Platform) -> Dict[str, Dict[str, str]]:
@@ -129,12 +134,15 @@ class Adb:
   def shell_stdout(self,
                    *args: Union[str, pathlib.Path],
                    quiet: bool = False,
-                   encoding: str = "utf-8") -> str:
+                   encoding: str = "utf-8",
+                   env: Optional[Mapping[str, str]] = None) -> str:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
     # -T: disable pty allocation
     # -t: allocate a pty if on a tty (-tt: force pty allocation)
     # -x: disable remote exit codes and stdout/stderr separation
+    if env:
+      raise ValueError("ADB shell only supports an empty env for now.")
     return self._adb_stdout("shell", *args, quiet=quiet, encoding=encoding)
 
   def shell(self,
@@ -218,13 +226,14 @@ class AndroidAdbPlatform(PosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
-               device_identifier: Optional[str] = None) -> None:
+               device_identifier: Optional[str] = None,
+               adb: Optional[Adb] = None) -> None:
     super().__init__()
     self._machine: Optional[MachineArch] = None
     self._host_platform = host_platform
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
-    self._adb = Adb(host_platform, device_identifier)
+    self._adb = adb or Adb(host_platform, device_identifier)
 
   @property
   def is_remote(self) -> bool:
@@ -288,7 +297,7 @@ class AndroidAdbPlatform(PosixPlatform):
     cpu_abi = self.adb.getprop("ro.product.cpu.abi")
     arch = self._MACHINE_ARCH_LOOKUP.get(cpu_abi, None)
     if not arch:
-      raise ValueError("Unknown android CPU ABI: {cpu_abi}")
+      raise ValueError(f"Unknown android CPU ABI: {cpu_abi}")
     self._machine = arch
     return self._machine
 
@@ -346,15 +355,32 @@ class AndroidAdbPlatform(PosixPlatform):
     details["android"] = properties
     return details
 
+  def python_details(self) -> JsonDict:
+    # Python is not available on android.
+    return {}
+
+  def os_details(self) -> JsonDict:
+    # TODO: add more info
+    return {"version": self.version}
+
+  def cpu_details(self) -> JsonDict:
+    # TODO: add more info
+    return {"info": self.cpu}
+
   def check_autobrightness(self) -> bool:
     # adb shell dumpsys display
     # TODO: implement.
     return True
 
+  _BRIGHTNESS_RE = re.compile(
+      r"mLatestFloatBrightness=(?P<brightness>[0-9]+\.[0-9]+)")
+
   def get_main_display_brightness(self) -> int:
-    # adb shell dumpsys display
-    # TODO: implement.
-    return 1
+    display_info: str = self.adb.shell_stdout("dumpsys", "display")
+    match_result = self._BRIGHTNESS_RE.search(display_info)
+    if match_result is None:
+      raise ValueError("Could not parse adb display brightness.")
+    return int(float(match_result.group("brightness")) * 100)
 
   @property
   def default_tmp_dir(self) -> pathlib.Path:
@@ -381,10 +407,20 @@ class AndroidAdbPlatform(PosixPlatform):
         quiet=quiet,
         check=check)
 
+  def sh_stdout(self,
+                *args: Union[str, pathlib.Path],
+                shell: bool = False,
+                quiet: bool = False,
+                encoding: str = "utf-8",
+                env: Optional[Mapping[str, str]] = None) -> str:
+    # The shell option is not supported on adb.
+    del shell
+    return self.adb.shell_stdout(*args, env=env, quiet=quiet, encoding=encoding)
+
   def rsync(self, from_path: pathlib.Path,
             to_path: pathlib.Path) -> pathlib.Path:
-    assert self.exists(
-        from_path), f"Source file '{from_path}' does not exist on {self}"
+    assert self.exists(from_path), (
+        f"Source file '{from_path}' does not exist on {self}")
     to_path.parent.mkdir(parents=True, exist_ok=True)
     self.adb.pull(from_path, to_path)
     return to_path

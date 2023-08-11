@@ -18,7 +18,7 @@ from frozendict import frozendict
 
 import crossbench.browsers.all as browsers
 from crossbench import cli_helper, exception, helper
-from crossbench import platform as cb_platform
+from crossbench import plt
 from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)
 from crossbench.browsers.chrome.downloader import ChromeDownloader
@@ -158,7 +158,7 @@ class DriverConfig(ConfigObject):
           driver_type = BrowserDriverType.parse(value)
         except argparse.ArgumentTypeError as original_error:
           try:
-            return cls.load_short_settings(value, cb_platform.PLATFORM)
+            return cls.load_short_settings(value, plt.PLATFORM)
           except AmbiguousDriverIdentifier:  # pylint: disable=try-except-raise
             raise
           except ValueError as e:
@@ -174,7 +174,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   def load_short_settings(cls, value: str,
-                          platform: cb_platform.Platform) -> DriverConfig:
+                          platform: plt.Platform) -> DriverConfig:
     """Check for short versions and multiple candidates"""
     logging.debug("Looking for driver candidates: %s", value)
     candidate: Optional[DriverConfig]
@@ -184,12 +184,11 @@ class DriverConfig(ConfigObject):
     raise ValueError("Unknown setting")
 
   @classmethod
-  def try_load_adb_settings(
-      cls, value: str,
-      platform: cb_platform.Platform) -> Optional[DriverConfig]:
+  def try_load_adb_settings(cls, value: str,
+                            platform: plt.Platform) -> Optional[DriverConfig]:
     candidate_serials: List[str] = []
     pattern: re.Pattern = re.compile(value)
-    for serial, info in cb_platform.adb_devices(platform).items():
+    for serial, info in plt.adb_devices(platform).items():
       if pattern.fullmatch(serial):
         candidate_serials.append(serial)
         continue
@@ -226,14 +225,13 @@ class DriverConfig(ConfigObject):
         help="Additional driver settings (Driver dependent).")
     return parser
 
-  def get_platform(self) -> cb_platform.Platform:
+  def get_platform(self) -> plt.Platform:
     if self.type == BrowserDriverType.ANDROID:
       device_identifier = None
       if self.settings:
         device_identifier = self.settings.get("serial", None)
-      return cb_platform.AndroidAdbPlatform(cb_platform.PLATFORM,
-                                            device_identifier)
-    return cb_platform.PLATFORM
+      return plt.AndroidAdbPlatform(plt.PLATFORM, device_identifier)
+    return plt.PLATFORM
 
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
@@ -311,11 +309,9 @@ class BrowserConfig(ConfigObject):
       return browsers.Firefox.developer_edition_path()
     if identifier in ("firefox-nightly", "ff-nightly", "ff-trunk"):
       return browsers.Firefox.nightly_path()
-    if ChromeDownloader.is_valid(maybe_path_or_identifier,
-                                 cb_platform.PLATFORM):
+    if ChromeDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
       return maybe_path_or_identifier
-    if FirefoxDownloader.is_valid(maybe_path_or_identifier,
-                                  cb_platform.PLATFORM):
+    if FirefoxDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
       return maybe_path_or_identifier
     path = try_resolve_existing_path(maybe_path_or_identifier)
     if not path:
@@ -372,7 +368,7 @@ class BrowserConfig(ConfigObject):
     assert isinstance(self.browser, pathlib.Path)
     return self.browser
 
-  def get_platform(self) -> cb_platform.Platform:
+  def get_platform(self) -> plt.Platform:
     return self.driver.get_platform()
 
 
@@ -630,8 +626,8 @@ class BrowserVariantsConfig:
       return browsers.EdgeWebDriver
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
-  def _get_browser_platform(
-      self, browser_config: BrowserConfig) -> cb_platform.Platform:
+  def _get_browser_platform(self,
+                            browser_config: BrowserConfig) -> plt.Platform:
     return browser_config.get_platform()
 
   def _ensure_unique_browser_names(self) -> None:
@@ -690,7 +686,7 @@ class BrowserVariantsConfig:
     path_or_identifier = browser_config.browser
     if isinstance(path_or_identifier, pathlib.Path):
       return browser_config
-    platform = cb_platform.PLATFORM
+    platform = plt.PLATFORM
     if ChromeDownloader.is_valid(path_or_identifier, platform):
       downloaded = ChromeDownloader.load(
           path_or_identifier, platform, cache_dir=self._cache_dir)

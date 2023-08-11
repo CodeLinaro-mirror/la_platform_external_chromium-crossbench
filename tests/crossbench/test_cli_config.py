@@ -11,7 +11,6 @@ from unittest import mock
 import hjson
 from frozendict import frozendict
 
-from crossbench import helper
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.safari.safari import Safari
@@ -20,8 +19,10 @@ from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
                                        ConfigError, DriverConfig,
                                        FlagGroupConfig, ProbeConfig,
                                        SingleProbeConfig)
+from crossbench import plt
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
+from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
@@ -254,7 +255,7 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
       BrowserConfig.parse("{path:something}")
 
   def test_parse_inline_hjson(self):
-    config_dict: helper.JsonDict = {
+    config_dict: JsonDict = {
         "browser": "chrome",
         "driver": {
             "type": 'adb',
@@ -311,7 +312,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
   def test_from_cli_args(self):
     file = pathlib.Path("probe.config.hjson")
     js_flags = ["--log-maps", "--log-function-events"]
-    config_data: helper.JsonDict = {
+    config_data: JsonDict = {
         "probes": {
             "v8.log": {
                 "prof": True,
@@ -804,7 +805,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
       self.assertEqual(browser.version, "101.22.333.44")
 
   def test_inline_load_safari(self):
-    if not helper.PLATFORM.is_macos:
+    if not plt.PLATFORM.is_macos:
       return
     with mock.patch.object(Safari, "_extract_version", return_value="16.0"):
       config = BrowserVariantsConfig(

@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import Sequence, TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Sequence, Tuple, Type
 
 if TYPE_CHECKING:
   from crossbench.probes import Probe
   from crossbench.runner.run import Run
-  from crossbench import helper
+  from crossbench.types import JsonDict
 
 
 class Story(abc.ABC):
@@ -39,7 +39,7 @@ class Story(abc.ABC):
   def duration(self) -> dt.timedelta:
     return self._duration
 
-  def details_json(self) -> helper.JsonDict:
+  def details_json(self) -> JsonDict:
     return {"name": self.name, "duration": self.duration.total_seconds()}
 
   @abc.abstractmethod

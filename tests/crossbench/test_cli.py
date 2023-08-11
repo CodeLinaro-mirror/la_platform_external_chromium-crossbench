@@ -12,7 +12,7 @@ from unittest import mock
 
 import hjson
 
-from crossbench import cli_helper, platform
+from crossbench import cli_helper, plt
 from crossbench.browsers import splash_screen, viewport
 from crossbench.cli import CrossBenchCLI
 from crossbench.cli.cli_config import (BrowserConfig, BrowserDriverType,
@@ -39,8 +39,8 @@ class CliTestCase(BaseCrossbenchTestCase):
               enable_logging: bool = False) -> MockCLI:
     cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
     with mock.patch(
-                "sys.exit", side_effect=SysExitException), mock.patch.object(
-                    platform, "PLATFORM", self.platform):
+        "sys.exit", side_effect=SysExitException), mock.patch.object(
+            plt, "PLATFORM", self.platform):
       if raises:
         with self.assertRaises(raises):
           cli.run(args)

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
-  from crossbench.platform import Platform
+  from crossbench import plt
   from crossbench.runner.run import Run
 
 
@@ -44,7 +44,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[Platform] = None):
+      platform: Optional[plt.Platform] = None):
     super().__init__(label, path, flags, js_flags, cache_dir, type, driver_path,
                      viewport, splash_screen, platform)
 

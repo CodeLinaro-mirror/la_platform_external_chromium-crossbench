@@ -8,7 +8,7 @@ import abc
 import pathlib
 from typing import Iterator, List, Optional, Union
 
-from .platform import Environ, Platform
+from .base import Environ, Platform
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):

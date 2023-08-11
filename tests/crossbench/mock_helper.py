@@ -16,10 +16,10 @@ import psutil
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench
-from crossbench import platform
+from crossbench import plt
 from crossbench.benchmarks.benchmark import SubStoryBenchmark
 from crossbench.cli import CrossBenchCLI
-from crossbench.platform.platform import MachineArch
+from crossbench.plt.base import MachineArch
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -29,7 +29,9 @@ from . import mock_browser
 
 GIB = 1014**3
 
-ActivePlatformClass: Type[platform.Platform] = type(platform.PLATFORM)
+ActivePlatformClass: Type[plt.Platform] = type(plt.PLATFORM)
+
+ShellArgsT = Tuple[Union[str, pathlib.Path]]
 
 
 class MockPlatform(ActivePlatformClass):
@@ -37,10 +39,19 @@ class MockPlatform(ActivePlatformClass):
   def __init__(self, is_battery_powered=False):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self._key = platform.PLATFORM.key
-    self._machine: MachineArch = platform.PLATFORM.machine
-    self.sh_cmds: List[Tuple[Union[str, pathlib.Path]]] = []
+    self._key = plt.PLATFORM.key
+    self._machine: MachineArch = plt.PLATFORM.machine
+    self.sh_cmds: List[ShellArgsT] = []
+    self.expected_sh_cmds: Optional[List[ShellArgsT]] = None
     self.sh_results: List[str] = []
+
+  def expect_sh(self,
+                *args: Union[str, pathlib.Path],
+                result: str = "") -> None:
+    if self.expected_sh_cmds is None:
+      self.expected_sh_cmds = []
+    self.expected_sh_cmds.insert(0, args)
+    self.sh_results.insert(0, result)
 
   @property
   def key(self) -> str:
@@ -105,6 +116,10 @@ class MockPlatform(ActivePlatformClass):
                 encoding: str = "utf-8",
                 env: Optional[Mapping[str, str]] = None) -> str:
     del shell, quiet, encoding, env
+    if self.expected_sh_cmds is not None:
+      assert self.expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
+      expected = self.expected_sh_cmds.pop()
+      assert expected == args, f"Expected sh_cmd: {expected}, got: {args}"
     self.sh_cmds.append(args)
     if not self.sh_results:
       raise ValueError("MockPlatform has no more sh outputs.")
@@ -184,7 +199,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def setUp(self) -> None:
     # Instantiate MockPlatform before setting up fake_filesystem so we can
-    # still interact with the original, real Platform object for extracting
+    # still interact with the original, real plt.Platform object for extracting
     # basic system information.
     self.platform = MockPlatform()  # pytype: disable=not-instantiable
     super().setUp()
@@ -199,7 +214,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         mock_browser.MockChromeDev("dev", platform=self.platform),
         mock_browser.MockChromeStable("stable", platform=self.platform)
     ]
-    self._mock_platform_patcher = mock.patch.object(platform, "PLATFORM",
+    self._mock_platform_patcher = mock.patch.object(plt, "PLATFORM",
                                                     self.platform)
     self._mock_platform_patcher.start()
     for browser in self.browsers:

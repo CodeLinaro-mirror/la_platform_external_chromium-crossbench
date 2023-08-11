@@ -12,10 +12,10 @@ from crossbench import compat
 from crossbench.browsers.browser import Browser
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
-  from crossbench.platform.macos import MacOSPlatform
   from crossbench.runner.runner import Runner
 
 
@@ -54,7 +54,7 @@ class Safari(Browser):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[MacOSPlatform] = None):
+      platform: Optional[plt.MacOSPlatform] = None):
     super().__init__(
         label,
         path,

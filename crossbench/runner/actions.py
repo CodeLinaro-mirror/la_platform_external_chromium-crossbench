@@ -16,7 +16,7 @@ if TYPE_CHECKING:
   from .run import Run
   from .timing import Timing
   from crossbench.browsers.browser import Browser
-  from crossbench.platform.platform import Platform
+  from crossbench import plt
 
 
 class Actions(helper.TimeScope):
@@ -53,7 +53,7 @@ class Actions(helper.TimeScope):
     return self._run
 
   @property
-  def platform(self) -> Platform:
+  def platform(self) -> plt.Platform:
     return self._run.platform
 
   def __enter__(self) -> Actions:

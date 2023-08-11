@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 import selenium.common.exceptions
 from selenium import webdriver
 
-from crossbench import helper
+from crossbench.types import JsonDict
 
 from .browser import Browser
 
@@ -24,9 +24,9 @@ if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
-  from crossbench.platform.platform import Platform
-  from crossbench.runner.runner import Runner
+  from crossbench import plt
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 class DriverException(RuntimeError):
@@ -62,7 +62,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[Platform] = None):
+      platform: Optional[plt.Platform] = None):
     super().__init__(label, path, flags, js_flags, cache_dir, type, None,
                      viewport, splash_screen, platform)
     self._driver_path = driver_path
@@ -132,9 +132,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                     driver_path: pathlib.Path) -> webdriver.Remote:
     pass
 
-  def details_json(self) -> helper.JsonDict:
-    details: helper.JsonDict = super().details_json()
-    log = cast(helper.JsonDict, details["log"])
+  def details_json(self) -> JsonDict:
+    details: JsonDict = super().details_json()
+    log = cast(JsonDict, details["log"])
     log["driver"] = str(self.driver_log_file)
     return details
 

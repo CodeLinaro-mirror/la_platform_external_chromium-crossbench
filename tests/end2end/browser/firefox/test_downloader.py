@@ -13,11 +13,11 @@ from crossbench import compat
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.firefox.webdriver import (FirefoxWebDriver,
                                                    FirefoxDriverFinder)
-from crossbench.platform import PLATFORM
+from crossbench import plt
 from tests import test_helper
 
 
-@unittest.skipIf(not PLATFORM.is_macos, "Only supported on macOS")
+@unittest.skipIf(not plt.PLATFORM.is_macos, "Only supported on macOS")
 class FirefoxDownloaderTestCase():
 
   def _load_and_check_version(self,
@@ -27,20 +27,20 @@ class FirefoxDownloaderTestCase():
                               version_str: str,
                               expect_archive: bool = True) -> pathlib.Path:
     app_path: pathlib.Path = FirefoxDownloader.load(version_or_archive,
-                                                    PLATFORM, output_dir)
+                                                    plt.PLATFORM, output_dir)
     assert compat.is_relative_to(app_path, output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       assert set(output_dir.iterdir()) == {app_path, archive_dir}
-    assert version_str in PLATFORM.app_version(app_path)
+    assert version_str in plt.PLATFORM.app_version(app_path)
     archives = list(archive_dir.iterdir())
     if expect_archive:
       assert len(archives) == 1
     else:
       assert not archives
     assert app_path.exists()
-    browser = FirefoxWebDriver("test-browser", app_path, platform=PLATFORM)
+    browser = FirefoxWebDriver("test-browser", app_path, platform=plt.PLATFORM)
     # TODO: fix using dedicated Version object
     base_version_str = version_str.split("b")[0]
     assert base_version_str in browser.version
@@ -76,7 +76,7 @@ class FirefoxDownloaderTestCase():
                                             version_str)
 
     # Delete the extracted app and reload, should reuse the cached archive.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir.output_dir / version_str)
@@ -85,7 +85,7 @@ class FirefoxDownloaderTestCase():
                                             f"firefox-{version_str}",
                                             version_str)
     # Delete app and install from archive.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir.output_dir / version_str)
@@ -110,7 +110,7 @@ class FirefoxDownloaderTestCase():
                                             version_str)
 
     # Delete the extracted app and reload, should reuse the cached archive.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir.output_dir / version_str)
@@ -120,7 +120,7 @@ class FirefoxDownloaderTestCase():
                                             version_str)
 
     # Delete app and install from archive.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir.output_dir / version_str)

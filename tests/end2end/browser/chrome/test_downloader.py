@@ -15,12 +15,12 @@ from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
-from crossbench.platform import PLATFORM
+from crossbench import plt
 from tests import test_helper
 
 
 @pytest.mark.skipif(
-    PLATFORM.which("gsutil") is None,
+    plt.PLATFORM.which("gsutil") is None,
     reason="Missing required 'gsutil', skipping test.")
 class TestChromeDownloader:
 
@@ -30,21 +30,21 @@ class TestChromeDownloader:
                               version_or_archive: Union[str, pathlib.Path],
                               version_str: str,
                               expect_archive: bool = True) -> pathlib.Path:
-    app_path: pathlib.Path = ChromeDownloader.load(version_or_archive, PLATFORM,
-                                                   output_dir)
+    app_path: pathlib.Path = ChromeDownloader.load(version_or_archive,
+                                                   plt.PLATFORM, output_dir)
     assert compat.is_relative_to(app_path, output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       assert set(output_dir.iterdir()) == {app_path, archive_dir}
-    assert version_str in PLATFORM.app_version(app_path)
+    assert version_str in plt.PLATFORM.app_version(app_path)
     archives = list(archive_dir.iterdir())
     if expect_archive:
       assert len(archives) == 1
     else:
       assert not archives
     assert app_path.exists()
-    chrome = ChromeWebDriver("test-chrome", app_path, platform=PLATFORM)
+    chrome = ChromeWebDriver("test-chrome", app_path, platform=plt.PLATFORM)
     assert version_str in chrome.version
     self._load_and_check_chromedriver(output_dir, chrome)
     return app_path
@@ -80,7 +80,7 @@ class TestChromeDownloader:
     # Delete the extracted app and reload, can't reuse the cached archive since
     # we're requesting only a milestone that could have been updated
     # in the meantime.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir / "M111")
@@ -102,7 +102,7 @@ class TestChromeDownloader:
     # Delete the extracted app and reload, can't reuse the cached archive since
     # we're requesting only a milestone that could have been updated
     # in the meantime.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir / "M115")
@@ -122,7 +122,7 @@ class TestChromeDownloader:
                                             version_str)
 
     # Delete the extracted app and reload, should reuse the cached archive.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir / version_str)
@@ -132,7 +132,7 @@ class TestChromeDownloader:
                                             version_str)
 
     # Delete app and install from archive.
-    if PLATFORM.is_macos:
+    if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
       shutil.rmtree(output_dir / version_str)
@@ -145,7 +145,7 @@ class TestChromeDownloader:
     assert list(archive_dir.iterdir()) == [archive]
 
   @pytest.mark.skipif(
-      PLATFORM.is_macos and PLATFORM.is_arm64,
+      plt.PLATFORM.is_macos and plt.PLATFORM.is_arm64,
       reason="Old versions only supported on intel machines.")
   def test_download_old_major_version(self, output_dir, archive_dir) -> None:
     assert not list(output_dir.iterdir())

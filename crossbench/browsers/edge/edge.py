@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   import crossbench.runner
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
-  from crossbench.platform import Platform
+  from crossbench import plt
 
 FlagsInitialDataType = crossbench.flags.Flags.InitialDataType
 
@@ -73,7 +73,7 @@ class Edge(Chromium):
                cache_dir: Optional[pathlib.Path] = None,
                viewport: Optional[Viewport] = None,
                splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[Platform] = None):
+               platform: Optional[plt.Platform] = None):
     super().__init__(
         label,
         path,

@@ -7,6 +7,7 @@ import pathlib
 import unittest
 
 from crossbench import helper
+from crossbench import plt
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -58,7 +59,7 @@ class WaitTestCase(unittest.TestCase):
       data.append((time_spent, time_left))
       if len(data) == 2:
         break
-      helper.PLATFORM.sleep(delta)
+      plt.PLATFORM.sleep(delta)
     self.assertEqual(len(data), 2)
     first_time_spent, first_time_left = data[0]
     second_time_spent, second_time_left = data[1]
@@ -205,7 +206,7 @@ class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
     super().setUp()
-    self.platform = helper.PLATFORM
+    self.platform = plt.PLATFORM
 
   def test_single(self):
     input_file = pathlib.Path("input")

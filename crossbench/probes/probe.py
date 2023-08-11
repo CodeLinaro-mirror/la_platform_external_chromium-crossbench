@@ -12,6 +12,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, Set,
 
 from crossbench import helper
 from crossbench.config import ConfigParser
+from crossbench import plt
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        ProbeResult)
 
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.platform import Platform
+  from crossbench import plt
   from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
                                         StoriesRunGroup)
   from crossbench.runner.run import Run
@@ -122,8 +123,8 @@ class Probe(abc.ABC):
     return type(self).__name__
 
   @property
-  def runner_platform(self) -> Platform:
-    return helper.PLATFORM
+  def runner_platform(self) -> plt.Platform:
+    return plt.PLATFORM
 
   @property
   def name(self) -> str:
@@ -266,11 +267,11 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     return self._run.runner
 
   @property
-  def browser_platform(self) -> Platform:
+  def browser_platform(self) -> plt.Platform:
     return self.browser.platform
 
   @property
-  def runner_platform(self) -> Platform:
+  def runner_platform(self) -> plt.Platform:
     return self.runner.platform
 
   def browser_result(

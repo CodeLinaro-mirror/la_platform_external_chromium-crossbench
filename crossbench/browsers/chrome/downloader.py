@@ -14,7 +14,7 @@ from typing import Dict, Final, List, Optional, Tuple, Type, Union
 from crossbench import helper
 from crossbench.browsers.downloader import (DMGArchiveHelper, Downloader,
                                             RPMArchiveHelper)
-from crossbench.platform import Platform, SubprocessError
+from crossbench import plt
 
 
 class ChromeDownloader(Downloader):
@@ -26,7 +26,7 @@ class ChromeDownloader(Downloader):
       "chrome/platforms/{platform}/channels/{channel}/versions?filter={filter}")
 
   @classmethod
-  def _get_loader_cls(cls, platform: Platform) -> Type[ChromeDownloader]:
+  def _get_loader_cls(cls, platform: plt.Platform) -> Type[ChromeDownloader]:
     if platform.is_macos:
       return ChromeDownloaderMacOS
     if platform.is_linux:
@@ -133,7 +133,7 @@ class ChromeDownloader(Downloader):
       archive_url = self._archive_url(url, version_str)
       try:
         result = self._platform.sh_stdout("gsutil", "ls", archive_url)
-      except SubprocessError as e:
+      except plt.SubprocessError as e:
         logging.debug("gsutil failed: %s", e)
         continue
       if result:
@@ -160,7 +160,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
-               platform: Platform) -> bool:
+               platform: plt.Platform) -> bool:
     if cls.VERSION_RE.fullmatch(str(path_or_identifier)):
       return True
     path = pathlib.Path(path_or_identifier)
@@ -170,7 +170,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
                version_identifier: Union[str, pathlib.Path],
                browser_type: str,
                platform_name: str,
-               platform: Platform,
+               platform: plt.Platform,
                cache_dir: Optional[pathlib.Path] = None):
     assert not browser_type
     assert platform.is_linux
@@ -203,7 +203,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
-               platform: Platform) -> bool:
+               platform: plt.Platform) -> bool:
     if cls.VERSION_RE.fullmatch(str(path_or_identifier)):
       return True
     path = pathlib.Path(path_or_identifier)
@@ -213,7 +213,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
                version_identifier: Union[str, pathlib.Path],
                browser_type: str,
                platform_name: str,
-               platform: Platform,
+               platform: plt.Platform,
                cache_dir: Optional[pathlib.Path] = None):
     assert not browser_type
     assert platform.is_macos, f"{type(self)} can only be used on macOS"

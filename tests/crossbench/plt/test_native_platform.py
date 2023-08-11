@@ -2,54 +2,20 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import datetime as dt
 import pathlib
 import unittest
 
-from crossbench.platform import PLATFORM, MachineArch, Platform
-from crossbench.platform.macos import MacOSPlatform
-from crossbench.platform.posix import PosixPlatform
-from crossbench.platform.win import WinPlatform
+from crossbench import plt
 from tests import test_helper
-
-
-class MachineArchTestCase(unittest.TestCase):
-
-  def test_is_arm(self):
-    self.assertFalse(MachineArch.IA32.is_arm)
-    self.assertFalse(MachineArch.X64.is_arm)
-    self.assertTrue(MachineArch.ARM_32.is_arm)
-    self.assertTrue(MachineArch.ARM_64.is_arm)
-
-  def test_is_intel(self):
-    self.assertTrue(MachineArch.IA32.is_intel)
-    self.assertTrue(MachineArch.X64.is_intel)
-    self.assertFalse(MachineArch.ARM_32.is_intel)
-    self.assertFalse(MachineArch.ARM_64.is_intel)
-
-  def test_is_32bit(self):
-    self.assertTrue(MachineArch.IA32.is_32bit)
-    self.assertFalse(MachineArch.X64.is_32bit)
-    self.assertTrue(MachineArch.ARM_32.is_32bit)
-    self.assertFalse(MachineArch.ARM_64.is_32bit)
-
-  def test_is_64bit(self):
-    self.assertFalse(MachineArch.IA32.is_64bit)
-    self.assertTrue(MachineArch.X64.is_64bit)
-    self.assertFalse(MachineArch.ARM_32.is_64bit)
-    self.assertTrue(MachineArch.ARM_64.is_64bit)
-
-  def test_str(self):
-    self.assertEqual(str(MachineArch.IA32), "ia32")
-    self.assertEqual(str(MachineArch.X64), "x64")
-    self.assertEqual(str(MachineArch.ARM_32), "arm32")
-    self.assertEqual(str(MachineArch.ARM_64), "arm64")
 
 
 class PlatformTestCase(unittest.TestCase):
 
   def setUp(self):
-    self.platform: Platform = PLATFORM
+    self.platform: plt.Platform = plt.PLATFORM
 
   def test_sleep(self):
     self.platform.sleep(0)
@@ -77,14 +43,14 @@ class PlatformTestCase(unittest.TestCase):
     self.assertIsNotNone(self.platform.system_details())
 
 
-@unittest.skipIf(not PLATFORM.is_win, "Incompatible platform")
+@unittest.skipIf(not plt.PLATFORM.is_win, "Incompatible platform")
 class WinPlatformUnittest(unittest.TestCase):
-  platform: WinPlatform
+  platform: plt.WinPlatform
 
   def setUp(self):
     super().setUp()
-    assert isinstance(PLATFORM, WinPlatform)
-    self.platform = PLATFORM
+    assert isinstance(plt.PLATFORM, plt.WinPlatform)
+    self.platform = plt.PLATFORM
 
   def test_sh(self):
     ls = self.platform.sh_stdout("ls")
@@ -111,14 +77,14 @@ class WinPlatformUnittest(unittest.TestCase):
     self.assertFalse(self.platform.is_remote)
 
 
-@unittest.skipIf(not PLATFORM.is_posix, "Incompatible platform")
+@unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class PosixPlatformUnittest(unittest.TestCase):
-  platform: PosixPlatform
+  platform: plt.PosixPlatform
 
   def setUp(self):
     super().setUp()
-    assert isinstance(PLATFORM, PosixPlatform)
-    self.platform: PosixPlatform = PLATFORM
+    assert isinstance(plt.PLATFORM, plt.PosixPlatform)
+    self.platform: plt.PosixPlatform = plt.PLATFORM
 
   def test_sh(self):
     ls = self.platform.sh_stdout("ls")
@@ -139,14 +105,14 @@ class PosixPlatformUnittest(unittest.TestCase):
     self.assertTrue(details)
 
 
-@unittest.skipIf(not PLATFORM.is_macos, "Incompatible platform")
+@unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
 class MacOSPlatformHelperTestCase(unittest.TestCase):
-  platform: MacOSPlatform
+  platform: plt.MacOSPlatform
 
   def setUp(self):
     super().setUp()
-    assert isinstance(PLATFORM, MacOSPlatform)
-    self.platform = PLATFORM
+    assert isinstance(plt.PLATFORM, plt.MacOSPlatform)
+    self.platform = plt.PLATFORM
 
   def test_search_binary_not_found(self):
     with self.assertRaises(ValueError):
@@ -173,12 +139,13 @@ class MacOSPlatformHelperTestCase(unittest.TestCase):
     self.assertFalse(self.platform.is_remote)
 
   def test_set_main_screen_brightness(self):
-    prev_level = PLATFORM.get_main_display_brightness()
+    prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
-    PLATFORM.set_main_display_brightness(brightness_level)
-    self.assertEqual(brightness_level, PLATFORM.get_main_display_brightness())
-    PLATFORM.set_main_display_brightness(prev_level)
-    self.assertEqual(prev_level, PLATFORM.get_main_display_brightness())
+    plt.PLATFORM.set_main_display_brightness(brightness_level)
+    self.assertEqual(brightness_level,
+                     plt.PLATFORM.get_main_display_brightness())
+    plt.PLATFORM.set_main_display_brightness(prev_level)
+    self.assertEqual(prev_level, plt.PLATFORM.get_main_display_brightness())
 
 
 if __name__ == "__main__":

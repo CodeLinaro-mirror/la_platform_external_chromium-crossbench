@@ -14,12 +14,16 @@ import secrets
 import shlex
 import sys
 import tempfile
-from typing import Any, Coroutine, Dict, List, Optional, Tuple, Union
+from typing import (TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, Tuple,
+                    Union)
 
 import websockets
 from websockets.server import WebSocketServerProtocol
 
-from crossbench import compat, helper
+from crossbench import compat
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 class State(compat.StrEnum):
@@ -109,11 +113,7 @@ class CrossbenchDevToolsRecorderProxy:
   async def _send_message(
       self, coroutine: Coroutine[Any, Any, Optional[Tuple[Response,
                                                           Any]]]) -> None:
-    response: helper.JsonDict = {
-        "success": False,
-        "payload": None,
-        "error": None
-    }
+    response: JsonDict = {"success": False, "payload": None, "error": None}
     try:
       result: Optional[Tuple[Response, Any]] = await coroutine
       response["success"] = True

@@ -20,7 +20,7 @@ from .safari import Safari, find_safaridriver
 
 if TYPE_CHECKING:
   from crossbench.flags import Flags
-  from crossbench.platform.macos import MacOSPlatform
+  from crossbench import plt
   from crossbench.runner.runner import Runner
   from crossbench.runner.run import Run
 
@@ -38,7 +38,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[MacOSPlatform] = None):
+      platform: Optional[plt.MacOSPlatform] = None):
     super().__init__(label, path, flags, js_flags, cache_dir, type, driver_path,
                      viewport, splash_screen, platform)
     assert self.platform.is_macos

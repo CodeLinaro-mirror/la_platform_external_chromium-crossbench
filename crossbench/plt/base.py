@@ -7,7 +7,6 @@ from __future__ import annotations
 import abc
 import collections.abc
 import datetime as dt
-import enum
 import logging
 import os
 import pathlib
@@ -21,10 +20,15 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import (Any, Dict, Iterable, Iterator, List, Mapping, Optional,
-                    Tuple, Union)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping,
+                    Optional, Tuple, Union)
 
 import psutil
+
+from .arch import MachineArch
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
@@ -50,37 +54,6 @@ class LocalEnviron(Environ):
 
   def __len__(self) -> int:
     return self._environ.__len__()
-
-
-class MachineArch(enum.Enum):
-  IA32 = ("ia32", "intel", 32)
-  X64 = ("x64", "intel", 64)
-  ARM_32 = ("arm32", "arm", 32)
-  ARM_64 = ("arm64", "arm", 64)
-
-  def __init__(self, name: str, arch: str, bits: int) -> None:
-    self.identifier = name
-    self.arch = arch
-    self.bits = bits
-
-  @property
-  def is_arm(self) -> bool:
-    return self.arch == "arm"
-
-  @property
-  def is_intel(self) -> bool:
-    return self.arch == "intel"
-
-  @property
-  def is_32bit(self) -> bool:
-    return self.bits == 32
-
-  @property
-  def is_64bit(self) -> bool:
-    return self.bits == 64
-
-  def __str__(self) -> str:
-    return self.identifier
 
 
 class SubprocessError(subprocess.CalledProcessError):
@@ -469,20 +442,27 @@ class Platform(abc.ABC):
     return details
 
   def system_details(self) -> Dict[str, Any]:
+    return {
+        "machine": str(self.machine),
+        "os": self.os_details(),
+        "python": self.python_details(),
+        "CPU": self.cpu_details(),
+    }
+
+  def os_details(self) -> JsonDict:
     assert not self.is_remote, "Unsupported operation on remote platform"
     return {
-        "machine": py_platform.machine(),
-        "os": {
-            "system": py_platform.system(),
-            "release": py_platform.release(),
-            "version": py_platform.version(),
-            "platform": py_platform.platform(),
-        },
-        "python": {
-            "version": py_platform.python_version(),
-            "bits": "64" if sys.maxsize > 2**32 else "32",
-        },
-        "CPU": self.cpu_details(),
+        "system": py_platform.system(),
+        "release": py_platform.release(),
+        "version": py_platform.version(),
+        "platform": py_platform.platform(),
+    }
+
+  def python_details(self) -> JsonDict:
+    assert not self.is_remote, "Unsupported operation on remote platform"
+    return {
+        "version": py_platform.python_version(),
+        "bits": "64" if sys.maxsize > 2**32 else "32",
     }
 
   def download_to(self, url: str, path: pathlib.Path) -> pathlib.Path:
