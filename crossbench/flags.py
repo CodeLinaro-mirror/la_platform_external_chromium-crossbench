@@ -108,11 +108,13 @@ class JSFlags(Flags):
            flag_value: Optional[str] = None,
            override: bool = False) -> None:
     if flag_value is not None:
-      assert "," not in flag_value, (
-          "Comma in flag value, flag escaping for chrome's "
-          f"--js-flag might not work: {flag_name}={flag_value}")
-    assert flag_name.startswith("--"), (
-        f"Only long-form flag names allowed: got '{flag_name}'")
+      if "," in flag_value:
+        raise ValueError(
+            "--js-flags: Comma in V8 flag value, flag escaping for chrome's "
+            f"--js-flags might not work: {flag_name}={flag_value}")
+    if not flag_name.startswith("--"):
+      raise ValueError("--js-flags: Only long-form flag names allowed, "
+                       f"but got '{flag_name}'")
     self._check_negated_flag(flag_name, override)
     super()._set(flag_name, flag_value, override)
 

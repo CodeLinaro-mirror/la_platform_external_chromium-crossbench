@@ -211,12 +211,13 @@ class HostEnvironment:
     if self._validation_mode == ValidationMode.WARN:
       logging.warning(message)
       return
-    if self._validation_mode == ValidationMode.PROMPT and allow_interactive:
-      result = input(f"{helper.TTYColor.RED}{message} Continue?"
-                     f"{helper.TTYColor.RESET} [Yn]")
-      # Accept <enter> as default input to continue.
-      if result.lower() != "n":
-        return
+    if self._validation_mode == ValidationMode.PROMPT:
+      if allow_interactive:
+        result = input(f"{helper.TTYColor.RED}{message} Continue?"
+                       f"{helper.TTYColor.RESET} [Yn]")
+        # Accept <enter> as default input to continue.
+        if result.lower() != "n":
+          return
     elif self._validation_mode != ValidationMode.THROW:
       raise ValueError(
           f"Unknown environment validation mode={self._validation_mode}")
