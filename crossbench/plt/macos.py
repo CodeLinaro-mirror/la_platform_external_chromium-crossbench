@@ -35,7 +35,7 @@ class MacOSPlatform(PosixPlatform):
 
   @property
   def version(self) -> str:
-    if self._version:
+    if not self._version:
       self._version = self.sh_stdout("sw_vers", "-productVersion").strip()
     return self._version
 

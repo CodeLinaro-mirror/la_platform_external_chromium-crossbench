@@ -329,7 +329,12 @@ class Platform(abc.ABC):
                 encoding: str = "utf-8",
                 env: Optional[Mapping[str, str]] = None) -> str:
     completed_process = self.sh(
-        *args, shell=shell, capture_output=True, quiet=quiet, env=env)
+        *args,
+        shell=shell,
+        capture_output=True,
+        quiet=quiet,
+        env=env,
+        check=True)
     return completed_process.stdout.decode(encoding)
 
   def popen(self,

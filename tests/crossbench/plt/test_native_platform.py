@@ -44,7 +44,7 @@ class PlatformTestCase(unittest.TestCase):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_win, "Incompatible platform")
-class WinPlatformUnittest(unittest.TestCase):
+class WinPlatformUnittest(PlatformTestCase):
   platform: plt.WinPlatform
 
   def setUp(self):
@@ -78,7 +78,7 @@ class WinPlatformUnittest(unittest.TestCase):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
-class PosixPlatformUnittest(unittest.TestCase):
+class PosixPlatformUnittest(PlatformTestCase):
   platform: plt.PosixPlatform
 
   def setUp(self):
@@ -106,7 +106,7 @@ class PosixPlatformUnittest(unittest.TestCase):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
-class MacOSPlatformHelperTestCase(unittest.TestCase):
+class MacOSPlatformHelperTestCase(PosixPlatformUnittest):
   platform: plt.MacOSPlatform
 
   def setUp(self):
@@ -124,13 +124,51 @@ class MacOSPlatformHelperTestCase(unittest.TestCase):
     binary = self.platform.search_binary(pathlib.Path("Safari.app"))
     self.assertTrue(binary and binary.is_file())
 
+  def test_search_app_none(self):
+    self.assertIsNone(self.platform.search_app(pathlib.Path("No App.app")))
+
   def test_search_app(self):
     binary = self.platform.search_app(pathlib.Path("Safari.app"))
     self.assertTrue(binary and binary.exists())
     self.assertTrue(binary and binary.is_dir())
 
+  def test_app_version_app(self):
+    app = self.platform.search_app(pathlib.Path("Safari.app"))
+    self.assertIsNotNone(app)
+    self.assertTrue(app.is_dir())
+    version = self.platform.app_version(app)
+    self.assertRegex(version, r"[0-9]+\.[0-9]+")
+
+  def test_app_version_app_binary(self):
+    binary = self.platform.search_binary(pathlib.Path("Safari.app"))
+    self.assertIsNotNone(binary)
+    self.assertTrue(binary.is_file())
+    version = self.platform.app_version(binary)
+    self.assertRegex(version, r"[0-9]+\.[0-9]+")
+
+  def test_app_version_binary(self):
+    binary = pathlib.Path("/usr/bin/safaridriver")
+    self.assertTrue(binary.is_file())
+    version = self.platform.app_version(binary)
+    self.assertRegex(version, r"[0-9]+\.[0-9]+")
+
   def test_name(self):
     self.assertEqual(self.platform.name, "macos")
+
+  def test_version(self):
+    self.assertTrue(self.platform.version)
+    self.assertRegex(self.platform.version, r"[0-9]+\.[0-9]")
+
+  def test_device(self):
+    self.assertTrue(self.platform.device)
+    self.assertRegex(self.platform.device, r"[a-zA-Z]+[0-9]+,[0-9]+")
+
+  def test_cpu(self):
+    self.assertTrue(self.platform.cpu)
+    self.assertRegex(self.platform.cpu, r".* [0-9]+ cores")
+
+  def test_foreground_process(self):
+    self.assertTrue(self.platform.foreground_process())
 
   def test_is_macos(self):
     self.assertTrue(self.platform.is_macos)
@@ -146,6 +184,18 @@ class MacOSPlatformHelperTestCase(unittest.TestCase):
                      plt.PLATFORM.get_main_display_brightness())
     plt.PLATFORM.set_main_display_brightness(prev_level)
     self.assertEqual(prev_level, plt.PLATFORM.get_main_display_brightness())
+
+  def test_check_autobrightness(self):
+    self.platform.check_autobrightness()
+
+  def test_exec_apple_script(self):
+    self.assertEqual(
+        self.platform.exec_apple_script('copy "a value" to stdout').strip(),
+        "a value")
+
+  def test_exec_apple_script_invalid(self):
+    with self.assertRaises(plt.SubprocessError):
+      self.platform.exec_apple_script('something is not right 11')
 
 
 if __name__ == "__main__":
