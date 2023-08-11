@@ -42,6 +42,26 @@ if TYPE_CHECKING:
 argparse.ArgumentError = cli_helper.CrossBenchArgumentError
 
 
+class EnableDebuggingAction(argparse.Action):
+  """Custom action to set both --throw and -vvv"""
+
+  def __init__(
+      self,
+      option_strings,
+      dest,
+      const=None,
+      default=None,
+      required=False,
+      help=None,  # pylint: disable=redefined-builtin
+      metavar=None):
+    super().__init__(
+        option_strings=option_strings, dest=dest, nargs=0, help=help)
+
+  def __call__(self, parser, namespace, values, option_string=None):
+    setattr(namespace, "throw", True)
+    setattr(namespace, "verbosity", 3)
+
+
 class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
       benchmarks.Speedometer30Benchmark,
@@ -109,6 +129,8 @@ class CrossBenchCLI:
         help=("Directly throw exceptions instead. "
               "Note that this prevents merging of probe results if only "
               "a subset of the runs failed."))
+    debug_output_group.add_argument(
+        "--debug", action=EnableDebuggingAction, help="Enable debug output")
 
   def _setup_subparser(self) -> None:
     self.subparsers = self.parser.add_subparsers(
@@ -254,7 +276,9 @@ class CrossBenchCLI:
         default=BROWSERS_CACHE,
         help="Used for caching browser binaries and archives. "
         "Defaults to .browser_cache")
-    runner_group.add_argument(
+
+    cooldown_group = runner_group.add_mutually_exclusive_group()
+    cooldown_group.add_argument(
         "--cool-down-time",
         "--cool-down",
         type=cli_helper.Duration.parse_zero,
@@ -262,6 +286,14 @@ class CrossBenchCLI:
         help="Time the runner waits between different runs or repetitions. "
         "Increase this to let the CPU cool down between runs. "
         f"Format: {cli_helper.Duration.help()}")
+    cooldown_group.add_argument(
+        "--no-cool-down",
+        action="store_const",
+        dest="cool_down_time",
+        const=dt.timedelta(seconds=0),
+        help="Disable cool-down between runs (might cause CPU throttling), "
+        "equivalent to --cool-down=0.")
+
     runner_group.add_argument(
         "--time-unit",
         type=cli_helper.Duration.parse,
@@ -534,8 +566,8 @@ class CrossBenchCLI:
     logging.error("-" * 80)
     if benchmark:
       logging.error("Running '%s' was not successful:", benchmark.NAME)
-    logging.error("- Use --throw to throw on the first logged exception")
-    logging.error("- Use -vv for detailed logging")
+    logging.error(
+        "- Use --debug for very verbose output (equivalent to --throw -vvv)")
     if runner and runner.runs:
       self._log_runner_debug_hints(runner)
     else:
@@ -577,8 +609,8 @@ class CrossBenchCLI:
     for log_file in candidates[:limit]:
       try:
         log_file = log_file.relative_to(pathlib.Path.cwd())
-      except Exception:
-        pass
+      except Exception as e:
+        logging.debug("Could not create relative log_file: %s", e)
       logging.error("  - %s", log_file)
     if (pending := len(candidates) - limit) > 0:
       logging.error("  - ... and %d more interesting %s.json or *.log files",
@@ -707,8 +739,8 @@ class CrossBenchCLI:
       self.args, unprocessed_argv = self.parser.parse_known_args(argv)
     except argparse.ArgumentError as e:
       # args is not set at this point, as parsing might have failed before
-      # handling --throw.
-      if "--throw" in argv:
+      # handling --throw or --debug.
+      if "--throw" in argv or "--debug" in argv:
         raise e
       self.error(str(e))
     if unprocessed_argv:

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import logging
 from typing import Iterator
 
 from crossbench import cli_helper
@@ -34,8 +35,8 @@ class PlaybackController:
             f"Repeat-count must be positive: {value}")
       try:
         return cls.repeat(loops)
-      except ValueError:
-        pass
+      except ValueError as e:
+        logging.debug("{%s}.repeat failed, falling back to timeout: %s", cls, e)
     duration = dt.timedelta()
     try:
       duration = cli_helper.Duration.parse_zero(value)

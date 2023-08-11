@@ -203,7 +203,9 @@ class MacOSPlatform(PosixPlatform):
     try:
       logging.warning("Checking falcon sensor status:")
       status = self.sh_stdout("sudo", falconctl, "stats", "agent_info")
-    except SubprocessError:
+    except SubprocessError as e:
+      logging.debug("Could not probe falconctl, assuming it's not running: %s",
+                    e)
       return True
     if "operational: true" not in status:
       # Early return if not running, no need to disable the sensor.

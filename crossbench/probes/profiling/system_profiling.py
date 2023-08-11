@@ -443,8 +443,8 @@ def linux_perf_probe_pprof(
             f"-add_comment={run_details}",
             raw_perf_data_file,
         ).strip()
-      except SubprocessError:
-        pass
+      except SubprocessError as e2:
+        logging.debug("pprof -flame failed: %s", e2)
     if not url:
       logging.warning("Failed processing: %s\n%s", perf_data_file, e)
       return None

@@ -133,7 +133,8 @@ class ChromeDownloader(Downloader):
       archive_url = self._archive_url(url, version_str)
       try:
         result = self._platform.sh_stdout("gsutil", "ls", archive_url)
-      except SubprocessError:
+      except SubprocessError as e:
+        logging.debug("gsutil failed: %s", e)
         continue
       if result:
         return archive_url

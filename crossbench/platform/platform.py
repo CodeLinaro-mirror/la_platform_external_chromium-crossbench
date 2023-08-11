@@ -458,8 +458,8 @@ class Platform(abc.ABC):
     }
     try:
       cpu_freq = psutil.cpu_freq()
-    except FileNotFoundError:
-      # MacOS M1 fail for this some times
+    except FileNotFoundError as e:
+      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
       return details
     details.update({
         "max frequency": f"{cpu_freq.max:.2f}Mhz",

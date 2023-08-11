@@ -507,7 +507,7 @@ class ChromeDriverFinder:
       try:
         int(base)
       except ValueError:
-        # Ignore ig base is not an int
+        # Ignore base if it is not an int
         continue
       versions.append((int(base), version["mediaLink"]))
     versions.sort()

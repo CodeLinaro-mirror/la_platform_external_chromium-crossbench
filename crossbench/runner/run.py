@@ -359,7 +359,8 @@ class Run:
       try:
         # pytype somehow gets the package path wrong here, disabling for now.
         self._browser.setup(self)  # pytype: disable=wrong-arg-types
-      except:
+      except Exception as e:
+        logging.debug("Browser setup failed: %s", e)
         # Clean up half-setup browser instances
         self._browser.force_quit()
         raise
