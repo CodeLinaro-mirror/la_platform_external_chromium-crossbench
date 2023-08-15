@@ -7,9 +7,11 @@ from __future__ import annotations
 import abc
 import json
 import logging
+import os
 import pathlib
 import re
 import shlex
+import shutil
 import stat
 import tempfile
 import urllib.error
@@ -281,7 +283,7 @@ class ChromeDriverFinder:
         raise DriverNotFoundError(
             f"Extracted driver at {maybe_driver} does not exist.")
       self.driver_path.parent.mkdir(parents=True, exist_ok=True)
-      maybe_driver.rename(self.driver_path)
+      shutil.move(os.fspath(maybe_driver), self.driver_path)
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
   CHROME_FOR_TESTING_DOWNLOAD_URL: str = (

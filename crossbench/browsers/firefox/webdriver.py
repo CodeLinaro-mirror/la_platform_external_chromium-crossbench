@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import pathlib
 import shlex
 import shutil
@@ -120,7 +121,7 @@ class FirefoxDriverFinder:
       driver = unpack_dir / f"geckodriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
       self.driver_path.parent.mkdir(parents=True, exist_ok=True)
-      driver.rename(self.driver_path)
+      shutil.move(os.fspath(driver), self.driver_path)
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
   def _find_driver_download_url(self) -> Tuple[str, str]:

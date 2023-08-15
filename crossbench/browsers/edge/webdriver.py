@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import pathlib
 import shutil
 import stat
@@ -105,7 +106,7 @@ class EdgeWebDriverDownloader:
       driver = unpack_dir / f"msedgedriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
       BROWSERS_CACHE.mkdir(parents=True, exist_ok=True)
-      driver.rename(self.driver_path)
+      shutil.move(os.fspath(driver), self.driver_path)
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
   def _arch_identifier(self) -> str:
