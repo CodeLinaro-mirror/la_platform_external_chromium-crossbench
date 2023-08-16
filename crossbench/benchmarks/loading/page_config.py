@@ -5,9 +5,11 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, Dict, List, Optional, TextIO, TypeVar
-
+import argparse
+import copy
 import datetime as dt
+import json
+from typing import Any, Dict, List, Optional, TextIO, Type, TypeVar
 
 import hjson
 
@@ -15,6 +17,7 @@ from crossbench import cli_helper
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.exception import ExceptionAnnotator
+from crossbench.types import JsonDict
 
 from . import action
 from .page import InteractivePage
@@ -56,9 +59,6 @@ class AbstractPageConfig(abc.ABC):
     pass
 
 
-ActionT = TypeVar("ActionT", bound=action.Action)
-
-
 class PageConfig(AbstractPageConfig):
 
   def _load_dict(self, raw_config_data: Dict) -> None:
@@ -68,7 +68,8 @@ class PageConfig(AbstractPageConfig):
       if not raw_config_data["pages"]:
         raise ValueError("Config contains empty 'pages' dict.")
       with self._exceptions.info("Parsing config 'pages'"):
-        self._parse_pages(raw_config_data["pages"])
+        pages = copy.deepcopy(raw_config_data["pages"])
+        self._parse_pages(pages)
 
   def _parse_pages(self, pages: Dict[str, Any]) -> None:
     """
@@ -99,31 +100,29 @@ class PageConfig(AbstractPageConfig):
       raise ValueError(f"Expected list, got={type(actions)}, '{actions}'")
     actions_list: List[action.Action] = []
     get_action_found = False
-    for i, step in enumerate(actions):
-      with self._exceptions.info(f"Parsing action ...['{scenario_name}'][{i}]"):
-        if step.get("action") == action.ActionType.GET:
+    for i, action_config in enumerate(actions):
+      with self._exceptions.info(
+          f"Parsing action   ...['{scenario_name}'][{i}]"):
+        action_step = self._parse_action(i, action_config)
+        if action_step.TYPE == action.ActionType.GET:
           get_action_found = True
-        if "action" not in step:
-          raise ValueError("No 'action' property found.")
-        action_type = step["action"]
-        if not action_type:
-          raise ValueError("Empty 'action' property")
-        action_duration = cli_helper.Duration.parse_zero(
-            step.get("duration", 0.0))
-        value = step.get("url") or step.get("value")
-        actions_list.append(
-            self._create_action(action_type, value, action_duration))
+        actions_list.append(action_step)
     assert get_action_found, ("Not a valid entry for scenario: "
                               f"{scenario_name}. No 'get' action found.")
     assert actions_list, (f"Not valid entry for scenario {scenario_name} "
                           "does not contain any valid actions")
     return actions_list
 
-  def _create_action(self, action_type: action.ActionType, value,
-                     duration: dt.timedelta) -> ActionT:
-    if action_type not in action.ACTION_FACTORY:
-      raise ValueError(f"Unknown action name: '{action_type}'")
-    return action.ACTION_FACTORY[action_type](value, duration)
+  def _parse_action(self, i, action_config: JsonDict) -> action.Action:
+    if "action" not in action_config:
+      raise argparse.ArgumentTypeError(
+          f"Missing 'action' property in {json.dumps(action_config)}")
+    action_type = action.ActionType.parse(action_config.get("action"))
+    action_cls: Type[action.Action] = action.ACTIONS[action_type]
+    with self._exceptions.info(
+        f"Parsing details  ...[{i}]{{ action: \"{action_type}\", ...}}:"):
+      kwargs = action_cls.kwargs_from_dict(action_config)
+      return action_cls(**kwargs)
 
 
 class DevToolsRecorderPageConfig(AbstractPageConfig):
@@ -161,7 +160,8 @@ class DevToolsRecorderPageConfig(AbstractPageConfig):
             xpath = selector
             break
       assert xpath, "Need xpath selector for click action"
-      return action.ClickAction(xpath, default_timeout, scroll_into_view=True)
+      return action.ClickAction(
+          xpath, scroll_into_view=True, timeout=default_timeout)
     if step_type == "setViewport":
       # Resizing is ignored for now.
       return None

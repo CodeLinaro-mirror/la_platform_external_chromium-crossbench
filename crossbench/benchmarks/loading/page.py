@@ -119,11 +119,11 @@ class InteractivePage(Page):
   def run(self, run: Run) -> None:
     for _ in self._playback:
       for action in self._actions:
-        action.run(run, self)
+        action.run(run)
 
   def details_json(self) -> JsonDict:
     result = super().details_json()
-    result["actions"] = list(action.details_json() for action in self._actions)
+    result["actions"] = list(action.to_json() for action in self._actions)
     return result
 
   def _get_duration(self) -> dt.timedelta:

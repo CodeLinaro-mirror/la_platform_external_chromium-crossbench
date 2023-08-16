@@ -133,7 +133,10 @@ class ExceptionAnnotator:
       message = "Got Exceptions: {}"
     message = message.format(self)
     if issubclass(exception_cls, MultiException):
-      raise exception_cls(message, self)
+      exception = exception_cls(message, self)
+      if len(self.exceptions) == 1:
+        raise exception from self.exceptions[0].exception
+      raise exception
     raise exception_cls(message)
 
   def info(self, *stack_entries: str) -> ExceptionAnnotationScope:

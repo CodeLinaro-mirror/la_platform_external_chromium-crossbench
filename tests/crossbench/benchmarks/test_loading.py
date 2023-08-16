@@ -225,14 +225,12 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self.assertEqual(browser_2_urls, story_urls)
 
 
-class TestPageConfig(CrossbenchFakeFsTestCase):
+class TestExamplePageConfig(unittest.TestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):
     example_config_file = pathlib.Path(
-        __file__).parents[2] / "config" / "page.config.example.hjson"
-    if not example_config_file.exists():
-      raise unittest.SkipTest(f"Test file {example_config_file} does not exist")
+        __file__).parents[3] / "config" / "page.config.example.hjson"
     with example_config_file.open(encoding="utf-8") as f:
       file_config = PageConfig()
       file_config.load(f)
@@ -242,6 +240,12 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
     dict_config.load_dict(data)
     self.assertTrue(dict_config.stories)
     self.assertTrue(file_config.stories)
+    for story in dict_config.stories:
+      json_data = story.details_json()
+      self.assertIn("actions", json_data)
+
+
+class TestPageConfig(CrossbenchFakeFsTestCase):
 
   def test_example(self):
     config_data = {
@@ -249,7 +253,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
             "Google Story": [
                 {
                     "action": "get",
-                    "value": "https://www.google.com"
+                    "url": "https://www.google.com"
                 },
                 {
                     "action": "wait",
@@ -257,7 +261,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
                 },
                 {
                     "action": "scroll",
-                    "value": "down",
+                    "direction": "down",
                     "duration": 3
                 },
             ],
@@ -297,7 +301,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
           PageConfig().load_dict(config_dict, throw=True)
 
   def test_missing_action(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
       PageConfig().load_dict(
           {"pages": {
               "TEST": [{
@@ -306,6 +310,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
               }]
           }},
           throw=True)
+    self.assertIn("Missing 'action'", str(cm.exception))
 
   def test_invalid_action(self):
     invalid_actions = [None, "", [], {}, "unknown action name", 12]
@@ -319,7 +324,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
           }
       }
       with self.subTest(invalid_action=invalid_action):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(argparse.ArgumentTypeError):
           PageConfig().load_dict(config_dict, throw=True)
 
   def test_missing_get_action_scenario(self):

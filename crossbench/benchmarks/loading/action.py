@@ -5,11 +5,13 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import datetime as dt
+import json
 import time
-from typing import TYPE_CHECKING, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Tuple, Type
 
-from crossbench import compat
+from crossbench import cli_helper, compat
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
@@ -17,59 +19,94 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
-class Scroll(compat.StrEnum):
+class ParsingEnum(compat.StrEnum):
+
+  @classmethod
+  def parse(cls, value: Any) -> ParsingEnum:
+    value_str: str = cli_helper.parse_non_empty_str(value, cls.__name__).upper()
+    if enum_instance := getattr(cls, value_str, None):
+      return enum_instance
+    choices = ", ".join(e.name for e in cls)  # pytype: disable=missing-parameter
+    raise argparse.ArgumentTypeError(f"Unknown {cls.__name__}: '{value}', "
+                                     f"choices are {choices}")
+
+
+class ScrollDirection(ParsingEnum):
   UP = "up"
   DOWN = "down"
 
 
-class ButtonClick(compat.StrEnum):
+class ButtonClick(ParsingEnum):
   LEFT = "left"
   RIGHT = "right"
   MIDDLE = "middle"
 
 
-class ActionType(compat.StrEnum):
+class ActionType(ParsingEnum):
   GET = "get"
   WAIT = "wait"
   SCROLL = "scroll"
   CLICK = "click"
 
 
+ACTION_TIMEOUT = dt.timedelta(seconds=10)
+
+
 class Action(abc.ABC):
   TYPE: ActionType = ActionType.GET
 
-  timeout: float
-  _story: Story
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = {}
+    if timeout := value.pop("timeout", None):
+      kwargs["timeout"] = cli_helper.Duration.parse_non_zero(timeout)
+    return kwargs
 
-  _EXCEPTION_BASE_STR = "Not valid action for scenario: "
+  @classmethod
+  def pop_required_input(cls, value: JsonDict, key: str) -> Any:
+    if key not in value:
+      raise argparse.ArgumentTypeError(
+          f"{cls.__name__}: Missing '{key}' property in {json.dumps(value)}")
+    value = value.pop(key)
+    if value is None:
+      raise argparse.ArgumentTypeError(
+          f"{cls.__name__}: {key} should not be None")
+    return value
 
-  def __init__(self,
-               value: Optional[str] = None,
-               duration: dt.timedelta = dt.timedelta()):
-    self.value = value
-    assert isinstance(duration, dt.timedelta)
-    self._duration = duration
+  def __init__(self, timeout: dt.timedelta = ACTION_TIMEOUT):
+    self._timeout: dt.timedelta = timeout
+    self.validate()
 
   @property
   def duration(self) -> dt.timedelta:
-    return self._duration
+    return dt.timedelta(milliseconds=10)
+
+  @property
+  def timeout(self) -> dt.timedelta:
+    return self._timeout
+
+  @property
+  def has_timeout(self) -> bool:
+    return self._timeout != dt.timedelta.max
 
   @abc.abstractmethod
-  def run(self, run: Run, story: Story) -> None:
+  def run(self, run: Run) -> None:
     pass
 
-  @abc.abstractmethod
-  def _validate_action(self) -> None:
-    pass
+  def validate(self) -> None:
+    if self._timeout.total_seconds() < 0:
+      raise ValueError(
+          f"{self}.timeout should be positive, but got {self.timeout}")
 
-  @abc.abstractmethod
-  def details_json(self) -> JsonDict:
-    pass
+  def to_json(self) -> JsonDict:
+    return {"type": self.TYPE, "timeout": self.timeout.total_seconds()}
 
 
 class ReadyState(compat.StrEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Document/readyState"""
+  # Non-blocking:
   ANY = "any"
+  # Blocking (on dom event):
   LOADING = "loading"
   INTERACTIVE = "interactive"
   COMPLETE = "complete"
@@ -78,59 +115,114 @@ class ReadyState(compat.StrEnum):
 class GetAction(Action):
   TYPE: ActionType = ActionType.GET
 
-  def __init__(self,
-               value: Optional[str] = None,
-               duration: dt.timedelta = dt.timedelta(),
-               ready_state: ReadyState = ReadyState.ANY):
-    self._ready_state = ready_state
-    super().__init__(value, duration)
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["url"] = cli_helper.parse_url_str(
+        cls.pop_required_input(value, "url"))
+    if ready_state := value.pop("ready-state", None):
+      kwargs["ready_state"] = ReadyState[ready_state]
+    return kwargs
 
-  def run(self, run: Run, story: Story) -> None:
-    self._story = story
-    self._validate_action()
+  def __init__(self,
+               url: str,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               ready_state: ReadyState = ReadyState.ANY):
+    self._url: str = url
+    self._ready_state = ready_state
+    super().__init__(timeout)
+
+  @property
+  def url(self) -> str:
+    return self._url
+
+  @property
+  def ready_state(self) -> ReadyState:
+    return self._ready_state
+
+  def run(self, run: Run) -> None:
     with run.actions("GetAction", measure=False) as action:
-      assert self.value
-      action.show_url(self.value)
+      action.show_url(self.url)
       if self._ready_state == ReadyState.ANY:
         return
       action.wait_js_condition(
           f"return document.readyState === '{self._ready_state}'", 0.5, 15)
 
-  def _validate_action(self) -> None:
-    if not self.value:
-      raise ValueError(self._EXCEPTION_BASE_STR +
-                       f"{self._story.name}. Argument 'value' is not provided")
+  def validate(self) -> None:
+    super().validate()
+    if not self.url:
+      raise ValueError(f"{self}.url is missing")
 
-  def details_json(self) -> JsonDict:
-    return {"action": str(self.TYPE), "value": self.value}
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["url"] = self.url
+    details["ready_state"] = str(self.ready_state)
+    return details
 
 
-class WaitAction(Action):
+class DurationAction(Action):
   TYPE: ActionType = ActionType.WAIT
 
-  def run(self, run: Run, story: Story) -> None:
-    self._story = story
-    self._validate_action()
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["duration"] = cli_helper.Duration.parse_non_zero(
+        cls.pop_required_input(value, "duration"))
+    return kwargs
+
+  def __init__(self,
+               duration: dt.timedelta,
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._duration: dt.timedelta = duration
+    super().__init__(timeout)
+
+  @property
+  def duration(self) -> dt.timedelta:
+    return self._duration
+
+  def validate(self) -> None:
+    super().validate()
+    if self.duration.total_seconds() <= 0:
+      raise ValueError(
+          f"{self}.duration should be positive, but got {self.duration}")
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["duration"] = self.duration.total_seconds()
+    return details
+
+
+class WaitAction(DurationAction):
+  TYPE: ActionType = ActionType.WAIT
+
+  def run(self, run: Run) -> None:
     run.runner.wait(self.duration)
 
-  def _validate_action(self) -> None:
-    if not self.duration:
-      raise ValueError(
-          self._EXCEPTION_BASE_STR +
-          f"{self._story.name}. Argument 'duration' is not provided")
 
-  def details_json(self) -> JsonDict:
-    return {"action": str(self.TYPE), "duration": self.duration.total_seconds()}
-
-
-class ScrollAction(Action):
+class ScrollAction(DurationAction):
   TYPE: ActionType = ActionType.SCROLL
 
-  def run(self, run: Run, story: Story) -> None:
-    self._story = story
-    self._validate_action()
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    if direction := value.pop("direction", None):
+      kwargs["direction"] = ScrollDirection.parse(direction)
+    return kwargs
+
+  def __init__(self,
+               direction: ScrollDirection = ScrollDirection.DOWN,
+               duration: dt.timedelta = dt.timedelta(seconds=1),
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._direction: ScrollDirection = direction
+    super().__init__(duration, timeout)
+
+  @property
+  def direction(self) -> ScrollDirection:
+    return self._direction
+
+  def run(self, run: Run) -> None:
     time_end = time.time() + self.duration.total_seconds()
-    direction = 1 if self.value == Scroll.UP else -1
+    direction = 1 if self.direction == ScrollDirection.UP else -1
 
     start = 0
     end = direction
@@ -144,35 +236,50 @@ class ScrollAction(Action):
       # else :
       #   pyautogui.scroll(direction)
 
-  def _validate_action(self) -> None:
-    if not self.duration or not self.value:
-      raise ValueError(
-          self._EXCEPTION_BASE_STR +
-          f"{self._story.name}. Argument 'duration' is not provided")
+  def validate(self) -> None:
+    super().validate()
+    if not self.direction:
+      raise ValueError(f"{self}.direction is not provided")
 
-  def details_json(self) -> JsonDict:
-    return {
-        "action": str(self.TYPE),
-        "value": self.value,
-        "duration": self.duration.total_seconds(),
-    }
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["direction"] = str(self.direction)
+    return details
 
 
 class ClickAction(Action):
   TYPE: ActionType = ActionType.CLICK
 
-  def __init__(self,
-               value: Optional[str] = None,
-               duration: dt.timedelta = dt.timedelta(),
-               scroll_into_view: bool = False):
-    self._scroll_into_view = scroll_into_view
-    super().__init__(value, duration)
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["selector"] = cls.pop_required_input(value, "selector")
+    if scroll_into_view := value.pop("scroll_into_view", None):
+      kwargs["scroll_into_view"] = cli_helper.parse_bool(scroll_into_view)
+    return kwargs
 
-  def run(self, run: Run, story: Story) -> None:
+  def __init__(self,
+               selector: str,
+               scroll_into_view: bool = False,
+               timeout: dt.timedelta = ACTION_TIMEOUT):
+    # TODO: convert to custom selector object.
+    self._selector = selector
+    self._scroll_into_view: bool = scroll_into_view
+    super().__init__(timeout)
+
+  @property
+  def scroll_into_view(self) -> bool:
+    return self._scroll_into_view
+
+  @property
+  def selector(self) -> str:
+    return self._selector
+
+  def run(self, run: Run) -> None:
     # TODO: support more selector types.
     prefix = "xpath/"
-    if self.value and self.value.startswith(prefix):
-      xpath: str = self.value[len(prefix):]
+    if self.selector.startswith(prefix):
+      xpath: str = self.selector[len(prefix):]
       run.browser.js(
           run.runner,
           """
@@ -182,21 +289,29 @@ class ClickAction(Action):
        """,
           arguments=[xpath, self._scroll_into_view])
     else:
-      raise NotImplementedError(f"Unsupported selector: {self.value}")
+      raise NotImplementedError(f"Unsupported selector: {self.selector}")
 
-  def _validate_action(self) -> None:
-    pass
+  def validate(self) -> None:
+    super().validate()
+    if not self.selector:
+      raise ValueError(f"{self}.selector is missing.")
 
-  def details_json(self) -> JsonDict:
-    return {
-        "action": str(self.TYPE),
-        "value": self.value,
-        "duration": self.duration.total_seconds(),
-    }
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["selector"] = self.selector
+    details["scroll_into_view"] = self.scroll_into_view
+    return details
 
 
-ACTION_FACTORY: Dict[ActionType, Type] = {
-    ActionType.GET: GetAction,
-    ActionType.WAIT: WaitAction,
-    ActionType.SCROLL: ScrollAction,
+ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
+    ClickAction,
+    GetAction,
+    ScrollAction,
+    WaitAction,
+)
+
+ACTIONS: Dict[ActionType, Type] = {
+    action_cls.TYPE: action_cls for action_cls in ACTIONS_TUPLE
 }
+
+assert len(ACTIONS_TUPLE) == len(ACTIONS), "Non unique Action.TYPE present"

@@ -62,15 +62,16 @@ def parse_existing_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   return path
 
 
-def parse_inline_hjson(value: str) -> Any:
-  if not value or value[0] != "{" or value[-1] != "}":
+def parse_inline_hjson(value: Any) -> Any:
+  value_str = parse_non_empty_str(value, hjson.__name__)
+  if value_str[0] != "{" or value_str[-1] != "}":
     raise argparse.ArgumentTypeError(
-        f"Invalid inline {hjson.__name__}, missing braces: '{value}'")
+        f"Invalid inline {hjson.__name__}, missing braces: '{value_str}'")
   try:
-    return hjson.loads(value)
+    return hjson.loads(value_str)
   except ValueError as e:
     message = _extract_decoding_error(
-        "Could not decode inline {hjson.__name__}", value, e)
+        f"Could not decode inline {hjson.__name__}", value_str, e)
     if "eof" in message:
       message += "\n   Likely missing quotes."
     raise argparse.ArgumentTypeError(message) from e
@@ -158,7 +159,7 @@ def parse_hjson_file(value: Union[str, pathlib.Path]) -> Any:
       raise argparse.ArgumentTypeError(message) from e
 
 
-def parse_positive_zero_float(value: str) -> float:
+def parse_positive_zero_float(value: Any) -> float:
   try:
     value_f = float(value)
   except ValueError as e:
@@ -168,7 +169,7 @@ def parse_positive_zero_float(value: str) -> float:
   return value_f
 
 
-def parse_positive_zero_int(value: str) -> int:
+def parse_positive_zero_int(value: Any) -> int:
   try:
     positive_int = int(value)
   except ValueError as e:
@@ -190,15 +191,27 @@ def parse_positive_int(value: str, msg: str = "") -> int:
   return value_i
 
 
-def parse_non_empty_str(value: str) -> str:
+def parse_non_empty_str(value: Any, name: str = "string") -> str:
+  if value is None:
+    raise argparse.ArgumentTypeError(f"Expected non-empty {name}, but got None")
+  if not isinstance(value, str):
+    raise argparse.ArgumentTypeError(
+        f"Expected non-empty {name}, but got {type(value)}: {value}")
   if not value:
-    raise argparse.ArgumentTypeError("Non-empty string expected.")
+    raise argparse.ArgumentTypeError("Non-empty {name} expected.")
   return value
 
 
-def parse_httpx_url_str(value: str) -> str:
+def parse_url_str(value: str) -> str:
+  # TODO: improve
+  url_str: str = parse_non_empty_str(value, "url")
+  return url_str
+
+
+def parse_httpx_url_str(value: Any) -> str:
   try:
-    parsed = urlparse(value)
+    url_str: str = parse_url_str(value)
+    parsed = urlparse(url_str)
     if parsed.scheme not in ("http", "https"):
       raise argparse.ArgumentTypeError(
           "Expected 'http' or 'https' scheme, "
@@ -208,6 +221,17 @@ def parse_httpx_url_str(value: str) -> str:
   except ValueError as e:
     raise argparse.ArgumentTypeError(f"Invalid URL: {value}, {e}") from e
   return value
+
+
+def parse_bool(value: Any) -> bool:
+  if isinstance(value, bool):
+    return value
+  value = value.lower()
+  if value == "true":
+    return True
+  if value == "false":
+    return False
+  raise TypeError(f"Expected bool but got {type(value)}: {value}")
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
