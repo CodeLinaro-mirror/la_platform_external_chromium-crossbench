@@ -34,7 +34,18 @@ emulator-5554 device product:sdk_google_phone_x86 model:Android_SDK_built_for_x8
 0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo"""
 
 
-class DriverConfigTestCase(BaseCrossbenchTestCase):
+class BaseConfigTestCase(BaseCrossbenchTestCase):
+
+  def setUp(self) -> None:
+    super().setUp()
+    adb_patcher = mock.patch(
+        "crossbench.plt.android_adb._find_adb_bin",
+        return_value=pathlib.Path("adb"))
+    adb_patcher.start()
+    self.addCleanup(adb_patcher.stop)
+
+
+class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -109,7 +120,7 @@ class DriverConfigTestCase(BaseCrossbenchTestCase):
     self.assertEqual(config.settings["serial"], "0a388e93")
 
 
-class BrowserConfigTestCase(BaseCrossbenchTestCase):
+class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_equal(self):
     path = Chrome.stable_path()
@@ -152,12 +163,14 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
     self.assertIn("a-random-name", str(cm.exception))
 
   def test_parse_invalid_path(self):
+    path = pathlib.Path("foo/bar")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      BrowserConfig.parse("foo/bar")
-    self.assertIn("foo/bar", str(cm.exception))
+      BrowserConfig.parse(str(path))
+    self.assertIn(str(path), str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse("selenium/bar")
-    self.assertIn("selenium/bar", str(cm.exception))
+    self.assertIn("selenium", str(cm.exception))
+    self.assertIn("bar", str(cm.exception))
 
   def test_parse_invalid_windows_path(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -218,6 +231,8 @@ class BrowserConfigTestCase(BaseCrossbenchTestCase):
             pathlib.Path("com.chrome.canary"),
             DriverConfig(BrowserDriverType.ANDROID)))
 
+  @unittest.skipIf(plt.PLATFORM.is_win,
+                   "Chrome downloading not supported on windows.")
   def test_parse_chrome_version(self):
     self.assertEqual(
         BrowserConfig.parse("applescript:chrome-m100"),

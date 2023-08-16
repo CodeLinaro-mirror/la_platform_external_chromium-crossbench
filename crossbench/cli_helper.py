@@ -55,6 +55,13 @@ def parse_dir_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   return path
 
 
+def parse_existing_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+  path = parse_path(value)
+  if not path.exists():
+    raise argparse.ArgumentTypeError(f"Path '{path}' does not exist.")
+  return path
+
+
 def parse_inline_hjson(value: str) -> Any:
   if not value or value[0] != "{" or value[-1] != "}":
     raise argparse.ArgumentTypeError(

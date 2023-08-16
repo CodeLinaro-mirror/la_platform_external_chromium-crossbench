@@ -180,16 +180,12 @@ class CrossbenchFakeFsTestCase(
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser])
     # gettext is used extensively in argparse
-    self.gettext_patcher = mock.patch(
+    gettext_patcher = mock.patch(
         "gettext.dgettext", side_effect=lambda domain, message: message)
-    self.gettext_patcher.start()
-    self.sleep_patcher = mock.patch('time.sleep', return_value=None)
-    self.sleep_patcher.start()
-
-  def tearDown(self) -> None:
-    self.sleep_patcher.stop()
-    self.gettext_patcher.stop()
-    super().tearDown()
+    gettext_patcher.start()
+    self.addCleanup(gettext_patcher.stop)
+    sleep_patcher = mock.patch('time.sleep', return_value=None)
+    self.addCleanup(sleep_patcher.stop)
 
 
 class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
@@ -214,14 +210,13 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         mock_browser.MockChromeDev("dev", platform=self.platform),
         mock_browser.MockChromeStable("stable", platform=self.platform)
     ]
-    self._mock_platform_patcher = mock.patch.object(plt, "PLATFORM",
-                                                    self.platform)
-    self._mock_platform_patcher.start()
+    mock_platform_patcher = mock.patch.object(plt, "PLATFORM", self.platform)
+    mock_platform_patcher.start()
+    self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.js_side_effects, [])
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
-    self._mock_platform_patcher.stop()
     self.assertListEqual(self.platform.sh_results, [])
     super().tearDown()

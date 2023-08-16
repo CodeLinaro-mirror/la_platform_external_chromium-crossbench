@@ -126,26 +126,50 @@ def get_file_size(file: pathlib.Path, digits: int = 2) -> str:
   return f"{size:.{digits}f} {SIZE_UNITS[unit_index]}"
 
 
-def search_app_or_executable(name: str,
-                             macos: Sequence[str] = (),
-                             win: Sequence[str] = (),
-                             linux: Sequence[str] = ()) -> pathlib.Path:
+def _search_executable(
+    name: str,
+    macos: Sequence[str],
+    win: Sequence[str],
+    linux: Sequence[str],
+    platform: plt.Platform,
+    lookup_callable: Callable[[pathlib.Path], Optional[pathlib.Path]],
+) -> pathlib.Path:
   executables: Sequence[str] = []
-  if plt.PLATFORM.is_macos:
+  if platform.is_macos:
     executables = macos
-  elif plt.PLATFORM.is_win:
+  elif platform.is_win:
     executables = win
-  elif plt.PLATFORM.is_linux:
+  elif platform.is_linux:
     executables = linux
-
   if not executables:
-    raise ValueError(f"Executable {name} not supported "
-                     f"on platform {plt.PLATFORM.name}")
+    raise ValueError(f"Executable {name} not supported on {platform}")
   for name_or_path in executables:
-    binary = plt.PLATFORM.search_app(pathlib.Path(name_or_path))
+    path = pathlib.Path(name_or_path).expanduser()
+    binary = lookup_callable(path)
     if binary and binary.exists():
       return binary
-  raise ValueError(f"Executable {name} not found on {plt.PLATFORM.name}")
+  raise ValueError(f"Executable {name} not found on {platform}")
+
+
+def search_app_or_executable(
+    name: str,
+    macos: Sequence[str] = (),
+    win: Sequence[str] = (),
+    linux: Sequence[str] = (),
+    platform: Optional[plt.Platform] = None) -> pathlib.Path:
+  platform = platform or plt.PLATFORM
+  return _search_executable(name, macos, win, linux, platform,
+                            platform.search_app)
+
+
+def search_binary(name: str,
+                  macos: Sequence[str] = (),
+                  win: Sequence[str] = (),
+                  linux: Sequence[str] = (),
+                  platform: Optional[plt.Platform] = None) -> pathlib.Path:
+  platform = platform or plt.PLATFORM
+  return _search_executable(name, macos, win, linux, platform,
+                            platform.search_binary)
 
 # =============================================================================
 

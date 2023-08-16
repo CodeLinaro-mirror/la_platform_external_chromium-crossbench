@@ -31,6 +31,8 @@ class ChromeDownloader(Downloader):
       return ChromeDownloaderMacOS
     if platform.is_linux:
       return ChromeDownloaderLinux
+    if platform.is_win:
+      return ChromeDownloaderWin
     raise ValueError("Downloading chrome is only supported on linux and macOS, "
                      f"but not on {platform.name} {platform.machine}")
 
@@ -244,3 +246,15 @@ class ChromeDownloaderMacOS(ChromeDownloader):
     extracted_path = self._default_extracted_path()
     DMGArchiveHelper.extract(self._platform, archive_path, extracted_path)
     assert extracted_path.exists()
+
+
+class ChromeDownloaderWin(ChromeDownloader):
+  # TODO: fully implement
+
+  @classmethod
+  def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
+               platform: plt.Platform) -> bool:
+    return False
+
+  def _archive_url(self, folder_url: str, version_str: str) -> str:
+    raise NotImplementedError("Downloading on Windows not yet supported")

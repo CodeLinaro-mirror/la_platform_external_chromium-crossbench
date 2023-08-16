@@ -115,14 +115,18 @@ class MacOSPlatformHelperTestCase(PosixPlatformUnittest):
     self.platform = plt.PLATFORM
 
   def test_search_binary_not_found(self):
-    with self.assertRaises(ValueError):
-      self.platform.search_binary(pathlib.Path("Invalid App Name"))
+    binary = self.platform.search_binary(pathlib.Path("Invalid App Name"))
+    self.assertIsNone(binary)
     binary = self.platform.search_binary(pathlib.Path("Non-existent App.app"))
     self.assertIsNone(binary)
 
   def test_search_binary(self):
     binary = self.platform.search_binary(pathlib.Path("Safari.app"))
     self.assertTrue(binary and binary.is_file())
+
+  def test_search_app_invalid(self):
+    with self.assertRaises(ValueError):
+      self.platform.search_app(pathlib.Path("Invalid App Name"))
 
   def test_search_app_none(self):
     self.assertIsNone(self.platform.search_app(pathlib.Path("No App.app")))

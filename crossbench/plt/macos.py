@@ -76,12 +76,18 @@ class MacOSPlatform(PosixPlatform):
     raise ValueError(f"Invalid number of binaries candidates found: {binaries}")
 
   def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    if app_or_bin.suffix != ".app":
-      raise ValueError("Expected app name with '.app' suffix, "
-                       f"but got: '{app_or_bin.name}'")
+    assert not self.is_remote, "Unsupported operation on remote platform"
+    if result_path := self.which(str(app_or_bin)):
+      assert result_path.exists(), f"{result_path} does not exist."
+      return result_path
+    is_app = app_or_bin.suffix == ".app"
     for search_path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = pathlib.Path(search_path) / app_or_bin
+      if not is_app:
+        if result_path.is_file():
+          return result_path
+        continue
       if not result_path.is_dir():
         continue
       result_path = self._find_app_binary_path(result_path)
@@ -90,6 +96,10 @@ class MacOSPlatform(PosixPlatform):
     return None
 
   def search_app(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
+    assert not self.is_remote, "Unsupported operation on remote platform"
+    if app_or_bin.suffix != ".app":
+      raise ValueError("Expected app name with '.app' suffix, "
+                       f"but got: '{app_or_bin.name}'")
     binary = self.search_binary(app_or_bin)
     if not binary:
       return None

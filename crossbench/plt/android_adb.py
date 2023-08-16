@@ -11,6 +11,8 @@ import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
                     Union)
 
+from crossbench import helper
+
 from .arch import MachineArch
 from .posix import PosixPlatform
 
@@ -19,8 +21,26 @@ if TYPE_CHECKING:
   from .base import Platform
 
 
-def adb_devices(platform: Platform) -> Dict[str, Dict[str, str]]:
-  raw_lines = platform.sh_stdout("adb", "devices", "-l").strip().split("\n")[1:]
+def _find_adb_bin(platform: Platform) -> pathlib.Path:
+  adb_bin = helper.search_binary(
+      name="adb",
+      macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
+      linux=["adb"],
+      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"],
+      platform=platform)
+  if adb_bin:
+    return adb_bin
+  raise ValueError(
+      "Could not find adb binary."
+      "See https://developer.android.com/tools/adb fore more details.")
+
+
+def adb_devices(
+    platform: Platform,
+    adb_bin: Optional[pathlib.Path] = None) -> Dict[str, Dict[str, str]]:
+  adb_bin = adb_bin or _find_adb_bin(platform)
+  output = platform.sh_stdout(adb_bin, "devices", "-l")
+  raw_lines = output.strip().splitlines()[1:]
   result: Dict[str, Dict[str, str]] = {}
   for line in raw_lines:
     serial_id, details = line.split(" ", maxsplit=1)
@@ -43,6 +63,7 @@ class Adb:
                host_platform: Platform,
                device_identifier: Optional[str] = None) -> None:
     self._host_platform = host_platform
+    self._adb_bin = _find_adb_bin(host_platform)
     self.start_server()
     self._serial_id, self._device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", self._serial_id,
@@ -102,9 +123,9 @@ class Adb:
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
     adb_cmd: List[Union[str, pathlib.Path]] = []
     if use_serial_id:
-      adb_cmd = ["adb", "-s", self._serial_id]
+      adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
-      adb_cmd = ["adb"]
+      adb_cmd = [self._adb_bin]
     adb_cmd.extend(args)
     return self._host_platform.sh(
         *adb_cmd,
@@ -124,9 +145,9 @@ class Adb:
                   use_serial_id: bool = True) -> str:
     adb_cmd: List[Union[str, pathlib.Path]] = []
     if use_serial_id:
-      adb_cmd = ["adb", "-s", self._serial_id]
+      adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
-      adb_cmd = ["adb"]
+      adb_cmd = [self._adb_bin]
     adb_cmd.extend(args)
     return self._host_platform.sh_stdout(
         *adb_cmd, quiet=quiet, encoding=encoding)
@@ -178,7 +199,7 @@ class Adb:
     self._adb_stdout("kill-server", use_serial_id=False)
 
   def devices(self) -> Dict[str, Dict[str, str]]:
-    return adb_devices(self._host_platform)
+    return adb_devices(self._host_platform, self._adb_bin)
 
   def pull(self, device_src_path: pathlib.Path,
            local_dest_path: pathlib.Path) -> None:
@@ -207,7 +228,7 @@ class Adb:
 
   def services(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:
     lines = list(
-        self.cmd("-l", quiet=quiet, encoding=encoding).strip().split("\n"))
+        self.cmd("-l", quiet=quiet, encoding=encoding).strip().splitlines())
     lines = lines[1:]
     lines.sort()
     return [line.strip() for line in lines]
@@ -216,7 +237,7 @@ class Adb:
     # adb shell cmd package list packages
     raw_list = self.cmd(
         "package", "list", "packages", quiet=quiet,
-        encoding=encoding).strip().split("\n")
+        encoding=encoding).strip().splitlines()
     packages = [package.split(":", maxsplit=2)[1] for package in raw_list]
     packages.sort()
     return packages
@@ -348,7 +369,7 @@ class AndroidAdbPlatform(PosixPlatform):
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
     properties: Dict[str, str] = {}
-    for line in self.adb.shell_stdout("getprop").strip().split("\n"):
+    for line in self.adb.shell_stdout("getprop").strip().splitlines():
       result = self._GETPROP_RE.fullmatch(line)
       if result:
         properties[result.group("key")] = result.group("value")

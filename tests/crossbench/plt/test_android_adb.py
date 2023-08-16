@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 import pathlib
+from unittest import mock
 
 from crossbench import plt
+from crossbench.plt import android_adb
 
 from crossbench.plt.android_adb import Adb
 from crossbench.plt.arch import MachineArch
@@ -25,14 +27,21 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.expect_sh("adb", "start-server")
-    self.expect_sh("adb", "devices", "-l", result=ADB_DEVICES_SAMPLE_OUTPUT)
+    adb_patcher = mock.patch(
+        "crossbench.plt.android_adb._find_adb_bin",
+        return_value=pathlib.Path("adb"))
+    adb_patcher.start()
+    self.addCleanup(adb_patcher.stop)
+    self.expect_sh(pathlib.Path("adb"), "start-server")
+    self.expect_sh(
+        pathlib.Path("adb"), "devices", "-l", result=ADB_DEVICES_SAMPLE_OUTPUT)
     self.adb = Adb(self.mock_platform, self.DEVICE_ID)
     self.platform = plt.AndroidAdbPlatform(
         self.mock_platform, self.DEVICE_ID, adb=self.adb)
 
   def expect_adb(self, *args, result=""):
-    self.expect_sh("adb", "-s", self.DEVICE_ID, *args, result=result)
+    self.expect_sh(
+        pathlib.Path("adb"), "-s", self.DEVICE_ID, *args, result=result)
 
   def test_is_remote(self):
     self.assertTrue(self.platform.is_remote)
@@ -102,9 +111,10 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
     self.assertEqual(self.platform.machine, MachineArch.ARM_32)
 
   def test_app_path_to_package_invalid_path(self):
+    path = pathlib.Path("path/to/app.bin")
     with self.assertRaises(ValueError) as cm:
-      self.platform.app_path_to_package(pathlib.Path("path/to/app.bin"))
-    self.assertIn("path/to/app.bin", str(cm.exception))
+      self.platform.app_path_to_package(path)
+    self.assertIn(str(path), str(cm.exception))
 
   def test_app_path_to_package_not_installed(self):
     with self.assertRaises(ValueError) as cm:

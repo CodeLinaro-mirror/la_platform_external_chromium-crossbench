@@ -7,6 +7,7 @@ import gettext
 import io
 import json
 import pathlib
+import unittest
 from typing import Dict, List, Tuple, Type
 from unittest import mock
 
@@ -412,6 +413,17 @@ class CliTestCase(BaseCrossbenchTestCase):
 
   def test_unknown_browser_binary(self):
     browser_bin = pathlib.Path("/foo/custom/browser.bin")
+    browser_bin.parent.mkdir(parents=True)
+    browser_bin.touch()
+    with self.assertRaises(argparse.ArgumentError) as cm:
+      self.run_cli("loading", f"--browser={browser_bin}",
+                   "--urls=http://test.com", "--env-validation=skip", "--throw")
+    self.assertIn("--browser", str(cm.exception))
+    self.assertIn(str(browser_bin), str(cm.exception))
+
+  @unittest.skipUnless(plt.PLATFORM.is_win, "Can only run on windows")
+  def test_unknown_browser_binary_win(self):
+    browser_bin = pathlib.Path("C:\\foo\\custom\\browser.bin")
     browser_bin.parent.mkdir(parents=True)
     browser_bin.touch()
     with self.assertRaises(argparse.ArgumentError) as cm:

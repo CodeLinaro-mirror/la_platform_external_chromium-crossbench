@@ -27,7 +27,7 @@ class Benchmark(abc.ABC):
   def cli_help(cls) -> str:
     assert cls.__doc__, (f"Benchmark class {cls} must provide a doc string.")
     # Return the first non-empty line
-    return cls.__doc__.strip().split("\n")[0]
+    return cls.__doc__.strip().splitlines()[0]
 
   @classmethod
   def cli_description(cls) -> str:

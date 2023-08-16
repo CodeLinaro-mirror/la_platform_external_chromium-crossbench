@@ -345,7 +345,7 @@ class ChromeDriverFinder:
     if major_version <= 69:
       with helper.urlopen(
           f"{self.PRE_115_STABLE_URL}/2.46/notes.txt") as response:
-        lines = response.read().decode("utf-8").split("\n")
+        lines = response.read().decode("utf-8").splitlines()
         for i, line in enumerate(lines):
           if not line.startswith("---"):
             continue

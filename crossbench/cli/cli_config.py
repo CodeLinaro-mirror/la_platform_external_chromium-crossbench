@@ -272,8 +272,31 @@ class BrowserConfig(ConfigObject):
       maybe_path_or_identifier: str,
       driver_type: Optional[BrowserDriverType] = None
   ) -> Union[str, pathlib.Path]:
-    identifier = maybe_path_or_identifier.lower()
     driver_type = driver_type or BrowserDriverType.default()
+    identifier = maybe_path_or_identifier.lower()
+    if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
+      # Assume a path since short-names never contain back-/slashes.
+      path = cli_helper.parse_existing_path(maybe_path_or_identifier)
+    else:
+      if path := cls._try_parse_short_name(identifier, driver_type):
+        return path
+      if ChromeDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
+        return maybe_path_or_identifier
+      if FirefoxDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
+        return maybe_path_or_identifier
+    if not path:
+      path = try_resolve_existing_path(maybe_path_or_identifier)
+      if not path:
+        raise argparse.ArgumentTypeError(
+            f"Unknown browser path or short name: '{maybe_path_or_identifier}'")
+    if cls.is_supported_browser_path(path):
+      return path
+    raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
+
+  @classmethod
+  def _try_parse_short_name(
+      cls, identifier: str,
+      driver_type: BrowserDriverType) -> Optional[pathlib.Path]:
     # We're not using a dict-based lookup here, since not all browsers are
     # available on all platforms
     if identifier in ("chrome", "chrome-stable", "chr-stable", "chr"):
@@ -310,21 +333,7 @@ class BrowserConfig(ConfigObject):
       return browsers.Firefox.developer_edition_path()
     if identifier in ("firefox-nightly", "ff-nightly", "ff-trunk"):
       return browsers.Firefox.nightly_path()
-    if ChromeDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
-      return maybe_path_or_identifier
-    if FirefoxDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
-      return maybe_path_or_identifier
-    path = try_resolve_existing_path(maybe_path_or_identifier)
-    if not path:
-      if (cls.value_has_path_prefix(maybe_path_or_identifier) or
-          "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier):
-        raise argparse.ArgumentTypeError(
-            f"Browser path does not exist: {maybe_path_or_identifier}")
-      raise argparse.ArgumentTypeError(
-          f"Unknown browser path or short name: '{maybe_path_or_identifier}'")
-    if cls.is_supported_browser_path(path):
-      return path
-    raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
+    return None
 
   @classmethod
   def is_supported_browser_path(cls, path: pathlib.Path) -> bool:

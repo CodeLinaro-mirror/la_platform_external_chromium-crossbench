@@ -36,9 +36,10 @@ class FirefoxDownloader(Downloader):
       return FirefoxDownloaderMacOS
     if platform.is_linux:
       return FirefoxDownloaderLinux
-    raise ValueError(
-        "Downloading Firefox is only supported on linux and macOS, "
-        f"but not on {platform.name} {platform.machine}")
+    if platform.is_win:
+      return FirefoxDownloaderWin
+    raise ValueError("Downloading Firefox is not supported "
+                     f"{platform.name} {platform.machine}")
 
   def __init__(self,
                version_identifier: Union[str, pathlib.Path],
@@ -167,3 +168,14 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
     extracted_path = self._default_extracted_path()
     DMGArchiveHelper.extract(self._platform, archive_path, extracted_path)
     assert extracted_path.exists()
+
+
+class FirefoxDownloaderWin(FirefoxDownloader):
+
+  @classmethod
+  def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
+               platform: plt.Platform) -> bool:
+    return False
+
+  def _extract_archive(self, archive_path: pathlib.Path) -> None:
+    raise NotImplementedError("Missing windows supoprt")
