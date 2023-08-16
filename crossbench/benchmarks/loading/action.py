@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import datetime as dt
+import logging
 import json
 import time
 from typing import TYPE_CHECKING, Any, Dict, Tuple, Type
@@ -49,7 +50,7 @@ class ActionType(ParsingEnum):
   CLICK = "click"
 
 
-ACTION_TIMEOUT = dt.timedelta(seconds=10)
+ACTION_TIMEOUT = dt.timedelta(seconds=20)
 
 
 class Action(abc.ABC):
@@ -102,7 +103,7 @@ class Action(abc.ABC):
     return {"type": self.TYPE, "timeout": self.timeout.total_seconds()}
 
 
-class ReadyState(compat.StrEnum):
+class ReadyState(ParsingEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Document/readyState"""
   # Non-blocking:
   ANY = "any"
@@ -120,15 +121,19 @@ class GetAction(Action):
     kwargs = super().kwargs_from_dict(value)
     kwargs["url"] = cli_helper.parse_url_str(
         cls.pop_required_input(value, "url"))
+    if duration := value.pop("duration-state", None):
+      kwargs["duration"] = cli_helper.Duration.parse_zero(duration)
     if ready_state := value.pop("ready-state", None):
-      kwargs["ready_state"] = ReadyState[ready_state]
+      kwargs["ready_state"] = ReadyState.parse(ready_state)
     return kwargs
 
   def __init__(self,
                url: str,
+               duration: dt.timedelta = dt.timedelta(),
                timeout: dt.timedelta = ACTION_TIMEOUT,
                ready_state: ReadyState = ReadyState.ANY):
     self._url: str = url
+    self._duration = duration
     self._ready_state = ready_state
     super().__init__(timeout)
 
@@ -140,22 +145,44 @@ class GetAction(Action):
   def ready_state(self) -> ReadyState:
     return self._ready_state
 
+  @property
+  def duration(self) -> dt.timedelta:
+    return self._duration
+
   def run(self, run: Run) -> None:
+    start_time = time.time()
+    expected_end_time = start_time + self.duration.total_seconds()
+
     with run.actions("GetAction", measure=False) as action:
       action.show_url(self.url)
-      if self._ready_state == ReadyState.ANY:
+      if self._ready_state != ReadyState.ANY:
+        action.wait_js_condition(
+            f"return document.readyState === '{self._ready_state}'", 0.5, 15)
         return
-      action.wait_js_condition(
-          f"return document.readyState === '{self._ready_state}'", 0.5, 15)
+      # Wait for the given duration from the start of the action.
+      wait_time_seconds = expected_end_time - time.time()
+      if wait_time_seconds > 0:
+        action.wait(wait_time_seconds)
+      elif self.duration:
+        run_duration = dt.timedelta(seconds=time.time() - start_time)
+        logging.info("%s took longer (%s) than expected action duration (%s).",
+                     self, run_duration, self.duration)
 
   def validate(self) -> None:
     super().validate()
     if not self.url:
       raise ValueError(f"{self}.url is missing")
+    if self._ready_state == ReadyState.ANY:
+      return
+    if self.duration != dt.timedelta():
+      raise ValueError(
+          f"Expected empty duration with ReadyState {self._ready_state} "
+          f"but got: {self.duration}")
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["url"] = self.url
+    details["duration"] = self.duration.total_seconds()
     details["ready_state"] = str(self.ready_state)
     return details
 

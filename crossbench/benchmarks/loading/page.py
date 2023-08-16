@@ -62,7 +62,7 @@ class LivePage(Page):
   def run(self, run: Run) -> None:
     for _ in self._playback:
       run.browser.show_url(run.runner, self.url)
-      run.runner.wait(self.duration + dt.timedelta(seconds=1))
+      run.runner.wait(self.duration)
 
   def __str__(self) -> str:
     return f"Page(name={self.name}, url={self.url})"
