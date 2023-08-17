@@ -234,6 +234,8 @@ class EnumWithHelpTestCase(unittest.TestCase):
   def test_lookup(self):
     self.assertIs(self.TestEnum("a"), self.TestEnum.A)
     self.assertIs(self.TestEnum("b"), self.TestEnum.B)
+    self.assertIs(self.TestEnum["A"], self.TestEnum.A)
+    self.assertIs(self.TestEnum["B"], self.TestEnum.B)
 
   def test_value_help(self):
     # pylint: disable=no-member

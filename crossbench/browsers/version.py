@@ -7,11 +7,10 @@ from __future__ import annotations
 import abc
 import functools
 from typing import Any, Tuple
+import enum
 
-from crossbench import compat
 
-
-class BrowserVersionChannel(compat.StrEnum):
+class BrowserVersionChannel(enum.Enum):
   LTS = "lts"
   STABLE = "stable"
   BETA = "beta"
