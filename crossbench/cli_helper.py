@@ -159,6 +159,24 @@ def parse_hjson_file(value: Union[str, pathlib.Path]) -> Any:
       raise argparse.ArgumentTypeError(message) from e
 
 
+def parse_non_empty_hjson_file(value: Union[str, pathlib.Path]) -> Any:
+  data = parse_hjson_file(value)
+  if not data:
+    raise argparse.ArgumentTypeError(
+        f"Expected {hjson.__name__} file with non-empty data, "
+        f"but got: {hjson.dumps(data)}")
+  return data
+
+
+def parse_dict_hjson_file(value: Union[str, pathlib.Path]) -> Any:
+  data = parse_non_empty_hjson_file(value)
+  if not isinstance(data, dict):
+    raise argparse.ArgumentTypeError(
+        f"Expected object in {hjson.__name__} config '{value}', "
+        f"but got {type(data).__name__}: {data}")
+  return data
+
+
 def parse_positive_zero_float(value: Any) -> float:
   try:
     value_f = float(value)
@@ -251,7 +269,6 @@ class CrossBenchArgumentError(argparse.ArgumentError):
     return (f"argument error {self.argument_name}:\n\n"
             f"Help {self.argument_name}:\n{self.help}\n\n"
             f"{formatted}")
-
 
 # Needed to gap the diff between 3.8 and 3.9 default args that change throwing
 # behavior.

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import unittest
 
 from crossbench import compat, helper
@@ -79,9 +80,9 @@ class ProbeConfigTestCase(unittest.TestCase):
   def test_bool_missing_property(self):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("bool_argument_name", type=bool, required=True)
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"other": True})
 
   def test_bool_invalid_value(self):
@@ -89,19 +90,19 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser.add_argument("bool_argument_name", type=bool)
     parser_required = ProbeConfigParser(MockProbe)
     parser_required.add_argument("bool_argument_name", type=bool, required=True)
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"bool_argument_name": "not a bool"})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"bool_argument_name": ""})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"bool_argument_name": {}})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"bool_argument_name": []})
     # Argument is not required, this should pass
     parser.kwargs_from_config({"bool_argument_name": None})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser_required.kwargs_from_config({"bool_argument_name": None})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"bool_argument_name": 0})
 
   def test_bool_default(self):
@@ -129,11 +130,11 @@ class ProbeConfigTestCase(unittest.TestCase):
   def test_int_list_invalid(self):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("int_list", type=int, is_list=True, default=[111, 222])
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"int_list": 9})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"int_list": ["0", "1"]})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"int_list": "0,1"})
 
   def test_int_list(self):
@@ -172,9 +173,9 @@ class ProbeConfigTestCase(unittest.TestCase):
     with self.assertRaises(AssertionError):
       parser.add_argument("unused", type=None, choices=[])
     parser.add_argument("choice", type=None, choices=["a", "b"])
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"choice": ""})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"choice": "unknown"})
     kwargs = parser.kwargs_from_config({"choice": "a"})
     self.assertIs(kwargs["choice"], "a")
@@ -193,9 +194,9 @@ class ProbeConfigTestCase(unittest.TestCase):
     with self.assertRaises(AssertionError):
       parser.add_argument("unused", type=MyEnum, choices=["one"])
     parser.add_argument("my-enum-one", type=MyEnum, choices=[MyEnum.ONE])
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"my-enum-one": ""})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"my-enum-one": "two"})
     kwargs = parser.kwargs_from_config({"my-enum-one": "one"})
     self.assertIs(kwargs["my-enum-one"], MyEnum.ONE)
@@ -205,11 +206,11 @@ class ProbeConfigTestCase(unittest.TestCase):
     self.assertIs(kwargs["my-enum"], MyEnum.ONE)
     kwargs = parser.kwargs_from_config({"my-enum": "two"})
     self.assertIs(kwargs["my-enum"], MyEnum.TWO)
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"my-enum": ""})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"my-enum": "three"})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"my-enum": "TWO"})
 
   def test_enum_with_help(self):

@@ -18,6 +18,7 @@ from typing import (Any, Callable, Dict, Generic, Iterable, List, Optional,
 import tabulate
 
 from crossbench import cli_helper, helper
+from crossbench import exception
 from crossbench.exception import ExceptionAnnotator
 
 ArgParserType = Union[Callable[[Any], Any], Type]
@@ -250,18 +251,13 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def load_path(cls, path: pathlib.Path) -> ConfigObject:
-    data = cli_helper.parse_hjson_file(path)
-    if not isinstance(data, dict):
-      raise argparse.ArgumentTypeError(
-          f"Expected object in hjson config '{path}', "
-          f"but got {type(data).__name__}: {data}")
-    return cls.load_dict(data)
+    with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
+      data = cli_helper.parse_dict_hjson_file(path)
+      return cls.load_dict(data)
 
   @classmethod
   @abc.abstractmethod
-  def load_dict(cls,
-                config: Dict[str, Any],
-                throw: bool = False) -> ConfigObject:
+  def load_dict(cls, config: Dict[str, Any]) -> ConfigObject:
     raise NotImplementedError()
 
 
@@ -289,21 +285,17 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     self._args[name] = _ConfigArg(self, name, type, default, choices, help,
                                   is_list, required)
 
-  def kwargs_from_config(self, config_data: Dict[str, Any],
-                         throw: bool = False) -> Dict[str, Any]:
-    kwargs: Dict[str, Any] = {}
-    exceptions = ExceptionAnnotator(throw=throw)
+  def kwargs_from_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
+    with exception.annotate_argparsing(
+        f"Parsing {type(self).__name__} config dict:"):
+      kwargs: Dict[str, Any] = {}
+      for arg_parser in self._args.values():
+        with exception.annotate(f"Parsing ...['{arg_parser.name}']:"):
+          kwargs[arg_parser.name] = arg_parser.parse(config_data)
+      return kwargs
 
-    for arg_parser in self._args.values():
-      with exceptions.capture(f"Parsing ...['{arg_parser.name}']:"):
-        kwargs[arg_parser.name] = arg_parser.parse(config_data)
-    exceptions.assert_success("Failed to parse config: {}", log=False)
-    return kwargs
-
-  def parse(self,
-            config_data: Dict[str, Any],
-            throw: bool = False) -> ConfigResultObjectT:
-    return self.cls(**self.kwargs_from_config(config_data, throw))
+  def parse(self, config_data: Dict[str, Any]) -> ConfigResultObjectT:
+    return self.cls(**self.kwargs_from_config(config_data))
 
   @property
   def cls(self) -> Type:

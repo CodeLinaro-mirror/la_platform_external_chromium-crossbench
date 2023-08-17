@@ -9,14 +9,13 @@ import argparse
 import copy
 import datetime as dt
 import json
-from typing import Any, Dict, List, Optional, TextIO, Type, TypeVar
+from typing import Any, Dict, List, Optional, TextIO, Type
 
 import hjson
 
-from crossbench import cli_helper
+from crossbench import cli_helper, exception
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
-from crossbench.exception import ExceptionAnnotator
 from crossbench.types import JsonDict
 
 from . import action
@@ -34,25 +33,21 @@ class AbstractPageConfig(abc.ABC):
       return config.stories
 
   def __init__(self, raw_config_data: Optional[Dict] = None) -> None:
-    self._exceptions = ExceptionAnnotator(throw=True)
     self.stories: List[InteractivePage] = []
     if raw_config_data:
       self.load_dict(raw_config_data)
 
-  def load(self, f: TextIO, throw: bool = False) -> None:
+  def load(self, f: TextIO) -> None:
     assert not self.stories
-    self._exceptions.throw = throw
-    with self._exceptions.capture(f"Loading Pages config file: {f.name}"):
-      with self._exceptions.info(f"Parsing {hjson.__name__}"):
+    with exception.annotate_argparsing(f"Loading Pages config file: {f.name}"):
+      with exception.annotate(f"Parsing {hjson.__name__}"):
         config = hjson.load(f)
-        self.load_dict(config, throw=throw)
-    self._exceptions.assert_success()
+        self.load_dict(config)
 
-  def load_dict(self, config: Dict[str, Any], throw: bool = False) -> None:
+  def load_dict(self, config: Dict[str, Any]) -> None:
     assert not self.stories
-    self._exceptions.throw = throw
-    self._load_dict(config)
-    self._exceptions.assert_success()
+    with exception.annotate_argparsing(f"Parsing {type(self).__name__} dict:"):
+      self._load_dict(config)
 
   @abc.abstractmethod
   def _load_dict(self, raw_config_data: Dict) -> None:
@@ -62,12 +57,13 @@ class AbstractPageConfig(abc.ABC):
 class PageConfig(AbstractPageConfig):
 
   def _load_dict(self, raw_config_data: Dict) -> None:
-    with self._exceptions.capture("Parsing scenarios / pages"):
+    with exception.annotate("Parsing scenarios / pages"):
       if "pages" not in raw_config_data:
-        raise ValueError("Config does not provide a 'pages' dict.")
+        raise argparse.ArgumentTypeError(
+            "Config does not provide a 'pages' dict.")
       if not raw_config_data["pages"]:
-        raise ValueError("Config contains empty 'pages' dict.")
-      with self._exceptions.info("Parsing config 'pages'"):
+        raise argparse.ArgumentTypeError("Config contains empty 'pages' dict.")
+      with exception.annotate("Parsing config 'pages'"):
         pages = copy.deepcopy(raw_config_data["pages"])
         self._parse_pages(pages)
 
@@ -88,7 +84,8 @@ class PageConfig(AbstractPageConfig):
     playback: PlaybackController = PlaybackController.parse(
         pages.get("playback", "1x"))
     for scenario_name, actions in pages.items():
-      with self._exceptions.info(f"Parsing scenario ...['{scenario_name}']"):
+      with exception.annotate_argparsing(
+          f"Parsing scenario ...['{scenario_name}']"):
         actions = self._parse_actions(actions, scenario_name)
         self.stories.append(InteractivePage(actions, scenario_name, playback))
 
@@ -101,8 +98,7 @@ class PageConfig(AbstractPageConfig):
     actions_list: List[action.Action] = []
     get_action_found = False
     for i, action_config in enumerate(actions):
-      with self._exceptions.info(
-          f"Parsing action   ...['{scenario_name}'][{i}]"):
+      with exception.annotate(f"Parsing action   ...['{scenario_name}'][{i}]"):
         action_step = self._parse_action(i, action_config)
         if action_step.TYPE == action.ActionType.GET:
           get_action_found = True
@@ -119,7 +115,7 @@ class PageConfig(AbstractPageConfig):
           f"Missing 'action' property in {json.dumps(action_config)}")
     action_type = action.ActionType.parse(action_config.get("action"))
     action_cls: Type[action.Action] = action.ACTIONS[action_type]
-    with self._exceptions.info(
+    with exception.annotate(
         f"Parsing details  ...[{i}]{{ action: \"{action_type}\", ...}}:"):
       kwargs = action_cls.kwargs_from_dict(action_config)
       return action_cls(**kwargs)
@@ -129,7 +125,7 @@ class DevToolsRecorderPageConfig(AbstractPageConfig):
 
   def _load_dict(self, raw_config_data: Dict) -> None:
     playback: PlaybackController = PlaybackController.once()
-    with self._exceptions.capture("Loading DevTools recording file"):
+    with exception.annotate("Loading DevTools recording file"):
       title = raw_config_data["title"]
       assert title, "No title provided"
       actions = self._parse_steps(raw_config_data["steps"])

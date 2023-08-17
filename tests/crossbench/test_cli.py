@@ -301,7 +301,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     with mock.patch.object(
         CrossBenchCLI, "_get_browsers", return_value=self.browsers):
       url = "http://test.com"
-      with self.assertRaises(ProbeConfigError):
+      with self.assertRaises(argparse.ArgumentTypeError):
         self.run_cli("loading", f"--probe-config={config_file}",
                      f"--urls={url}", "--env-validation=skip", "--throw")
       for browser in self.browsers:
@@ -330,7 +330,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     config_data = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(ProbeConfigError) as cm:
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
       with mock.patch.object(
           CrossBenchCLI, "_get_browsers", return_value=self.browsers):
         self.run_cli("loading", f"--probe-config={config_file}",

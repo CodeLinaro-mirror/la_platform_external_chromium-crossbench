@@ -25,7 +25,6 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.env import HostEnvironment, HostEnvironmentConfig
-from crossbench.exception import ExceptionAnnotator
 from crossbench.flags import ChromeFlags, Flags
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
@@ -211,10 +210,8 @@ class DriverConfig(ConfigObject):
         settings=frozendict(serial=candidate_serials[0]))
 
   @classmethod
-  def load_dict(cls,
-                config: Dict[str, Any],
-                throw: bool = False) -> DriverConfig:
-    return cls.config_parser().parse(config, throw)
+  def load_dict(cls, config: Dict[str, Any]) -> DriverConfig:
+    return cls.config_parser().parse(config)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[DriverConfig]:
@@ -272,6 +269,8 @@ class BrowserConfig(ConfigObject):
       maybe_path_or_identifier: str,
       driver_type: Optional[BrowserDriverType] = None
   ) -> Union[str, pathlib.Path]:
+    if not maybe_path_or_identifier:
+      raise argparse.ArgumentTypeError("Got empty browser identifier.")
     driver_type = driver_type or BrowserDriverType.default()
     identifier = maybe_path_or_identifier.lower()
     if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
@@ -358,7 +357,8 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def load(cls, f: TextIO) -> BrowserConfig:
-    with exception.annotate(f"Loading browser config file: {f.name}"):
+    with exception.annotate_argparsing(
+        f"Loading browser config file: {f.name}"):
       config = {}
       with exception.annotate(f"Parsing {hjson.__name__}"):
         config = hjson.load(f)
@@ -367,10 +367,8 @@ class BrowserConfig(ConfigObject):
     raise argparse.ArgumentTypeError(f"Could not parse : '{f.name}'")
 
   @classmethod
-  def load_dict(cls,
-                config: Dict[str, Any],
-                throw: bool = False) -> BrowserConfig:
-    return cls.config_parse().parse(config, throw)
+  def load_dict(cls, config: Dict[str, Any]) -> BrowserConfig:
+    return cls.config_parse().parse(config)
 
   @classmethod
   def config_parse(cls) -> ConfigParser[BrowserConfig]:
@@ -386,8 +384,6 @@ class BrowserConfig(ConfigObject):
 
   def get_platform(self) -> plt.Platform:
     return self.driver.get_platform()
-
-
 
 
 class BrowserVariantsConfig:
@@ -413,38 +409,36 @@ class BrowserVariantsConfig:
     self._variants: List[Browser] = []
     self._browser_lookup_override = browser_lookup_override or {}
     self._cache_dir: pathlib.Path = BROWSERS_CACHE
-    self._exceptions = ExceptionAnnotator()
     if raw_config_data:
       assert args, "args object needed when loading from dict."
       self.load_dict(raw_config_data, args)
 
   @property
   def variants(self) -> List[Browser]:
-    self._exceptions.assert_success(
-        "Could not create variants from config files: {}", ConfigError)
+    assert self._variants
     return self._variants
 
   def load(self, f: TextIO, args: argparse.Namespace) -> None:
-    with self._exceptions.capture(f"Loading browser config file: {f.name}"):
+    with exception.annotate_argparsing(
+        f"Loading browser config file: {f.name}"):
       config = {}
-      with self._exceptions.info(f"Parsing {hjson.__name__}"):
+      with exception.annotate(f"Parsing {hjson.__name__}"):
         config = hjson.load(f)
-      with self._exceptions.info(f"Parsing config file: {f.name}"):
+      with exception.annotate(f"Parsing config file: {f.name}"):
         self.load_dict(config, args)
 
   def load_dict(self, config: Dict[str, Any], args: argparse.Namespace) -> None:
-    try:
+    with exception.annotate(
+        f"Parsing {type(self).__name__} dict", throw_cls=ConfigError):
       if "flags" in config:
-        with self._exceptions.info("Parsing config['flags']"):
+        with exception.annotate("Parsing config['flags']"):
           self._parse_flag_groups(config["flags"])
       if "browsers" not in config:
         raise ConfigError("Config does not provide a 'browsers' dict.")
       if not config["browsers"]:
         raise ConfigError("Config contains empty 'browsers' dict.")
-      with self._exceptions.info("Parsing config['browsers']"):
+      with exception.annotate("Parsing config['browsers']"):
         self._parse_browsers(config["browsers"], args)
-    except Exception as e:  # pylint: disable=broad-except
-      self._exceptions.append(e)
 
   def load_from_args(self, args: argparse.Namespace) -> None:
     self._cache_dir = args.cache_dir
@@ -462,8 +456,7 @@ class BrowserVariantsConfig:
 
   def _parse_flag_groups(self, data: Dict[str, Any]) -> None:
     for flag_name, group_config in data.items():
-      with self._exceptions.capture(
-          f"Parsing flag-group: flags['{flag_name}']"):
+      with exception.annotate(f"Parsing flag-group: flags['{flag_name}']"):
         self._parse_flag_group(flag_name, group_config)
 
   def _parse_flag_group(self, name: str,
@@ -494,7 +487,7 @@ class BrowserVariantsConfig:
   def _parse_browsers(self, data: Dict[str, Any],
                       args: argparse.Namespace) -> None:
     for name, browser_config in data.items():
-      with self._exceptions.info(f"Parsing browsers['{name}']"):
+      with exception.annotate(f"Parsing browsers['{name}']"):
         self._parse_browser(name, browser_config, args)
     self._ensure_unique_browser_names()
 
@@ -515,10 +508,10 @@ class BrowserVariantsConfig:
       raise ConfigError(
           f"browsers['{name}'].path='{browser_config.path}' does not exist.")
     raw_flags: List[Tuple[FlagItemT, ...]] = []
-    with self._exceptions.info(f"Parsing browsers['{name}'].flags"):
+    with exception.annotate(f"Parsing browsers['{name}'].flags"):
       raw_flags = self._parse_flags(name, raw_browser_data)
     variants_flags: Tuple[Flags, ...] = ()
-    with self._exceptions.info(
+    with exception.annotate(
         f"Expand browsers['{name}'].flags into full variants"):
       variants_flags = tuple(
           browser_cls.default_flags(flags) for flags in raw_flags)
@@ -802,9 +795,7 @@ class SingleProbeConfig(ConfigObject):
     return cls.load_dict(config)
 
   @classmethod
-  def load_dict(cls,
-                config: Dict[str, Any],
-                throw: bool = False) -> SingleProbeConfig:
+  def load_dict(cls, config: Dict[str, Any]) -> SingleProbeConfig:
     probe_name = config.pop("name")
     if probe_name not in PROBE_LOOKUP:
       raise ProbeConfigError(f"Unknown probe: '{probe_name}'")
@@ -826,40 +817,38 @@ class ProbeConfig:
   def from_cli_args(cls, args: argparse.Namespace) -> ProbeConfig:
     if args.probe_config:
       with args.probe_config.open(encoding="utf-8") as f:
-        return cls.load(f, throw=args.throw)
-    return cls(args.probe, throw=args.throw)
+        return cls.load(f)
+    return cls(args.probe)
 
   @classmethod
-  def load(cls, file: TextIO, throw: bool = False) -> ProbeConfig:
-    probe_config = cls(throw=throw)
+  def load(cls, file: TextIO) -> ProbeConfig:
+    probe_config = cls()
     probe_config.load_config_file(file)
     return probe_config
 
   def __init__(self,
-               probe_configs: Optional[Iterable[SingleProbeConfig]] = None,
-               throw: bool = False):
-    self._exceptions = ExceptionAnnotator(throw=throw)
+               probe_configs: Optional[Iterable[SingleProbeConfig]] = None):
     self._probes: List[Probe] = []
     if not probe_configs:
       return
     for probe_config in probe_configs:
-      with self._exceptions.capture(f"Parsing --probe={probe_config.name}"):
+      with exception.annotate_argparsing(
+          f"Parsing --probe={probe_config.name}"):
         self.add_probe(probe_config)
 
   @property
   def probes(self) -> List[Probe]:
-    self._exceptions.assert_success("Could not load probes: {}", ConfigError)
     return self._probes
 
   def add_probe(self, probe_config: SingleProbeConfig) -> None:
-    probe: Probe = probe_config.cls.from_config(
-        probe_config.config, throw=self._exceptions.throw)
+    probe: Probe = probe_config.cls.from_config(probe_config.config)
     self._probes.append(probe)
 
   def load_config_file(self, file: TextIO) -> None:
-    with self._exceptions.capture(f"Loading probe config file: {file.name}"):
+    with exception.annotate_argparsing(
+        f"Loading probe config file: {file.name}"):
       data = None
-      with self._exceptions.info(f"Parsing {hjson.__name__}"):
+      with exception.annotate(f"Parsing {hjson.__name__}"):
         try:
           data = hjson.load(file)
         except ValueError as e:
@@ -871,7 +860,7 @@ class ProbeConfig:
 
   def load_dict(self, config: Dict[str, Any]) -> None:
     for probe_name, config_data in config.items():
-      with self._exceptions.info(
+      with exception.annotate_argparsing(
           f"Parsing probe config probes['{probe_name}']"):
         if probe_name not in PROBE_LOOKUP:
           self.raise_unknown_probe(probe_name)

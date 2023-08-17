@@ -179,7 +179,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
   def test_run_throw(self):
     stories = PAGE_LIST
-    self._test_run(stories, throw=True)
+    self._test_run(stories)
     self._assert_urls_loaded([story.url for story in stories])
 
   def test_run_repeat(self):
@@ -188,7 +188,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     stories = self.story_filter([url1, url2],
                                 separate=False,
                                 playback=PlaybackController.repeat(3)).stories
-    self._test_run(stories, throw=True)
+    self._test_run(stories)
     urls = [url1, url2] * 3
     self._assert_urls_loaded(urls)
 
@@ -198,7 +198,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     stories = self.story_filter([url1, url2],
                                 separate=True,
                                 playback=PlaybackController.repeat(3)).stories
-    self._test_run(stories, throw=True)
+    self._test_run(stories)
     urls = [url1] * 3 + [url2] * 3
     self._assert_urls_loaded(urls)
 
@@ -268,7 +268,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
         }
     }
     config = PageConfig()
-    config.load_dict(config_data, throw=True)
+    config.load_dict(config_data)
     self.assert_single_google_story(config.stories)
     # Loading the same config from a file should result in the same actions.
     file = pathlib.Path("page.config.hjson")
@@ -287,18 +287,18 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
                          ["get", "wait", "scroll"])
 
   def test_no_scenarios(self):
-    with self.assertRaises(ValueError):
-      PageConfig().load_dict({}, throw=True)
-    with self.assertRaises(ValueError):
-      PageConfig().load_dict({"pages": {}}, throw=True)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PageConfig().load_dict({})
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PageConfig().load_dict({"pages": {}})
 
   def test_scenario_invalid_actions(self):
     invalid_actions = [None, "", [], {}, "invalid string", 12]
     for invalid_action in invalid_actions:
       config_dict = {"pages": {"name": invalid_action}}
       with self.subTest(invalid_action=invalid_action):
-        with self.assertRaises(ValueError):
-          PageConfig().load_dict(config_dict, throw=True)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          PageConfig().load_dict(config_dict)
 
   def test_missing_action(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -308,8 +308,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
                   "action___": "wait",
                   "duration": 5.0
               }]
-          }},
-          throw=True)
+          }})
     self.assertIn("Missing 'action'", str(cm.exception))
 
   def test_invalid_action(self):
@@ -325,18 +324,17 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
-          PageConfig().load_dict(config_dict, throw=True)
+          PageConfig().load_dict(config_dict)
 
   def test_missing_get_action_scenario(self):
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       PageConfig().load_dict(
           {"pages": {
               "TEST": [{
                   "action": "wait",
                   "duration": 5.0
               }]
-          }},
-          throw=True)
+          }})
 
   def test_get_action_durations(self):
     durations = [
@@ -414,22 +412,20 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
     for invalid_duration in invalid_durations:
       with self.subTest(duration=invalid_duration), self.assertRaises(
           (AssertionError, ValueError, argparse.ArgumentTypeError)):
-        PageConfig().load_dict(
-            {
-                "pages": {
-                    "TEST": [
-                        {
-                            "action": "get",
-                            "url": 'google.com'
-                        },
-                        {
-                            "action": "wait",
-                            "duration": invalid_duration
-                        },
-                    ]
-                }
-            },
-            throw=True)
+        PageConfig().load_dict({
+            "pages": {
+                "TEST": [
+                    {
+                        "action": "get",
+                        "url": 'google.com'
+                    },
+                    {
+                        "action": "wait",
+                        "duration": invalid_duration
+                    },
+                ]
+            }
+        })
 
 
 if __name__ == "__main__":

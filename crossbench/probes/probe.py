@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import datetime as dt
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, Set,
@@ -88,14 +89,11 @@ class Probe(abc.ABC):
     return ProbeConfigParser(cls)
 
   @classmethod
-  def from_config(cls: Type[ProbeT],
-                  config_data: Dict,
-                  throw: bool = False) -> ProbeT:
+  def from_config(cls: Type[ProbeT], config_data: Dict) -> ProbeT:
     config_parser = cls.config_parser()
-    kwargs: Dict[str, Any] = config_parser.kwargs_from_config(
-        config_data, throw=throw)
+    kwargs: Dict[str, Any] = config_parser.kwargs_from_config(config_data)
     if config_data:
-      raise ValueError(
+      raise argparse.ArgumentTypeError(
           f"Config for Probe={cls.NAME} contains unused properties: "
           f"{', '.join(config_data.keys())}")
     return cls(**kwargs)

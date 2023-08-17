@@ -2,14 +2,43 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import unittest
 from unittest import mock
 
-from crossbench.exception import ExceptionAnnotator
+from crossbench.exception import (ArgumentTypeMultiException, Entry,
+                                  ExceptionAnnotator, MultiException, annotate,
+                                  annotate_argparsing)
 from tests import test_helper
 
 
 class ExceptionHandlerTestCase(unittest.TestCase):
+
+  def test_annotate(self):
+    with self.assertRaises(MultiException) as cm:
+      with annotate("BBB"):
+        with annotate("AAA"):
+          raise ValueError("an exception")
+    exception: MultiException = cm.exception
+    annotator: ExceptionAnnotator = exception.annotator
+    self.assertTrue(len(annotator.exceptions), 1)
+    entry: Entry = annotator.exceptions[0]
+    self.assertTupleEqual(entry.info_stack, ("BBB", "AAA"))
+    self.assertIsInstance(entry.exception, ValueError)
+
+  def test_annotate_argparse(self):
+    with self.assertRaises(ArgumentTypeMultiException) as cm:
+      with annotate_argparsing("BBB"):
+        with annotate("AAA"):
+          with annotate("000"):
+            raise ValueError("an exception")
+    exception: MultiException = cm.exception
+    self.assertIsInstance(exception, argparse.ArgumentTypeError)
+    annotator: ExceptionAnnotator = exception.annotator
+    self.assertTrue(len(annotator.exceptions), 1)
+    entry: Entry = annotator.exceptions[0]
+    self.assertTupleEqual(entry.info_stack, ("BBB", "AAA", "000"))
+    self.assertIsInstance(entry.exception, ValueError)
 
   def test_empty(self):
     annotator = ExceptionAnnotator()

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import unittest
 
 from crossbench.probes.all import V8LogProbe
@@ -41,9 +42,9 @@ class TestV8LogProbe(unittest.TestCase):
           "profview": True
       })
     self.assertIn("profview", str(cm.exception))
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       V8LogProbe.from_config({"log_all": []})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       V8LogProbe.from_config({"prof": 12})
     with self.assertRaises(ValueError):
       V8LogProbe.from_config({"js_flags": [1]})

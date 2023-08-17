@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import argparse
 
 import logging
 import sys
@@ -38,6 +39,10 @@ class MultiException(ValueError):
     super().__init__(message)
     self.exceptions = exceptions
 
+  @property
+  def annotator(self) -> ExceptionAnnotator:
+    return self.exceptions
+
 
 class ExceptionAnnotationScope:
   """Used in a with-scope to annotate exceptions with a TInfoStack.
@@ -50,12 +55,12 @@ class ExceptionAnnotationScope:
                annotator: ExceptionAnnotator,
                exception_types: TExceptionTypes,
                entries: Tuple[str, ...],
-               rethrow: bool = False) -> None:
+               throw_cls: Optional[Type[BaseException]] = None) -> None:
     logging.debug("ExceptionAnnotationScope: %s", entries)
     self._annotator = annotator
     self._exception_types = exception_types
     self._added_info_stack_entries = entries
-    self.rethrow = rethrow
+    self._throw_cls = throw_cls
     self._previous_info_stack: TInfoStack = ()
 
   def __enter__(self) -> ExceptionAnnotationScope:
@@ -81,8 +86,11 @@ class ExceptionAnnotationScope:
       # exception handling by returning True.
       self._annotator.append(exception_value)
       self._annotator._info_stack = self._previous_info_stack
-      if self.rethrow:
-        self._annotator.assert_success(log=False)
+      if self._throw_cls:
+        self._annotator.assert_success(
+            exception_cls=self._throw_cls,
+            log=False,
+        )
       return True
     if exception_value not in self._annotator._pending_exceptions:
       self._annotator._pending_exceptions[
@@ -97,9 +105,12 @@ class ExceptionAnnotator:
   ExceptionAnnotationScopes.
   """
 
-  def __init__(self, throw: bool = False) -> None:
+  def __init__(self,
+               throw: bool = False,
+               throw_cls: Optional[Type[BaseException]] = None) -> None:
     self._exceptions: List[Entry] = []
     self.throw: bool = throw
+    self._throw_cls: Optional[Type[BaseException]] = throw_cls
     # The info_stack adds additional meta information to handle exceptions.
     # Unlike the source-based backtrace, this can contain dynamic information
     # for easier debugging.
@@ -121,6 +132,9 @@ class ExceptionAnnotator:
   def exceptions(self) -> List[Entry]:
     return self._exceptions
 
+  def __len__(self) -> int:
+    return len(self._exceptions)
+
   def assert_success(self,
                      message: Optional[str] = None,
                      exception_cls: Type[BaseException] = MultiException,
@@ -130,7 +144,7 @@ class ExceptionAnnotator:
     if log:
       self.log()
     if message is None:
-      message = "Got Exceptions: {}"
+      message = "{}"
     message = message.format(self)
     if issubclass(exception_cls, MultiException):
       exception = exception_cls(message, self)
@@ -143,12 +157,12 @@ class ExceptionAnnotator:
     """Only sets info stack entries, exceptions are passed-through."""
     return ExceptionAnnotationScope(self, tuple(), stack_entries)
 
-  def capture(self,
-              *stack_entries: str,
-              exceptions: TExceptionTypes = (Exception,),
-              rethrow: bool = False) -> ExceptionAnnotationScope:
+  def capture(
+      self, *stack_entries: str, exceptions: TExceptionTypes = (Exception,)
+  ) -> ExceptionAnnotationScope:
     """Sets info stack entries and captures exceptions."""
-    return ExceptionAnnotationScope(self, exceptions, stack_entries, rethrow)
+    return ExceptionAnnotationScope(self, exceptions, stack_entries,
+                                    self._throw_cls)
 
   def extend(self, annotator: ExceptionAnnotator,
              is_nested: bool = False) -> None:
@@ -241,8 +255,27 @@ class ExceptionAnnotator:
 Annotator = ExceptionAnnotator
 
 
-def annotate(*stack_entries: str,
-             exceptions: TExceptionTypes = (Exception,),
-             throw: bool = False) -> ExceptionAnnotationScope:
-  return ExceptionAnnotator(throw=throw).capture(
-      *stack_entries, exceptions=exceptions, rethrow=True)
+def annotate(
+    *stack_entries: str,
+    exceptions: TExceptionTypes = (Exception,),
+    throw_cls: Optional[Type[BaseException]] = MultiException
+) -> ExceptionAnnotationScope:
+  """Use to annotate an exception.UserWarning.
+  By default this will throw a MultiException which can keep track of 
+  more annotations."""
+  return ExceptionAnnotator(throw_cls=throw_cls).capture(
+      *stack_entries, exceptions=exceptions)
+
+
+class ArgumentTypeMultiException(MultiException, argparse.ArgumentTypeError):
+  pass
+
+
+def annotate_argparsing(*stack_entries: str,
+                        exceptions: TExceptionTypes = (Exception,)):
+  """Use this to annotate argument parsing-related code blocks to get more
+  readable annotated exception back."""
+  return annotate(
+      *stack_entries,
+      exceptions=exceptions,
+      throw_cls=ArgumentTypeMultiException)

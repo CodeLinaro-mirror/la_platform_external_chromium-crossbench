@@ -29,10 +29,8 @@ class CustomNestedConfigObject(ConfigObject):
     return cls(name=value)
 
   @classmethod
-  def load_dict(cls,
-                config: Dict[str, Any],
-                throw: bool = False) -> CustomNestedConfigObject:
-    return cls.config_parser().parse(config, throw)
+  def load_dict(cls, config: Dict[str, Any]) -> CustomNestedConfigObject:
+    return cls.config_parser().parse(config)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomNestedConfigObject]:
@@ -58,10 +56,8 @@ class CustomConfigObject(ConfigObject):
     return cls(name=value)
 
   @classmethod
-  def load_dict(cls,
-                config: Dict[str, Any],
-                throw: bool = False) -> CustomConfigObject:
-    return cls.config_parser().parse(config, throw)
+  def load_dict(cls, config: Dict[str, Any]) -> CustomConfigObject:
+    return cls.config_parser().parse(config)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomConfigObject]:
@@ -83,11 +79,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_load_dict_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({"name": "foo", "array": 1})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({"name": "foo", "array": [], "integer": "a"})
-    with self.assertRaises(ValueError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.load_dict({"name": "foo", "array": [], "integer": "a"})
 
   def test_load_dict(self):
@@ -141,9 +137,9 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump({}, f)
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
       CustomConfigObject.parse(path)
-    self.assertIn("name", str(cm.exception))
+    self.assertIn("non-empty data", str(cm.exception))
 
   def test_load_path_invalid_json_array(self):
     path = pathlib.Path("test_file.json")
@@ -151,7 +147,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       json.dump([], f)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       CustomConfigObject.parse(path)
-    self.assertIn("Expected object", str(cm.exception))
+    self.assertIn("non-empty data", str(cm.exception))
 
   def test_load_path_minimal(self):
     path = pathlib.Path("test_file.json")
