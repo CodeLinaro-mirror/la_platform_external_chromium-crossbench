@@ -28,7 +28,7 @@ class SafariVersion(BrowserVersion):
     parts_str = matches["parts"]
     major_minor_str = matches["major_minor"]
     assert version_str and parts_str and major_minor_str
-    channel = BrowserVersionChannel.STABLE
+    channel: BrowserVersionChannel = BrowserVersionChannel.STABLE
     if "Safari Technology Preview" in version:
       channel = BrowserVersionChannel.BETA
     major, minor = tuple(map(int, major_minor_str.split(".")))

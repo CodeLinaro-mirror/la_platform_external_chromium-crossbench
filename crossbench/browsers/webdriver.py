@@ -70,7 +70,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._driver_path = driver_path
 
   @property
-  def driver(self):
+  def driver(self) -> webdriver.Remote:
     return self._driver
 
   @property

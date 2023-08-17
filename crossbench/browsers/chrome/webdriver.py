@@ -18,12 +18,14 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
 from crossbench.browsers.webdriver import DriverException
 
 if TYPE_CHECKING:
+  from selenium.webdriver.chromium.options import ChromiumOptions
+  from selenium.webdriver.chromium.service import ChromiumService
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
+  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
-  from crossbench import plt
 
 
 class ChromeWebDriver(ChromiumWebDriver):
@@ -55,8 +57,10 @@ class ChromeWebDriver(ChromiumWebDriver):
         splash_screen=splash_screen,
         platform=platform)
 
-  def _create_driver(self, options: ChromeOptions,
-                     service: ChromeService) -> ChromiumDriver:
+  def _create_driver(self, options: ChromiumOptions,
+                     service: ChromiumService) -> ChromiumDriver:
+    assert isinstance(options, ChromeOptions)
+    assert isinstance(service, ChromeService)
     try:
       return webdriver.Chrome(  # pytype: disable=wrong-keyword-args
           options=options,

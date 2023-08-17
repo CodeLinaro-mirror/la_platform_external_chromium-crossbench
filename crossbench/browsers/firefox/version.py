@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import re
-from typing import Tuple
+from typing import Dict, Tuple
 
-from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel)
+from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 
 class FirefoxVersion(BrowserVersion):
@@ -15,7 +15,7 @@ class FirefoxVersion(BrowserVersion):
                            r"(?P<parts>\d+\.\d+(?P<channel>[ab.])\d+)"
                            r")(?P<channel_esr>esr)?")
   _SPLIT_RE = re.compile(r'[ab.]')
-  _CHANNEL_LOOKUP = {
+  _CHANNEL_LOOKUP: Dict[str, Tuple[BrowserVersionChannel, int]] = {
       "esr": (BrowserVersionChannel.LTS, 3),
       ".": (BrowserVersionChannel.STABLE, 2),
       # IRL Firefox version numbers do not distinct beta from stable, so we

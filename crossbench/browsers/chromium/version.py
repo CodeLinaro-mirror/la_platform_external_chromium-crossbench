@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Tuple
+from typing import Dict, Tuple
 
 from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel)
 
@@ -13,7 +13,7 @@ from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel)
 class ChromiumVersion(BrowserVersion):
   _VERSION_RE = re.compile(
       r'[^\d]+ (?P<version>\d+\.\d+\.\d+\.\d+)( (?P<channel>[a-zA-Z]+))?')
-  _CHANNEL_LOOKUP = {
+  _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
       "stable": BrowserVersionChannel.STABLE,
       "beta": BrowserVersionChannel.BETA,
       "dev": BrowserVersionChannel.ALPHA,
