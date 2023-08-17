@@ -44,13 +44,15 @@ class WinPlatform(Platform):
     return ""
 
   def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
+    assert not self.is_remote, "Unsupported operation on remote platform"
+    if not app_or_bin.parts:
+      raise ValueError("Got empty path")
     if app_or_bin.suffix != ".exe":
       raise ValueError("Expected executable path with '.exe' suffix, "
                        f"but got: '{app_or_bin.name}'")
     if result_path := self.which(str(app_or_bin)):
       assert result_path.exists(), f"{result_path} does not exist."
       return result_path
-    assert not self.is_remote, "Unsupported operation on remote platform"
     for path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = pathlib.Path(path) / app_or_bin

@@ -88,7 +88,7 @@ class Actions(helper.TimeScope):
     assert js_code, "js_code must be a valid JS script"
     if kwargs:
       js_code = js_code.format(**kwargs)
-    delta = self.timing.timedelta(timeout)
+    delta = self.timing.timeout_timedelta(timeout)
     return self._browser.js(
         self._runner,  # pytype: disable=wrong-arg-types
         js_code,
@@ -99,7 +99,7 @@ class Actions(helper.TimeScope):
                                                             float],
                         timeout: Union[dt.timedelta, float]) -> None:
     wait_range = helper.WaitRange(
-        self.timing.timedelta(min_wait), self.timing.timedelta(timeout))
+        self.timing.timedelta(min_wait), self.timing.timeout_timedelta(timeout))
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
     for _, time_left in helper.wait_with_backoff(wait_range):

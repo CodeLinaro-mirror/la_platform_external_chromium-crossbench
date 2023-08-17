@@ -12,10 +12,11 @@ import math
 import pathlib
 import re
 import sys
-from typing import Any, Iterator, Union
+from typing import Any, Iterator, Optional, Union
 from urllib.parse import urlparse
 
 import hjson
+from crossbench import plt
 
 
 def parse_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
@@ -60,6 +61,17 @@ def parse_existing_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   if not path.exists():
     raise argparse.ArgumentTypeError(f"Path '{path}' does not exist.")
   return path
+
+
+def parse_binary_path(value: str,
+                      platform: Optional[plt.Platform] = None) -> pathlib.Path:
+  maybe_path = pathlib.Path(value)
+  if maybe_path.is_file():
+    return maybe_path
+  maybe_bin = (platform or plt.PLATFORM).search_binary(maybe_path)
+  if not maybe_bin:
+    raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
+  return maybe_bin
 
 
 def parse_inline_hjson(value: Any) -> Any:

@@ -42,6 +42,14 @@ class PlatformTestCase(unittest.TestCase):
   def test_system_details(self):
     self.assertIsNotNone(self.platform.system_details())
 
+  def test_search_app_empty_path(self):
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_app(pathlib.Path())
+    self.assertIn("empty", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_app(pathlib.Path(""))
+    self.assertIn("empty", str(cm.exception))
+
 
 @unittest.skipIf(not plt.PLATFORM.is_win, "Incompatible platform")
 class WinPlatformUnittest(PlatformTestCase):
@@ -76,6 +84,9 @@ class WinPlatformUnittest(PlatformTestCase):
     self.assertTrue(self.platform.is_win)
     self.assertFalse(self.platform.is_remote)
 
+  def test_has_display(self):
+    self.assertIn(self.platform.has_display, (True, False))
+
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class PosixPlatformUnittest(PlatformTestCase):
@@ -103,6 +114,11 @@ class PosixPlatformUnittest(PlatformTestCase):
   def test_system_details(self):
     details = self.platform.system_details()
     self.assertTrue(details)
+
+  def test_search_binary(self):
+    result_path = self.platform.search_binary(pathlib.Path("ls"))
+    self.assertIsNotNone(result_path)
+    self.assertIn("ls", result_path.parts)
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")

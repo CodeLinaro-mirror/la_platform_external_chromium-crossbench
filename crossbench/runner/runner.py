@@ -264,9 +264,15 @@ class Runner:
     return self._platform.sh(*args, shell=shell, stdout=stdout)
 
   def wait(self,
-           time: Union[float, dt.timedelta],
+           time: Union[int, float, dt.timedelta],
            absolute_time: bool = False) -> None:
-    delta = self.timing.timedelta(time, absolute_time)
+    if not absolute_time:
+      delta = self.timing.timedelta(time)
+    else:
+      if isinstance(time, (int, float)):
+        delta = dt.timedelta(seconds=time)
+      else:
+        delta = time
     self._platform.sleep(delta)
 
   def run(self, is_dry_run: bool = False) -> None:

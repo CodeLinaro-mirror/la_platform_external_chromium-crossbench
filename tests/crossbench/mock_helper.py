@@ -114,8 +114,9 @@ class MockPlatform(ActivePlatformClass):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
-                env: Optional[Mapping[str, str]] = None) -> str:
-    del shell, quiet, encoding, env
+                env: Optional[Mapping[str, str]] = None,
+                check: bool = True) -> str:
+    del shell, quiet, encoding, env, check
     if self.expected_sh_cmds is not None:
       assert self.expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
       expected = self.expected_sh_cmds.pop()

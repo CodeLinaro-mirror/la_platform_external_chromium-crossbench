@@ -160,7 +160,8 @@ class Chromium(Browser):
     matches = re.findall(r"[\d\.]+", version_string)
     if not matches:
       raise ValueError(
-          f"Could not extract version number from '{version_string}'")
+          f"Could not extract version number from '{version_string}' "
+          f"for '{self.path}'")
     return str(matches[0])
 
   @property

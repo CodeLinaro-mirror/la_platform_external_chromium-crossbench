@@ -28,6 +28,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
+  from selenium.webdriver.common.timeouts import Timeouts
+
 
 class DriverException(RuntimeError):
   """Wrapper for more readable error messages than the default
@@ -98,21 +100,49 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     except selenium.common.exceptions.SessionNotCreatedException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e
-    if hasattr(self._driver, "service"):
-      self._driver_pid = self._driver.service.process.pid
-      candidates: List[int] = []
-      for child in self.platform.process_children(self._driver_pid):
-        if str(child["exe"]) == str(self.path):
-          candidates.append(child["pid"])
-      if len(candidates) == 1:
-        self._pid = candidates[0]
-      else:
-        logging.debug(
-            "Could not find unique browser process for webdriver: %s, got %s",
-            self, candidates)
+    self._find_driver_pid()
+    self._set_driver_timeouts(run)
     self._is_running = True
     self._setup_window()
     self._check_driver_version()
+
+  def _find_driver_pid(self) -> None:
+    service = getattr(self._driver, "service", None)
+    if not service:
+      return
+    self._driver_pid = service.process.pid
+    candidates: List[int] = []
+    for child in self.platform.process_children(self._driver_pid):
+      if str(child["exe"]) == str(self.path):
+        candidates.append(child["pid"])
+    if len(candidates) == 1:
+      self._pid = candidates[0]
+    else:
+      logging.debug(
+          "Could not find unique browser process for webdriver: %s, got %s",
+          self, candidates)
+
+  def _set_driver_timeouts(self, run: Run) -> None:
+    """Adjust the global webdriver timeouts if the runner has custom timeout
+    unit values.
+    If timing.has_no_timeout each value is set to SAFE_MAX_TIMEOUT_TIMEDELTA."""
+    timing = run.timing
+    if not timing.timeout_unit:
+      return
+    if timing.has_no_timeout:
+      logging.info("Disabling webdriver timeouts")
+    else:
+      factor = timing.timeout_unit.total_seconds()
+      logging.info("Increasing webdriver timeouts by %fx", factor)
+    timeouts: Timeouts = self.driver.timeouts
+    if implicit_wait := getattr(timeouts, "implicit_wait", None):
+      timeouts.implicit_wait = timing.timeout_timedelta(
+          implicit_wait).total_seconds()
+    if script := getattr(timeouts, "script", None):
+      timeouts.script = timing.timeout_timedelta(script).total_seconds()
+    if page_load := getattr(timeouts, "page_load", None):
+      timeouts.page_load = timing.timeout_timedelta(page_load).total_seconds()
+    self.driver.timeouts = timeouts
 
   def _setup_window(self) -> None:
     # Force main window to foreground.

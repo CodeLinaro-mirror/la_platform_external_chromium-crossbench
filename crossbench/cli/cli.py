@@ -23,7 +23,7 @@ from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
-from crossbench.probes.all import GENERAL_PURPOSE_PROBES
+from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
 from crossbench.probes.internal import ErrorsProbe
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
@@ -43,23 +43,31 @@ argparse.ArgumentError = cli_helper.CrossBenchArgumentError
 
 
 class EnableDebuggingAction(argparse.Action):
-  """Custom action to set both --throw and -vvv"""
-
-  def __init__(
-      self,
-      option_strings,
-      dest,
-      const=None,
-      default=None,
-      required=False,
-      help=None,  # pylint: disable=redefined-builtin
-      metavar=None):
-    super().__init__(
-        option_strings=option_strings, dest=dest, nargs=0, help=help)
+  """Custom action to set both --throw and -vvv."""
 
   def __call__(self, parser, namespace, values, option_string=None):
     setattr(namespace, "throw", True)
     setattr(namespace, "verbosity", 3)
+
+
+class AppendDebuggerProbeAction(argparse.Action):
+  """Custom action to set multiple args when --gdb or --lldb are set:
+  - Add a DebuggerProbe config.
+  - Increase --timeout-unit to a large value to keep debug session alive for a
+    longer time.
+  """
+
+  def __call__(self, parser, namespace, values, option_string=None):
+    probes: List[cli_config.SingleProbeConfig] = getattr(
+        namespace, self.dest, [])
+    probe_settings = {"debugger": "gdb"}
+    if option_string and "lldb" in option_string:
+      probe_settings["debugger"] = "lldb"
+    probes.append(cli_config.SingleProbeConfig(DebuggerProbe, probe_settings))
+    if not getattr(namespace, "timeout_unit", None):
+      # Set a very large --timeout-unit to allow for very slow debugging without
+      # causing timeouts (for instance when waiting on a breakpoint).
+      setattr(namespace, "timeout_unit", dt.timedelta.max)
 
 
 class CrossBenchCLI:
@@ -103,9 +111,8 @@ class CrossBenchCLI:
         help="Disable colored output")
 
   def _add_verbosity_argument(self, parser: argparse.ArgumentParser) -> None:
-    debug_output_group = parser.add_argument_group(
-        "Verbosity / Debugging Options")
-    verbosity_group = debug_output_group.add_mutually_exclusive_group()
+    debug_group = parser.add_argument_group("Verbosity / Debugging Options")
+    verbosity_group = debug_group.add_mutually_exclusive_group()
     verbosity_group.add_argument(
         "--quiet",
         "-q",
@@ -122,15 +129,34 @@ class CrossBenchCLI:
         default=0,
         help=("Increase output verbosity. "
               "Repeat for more verbose output (0..2)."))
-    debug_output_group.add_argument(
+    debug_group.add_argument(
         "--throw",
         action="store_true",
         default=False,
         help=("Directly throw exceptions instead. "
               "Note that this prevents merging of probe results if only "
               "a subset of the runs failed."))
-    debug_output_group.add_argument(
-        "--debug", action=EnableDebuggingAction, help="Enable debug output")
+    debug_group.add_argument(
+        "--debug",
+        action=EnableDebuggingAction,
+        nargs=0,
+        help="Enable debug output, equivalent to --throw -vvv")
+
+    debugger_group = debug_group.add_mutually_exclusive_group()
+    debugger_group.add_argument(
+        "--gdb",
+        action=AppendDebuggerProbeAction,
+        nargs=0,
+        dest="probe",
+        help=("Launch chrome with gdb or lldb attached to all processes. "
+              " See 'describe probe debugger' for more options."))
+    debugger_group.add_argument(
+        "--lldb",
+        action=AppendDebuggerProbeAction,
+        nargs=0,
+        dest="probe",
+        help=("Launch chrome with lldb attached to all processes."
+              " See 'describe probe debugger' for more options."))
 
   def _setup_subparser(self) -> None:
     self.subparsers = self.parser.add_subparsers(
@@ -300,6 +326,14 @@ class CrossBenchCLI:
         default=dt.timedelta(seconds=1),
         help="Absolute duration of 1 time unit in the runner. "
         "Increase this for slow builds or machines. "
+        f"Format: {cli_helper.Duration.help()}")
+    runner_group.add_argument(
+        "--timeout-unit",
+        type=cli_helper.Duration.parse,
+        default=dt.timedelta(),
+        help="Absolute duration of 1 time unit for timeouts in the runner. "
+        "Unlike --time-unit, this does only apply for timeouts, "
+        "as opposed to say initial wait times or sleeps."
         f"Format: {cli_helper.Duration.help()}")
     runner_group.add_argument(
         "--run-timeout",
@@ -697,27 +731,21 @@ class CrossBenchCLI:
   def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:
     return args.benchmark_cls
 
-  def _get_env_validation_mode(
-      self,
-      args: argparse.Namespace,
-  ) -> ValidationMode:
+  def _get_env_validation_mode(self,
+                               args: argparse.Namespace) -> ValidationMode:
     return args.env_validation
 
-  def _get_env_config(
-      self,
-      args: argparse.Namespace,
-  ) -> HostEnvironmentConfig:
+  def _get_env_config(self, args: argparse.Namespace) -> HostEnvironmentConfig:
     if args.env:
       return args.env
     if args.env_config:
       return args.env_config
     return HostEnvironmentConfig()
 
-  def _get_timing(
-      self,
-      args: argparse.Namespace,
-  ) -> Timing:
-    return Timing(args.cool_down_time, args.time_unit, args.run_timeout)
+  def _get_timing(self, args: argparse.Namespace) -> Timing:
+    timeout_unit: dt.timedelta = args.timeout_unit or args.time_unit
+    return Timing(args.cool_down_time, args.time_unit, timeout_unit,
+                  args.run_timeout)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
                   env_config: HostEnvironmentConfig,

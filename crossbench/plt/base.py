@@ -327,14 +327,15 @@ class Platform(abc.ABC):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
-                env: Optional[Mapping[str, str]] = None) -> str:
+                env: Optional[Mapping[str, str]] = None,
+                check: bool = True) -> str:
     completed_process = self.sh(
         *args,
         shell=shell,
         capture_output=True,
         quiet=quiet,
         env=env,
-        check=True)
+        check=check)
     return completed_process.stdout.decode(encoding)
 
   def popen(self,
@@ -366,7 +367,7 @@ class Platform(abc.ABC):
          stdin=None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
-         check: bool = False) -> subprocess.CompletedProcess:
+         check: bool = True) -> subprocess.CompletedProcess:
     assert not self.is_remote, "Unsupported operation on remote platform"
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))

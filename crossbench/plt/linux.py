@@ -74,6 +74,8 @@ class LinuxPlatform(PosixPlatform):
 
   def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
     assert not self.is_remote, "Unsupported operation on remote platform"
+    if not app_or_bin.parts:
+      raise ValueError("Got empty path")
     if result_path := self.which(str(app_or_bin)):
       assert result_path.exists(), f"{result_path} does not exist."
       return result_path

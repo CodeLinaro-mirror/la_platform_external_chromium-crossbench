@@ -142,7 +142,8 @@ class Adb:
                   *args: Union[str, pathlib.Path],
                   quiet: bool = False,
                   encoding: str = "utf-8",
-                  use_serial_id: bool = True) -> str:
+                  use_serial_id: bool = True,
+                  check: bool = True) -> str:
     adb_cmd: List[Union[str, pathlib.Path]] = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
@@ -150,13 +151,14 @@ class Adb:
       adb_cmd = [self._adb_bin]
     adb_cmd.extend(args)
     return self._host_platform.sh_stdout(
-        *adb_cmd, quiet=quiet, encoding=encoding)
+        *adb_cmd, quiet=quiet, encoding=encoding, check=check)
 
   def shell_stdout(self,
                    *args: Union[str, pathlib.Path],
                    quiet: bool = False,
                    encoding: str = "utf-8",
-                   env: Optional[Mapping[str, str]] = None) -> str:
+                   env: Optional[Mapping[str, str]] = None,
+                   check: bool = True) -> str:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
     # -T: disable pty allocation
@@ -164,7 +166,8 @@ class Adb:
     # -x: disable remote exit codes and stdout/stderr separation
     if env:
       raise ValueError("ADB shell only supports an empty env for now.")
-    return self._adb_stdout("shell", *args, quiet=quiet, encoding=encoding)
+    return self._adb_stdout(
+        "shell", *args, quiet=quiet, encoding=encoding, check=check)
 
   def shell(self,
             *args: Union[str, pathlib.Path],
@@ -433,10 +436,12 @@ class AndroidAdbPlatform(PosixPlatform):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
-                env: Optional[Mapping[str, str]] = None) -> str:
+                env: Optional[Mapping[str, str]] = None,
+                check: bool = True) -> str:
     # The shell option is not supported on adb.
     del shell
-    return self.adb.shell_stdout(*args, env=env, quiet=quiet, encoding=encoding)
+    return self.adb.shell_stdout(
+        *args, env=env, quiet=quiet, encoding=encoding, check=check)
 
   def rsync(self, from_path: pathlib.Path,
             to_path: pathlib.Path) -> pathlib.Path:
