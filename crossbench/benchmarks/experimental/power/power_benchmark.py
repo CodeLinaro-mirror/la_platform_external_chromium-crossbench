@@ -7,7 +7,9 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
+import pathlib
 import time
+from threading import Timer
 from typing import TYPE_CHECKING, Sequence, Tuple
 
 from selenium import webdriver
@@ -27,6 +29,7 @@ if TYPE_CHECKING:
 STORY_LIST = [
   "YoutubeFullscreen",
   "ZoomMeeting",
+  "Browsing",
 ]
 
 class PowerBenchmarkStory(Story, metaclass=abc.ABCMeta):
@@ -72,6 +75,44 @@ class PowerBenchmarkStoryFilter(StoryFilter[PowerBenchmarkStory]):
     for story_name in self.story_names:
       stories.append(globals()[story_name + "Story"](duration))
     return stories
+
+
+class RepeatTimer(Timer):
+  def run(self):
+    while not self.finished.wait(self.interval):
+      self.function(*self.args, **self.kwargs)
+
+
+class BrowsingStory(PowerBenchmarkStory):
+
+  def __init__(self, duration: dt.timedelta = dt.timedelta(15 * 60)):
+    super().__init__("Browsing", duration)
+    self._url_file = pathlib.Path(__file__).parent.absolute() / "browsing_urls.txt"
+    self._urls = self.get_urls()
+    self._idx = 0
+
+  def get_urls(self) -> Sequence[str]:
+    urls = []
+    with self._url_file.open(encoding="utf-8") as f:
+      for line in f:
+        url = line.strip()
+        if url:
+            urls.append(url)
+    return urls
+
+  def browser_url(self) -> None:
+    url = self._urls[self._idx]
+    self._driver.get(url)
+    self._idx += 1
+    self._idx %= len(self._urls)
+
+  def run(self, run: Run) -> None:
+    self.get_driver(run)
+
+    timer = RepeatTimer(15, self.browser_url)
+    timer.start()
+    time.sleep(self.duration.total_seconds())
+    timer.cancel()
 
 
 class ZoomMeetingStory(PowerBenchmarkStory):

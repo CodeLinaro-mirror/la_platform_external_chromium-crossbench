@@ -121,7 +121,7 @@ class GetAction(Action):
     kwargs = super().kwargs_from_dict(value)
     kwargs["url"] = cli_helper.parse_url_str(
         cls.pop_required_input(value, "url"))
-    if duration := value.pop("duration-state", None):
+    if duration := value.pop("duration", None):
       kwargs["duration"] = cli_helper.Duration.parse_zero(duration)
     if ready_state := value.pop("ready-state", None):
       kwargs["ready_state"] = ReadyState.parse(ready_state)
