@@ -59,6 +59,8 @@ def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
   return list(results_dir.glob("**/*-v8.log"))
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   # - Speedometer 2.0
   # - Speedometer --iterations flag
@@ -76,6 +78,8 @@ def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
            f"--cache-dir={cache_dir}", "--probe=tracing:{preset:'minimal'}")
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_speedometer_2_1(output_dir, cache_dir) -> None:
   # - Speedometer 2.1
   # - Story filtering with regexp
@@ -119,6 +123,8 @@ def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
   assert not v8_log_files
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
                                        driver_path) -> None:
   # - Speedometer 3
@@ -145,6 +151,8 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
   assert v8_log_files == []
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_jetstream_2_0(output_dir, cache_dir) -> None:
   # - jetstream 2.0
   # - merge / run separate stories
@@ -168,6 +176,8 @@ def test_jetstream_2_0(output_dir, cache_dir) -> None:
   assert len(browser_dirs) == 1
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   # - jetstream 2.1
   # - custom --time-unit
@@ -194,6 +204,8 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   assert len(v8_log_files) > 1
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_loading(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - custom cooldown time
@@ -213,6 +225,8 @@ def test_loading(output_dir, cache_dir) -> None:
   assert len(browser_dirs) == 1
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
   # - loading with config file
   page_config = root_dir / "config" / "page.config.example.hjson"
@@ -224,6 +238,8 @@ def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
            "--probe=performance.entries")
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_loading_playback_urls(output_dir, cache_dir) -> None:
   # - loading using url
   # - combined pages and --playback controller
@@ -237,6 +253,8 @@ def test_loading_playback_urls(output_dir, cache_dir) -> None:
            "--probe=performance.entries")
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_loading_playback(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
@@ -250,6 +268,8 @@ def test_loading_playback(output_dir, cache_dir) -> None:
            "--window-position=150,150")
 
 
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 def test_loading_playback_firefox(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - --playback controller

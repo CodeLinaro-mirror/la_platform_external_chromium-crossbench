@@ -112,7 +112,7 @@ class TestChromeDownloader:
 
   def test_download_specific_version(self, output_dir, archive_dir) -> None:
     assert not list(output_dir.iterdir())
-    version_str = "111.0.5563.110"
+    version_str = "111.0.5563.146"
     self._load_and_check_version(output_dir, archive_dir,
                                  f"chrome-{version_str}", version_str)
 
