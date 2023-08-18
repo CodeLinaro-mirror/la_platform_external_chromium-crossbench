@@ -111,8 +111,7 @@ class Platform(abc.ABC):
 
   @property
   def machine(self) -> MachineArch:
-    assert not self.is_remote, "Unsupported operation on remote platform"
-    raw = py_platform.machine()
+    raw = self._raw_machine_arch()
     if raw in ("i386", "i686", "x86", "ia32"):
       return MachineArch.IA32
     if raw in ("x86_64", "AMD64"):
@@ -122,6 +121,10 @@ class Platform(abc.ABC):
     if raw in ("arm"):
       return MachineArch.ARM_32
     raise NotImplementedError(f"Unsupported machine type: {raw}")
+
+  def _raw_machine_arch(self) -> str:
+    assert not self.is_remote, "Unsupported operation on remote platform"
+    return py_platform.machine()
 
   @property
   def is_ia32(self) -> bool:
@@ -206,8 +209,9 @@ class Platform(abc.ABC):
     time.sleep(seconds)
 
   def which(self, binary_name: str) -> Optional[pathlib.Path]:
+    if not binary_name:
+      raise ValueError("Got empty path")
     assert not self.is_remote, "Unsupported operation on remote platform"
-    # TODO(cbruni): support remote platforms
     result = shutil.which(binary_name)
     if not result:
       return None
@@ -468,7 +472,7 @@ class Platform(abc.ABC):
     assert not self.is_remote, "Unsupported operation on remote platform"
     return {
         "version": py_platform.python_version(),
-        "bits": "64" if sys.maxsize > 2**32 else "32",
+        "bits": 64 if sys.maxsize > 2**32 else 32,
     }
 
   def download_to(self, url: str, path: pathlib.Path) -> pathlib.Path:

@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import logging
 
+import logging
 import os
 import pathlib
 from typing import Any, Dict, Optional
@@ -65,6 +65,12 @@ class LinuxPlatform(PosixPlatform):
   def has_display(self) -> bool:
     return "DISPLAY" in os.environ
 
+  @property
+  def is_battery_powered(self) -> bool:
+    if not self.is_remote:
+      return super().is_battery_powered
+    return self.sh("on_ac_power", check=False).returncode == 1
+
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
     for info_bin in ("lscpu", "inxi"):
@@ -73,15 +79,14 @@ class LinuxPlatform(PosixPlatform):
     return details
 
   def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    assert not self.is_remote, "Unsupported operation on remote platform"
     if not app_or_bin.parts:
       raise ValueError("Got empty path")
     if result_path := self.which(str(app_or_bin)):
-      assert result_path.exists(), f"{result_path} does not exist."
+      assert self.exists(result_path), f"{result_path} does not exist."
       return result_path
     for path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = pathlib.Path(path) / app_or_bin
-      if result_path.exists():
+      if self.exists(result_path):
         return result_path
     return None

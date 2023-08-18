@@ -54,50 +54,58 @@ class MacOSPlatform(PosixPlatform):
       self._cpu = f"{brand} {cores} cores"
     return self._cpu
 
+  @property
+  def is_battery_powered(self) -> bool:
+    if not self.is_remote:
+      return super().is_battery_powered
+    return "Battery Power" in self.sh_stdout("pmset", "-g", "batt")
+
   def _find_app_binary_path(self, app_path: pathlib.Path) -> pathlib.Path:
     assert app_path.suffix == ".app"
     bin_path = app_path / "Contents" / "MacOS" / app_path.stem
-    if bin_path.exists():
+    if self.exists(bin_path):
       return bin_path
+    assert not self.is_remote, "Unsupported operation on remote platform"
     binaries = [path for path in bin_path.parent.iterdir() if path.is_file()]
     if len(binaries) == 1:
       return binaries[0]
     # Fallback to read plist
     plist_path = app_path / "Contents" / "Info.plist"
-    assert plist_path.is_file(), (
+    assert self.is_file(plist_path), (
         f"Could not find Info.plist in app bundle: {app_path}")
     with plist_path.open("rb") as f:
       plist = plistlib.load(f)
     bin_path = (
         app_path / "Contents" / "MacOS" /
         plist.get("CFBundleExecutable", app_path.stem))
-    if bin_path.is_file():
+    if self.is_file(bin_path):
       return bin_path
     raise ValueError(f"Invalid number of binaries candidates found: {binaries}")
 
   def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    assert not self.is_remote, "Unsupported operation on remote platform"
     if not app_or_bin.parts:
       raise ValueError("Got empty path")
     if result_path := self.which(str(app_or_bin)):
-      assert result_path.exists(), f"{result_path} does not exist."
+      assert self.exists(result_path), f"{result_path} does not exist."
       return result_path
     is_app = app_or_bin.suffix == ".app"
     for search_path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = pathlib.Path(search_path) / app_or_bin
       if not is_app:
-        if result_path.is_file():
+        if self.is_file(result_path):
           return result_path
         continue
-      if not result_path.is_dir():
+      if not self.is_dir(result_path):
         continue
       result_path = self._find_app_binary_path(result_path)
-      if result_path.exists():
+      if self.exists(result_path):
         return result_path
     return None
 
   def search_app(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
+    if not app_or_bin.parts:
+      raise ValueError("Got empty path")
     assert not self.is_remote, "Unsupported operation on remote platform"
     if app_or_bin.suffix != ".app":
       raise ValueError("Expected app name with '.app' suffix, "
@@ -167,7 +175,8 @@ class MacOSPlatform(PosixPlatform):
         if line == "CPU_Speed_Limit":
           return int(lines[index + 2]) / 100.0
     except SubprocessError:
-      logging.debug("Could not get relative PCU speed: %s", tb.format_exc())
+      pass
+    logging.debug("Could not get relative CPU speed: %s", tb.format_exc())
     return 1
 
   def system_details(self) -> Dict[str, Any]:
