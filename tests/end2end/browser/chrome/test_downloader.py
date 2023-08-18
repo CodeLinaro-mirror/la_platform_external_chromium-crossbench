@@ -16,7 +16,7 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
 from crossbench import plt
-from tests import test_helper
+from tests import run_helper
 
 
 @pytest.mark.skipif(
@@ -154,4 +154,4 @@ class TestChromeDownloader:
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

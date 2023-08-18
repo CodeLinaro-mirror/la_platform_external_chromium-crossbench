@@ -8,7 +8,7 @@ import unittest
 from crossbench import compat, helper
 from crossbench.probes import Probe
 from crossbench.probes.probe import ProbeConfigParser
-from tests import test_helper
+from tests import run_helper
 
 
 class MockProbe(Probe):
@@ -229,4 +229,4 @@ class ProbeConfigTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

@@ -8,7 +8,7 @@ from crossbench.runner.timing import SAFE_MAX_TIMEOUT_TIMEDELTA, Timing
 
 import datetime as dt
 
-from tests import test_helper
+from tests import run_helper
 
 
 class TimingTestCase(unittest.TestCase):
@@ -123,4 +123,4 @@ class TimingTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

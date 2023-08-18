@@ -21,7 +21,7 @@ from crossbench.cli.cli_config import (BrowserConfig, BrowserDriverType,
                                        ProbeConfigError)
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
-from tests import test_helper
+from tests import run_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase, MockCLI
 
@@ -958,4 +958,4 @@ class CliTestCase(BaseCrossbenchTestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

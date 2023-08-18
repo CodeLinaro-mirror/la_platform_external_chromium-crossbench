@@ -171,7 +171,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_load_path_full(self):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
-      json.dump(self.TEST_DICT, f)
+      json.dump(dict(self.TEST_DICT), f)
     config = CustomConfigObject.load_path(path)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
@@ -206,7 +206,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     path = pathlib.Path("nested.json")
     self.assertFalse(path.exists())
     with path.open("w", encoding="utf-8") as f:
-      json.dump(self.TEST_DICT_NESTED, f)
+      json.dump(dict(self.TEST_DICT_NESTED), f)
     test_dict = dict(self.TEST_DICT)
     test_dict["nested"] = str(path)
     config = CustomConfigObject.load_dict(test_dict)

@@ -9,7 +9,7 @@ import pathlib
 import unittest
 
 from crossbench import plt
-from tests import test_helper
+from tests import run_helper
 
 
 class PlatformTestCase(unittest.TestCase):
@@ -219,4 +219,4 @@ class MacOSPlatformHelperTestCase(PosixPlatformUnittest):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

@@ -14,7 +14,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
-from tests import test_helper
+from tests import run_helper
 
 
 class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
@@ -148,4 +148,4 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

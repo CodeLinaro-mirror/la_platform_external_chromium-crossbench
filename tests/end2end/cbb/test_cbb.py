@@ -11,7 +11,7 @@ from crossbench.benchmarks import all as benchmarks
 from crossbench.benchmarks.benchmark import PressBenchmark
 from crossbench.browsers.chrome import webdriver as chrome_webdriver
 from crossbench.cbb import cbb_adapter
-from tests import test_helper
+from tests import run_helper
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
@@ -82,4 +82,4 @@ def test_jetstream_21(output_dir, webdriver):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

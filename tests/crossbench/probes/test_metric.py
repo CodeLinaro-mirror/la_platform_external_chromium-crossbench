@@ -7,7 +7,7 @@ import pathlib
 import unittest
 
 from crossbench.probes import metric
-from tests import test_helper
+from tests import run_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -269,4 +269,4 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

@@ -15,7 +15,7 @@ import pytest
 import crossbench.browsers.all as browsers
 from crossbench.cli import CrossBenchCLI
 from crossbench import plt
-from tests import test_helper
+from tests import run_helper
 
 
 class SysExitException(Exception):
@@ -291,4 +291,4 @@ def test_loading_playback_firefox(output_dir, cache_dir) -> None:
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

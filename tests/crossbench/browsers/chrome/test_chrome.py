@@ -5,7 +5,7 @@
 import argparse
 
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
-from tests import test_helper
+from tests import run_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
@@ -47,4 +47,4 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

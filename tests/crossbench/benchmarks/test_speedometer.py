@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from tests import test_helper
+from tests import run_helper
 
 from crossbench.benchmarks.speedometer import speedometer_2_0
 from crossbench.benchmarks.speedometer import speedometer_2_1
@@ -74,4 +74,4 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)

@@ -10,7 +10,7 @@ import hjson
 
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationError, ValidationMode)
-from tests import test_helper
+from tests import run_helper
 
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -327,4 +327,4 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
 
 if __name__ == "__main__":
-  test_helper.run_pytest(__file__)
+  run_helper.run_pytest(__file__)
