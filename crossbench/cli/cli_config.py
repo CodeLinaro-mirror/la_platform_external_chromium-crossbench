@@ -132,6 +132,8 @@ class DriverConfig(ConfigObject):
   settings: Optional[frozendict] = None
 
   def __post_init__(self):
+    if not self.type:
+      raise ValueError(f"{type(self).__name__}.type cannot be None.")
     try:
       hash(self.settings)
     except ValueError as e:
@@ -216,7 +218,10 @@ class DriverConfig(ConfigObject):
   @classmethod
   def config_parser(cls) -> ConfigParser[DriverConfig]:
     parser = ConfigParser("DriverConfig parser", cls)
-    parser.add_argument("type", type=BrowserDriverType.parse)
+    parser.add_argument(
+        "type",
+        type=BrowserDriverType.parse,
+        default=BrowserDriverType.default())
     parser.add_argument(
         "settings",
         type=frozendict,
@@ -238,6 +243,12 @@ SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 class BrowserConfig(ConfigObject):
   browser: Union[pathlib.Path, str]
   driver: DriverConfig = DriverConfig.default()
+
+  def __post_init__(self) -> None:
+    if not self.browser:
+      raise ValueError(f"{type(self).__name__}.browser cannot be None.")
+    if not self.driver:
+      raise ValueError(f"{type(self).__name__}.driver cannot be None.")
 
   @classmethod
   def default(cls) -> BrowserConfig:
@@ -373,8 +384,10 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def config_parse(cls) -> ConfigParser[BrowserConfig]:
     parser = ConfigParser("BrowserConfig parser", cls)
-    parser.add_argument("browser", type=cls._parse_path_or_identifier)
-    parser.add_argument("driver", type=DriverConfig.parse)
+    parser.add_argument(
+        "browser", type=cls._parse_path_or_identifier, required=True)
+    parser.add_argument(
+        "driver", type=DriverConfig.parse, default=DriverConfig.default())
     return parser
 
   @property
@@ -449,8 +462,9 @@ class BrowserVariantsConfig:
     if len(browser_list) != len(set(browser_list)):
       raise argparse.ArgumentTypeError(
           f"Got duplicate --browser arguments: {browser_list}")
-    for browser in browser_list:
-      self._append_browser(args, browser)
+    for i, browser in enumerate(browser_list):
+      with exception.annotate(f"Append browser {i}"):
+        self._append_browser(args, browser)
     self._verify_browser_flags(args)
     self._ensure_unique_browser_names()
 
@@ -772,6 +786,12 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
 class SingleProbeConfig(ConfigObject):
   cls: Type[Probe]
   config: Dict[str, Any] = dataclasses.field(default_factory=dict)
+
+  def __post_init__(self) -> None:
+    if not self.cls:
+      raise ValueError(f"{type(self).__name__}.cls cannot be None.")
+    if self.config is None:
+      raise ValueError(f"{type(self).__name__}.config cannot be None.")
 
   @classmethod
   def loads(cls, value: str) -> SingleProbeConfig:

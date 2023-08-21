@@ -9,6 +9,7 @@ import argparse
 import collections
 import enum
 import inspect
+import logging
 import pathlib
 import re
 import textwrap
@@ -287,7 +288,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
   def kwargs_from_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
     with exception.annotate_argparsing(
-        f"Parsing {type(self).__name__} config dict:"):
+        f"Parsing {self._cls.__name__} config dict:"):
       kwargs: Dict[str, Any] = {}
       for arg_parser in self._args.values():
         with exception.annotate(f"Parsing ...['{arg_parser.name}']:"):
@@ -295,7 +296,10 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       return kwargs
 
   def parse(self, config_data: Dict[str, Any]) -> ConfigResultObjectT:
-    return self.cls(**self.kwargs_from_config(config_data))
+    kwargs = self.kwargs_from_config(config_data)
+    if config_data:
+      logging.debug("Got unused properties: %s", config_data.keys())
+    return self.cls(**kwargs)
 
   @property
   def cls(self) -> Type:

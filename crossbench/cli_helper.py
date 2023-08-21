@@ -331,7 +331,7 @@ def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
   """
   try:
     yield
-  except (ValueError, argparse.ArgumentTypeError) as e:
+  except Exception as e:
     raise LateArgumentError(flag, str(e)) from e
 
 
