@@ -70,6 +70,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def python_details(self) -> JsonDict:
     if not self.is_remote:
       return super().python_details()
+    if not self.which("python3"):
+      return {"version": "unknown", "bits": 64}
     return {
         "version": self.sh_stdout("python3", "--version").strip(),
         "bits": int(self.sh_stdout("python3", "-c", self._PY_VERSION).strip())

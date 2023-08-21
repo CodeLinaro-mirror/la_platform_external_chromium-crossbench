@@ -69,7 +69,9 @@ class LinuxPlatform(PosixPlatform):
   def is_battery_powered(self) -> bool:
     if not self.is_remote:
       return super().is_battery_powered
-    return self.sh("on_ac_power", check=False).returncode == 1
+    if self.which("on_ac_power"):
+      return self.sh("on_ac_power", check=False).returncode == 1
+    return False
 
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
