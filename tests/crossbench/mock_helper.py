@@ -90,7 +90,7 @@ class MockPlatform(ActivePlatformClass):
     return 0.1
 
   def cpu_details(self) -> Dict[str, Any]:
-    return {"physical cores": 2, "logical cores": 4}
+    return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
   def system_details(self):
     return {"CPU": "20-core 3.1 GHz"}

@@ -438,6 +438,8 @@ class Platform(abc.ABC):
             psutil.cpu_percent(),
         "system load":
             psutil.getloadavg(),
+        "info":
+            self.cpu,
     }
     try:
       cpu_freq = psutil.cpu_freq()

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import pathlib
+import re
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 from crossbench.types import JsonDict
@@ -37,10 +38,22 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super()._raw_machine_arch()
     return self.sh_stdout("arch").strip()
 
+  _GET_CPONF_PROC_RE = re.compile(r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
+
   def cpu_details(self) -> Dict[str, Any]:
     if not self.is_remote:
       return super().cpu_details()
-    return {"physical cores": int(self.sh_stdout("nproc"))}
+    cores = -1
+    if self.which("nproc"):
+      cores = int(self.sh_stdout("nproc"))
+    elif self.which("getconf"):
+      result = self._GET_CPONF_PROC_RE.search(self.sh_stdout("getconf", "-a"))
+      if result:
+        cores = int(result["cores"])
+    return {
+        "physical cores": cores,
+        "info": self.cpu,
+    }
 
   def os_details(self) -> JsonDict:
     if not self.is_remote:
