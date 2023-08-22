@@ -336,6 +336,18 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     delegate heavy computation to the "SetUp" method.
     """
 
+  def start_story_run(self, run: Run) -> None:
+    """
+    Called before running a Story's core workload (Story.run)
+    and after running Story.setup.
+    """
+
+  def stop_story_run(self, run: Run) -> None:
+    """
+    Called after running a Story's core workload (Story.run) and before running
+    Story.tear_down.
+    """
+
   @abc.abstractmethod
   def stop(self, run: Run) -> None:
     """

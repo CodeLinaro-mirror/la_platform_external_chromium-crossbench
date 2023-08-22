@@ -120,7 +120,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
   def substory_duration(self) -> dt.timedelta:
     return self.iterations * dt.timedelta(seconds=0.4)
 
-  def run(self, run: Run) -> None:
+  def setup(self, run: Run) -> None:
     updated_url = helper.update_url_query(
         self.url, {"iterationCount": str(self.iterations)})
 
@@ -130,7 +130,6 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
       self._setup_substories(actions)
       self._setup_benchmark_client(actions)
       actions.wait(0.5)
-    self._run_stories(run)
 
   def _setup_substories(self, actions: Actions) -> None:
     if self._substories == self.SUBSTORIES:
@@ -161,7 +160,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
           window.testDone = true;
       };""")
 
-  def _run_stories(self, run: Run) -> None:
+  def run(self, run: Run) -> None:
     with run.actions("Running") as actions:
       actions.js("""
           if (window.startTest) {

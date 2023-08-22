@@ -397,12 +397,31 @@ class Run:
       try:
         with self.measure("run"), helper.Spinner():
           if not is_dry_run:
+            self._run_story_setup()
             self._story.run(self)
+            self._run_story_tear_down()
       except TimeoutError as e:
         # Handle TimeoutError earlier since they might be caused by
         # throttled down non-foreground browser.
         self._exceptions.append(e)
       self.environment.check_browser_focused(self.browser)
+
+  def _run_story_setup(self) -> None:
+    with self.measure("story-setup"):
+      self._story.setup(self)
+    with self.measure("probes-start_story_run"):
+      for probe_scope in self._probe_scopes:
+        with self.exception_handler(
+            f"Probe {probe_scope.name} start_story_run"):
+          probe_scope.start_story_run(self)
+
+  def _run_story_tear_down(self) -> None:
+    with self.measure("probes-stop_story_run"):
+      for probe_scope in self._probe_scopes:
+        with self.exception_handler(f"Probe {probe_scope.name} stop_story_run"):
+          probe_scope.stop_story_run(self)
+    with self.measure("story-tear-down"):
+      self._story.tear_down(self)
 
   def _advance_state(self, expected: RunState, next_state: RunState) -> None:
     assert self._state == expected, (

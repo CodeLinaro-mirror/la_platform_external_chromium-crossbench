@@ -167,7 +167,7 @@ class MotionMark12Story(PressBenchmarkStory):
   def substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=35)
 
-  def run(self, run: Run) -> None:
+  def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
       actions.show_url(self._url)
       actions.wait_js_condition(
@@ -194,6 +194,8 @@ class MotionMark12Story(PressBenchmarkStory):
           arguments=[self._substories])
       assert num_enabled > 0, "No tests were enabled"
       actions.wait(0.1)
+
+  def run(self, run: Run) -> None:
     with run.actions("Running") as actions:
       actions.js("window.benchmarkController.startBenchmark()")
       actions.wait(self.fast_duration)

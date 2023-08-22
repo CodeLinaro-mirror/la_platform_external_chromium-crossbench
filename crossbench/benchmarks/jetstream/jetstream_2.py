@@ -195,7 +195,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
   def substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=2)
 
-  def run(self, run: Run) -> None:
+  def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
       actions.show_url(self._url)
       if self._substories != self.SUBSTORIES:
@@ -213,6 +213,8 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
           """
         return document.querySelectorAll("#results>.benchmark").length > 0;
       """, 1, self.duration + dt.timedelta(seconds=30))
+
+  def run(self, run: Run) -> None:
     with run.actions("Running") as actions:
       actions.js("JetStream.start()")
       actions.wait(self.fast_duration)

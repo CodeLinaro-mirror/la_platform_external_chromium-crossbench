@@ -42,9 +42,21 @@ class Story(abc.ABC):
   def details_json(self) -> JsonDict:
     return {"name": self.name, "duration": self.duration.total_seconds()}
 
+  def setup(self, run: Run) -> None:
+    """Setup work for a story that is not part of the main workload should
+    be put in this method. Probes can skip measuring this section.
+    i.e selecting substories to run.
+    """
+
   @abc.abstractmethod
   def run(self, run: Run) -> None:
-    pass
+    """The main workload of a story that is measured by all Probes.
+    """
+
+  def tear_down(self, run: Run) -> None:
+    """Cleanup work for a story that is not part of the main workload should
+    be put in this method. Probes can skip measuring this section.
+    """
 
   def __str__(self) -> str:
     return f"Story(name={self.name})"
