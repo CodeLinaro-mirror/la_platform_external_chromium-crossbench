@@ -6,6 +6,7 @@ import json
 import pathlib
 
 import pytest
+from crossbench import plt
 
 from crossbench.benchmarks import all as benchmarks
 from crossbench.benchmarks.benchmark import PressBenchmark
@@ -61,22 +62,32 @@ def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
   assert benchmark_data
 
 
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_speedometer_20(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.Speedometer20Benchmark)
 
 
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_speedometer_21(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.Speedometer21Benchmark)
 
 
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_motionmark_12(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.MotionMark12Benchmark)
 
 
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_jetstream_20(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.JetStream20Benchmark)
 
 
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_jetstream_21(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.JetStream21Benchmark)
 

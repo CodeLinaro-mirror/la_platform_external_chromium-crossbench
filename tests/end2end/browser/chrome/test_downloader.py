@@ -3,26 +3,40 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import logging
 
 import pathlib
 import shutil
+import unittest
 from typing import Union
 
 import pytest
 
-from crossbench import compat
-from crossbench.browsers.chrome.webdriver import ChromeWebDriver
+from crossbench import compat, plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
-from crossbench import plt
 from tests import run_helper
 
 
 @pytest.mark.skipif(
-    plt.PLATFORM.which("gsutil") is None,
+    plt.PLATFORM.which("gsutil") is None and plt.PLATFORM.is_macos,
     reason="Missing required 'gsutil', skipping test.")
-class TestChromeDownloader:
+class TestChromeDownloader(unittest.TestCase):
+
+  def setUp(self) -> None:
+    super().setUp()
+    try:
+      plt.PLATFORM.sh_stdout(
+          "gsutil", "ls",
+          "gs://chrome-signed/desktop-5c0tCh/111.0.5563.19/linux64")
+    except plt.SubprocessError as e:
+      logging.info("Could not access chrome bucket with gsutil: %s", e)
+      if "does not have storage.objects.list access" in str(e):
+        pytest.skip(
+            "gsutil likely has no access to gs://chrome-signed/desktop-5c0tCh")
+      raise e
 
   def _load_and_check_version(self,
                               output_dir: pathlib.Path,

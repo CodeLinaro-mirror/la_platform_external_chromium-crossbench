@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import sys
 import tempfile
 from typing import Optional
 
@@ -29,6 +30,13 @@ def pytest_addoption(parser):
       "--driverpath",
       default=None,
       type=cli_helper.parse_path)
+
+
+def pytest_xdist_auto_num_workers(config):
+  del config
+  if "linux" in sys.platform:
+    return 2
+  return 4
 
 
 @pytest.fixture(scope="session", autouse=True)

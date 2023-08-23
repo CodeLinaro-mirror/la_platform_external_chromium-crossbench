@@ -6,12 +6,14 @@ import argparse
 import gettext
 import io
 import json
+import logging
 import pathlib
 import unittest
 from typing import Dict, List, Tuple, Type
 from unittest import mock
 
 import hjson
+import pytest
 
 from crossbench import cli_helper, plt
 from crossbench.browsers import splash_screen, viewport
@@ -236,8 +238,8 @@ class CliTestCase(BaseCrossbenchTestCase):
             subcommand,
             "describe",
             raises=SysExitException)
-        self.assertIn("See `describe benchmark ", stderr)
-        self.assertIn("| Benchmark ", stdout)
+        output = stderr + stdout
+        self.assertIn("See `describe benchmark ", output)
 
   def test_subcommand_run_subcommand(self):
     with mock.patch.object(

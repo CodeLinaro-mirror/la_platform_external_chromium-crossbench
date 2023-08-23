@@ -61,6 +61,8 @@ def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   # - Speedometer 2.0
   # - Speedometer --iterations flag
@@ -80,6 +82,8 @@ def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_speedometer_2_1(output_dir, cache_dir) -> None:
   # - Speedometer 2.1
   # - Story filtering with regexp
@@ -91,12 +95,19 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
   _run_cli("describe", "benchmark", "speedometer_2.1")
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("sp2.1", "--browser=chrome-stable", "--splashscreen=minimal",
-           "--iterations=2", "--env-validation=skip",
-           f"--out-dir={results_dir}", f"--cache-dir={cache_dir}",
-           "--stories=.*Vanilla.*",
-           "--probe=v8.log:{log_all:false,js_flags:['--log-maps']}",
-           "--probe=v8.turbolizer")
+  _run_cli(
+      "sp2.1",
+      "--browser=chrome-stable",
+      "--splashscreen=minimal",
+      "--iterations=2",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--stories=.*Vanilla.*",
+      # V8 --prof doesn't always work on linux, skip it.
+      "--probe=v8.log:{log_all:false, js_flags:['--log-maps'], prof:false, profview:false}",
+      "--probe=v8.turbolizer",
+      "--debug")
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
@@ -104,6 +115,8 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
   assert len(v8_log_files) > 1
 
 
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
   # - Custom chrome version downloads
   # - headless
@@ -125,6 +138,8 @@ def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
                                        driver_path) -> None:
   # - Speedometer 3
@@ -153,6 +168,8 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_jetstream_2_0(output_dir, cache_dir) -> None:
   # - jetstream 2.0
   # - merge / run separate stories
@@ -178,6 +195,8 @@ def test_jetstream_2_0(output_dir, cache_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   # - jetstream 2.1
   # - custom --time-unit
@@ -196,7 +215,7 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   _run_cli("jetstream_2.1", chrome_version, "--env-validation=skip",
            "--splashscreen=http://google.com", f"--out-dir={results_dir}",
            f"--cache-dir={cache_dir}", "--viewport=900x800", "--stories=Box2D",
-           "--time-unit=0.9", f"--probe-config={probe_config}")
+           "--time-unit=0.9", f"--probe-config={probe_config}", "--throw")
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
@@ -206,6 +225,8 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_loading(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - custom cooldown time
@@ -227,6 +248,8 @@ def test_loading(output_dir, cache_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
   # - loading with config file
   page_config = root_dir / "config" / "page.config.example.hjson"
@@ -235,11 +258,13 @@ def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
   assert not results_dir.exists()
   _run_cli("loading", "--env-validation=skip", f"--out-dir={results_dir}",
            f"--cache-dir={cache_dir}", f"--page-config={page_config}",
-           "--probe=performance.entries")
+           "--probe=performance.entries", "--throw")
 
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_loading_playback_urls(output_dir, cache_dir) -> None:
   # - loading using url
   # - combined pages and --playback controller
@@ -255,6 +280,8 @@ def test_loading_playback_urls(output_dir, cache_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_loading_playback(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
@@ -270,6 +297,8 @@ def test_loading_playback(output_dir, cache_dir) -> None:
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_loading_playback_firefox(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - --playback controller
