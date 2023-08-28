@@ -22,7 +22,9 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.runner.run import Run
 
+# TODO: go over these again and clean the categories.
 MINIMAL_CONFIG = {
+    "blink.user_timing",
     "toplevel",
     "v8",
     "v8.execute",
@@ -45,9 +47,9 @@ DEVTOOLS_TRACE_CONFIG = {
     "toplevel",
     "v8.execute",
 }
-# TODO: go over these again and clean the categories.
 V8_TRACE_CONFIG = {
     "blink",
+    "blink.user_timing",
     "browser",
     "cc",
     "disabled-by-default-ipc.flow",

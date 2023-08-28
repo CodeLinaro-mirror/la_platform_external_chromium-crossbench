@@ -108,7 +108,7 @@ class Runner:
         "-o",
         type=pathlib.Path,
         help=("Results will be stored in this directory. "
-              "Defaults to result/${DATE}_${LABEL}"))
+              "Defaults to results/${DATE}_${LABEL}"))
     out_dir_xor_group.add_argument(
         "--label",
         "--name",
@@ -125,8 +125,8 @@ class Runner:
     else:
       label = args.label
       assert label
-      cli_dir = pathlib.Path(__file__).parent.parent
-      out_dir = cls.get_out_dir(cli_dir, label)
+      root_dir = pathlib.Path(__file__).parents[2]
+      out_dir = cls.get_out_dir(root_dir, label)
     return {
         "out_dir": out_dir,
         "browsers": args.browser,
