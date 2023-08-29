@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, Sequence, Tuple
 
 from selenium import webdriver
 from selenium.common.exceptions import (ElementNotInteractableException,
-                                        TimeoutException)
+                                        TimeoutException,
+                                        WebDriverException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
@@ -102,9 +103,12 @@ class BrowsingStory(PowerBenchmarkStory):
 
   def browser_url(self) -> None:
     url = self._urls[self._idx]
-    self._driver.get(url)
     self._idx += 1
     self._idx %= len(self._urls)
+    try:
+      self._driver.get(url)
+    except WebDriverException as e:
+      logging.info("Error while loading {}, error: {}".format(url, e))
 
   def run(self, run: Run) -> None:
     self.get_driver(run)
@@ -140,12 +144,13 @@ class ZoomMeetingStory(PowerBenchmarkStory):
 
       # Input name
       name = WebDriverWait(self._driver, 10).until(
-          expected_conditions.element_to_be_clickable((By.ID, "inputname")))
+          expected_conditions.element_to_be_clickable((By.ID, "input-for-name")))
       name.send_keys("CBB Zoom Test")
 
       # Click the "Join" button
       btn = WebDriverWait(self._driver, 10).until(
-          expected_conditions.element_to_be_clickable((By.ID, "joinBtn")))
+          expected_conditions.element_to_be_clickable(
+            (By.XPATH, "//*[@id='root']/div/div[1]/div/div[2]/button")))
       btn.click()
 
       # Wait for 10 seconds to make sure to finish joining the meeting
@@ -160,7 +165,6 @@ class ZoomMeetingStory(PowerBenchmarkStory):
         btn.click()
       except (TimeoutException, ElementNotInteractableException):
         logging.info("Join audio by computer button is not present.")
-        pass
 
       # Start a new test meeting every 1 minute to avoid the meeting to be
       # ended by the Zoom host.
