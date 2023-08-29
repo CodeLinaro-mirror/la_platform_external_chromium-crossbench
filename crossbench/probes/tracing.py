@@ -23,13 +23,13 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 # TODO: go over these again and clean the categories.
-MINIMAL_CONFIG = {
+MINIMAL_CONFIG = frozenset((
     "blink.user_timing",
     "toplevel",
     "v8",
     "v8.execute",
-}
-DEVTOOLS_TRACE_CONFIG = {
+))
+DEVTOOLS_TRACE_CONFIG = frozenset((
     "blink.console",
     "blink.user_timing",
     "devtools.timeline",
@@ -46,8 +46,8 @@ DEVTOOLS_TRACE_CONFIG = {
     "latencyInfo",
     "toplevel",
     "v8.execute",
-}
-V8_TRACE_CONFIG = {
+))
+V8_TRACE_CONFIG = frozenset((
     "blink",
     "blink.user_timing",
     "browser",
@@ -58,7 +58,6 @@ V8_TRACE_CONFIG = {
     "disabled-by-default-v8.cpu_profiler",
     "disabled-by-default-v8.cpu_profiler.hires",
     "disabled-by-default-v8.gc",
-    "disabled-by-default-v8.gc_stats",
     "disabled-by-default-v8.inspector",
     "disabled-by-default-v8.runtime",
     "disabled-by-default-v8.runtime_stats",
@@ -83,12 +82,15 @@ V8_TRACE_CONFIG = {
     "v8",
     "v8.execute",
     "wayland",
-}
+))
+V8_GC_STATS_TRACE_CONFIG = V8_TRACE_CONFIG | frozenset(
+    ("disabled-by-default-v8.gc_stats",))
 
-TRACE_PRESETS: Dict[str, Set[str]] = {
+TRACE_PRESETS: Dict[str, frozenset[str]] = {
     "minimal": MINIMAL_CONFIG,
     "devtools": DEVTOOLS_TRACE_CONFIG,
     "v8": V8_TRACE_CONFIG,
+    "v8-gc-stats": V8_GC_STATS_TRACE_CONFIG,
 }
 
 class RecordMode(compat.StrEnum):
@@ -154,7 +156,8 @@ class TracingProbe(Probe):
         type=str,
         default="minimal",
         choices=TRACE_PRESETS.keys(),
-        help="Use predefined trace categories")
+        help=("Use predefined trace categories, "
+              f"see source {__file__} for more details."))
     parser.add_argument(
         "categories",
         is_list=True,
