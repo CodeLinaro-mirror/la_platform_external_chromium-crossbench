@@ -11,11 +11,13 @@ import json
 import math
 import pathlib
 import re
+import shlex
 import sys
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import hjson
+
 from crossbench import plt
 
 
@@ -256,12 +258,30 @@ def parse_httpx_url_str(value: Any) -> str:
 def parse_bool(value: Any) -> bool:
   if isinstance(value, bool):
     return value
-  value = value.lower()
+  value = str(value).lower()
   if value == "true":
     return True
   if value == "false":
     return False
-  raise TypeError(f"Expected bool but got {type(value)}: {value}")
+  raise argparse.ArgumentTypeError(
+      f"Expected bool but got {type(value)}: {value}")
+
+
+def parse_sh_cmd(value: Any) -> List[str]:
+  if not value:
+    raise argparse.ArgumentTypeError(
+        f"Expected non-empty shell cmd, but got: {value}")
+  if isinstance(value, (list, tuple)):
+    for i, part in enumerate(value):
+      parse_non_empty_str(part, f"cmd[{i}]")
+    return list(value)
+  if not isinstance(value, str):
+    raise argparse.ArgumentTypeError(
+        f"Expected string or list, but got {type(value)}: {value}")
+  try:
+    return shlex.split(value)
+  except ValueError as e:
+    raise argparse.ArgumentTypeError(f"Invalid shell cmd: {value} ") from e
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
@@ -335,6 +355,9 @@ def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
     raise LateArgumentError(flag, str(e)) from e
 
 
+DurationInputT = Union[float, int, str, dt.timedelta]
+
+
 class Duration:
 
   @classmethod
@@ -358,11 +381,11 @@ class Duration:
         "Make sure to use a supported time unit/suffix")
 
   @classmethod
-  def parse(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+  def parse(cls, time_value: DurationInputT) -> dt.timedelta:
     return cls.parse_non_zero(time_value)
 
   @classmethod
-  def parse_non_zero(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+  def parse_non_zero(cls, time_value: DurationInputT) -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value)
     if duration.total_seconds() <= 0:
       raise argparse.ArgumentTypeError(
@@ -370,7 +393,7 @@ class Duration:
     return duration
 
   @classmethod
-  def parse_zero(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+  def parse_zero(cls, time_value: DurationInputT) -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value)
     if duration.total_seconds() < 0:
       raise argparse.ArgumentTypeError(
@@ -378,7 +401,7 @@ class Duration:
     return duration
 
   @classmethod
-  def parse_any(cls, time_value: Union[float, int, str]) -> dt.timedelta:
+  def parse_any(cls, time_value: DurationInputT) -> dt.timedelta:
     """
     This function will parse the measurement and the value from string value.
 
@@ -387,14 +410,15 @@ class Duration:
     5m => 5*60 = dt.timedelta(minutes=5)
 
     """
+    if isinstance(time_value, dt.timedelta):
+      return time_value
     if isinstance(time_value, (int, float)):
-      if time_value < 0:
-        raise argparse.ArgumentTypeError(
-            f"Duration must be positive, but got: {time_value}")
       return dt.timedelta(seconds=time_value)
-
     if not time_value:
-      raise argparse.ArgumentTypeError("duration.")
+      raise argparse.ArgumentTypeError("Expected non-empty duration value.")
+    if not isinstance(time_value, str):
+      raise argparse.ArgumentTypeError(
+          f"Unexpected {type(time_value)}: {time_value}")
 
     match = cls._DURATION_RE.fullmatch(time_value)
     if match is None:
@@ -411,9 +435,9 @@ class Duration:
       time_value = float(value)
     except ValueError as e:
       raise argparse.ArgumentTypeError(f"Duration must be a valid number, {e}")
-    if math.isnan(time_value) or math.isinf(time_value):
+    if not math.isfinite(time_value):
       raise argparse.ArgumentTypeError(
-          f"Duration must be positive, but got: {time_value}")
+          f"Duration must be finite, but got: {time_value}")
 
     if not time_unit:
       # If no time unit provided we assume it is in seconds.

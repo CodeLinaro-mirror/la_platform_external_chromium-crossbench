@@ -13,11 +13,11 @@ import unittest
 
 
 from crossbench.cli_helper import (
-    Duration, parse_dir_path, parse_existing_file_path, parse_hjson_file_path,
-    parse_httpx_url_str, parse_inline_hjson, parse_json_file,
-    parse_json_file_path, parse_non_empty_file_path, parse_non_empty_str,
-    parse_path, parse_positive_int, parse_positive_zero_float,
-    parse_positive_zero_int)
+    Duration, parse_bool, parse_dir_path, parse_existing_file_path,
+    parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson,
+    parse_json_file, parse_json_file_path, parse_non_empty_file_path,
+    parse_non_empty_str, parse_path, parse_positive_int,
+    parse_positive_zero_float, parse_positive_zero_int, parse_sh_cmd)
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -31,7 +31,11 @@ class DurationTestCase(unittest.TestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       Duration.parse_zero("-1")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      Duration.parse_zero(dt.timedelta(seconds=-1))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
       Duration.parse_non_zero("-1")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      Duration.parse_non_zero(dt.timedelta(seconds=-1))
     self.assertIn("-1", str(cm.exception))
     self.assertEqual(Duration.parse_any("-1.5").total_seconds(), -1.5)
 
@@ -40,7 +44,8 @@ class DurationTestCase(unittest.TestCase):
     self.assertEqual(Duration.parse_any("0s").total_seconds(), 0)
     self.assertEqual(Duration.parse_any("0.0").total_seconds(), 0)
     self.assertEqual(Duration.parse_zero("0.0").total_seconds(), 0)
-    for invalid in (-1, 0, "-1", "0", "invalid"):
+    for invalid in (-1, 0, "-1", "0", "invalid", dt.timedelta(0),
+                    dt.timedelta(seconds=-1)):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         Duration.parse(invalid)
       self.assertIn(str(invalid), str(cm.exception))
@@ -73,6 +78,9 @@ class DurationTestCase(unittest.TestCase):
 
   def test_milliseconds(self):
     self.assertEqual(Duration.parse("27.5ms"), dt.timedelta(milliseconds=27.5))
+    self.assertEqual(
+        Duration.parse(dt.timedelta(milliseconds=27.5)),
+        dt.timedelta(milliseconds=27.5))
     self.assertEqual(
         Duration.parse("27.5 millis"), dt.timedelta(milliseconds=27.5))
     self.assertEqual(
@@ -268,3 +276,27 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     file = pathlib.Path("file")
     file.touch()
     self.assertEqual(file, parse_path(file))
+
+  def test_bool_success(self):
+    self.assertIs(parse_bool("true"), True)
+    self.assertIs(parse_bool("True"), True)
+    self.assertIs(parse_bool(True), True)
+    self.assertIs(parse_bool("false"), False)
+    self.assertIs(parse_bool("False"), False)
+    self.assertIs(parse_bool(False), False)
+
+  def test_bool_invalid(self):
+    for invalid in (1, 0, "1", "0", "", None, [], tuple()):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        parse_bool(invalid)
+
+  def test_parse_sh_cmd(self):
+    self.assertListEqual(parse_sh_cmd("ls -al ."), ["ls", "-al", "."])
+    self.assertListEqual(parse_sh_cmd("ls -al '.'"), ["ls", "-al", "."])
+    self.assertListEqual(parse_sh_cmd(";ls -al '.'"), [";ls", "-al", "."])
+    self.assertListEqual(parse_sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."])
+
+  def test_parse_sh_cmd_invalid(self):
+    for invalid in (1, "", None, [], "ls -al \"."):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        parse_sh_cmd(invalid)
