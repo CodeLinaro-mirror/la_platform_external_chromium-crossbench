@@ -10,7 +10,7 @@ import inspect
 import logging
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
-                    Sequence, Type, Union)
+                    Sequence, Set, Type, Union)
 
 from crossbench import cli_helper, exception, helper
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
@@ -238,6 +238,10 @@ class Runner:
   @property
   def env(self) -> HostEnvironment:
     return self._env
+
+  @property
+  def platforms(self) -> Set[plt.Platform]:
+    return set(browser.platform for browser in self.browsers)
 
   @property
   def runs(self) -> Iterable[Run]:

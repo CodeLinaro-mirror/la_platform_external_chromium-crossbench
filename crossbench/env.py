@@ -222,14 +222,19 @@ class HostEnvironment:
           f"Unknown environment validation mode={self._validation_mode}")
     raise ValidationError(message)
 
-  def validate_url(self, url: str) -> bool:
+  def validate_url(self,
+                   url: str,
+                   platform: plt.Platform = plt.PLATFORM) -> bool:
     if self._validation_mode == ValidationMode.SKIP:
-      # TODO: validate file-urls on remote browser platforms.
+      return True
+    result = urlparse(url)
+    if result.scheme == "file":
+      return platform.exists(pathlib.Path(result.path))
+    if platform.is_remote and result.hostname in ("localhost", "127.0.0.1"):
+      # TODO: support remote URL verification, for now we just assume that
+      # checking a live site is ok.
       return True
     try:
-      result = urlparse(url)
-      if result.scheme == "file":
-        return pathlib.Path(result.path).exists()
       if not all([result.scheme in ["http", "https"], result.netloc]):
         return False
       if self._validation_mode != ValidationMode.PROMPT:

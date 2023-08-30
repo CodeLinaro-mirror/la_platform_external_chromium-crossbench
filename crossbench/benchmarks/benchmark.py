@@ -433,22 +433,26 @@ class PressBenchmark(SubStoryBenchmark):
 
   def validate_url(self, runner: Runner) -> None:
     if self.custom_url:
-      if runner.env.validate_url(self.custom_url):
-        return
-      raise ValueError(
-          f"Could not reach custom benchmark URL: '{self.custom_url}'. "
-          f"Please make sure your local web server is running.")
+      self._validate_custom_url(runner, self.custom_url)
+      return
     first_story = cast(PressBenchmarkStory, self.stories[0])
     url = first_story.url
     if not url:
       raise ValueError("Invalid empty url")
-    if not runner.env.validate_url(url):
-      msg = [
-          f"Could not reach live benchmark URL: '{url}'."
-          f"Please make sure you're connected to the internet."
-      ]
-      local_url = first_story.URL_LOCAL
-      if local_url:
-        msg.append(
-            f"Alternatively use --local for the default local URL: {local_url}")
-      raise ValueError("\n".join(msg))
+    if all(runner.env.validate_url(url, p) for p in runner.platforms):
+      return
+    msg = [
+        f"Could not reach live benchmark URL: '{url}'."
+        f"Please make sure you're connected to the internet."
+    ]
+    local_url = first_story.URL_LOCAL
+    if local_url:
+      msg.append(
+          f"Alternatively use --local for the default local URL: {local_url}")
+    raise ValueError("\n".join(msg))
+
+  def _validate_custom_url(self, runner: Runner, url: str) -> None:
+    if not all(runner.env.validate_url(url, p) for p in runner.platforms):
+      raise ValueError(
+          f"Could not reach custom benchmark URL: '{self.custom_url}'. "
+          f"Please make sure your local web server is running.")

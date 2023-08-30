@@ -20,7 +20,6 @@ import tabulate
 
 from crossbench import cli_helper, helper
 from crossbench import exception
-from crossbench.exception import ExceptionAnnotator
 
 ArgParserType = Union[Callable[[Any], Any], Type]
 
