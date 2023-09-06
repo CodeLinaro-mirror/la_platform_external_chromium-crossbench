@@ -180,10 +180,10 @@ class MacOSPlatform(PosixPlatform):
       app_list = self.sh_stdout("lsappinfo", "list")
       found_front_app = False
       for app_list_line in app_list.splitlines():
-        if re.match(LSAPPINFO_IN_FRONT_LINE_RE, app_list_line):
+        if re.match(self.LSAPPINFO_IN_FRONT_LINE_RE, app_list_line):
           found_front_app = True
         elif found_front_app:
-          match = re.match(LSAPPINFO_PID_LINE_RE, app_list_line)
+          match = re.match(self.LSAPPINFO_PID_LINE_RE, app_list_line)
           if match:
             pid = match.group(1)
             break
