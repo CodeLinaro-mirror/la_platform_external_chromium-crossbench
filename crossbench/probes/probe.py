@@ -11,9 +11,8 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, Set,
                     Type, TypeVar)
 
-from crossbench import helper
+from crossbench import helper, plt
 from crossbench.config import ConfigParser
-from crossbench import plt
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        ProbeResult)
 
@@ -22,9 +21,9 @@ if TYPE_CHECKING:
 
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench import plt
   from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
-                                        StoriesRunGroup)
+                                        StoriesRunGroup,
+                                        CacheTemperatureRunGroup)
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
@@ -164,26 +163,32 @@ class Probe(abc.ABC):
     for browser in self._browsers:
       assert self.is_compatible(browser)
 
+  def merge_cache_temperatures(self,
+                               group: CacheTemperatureRunGroup) -> ProbeResult:
+    """
+    For merging probe data from multiple browser cache temperatures with the
+    same repetition, story and browser.
+    """
+    # Return the first result by default.
+    return tuple(group.runs)[0].results[self]
+
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     """
-    Can be used to merge probe data from multiple repetitions of the same story.
-    Return None, a result file Path (or a list of Paths)
+    For merging probe data from multiple repetitions of the same story.
     """
     del group
     return EmptyProbeResult()
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     """
-    Can be used to merge probe data from multiple stories for the same browser.
-    Return None, a result file Path (or a list of Paths)
+    For merging multiple stories for the same browser.
     """
     del group
     return EmptyProbeResult()
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """
-    Can be used to merge all probe data (from multiple stories and browsers.)
-    Return None, a result file Path (or a list of Paths)
+    For merging all probe data (from multiple stories and browsers.)
     """
     del group
     return EmptyProbeResult()

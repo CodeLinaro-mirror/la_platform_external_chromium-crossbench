@@ -738,7 +738,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     with mock.patch.object(
         CrossBenchCLI, "_get_browsers", return_value=self.browsers):
       self.run_cli("loading", "--env=strict", "--urls=http://test.com",
-                   "--env-validation=skip")
+                   "--env-validation=skip", "--throw")
 
   def test_env_config_inline_hjson(self):
     with mock.patch.object(

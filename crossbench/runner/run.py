@@ -42,6 +42,13 @@ class RunState(enum.Enum):
   DONE = enum.auto()
 
 
+@enum.unique
+class Temperature(helper.StrEnumWithHelp):
+  COLD = ("cold", "first run")
+  WARM = ("warm", "second run")
+  HOT = ("hot", "third run")
+
+
 class Run:
 
   def __init__(self,
@@ -49,20 +56,22 @@ class Run:
                browser_session: BrowserSessionRunGroup,
                story: Story,
                repetition: int,
+               temperature: str,
                index: int,
                root_dir: pathlib.Path,
                name: Optional[str] = None,
-               temperature: Optional[int] = None,
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
     self._state = RunState.INITIAL
-    self._browser_session = browser_session
-    browser_session.append(self)
     self._runner = runner
+    self._browser_session = browser_session
     self._browser = browser_session.browser
+    browser_session.append(self)
     self._story = story
     assert repetition >= 0
     self._repetition = repetition
+    assert temperature, "Missing cache-temperature value."
+    self._temperature = temperature
     assert index >= 0
     self._index = index
     self._name = name
@@ -73,7 +82,6 @@ class Run:
     self._extra_flags = Flags()
     self._durations = helper.Durations()
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
-    self._temperature = temperature
     self._timeout = timeout
     self._exceptions = exception.Annotator(throw)
     self._browser_tmp_dir: Optional[pathlib.Path] = None
@@ -82,8 +90,8 @@ class Run:
     return f"Run({self.name}, {self._state}, {self.browser})"
 
   def get_out_dir(self, root_dir: pathlib.Path) -> pathlib.Path:
-    return root_dir / self.browser.unique_name / self.story.name / str(
-        self._repetition)
+    return (root_dir / self.browser.unique_name / self.story.name /
+            str(self._repetition) / str(self._temperature))
 
   @property
   def group_dir(self) -> pathlib.Path:
@@ -118,7 +126,7 @@ class Run:
     }
 
   @property
-  def temperature(self) -> Optional[int]:
+  def temperature(self) -> str:
     return self._temperature
 
   @property

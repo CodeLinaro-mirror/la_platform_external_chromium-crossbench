@@ -10,17 +10,17 @@ import inspect
 import logging
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
-                    Sequence, Set, Type, Union)
+                    Sequence, Set, Tuple, Type, Union)
 
-from crossbench import cli_helper, exception, helper
+from crossbench import cli_helper, exception, helper, plt
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
-from crossbench import plt
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 
 from .groups import (BrowserSessionRunGroup, BrowsersRunGroup,
-                     RepetitionsRunGroup, RunThreadGroup, StoriesRunGroup)
+                     CacheTemperatureRunGroup, RepetitionsRunGroup,
+                     RunThreadGroup, StoriesRunGroup)
 from .run import Run
 from .timing import Timing
 
@@ -29,6 +29,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
 
+from crossbench.stories.story import Story
+
 
 class RunnerException(exception.MultiException):
   pass
@@ -36,29 +38,30 @@ class RunnerException(exception.MultiException):
 
 class ThreadMode(helper.StrEnumWithHelp):
   NONE = ("none", (
-      "Execute all Runs sequentially, default. "
+      "Execute all browser-sessions sequentially, default. "
       "Low interference risk, use for worry-free time-critical measurements."))
-  PLATFORM = ("platform",
-              ("Execute runs from each platform in parallel threads. "
-               "Might cause some interference with probes that do heavy "
-               "post-processing."))
+  PLATFORM = ("platform", (
+      "Execute browser-sessions from each platform in parallel threads. "
+      "Might cause some interference with probes that do heavy "
+      "post-processing."))
   BROWSER = ("browser", (
-      "Execute runs from each browser in parallel thread. "
+      "Execute browser-sessions from each browser in parallel thread. "
       "High interference risk, don't use for time-critical measurements."))
-  RUN = ("run",
-         ("Execute each Run in a parallel thread. "
-          "High interference risk, don't use for time-critical measurements."))
+  SESSION = ("session", (
+      "Execute run from each browser-session in a parallel thread. "
+      "High interference risk, don't use for time-critical measurements."))
 
   def group(self, runs: List[Run]) -> List[RunThreadGroup]:
     if self == ThreadMode.NONE:
       return [RunThreadGroup(runs)]
-    if self == ThreadMode.RUN:
-      return [RunThreadGroup([run]) for run in runs]
     groups: Dict[Any, List[Run]] = {}
-    if self == ThreadMode.PLATFORM:
-      groups = helper.group_by(runs, lambda run: run.platform)
+    if self == ThreadMode.SESSION:
+      groups = helper.group_by(
+          runs, lambda run: run.browser_session, sort_key=None)
+    elif self == ThreadMode.PLATFORM:
+      groups = helper.group_by(runs, lambda run: run.platform, sort_key=None)
     elif self == ThreadMode.BROWSER:
-      groups = helper.group_by(runs, lambda run: run.browser)
+      groups = helper.group_by(runs, lambda run: run.browser, sort_key=None)
     else:
       raise ValueError(f"Unexpected thread mode: {self}")
     return [RunThreadGroup(runs) for runs in groups.values()]
@@ -91,6 +94,13 @@ class Runner:
         type=cli_helper.parse_positive_int,
         help=("Number of times each benchmark story is "
               "repeated. Defaults to 1"))
+    parser.add_argument(
+        "--cache-temperatures",
+        default=["default"],
+        const=["cold", "warm", "hot"],
+        action="store_const",
+        help=("Repeat each run with different cache temperatures without "
+              "closing the browser in between."))
 
     parser.add_argument(
         "--thread-mode",
@@ -131,6 +141,7 @@ class Runner:
         "out_dir": out_dir,
         "browsers": args.browser,
         "repetitions": args.repetitions,
+        "cache_temperatures": args.cache_temperatures,
         "thread_mode": args.thread_mode,
         "throw": args.throw,
     }
@@ -145,6 +156,7 @@ class Runner:
       env_config: Optional[HostEnvironmentConfig] = None,
       env_validation_mode: ValidationMode = ValidationMode.THROW,  # pytype: disable=annotation-type-mismatch
       repetitions: int = 1,
+      cache_temperatures: Iterable[str] = ("default",),
       timing: Timing = Timing(),
       thread_mode: ThreadMode = ThreadMode.NONE,
       throw: bool = False):
@@ -152,12 +164,13 @@ class Runner:
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._timing = timing
-    self.browsers = browsers
+    self._browsers = tuple(browsers)
     self._validate_browsers()
     self._benchmark = benchmark
-    self.stories = benchmark.stories
+    self._stories = tuple(benchmark.stories)
     self._repetitions = repetitions
     assert repetitions > 0, f"Invalid repetitions={repetitions}"
+    self._cache_temperatures: Tuple[str, ...] = tuple(cache_temperatures)
     self._probes: List[Probe] = []
     self._runs: List[Run] = []
     self._thread_mode = thread_mode
@@ -169,8 +182,9 @@ class Runner:
         env_validation_mode)
     self._attach_default_probes(additional_probes)
     self._validate_stories()
-    self._repetitions_groups: List[RepetitionsRunGroup] = []
-    self._story_groups: List[StoriesRunGroup] = []
+    self._cache_temperature_groups: Tuple[CacheTemperatureRunGroup, ...] = ()
+    self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
+    self._story_groups: Tuple[StoriesRunGroup, ...] = ()
     self._browser_group: Optional[BrowsersRunGroup] = None
 
   def _validate_stories(self) -> None:
@@ -216,6 +230,18 @@ class Runner:
     return self._timing
 
   @property
+  def cache_temperatures(self) -> Tuple[str, ...]:
+    return self._cache_temperatures
+
+  @property
+  def browsers(self) -> Tuple[Browser, ...]:
+    return self._browsers
+
+  @property
+  def stories(self) -> Tuple[Story, ...]:
+    return self._stories
+
+  @property
   def probes(self) -> Iterable[Probe]:
     return iter(self._probes)
 
@@ -248,11 +274,19 @@ class Runner:
     return iter(self._runs)
 
   @property
-  def repetitions_groups(self) -> List[RepetitionsRunGroup]:
+  def cache_temperature_groups(self) -> Tuple[CacheTemperatureRunGroup, ...]:
+    assert self._cache_temperature_groups, (
+        f"No CacheTemperatureRunGroup in {self}")
+    return self._cache_temperature_groups
+
+  @property
+  def repetitions_groups(self) -> Tuple[RepetitionsRunGroup, ...]:
+    assert self._repetitions_groups, f"No RepetitionsRunGroup in {self}"
     return self._repetitions_groups
 
   @property
-  def story_groups(self) -> List[StoriesRunGroup]:
+  def story_groups(self) -> Tuple[StoriesRunGroup, ...]:
+    assert self._story_groups, f"No StoriesRunGroup in {self}"
     return self._story_groups
 
   @property
@@ -321,19 +355,21 @@ class Runner:
     for repetition in range(self.repetitions):
       for story in self.stories:
         for browser in self.browsers:
-          # TODO: respect temperature and create multi-run session
+          # TODO: implement browser-session start/stop
           browser_session = BrowserSessionRunGroup(browser)
-          yield Run(
-              self,
-              browser_session,
-              story,
-              repetition,
-              index,
-              self.out_dir,
-              name=f"{story.name}[{repetition}]",
-              timeout=self.timing.run_timeout,
-              throw=self._exceptions.throw)
-          index += 1
+          for temp_index, temperature in enumerate(self.cache_temperatures):
+            yield Run(
+                self,
+                browser_session,
+                story,
+                repetition,
+                f"{temp_index}_{temperature}",
+                index,
+                self.out_dir,
+                name=f"{story.name}[rep={repetition}, cache={temperature}]",
+                timeout=self.timing.run_timeout,
+                throw=self._exceptions.throw)
+            index += 1
 
   def assert_successful_runs(self) -> None:
     failed_runs = list(run for run in self.runs if not run.is_success)
@@ -362,18 +398,27 @@ class Runner:
     logging.info("-" * 80)
     logging.info("MERGING PROBE DATA")
 
-    logging.debug("MERGING PROBE DATA: repetitions")
     throw = self._exceptions.throw
-    self._repetitions_groups = RepetitionsRunGroup.groups(self._runs, throw)
-    for repetitions_group in self._repetitions_groups:
-      repetitions_group.merge(self)
-      self._exceptions.extend(repetitions_group.exceptions, is_nested=True)
+
+    logging.debug("MERGING PROBE DATA: cache temperatures")
+    self._cache_temperature_groups = CacheTemperatureRunGroup.groups(
+        self._runs, throw)
+    for group in self._cache_temperature_groups:
+      group.merge(self)
+      self._exceptions.extend(group.exceptions, is_nested=True)
+
+    logging.debug("MERGING PROBE DATA: repetitions")
+    self._repetitions_groups = RepetitionsRunGroup.groups(
+        self._cache_temperature_groups, throw)
+    for group in self._repetitions_groups:
+      group.merge(self)
+      self._exceptions.extend(group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: stories")
     self._story_groups = StoriesRunGroup.groups(self._repetitions_groups, throw)
-    for story_group in self._story_groups:
-      story_group.merge(self)
-      self._exceptions.extend(story_group.exceptions, is_nested=True)
+    for group in self._story_groups:
+      group.merge(self)
+      self._exceptions.extend(group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: browsers")
     self._browser_group = BrowsersRunGroup(self._story_groups, throw)

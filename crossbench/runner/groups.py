@@ -9,12 +9,13 @@ import contextlib
 import logging
 import pathlib
 import threading
-from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional
+from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
 from crossbench import compat, exception, helper
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   from crossbench.stories.story import Story
@@ -61,11 +62,6 @@ class RunGroup(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def info(self) -> JsonDict:
-    pass
-
-  @property
-  @abc.abstractmethod
   def runs(self) -> Iterable[Run]:
     pass
 
@@ -74,6 +70,13 @@ class RunGroup(abc.ABC):
     for run in self.runs:
       if not run.is_success:
         yield run
+
+  @property
+  def info(self) -> JsonDict:
+    return {
+        "runs": len(tuple(self.runs)),
+        "failed runs": len(tuple(self.failed_runs))
+    }
 
   def get_local_probe_result_path(self,
                                   probe: Probe,
@@ -99,20 +102,20 @@ class RunGroup(abc.ABC):
     pass
 
 
-class RepetitionsRunGroup(RunGroup):
+class CacheTemperatureRunGroup(RunGroup):
   """
-  A group of Run objects that are different repetitions for the same Story with
-  and the same browser.
+  A group of Run objects with different cache temperatures for the same Story
+  with same browser and same iteration.
   """
 
   @classmethod
   def groups(cls,
              runs: Iterable[Run],
-             throw: bool = False) -> List[RepetitionsRunGroup]:
-    return list(
+             throw: bool = False) -> Tuple[CacheTemperatureRunGroup, ...]:
+    return tuple(
         helper.group_by(
             runs,
-            key=lambda run: (run.story, run.browser),
+            key=lambda run: (run.story, run.browser, run.repetition),
             group=lambda _: cls(throw),
             sort_key=None).values())
 
@@ -121,20 +124,98 @@ class RepetitionsRunGroup(RunGroup):
     self._runs: List[Run] = []
     self._story: Optional[Story] = None
     self._browser: Optional[Browser] = None
+    self._repetition = -1
 
   def append(self, run: Run) -> None:
     if self._path is None:
       self._set_path(run.group_dir)
       self._story = run.story
       self._browser = run.browser
+      self._repetition = run.repetition
     assert self._story == run.story
     assert self._path == run.group_dir
     assert self._browser == run.browser
+    assert self._repetition == run.repetition
     self._runs.append(run)
 
   @property
   def runs(self) -> Iterable[Run]:
     return iter(self._runs)
+
+  @property
+  def repetition(self) -> int:
+    return self._repetition
+
+  @property
+  def story(self) -> Story:
+    assert self._story
+    return self._story
+
+  @property
+  def browser(self) -> Browser:
+    assert self._browser
+    return self._browser
+
+  @property
+  def info_stack(self) -> exception.TInfoStack:
+    return ("Merging results from multiple cache temperatures",
+            f"browser={self.browser.unique_name}", f"story={self.story}",
+            f"repetition={self.repetition}")
+
+  @property
+  def info(self) -> JsonDict:
+    info = {
+        "story": str(self.story),
+        "repetition": self.repetition,
+    }
+    info.update(super().info)
+    return info
+
+  def _merge_probe_results(self, probe: Probe) -> ProbeResult:
+    return probe.merge_cache_temperatures(self)  # pytype: disable=wrong-arg-types
+
+
+class RepetitionsRunGroup(RunGroup):
+  """
+  A group of Run objects that are different repetitions for the same Story
+  and the same browser.
+  """
+
+  @classmethod
+  def groups(cls,
+             run_groups: Iterable[CacheTemperatureRunGroup],
+             throw: bool = False) -> Tuple[RepetitionsRunGroup, ...]:
+    return tuple(
+        helper.group_by(
+            run_groups,
+            key=lambda group: (group.browser, group.story),
+            group=lambda _: cls(throw),
+            sort_key=None).values())
+
+  def __init__(self, throw: bool = False):
+    super().__init__(throw)
+    self._cache_temperature_groups: List[CacheTemperatureRunGroup] = []
+    self._story: Optional[Story] = None
+    self._browser: Optional[Browser] = None
+
+  def append(self, group: CacheTemperatureRunGroup) -> None:
+    if self._path is None:
+      self._set_path(group.path.parent)
+      self._story = group.story
+      self._browser = group.browser
+    assert self._story == group.story
+    assert self._path == group.path.parent
+    assert self._browser == group.browser
+    self._cache_temperature_groups.append(group)
+
+  @property
+  def cache_temperature_groups(self) -> List[CacheTemperatureRunGroup]:
+    return self._cache_temperature_groups
+
+  @property
+  def runs(self) -> Iterable[Run]:
+    for group in self._cache_temperature_groups:
+      yield from group.runs
 
   @property
   def story(self) -> Story:
@@ -153,11 +234,9 @@ class RepetitionsRunGroup(RunGroup):
 
   @property
   def info(self) -> JsonDict:
-    return {
-        "story": str(self.story),
-        "runs": len(tuple(self.runs)),
-        "failed runs": len(tuple(self.failed_runs))
-    }
+    info = {"story": str(self.story)}
+    info.update(super().info)
+    return info
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_repetitions(self)  # pytype: disable=wrong-arg-types
@@ -165,19 +244,19 @@ class RepetitionsRunGroup(RunGroup):
 
 class StoriesRunGroup(RunGroup):
   """
-  A group of StoryRepetitionsRunGroups for the same browser.
+  A group of RepetitionsRunGroup for the same browser.
   """
 
   def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._repetitions_groups: List[RepetitionsRunGroup] = []
-    self._browser: Browser = None
+    self._browser: Optional[Browser] = None
 
   @classmethod
   def groups(cls,
              run_groups: Iterable[RepetitionsRunGroup],
-             throw: bool = False) -> List[StoriesRunGroup]:
-    return list(
+             throw: bool = False) -> Tuple[StoriesRunGroup, ...]:
+    return tuple(
         helper.group_by(
             run_groups,
             key=lambda run_group: run_group.browser,
@@ -197,13 +276,23 @@ class StoriesRunGroup(RunGroup):
     return self._repetitions_groups
 
   @property
+  def cache_temperature_groups(self) -> Iterable[CacheTemperatureRunGroup]:
+    for group in self._repetitions_groups:
+      yield from group.cache_temperature_groups
+
+  @property
   def runs(self) -> Iterable[Run]:
     for group in self._repetitions_groups:
       yield from group.runs
 
   @property
   def browser(self) -> Browser:
+    assert self._browser
     return self._browser
+
+  @property
+  def stories(self) -> Iterable[Story]:
+    return (group.story for group in self._repetitions_groups)
 
   @property
   def info_stack(self) -> exception.TInfoStack:
@@ -214,7 +303,7 @@ class StoriesRunGroup(RunGroup):
 
   @property
   def info(self) -> JsonDict:
-    return {
+    info = {
         "label": self.browser.label,
         "browser": self.browser.app_name.title(),
         "version": self.browser.version,
@@ -226,10 +315,8 @@ class StoriesRunGroup(RunGroup):
         "runs": len(tuple(self.runs)),
         "failed runs": len(tuple(self.failed_runs))
     }
-
-  @property
-  def stories(self) -> Iterable[Story]:
-    return (group.story for group in self._repetitions_groups)
+    info.update(super().info)
+    return info
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     # TODO: enable pytype again
@@ -267,24 +354,17 @@ class BrowsersRunGroup(RunGroup):
   def info_stack(self) -> exception.TInfoStack:
     return ("Merging results from multiple browsers",)
 
-  @property
-  def info(self) -> JsonDict:
-    return {
-        "runs": len(tuple(self.runs)),
-        "failed runs": len(tuple(self.failed_runs))
-    }
-
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_browsers(self)  # pytype: disable=wrong-arg-types
 
 
 class RunThreadGroup(threading.Thread):
 
-  def __init__(self, runs: List[Run]) -> None:
+  def __init__(self, runs: Iterable[Run]) -> None:
     super().__init__()
-    assert len(runs), "Got unexpected empty runs list"
-    self._runner: Runner = runs[0].runner
-    self._runs = runs
+    self._runs = tuple(runs)
+    assert self._runs, "Got unexpected empty runs list"
+    self._runner: Runner = self._runs[0].runner
     self.is_dry_run: bool = False
     self._verify_contains_all_browser_session_runs()
 
@@ -295,6 +375,10 @@ class RunThreadGroup(threading.Thread):
         assert session_run in runs_set, (
             f"BrowserSession {run.browser_session} is not allowed to have "
             f"{session_run} in another RunThreadGroup.")
+
+  @property
+  def runs(self) -> Tuple[Run, ...]:
+    return self._runs
 
   def run(self) -> None:
     total_run_count = len(tuple(self._runner.runs))
@@ -331,11 +415,16 @@ class BrowserSessionRunGroup:
   def append(self, run: Run) -> None:
     assert self._state == self.State.READY
     assert run.browser_session == self
+    assert run.browser == self._browser
     self._runs.append(run)
 
   @property
   def browser(self) -> Browser:
     return self._browser
+
+  @property
+  def platform(self) -> plt.Platform:
+    return self._browser.platform
 
   @property
   def runs(self) -> Iterable[Run]:

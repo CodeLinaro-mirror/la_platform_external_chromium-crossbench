@@ -187,7 +187,6 @@ class Browser(abc.ABC):
     self.clear_cache(runner)
     self.start(run)
     assert self._is_running
-    self._prepare_temperature(run)
     self.splash_screen.run(run)
 
   @abc.abstractmethod
@@ -202,17 +201,6 @@ class Browser(abc.ABC):
   @abc.abstractmethod
   def start(self, run: Run) -> None:
     pass
-
-  def _prepare_temperature(self, run: Run) -> None:
-    """Warms up the browser by loading the page 3 times."""
-    runner = run.runner
-    if run.temperature != "cold" and run.temperature:
-      for _ in range(3):
-        # TODO(cbruni): add no_collect argument
-        run.story.run(run)
-        runner.wait(run.story.duration / 2)
-        self.show_url(runner, "about:blank")
-        runner.wait(1)
 
   def _get_browser_flags_for_run(self, run: Run) -> Tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()

@@ -3,6 +3,8 @@
 # found in the LICENSE file.
 
 import unittest
+from crossbench.runner.groups import BrowserSessionRunGroup
+from crossbench.runner.runner import ThreadMode
 
 from crossbench.runner.timing import SAFE_MAX_TIMEOUT_TIMEDELTA, Timing
 
@@ -121,6 +123,109 @@ class TimingTestCase(unittest.TestCase):
     self.assertEqual(t.timeout_timedelta(1500), SAFE_MAX_TIMEOUT_TIMEDELTA)
 
 
+class MockBrowser:
+
+  def __init__(self, unique_name: str, platform) -> None:
+    self.unique_name = unique_name
+    self.platform = platform
+
+  def __str__(self):
+    return self.unique_name
+
+
+class MockRun:
+
+  def __init__(self, runner, browser_session, name) -> None:
+    self.runner = runner
+    self.browser_session = browser_session
+    self.browser = browser_session.browser
+    self.platform = self.browser.platform
+    self.name = name
+
+  def __str__(self):
+    return self.name
+
+
+class MockPlatform:
+
+  def __init__(self, name) -> None:
+    self.name = name
+
+  def __str__(self):
+    return self.name
+
+
+class MockRunner:
+  pass
+
+
+# Skip strict type checks for better mocking
+# pytype: disable=wrong-arg-types
+class TestThreadModeTestCase(unittest.TestCase):
+  # pylint has some issues with enums.
+  # pylint: disable=no-member
+
+  def setUp(self) -> None:
+    self.platform_a = MockPlatform("platform a")
+    self.platform_b = MockPlatform("platform b")
+    self.browser_a_1 = MockBrowser("mock browser a 1", self.platform_a)
+    self.browser_a_2 = MockBrowser("mock browser b 1", self.platform_a)
+    self.browser_b_1 = MockBrowser("mock browser b 1", self.platform_b)
+    self.browser_b_2 = MockBrowser("mock browser b 2", self.platform_b)
+    self.runner = MockRunner()
+    self.runs = (
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_1), "run 1"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_2), "run 2"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_1), "run 3"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_2), "run 4"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_1), "run 5"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_2), "run 6"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_1), "run 7"),
+        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_2), "run 8"),
+    )
+
+  def test_group_none(self):
+    groups = ThreadMode.NONE.group(self.runs)
+    self.assertEqual(len(groups), 1)
+    self.assertTupleEqual(groups[0].runs, self.runs)
+
+  def test_group_platform(self):
+    groups = ThreadMode.PLATFORM.group(self.runs)
+    self.assertEqual(len(groups), 2)
+    group_a, group_b = groups
+    self.assertTupleEqual(group_a.runs, self.runs[:4])
+    self.assertTupleEqual(group_b.runs, self.runs[4:])
+
+  def test_group_browser(self):
+    groups = ThreadMode.BROWSER.group(self.runs)
+    self.assertEqual(len(groups), 4)
+    self.assertTupleEqual(groups[0].runs, (self.runs[0], self.runs[2]))
+    self.assertTupleEqual(groups[1].runs, (self.runs[1], self.runs[3]))
+    self.assertTupleEqual(groups[2].runs, (self.runs[4], self.runs[6]))
+    self.assertTupleEqual(groups[3].runs, (self.runs[5], self.runs[7]))
+
+  def test_group_session(self):
+    groups = ThreadMode.SESSION.group(self.runs)
+    self.assertEqual(len(groups), len(self.runs))
+    for group, run in zip(groups, self.runs):
+      self.assertTupleEqual(group.runs, (run,))
+
+  def test_group_session_2(self):
+    session_1 = BrowserSessionRunGroup(self.browser_a_1)
+    session_2 = BrowserSessionRunGroup(self.browser_a_2)
+    runs = (
+        MockRun(self.runner, session_1, "run 1"),
+        MockRun(self.runner, session_2, "run 2"),
+        MockRun(self.runner, session_1, "run 3"),
+        MockRun(self.runner, session_2, "run 4"),
+    )
+    groups = ThreadMode.SESSION.group(runs)
+    group_a, group_b = groups
+    self.assertTupleEqual(group_a.runs, (runs[0], runs[2]))
+    self.assertTupleEqual(group_b.runs, (runs[1], runs[3]))
+
+
+# pytype: enable=wrong-arg-types
 
 if __name__ == "__main__":
   run_helper.run_pytest(__file__)
