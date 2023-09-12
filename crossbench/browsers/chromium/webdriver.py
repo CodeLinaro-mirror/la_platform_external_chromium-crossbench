@@ -57,16 +57,18 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     super().__init__(label, path, flags, js_flags, cache_dir, type, driver_path,
                      viewport, splash_screen, platform)
 
-  def _use_local_chromedriver(self) -> bool:
-    return self.major_version == 0 or (self.app_path.parent /
-                                       "args.gn").exists()
+  def use_local_chromedriver(self) -> bool:
+    return self.major_version == 0 or self.is_locally_compiled()
+
+  def is_locally_compiled(self) -> bool:
+    return (self.app_path.parent / "args.gn").exists()
 
   def _find_driver(self) -> pathlib.Path:
     if self._driver_path:
       return self._driver_path
     finder = ChromeDriverFinder(self)
     assert self.app_path
-    if self._use_local_chromedriver():
+    if self.use_local_chromedriver():
       return finder.find_local_build()
     try:
       return finder.download()
@@ -203,6 +205,11 @@ class DriverNotFoundError(ValueError):
   pass
 
 
+def build_chromedriver_instructions(build_dir: pathlib.Path) -> str:
+  return ("Please build 'chromedriver' manually for local builds.\n"
+          f"autoninja -C {build_dir} chromedriver")
+
+
 class ChromeDriverFinder:
   driver_path: pathlib.Path
 
@@ -223,12 +230,17 @@ class ChromeDriverFinder:
   def find_local_build(self) -> pathlib.Path:
     assert self.browser.app_path
     # assume it's a local build
-    driver_path = self.browser.app_path.parent / "chromedriver"
-    if not driver_path.is_file():
-      raise DriverNotFoundError(
-          f"Driver '{driver_path}' does not exist. "
-          "Please build 'chromedriver' manually for local builds.")
-    return driver_path
+    lookup_dir = self.browser.app_path.parent
+    driver_path = lookup_dir / "chromedriver"
+    is_build_dir = (lookup_dir / "args.gn").exists()
+    if driver_path.is_file():
+      return driver_path
+    error_message = [f"Driver '{driver_path}' does not exist."]
+    if is_build_dir:
+      error_message += [build_chromedriver_instructions(lookup_dir)]
+    else:
+      error_message += ["Please manually provide a chromedriver binary."]
+    raise DriverNotFoundError("\n".join(error_message))
 
   def download(self) -> pathlib.Path:
     if not self.driver_path.is_file():

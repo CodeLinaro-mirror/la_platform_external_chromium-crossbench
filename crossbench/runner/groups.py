@@ -381,7 +381,7 @@ class RunThreadGroup(threading.Thread):
     return self._runs
 
   def run(self) -> None:
-    total_run_count = len(tuple(self._runner.runs))
+    total_run_count = len(self._runner.runs)
     for run in self._runs:
       logging.info("=" * 80)
       logging.info("RUN %s/%s", run.index + 1, total_run_count)

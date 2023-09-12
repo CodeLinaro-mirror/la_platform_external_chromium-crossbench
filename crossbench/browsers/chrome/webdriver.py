@@ -13,8 +13,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 
-from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
-                                                    ChromiumWebDriverAndroid)
+from crossbench.browsers.chromium.webdriver import (
+    ChromiumWebDriver, ChromiumWebDriverAndroid,
+    build_chromedriver_instructions)
 from crossbench.browsers.webdriver import DriverException
 
 if TYPE_CHECKING:
@@ -66,14 +67,19 @@ class ChromeWebDriver(ChromiumWebDriver):
           options=options,
           service=service)
     except selenium.common.exceptions.WebDriverException as e:
-      msg = f"Could not start WebDriver: {e.msg}"
+      msg = [f"Could not start WebDriver: {e.msg}"]
       if self.platform.is_android:
-        msg += ("\nPossibly missing chrome settings on {self.platform}.\n"
-                "Please make sure to allow chrome-flags on "
-                "non-rooted android devices: \n"
-                "chrome://flags#enable-command-line-on-non-rooted-devices")
-      logging.error(msg)
-      raise DriverException(msg) from e
+        msg += [
+            "Possibly missing chrome settings on {self.platform}.",
+            "Please make sure to allow chrome-flags on "
+            "non-rooted android devices:",
+            "chrome://flags#enable-command-line-on-non-rooted-devices",
+        ]
+      if self.is_locally_compiled():
+        msg.append(build_chromedriver_instructions(self.app_path.parent))
+      msg_str = "\n".join(msg)
+      logging.error(msg_str)
+      raise DriverException(msg_str) from e
 
 
 class ChromeWebDriverAndroid(ChromiumWebDriverAndroid, ChromeWebDriver):

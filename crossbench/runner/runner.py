@@ -270,8 +270,8 @@ class Runner:
     return set(browser.platform for browser in self.browsers)
 
   @property
-  def runs(self) -> Iterable[Run]:
-    return iter(self._runs)
+  def runs(self) -> Tuple[Run, ...]:
+    return tuple(self._runs)
 
   @property
   def cache_temperature_groups(self) -> Tuple[CacheTemperatureRunGroup, ...]:
