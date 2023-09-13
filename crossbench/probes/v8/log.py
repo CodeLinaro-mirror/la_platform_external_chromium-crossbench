@@ -255,17 +255,19 @@ def _process_profview_json(d8_binary: pathlib.Path,
   return result_json
 
 
-class V8ToolsFinder(probe_helper.V8CheckoutFinder):
+class V8ToolsFinder:
   """Helper class to find d8 binaries and the tick-processor.
   If no explicit d8 and checkout path are given, $D8_PATH and common v8 and
   chromium installation directories are checked."""
 
   def __init__(self, platform: plt.Platform, d8_binary: Optional[pathlib.Path],
                v8_checkout: Optional[pathlib.Path]) -> None:
-    super().__init__(platform)
+    self.platform = platform
     self.d8_binary: Optional[pathlib.Path] = d8_binary
     if v8_checkout:
       self.v8_checkout = v8_checkout
+    else:
+      self.v8_checkout = probe_helper.V8CheckoutFinder(self.platform).path
     self.tick_processor: Optional[pathlib.Path] = None
     self.d8_binary = self._find_d8()
     if self.d8_binary:
@@ -285,7 +287,8 @@ class V8ToolsFinder(probe_helper.V8CheckoutFinder):
       if candidate.is_file():
         return candidate
     # Try potential build location
-    for candidate_dir in self.checkout_candidates:
+    for candidate_dir in probe_helper.V8CheckoutFinder(
+        self.platform).candidates:
       for build_type in ("release", "optdebug", "Default", "Release"):
         candidates = list(candidate_dir.glob(f"out/*{build_type}/d8"))
         if candidates and candidates[0].is_file():

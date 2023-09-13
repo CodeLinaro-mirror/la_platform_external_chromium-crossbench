@@ -296,13 +296,12 @@ class TracingProbeScope(ProbeScope[TracingProbe]):
         json=(json_trace_file,), file=(self.result_path,))
 
 
-class TraceconvFinder(probe_helper.V8CheckoutFinder):
+class TraceconvFinder:
 
   def __init__(self, platform: plt.Platform) -> None:
-    super().__init__(platform)
     self.traceconv: Optional[pathlib.Path] = None
-    if self.v8_checkout:
+    if chrome_checkout := probe_helper.ChromiumCheckoutFinder(platform).path:
       candidate = (
-          self.v8_checkout / "third_party" / "perfetto" / "tools" / "traceconv")
+          chrome_checkout / "third_party" / "perfetto" / "tools" / "traceconv")
       if candidate.is_file():
         self.traceconv = candidate

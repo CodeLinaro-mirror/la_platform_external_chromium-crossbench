@@ -320,49 +320,56 @@ class TestFlatten(unittest.TestCase):
 class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
 
   def test_find_none(self):
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
 
   def _add_v8_checkout_files(self, checkout_dir: pathlib.Path) -> None:
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
     (checkout_dir / ".git").mkdir(parents=True)
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
     self.fs.create_file(checkout_dir / "include" / "v8.h", st_size=100)
+
+  def _add_chrome_checkout_files(self, checkout_dir: pathlib.Path) -> None:
+    self.assertIsNone(helper.ChromiumCheckoutFinder(self.platform).path)
+    self._add_v8_checkout_files(checkout_dir / "v8")
+    (checkout_dir / ".git").mkdir(parents=True)
+    self.assertIsNone(helper.ChromiumCheckoutFinder(self.platform).path)
+    (checkout_dir / "chrome").mkdir(parents=True)
 
   def test_D8_PATH(self):
     with mock.patch.dict(os.environ, {}, clear=True):
-      self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+      self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
     candidate_dir = pathlib.Path("/custom/v8/")
     d8_path = candidate_dir / "out/x64.release/d8"
     with mock.patch.dict(os.environ, {"D8_PATH": str(d8_path)}, clear=True):
-      self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+      self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
     self._add_v8_checkout_files(candidate_dir)
     with mock.patch.dict(os.environ, {"D8_PATH": str(d8_path)}, clear=True):
       self.assertEqual(
-          helper.V8CheckoutFinder(self.platform).v8_checkout, candidate_dir)
+          helper.V8CheckoutFinder(self.platform).path, candidate_dir)
     # Still NONE without custom D8_PATH env var.
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
 
   def test_known_location(self):
     checkout_dir = pathlib.Path.home() / "v8/v8"
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
+    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
     checkout_dir.mkdir(parents=True)
     self._add_v8_checkout_files(checkout_dir)
-    self.assertEqual(
-        helper.V8CheckoutFinder(self.platform).v8_checkout, checkout_dir)
+    self.assertEqual(helper.V8CheckoutFinder(self.platform).path, checkout_dir)
 
   def test_module_relative(self):
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
-    path = pathlib.Path(__file__)
-    self.assertFalse(path.exists())
-    if "google3" in path.parts:
-      fake_chrome_root = path.parents[5]
-    else:
-      fake_chrome_root = path.parents[4]
-    checkout_dir = fake_chrome_root / "v8"
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).v8_checkout)
-    self._add_v8_checkout_files(checkout_dir)
-    self.assertEqual(
-        helper.V8CheckoutFinder(self.platform).v8_checkout, checkout_dir)
+    with mock.patch.dict(os.environ, {}, clear=True):
+      self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
+      path = pathlib.Path(__file__)
+      self.assertFalse(path.exists())
+      if "google3" in path.parts:
+        fake_chrome_root = path.parents[5]
+      else:
+        fake_chrome_root = path.parents[4]
+      checkout_dir = fake_chrome_root / "v8"
+      self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
+      self._add_chrome_checkout_files(fake_chrome_root)
+      self.assertEqual(
+          helper.V8CheckoutFinder(self.platform).path, checkout_dir)
 
 
 if __name__ == "__main__":
