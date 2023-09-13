@@ -67,7 +67,7 @@ class SubprocessError(subprocess.CalledProcessError):
   def __str__(self) -> str:
     super_str = super().__str__()
     if not self.stderr:
-      return super_str
+      return f"{self.platform}: {super_str}"
     return f"{self.platform}: {super_str}\nstderr:{self.stderr.decode()}"
 
 

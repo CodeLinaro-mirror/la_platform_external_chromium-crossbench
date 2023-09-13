@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import atexit
 
 import logging
 import os
@@ -188,7 +189,9 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
         stdin=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         stdout=self._recorder_log_file)
-    assert self._record_process is not None, "Could not start screen recorder"
+    if self._record_process.poll():
+      raise ValueError("Could not start screen recorder")
+    atexit.register(self.stop_process)
     # TODO: Add common start-story-delay on runner for these cases.
     self.runner_platform.sleep(1)
 
@@ -221,14 +224,18 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
     assert self._record_process, "Screen recorder stopped early."
     assert self._recorder_log_file, "No log file."
     self._recorder_log_file.close()
-    if self._record_process.poll() is not None:
-      self._record_process.wait(timeout=5)
+    self.stop_process()
     if not self.result_path.exists():
       raise ProbeMissingDataError(
           f"No screen recording video found at: {self.result_path}")
     with tempfile.TemporaryDirectory() as tmp_dir:
       timestrip_file = self._create_time_strip(pathlib.Path(tmp_dir))
     return LocalProbeResult(file=(self.result_path, timestrip_file))
+
+  def stop_process(self) -> None:
+    if self._record_process:
+      helper.wait_and_kill(self._record_process, timeout=5)
+      self._record_process = None
 
   def _create_time_strip(self, tmpdir: pathlib.Path) -> pathlib.Path:
     logging.info("TIMESTRIP")

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import atexit
 
 import csv
 import logging
@@ -99,15 +100,19 @@ class PowerMetricsProbeScope(ProbeScope[PowerMetricsProbe]):
         "--output-file",
         self._output_plist_file,
         stdout=subprocess.DEVNULL)
-    assert self._power_metrics_process is not None, (
-        "Could not start powermetrics")
+    if self._power_metrics_process.poll():
+      raise ValueError("Could not start powermetrics")
+    atexit.register(self.stop_process)
 
   def stop(self, run: Run) -> None:
     if self._power_metrics_process:
       self._power_metrics_process.terminate()
 
   def tear_down(self, run: Run) -> ProbeResult:
-    if self._power_metrics_process:
-      self._power_metrics_process.wait()
-      self._power_metrics_process.kill()
+    self.stop_process()
     return self.browser_result(file=(self._output_plist_file,))
+
+  def stop_process(self) -> None:
+    if self._power_metrics_process:
+      helper.wait_and_kill(self._power_metrics_process)
+      self._power_metrics_process = None

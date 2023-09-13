@@ -10,7 +10,7 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
-from crossbench import plt
+from crossbench import helper, plt
 from crossbench.env import ValidationError
 
 from .browser import Browser
@@ -87,6 +87,8 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     startup_flags = self._get_browser_flags_for_run(run)
     self._browser_process = self.platform.popen(
         self.path, *startup_flags, shell=False)
+    if self._browser_process.poll():
+      raise ValueError("Could not start browser process.")
     self._pid = self._browser_process.pid
     self.platform.sleep(3)
     self._exec_apple_script("activate")
@@ -137,4 +139,4 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   def quit(self, runner: Runner) -> None:
     del runner
     self._exec_apple_script("quit")
-    self._browser_process.terminate()
+    helper.wait_and_kill(self._browser_process)

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import atexit
 
 import csv
 import logging
@@ -133,13 +134,14 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
         "--no-samplers",
         "--simulate-user-active",
         stdout=subprocess.DEVNULL)
-    assert self._active_user_process is not None, (
-        "Could not start active user background sa")
+    if self._active_user_process.poll():
+      raise ValueError("Could not start active user background sampler")
+    atexit.register(self.stop_processes)
     if self.probe.wait_for_battery:
       self._wait_for_battery_not_full(run)
 
   def start(self, run: Run) -> None:
-    assert self._active_user_process is not None
+    assert self._active_user_process
     if self.probe.sampling_interval > 0:
       self._power_process = self.browser_platform.popen(
           self._bin_path,
@@ -148,7 +150,8 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
           f"--json-output-file={self._power_output}",
           f"--resource-coalition-pid={self.browser_pid}",
           stdout=subprocess.DEVNULL)
-      assert self._power_process is not None, "Could not start power sampler"
+      if self._power_process.poll():
+        raise ValueError("Could not start power sampler")
     self._power_battery_process = self.browser_platform.popen(
         self._bin_path,
         "--sample-on-notification",
@@ -156,8 +159,8 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
         f"--json-output-file={self._power_battery_output}",
         f"--resource-coalition-pid={self.browser_pid}",
         stdout=subprocess.DEVNULL)
-    assert self._power_battery_process is not None, (
-        "Could not start power and battery sampler")
+    if self._power_battery_process.poll():
+      raise ValueError("Could not start power and battery sampler")
 
   def stop(self, run: Run) -> None:
     if self._power_process:
@@ -166,18 +169,22 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
       self._power_battery_process.terminate()
 
   def tear_down(self, run: Run) -> ProbeResult:
-    if self._power_process:
-      self._power_process.wait()
-      self._power_process.kill()
-    if self._power_battery_process:
-      self._power_battery_process.wait()
-      self._power_battery_process.kill()
-    if self._active_user_process:
-      self._active_user_process.kill()
+    self.stop_processes()
     if self.probe.sampling_interval > 0:
       return self.browser_result(
           json=[self._power_output, self._power_battery_output])
     return self.browser_result(json=[self._power_battery_output])
+
+  def stop_processes(self) -> None:
+    if self._power_process:
+      helper.wait_and_kill(self._power_process)
+      self._power_process = None
+    if self._power_battery_process:
+      helper.wait_and_kill(self._power_battery_process)
+      self._power_battery_process = None
+    if self._active_user_process:
+      helper.wait_and_kill(self._active_user_process)
+      self._active_user_process = None
 
   def _wait_for_battery_not_full(self, run: Run) -> None:
     """

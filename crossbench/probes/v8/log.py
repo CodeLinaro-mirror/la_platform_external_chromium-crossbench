@@ -251,7 +251,7 @@ def _process_profview_json(d8_binary: pathlib.Path,
         log_file,
         env=env,
         stdout=f,
-        stderr=subprocess.DEVNULL)
+        stderr=subprocess.PIPE)
   return result_json
 
 

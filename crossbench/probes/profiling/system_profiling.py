@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import atexit
 import json
 import logging
 import multiprocessing
@@ -221,7 +222,7 @@ class ProfilingScope(ProbeScope[ProfilingProbe], metaclass=abc.ABCMeta):
 
 
 class MacOSProfilingScope(ProfilingScope):
-  _process: subprocess.Popen
+  _process: Optional[subprocess.Popen]
 
   def get_default_result_path(self) -> pathlib.Path:
     return super().get_default_result_path().parent / "profile.trace"
@@ -233,15 +234,23 @@ class MacOSProfilingScope(ProfilingScope):
                                                 self.result_path)
     # xctrace takes some time to start up
     time.sleep(3)
+    if self._process.poll():
+      raise ValueError("Could not start xctrace")
+    atexit.register(self.stop_process)
 
   def stop(self, run: Run) -> None:
     # Needs to be SIGINT for xctrace, terminate won't work.
+    assert self._process
     self._process.send_signal(signal.SIGINT)
 
   def tear_down(self, run: Run) -> ProbeResult:
-    while self._process.poll() is None:
-      time.sleep(1)
+    self.stop_process()
     return self.browser_result(file=(self.result_path,))
+
+  def stop_process(self) -> None:
+    if self._process:
+      helper.wait_and_kill(self._process, signal=signal.SIGINT)
+      self._process = None
 
 
 class LinuxProfilingScope(ProfilingScope):
@@ -267,6 +276,9 @@ class LinuxProfilingScope(ProfilingScope):
     self._perf_process = self.browser_platform.popen(
         "perf", "record", "--call-graph=fp", "--freq=max", "--clockid=mono",
         f"--output={perf_data_file}", f"--pid={run.browser.pid}")
+    if self._perf_process.poll():
+      raise ValueError("Could not start linux profiler")
+    atexit.register(self.stop_process)
 
   def setup(self, run: Run) -> None:
     for probe in run.probes:
@@ -274,8 +286,12 @@ class LinuxProfilingScope(ProfilingScope):
           "Cannot use profiler and v8.log probe in parallel yet")
 
   def stop(self, run: Run) -> None:
+    self.stop_process()
+
+  def stop_process(self) -> None:
     if self._perf_process:
-      self._perf_process.terminate()
+      helper.wait_and_kill(self._perf_process)
+      self._perf_process = None
 
   def tear_down(self, run: Run) -> ProbeResult:
     # Waiting for linux-perf to flush all perf data

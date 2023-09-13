@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import atexit
 import logging
 import pathlib
 import time
@@ -100,9 +101,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     except selenium.common.exceptions.SessionNotCreatedException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e
+    self._is_running = True
+    atexit.register(self.force_quit)
     self._find_driver_pid()
     self._set_driver_timeouts(run)
-    self._is_running = True
     self._setup_window()
     self._check_driver_version()
 
@@ -205,8 +207,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self.force_quit()
 
   def force_quit(self) -> None:
-    if getattr(self, "_driver", None) is None:
+    if getattr(self, "_driver", None) is None or not self._is_running:
       return
+    atexit.unregister(self.force_quit)
     logging.debug("WebDriverBrowser.force_quit()")
     try:
       try:
@@ -231,7 +234,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       logging.debug("Could not quit browser: %s\n%s", e, traceback.format_exc())
     finally:
       self._is_running = False
-    return
 
 
 class RemoteWebDriver(WebDriverBrowser, Browser):

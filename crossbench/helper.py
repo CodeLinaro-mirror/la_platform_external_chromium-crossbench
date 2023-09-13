@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import atexit
 import datetime as dt
 import enum
 import logging
@@ -18,12 +19,17 @@ import urllib
 import urllib.error
 import urllib.parse as urlparse
 import urllib.request
-from typing import (Any, Callable, Dict, Final, Iterable, Iterator, List,
-                    Optional, Sequence, Tuple, Type, TypeVar, Union)
+from subprocess import Popen, TimeoutExpired
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
+                    Iterator, List, Optional, Sequence, Tuple, Type, TypeVar,
+                    Union)
 
 import tabulate
 
 from crossbench import plt
+
+if TYPE_CHECKING:
+  import signal
 
 assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
@@ -212,11 +218,16 @@ class SystemSleepPreventer:
   def __enter__(self) -> None:
     if plt.PLATFORM.is_macos:
       self._process = plt.PLATFORM.popen("caffeinate", "-imdsu")
+      atexit.register(self.stop_process)
     # TODO: Add linux support
 
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
+    self.stop_process()
+
+  def stop_process(self) -> None:
     if self._process:
       self._process.kill()
+      self._process = None
 
 
 class TimeScope:
@@ -445,3 +456,46 @@ def update_url_query(url: str, query_params: Dict[str, str]) -> str:
   query.update(query_params)
   parsed_url = parsed_url._replace(query=urlparse.urlencode(query, doseq=True))
   return parsed_url.geturl()
+
+
+def wait_and_kill(process: Popen,
+                  timeout=1,
+                  signal: Optional[signal.Signals] = None) -> None:
+  """Graceful process termination:
+  1. Send signal if provided,
+  2. wait for the given time,
+  3. terminate(),
+  4. Last stage: kill process.
+  """
+  try:
+    wait_and_terminate(process, timeout, signal)
+  finally:
+    try:
+      process.kill()
+    except ProcessLookupError:
+      pass
+
+
+def wait_and_terminate(process,
+                       timeout=1,
+                       signal: Optional[signal.Signals] = None) -> None:
+  if process.poll() is not None:
+    return
+  logging.debug("Terminating process: %s", process)
+  try:
+    if signal:
+      process.send_signal(signal)
+    process.wait(timeout)
+    return
+  except KeyboardInterrupt:  # pylint: disable=try-except-raise
+    # Propagate keyboard interrupts, unlike all other exceptions.
+    raise
+  except TimeoutExpired as e:
+    logging.debug("Got timeout while waiting for process (%s): %s", process, e)
+  except Exception as e:  # pylint: disable=broad-except
+    logging.debug("Ignoring exception during process termination: %s", e)
+  finally:
+    try:
+      process.terminate()
+    except ProcessLookupError:
+      pass
