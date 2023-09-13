@@ -63,6 +63,7 @@ def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   # - Speedometer 2.0
   # - Speedometer --iterations flag
@@ -84,6 +85,7 @@ def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_1(output_dir, cache_dir) -> None:
   # - Speedometer 2.1
   # - Story filtering with regexp
@@ -140,6 +142,7 @@ def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
                                        driver_path) -> None:
   # - Speedometer 3
@@ -170,6 +173,7 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_jetstream_2_0(output_dir, cache_dir) -> None:
   # - jetstream 2.0
   # - merge / run separate stories
@@ -197,6 +201,7 @@ def test_jetstream_2_0(output_dir, cache_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   # - jetstream 2.1
   # - custom --time-unit
@@ -227,6 +232,7 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_loading(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - custom cooldown time
@@ -265,6 +271,7 @@ def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_loading_playback_urls(output_dir, cache_dir) -> None:
   # - loading using url
   # - combined pages and --playback controller
@@ -282,6 +289,7 @@ def test_loading_playback_urls(output_dir, cache_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_loading_playback(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
@@ -299,6 +307,7 @@ def test_loading_playback(output_dir, cache_dir) -> None:
     not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_loading_playback_firefox(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - --playback controller

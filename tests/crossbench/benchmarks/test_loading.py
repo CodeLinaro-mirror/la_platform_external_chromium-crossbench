@@ -372,7 +372,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
                 "TEST": [
                     {
                         "action": "get",
-                        "url": 'google.com'
+                        "url": "google.com"
                     },
                     {
                         "action": "wait",
@@ -417,7 +417,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
                 "TEST": [
                     {
                         "action": "get",
-                        "url": 'google.com'
+                        "url": "google.com"
                     },
                     {
                         "action": "wait",
