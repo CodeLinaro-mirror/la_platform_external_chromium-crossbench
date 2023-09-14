@@ -302,7 +302,7 @@ class CrossBenchCLI:
         type=pathlib.Path,
         default=BROWSERS_CACHE,
         help="Used for caching browser binaries and archives. "
-        "Defaults to .browser_cache")
+        "Defaults to binary_cache")
 
     cooldown_group = runner_group.add_mutually_exclusive_group()
     cooldown_group.add_argument(

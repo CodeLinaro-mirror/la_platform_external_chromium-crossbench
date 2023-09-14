@@ -20,7 +20,7 @@ class AbstractChromeDownloaderTestCase(
     self.platform = mock.Mock(
         is_remote=False, is_linux=False, is_macos=False, sh_results=[])
     self.platform.which = lambda x: True
-    self.cache_dir = pathlib.Path("crossbench/.browser_cache")
+    self.cache_dir = pathlib.Path("crossbench/binary_cache")
     self.fs.create_dir(self.cache_dir)
 
   def test_wrong_versions(self) -> None:
