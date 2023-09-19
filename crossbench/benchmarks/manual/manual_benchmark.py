@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
+from threading import Thread
 import time
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
@@ -30,14 +31,20 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
     super().__init__(self.STORY_NAME, start_after + run_for)
 
   def setup(self, run: Run) -> None:
-    logging.critical("The browser has launched. Measurement will start in %s",
+    logging.critical("The browser has launched. Measurement will start in %s" +
+                     " (or press enter to start immediately)",
                      self._start_after)
-    time.sleep(self._start_after.total_seconds())
+    wait = Thread(target=input)
+    wait.start()
+    wait.join(timeout=self._start_after.total_seconds())
 
   def run(self, run: Run) -> None:
-    logging.critical("Measurement has started. The browser will close in %s",
+    logging.critical("Measurement has started. The browser will close in %s" +
+                     " (or press enter to close immediately)",
                      self._run_for)
-    time.sleep(self._run_for.total_seconds())
+    wait = Thread(target=input)
+    wait.start()
+    wait.join(timeout=self._run_for.total_seconds())
 
   @classmethod
   def all_story_names(cls) -> Tuple[str, ...]:
