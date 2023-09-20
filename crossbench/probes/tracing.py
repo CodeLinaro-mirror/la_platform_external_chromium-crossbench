@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
 from crossbench import cli_helper, compat, helper
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes import helper as probe_helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
@@ -256,16 +256,16 @@ class TracingProbe(Probe):
       flags["--enable-tracing"] = ",".join(self._categories)
     super().attach(browser)
 
-  def get_scope(self, run: Run) -> TracingProbeScope:
-    return TracingProbeScope(self, run)
+  def get_context(self, run: Run) -> TracingProbeContext:
+    return TracingProbeContext(self, run)
 
 
-class TracingProbeScope(ProbeScope[TracingProbe]):
+class TracingProbeContext(ProbeContext[TracingProbe]):
   _traceconv: Optional[pathlib.Path]
   _record_format: RecordFormat
 
-  def setup(self, run: Run) -> None:
-    run.extra_flags["--trace-startup-file"] = str(self.result_path)
+  def setup(self) -> None:
+    self.run.extra_flags["--trace-startup-file"] = str(self.result_path)
     self._record_format = self.probe.record_format
     if self._record_format == RecordFormat.PROTO:
       self._traceconv = self.probe.traceconv or TraceconvFinder(
@@ -273,13 +273,13 @@ class TracingProbeScope(ProbeScope[TracingProbe]):
     else:
       self._traceconv = None
 
-  def start(self, run: Run) -> None:
-    del run
+  def start(self) -> None:
+    pass
 
-  def stop(self, run: Run) -> None:
-    del run
+  def stop(self) -> None:
+    pass
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     if self._record_format == RecordFormat.JSON:
       return self.browser_result(json=(self.result_path,))
     if not self._traceconv:

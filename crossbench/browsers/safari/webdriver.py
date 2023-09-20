@@ -71,8 +71,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       options.set_capability("browserName", "Safari Technology Preview")
       options.use_technology_preview = True
 
-    for probe in run.probe_scopes:
-      probe.setup_selenium_options(options)
+    for probe_context in run.probe_contexts:
+      probe_context.setup_selenium_options(options)
 
     with run.actions("Clearing Browser Cache"):
       self._clear_cache()

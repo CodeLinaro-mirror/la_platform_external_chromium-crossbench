@@ -63,8 +63,8 @@ class PollingProbe(cb_probe.Probe, abc.ABC):
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.runner.repetitions}.")
 
-  def get_scope(self, run: Run) -> PollingProbeScope:
-    return PollingProbeScope(self, run)
+  def get_context(self, run: Run) -> PollingProbeContext:
+    return PollingProbeContext(self, run)
 
 
 class ShellPollingProbe(PollingProbe):
@@ -86,7 +86,7 @@ class ShellPollingProbe(PollingProbe):
     return parser
 
 
-class PollingProbeScope(cb_probe.ProbeScope[PollingProbe]):
+class PollingProbeContext(cb_probe.ProbeContext[PollingProbe]):
   _poller: CMDPoller
 
   def __init__(self, probe: PollingProbe, run: Run) -> None:
@@ -94,16 +94,16 @@ class PollingProbeScope(cb_probe.ProbeScope[PollingProbe]):
     self._poller = CMDPoller(self.browser_platform, self.probe.cmd,
                              self.probe.interval, self.result_path)
 
-  def setup(self, run: Run) -> None:
+  def setup(self) -> None:
     self.result_path.mkdir()
 
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     self._poller.start()
 
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     self._poller.stop()
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     return LocalProbeResult(file=(self.result_path,))
 
 

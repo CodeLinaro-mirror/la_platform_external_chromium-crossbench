@@ -216,8 +216,8 @@ PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound=PressBenchmarkStory)
 
 
-class PressBenchmarkStoryFilter(Generic[PressBenchmarkStoryT],
-                                StoryFilter[PressBenchmarkStoryT]):
+class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
+                                Generic[PressBenchmarkStoryT]):
   """
   Filter stories by name or regexp.
 

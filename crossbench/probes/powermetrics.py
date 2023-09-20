@@ -12,7 +12,7 @@ import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from crossbench import helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
@@ -77,18 +77,18 @@ class PowerMetricsProbe(Probe):
     # Only supported on macOS
     return browser.platform.is_macos
 
-  def get_scope(self, run: Run) -> PowerMetricsProbeScope:
-    return PowerMetricsProbeScope(self, run)
+  def get_context(self, run: Run) -> PowerMetricsProbeContext:
+    return PowerMetricsProbeContext(self, run)
 
 
-class PowerMetricsProbeScope(ProbeScope[PowerMetricsProbe]):
+class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
 
   def __init__(self, probe: PowerMetricsProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._power_metrics_process: Optional[subprocess.Popen] = None
     self._output_plist_file = self.result_path.with_suffix(".plist")
 
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     self._power_metrics_process = self.browser_platform.popen(
         "sudo",
         "powermetrics",
@@ -104,11 +104,11 @@ class PowerMetricsProbeScope(ProbeScope[PowerMetricsProbe]):
       raise ValueError("Could not start powermetrics")
     atexit.register(self.stop_process)
 
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     if self._power_metrics_process:
       self._power_metrics_process.terminate()
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     self.stop_process()
     return self.browser_result(file=(self._output_plist_file,))
 

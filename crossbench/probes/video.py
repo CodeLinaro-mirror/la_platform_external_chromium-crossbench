@@ -17,7 +17,7 @@ from crossbench import helper
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 
-from .probe import Probe, ProbeMissingDataError, ProbeScope, ResultLocation
+from .probe import Probe, ProbeMissingDataError, ProbeContext, ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
@@ -86,8 +86,8 @@ class VideoProbe(Probe):
             f"Viewport size for {browser} is {viewport}, "
             f"which differs from first viewport {first_viewport}. ")
 
-  def get_scope(self, run: Run) -> VideoProbeScope:
-    return VideoProbeScope(self, run)
+  def get_context(self, run: Run) -> VideoProbeContext:
+    return VideoProbeContext(self, run)
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     result_file = group.get_local_probe_result_path(self)
@@ -163,7 +163,7 @@ class VideoProbe(Probe):
     return result_file
 
 
-class VideoProbeScope(ProbeScope[VideoProbe]):
+class VideoProbeContext(ProbeContext[VideoProbe]):
   IMAGE_FORMAT = "png"
   FFMPEG_TIMELINE_TEXT = (
       "drawtext="
@@ -178,8 +178,8 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
     self._record_process: Optional[subprocess.Popen] = None
     self._recorder_log_file: Optional[TextIO] = None
 
-  def start(self, run: Run) -> None:
-    browser = run.browser
+  def start(self) -> None:
+    browser = self.run.browser
     cmd = self._record_cmd(browser.viewport)
     self._recorder_log_file = self.result_path.with_suffix(
         ".recorder.log").open(
@@ -208,7 +208,7 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
               str(self.result_path))
     raise ValueError("Invalid platform")
 
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     assert self._record_process, "screencapture stopped early."
     if self.browser_platform.is_macos:
       assert not self._record_process.poll(), (
@@ -220,7 +220,7 @@ class VideoProbeScope(ProbeScope[VideoProbe]):
     else:
       self._record_process.terminate()
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     assert self._record_process, "Screen recorder stopped early."
     assert self._recorder_log_file, "No log file."
     self._recorder_log_file.close()

@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Optional, cast
 
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.probes.probe import Probe, ProbeMissingDataError, ProbeScope
+from crossbench.probes.probe import Probe, ProbeMissingDataError, ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
@@ -39,8 +39,8 @@ class V8RCSProbe(Probe):
   def result_path_name(self) -> str:
     return f"{self.name}.txt"
 
-  def get_scope(self, run: Run) -> V8RCSProbeScope:
-    return V8RCSProbeScope(self, run)
+  def get_context(self, run: Run) -> V8RCSProbeContext:
+    return V8RCSProbeContext(self, run)
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
@@ -80,20 +80,20 @@ class V8RCSProbe(Probe):
     return LocalProbeResult(file=files)
 
 
-class V8RCSProbeScope(ProbeScope[V8RCSProbe]):
+class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
   _rcs_table: Optional[str] = None
 
-  def setup(self, run: Run) -> None:
+  def setup(self) -> None:
     pass
 
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     pass
 
-  def stop(self, run: Run) -> None:
-    with run.actions("Extract RCS") as actions:
+  def stop(self) -> None:
+    with self.run.actions("Extract RCS") as actions:
       self._rcs_table = actions.js("return %GetAndResetRuntimeCallStats();")
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     if not self._rcs_table:
       raise ProbeMissingDataError(
           "Chrome didn't produce any RCS data. "

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench import plt
-  from crossbench.probes.probe import Probe, ProbeScope
+  from crossbench.probes.probe import Probe, ProbeContext
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
 
@@ -77,7 +77,7 @@ class Run:
     self._name = name
     self._out_dir = self.get_out_dir(root_dir).absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
-    self._probe_scopes: List[ProbeScope] = []
+    self._probe_contexts: List[ProbeContext] = []
     self._extra_js_flags = JSFlags()
     self._extra_flags = Flags()
     self._durations = helper.Durations()
@@ -239,8 +239,8 @@ class Run:
     return self._exceptions.is_success
 
   @property
-  def probe_scopes(self) -> Iterator[ProbeScope]:
-    return iter(self._probe_scopes)
+  def probe_contexts(self) -> Iterator[ProbeContext]:
+    return iter(self._probe_contexts)
 
   @contextlib.contextmanager
   def measure(
@@ -303,9 +303,9 @@ class Run:
     self._start_datetime = dt.datetime.now()
     self._out_dir.mkdir(parents=True, exist_ok=True)
     with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
-      assert not self._probe_scopes
+      assert not self._probe_contexts
       try:
-        self._probe_scopes = self._setup_probes(is_dry_run)
+        self._probe_contexts = self._setup_probes(is_dry_run)
         self._setup_browser(is_dry_run)
       except Exception as e:  # pylint: disable=broad-except
         self._handle_setup_error(e)
@@ -318,7 +318,7 @@ class Run:
         if not is_dry_run:
           self.tear_down()
 
-  def _setup_probes(self, is_dry_run: bool) -> List[ProbeScope[Any]]:
+  def _setup_probes(self, is_dry_run: bool) -> List[ProbeContext[Any]]:
     assert self._state == RunState.SETUP
     logging.debug("SETUP")
     logging.info("PROBES: %s", ", ".join(probe.NAME for probe in self.probes))
@@ -336,7 +336,7 @@ class Run:
       self._runner.wait(self._runner.timing.cool_down_time, absolute_time=True)
       self._runner.cool_down()
 
-    probe_run_scopes: List[ProbeScope] = []
+    probe_run_contexts: List[ProbeContext] = []
     with self.measure("probes-creation"):
       probe_set = set()
       for probe in self.probes:
@@ -347,13 +347,13 @@ class Run:
           self._probe_results[probe] = EmptyProbeResult()
         assert probe.is_attached, (
             f"Probe {probe.name} is not properly attached to a browser")
-        probe_run_scopes.append(probe.get_scope(self))
+        probe_run_contexts.append(probe.get_context(self))
 
     with self.measure("probes-setup"):
-      for probe_scope in probe_run_scopes:
-        with self.measure(f"probes-setup {probe_scope.name}"):
-          probe_scope.setup(self)  # pytype: disable=wrong-arg-types
-    return probe_run_scopes
+      for probe_context in probe_run_contexts:
+        with self.measure(f"probes-setup {probe_context.name}"):
+          probe_context.setup()  # pytype: disable=wrong-arg-types
+    return probe_run_contexts
 
   def _setup_browser(self, is_dry_run: bool) -> None:
     assert self._state == RunState.SETUP
@@ -382,23 +382,23 @@ class Run:
     assert self._state == RunState.DONE
     assert not self._exceptions.is_success
     # Special handling for crucial runner probes
-    internal_probe_scopes = [
-        scope for scope in self._probe_scopes
-        if isinstance(scope.probe, internal_probe.InternalProbe)
+    internal_probe_contexts = [
+        context for context in self._probe_contexts
+        if isinstance(context.probe, internal_probe.InternalProbe)
     ]
-    self._tear_down_probe_scopes(internal_probe_scopes)
+    self._tear_down_probe_contexts(internal_probe_contexts)
 
   def _run(self, is_dry_run: bool) -> None:
     self._advance_state(RunState.SETUP, RunState.RUN)
-    assert self._probe_scopes
+    assert self._probe_contexts
     probe_start_time = dt.datetime.now()
-    probe_scope_manager = contextlib.ExitStack()
+    probe_context_manager = contextlib.ExitStack()
 
-    for probe_scope in self._probe_scopes:
-      probe_scope.set_start_time(probe_start_time)
-      probe_scope_manager.enter_context(probe_scope)
+    for probe_context in self._probe_contexts:
+      probe_context.set_start_time(probe_start_time)
+      probe_context_manager.enter_context(probe_context)
 
-    with probe_scope_manager:
+    with probe_context_manager:
       self._durations["probes-start"] = dt.datetime.now() - probe_start_time
       logging.info("RUNNING STORY")
       assert self._state == RunState.RUN, "Invalid state"
@@ -418,16 +418,17 @@ class Run:
     with self.measure("story-setup"):
       self._story.setup(self)
     with self.measure("probes-start_story_run"):
-      for probe_scope in self._probe_scopes:
+      for probe_context in self._probe_contexts:
         with self.exception_handler(
-            f"Probe {probe_scope.name} start_story_run"):
-          probe_scope.start_story_run(self)
+            f"Probe {probe_context.name} start_story_run"):
+          probe_context.start_story_run()
 
   def _run_story_tear_down(self) -> None:
     with self.measure("probes-stop_story_run"):
-      for probe_scope in self._probe_scopes:
-        with self.exception_handler(f"Probe {probe_scope.name} stop_story_run"):
-          probe_scope.stop_story_run(self)
+      for probe_context in self._probe_contexts:
+        with self.exception_handler(
+            f"Probe {probe_context.name} stop_story_run"):
+          probe_context.stop_story_run()
     with self.measure("story-tear-down"):
       self._story.tear_down(self)
 
@@ -451,19 +452,20 @@ class Run:
         with self._exceptions.capture("Quit browser"):
           self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
     with self.measure("probes-tear_down"):
-      self._tear_down_probe_scopes(self._probe_scopes)
-      self._probe_scopes = []
+      self._tear_down_probe_contexts(self._probe_contexts)
+      self._probe_contexts = []
     self._rm_browser_tmp_dir()
 
-  def _tear_down_probe_scopes(self, probe_scopes: List[ProbeScope]) -> None:
+  def _tear_down_probe_contexts(self,
+                                probe_contexts: List[ProbeContext]) -> None:
     assert self._state == RunState.DONE
-    assert probe_scopes, "Expected non-empty probe_scopes list."
+    assert probe_contexts, "Expected non-empty probe_contexts list."
     logging.debug("PROBE SCOPE TEARDOWN")
-    for probe_scope in reversed(probe_scopes):
-      with self.exceptions.capture(f"Probe {probe_scope.name} teardown"):
-        assert probe_scope.run == self
-        probe_results: ProbeResult = probe_scope.tear_down(self)  # pytype: disable=wrong-arg-types
-        probe = probe_scope.probe
+    for probe_context in reversed(probe_contexts):
+      with self.exceptions.capture(f"Probe {probe_context.name} teardown"):
+        assert probe_context.run == self
+        probe_results: ProbeResult = probe_context.tear_down()  # pytype: disable=wrong-arg-types
+        probe = probe_context.probe
         if probe_results.is_empty:
           logging.warning("Probe did not extract any data. probe=%s run=%s",
                           probe, self)

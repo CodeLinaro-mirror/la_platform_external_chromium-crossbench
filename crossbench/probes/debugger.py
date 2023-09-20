@@ -11,7 +11,7 @@ from crossbench import cli_helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium import chromium
 
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
@@ -119,17 +119,17 @@ class DebuggerProbe(Probe):
     debugger_cmd.extend(self._debugger_args)
     return shlex.join(debugger_cmd)
 
-  def get_scope(self, run: Run) -> DebuggerScope:
-    return DebuggerScope(self, run)
+  def get_context(self, run: Run) -> DebuggerContext:
+    return DebuggerContext(self, run)
 
 
-class DebuggerScope(ProbeScope[DebuggerProbe]):
+class DebuggerContext(ProbeContext[DebuggerProbe]):
 
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     pass
 
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     pass
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     return EmptyProbeResult()

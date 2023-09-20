@@ -4,6 +4,6 @@
 
 from __future__ import annotations
 
-from crossbench.probes.probe import Probe, ProbeScope
+from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.results import (BrowserProbeResult, ProbeResult,
                                        ProbeResultDict)

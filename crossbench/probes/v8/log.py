@@ -18,7 +18,7 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags import JSFlags
 from crossbench import plt
 from crossbench.probes import helper as probe_helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
@@ -172,8 +172,8 @@ class V8LogProbe(Probe):
                        [(finder.d8_binary, finder.tick_processor, log_file)
                         for log_file in log_files]))
 
-  def get_scope(self, run: Run) -> V8LogProbeScope:
-    return V8LogProbeScope(self, run)
+  def get_context(self, run: Run) -> V8LogProbeContext:
+    return V8LogProbeContext(self, run)
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     runs: List[Run] = list(run for run in group.runs if self in run.results)
@@ -209,23 +209,23 @@ class V8LogProbe(Probe):
                      largest_profview_file.parent, len(profview_files))
 
 
-class V8LogProbeScope(ProbeScope[V8LogProbe]):
+class V8LogProbeContext(ProbeContext[V8LogProbe]):
 
   def get_default_result_path(self) -> pathlib.Path:
     log_dir = super().get_default_result_path()
     self.browser_platform.mkdir(log_dir)
     return log_dir / self.probe.result_path_name
 
-  def setup(self, run: Run) -> None:
-    run.extra_js_flags["--logfile"] = str(self.result_path)
+  def setup(self) -> None:
+    self.run.extra_js_flags["--logfile"] = str(self.result_path)
 
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     pass
 
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     pass
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     log_dir = self.result_path.parent
     log_files = helper.sort_by_file_size(log_dir.glob("*-v8.log"))
     # Only convert a v8.log file with profile ticks.

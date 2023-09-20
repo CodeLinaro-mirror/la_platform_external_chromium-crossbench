@@ -58,7 +58,7 @@ class Probe(abc.ABC):
   / stories.
 
   Probe interface:
-  - scope(): Return a custom ProbeScope (see below)
+  - scope(): Return a custom ProbeContext (see below)
   - is_compatible(): Use for checking whether a Probe can be used with a
     given browser
   - pre_check(): Customize to display warnings before using Probes with
@@ -69,8 +69,8 @@ class Probe(abc.ABC):
   - merged repetitions from multiple stories (same browser)
   - Probe data from all Runs
 
-  Probes use a ProbeScope that is active during a story-Run.
-  The ProbeScope class defines a customizable interface
+  Probes use a ProbeContext that is active during a story-Run.
+  The ProbeContext class defines a customizable interface
   - setup(): Used for high-overhead Probe initialization
   - start(): Low-overhead start-to-measure signal
   - stop():  Low-overhead stop-to-measure signal
@@ -194,7 +194,7 @@ class Probe(abc.ABC):
     return EmptyProbeResult()
 
   @abc.abstractmethod
-  def get_scope(self: ProbeT, run: Run) -> ProbeScope[ProbeT]:
+  def get_context(self: ProbeT, run: Run) -> ProbeContext[ProbeT]:
     pass
 
   def log_run_result(self, run: Run) -> None:
@@ -211,7 +211,7 @@ class Probe(abc.ABC):
     del group
 
 
-class ProbeScope(abc.ABC, Generic[ProbeT]):
+class ProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   """
   A scope during which a probe is actively collecting data.
   Override in Probe subclasses to implement actual performance data
@@ -237,18 +237,18 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     assert self._start_time is None
     self._start_time = start_datetime
 
-  def __enter__(self) -> ProbeScope[ProbeT]:
+  def __enter__(self) -> ProbeContext[ProbeT]:
     assert not self._is_active
     assert not self._is_success
     with self._run.exception_handler(f"Probe {self.name} start"):
       self._is_active = True
-      self.start(self._run)
+      self.start()
     return self
 
   def __exit__(self, exc_type, exc_value, traceback) -> None:
     assert self._is_active
     with self._run.exception_handler(f"Probe {self.name} stop"):
-      self.stop(self._run)
+      self.stop()
       self._is_success = True
       assert self._stop_time is None
     self._stop_time = dt.datetime.now()
@@ -290,7 +290,7 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
   @property
   def start_time(self) -> dt.datetime:
     """
-    Returns a unified start time that is the same for all ProbeScopes
+    Returns a unified start time that is the same for all ProbeContexts
     within a run. This can be used to account for startup delays caused by other
     Probes.
     """
@@ -320,12 +320,11 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     assert maybe_pid, "Browser is not runner or does not provide a pid."
     return maybe_pid
 
-  def setup(self, run: Run) -> None:
+  def setup(self) -> None:
     """
     Called before starting the browser, typically used to set run-specific
     browser flags.
     """
-    del run
 
   def setup_selenium_options(self, options: BaseOptions) -> None:
     """
@@ -334,27 +333,27 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     del options
 
   @abc.abstractmethod
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     """
     Called immediately before starting the given Run, after the browser started.
     This method should have as little overhead as possible. If possible,
     delegate heavy computation to the "SetUp" method.
     """
 
-  def start_story_run(self, run: Run) -> None:
+  def start_story_run(self) -> None:
     """
     Called before running a Story's core workload (Story.run)
     and after running Story.setup.
     """
 
-  def stop_story_run(self, run: Run) -> None:
+  def stop_story_run(self) -> None:
     """
     Called after running a Story's core workload (Story.run) and before running
     Story.tear_down.
     """
 
   @abc.abstractmethod
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     """
     Called immediately after finishing the given Run with the browser still
     running.
@@ -364,7 +363,7 @@ class ProbeScope(abc.ABC, Generic[ProbeT]):
     return None
 
   @abc.abstractmethod
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     """
     Called after stopping all probes and shutting down the browser.
     Returns

@@ -116,8 +116,8 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       options.add_argument(arg)
     options.binary_location = str(self.path)
 
-    for probe in run.probe_scopes:
-      probe.setup_selenium_options(options)
+    for probe_context in run.probe_contexts:
+      probe_context.setup_selenium_options(options)
 
     return options
 

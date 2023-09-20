@@ -12,7 +12,7 @@ import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from crossbench import helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeScope,
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
@@ -112,11 +112,11 @@ class PowerSamplerProbe(Probe):
     # For now only supported on MacOs
     return browser.platform.is_macos
 
-  def get_scope(self, run: Run) -> PowerSamplerProbeScope:
-    return PowerSamplerProbeScope(self, run)
+  def get_context(self, run: Run) -> PowerSamplerProbeContext:
+    return PowerSamplerProbeContext(self, run)
 
 
-class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
+class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
@@ -128,7 +128,7 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
     self._power_battery_output = self.result_path.with_suffix(
         ".power_battery.json")
 
-  def setup(self, run: Run) -> None:
+  def setup(self) -> None:
     self._active_user_process = self.browser_platform.popen(
         self._bin_path,
         "--no-samplers",
@@ -138,9 +138,9 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
       raise ValueError("Could not start active user background sampler")
     atexit.register(self.stop_processes)
     if self.probe.wait_for_battery:
-      self._wait_for_battery_not_full(run)
+      self._wait_for_battery_not_full(self.run)
 
-  def start(self, run: Run) -> None:
+  def start(self) -> None:
     assert self._active_user_process
     if self.probe.sampling_interval > 0:
       self._power_process = self.browser_platform.popen(
@@ -162,13 +162,13 @@ class PowerSamplerProbeScope(ProbeScope[PowerSamplerProbe]):
     if self._power_battery_process.poll():
       raise ValueError("Could not start power and battery sampler")
 
-  def stop(self, run: Run) -> None:
+  def stop(self) -> None:
     if self._power_process:
       self._power_process.terminate()
     if self._power_battery_process:
       self._power_battery_process.terminate()
 
-  def tear_down(self, run: Run) -> ProbeResult:
+  def tear_down(self) -> ProbeResult:
     self.stop_processes()
     if self.probe.sampling_interval > 0:
       return self.browser_result(
