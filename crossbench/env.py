@@ -138,6 +138,16 @@ _config_catan = _config_strict.merge(
         system_forbidden_process_names=["terminal", "iterm2"],
         screen_allow_autobrightness=False))
 
+STALE_RESULT_ICONS = {
+    75: "👻",
+    100: "👾",
+    125: "🎃",
+    150: "👹",
+    200: "💀",
+    250: "😱",
+    500: "🤯"
+}
+
 
 class HostEnvironment:
   """
@@ -442,6 +452,10 @@ class HostEnvironment:
       return
     message = (f"Found {num_results} existing crossbench results. "
                f"Consider cleaning stale results in '{results_dir}'")
+    for count, icon in reversed(STALE_RESULT_ICONS.items()):
+      if num_results > count:
+        message = f"{icon} {message}"
+        break
     if num_results > 50:
       logging.error(message)
     else:
