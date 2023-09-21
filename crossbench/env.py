@@ -14,6 +14,8 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
                     Optional, Union)
 from urllib.parse import urlparse
 
+import colorama
+
 from crossbench import helper, plt
 
 if TYPE_CHECKING:
@@ -212,8 +214,8 @@ class HostEnvironment:
       return
     if self._validation_mode == ValidationMode.PROMPT:
       if allow_interactive:
-        result = input(f"{helper.TTYColor.RED}{message} Continue?"
-                       f"{helper.TTYColor.RESET} [Yn]")
+        result = input(f"{colorama.Fore.RED}{message} Continue?"
+                       f"{colorama.Fore.RESET} [Yn]")
         # Accept <enter> as default input to continue.
         if result.lower() != "n":
           return

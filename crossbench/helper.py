@@ -25,29 +25,18 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
                     Union)
 
 import tabulate
+from colorama import init, Fore, Style
 
 from crossbench import plt
 
 if TYPE_CHECKING:
   import signal
 
+
+init()
+
 assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
-
-
-class TTYColor:
-  CYAN = "\033[1;36;6m"
-  PURPLE = "\033[1;35;5m"
-  BLUE = "\033[38;5;4m"
-  YELLOW = "\033[38;5;3m"
-  GREEN = "\033[38;5;2m"
-  RED = "\033[38;5;1m"
-  BLACK = "\033[38;5;0m"
-
-  BOLD = "\033[1m"
-  UNDERLINE = "\033[4m"
-  REVERSED = "\033[7m"
-  RESET = "\033[0m"
 
 
 class ColoredLogFormatter(logging.Formatter):
@@ -56,10 +45,10 @@ class ColoredLogFormatter(logging.Formatter):
 
   FORMATS = {
       logging.DEBUG: FORMAT,
-      logging.INFO: TTYColor.GREEN + FORMAT + TTYColor.RESET,
-      logging.WARNING: TTYColor.YELLOW + FORMAT + TTYColor.RESET,
-      logging.ERROR: TTYColor.RED + FORMAT + TTYColor.RESET,
-      logging.CRITICAL: TTYColor.BOLD + FORMAT + TTYColor.RESET,
+      logging.INFO: Fore.GREEN + FORMAT + Fore.RESET,
+      logging.WARNING: Fore.YELLOW + FORMAT + Fore.RESET,
+      logging.ERROR: Fore.RED + FORMAT + Fore.RESET,
+      logging.CRITICAL: Style.BRIGHT + FORMAT + Style.RESET_ALL,
   }
 
   def format(self, record: logging.LogRecord) -> str:
@@ -499,3 +488,29 @@ def wait_and_terminate(process,
       process.terminate()
     except ProcessLookupError:
       pass
+
+
+class RepeatTimer(threading.Timer):
+
+  def run(self):
+    while not self.finished.wait(self.interval):
+      self.function(*self.args, **self.kwargs)
+
+
+def input_with_timeout(timeout=dt.timedelta(seconds=10), default=None):
+  result_container = [default]
+  wait = threading.Thread(
+      target=_input, args=[
+          result_container,
+      ])
+  wait.daemon = True
+  wait.start()
+  wait.join(timeout=timeout.total_seconds())
+  return result_container[0]
+
+
+def _input(results_container):
+  try:
+    results_container[0] = input()
+  except KeyboardInterrupt:
+    pass

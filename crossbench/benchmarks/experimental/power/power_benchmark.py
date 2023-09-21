@@ -9,17 +9,16 @@ import datetime as dt
 import logging
 import pathlib
 import time
-from threading import Timer
 from typing import TYPE_CHECKING, Sequence, Tuple
 
 from selenium import webdriver
 from selenium.common.exceptions import (ElementNotInteractableException,
-                                        TimeoutException,
-                                        WebDriverException)
+                                        TimeoutException, WebDriverException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
+from crossbench import helper
 from crossbench.benchmarks.benchmark import StoryFilter, SubStoryBenchmark
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.stories.story import Story
@@ -77,13 +76,6 @@ class PowerBenchmarkStoryFilter(StoryFilter[PowerBenchmarkStory]):
       stories.append(globals()[story_name + "Story"](duration))
     return stories
 
-
-class RepeatTimer(Timer):
-  def run(self):
-    while not self.finished.wait(self.interval):
-      self.function(*self.args, **self.kwargs)
-
-
 class BrowsingStory(PowerBenchmarkStory):
 
   def __init__(self, duration: dt.timedelta = dt.timedelta(15 * 60)):
@@ -98,7 +90,7 @@ class BrowsingStory(PowerBenchmarkStory):
       for line in f:
         url = line.strip()
         if url:
-            urls.append(url)
+          urls.append(url)
     return urls
 
   def browser_url(self) -> None:
@@ -113,7 +105,7 @@ class BrowsingStory(PowerBenchmarkStory):
   def run(self, run: Run) -> None:
     self.get_driver(run)
 
-    timer = RepeatTimer(15, self.browser_url)
+    timer = helper.RepeatTimer(15, self.browser_url)
     timer.start()
     time.sleep(self.duration.total_seconds())
     timer.cancel()
