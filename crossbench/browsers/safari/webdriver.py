@@ -111,6 +111,13 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         f"safaridriver={self._driver_path} version='{version}' "
         f" doesn't match safari version={self.major_version}")
 
+  def _setup_window(self) -> None:
+    super()._setup_window()
+    self.platform.exec_apple_script(f"""
+        tell application "{self.app_name}"
+          activate
+        end tell""")
+
   def quit(self, runner: Runner) -> None:
     super().quit(runner)
     # Safari needs some additional push to quit properly
