@@ -14,6 +14,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
 from crossbench import helper
 
 from .arch import MachineArch
+from .base import SubprocessError
 from .posix import PosixPlatform
 
 if TYPE_CHECKING:
@@ -101,6 +102,9 @@ class Adb:
 
   def __str__(self) -> str:
     return f"adb(serial={self._serial_id}, info='{self._device_info}')"
+
+  def has_root(self) -> bool:
+    return self.shell_stdout('id').startswith('uid=0(root)')
 
   @property
   def serial_id(self) -> str:
@@ -208,6 +212,10 @@ class Adb:
            local_dest_path: pathlib.Path) -> None:
     self._adb("pull", device_src_path, local_dest_path)
 
+  def push(self, local_src_path: pathlib.Path,
+           device_dest_path: pathlib.Path) -> None:
+    self._adb("push", local_src_path, device_dest_path)
+
   def cmd(self,
           *args: str,
           quiet: bool = False,
@@ -254,6 +262,7 @@ class AndroidAdbPlatform(PosixPlatform):
                adb: Optional[Adb] = None) -> None:
     super().__init__()
     self._machine: Optional[MachineArch] = None
+    self._system_details: Optional[Dict[str, Any]] = None
     self._host_platform = host_platform
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
@@ -450,3 +459,58 @@ class AndroidAdbPlatform(PosixPlatform):
     to_path.parent.mkdir(parents=True, exist_ok=True)
     self.adb.pull(from_path, to_path)
     return to_path
+
+  def push(self, from_path: pathlib.Path,
+              to_path: pathlib.Path) -> pathlib.Path:
+    self.adb.push(from_path, to_path)
+    return to_path
+
+  def processes(self,
+                attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()
+    if len(lines) == 1:
+      return []
+
+    res = []
+    for line in lines[1:]:
+      tokens = line.split()
+      assert len(tokens) == 2
+      res.append({"pid": int(tokens[0]), "name": tokens[1]})
+    return res
+
+  def cpu_details(self) -> Dict[str, Any]:
+    # TODO: Implement properly (i.e. remove all n/a values)
+    details = {
+        "physical cores": "n/a",
+        "logical cores": "n/a",
+        "usage": "n/a",
+        "total usage": "n/a",
+        "system load": "n/a"
+    }
+    details.update({
+        "max frequency": "n/a",
+        "min frequency": "n/a",
+        "current frequency": "n/a",
+    })
+    return details
+
+  def system_details(self) -> Dict[str, Any]:
+    if self._system_details:
+      return self._system_details
+
+    # TODO: Implement properly (i.e. remove all n/a values)
+    self._system_details = {
+        "machine": self.sh_stdout("uname", "-m").split()[0],
+        "os": {
+            "system": self.sh_stdout("uname", "-s").split()[0],
+            "release": self.sh_stdout("uname", "-r").split()[0],
+            "version": self.sh_stdout("uname", "-v").split()[0],
+            "platform": "n/a",
+        },
+        "python": {
+            "version": "n/a",
+            "bits": "n/a",
+        },
+        "CPU": self.cpu_details(),
+    }
+    return self._system_details

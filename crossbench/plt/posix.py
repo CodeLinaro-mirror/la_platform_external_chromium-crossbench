@@ -171,6 +171,21 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().is_dir(path)
     return self.sh("[", "-d", path, "]", check=False).returncode == 0
 
+  def terminate(self, proc_pid: int) -> None:
+    self.sh("kill", "-s", "TERM", str(proc_pid))
+
+  def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
+    try:
+      lines = self.sh_stdout("ps", "-o", "comm", "--pid", str(pid)).splitlines()
+      if len(lines) <= 1:
+        return None
+      assert len(lines) == 2, lines
+      tokens = lines[1].split()
+      assert len(tokens) == 1
+      return {"comm": tokens[0]}
+    except SubprocessError:
+      return None
+
   @property
   def environ(self) -> Environ:
     if not self.is_remote:

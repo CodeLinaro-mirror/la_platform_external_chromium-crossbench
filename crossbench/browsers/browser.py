@@ -262,3 +262,6 @@ class Browser(abc.ABC):
     if self.platform.is_remote:
       platform_prefix = str(self.platform)
     return f"{platform_prefix}{self.type.capitalize()}:{self.label}"
+
+  def performance_mark(self, runner: Runner, name: str):
+    self.js(runner, "performance.mark(arguments[0]);", arguments=[name])
