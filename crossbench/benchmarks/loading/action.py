@@ -113,6 +113,21 @@ class ReadyState(ParsingEnum):
   COMPLETE = "complete"
 
 
+class WindowTarget(ParsingEnum):
+  """See https://developer.mozilla.org/en-US/docs/Web/API/Window/open"""
+  # The current browsing context. (Default)
+  SELF = "_self"
+  # Usually a new tab, but users can configure browsers to open a new window
+  # instead.
+  BLANK = "_blank"
+  # The parent browsing context of the current one. If no parent, behaves as
+  # _self.
+  PARENT = "_parent"
+  # The topmost browsing context (the "highest" context that's an ancestor of
+  # the current one). If no ancestors, behaves as _self.
+  TOP = "_top"
+
+
 class GetAction(Action):
   TYPE: ActionType = ActionType.GET
 
@@ -125,16 +140,20 @@ class GetAction(Action):
       kwargs["duration"] = cli_helper.Duration.parse_zero(duration)
     if ready_state := value.pop("ready-state", None):
       kwargs["ready_state"] = ReadyState.parse(ready_state)
+    if target := value.pop("target", None):
+      kwargs["target"] = WindowTarget.parse(target)
     return kwargs
 
   def __init__(self,
                url: str,
                duration: dt.timedelta = dt.timedelta(),
                timeout: dt.timedelta = ACTION_TIMEOUT,
-               ready_state: ReadyState = ReadyState.ANY):
+               ready_state: ReadyState = ReadyState.ANY,
+               target: WindowTarget = WindowTarget.SELF):
     self._url: str = url
     self._duration = duration
     self._ready_state = ready_state
+    self._target = target
     super().__init__(timeout)
 
   @property
@@ -149,12 +168,21 @@ class GetAction(Action):
   def duration(self) -> dt.timedelta:
     return self._duration
 
+  @property
+  def target(self) -> WindowTarget:
+    return self._target
+
   def run(self, run: Run) -> None:
     start_time = time.time()
     expected_end_time = start_time + self.duration.total_seconds()
 
     with run.actions("GetAction", measure=False) as action:
-      action.show_url(self.url)
+      if self.target:
+        run.browser.js(run.runner,
+                       f"window.open('{self.url}','{self.target}');")
+      else:
+        action.show_url(self.url)
+
       if self._ready_state != ReadyState.ANY:
         action.wait_js_condition(
             f"return document.readyState === '{self._ready_state}'", 0.5, 15)
