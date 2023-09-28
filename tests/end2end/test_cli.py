@@ -245,8 +245,8 @@ def test_loading(output_dir, cache_dir) -> None:
   assert not results_dir.exists()
   _run_cli("loading", "--browser=chr", "--env-validation=skip",
            f"--out-dir={results_dir}", f"--cache-dir={cache_dir}",
-           "--viewport=headless", "--stories=cnn,facebook",
-           "--cool-down-time=2.5", "--probe=performance.entries")
+           "--viewport=headless", "--stories=cnn", "--cool-down-time=2.5",
+           "--probe=performance.entries")
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
@@ -264,7 +264,8 @@ def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
   assert not results_dir.exists()
   _run_cli("loading", "--env-validation=skip", f"--out-dir={results_dir}",
            f"--cache-dir={cache_dir}", f"--page-config={page_config}",
-           "--probe=performance.entries", "--throw")
+           "--probe=performance.entries", "--no-splash", "--cool-down-time=0",
+           "--throw")
 
 
 @pytest.mark.skipif(

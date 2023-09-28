@@ -62,10 +62,10 @@ class Actions(helper.TimeScope):
     self._is_active = True
     logging.debug("Action begin: %s", self._message)
     if self._verbose:
-      logging.info(self._message)
+      logging.info(self._message.ljust(30))
     else:
       # Print message that doesn't overlap with helper.Spinner
-      sys.stdout.write(f"   {self._message}\r")
+      sys.stdout.write(f"   {self._message.ljust(30)}\r")
     return self
 
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:

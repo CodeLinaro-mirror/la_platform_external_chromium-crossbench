@@ -176,16 +176,20 @@ class GetAction(Action):
     start_time = time.time()
     expected_end_time = start_time + self.duration.total_seconds()
 
-    with run.actions("GetAction", measure=False) as action:
+    with run.actions(f"Get {self.url}", measure=False) as action:
       if self.target:
-        run.browser.js(run.runner,
-                       f"window.open('{self.url}','{self.target}');")
+        action.js(f"window.open('{self.url}','{self.target}');")
       else:
         action.show_url(self.url)
 
       if self._ready_state != ReadyState.ANY:
+        # Make sure we also finish if readyState jumps directly
+        # from "loading" to "complete"
         action.wait_js_condition(
-            f"return document.readyState === '{self._ready_state}'", 0.5, 15)
+            f"""
+              let state = document.readyState;
+              return state === '{self._ready_state}' || state === "complete";
+            """, 0.2, self.timeout.total_seconds())
         return
       # Wait for the given duration from the start of the action.
       wait_time_seconds = expected_end_time - time.time()
@@ -251,7 +255,8 @@ class WaitAction(DurationAction):
   TYPE: ActionType = ActionType.WAIT
 
   def run(self, run: Run) -> None:
-    run.runner.wait(self.duration)
+    with run.actions("WaitAction", measure=False) as action:
+      action.wait(self.duration)
 
 
 class ScrollAction(DurationAction):
@@ -282,14 +287,15 @@ class ScrollAction(DurationAction):
     start = 0
     end = direction
 
-    while time.time() < time_end:
-      # TODO: REMOVE COMMENT CODE ONCE pyautogui ALLOWED ON GOOGLE3
-      # if events_source == 'js'
-      run.browser.js(run.runner, f"window.scrollTo({start}, {end});")
-      start = end
-      end += 100
-      # else :
-      #   pyautogui.scroll(direction)
+    with run.actions("ScrollAction", measure=False) as action:
+      while time.time() < time_end:
+        # TODO: REMOVE COMMENT CODE ONCE pyautogui ALLOWED ON GOOGLE3
+        # if events_source == 'js'
+        action.js(f"window.scrollTo({start}, {end});")
+        start = end
+        end += 100
+        # else :
+        #   pyautogui.scroll(direction)
 
   def validate(self) -> None:
     super().validate()
@@ -331,20 +337,20 @@ class ClickAction(Action):
     return self._selector
 
   def run(self, run: Run) -> None:
-    # TODO: support more selector types.
-    prefix = "xpath/"
-    if self.selector.startswith(prefix):
-      xpath: str = self.selector[len(prefix):]
-      run.browser.js(
-          run.runner,
-          """
-       let element = document.evaluate(arguments[0], document).iterateNext();
-       if (arguments[1]) element.scrollIntoView()
-       element.click()
-       """,
-          arguments=[xpath, self._scroll_into_view])
-    else:
-      raise NotImplementedError(f"Unsupported selector: {self.selector}")
+    with run.actions("ClickAction", measure=False) as action:
+      # TODO: support more selector types.
+      prefix = "xpath/"
+      if self.selector.startswith(prefix):
+        xpath: str = self.selector[len(prefix):]
+        action.js(
+            """
+              let element = document.evaluate(arguments[0], document).iterateNext();
+              if (arguments[1]) element.scrollIntoView()
+              element.click()
+            """,
+            arguments=[xpath, self._scroll_into_view])
+      else:
+        raise NotImplementedError(f"Unsupported selector: {self.selector}")
 
   def validate(self) -> None:
     super().validate()
