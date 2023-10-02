@@ -170,16 +170,16 @@ class SpeedometerBaseTestCase(
   def _test_run(self,
                 story_names: Optional[Sequence[str]] = None,
                 separate: bool = False,
+                iterations: int = 2,
                 custom_url: Optional[str] = None,
                 throw: bool = True) -> Runner:
     repetitions = 3
-    iterations = 2
     if story_names is None:
       default_story_name = self.story_cls.SUBSTORIES[0]
       self.assertTrue(default_story_name)
       story_names = [default_story_name]
     stories = self.story_cls.from_names(
-        story_names, separate=separate, url=custom_url)
+        story_names, separate=separate, url=custom_url, iterations=iterations)
 
     # The order should match Runner.get_runs
     for _ in range(repetitions):
@@ -193,8 +193,7 @@ class SpeedometerBaseTestCase(
             "mean": 2000,
             "geomean": 3000,
             "score": 10
-        }
-                                     for _ in range(iterations)]
+        }] * iterations
         js_side_effects = [
             True,  # Page is ready
             None,  # _setup_substories
@@ -270,22 +269,32 @@ class SpeedometerBaseTestCase(
     self._verify_results(runner)
 
   def test_run_default(self):
-    runner = self._test_run()
+    runner = self._test_run(iterations=10)
     self._verify_results(runner)
     for browser in self.browsers:
       urls = self.filter_data_urls(browser.url_list)
-      self.assertIn(f"{self.story_cls.URL}?iterationCount=10", urls)
-      self.assertNotIn(f"{self.story_cls.URL_LOCAL}?iterationCount=10", urls)
+      self.assertIn(self.story_cls.URL, urls)
+      self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
   def test_run_custom_url(self):
     custom_url = "http://test.example.com/speedometer"
-    runner = self._test_run(custom_url=custom_url)
+    runner = self._test_run(custom_url=custom_url, iterations=10)
     self._verify_results(runner)
     for browser in self.browsers:
       urls = self.filter_data_urls(browser.url_list)
-      self.assertIn(f"{custom_url}?iterationCount=10", urls)
-      self.assertNotIn(f"{self.story_cls.URL}?iterationCount=10", urls)
-      self.assertNotIn(f"{self.story_cls.URL_LOCAL}?iterationCount=10", urls)
+      self.assertIn(custom_url, urls)
+      self.assertNotIn(self.story_cls.URL, urls)
+      self.assertNotIn(self.story_cls.URL_LOCAL, urls)
+
+  def test_run_custom_iterations(self):
+    runner = self._test_run(iterations=7)
+    self._verify_results(runner)
+    for browser in self.browsers:
+      urls = self.filter_data_urls(browser.url_list)
+      self.assertIn(f"{self.story_cls.URL}?iterationCount=7", urls)
+      self.assertNotIn(self.story_cls.URL, urls)
+      self.assertNotIn(f"{self.story_cls.URL_LOCAL}?iterationCount=7", urls)
+      self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
   def _verify_results_stories(self, rows, story_names):
     labels = [row['label'] for row in rows]

@@ -2,6 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
+from dataclasses import dataclass
+import datetime as dt
+
 from tests import run_helper
 
 from crossbench.benchmarks.speedometer import speedometer_2_0
@@ -71,6 +75,64 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
 
   def test_run_separate(self):
     self._run_separate(["TodoMVC-JavaScript-ES5", "TodoMVC-Backbone"])
+
+  @dataclass
+  class Namespace(speedometer_helper.SpeedometerBaseTestCase.Namespace):
+    sync_wait = dt.timedelta(0)
+    sync_warmup = dt.timedelta(0)
+    measurement_method = speedometer_3_0.MeasurementMethod.RAF
+
+  def test_measurement_method_kwargs(self):
+    args = self.Namespace()
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.measurement_method,
+                       speedometer_3_0.MeasurementMethod.RAF)
+
+    args.measurement_method = speedometer_3_0.MeasurementMethod.TIMER
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.measurement_method,
+                       speedometer_3_0.MeasurementMethod.TIMER)
+      self.assertDictEqual(story.url_params, {"measurementMethod": "timer"})
+
+  def test_sync_wait_kwargs(self):
+    args = self.Namespace()
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.sync_wait, dt.timedelta(0))
+
+    with self.assertRaises(argparse.ArgumentTypeError):
+      args.sync_wait = dt.timedelta(seconds=-123.4)
+      self.benchmark_cls.from_cli_args(args)
+
+    args.sync_wait = dt.timedelta(seconds=123.4)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.sync_wait, dt.timedelta(seconds=123.4))
+      self.assertDictEqual(story.url_params, {"waitBeforeSync": "123400"})
+
+  def test_sync_warmup_kwargs(self):
+    args = self.Namespace()
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.sync_warmup, dt.timedelta(0))
+
+    with self.assertRaises(argparse.ArgumentTypeError):
+      args.sync_warmup = dt.timedelta(seconds=-123.4)
+      self.benchmark_cls.from_cli_args(args)
+
+    args.sync_warmup = dt.timedelta(seconds=123.4)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.sync_warmup, dt.timedelta(seconds=123.4))
+      self.assertDictEqual(story.url_params, {"warmupBeforeSync": "123400"})
 
 
 if __name__ == "__main__":

@@ -394,27 +394,35 @@ class Duration:
         "Make sure to use a supported time unit/suffix")
 
   @classmethod
-  def parse(cls, time_value: DurationInputT) -> dt.timedelta:
-    return cls.parse_non_zero(time_value)
+  def parse(cls,
+            time_value: DurationInputT,
+            name: str = "duration") -> dt.timedelta:
+    return cls.parse_non_zero(time_value, name)
 
   @classmethod
-  def parse_non_zero(cls, time_value: DurationInputT) -> dt.timedelta:
+  def parse_non_zero(cls,
+                     time_value: DurationInputT,
+                     name: str = "duration") -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value)
     if duration.total_seconds() <= 0:
       raise argparse.ArgumentTypeError(
-          f"Expected non-zero duration, but got {duration}")
+          f"Expected non-zero {name}, but got {duration}")
     return duration
 
   @classmethod
-  def parse_zero(cls, time_value: DurationInputT) -> dt.timedelta:
-    duration: dt.timedelta = cls.parse_any(time_value)
+  def parse_zero(cls,
+                 time_value: DurationInputT,
+                 name: str = "duration") -> dt.timedelta:
+    duration: dt.timedelta = cls.parse_any(time_value, name)
     if duration.total_seconds() < 0:
       raise argparse.ArgumentTypeError(
-          f"Expected positive duration, but got {duration}")
+          f"Expected positive {name}, but got {duration}")
     return duration
 
   @classmethod
-  def parse_any(cls, time_value: DurationInputT) -> dt.timedelta:
+  def parse_any(cls,
+                time_value: DurationInputT,
+                name: str = "duration") -> dt.timedelta:
     """
     This function will parse the measurement and the value from string value.
 
@@ -428,29 +436,28 @@ class Duration:
     if isinstance(time_value, (int, float)):
       return dt.timedelta(seconds=time_value)
     if not time_value:
-      raise argparse.ArgumentTypeError("Expected non-empty duration value.")
+      raise argparse.ArgumentTypeError(f"Expected non-empty {name} value.")
     if not isinstance(time_value, str):
       raise argparse.ArgumentTypeError(
-          f"Unexpected {type(time_value)}: {time_value}")
+          f"Unexpected {type(time_value)} for {name}: {time_value}")
 
     match = cls._DURATION_RE.fullmatch(time_value)
     if match is None:
-      raise argparse.ArgumentTypeError(
-          f"Unknown Duration format: '{time_value}'")
+      raise argparse.ArgumentTypeError(f"Unknown {name} format: '{time_value}'")
 
     value = match.group("value")
     if not value:
       raise argparse.ArgumentTypeError(
-          "Error: Duration value not found."
-          f"Make sure to include a valid duration value: '{time_value}'")
+          f"Error: {name} value not found."
+          f"Make sure to include a valid {name} value: '{time_value}'")
     time_unit = match.group("unit")
     try:
       time_value = float(value)
     except ValueError as e:
-      raise argparse.ArgumentTypeError(f"Duration must be a valid number, {e}")
+      raise argparse.ArgumentTypeError(f"{name} must be a valid number, {e}")
     if not math.isfinite(time_value):
       raise argparse.ArgumentTypeError(
-          f"Duration must be finite, but got: {time_value}")
+          f"{name} must be finite, but got: {time_value}")
 
     if not time_unit:
       # If no time unit provided we assume it is in seconds.
