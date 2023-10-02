@@ -49,6 +49,6 @@ requires = ["poetry_core>=1.1.5"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "--ignore=tests/cbb -n auto"
+addopts = "--ignore=tests/cbb -n auto --dist=loadgroup"
 log_cli = 1
 log_cli_level = "DEBUG"
