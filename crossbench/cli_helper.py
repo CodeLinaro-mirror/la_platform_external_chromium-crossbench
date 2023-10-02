@@ -191,36 +191,49 @@ def parse_dict_hjson_file(value: Union[str, pathlib.Path]) -> Any:
   return data
 
 
-def parse_positive_zero_float(value: Any) -> float:
+def parse_float(value: Any, name: str = "float") -> float:
   try:
-    value_f = float(value)
+    return float(value)
   except ValueError as e:
-    raise argparse.ArgumentTypeError(f"Invalid float: '{value}'") from e
+    raise argparse.ArgumentTypeError(f"Invalid {name}: '{value}'") from e
+
+
+def parse_positive_zero_float(value: Any, name: str = "float") -> float:
+  value_f = parse_float(value, name)
   if not math.isfinite(value_f) or value_f < 0:
-    raise argparse.ArgumentTypeError(f"Expected float >= 0, but got: {value_f}")
+    raise argparse.ArgumentTypeError(
+        f"Expected {name} >= 0, but got: {value_f}")
   return value_f
 
 
-def parse_positive_zero_int(value: Any) -> int:
+def parse_int(value: Any, name: str = "integer") -> int:
   try:
-    positive_int = int(value)
+    return int(value)
   except ValueError as e:
-    raise argparse.ArgumentTypeError(f"Invalid integer: '{value}'") from e
-  if positive_int < 0:
-    raise argparse.ArgumentTypeError(
-        f"Expected int >= 0, but got: {positive_int}")
-  return positive_int
+    raise argparse.ArgumentTypeError(f"Invalid {name}: '{value}'") from e
 
 
-def parse_positive_int(value: str, msg: str = "") -> int:
-  try:
-    value_i = int(value)
-  except ValueError as e:
-    raise argparse.ArgumentTypeError(f"Invalid integer: '{value}'") from e
-  if not math.isfinite(value_i) or value_i <= 0:
+def parse_positive_zero_int(value: Any, name: str = "integer") -> int:
+  value_i = parse_int(value, name)
+  if value_i < 0:
     raise argparse.ArgumentTypeError(
-        f"Expected int > 0 {msg}, but got: {value_i}")
+        f"Expected {name} >= 0, but got: {value_i}")
   return value_i
+
+
+def parse_positive_int(value: Any, name: str = "integer") -> int:
+  value_i = parse_int(value, name)
+  if not math.isfinite(value_i) or value_i <= 0:
+    raise argparse.ArgumentTypeError(f"Expected {name} > 0, but got: {value_i}")
+  return value_i
+
+
+def parse_port(value: Any, msg: str = "port") -> int:
+  port = parse_int(value, msg)
+  if 1 <= port <= 65535:
+    return port
+  raise argparse.ArgumentTypeError(
+      f"Expected 1 <= {port} <= 65535, but got: {port}")
 
 
 def parse_non_empty_str(value: Any, name: str = "string") -> str:

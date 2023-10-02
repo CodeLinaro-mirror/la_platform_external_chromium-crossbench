@@ -13,10 +13,10 @@ import unittest
 
 
 from crossbench.cli_helper import (
-    Duration, parse_bool, parse_dir_path, parse_existing_file_path,
-    parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson,
+    Duration, parse_bool, parse_dir_path, parse_existing_file_path, parse_float,
+    parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson, parse_int,
     parse_json_file, parse_json_file_path, parse_non_empty_file_path,
-    parse_non_empty_str, parse_path, parse_positive_int,
+    parse_non_empty_str, parse_path, parse_port, parse_positive_int,
     parse_positive_zero_float, parse_positive_zero_int, parse_sh_cmd)
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -128,9 +128,29 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
         _ = parse_httpx_url_str(invalid)
       self.assertIn(invalid, str(cm.exception))
 
+  def test_parse_int(self):
+    self.assertEqual(parse_int("-123456"), -123456)
+    self.assertEqual(parse_int(-123456), -123456)
+    self.assertEqual(parse_int("-1"), -1)
+    self.assertEqual(parse_int(-1), -1)
+    self.assertEqual(parse_int("0"), 0)
+    self.assertEqual(parse_int(0), 0)
+    self.assertEqual(parse_int("1"), 1)
+    self.assertEqual(parse_int(1), 1)
+    self.assertEqual(parse_int("123456"), 123456)
+    self.assertEqual(parse_int(123456), 123456)
+
+  def test_parse_int_invalid(self):
+    for invalid in ("", "-1.2", "1.2", "100.001", "Nan", "inf", "-inf",
+                    "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = parse_int(invalid)
+
   def test_parse_positive_int(self):
     self.assertEqual(parse_positive_int("1"), 1)
     self.assertEqual(parse_positive_int("123"), 123)
+
+  def test_parse_positive_int_ivalid(self):
     for invalid in ("", "0", "-1", "-1.2", "1.2", "Nan", "inf", "-inf",
                     "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
@@ -139,18 +159,52 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
   def test_parse_positive_zero_int(self):
     self.assertEqual(parse_positive_zero_int("1"), 1)
     self.assertEqual(parse_positive_zero_int("0"), 0)
+
+  def test_parse_positive_zero_int_invalid(self):
     for invalid in ("", "-1", "-1.2", "1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = parse_positive_zero_int(invalid)
 
+  def test_parse_float(self):
+    self.assertEqual(parse_float("-1.2"), -1.2)
+    self.assertEqual(parse_float(-1.2), -1.2)
+    self.assertEqual(parse_float("-1"), -1.0)
+    self.assertEqual(parse_float(-1), -1.0)
+    self.assertEqual(parse_float("0"), 0.0)
+    self.assertEqual(parse_float(0), 0.0)
+    self.assertEqual(parse_float("0.0"), 0.0)
+    self.assertEqual(parse_float(0.0), 0.0)
+    self.assertEqual(parse_float("0.1"), 0.1)
+    self.assertEqual(parse_float(0.1), 0.1)
+
+  def test_parse_float_invalid(self):
+    for invalid in ("", "abc", "NaN", "inf", "-inf", "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = parse_positive_zero_float(invalid)
+
   def test_parse_positive_zero_float(self):
-    self.assertEqual(parse_positive_zero_float("1"), 1)
-    self.assertEqual(parse_positive_zero_float("0"), 0)
-    self.assertEqual(parse_positive_zero_float("0.0"), 0)
+    self.assertEqual(parse_positive_zero_float("1"), 1.0)
+    self.assertEqual(parse_positive_zero_float("0"), 0.0)
+    self.assertEqual(parse_positive_zero_float("0.0"), 0.0)
     self.assertEqual(parse_positive_zero_float("1.23"), 1.23)
+
+  def test_parse_positive_zero_float_invlid(self):
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = parse_positive_zero_float(invalid)
+
+  def test_parse_port(self):
+    self.assertEqual(parse_port(1), 1)
+    self.assertEqual(parse_port("1"), 1)
+    self.assertEqual(parse_port(440), 440)
+    self.assertEqual(parse_port("440"), 440)
+    self.assertEqual(parse_port(65535), 65535)
+    self.assertEqual(parse_port("65535"), 65535)
+
+  def test_parse_port_invalid(self):
+    for invalid in ("", "-1", "-1.2", "6553500", "inf", "-inf", "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = parse_port(invalid)
 
   def _json_file_test_helper(self, parser) -> Any:
     with self.assertRaises(argparse.ArgumentTypeError):

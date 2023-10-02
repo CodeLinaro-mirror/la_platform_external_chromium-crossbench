@@ -255,10 +255,10 @@ class WaitRange:
 
   def __init__(
       self,
-      min: Union[float, dt.timedelta] = 0.1,  # pylint: disable=redefined-builtin
-      timeout: Union[float, dt.timedelta] = 10,
+      min: Union[int, float, dt.timedelta] = 0.1,  # pylint: disable=redefined-builtin
+      timeout: Union[int, float, dt.timedelta] = 10,
       factor: float = 1.01,
-      max: Optional[Union[float, dt.timedelta]] = None,  # pylint: disable=redefined-builtin
+      max: Optional[Union[int, float, dt.timedelta]] = None,  # pylint: disable=redefined-builtin
       max_iterations: Optional[int] = None
   ) -> None:
     if isinstance(min, dt.timedelta):
@@ -293,8 +293,10 @@ class WaitRange:
       i += 1
 
 
-def wait_with_backoff(wait_range: WaitRange) -> Iterator[Tuple[float, float]]:
-  assert isinstance(wait_range, WaitRange)
+def wait_with_backoff(
+    wait_range: Union[int, float, WaitRange]) -> Iterator[Tuple[float, float]]:
+  if not isinstance(wait_range, WaitRange):
+    wait_range = WaitRange(timeout=wait_range)
   start = dt.datetime.now()
   timeout = wait_range.timeout
   for sleep_for in wait_range:
