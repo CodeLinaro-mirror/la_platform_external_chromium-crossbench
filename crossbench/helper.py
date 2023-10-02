@@ -45,10 +45,10 @@ class ColoredLogFormatter(logging.Formatter):
 
   FORMATS = {
       logging.DEBUG: FORMAT,
-      logging.INFO: Fore.GREEN + FORMAT + Fore.RESET,
-      logging.WARNING: Fore.YELLOW + FORMAT + Fore.RESET,
-      logging.ERROR: Fore.RED + FORMAT + Fore.RESET,
-      logging.CRITICAL: Style.BRIGHT + FORMAT + Style.RESET_ALL,
+      logging.INFO: str(Fore.GREEN) + FORMAT + str(Fore.RESET),
+      logging.WARNING: str(Fore.YELLOW) + FORMAT + str(Fore.RESET),
+      logging.ERROR: str(Fore.RED) + FORMAT + str(Fore.RESET),
+      logging.CRITICAL: str(Style.BRIGHT) + FORMAT + str(Style.RESET_ALL),
   }
 
   def format(self, record: logging.LogRecord) -> str:
