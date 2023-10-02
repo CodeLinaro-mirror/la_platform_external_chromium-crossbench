@@ -197,10 +197,16 @@ class RemotePosixEnviron(Environ):
 
   def __init__(self, platform: PosixPlatform) -> None:
     self._platform = platform
-    self._environ = dict(
-        line.split("=", maxsplit=1)
-        for line in self._platform.sh_stdout("env").splitlines()
-        if line)
+    self._environ = {}
+    for line in self._platform.sh_stdout("env").splitlines():
+      parts = line.split("=", maxsplit=1)
+      if len(parts) == 2:
+        key, value = parts
+        self._environ[key] = value
+      else:
+        assert len(parts) == 1
+        key = parts[0]
+        self._environ[key] = ""
 
   def __getitem__(self, key: str) -> str:
     return self._environ.__getitem__(key)
