@@ -673,13 +673,27 @@ class BrowserVariantsConfig:
     unique_names = set(names)
     return len(unique_names) == len(names)
 
+  def _extract_chrome_flags(self, args: argparse.Namespace) -> ChromeFlags:
+    flags = ChromeFlags()
+    if args.enable_features:
+      flags["--enable-features"] = args.enable_features
+    if args.disable_features:
+      flags["--disable-features"] = args.disable_features
+
+    if args.js_flags:
+      for js_flag in args.js_flags.split(","):
+        js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
+        flags.js_flags.set(js_flag_name, js_flag_value)
+
+    if args.enable_field_trial_config is True:
+      flags.set("--enable-field-trial-config")
+    if args.enable_field_trial_config is False:
+      flags.set("--disable-field-trial-config")
+    return flags
+
   def _verify_browser_flags(self, args: argparse.Namespace) -> None:
-    chrome_args = {
-        "--enable-features": args.enable_features,
-        "--disable-features": args.disable_features,
-        "--js-flags": args.js_flags
-    }
-    for flag_name, value in chrome_args.items():
+    chrome_flags = self._extract_chrome_flags(args)
+    for flag_name, value in chrome_flags.items():
       if not value:
         continue
       for browser in self._variants:
@@ -735,7 +749,8 @@ class BrowserVariantsConfig:
 
     if issubclass(browser_cls, browsers.Chromium):
       assert isinstance(flags, ChromeFlags)
-      self._init_chrome_flags(args, flags)
+      extra_flags = self._extract_chrome_flags(args)
+      flags.merge(extra_flags)
 
     for flag_str in args.other_browser_args:
       flag_name, flag_value = Flags.split(flag_str)
@@ -754,19 +769,6 @@ class BrowserVariantsConfig:
     logging.info("SELECTED BROWSER: name=%s path='%s' ",
                  browser_instance.unique_name, path)
     self._variants.append(browser_instance)
-
-  def _init_chrome_flags(self, args: argparse.Namespace,
-                         flags: ChromeFlags) -> None:
-    if args.enable_features:
-      for feature in args.enable_features.split(","):
-        flags.features.enable(feature)
-    if args.disable_features:
-      for feature in args.disable_features.split(","):
-        flags.features.disable(feature)
-    if args.js_flags:
-      for js_flag in args.js_flags.split(","):
-        js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
-        flags.js_flags.set(js_flag_name, js_flag_value)
 
 
 class ProbeConfigError(argparse.ArgumentTypeError):

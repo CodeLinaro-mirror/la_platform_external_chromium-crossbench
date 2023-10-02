@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
+import re
 from typing import (Dict, Final, Iterable, Iterator, Optional, Set, Tuple,
                     Union)
 
@@ -43,18 +44,21 @@ class Flags(collections.UserDict):
            flag_name: str,
            flag_value: Optional[str] = None,
            override: bool = False) -> None:
-    assert flag_name, "Cannot set empty flag"
-    assert "=" not in flag_name, (
-        f"Flag name contains '=': {flag_name}, please split")
-    assert flag_name.startswith("-"), f"Invalid flag name: {flag_name}"
-    assert flag_value is None or isinstance(flag_value, str), (
-        f"Expected None or string flag-value for flag '{flag_name}', "
-        f"but got: {repr(flag_value)}")
+    if not flag_name:
+      raise ValueError("Cannot set empty flag")
+    if "=" in flag_name:
+      raise ValueError(f"Flag name contains '=': {flag_name}, please split")
+    if not flag_name.startswith("-"):
+      raise ValueError(f"Invalid flag name: {flag_name}")
+    if flag_value and not isinstance(flag_value, str):
+      raise ValueError(
+          f"Expected None or string flag-value for flag '{flag_name}', "
+          f"but got: {repr(flag_value)}")
     if not override and flag_name in self:
       old_value = self[flag_name]
-      assert flag_value == old_value, (
-          f"Flag {flag_name}={flag_value} was already set "
-          f"with a different previous value: '{old_value}'")
+      if flag_value != old_value:
+        raise ValueError(f"Flag {flag_name}={flag_value} was already set "
+                         f"with a different previous value: '{old_value}'")
       return
     self.data[flag_name] = flag_value
 
@@ -75,6 +79,9 @@ class Flags(collections.UserDict):
         else:
           flag_name, flag_value = flag_name_or_items
           self.set(flag_name, flag_value, override)
+
+  def merge(self, other: Flags.InitialDataType):
+    self.update(other)
 
   def copy(self) -> Flags:
     return self.__class__(self)
@@ -99,6 +106,7 @@ class JSFlags(Flags):
   with the --no-.../--no... prefix are not contradicting each other.
   """
   _NO_PREFIX = "--no"
+  _NAME_RE = re.compile(r"--[a-zA-Z_-]+")
 
   def copy(self) -> JSFlags:
     return self.__class__(self)
@@ -115,6 +123,8 @@ class JSFlags(Flags):
     if not flag_name.startswith("--"):
       raise ValueError("--js-flags: Only long-form flag names allowed, "
                        f"but got '{flag_name}'")
+    if not self._NAME_RE.fullmatch(flag_name):
+      raise ValueError(f"--js-flags: Invalid flag name '{flag_name}'")
     self._check_negated_flag(flag_name, override)
     super()._set(flag_name, flag_value, override)
 
@@ -127,8 +137,8 @@ class JSFlags(Flags):
       enabled = "--" + enabled
       if override:
         del self[enabled]
-      else:
-        assert enabled not in self, (
+      elif enabled in self:
+        raise ValueError(
             f"Conflicting flag '{flag_name}', "
             f"it has already been enabled by '{self._describe(enabled)}'")
     else:
@@ -142,7 +152,7 @@ class JSFlags(Flags):
       if override:
         del self[disabled]
       else:
-        assert False, (
+        raise ValueError(
             f"Conflicting flag '{flag_name}', "
             f"it has previously been disabled by '{self._describe(flag_name)}'")
 
@@ -191,14 +201,15 @@ class ChromeFlags(Flags):
       super()._set(flag_name, flag_value, override)
 
   def _verify_flag(self, name: str, value: Optional[str]) -> None:
-    if name == "--enable-feature":
+    if name in ("--enable-feature", "--enabled-feature", "--enabled-features"):
       logging.error(
           "Potentially misspelled flag: '%s'. "
-          "Did you mean to use --enable-features, with an 's'?", name)
-    elif name == "--disable-feature":
+          "Did you mean to use --enable-features ?", name)
+    elif name in ("--disable-feature", "--disabled-feature",
+                  "--disabled-features"):
       logging.error(
           "Potentially misspelled flag:  '%s'. "
-          "Did you mean to use --disable-features, with an 's'?", name)
+          "Did you mean to use --disable-features ?", name)
     del value
 
   @property
@@ -209,8 +220,19 @@ class ChromeFlags(Flags):
   def js_flags(self) -> JSFlags:
     return self._js_flags
 
-  def items(self) -> Iterable[Tuple[str, Optional[str]]]:
+  def merge(self, other: Flags.InitialDataType) -> None:
+    if not isinstance(other, ChromeFlags):
+      other = ChromeFlags(other)
+    self.features.merge(other.features)
+    self.js_flags.merge(other.js_flags)
+    for name, value in other.base_items():
+      self.set(name, value)
+
+  def base_items(self) -> Iterable[Tuple[str, Optional[str]]]:
     yield from super().items()
+
+  def items(self) -> Iterable[Tuple[str, Optional[str]]]:
+    yield from self.base_items()
     if self._js_flags:
       yield (self._JS_FLAG, str(self.js_flags))
     yield from self.features.items()
@@ -241,28 +263,39 @@ class ChromeFeatures:
 
   @property
   def enabled(self) -> Dict[str, Optional[str]]:
-    return self._enabled
+    return dict(self._enabled)
 
   @property
   def disabled(self) -> Set[str]:
     return set(self._disabled.keys())
 
+  @property
+  def disabled_ordered(self) -> Dict[str, None]:
+    return dict(self._disabled)
+
   def _parse_feature(self, feature: str) -> Tuple[str, Optional[str]]:
-    assert feature, "Cannot parse empty feature"
-    assert "," not in feature, (
-        f"'{feature}' contains multiple features. Please split them first.")
+    if not feature:
+      raise ValueError("Cannot parse empty feature")
+    if "," in feature:
+      raise ValueError(
+          f"'{feature}' contains multiple features. Please split them first.")
     parts = feature.split("<")
     if len(parts) == 2:
       return (parts[0], "<" + parts[1])
-    assert len(parts) == 1
+    if len(parts) != 1:
+      raise ValueError(f"Invalid number of feature parts: {parts}")
     parts = feature.split(":")
     if len(parts) == 2:
       return (parts[0], ":" + parts[1])
-    assert len(parts) == 1
+    if len(parts) != 1:
+      raise ValueError(f"Invalid number of feature parts: {parts}")
     return (feature, None)
 
   def enable(self, feature: str) -> None:
     name, value = self._parse_feature(feature)
+    self._enable(name, value)
+
+  def _enable(self, name: str, value: Optional[str]) -> None:
     if name in self._disabled:
       raise ValueError(f"Cannot enable previously disabled feature={name}")
     if name in self._enabled:
@@ -279,6 +312,15 @@ class ChromeFeatures:
     if name in self._enabled:
       raise ValueError(f"Cannot disable previously enabled feature={name}")
     self._disabled[name] = None
+
+  def update(self, other: ChromeFeatures) -> None:
+    for disabled in other.disabled_ordered:
+      self.disable(disabled)
+    for name, value in other.enabled.items():
+      self._enable(name, value)
+
+  def merge(self, other: ChromeFeatures) -> None:
+    self.update(other)
 
   def items(self) -> Iterable[Tuple[str, str]]:
     if self._enabled:

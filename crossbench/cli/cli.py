@@ -469,6 +469,23 @@ class CrossBenchCLI:
         help="Command-separated list of disabled chrome features. " + doc_str,
         default="")
 
+    field_trial_group = chrome_args.add_mutually_exclusive_group()
+    field_trial_group.add_argument(
+        "--enable-field-trial-config",
+        "--enable-field-trials",
+        default=None,
+        action="store_true",
+        help=("Use chrome's field-trial configs, "
+              "disabled by default by crossbench"))
+    field_trial_group.add_argument(
+        "--disable-field-trial-config",
+        "--disable-field-trials",
+        dest="enable_field_trial_config",
+        action="store_false",
+        help=("Explicitly disable field-trial configs."
+              "Off by default on official builds, "
+              "and disabled by default by crossbench."))
+
     probe_group = subparser.add_argument_group("Probe Options", "")
     probe_config_group = probe_group.add_mutually_exclusive_group()
     probe_config_group.add_argument(

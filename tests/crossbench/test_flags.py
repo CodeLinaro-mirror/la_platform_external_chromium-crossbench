@@ -31,7 +31,7 @@ class TestFlags(unittest.TestCase):
     self.assertIn("--bar", flags)
     self.assertIsNone(flags["--foo"])
     self.assertIsNone(flags["--bar"])
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       self.CLASS(("--foo=v1", "--bar=v2"))
     flags = self.CLASS((("--foo", "v3"), "--bar"))
     self.assertEqual(flags["--foo"], "v3")
@@ -48,7 +48,7 @@ class TestFlags(unittest.TestCase):
   def test_set(self):
     flags = self.CLASS()
     flags["--foo"] = "v1"
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags["--foo"] = "v2"
     # setting the same value is ok
     flags["--foo"] = "v1"
@@ -57,7 +57,7 @@ class TestFlags(unittest.TestCase):
     self.assertIn("--foo", flags)
     self.assertIn("--bar", flags)
     self.assertIsNone(flags["--bar"])
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags.set("--bar", "v3")
     flags.set("--bar", "v4", override=True)
     self.assertEqual(flags["--foo"], "v1")
@@ -74,7 +74,7 @@ class TestFlags(unittest.TestCase):
 
   def test_update(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags.update({"--bar": "v2"})
     self.assertEqual(flags["--foo"], "v1")
     self.assertIsNone(flags["--bar"])
@@ -96,6 +96,13 @@ class TestFlags(unittest.TestCase):
     })
     self.assertEqual(str(flags), "--flag1=value1 --flag2 --flag3=value3")
 
+  def test_merge(self):
+    flags = self.CLASS({"--foo": "v1", "--bar": None})
+    with self.assertRaises(ValueError):
+      flags.merge({"--bar": "v2"})
+    self.assertEqual(flags["--foo"], "v1")
+    self.assertIsNone(flags["--bar"])
+
 
 class TestChromeFlags(TestFlags):
 
@@ -112,10 +119,10 @@ class TestChromeFlags(TestFlags):
     with self.assertRaises(ValueError):
       flags["--js-flags"] = None
     self.assertNotIn("--js-flags", flags)
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags["--js-flags"] = "--js-foo, --no-js-foo"
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags["--js-flags"] = "--js-foo=v4, --no-js-bar"
     js_flags = flags.js_flags
     self.assertEqual(js_flags["--js-foo"], "v3")
@@ -212,15 +219,82 @@ class TestChromeFlags(TestFlags):
     flags_copy.update(flags)
     self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
 
+  def test_set_invalid_js_flags(self):
+    flags = self.CLASS()
+    for invalid in ("--bar,=", "-bar=1", "--bar,,", "--", "-", "a=b"):
+      with self.assertRaises(ValueError):
+        flags["--js-flags"] = invalid
+
+  def test_merge(self):
+    flags = self.CLASS({
+        "--foo": "v1",
+        "--bar": None,
+        "--js-flags": "--log-maps,--log-ic",
+        "--enable-features": "feature_1,feature_2",
+        "--disable-features": "feature_3"
+    })
+    with self.assertRaises(ValueError):
+      flags.merge({"--bar": "v2"})
+    with self.assertRaises(ValueError):
+      flags.merge({"--js-flags": "--no-log-maps"})
+    with self.assertRaises(ValueError):
+      flags.merge({"--disable-features": "feature_1,"})
+    with self.assertRaises(ValueError):
+      flags.merge({"--enable-features": "feature_3"})
+    flags.merge({
+        "--js-flags": "--log-all",
+        "--enable-features": "feature_x",
+        "--disable-features": "feature_y,feature_z"
+    })
+    self.assertListEqual(
+        list(flags.js_flags.get_list()),
+        ["--log-maps", "--log-ic", "--log-all"])
+    self.assertListEqual(
+        list(flags.features.get_list()), [
+            "--enable-features=feature_1,feature_2,feature_x",
+            "--disable-features=feature_3,feature_y,feature_z"
+        ])
+
+  def test_flag_typos(self):
+    for invalid_flag in ("--enable-feature", "--enabled-feature",
+                         "--enabled-features"):
+      with self.assertLogs(level="ERROR") as cm:
+        self.CLASS({invalid_flag: "feature_1"})
+      output = "\n".join(cm.output)
+      self.assertIn(invalid_flag, output)
+      self.assertIn("--enable-features", output)
+
+    for invalid_flag in ("--disable-feature", "--disabled-feature",
+                         "--disabled-features"):
+      with self.assertLogs(level="ERROR") as cm:
+        self.CLASS({invalid_flag: "feature_1"})
+      output = "\n".join(cm.output)
+      self.assertIn(invalid_flag, output)
+      self.assertIn("--disable-features", output)
+
 
 class TestJSFlags(TestFlags):
 
   CLASS = JSFlags
 
+  def test_invalid_js_flags(self):
+    flags = self.CLASS()
+    with self.assertRaises(ValueError) as cm:
+      flags.set("-foo")
+    self.assertIn("'-foo'", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      flags.set("--foo,--bar")
+    self.assertIn("'--foo,--bar'", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      flags.set("--v8-log", "foo,bar")
+    self.assertIn("comma", str(cm.exception).lower())
+    self.assertIn("--v8-log", str(cm.exception))
+    self.assertIn("foo,bar", str(cm.exception))
+
   def test_conflicting_flags(self):
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags = self.CLASS(("--foo", "--no-foo"))
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags = self.CLASS(("--foo", "--nofoo"))
     flags = self.CLASS(("--foo", "--no-bar"))
     self.assertIsNone(flags["--foo"])
@@ -232,14 +306,14 @@ class TestJSFlags(TestFlags):
 
   def test_conflicting_override(self):
     flags = self.CLASS(("--foo", "--no-bar"))
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags.set("--no-foo")
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags.set("--nofoo")
     flags.set("--nobar")
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags.set("--bar")
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       flags.set("--foo", "v2")
     self.assertIsNone(flags["--foo"])
     self.assertIsNone(flags["--no-bar"])
@@ -251,11 +325,11 @@ class TestJSFlags(TestFlags):
 
   def test_str_multiple(self):
     flags = self.CLASS({
-        "--flag1": "value1",
-        "--flag2": None,
-        "--flag3": "value3"
+        "--flag-a": "value1",
+        "--flag-b": None,
+        "--flag-c": "value3"
     })
-    self.assertEqual(str(flags), "--flag1=value1,--flag2,--flag3=value3")
+    self.assertEqual(str(flags), "--flag-a=value1,--flag-b,--flag-c=value3")
 
   def test_initial_data_empty(self):
     flags = self.CLASS()
@@ -267,9 +341,9 @@ class TestJSFlags(TestFlags):
 
   def test_initial_data(self):
     flags = self.CLASS({
-        "--flag1": "value1",
-        "--flag2": None,
-        "--flag3": "value3"
+        "--flag-a": "value1",
+        "--flag-b": None,
+        "--flag-c": "value3"
     })
     flags_copy = self.CLASS(flags)
     self.assertEqual(str(flags), str(flags_copy))
@@ -376,6 +450,34 @@ class ChromeFeaturesTestCase(unittest.TestCase):
     features.disable("feature1:k1/v1")
     features_str = str(features)
     self.assertEqual(features_str, "--disable-features=feature1")
+
+  def test_update_same(self):
+    features_1 = ChromeFeatures()
+    features_1.disable("feature1")
+    features_2 = ChromeFeatures()
+    features_2.disable("feature1")
+    features_1.update(features_2)
+    self.assertEqual(str(features_1), str(features_2))
+
+  def test_update_add(self):
+    features_1 = ChromeFeatures()
+    features_1.disable("feature1")
+    features_1.enable("feature2")
+    features_2 = ChromeFeatures()
+    features_2.disable("featureX")
+    features_2.enable("featureY")
+    features_1.update(features_2)
+    self.assertSetEqual(features_1.disabled, {"feature1", "featureX"})
+    self.assertSetEqual(
+        set(features_1.enabled.keys()), {"feature2", "featureY"})
+
+  def test_update_conflict(self):
+    features_1 = ChromeFeatures()
+    features_1.enable("feature1")
+    features_2 = ChromeFeatures()
+    features_2.disable("feature1")
+    with self.assertRaises(ValueError):
+      features_1.update(features_2)
 
 
 if __name__ == "__main__":
