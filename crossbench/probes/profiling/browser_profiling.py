@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, List, Optional, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
 
-from crossbench import compat, helper
+from crossbench import compat
 from crossbench.browsers.all import ChromiumWebDriver, Firefox, SafariWebDriver
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeResult,
-                                     ProbeContext, ResultLocation)
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
+                                     ProbeResult, ResultLocation)
 
 if TYPE_CHECKING:
   import pathlib
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class MozProfilerStartupFeatures(helper.StrEnumWithHelp):
+class MozProfilerStartupFeatures(compat.StrEnumWithHelp):
   """Options for MOZ_PROFILER_STARTUP_FEATURES env var.
     Extracted via MOZ_PROFILER_HELP=1 ./firefox-nightly-en/firefox
     """

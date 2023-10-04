@@ -11,7 +11,7 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, Set,
                     Type, TypeVar)
 
-from crossbench import helper, plt
+from crossbench import compat, plt
 from crossbench.config import ConfigParser
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        ProbeResult)
@@ -21,9 +21,9 @@ if TYPE_CHECKING:
 
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
-                                        StoriesRunGroup,
-                                        CacheTemperatureRunGroup)
+  from crossbench.runner.groups import (BrowsersRunGroup,
+                                        CacheTemperatureRunGroup,
+                                        RepetitionsRunGroup, StoriesRunGroup)
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
@@ -37,7 +37,7 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
     self._probe_cls = probe_cls
 
 
-class ResultLocation(helper.EnumWithHelp):
+class ResultLocation(compat.EnumWithHelp):
   LOCAL = ("local",
            "Probe always produces results on the runner's local platform.")
   BROWSER = ("browser",

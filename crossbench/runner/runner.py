@@ -12,7 +12,7 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type, Union)
 
-from crossbench import cli_helper, exception, helper, plt
+from crossbench import cli_helper, compat, exception, helper, plt
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes import all as all_probes
@@ -36,7 +36,7 @@ class RunnerException(exception.MultiException):
   pass
 
 
-class ThreadMode(helper.StrEnumWithHelp):
+class ThreadMode(compat.StrEnumWithHelp):
   NONE = ("none", (
       "Execute all browser-sessions sequentially, default. "
       "Low interference risk, use for worry-free time-critical measurements."))

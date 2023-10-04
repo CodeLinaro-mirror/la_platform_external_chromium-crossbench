@@ -12,7 +12,7 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Iterable, Iterator, List, Optional,
                     Tuple)
 
-from crossbench import exception, helper
+from crossbench import exception, helper, compat
 from crossbench.flags import Flags, JSFlags
 from crossbench.probes import internal as internal_probe
 from crossbench.probes.probe import ResultLocation
@@ -43,7 +43,7 @@ class RunState(enum.Enum):
 
 
 @enum.unique
-class Temperature(helper.StrEnumWithHelp):
+class Temperature(compat.StrEnumWithHelp):
   COLD = ("cold", "first run")
   WARM = ("warm", "second run")
   HOT = ("hot", "third run")

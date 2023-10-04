@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 
 import colorama
 
-from crossbench import helper, plt
+from crossbench import compat, helper, plt
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -109,7 +109,7 @@ class HostEnvironmentConfig:
     return HostEnvironmentConfig(**kwargs)
 
 
-class ValidationMode(helper.StrEnumWithHelp):
+class ValidationMode(compat.StrEnumWithHelp):
   THROW = ("throw", "Strict mode, throw and abort on env issues")
   PROMPT = ("prompt", "Prompt to accept potential env issues")
   WARN = ("warn", "Only display a warning for env issue")

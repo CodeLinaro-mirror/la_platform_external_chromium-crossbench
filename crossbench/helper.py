@@ -406,40 +406,6 @@ class Spinner:
     time.sleep(self._sleep_time)
 
 
-class EnumWithHelp(enum.Enum):
-
-  def __new__(cls, value, help_str: str = ""):
-    del help_str
-    obj = object.__new__(cls)
-    obj._value_ = value
-    return obj
-
-  def __init__(self, value, help_str: str = "") -> None:
-    del value
-    assert help_str, "Missing help_str"
-    self._help = help_str
-
-  @property
-  def help(self) -> str:
-    return self._help
-
-  @classmethod
-  def help_text_items(cls) -> List[Tuple[str, str]]:
-    return [(repr(instance.value), instance.help) for instance in cls]
-
-  @classmethod
-  def help_text(cls, indent: int = 0) -> str:
-    text: str = tabulate.tabulate(cls.help_text_items(), tablefmt="plain")
-    if indent:
-      return textwrap.indent(text, " " * indent)
-    return text
-
-
-class StrEnumWithHelp(EnumWithHelp):
-
-  def __str__(self) -> str:
-    return str(self.value)
-
 
 def update_url_query(url: str, query_params: Dict[str, str]) -> str:
   parsed_url = urlparse.urlparse(url)

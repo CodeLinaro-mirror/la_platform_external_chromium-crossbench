@@ -17,7 +17,7 @@ import hjson
 from frozendict import frozendict
 
 import crossbench.browsers.all as browsers
-from crossbench import cli_helper, exception, helper
+from crossbench import cli_helper, compat, exception
 from crossbench import plt
 from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)
@@ -83,7 +83,7 @@ class FlagGroupConfig:
 FlagItemT = Tuple[str, Optional[str]]
 
 
-class BrowserDriverType(helper.EnumWithHelp):
+class BrowserDriverType(compat.EnumWithHelp):
   WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
   APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
   ANDROID = ("Android",

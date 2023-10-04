@@ -6,7 +6,7 @@ import datetime as dt
 import pathlib
 import unittest
 
-from crossbench import helper
+from crossbench import compat, helper
 from crossbench import plt
 from tests import run_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
@@ -227,7 +227,7 @@ class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
 
 class EnumWithHelpTestCase(unittest.TestCase):
 
-  class TestEnum(helper.EnumWithHelp):
+  class TestEnum(compat.EnumWithHelp):
     A = ("a", "help a")
     B = ("b", "help b")
 
@@ -266,7 +266,7 @@ class EnumWithHelpTestCase(unittest.TestCase):
 
 class StrEnumWithHelpTestCase(EnumWithHelpTestCase):
 
-  class TestEnum(helper.StrEnumWithHelp):
+  class TestEnum(compat.StrEnumWithHelp):
     A = ("a", "help a")
     B = ("b", "help b")
 

@@ -5,7 +5,7 @@
 import argparse
 import unittest
 
-from crossbench import compat, helper
+from crossbench import compat
 from crossbench.probes import Probe
 from crossbench.probes.probe import ProbeConfigParser
 from tests import run_helper
@@ -215,7 +215,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_enum_with_help(self):
 
-    class MyEnum(helper.StrEnumWithHelp):
+    class MyEnum(compat.StrEnumWithHelp):
       ONE = ("oneX", "the one help")
       TWO = ("twoX", "the two help")
 

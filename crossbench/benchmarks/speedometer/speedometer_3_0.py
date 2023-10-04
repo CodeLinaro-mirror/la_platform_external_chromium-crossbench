@@ -3,12 +3,12 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import argparse
-
-from typing import Any, Dict, Final, List, Optional, Sequence, Tuple, Type
-
 import datetime as dt
-from crossbench import cli_helper, compat, helper
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+
+from crossbench import cli_helper, compat
 
 from .speedometer import (ProbeClsTupleT, SpeedometerBenchmark,
                           SpeedometerBenchmarkStoryFilter, SpeedometerProbe,
@@ -23,7 +23,7 @@ class Speedometer30Probe(SpeedometerProbe):
   NAME: str = "speedometer_3.0"
 
 
-class MeasurementMethod(helper.StrEnumWithHelp):
+class MeasurementMethod(compat.StrEnumWithHelp):
   RAF = ("raf", "requestAnimationFrame-based measurement")
   TIMER = ("timer", "setTimeout-based measurement")
 

@@ -9,7 +9,7 @@ import logging
 import pathlib
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
 
-from crossbench import cli_helper, compat, helper
+from crossbench import cli_helper, compat
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -99,7 +99,7 @@ class RecordMode(compat.StrEnum):
   AS_MUCH_AS_POSSIBLE = "record-as-much-as-possible"
 
 
-class RecordFormat(helper.StrEnumWithHelp):
+class RecordFormat(compat.StrEnumWithHelp):
   JSON = ("json", "Old about://tracing compatible file format.")
   PROTO = ("proto", "New https://ui.perfetto.dev/ compatible format")
 

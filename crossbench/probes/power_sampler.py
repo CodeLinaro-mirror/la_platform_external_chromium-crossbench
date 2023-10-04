@@ -11,7 +11,7 @@ import pathlib
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import helper
+from crossbench import compat, helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class SamplerType(helper.StrEnumWithHelp):
+class SamplerType(compat.StrEnumWithHelp):
   MAIN_DISPLAY = ("main_display",
                   "Samples the backlight level of the main display.")
   BATTERY = ("battery", "Provides data retrieved from the IOPMPowerSource.")
