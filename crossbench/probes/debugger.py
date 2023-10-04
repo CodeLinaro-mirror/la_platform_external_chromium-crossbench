@@ -6,18 +6,19 @@ from __future__ import annotations
 
 import pathlib
 import shlex
-from typing import TYPE_CHECKING, Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Dict, Iterable
 from crossbench import cli_helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium import chromium
 
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ResultLocation)
+                                     ProbeValidationError, ResultLocation)
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
+  from crossbench.env import HostEnvironment
 
 _DEBUGGER_LOOKUP: Dict[str, str] = {
     "macos": "lldb",
@@ -75,17 +76,17 @@ class DebuggerProbe(Probe):
     self._auto_run = auto_run
     self._geometry = geometry
 
-  def is_compatible(self, browser: Browser) -> bool:
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    super().validate_browser(env, browser)
+    self.expect_browser(browser, chromium.Chromium)
     # TODO: support more platforms
     if not (browser.platform.is_macos or browser.platform.is_linux):
-      raise ValueError(
-          f"Probe: {self.name} is currently only supported on linux and macOS.")
+      raise ValueError(f"Only supported on linux and macOS, but got {browser}")
     if browser.platform.is_remote:
-      raise TypeError(f"Probe({self.name}) does not run on remote platforms.")
+      raise ProbeValidationError(self, "Does not run on remote platforms.")
     # TODO: support more terminals.
     if not browser.platform.which("xterm"):
-      raise ValueError("Please install xterm on your system.")
-    return isinstance(browser, chromium.Chromium)
+      raise ProbeValidationError(self, "Please install xterm on your system.")
 
   def attach(self, browser: Browser) -> None:
     super().attach(browser)

@@ -12,26 +12,26 @@ import re
 import subprocess
 from typing import TYPE_CHECKING, Iterable, List, Optional, cast
 
-from crossbench import cli_helper, compat, helper
+from crossbench import cli_helper, compat, helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags import JSFlags
-from crossbench import plt
 from crossbench.probes import helper as probe_helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
+from crossbench.probes.chromium_probe import ChromiumProbe
+from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
-  from crossbench.runner.run import Run
   from crossbench.runner.groups import BrowsersRunGroup
+  from crossbench.runner.run import Run
 
 _PROF_FLAG = "--prof"
 _LOG_ALL_FLAG = "--log-all"
 
 
-class V8LogProbe(Probe):
+class V8LogProbe(ChromiumProbe):
   """
   Chromium-only probe that produces a v8.log file with detailed internal V8
   performance and logging information.
@@ -118,19 +118,23 @@ class V8LogProbe(Probe):
   def js_flags(self) -> JSFlags:
     return self._js_flags.copy()
 
-  def is_compatible(self, browser: Browser) -> bool:
-    if not isinstance(browser, Chromium):
-      return False
+  def validate_env(self, env: HostEnvironment) -> None:
+    super().validate_env(env)
+    if env.runner.repetitions != 1:
+      env.handle_warning(f"Probe({self.NAME}) cannot merge data over multiple "
+                         f"repetitions={env.runner.repetitions}.")
+
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    super().validate_browser(env, browser)
     # --prof sometimes causes issues on enterprise chrome on linux.
     if not _PROF_FLAG in self._js_flags:
-      return True
+      return
     if not browser.platform.is_linux or browser.major_version <= 106:
-      return True
+      return
     for search_path in cast(plt.LinuxPlatform, browser.platform).SEARCH_PATHS:
       if compat.is_relative_to(browser.path, search_path):
         logging.error(
             "Probe with V8 --prof might not work with enterprise profiles")
-    return True
 
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
@@ -139,12 +143,6 @@ class V8LogProbe(Probe):
     browser = cast(Chromium, browser)
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
-
-  def pre_check(self, env: HostEnvironment) -> None:
-    super().pre_check(env)
-    if env.runner.repetitions != 1:
-      env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
-                         f"repetitions={env.runner.repetitions}.")
 
   def process_log_files(self,
                         log_files: List[pathlib.Path]) -> List[pathlib.Path]:

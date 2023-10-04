@@ -7,16 +7,13 @@ from __future__ import annotations
 import logging
 import pathlib
 import subprocess
-import time
-from typing import TYPE_CHECKING, List, cast, Union
-from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
 from crossbench import helper
-from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ResultLocation)
-from crossbench.probes.results import ProbeResult, LocalProbeResult
+                                     ProbeIncompatibleBrowser, ResultLocation)
+from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -70,8 +67,10 @@ class PerfettoProbe(Probe):
   def perfetto_bin(self):
     return self._perfetto_bin
 
-  def is_compatible(self, browser: Browser) -> bool:
-    return browser.platform.is_android
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    super().validate_browser(env, browser)
+    if not browser.platform.is_android:
+      raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")
 
   def log_run_result(self, run: Run) -> None:
     logging.critical("Perfetto trace is written into %s",

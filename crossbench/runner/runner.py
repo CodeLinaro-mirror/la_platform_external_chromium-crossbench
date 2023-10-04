@@ -17,6 +17,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
+from crossbench.probes.probe import ProbeIncompatibleBrowser, Probe
 
 from .groups import (BrowserSessionRunGroup, BrowsersRunGroup,
                      CacheTemperatureRunGroup, RepetitionsRunGroup,
@@ -27,7 +28,6 @@ from .timing import Timing
 if TYPE_CHECKING:
   from crossbench.benchmarks.benchmark import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.probes.probe import Probe
 
 from crossbench.stories.story import Story
 
@@ -215,14 +215,16 @@ class Runner:
     assert probe not in self._probes, "Cannot add the same probe twice"
     self._probes.append(probe)
     for browser in self.browsers:
-      if not probe.is_compatible(browser):
+      try:
+        probe.validate_browser(self.env, browser)
+        browser.attach_probe(probe)
+      except ProbeIncompatibleBrowser as e:
         if matching_browser_only:
-          logging.warning("Skipping incompatible probe=%s for browser=%s",
-                          probe.name, browser.unique_name)
+          logging.error("Skipping incompatible probe=%s for browser=%s:",
+                        probe.name, browser.unique_name)
+          logging.error("    %s", e)
           continue
-        raise ValueError(f"Probe '{probe.name}' is not compatible with browser "
-                         f"{browser.type}")
-      browser.attach_probe(probe)
+        raise
     return probe
 
   @property

@@ -9,7 +9,7 @@ import argparse
 import datetime as dt
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, Set,
-                    Type, TypeVar)
+                    Tuple, Type, TypeVar, Union)
 
 from crossbench import compat, plt
 from crossbench.config import ConfigParser
@@ -50,6 +50,22 @@ class ProbeMissingDataError(ValueError):
   pass
 
 
+class ProbeValidationError(ValueError):
+
+  def __init__(self, probe: Probe, message: str) -> None:
+    self.probe = probe
+    super().__init__(f"Probe({probe.NAME}): {message}")
+
+
+class ProbeIncompatibleBrowser(ProbeValidationError):
+
+  def __init__(self,
+               probe: Probe,
+               browser: Browser,
+               message: str = "Incompatible browser") -> None:
+    super().__init__(probe, f"{message}, got {browser}")
+
+
 class Probe(abc.ABC):
   """
   Abstract Probe class.
@@ -59,10 +75,8 @@ class Probe(abc.ABC):
 
   Probe interface:
   - scope(): Return a custom ProbeContext (see below)
-  - is_compatible(): Use for checking whether a Probe can be used with a
-    given browser
-  - pre_check(): Customize to display warnings before using Probes with
-    incompatible settings.
+  - validate_browser(): Customize to display warnings before using Probes with
+    incompatible settings / browsers.
   The Probe object can the customize how to merge probe (performance) date at
   multiple levels:
   - multiple repetitions of the same story
@@ -131,37 +145,53 @@ class Probe(abc.ABC):
   def result_path_name(self) -> str:
     return self.name
 
-  def is_compatible(self, browser: Browser) -> bool:
-    """
-    Returns a boolean to indicate whether this Probe can be used with the given
-    Browser. Override to make browser-specific Probes.
-    """
-    del browser
-    return True
-
   @property
   def is_attached(self) -> bool:
     return len(self._browsers) > 0
 
   def attach(self, browser: Browser) -> None:
-    assert self.is_compatible(browser), (
-        f"Probe {self.name} is not compatible with browser {browser.type}")
     assert browser not in self._browsers, (
         f"Probe={self.name} is attached multiple times to the same browser")
     self._browsers.add(browser)
 
-  def pre_check(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: HostEnvironment) -> None:
     """
     Part of the Checklist, make sure everything is set up correctly for a probe
     to run.
+    Browser-only validation is handled in validate_browser(...).
     """
-    del env
     # Ensure that the proper super methods for setting up a probe were
     # called.
     assert self.is_attached, (
         f"Probe {self.name} is not properly attached to a browser")
     for browser in self._browsers:
-      assert self.is_compatible(browser)
+      self.validate_browser(env, browser)
+
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    """
+    Validate that browser is compatible with this Probe.
+    - Raise ProbeValidationError for hard-errors,
+    - Use env.handle_warning for soft errors where we expect recoverable errors
+      or only partially broken results.
+    """
+    del env, browser
+
+  def expect_browser(self,
+                     browser: Browser,
+                     types: Union[Type, Tuple[Type]],
+                     message: Optional[str] = None) -> None:
+    if isinstance(browser, types):
+      return
+    if not message:
+      if not isinstance(types, tuple):
+        types = (types,)
+      type_names = ",".join(str(type.__name__) for type in types)
+      message = f"Incompatible browser, expected {type_names}"
+    raise ProbeIncompatibleBrowser(self, browser, message)
+
+  def expect_macos(self, browser: Browser) -> None:
+    if not browser.platform.is_macos:
+      raise ProbeIncompatibleBrowser(self, browser, "Only supported on macOS")
 
   def merge_cache_temperatures(self,
                                group: CacheTemperatureRunGroup) -> ProbeResult:

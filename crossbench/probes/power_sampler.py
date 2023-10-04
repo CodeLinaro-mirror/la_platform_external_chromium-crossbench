@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import atexit
 
+import atexit
 import csv
 import logging
 import pathlib
@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from crossbench import compat, helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ResultLocation)
+                                     ProbeValidationError, ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
@@ -99,18 +99,13 @@ class PowerSamplerProbe(Probe):
   def wait_for_battery(self) -> bool:
     return self._wait_for_battery
 
-  def pre_check(self, env: HostEnvironment) -> None:
-    super().pre_check(env)
-    for browser in self._browsers:
-      if not browser.platform.is_battery_powered:
-        env.handle_warning("Power Sampler only works on battery power, "
-                           f"but Browser {browser} is connected to power.")
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    self.expect_macos(browser)
+    if not browser.platform.is_battery_powered:
+      env.handle_warning("Power Sampler only works on battery power, "
+                         f"but Browser {browser} is connected to power.")
     # TODO() warn when external monitors are connected
     # TODO() warn about open terminals
-
-  def is_compatible(self, browser: Browser) -> bool:
-    # For now only supported on MacOs
-    return browser.platform.is_macos
 
   def get_context(self, run: Run) -> PowerSamplerProbeContext:
     return PowerSamplerProbeContext(self, run)

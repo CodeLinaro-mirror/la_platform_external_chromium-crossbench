@@ -8,26 +8,24 @@ import logging
 from typing import TYPE_CHECKING, Optional, cast
 
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.probes.probe import Probe, ProbeMissingDataError, ProbeContext
+from crossbench.probes.chromium_probe import ChromiumProbe
+from crossbench.probes.probe import ProbeContext, ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.runner.run import Run
   from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
                                         StoriesRunGroup)
+  from crossbench.runner.run import Run
 
 
-class V8RCSProbe(Probe):
+class V8RCSProbe(ChromiumProbe):
   """
   Chromium-only Probe to extract runtime-call-stats data that can be used
   to analyze precise counters and time spent in various VM components in V8:
   https://v8.dev/tools/head/callstats.html
   """
   NAME = "v8.rcs"
-
-  def is_compatible(self, browser: Browser) -> bool:
-    return isinstance(browser, Chromium)
 
   def attach(self, browser: Browser) -> None:
     assert isinstance(browser, Chromium), "Expected Chromium-based browser."

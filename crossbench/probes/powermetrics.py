@@ -15,6 +15,7 @@ from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.env import HostEnvironment
   from crossbench.runner.run import Run
 
 
@@ -69,9 +70,9 @@ class PowerMetricsProbe(Probe):
   def samplers(self) -> Tuple[SamplerType, ...]:
     return self._samplers
 
-  def is_compatible(self, browser: Browser) -> bool:
-    # Only supported on macOS
-    return browser.platform.is_macos
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    super().validate_browser(env, browser)
+    self.expect_macos(browser)
 
   def get_context(self, run: Run) -> PowerMetricsProbeContext:
     return PowerMetricsProbeContext(self, run)

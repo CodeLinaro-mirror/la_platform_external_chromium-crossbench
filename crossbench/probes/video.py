@@ -48,8 +48,8 @@ class VideoProbe(Probe):
   def result_path_name(self) -> str:
     return f"{self.name}.mp4"
 
-  def pre_check(self, env: HostEnvironment) -> None:
-    super().pre_check(env)
+  def validate_env(self, env: HostEnvironment) -> None:
+    super().validate_env(env)
     if env.runner.repetitions > 10:
       env.handle_warning(
           f"Probe={self.NAME} might not be able to merge so many "

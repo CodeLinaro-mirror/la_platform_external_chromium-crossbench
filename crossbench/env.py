@@ -432,7 +432,7 @@ class HostEnvironment:
   def _check_probes(self) -> None:
     for probe in self._runner.probes:
       try:
-        probe.pre_check(self)
+        probe.validate_env(self)
       except Exception as e:
         raise ValidationError(
             f"Probe='{probe.NAME}' validation failed: {e}") from e

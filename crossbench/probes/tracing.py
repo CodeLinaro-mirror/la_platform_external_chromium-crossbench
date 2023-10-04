@@ -12,14 +12,16 @@ from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
 from crossbench import cli_helper, compat
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes import helper as probe_helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
+from crossbench.probes.chromium_probe import ChromiumProbe
+from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
-  from crossbench.flags import ChromeFlags
   from crossbench import plt
+  from crossbench.browsers.browser import Browser
+  from crossbench.env import HostEnvironment
+  from crossbench.flags import ChromeFlags
   from crossbench.runner.run import Run
 
 # TODO: go over these again and clean the categories.
@@ -135,7 +137,7 @@ def parse_trace_config_file_path(value: str) -> pathlib.Path:
 ANDROID_TRACE_CONFIG_PATH = pathlib.Path("/data/local/chrome-trace-config.json")
 
 
-class TracingProbe(Probe):
+class TracingProbe(ChromiumProbe):
   """
   Chromium-only Probe to collect tracing / perfetto data that can be used by
   chrome://tracing or https://ui.perfetto.dev/.
@@ -233,9 +235,6 @@ class TracingProbe(Probe):
   @property
   def record_format(self) -> RecordFormat:
     return self._record_format
-
-  def is_compatible(self, browser: Browser) -> bool:
-    return isinstance(browser, Chromium)
 
   def attach(self, browser: Browser) -> None:
     assert isinstance(browser, Chromium)

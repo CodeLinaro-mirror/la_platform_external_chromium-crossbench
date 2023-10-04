@@ -7,7 +7,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, cast
 
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.probes.probe import Probe, ProbeContext
+from crossbench.probes.chromium_probe import ChromiumProbe
+from crossbench.probes.probe import ProbeContext
 from crossbench.probes.results import LocalProbeResult
 
 if TYPE_CHECKING:
@@ -17,15 +18,12 @@ if TYPE_CHECKING:
   from crossbench.runner.groups import (RepetitionsRunGroup, StoriesRunGroup)
 
 
-class V8BuiltinsPGOProbe(Probe):
+class V8BuiltinsPGOProbe(ChromiumProbe):
   """
   Chromium-only Probe to extract V8 builtins PGO data.
   The resulting data is used to optimize Torque and CSA builtins.
   """
   NAME = "v8.builtins.pgo"
-
-  def is_compatible(self, browser: Browser) -> bool:
-    return isinstance(browser, Chromium)
 
   def attach(self, browser: Browser) -> None:
     # Use inline isinstance assert to hint that we have a Chrome browser.

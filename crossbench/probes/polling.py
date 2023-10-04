@@ -57,8 +57,8 @@ class PollingProbe(cb_probe.Probe, abc.ABC):
   def cmd(self) -> Tuple[str]:
     return self._cmd
 
-  def pre_check(self, env: HostEnvironment) -> None:
-    super().pre_check(env)
+  def validate_env(self, env: HostEnvironment) -> None:
+    super().validate_env(env)
     if env.runner.repetitions != 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.runner.repetitions}.")

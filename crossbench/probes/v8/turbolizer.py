@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, cast
 
 from crossbench import helper
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.probes.probe import Probe, ProbeContext, ResultLocation
+from crossbench.probes.chromium_probe import ChromiumProbe
+from crossbench.probes.probe import ProbeContext, ResultLocation
 from crossbench.probes.results import BrowserProbeResult, LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class V8TurbolizerProbe(Probe):
+class V8TurbolizerProbe(ChromiumProbe):
   """
   Chromium-only Probe for extracting detailed turbofan graphs.
   Note: This probe can have significant overhead.
@@ -25,9 +26,6 @@ class V8TurbolizerProbe(Probe):
   """
   NAME = "v8.turbolizer"
   RESULT_LOCATION = ResultLocation.BROWSER
-
-  def is_compatible(self, browser: Browser) -> bool:
-    return isinstance(browser, Chromium)
 
   def attach(self, browser: Browser) -> None:
     super().attach(browser)

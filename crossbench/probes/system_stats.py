@@ -8,8 +8,10 @@ import datetime as dt
 from typing import TYPE_CHECKING
 
 from crossbench.probes import polling
+from crossbench.probes.probe import ProbeValidationError
 
 if TYPE_CHECKING:
+  from crossbench.env import HostEnvironment
   from crossbench.browsers.browser import Browser
 
 
@@ -26,5 +28,7 @@ class SystemStatsProbe(polling.PollingProbe):
       self, interval: dt.timedelta = dt.timedelta(seconds=0.1)) -> None:
     super().__init__(self.CMD, interval)
 
-  def is_compatible(self, browser: Browser) -> bool:
-    return browser.platform.is_linux or browser.platform.is_macos
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    super().validate_browser(env, browser)
+    if not (browser.platform.is_linux or browser.platform.is_macos):
+      raise ProbeValidationError(self, "Only supported on macOS and linux.")

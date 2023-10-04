@@ -130,12 +130,7 @@ class ProfilingProbe(Probe):
         chromium.features.disable("SpareRendererForSitePerProcess")
       self._attach_linux(chromium)
 
-  def pre_check(self, env: HostEnvironment) -> None:
-    super().pre_check(env)
-    for browser in self._browsers:
-      self._pre_check_browser(browser, env)
-
-  def _pre_check_browser(self, browser: Browser, env: HostEnvironment) -> None:
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
     if self.run_pprof:
       self._run_pprof = browser_platform.which("gcert") is not None

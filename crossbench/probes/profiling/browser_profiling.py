@@ -13,7 +13,8 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 from crossbench import compat
 from crossbench.browsers.all import ChromiumWebDriver, Firefox, SafariWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeResult, ResultLocation)
+                                     ProbeIncompatibleBrowser, ProbeResult,
+                                     ProbeValidationError, ResultLocation)
 
 if TYPE_CHECKING:
   import pathlib
@@ -105,23 +106,13 @@ class BrowserProfilingProbe(Probe):
   def moz_profiler_startup_features(self) -> List[MozProfilerStartupFeatures]:
     return self._moz_profiler_startup_features
 
-  def is_compatible(self, browser: Browser) -> bool:
-    if isinstance(browser, ChromiumWebDriver):
-      return True
-    if isinstance(browser, Firefox):
-      return True
-    if isinstance(browser, SafariWebDriver):
-      return True
-    return False
-
-  def pre_check(self, env: HostEnvironment) -> None:
-    super().pre_check(env)
-    for browser in self._browsers:
-      self._pre_check_browser(browser, env)
-
-  def _pre_check_browser(self, browser: Browser, env: HostEnvironment) -> None:
+  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+    super().validate_browser(env, browser)
     if browser.platform.is_remote:
-      env.handle_warning(f"Probe({self}) only works on local browser")
+      raise ProbeValidationError(
+          self, f"Only works on local browser, but got {browser}.")
+    if isinstance(browser, (ChromiumWebDriver, SafariWebDriver)):
+      return
     if isinstance(browser, Firefox):
       browser_env = browser.platform.environ
       for env_var in list(FirefoxProfilerEnvVars):
@@ -129,6 +120,7 @@ class BrowserProfilingProbe(Probe):
           env.handle_warning(
               f"Probe({self}) conflicts with existing "
               f"env[{env_var.value}]={browser_env[env_var.value]}")
+    raise ProbeIncompatibleBrowser(self, browser)
 
   def get_context(self, run: Run) -> BrowserProfilingProbeContext:
     if isinstance(run.browser, ChromiumWebDriver):
