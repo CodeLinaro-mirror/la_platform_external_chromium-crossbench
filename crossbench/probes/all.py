@@ -8,6 +8,7 @@ from typing import Tuple, Type
 
 from crossbench.probes import internal
 from crossbench.probes.debugger import DebuggerProbe
+from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.perfetto import PerfettoProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
@@ -49,6 +50,7 @@ assert INTERNAL_PROBES[1] == internal.DurationsProbe
 GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     BrowserProfilingProbe,
     DebuggerProbe,
+    DTraceProbe,
     PerfettoProbe,
     PerformanceEntriesProbe,
     PowerMetricsProbe,
