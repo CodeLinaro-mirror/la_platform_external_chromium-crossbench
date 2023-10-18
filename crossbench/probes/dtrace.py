@@ -71,10 +71,10 @@ class DTraceProbe(Probe):
           dtrace_probe_name,
           stdout=subprocess.DEVNULL,
           stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
       raise ProbeValidationError(
-          self, f"Probe={self.NAME}: Cannot execute 'sudo dtrace'. This"
-          f" probe will fail to start.")
+          self, "Cannot execute 'sudo dtrace'. "
+          "This probe will fail to start.") from e
 
   def get_context(self, run: Run) -> DTraceProbeContext:
     return DTraceProbeContext(self, run)

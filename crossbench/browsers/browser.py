@@ -128,7 +128,11 @@ class Browser(abc.ABC):
     info = self.platform.process_info(self.pid)
     if info is None:
       return None
-    return info["status"] == "running" or info["status"] == "sleeping"
+    if status := info.get("status"):
+      return status in ("running", "sleeping")
+    # TODO(cbruni): fix posix process_info for remote platforms where
+    # we don't get the status back.
+    return False
 
   @property
   def is_local(self) -> bool:

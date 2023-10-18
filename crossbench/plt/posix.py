@@ -175,8 +175,10 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     self.sh("kill", "-s", "TERM", str(proc_pid))
 
   def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
+    if not self.is_remote:
+      return super().process_info(pid)
     try:
-      lines = self.sh_stdout("ps", "-o", "comm", "--pid", str(pid)).splitlines()
+      lines = self.sh_stdout("ps", "-o", "comm", "-p", str(pid)).splitlines()
       if len(lines) <= 1:
         return None
       assert len(lines) == 2, lines
