@@ -139,6 +139,29 @@ class DriverConfig(ConfigObject):
     except ValueError as e:
       raise ValueError(
           f"settings must be hashable but got: {self.settings}") from e
+    self.validate()
+
+  def validate(self) -> None:
+    if self.type == BrowserDriverType.ANDROID:
+      self.validate_android()
+
+  def validate_android(self):
+    devices = plt.adb_devices(plt.PLATFORM)
+    names = list(devices.keys())
+    if not devices:
+      raise argparse.ArgumentTypeError("No ADB devices attached.")
+    if not self.settings:
+      if len(devices) == 1:
+        # Default device "adb" (no settings) with exactly one device is ok.
+        return
+      raise AmbiguousDriverIdentifier(
+          f"{len(devices)} ADB devices connected: {names}. "
+          "Please explicitly specify a device ID.")
+    if serial := self.settings.get("serial"):
+      if serial not in devices:
+        raise argparse.ArgumentTypeError(
+            f"Could not find ADB device with serial={serial}. "
+            f"Choices are {names}.")
 
   @classmethod
   def default(cls) -> DriverConfig:
@@ -337,7 +360,7 @@ class BrowserConfig(ConfigObject):
       return browsers.Safari.default_path()
     if identifier in ("safari-technology-preview", "safari-tp", "sf-tp", "tp"):
       return browsers.Safari.technology_preview_path()
-    if identifier in ("firefox", "ff"):
+    if identifier in ("firefox", "firefox-stable", "ff", "ff-stable"):
       return browsers.Firefox.default_path()
     if identifier in ("firefox-dev", "firefox-developer-edition", "ff-dev"):
       return browsers.Firefox.developer_edition_path()

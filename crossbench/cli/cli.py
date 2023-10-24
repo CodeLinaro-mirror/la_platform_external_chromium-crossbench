@@ -384,18 +384,26 @@ class CrossBenchCLI:
         type=cli_config.BrowserConfig.parse,
         action="append",
         default=[],
-        help="Browser binary. Use this to test a simple browser variant. "
-        "Use [chrome, stable, dev, canary, safari] "
-        "for system default browsers or a full path. "
-        "Repeat for adding multiple browsers. "
-        "Defaults to 'chrome-stable'. "
-        "Use --browser=chrome-M107 to download the latest milestone, "
-        "--browser=chrome-100.0.4896.168 to download a specific chrome version "
-        "(macOS and linux for googlers and chrome only). "
-        "Use --browser=path/to/archive.dmg on macOS or "
+        help="Browser binary, defaults to 'chrome-stable'."
+        "Use this to test a simple browser variant. "
+        "Use [chrome, chrome-stable, chrome-dev, chrome-canary, "
+        "safari, safari-tp, "
+        "firefox, firefox-stable, firefox-dev, firefox-nightly, "
+        "edge, edge-stable, edge-beta, edge-dev, edge-canary] "
+        "for system default browsers or a full path. \n"
+        "* Use --browser=chrome-M107 to download the latest version for a "
+        "specific milestone\n"
+        "* Use --browser=chrome-100.0.4896.168 to download a specific chrome version "
+        "(macOS and linux for googlers and chrome only). \n"
+        "* Use --browser=path/to/archive.dmg on macOS or "
         "--browser=path/to/archive.rpm on linux "
-        "for locally cached versions (chrome only)."
-        "Cannot be used with --browser-config")
+        "for locally cached versions (chrome only).\n"
+        "* Use --browser=\"${ADB_SERIAL}:chrome\" "
+        "(e.g. --browser='0a388e93:chrome') for specific "
+        "android devices or --browser='adb:chrome' if only once device is "
+        "attached.\n"
+        "Repeat for adding multiple browsers. "
+        "Cannot be used together with --browser-config")
     browser_config_group.add_argument(
         "--browser-config",
         type=cli_helper.parse_hjson_file_path,
