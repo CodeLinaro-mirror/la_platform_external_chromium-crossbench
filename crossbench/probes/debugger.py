@@ -117,7 +117,8 @@ class DebuggerProbe(Probe):
       if self._auto_run:
         debugger_cmd += ["-ex", "run"]
       debugger_cmd += ["--args"]
-    debugger_cmd.extend(self._debugger_args)
+    if self._debugger_args is not None:
+      debugger_cmd.extend(self._debugger_args)
     return shlex.join(debugger_cmd)
 
   def get_context(self, run: Run) -> DebuggerContext:
