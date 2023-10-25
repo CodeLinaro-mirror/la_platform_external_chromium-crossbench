@@ -11,10 +11,12 @@ from typing import TYPE_CHECKING, Optional
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
+from crossbench import helper
 
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.browsers.viewport import Viewport
+from crossbench.runner.run import Run
 
 from .safari import Safari, find_safaridriver
 
@@ -57,6 +59,44 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
                  driver_path)
 
+    options: SafariOptions = self._get_driver_options(run)
+    for probe_context in run.probe_contexts:
+      probe_context.setup_selenium_options(options)
+
+    self._force_clear_cache(run)
+
+    service = SafariService(executable_path=str(driver_path))
+    driver_kwargs = {"service": service, "options": options}
+
+    if webdriver.__version__ == '4.1.0':
+      # Manually inject desired options for older selenium versions
+      # (currently fixed version from vpython3).
+      self._legacy_settings(options, driver_kwargs)
+
+    driver = webdriver.Safari(**driver_kwargs)
+
+    assert driver.session_id, "Could not start webdriver"
+    logs = (
+        pathlib.Path("~/Library/Logs/com.apple.WebDriver/").expanduser() /
+        driver.session_id)
+    all_logs = list(logs.glob("safaridriver*"))
+    if all_logs:
+      self.log_file = all_logs[0]
+      assert self.log_file.is_file()
+    return driver
+
+  def _legacy_settings(self, options, driver_kwargs) -> None:
+    logging.debug("SafariDriver: using legacy capabilities")
+    options.binary_location = str(self.path)
+    driver_kwargs["desired_capabilities"] = options.to_capabilities()
+
+  def _force_clear_cache(self, run: Run) -> None:
+    with run.actions("Clearing Browser Cache"):
+      self._clear_cache()
+      self.platform.exec_apple_script(f"""
+        tell application "{self.app_path}" to quit """)
+
+  def _get_driver_options(self, run: Run) -> SafariOptions:
     options = SafariOptions()
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "eager")
@@ -70,35 +110,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     if "Technology Preview" in self.app_name:
       options.set_capability("browserName", "Safari Technology Preview")
       options.use_technology_preview = True
-
-    for probe_context in run.probe_contexts:
-      probe_context.setup_selenium_options(options)
-
-    with run.actions("Clearing Browser Cache"):
-      self._clear_cache()
-      self.platform.exec_apple_script(f"""
-        tell application "{self.app_path}" to quit """)
-
-    service = SafariService(executable_path=str(driver_path),)
-    driver_kwargs = {"service": service, "options": options}
-
-    # Manually inject desired options for older selenium versions
-    # (currently fixed version from vpython3).
-    if webdriver.__version__ == '4.1.0':
-      options.binary_location = str(self.path)
-      driver_kwargs["desired_capabilities"] = options.to_capabilities()
-
-    driver = webdriver.Safari(**driver_kwargs)
-
-    assert driver.session_id, "Could not start webdriver"
-    logs = (
-        pathlib.Path("~/Library/Logs/com.apple.WebDriver/").expanduser() /
-        driver.session_id)
-    all_logs = list(logs.glob("safaridriver*"))
-    if all_logs:
-      self.log_file = all_logs[0]
-      assert self.log_file.is_file()
-    return driver
+    return options
 
   def _check_driver_version(self) -> None:
     # The bundled driver is always ok
@@ -125,3 +137,49 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         tell application "{self.app_name}"
           quit
         end tell""")
+
+
+class SafariWebdriverIOS(SafariWebDriver):
+  # TODO(cbruni): implement iOS platform
+  def _start_driver(self, run: Run,
+                    driver_path: pathlib.Path) -> webdriver.Safari:
+    # safaridriver for iOS seems to be brittle for starting up, we give it
+    # several chances to start up.
+    for timeout in helper.wait_with_backoff(
+        helper.WaitRange(min=2, timeout=15)):
+      try:
+        return super()._start_driver(run, driver_path)
+      except Exception as e:  # pylint: disable=disable=broad-except
+        logging.warning("SafariWebDriver: startup failed, retrying (%s)",
+                        timeout)
+        logging.debug("SafariWebDriver: startup error %s", e)
+    return super()._start_driver(run, driver_path)
+
+  def _get_driver_options(self, run: Run) -> SafariOptions:
+    options = super()._get_driver_options(run)
+    desired_cap = {
+        # "browserName": "Safari",
+        # "browserVersion": "17.0.3", # iOS version
+        # "safari:deviceType": "iPhone",
+        # "safari:deviceName": "XXX's iPhone",
+        # "safari:deviceUDID": "...",
+        "platformName": "iOS",
+        "safari:initialUrl": "about:blank",
+        "safari:openLinksInBackground": True,
+        "safari:allowPopups": True,
+    }
+    for key, value in desired_cap.items():
+      options.set_capability(key, value)
+    return options
+
+  def _setup_window(self) -> None:
+    pass
+
+  def _force_clear_cache(self, run: Run) -> None:
+    pass
+
+  def quit(self, runner: Runner) -> None:
+    self._driver.close()
+    self.platform.sleep(1.0)
+    self._driver.quit()
+    self.force_quit()

@@ -370,7 +370,7 @@ class HostEnvironment:
     if self._config.browser_allow_existing_process:
       return
     browser_binaries: Dict[str, List[Browser]] = helper.group_by(
-        self._runner.browsers, key=lambda browser: str(browser.path))
+        self._runner.browsers, key=lambda browser: str(browser.path.resolve()))
     own_pid = os.getpid()
     for proc_info in self._platform.processes(["cmdline", "exe", "pid",
                                                "name"]):

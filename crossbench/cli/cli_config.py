@@ -257,8 +257,12 @@ class DriverConfig(ConfigObject):
       if self.settings:
         device_identifier = self.settings.get("serial", None)
       return plt.AndroidAdbPlatform(plt.PLATFORM, device_identifier)
+    if self.type == BrowserDriverType.IOS:
+      # TODO(cbruni): use `xcrun xctrace list devices` to find the UDID
+      # for attached simulators or devices. Currently only a single device
+      # is supported
+      pass
     return plt.PLATFORM
-
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 
@@ -646,6 +650,8 @@ class BrowserVariantsConfig:
       raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
     path_str = str(browser_config.path).lower()
     if "safari" in path_str:
+      if driver == BrowserDriverType.IOS:
+        return browsers.SafariWebdriverIOS
       if driver == BrowserDriverType.WEB_DRIVER:
         return browsers.SafariWebDriver
       if driver == BrowserDriverType.APPLE_SCRIPT:
