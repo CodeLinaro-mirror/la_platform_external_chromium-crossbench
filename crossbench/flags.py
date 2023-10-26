@@ -7,6 +7,7 @@ import abc
 
 import collections
 import logging
+import pathlib
 import re
 from typing import (Dict, Final, Iterable, Iterator, Optional, Set, Tuple,
                     Union)
@@ -210,15 +211,24 @@ class ChromeFlags(Flags):
         new_js_flags.set(js_flag_name, js_flag_value, override=override)
       self._js_flags.update(new_js_flags)
     else:
-      self._verify_flag(flag_name, flag_value)
+      flag_value = self._verify_flag(flag_name, flag_value)
       super()._set(flag_name, flag_value, override)
 
-  def _verify_flag(self, name: str, value: Optional[str]) -> None:
-    del value
+  def _verify_flag(self, name: str, value: Optional[str]) -> Optional[str]:
     if candidate := self._find_misspelled_flag(name):
       logging.error(
           "Potentially misspelled flag: '%s'. "
           "Did you mean to use %s ?", name, candidate)
+    if name == "--user-data-dir":
+      if not value:
+        raise ValueError("--user-data-dir cannot be the empty string.")
+      expanded_dir = str(pathlib.Path(value).expanduser())
+      if expanded_dir != value:
+        logging.warning(
+            "Chrome Flags: auto-expanding --user-data-dir from '%s' to '%s'",
+            value, expanded_dir)
+      return expanded_dir
+    return value
 
   def _find_misspelled_flag(self, name: str) -> Optional[str]:
     if name in ("--enable-feature", "--enabled-feature", "--enabled-features"):
