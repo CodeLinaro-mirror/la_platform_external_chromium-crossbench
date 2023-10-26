@@ -560,8 +560,9 @@ class CliTestCase(BaseCrossbenchTestCase):
                    f"--out-dir={self.out_dir}")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
+      # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 3)
       versions = []
       for result_file in result_files:
@@ -603,8 +604,9 @@ class CliTestCase(BaseCrossbenchTestCase):
                    f"--out-dir={self.out_dir}")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
+      # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 2)
       versions = []
       for result_file in result_files:
@@ -646,8 +648,9 @@ class CliTestCase(BaseCrossbenchTestCase):
                    f"--out-dir={self.out_dir}")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
+      # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 2)
       versions = []
       for result_file in result_files:
@@ -686,8 +689,9 @@ class CliTestCase(BaseCrossbenchTestCase):
                    "--env-validation=skip", f"--out-dir={self.out_dir}")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
+      # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 3)
       versions = []
       for result_file in result_files:

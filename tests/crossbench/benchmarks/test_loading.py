@@ -282,7 +282,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
     self.assertTrue(len(stories), 1)
     story = stories[0]
     assert isinstance(story, InteractivePage)
-    self.assertEqual(story.name, "Google Story")
+    self.assertEqual(story.name, "Google_Story")
     self.assertListEqual([action.TYPE for action in story.actions],
                          ["get", "wait", "scroll"])
 

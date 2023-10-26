@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import atexit
 import datetime as dt
-import enum
 import logging
 import os
 import pathlib
@@ -24,7 +23,6 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
                     Iterator, List, Optional, Sequence, Tuple, Type, TypeVar,
                     Union)
 
-import tabulate
 from colorama import init, Fore, Style
 
 from crossbench import plt

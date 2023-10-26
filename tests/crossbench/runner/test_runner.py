@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import pathlib
 import unittest
 from crossbench.runner.groups import BrowserSessionRunGroup
 from crossbench.runner.runner import ThreadMode
@@ -173,15 +174,40 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.browser_b_1 = MockBrowser("mock browser b 1", self.platform_b)
     self.browser_b_2 = MockBrowser("mock browser b 2", self.platform_b)
     self.runner = MockRunner()
+    self.root_dir = pathlib.Path()
     self.runs = (
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_1), "run 1"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_2), "run 2"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_1), "run 3"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_a_2), "run 4"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_1), "run 5"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_2), "run 6"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_1), "run 7"),
-        MockRun(self.runner, BrowserSessionRunGroup(self.browser_b_2), "run 8"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_a_1, 1, self.root_dir, throw=True), "run 1"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_a_2, 2, self.root_dir, throw=True), "run 2"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_a_1, 3, self.root_dir, throw=True), "run 3"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_a_2, 4, self.root_dir, throw=True), "run 4"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_b_1, 5, self.root_dir, throw=True), "run 5"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_b_2, 6, self.root_dir, throw=True), "run 6"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_b_1, 7, self.root_dir, throw=True), "run 7"),
+        MockRun(
+            self.runner,
+            BrowserSessionRunGroup(
+                self.browser_b_2, 8, self.root_dir, throw=True), "run 8"),
     )
 
   def test_group_none(self):
@@ -211,8 +237,8 @@ class TestThreadModeTestCase(unittest.TestCase):
       self.assertTupleEqual(group.runs, (run,))
 
   def test_group_session_2(self):
-    session_1 = BrowserSessionRunGroup(self.browser_a_1)
-    session_2 = BrowserSessionRunGroup(self.browser_a_2)
+    session_1 = BrowserSessionRunGroup(self.browser_a_1, 1, self.root_dir, True)
+    session_2 = BrowserSessionRunGroup(self.browser_a_2, 2, self.root_dir, True)
     runs = (
         MockRun(self.runner, session_1, "run 1"),
         MockRun(self.runner, session_2, "run 2"),

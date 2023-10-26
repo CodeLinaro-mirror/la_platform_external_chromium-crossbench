@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import unittest
+from crossbench import plt
 
 from crossbench.plt import MachineArch
 from tests import run_helper
@@ -41,6 +42,17 @@ class MachineArchTestCase(unittest.TestCase):
     self.assertEqual(str(MachineArch.X64), "x64")
     self.assertEqual(str(MachineArch.ARM_32), "arm32")
     self.assertEqual(str(MachineArch.ARM_64), "arm64")
+
+
+class PlatformHelperTestCase(unittest.TestCase):
+
+  def test_safe_filename(self):
+    self.assertEqual(plt.safe_filename("abc-ABC"), "abc-ABC")
+
+  def test_safe_filename_unsafe(self):
+    self.assertEqual(plt.safe_filename("äbc_ÂBC"), "abc_ABC")
+    self.assertEqual(plt.safe_filename("abc?*//\\ABC"), "abc_ABC")
+    self.assertEqual(plt.safe_filename("äbc_**_ÂBC"), "abc___ABC")
 
 
 if __name__ == "__main__":

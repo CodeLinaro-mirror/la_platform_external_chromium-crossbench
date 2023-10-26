@@ -687,6 +687,7 @@ class CrossBenchCLI:
     finally:
       if not args.out_dir and runner.out_dir.exists():
         self._update_default_results_symlinks(runner)
+        self._create_runs_results_symlinks(runner)
 
   def _update_default_results_symlinks(self, runner: Runner) -> None:
     results_root = runner.out_dir.parent
@@ -698,6 +699,9 @@ class CrossBenchCLI:
           runner.out_dir.relative_to(results_root), target_is_directory=True)
     else:
       logging.error("Could not create %s", latest_link)
+
+  def _create_runs_results_symlinks(self, runner: Runner) -> None:
+    results_root = runner.out_dir.parent
     runs: Tuple[Run, ...] = runner.runs
     if not runs:
       logging.debug("Skip creating result symlinks in '%s': no runs produced.",
@@ -714,6 +718,7 @@ class CrossBenchCLI:
       logging.error("Cannot create last_run symlink: %s", last_run_dir)
     else:
       last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
+
     runs_dir = out_dir / "runs"
     runs_dir.mkdir()
     for run in runs:
@@ -721,6 +726,12 @@ class CrossBenchCLI:
         continue
       relative = pathlib.Path("..") / run.out_dir.relative_to(out_dir)
       (runs_dir / str(run.index)).symlink_to(relative)
+
+    sessions_dir = out_dir / "sessions"
+    sessions_dir.mkdir()
+    for session in set(run.browser_session for run in runs):
+      relative = pathlib.Path("..") / session.path.relative_to(out_dir)
+      (sessions_dir / str(session.index)).symlink_to(relative)
 
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:

@@ -91,7 +91,7 @@ class Browser(abc.ABC):
   def unique_name(self, name: str) -> None:
     assert name
     # Replace any potentially unsafe chars in the name
-    self._unique_name = re.sub(r"[^\w\d\-\.]", "_", name).lower()
+    self._unique_name = plt.safe_filename(name).lower()
 
   @property
   def splash_screen(self) -> SplashScreen:

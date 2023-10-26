@@ -354,11 +354,15 @@ class Runner:
 
   def get_runs(self) -> Iterable[Run]:
     index = 0
+    session_index = 0
+    throw = self._exceptions.throw
     for repetition in range(self.repetitions):
       for story in self.stories:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
-          browser_session = BrowserSessionRunGroup(browser)
+          browser_session = BrowserSessionRunGroup(browser, session_index,
+                                                   self.out_dir, throw)
+          session_index += 1
           for temp_index, temperature in enumerate(self.cache_temperatures):
             yield Run(
                 self,
@@ -367,10 +371,9 @@ class Runner:
                 repetition,
                 f"{temp_index}_{temperature}",
                 index,
-                self.out_dir,
                 name=f"{story.name}[rep={repetition}, cache={temperature}]",
                 timeout=self.timing.run_timeout,
-                throw=self._exceptions.throw)
+                throw=throw)
             index += 1
 
   def assert_successful_runs(self) -> None:

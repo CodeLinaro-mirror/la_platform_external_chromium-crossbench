@@ -17,7 +17,7 @@ import hjson
 from frozendict import frozendict
 
 import crossbench.browsers.all as browsers
-from crossbench import cli_helper, compat, exception
+from crossbench import cli_helper, compat, exception, helper
 from crossbench import plt
 from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)

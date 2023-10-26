@@ -101,7 +101,8 @@ def get_probe_result_file(benchmark_name: str,
     probe_cls = benchmark_cls.DEFAULT_STORY_CLS.PROBES[0]
     probe_name = probe_cls.NAME
 
-  result_file = output_dir_path / browser.unique_name / f"{probe_name}.json"
+  result_file = (
+      output_dir_path / browser.unique_name / "stories" / f"{probe_name}.json")
   return str(result_file)
 
 

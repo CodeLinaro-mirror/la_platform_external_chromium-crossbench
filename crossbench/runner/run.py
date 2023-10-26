@@ -12,7 +12,7 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Iterable, Iterator, List, Optional,
                     Tuple)
 
-from crossbench import exception, helper, compat
+from crossbench import exception, helper, compat, plt
 from crossbench.flags import Flags, JSFlags
 from crossbench.probes import internal as internal_probe
 from crossbench.probes.probe import ResultLocation
@@ -25,7 +25,6 @@ from .timing import Timing
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench import plt
   from crossbench.probes.probe import Probe, ProbeContext
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
@@ -58,7 +57,6 @@ class Run:
                repetition: int,
                temperature: str,
                index: int,
-               root_dir: pathlib.Path,
                name: Optional[str] = None,
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
@@ -75,7 +73,7 @@ class Run:
     assert index >= 0
     self._index = index
     self._name = name
-    self._out_dir = self.get_out_dir(root_dir).absolute()
+    self._out_dir = self._get_out_dir(browser_session.root_dir).absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
     self._probe_contexts: List[ProbeContext] = []
     self._extra_js_flags = JSFlags()
@@ -89,9 +87,10 @@ class Run:
   def __str__(self) -> str:
     return f"Run({self.name}, {self._state}, {self.browser})"
 
-  def get_out_dir(self, root_dir: pathlib.Path) -> pathlib.Path:
-    return (root_dir / self.browser.unique_name / self.story.name /
-            str(self._repetition) / str(self._temperature))
+  def _get_out_dir(self, root_dir: pathlib.Path) -> pathlib.Path:
+    return (root_dir / plt.safe_filename(self.browser.unique_name) / "stories" /
+            plt.safe_filename(self.story.name) / str(self._repetition) /
+            str(self._temperature))
 
   @property
   def group_dir(self) -> pathlib.Path:
@@ -118,6 +117,7 @@ class Run:
         "name": self.name,
         "repetition": self.repetition,
         "temperature": self.temperature,
+        "browser_session": self.browser_session.index,
         "story": str(self.story),
         "probes": [probe.name for probe in self.probes],
         "duration": self.story.duration.total_seconds(),
@@ -299,9 +299,9 @@ class Run:
     return path
 
   def run(self, is_dry_run: bool = False) -> None:
+    assert self.browser_session.is_running
     self._advance_state(RunState.INITIAL, RunState.SETUP)
-    self._start_datetime = dt.datetime.now()
-    self._out_dir.mkdir(parents=True, exist_ok=True)
+    self._setup()
     with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       assert not self._probe_contexts
       try:
@@ -317,6 +317,16 @@ class Run:
       finally:
         if not is_dry_run:
           self.tear_down()
+
+  def _setup(self) -> None:
+    self._start_datetime = dt.datetime.now()
+    self._out_dir.mkdir(parents=True, exist_ok=True)
+    # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
+    # Target: BROWSER / "sessions" / SESSION
+    relative_session_dir = (
+        pathlib.Path("../../../..") /
+        self.browser_session.path.relative_to(self.out_dir.parents[3]))
+    (self._out_dir / "session").symlink_to(relative_session_dir)
 
   def _setup_probes(self, is_dry_run: bool) -> List[ProbeContext[Any]]:
     assert self._state == RunState.SETUP
