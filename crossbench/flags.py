@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import abc
 
 import collections
 import logging
@@ -165,11 +166,13 @@ class ChromeFlags(Flags):
 
   This has special treatment for --js-flags and the feature flags:
   --enable-features/--disable-features
+  --enable-blink-features/--disable-blink-features
   """
   _JS_FLAG = "--js-flags"
 
   def __init__(self, initial_data: Flags.InitialDataType = None) -> None:
     self._features = ChromeFeatures()
+    self._blink_features = ChromeBlinkFeatures()
     self._js_flags = JSFlags()
     super().__init__(initial_data)
 
@@ -188,6 +191,16 @@ class ChromeFlags(Flags):
         raise ValueError(f"{ChromeFeatures.DISABLE_FLAG} cannot be None")
       for feature in flag_value.split(","):
         self._features.disable(feature)
+    elif flag_name == ChromeBlinkFeatures.ENABLE_FLAG:
+      if flag_value is None:
+        raise ValueError(f"{ChromeBlinkFeatures.ENABLE_FLAG} cannot be None")
+      for feature in flag_value.split(","):
+        self._blink_features.enable(feature)
+    elif flag_name == ChromeBlinkFeatures.DISABLE_FLAG:
+      if flag_value is None:
+        raise ValueError(f"{ChromeBlinkFeatures.DISABLE_FLAG} cannot be None")
+      for feature in flag_value.split(","):
+        self._blink_features.disable(feature)
     elif flag_name == self._JS_FLAG:
       if flag_value is None:
         raise ValueError(f"{self._JS_FLAG} cannot be None")
@@ -201,20 +214,33 @@ class ChromeFlags(Flags):
       super()._set(flag_name, flag_value, override)
 
   def _verify_flag(self, name: str, value: Optional[str]) -> None:
-    if name in ("--enable-feature", "--enabled-feature", "--enabled-features"):
+    del value
+    if candidate := self._find_misspelled_flag(name):
       logging.error(
           "Potentially misspelled flag: '%s'. "
-          "Did you mean to use --enable-features ?", name)
-    elif name in ("--disable-feature", "--disabled-feature",
-                  "--disabled-features"):
-      logging.error(
-          "Potentially misspelled flag:  '%s'. "
-          "Did you mean to use --disable-features ?", name)
-    del value
+          "Did you mean to use %s ?", name, candidate)
+
+  def _find_misspelled_flag(self, name: str) -> Optional[str]:
+    if name in ("--enable-feature", "--enabled-feature", "--enabled-features"):
+      return "--enable-features"
+    if name in ("--disable-feature", "--disabled-feature",
+                "--disabled-features"):
+      return "--disable-features"
+    if name in ("--enable-blink-feature", "--enabled-blink-feature",
+                "--enabled-blink-features"):
+      return "--enable-blink-features"
+    if name in ("--disable-blink-feature", "--disabled-blink-feature",
+                "--disabled-blink-features"):
+      return "--disable-blink-features"
+    return None
 
   @property
   def features(self) -> ChromeFeatures:
     return self._features
+
+  @property
+  def blink_features(self) -> ChromeBlinkFeatures:
+    return self._blink_features
 
   @property
   def js_flags(self) -> JSFlags:
@@ -224,6 +250,7 @@ class ChromeFlags(Flags):
     if not isinstance(other, ChromeFlags):
       other = ChromeFlags(other)
     self.features.merge(other.features)
+    self.blink_features.merge(other.blink_features)
     self.js_flags.merge(other.js_flags)
     for name, value in other.base_items():
       self.set(name, value)
@@ -236,21 +263,12 @@ class ChromeFlags(Flags):
     if self._js_flags:
       yield (self._JS_FLAG, str(self.js_flags))
     yield from self.features.items()
+    yield from self.blink_features.items()
 
 
-class ChromeFeatures:
-  """
-  Chrome Features set, throws if features are enabled and disabled at the same
-  time.
-  Examples:
-    --disable-features="MyFeature1"
-    --enable-features="MyFeature1,MyFeature2"
-    --enable-features="MyFeature1:k1/v1/k2/v2,MyFeature2"
-    --enable-features="MyFeature3<Trial2:k1/v1/k2/v2"
-  """
-
-  ENABLE_FLAG: Final[str] = "--enable-features"
-  DISABLE_FLAG: Final[str] = "--disable-features"
+class ChromeBaseFeatures(abc.ABC):
+  ENABLE_FLAG: str = ""
+  DISABLE_FLAG: str = ""
 
   def __init__(self) -> None:
     self._enabled: Dict[str, Optional[str]] = {}
@@ -279,17 +297,11 @@ class ChromeFeatures:
     if "," in feature:
       raise ValueError(
           f"'{feature}' contains multiple features. Please split them first.")
-    parts = feature.split("<")
-    if len(parts) == 2:
-      return (parts[0], "<" + parts[1])
-    if len(parts) != 1:
-      raise ValueError(f"Invalid number of feature parts: {parts}")
-    parts = feature.split(":")
-    if len(parts) == 2:
-      return (parts[0], ":" + parts[1])
-    if len(parts) != 1:
-      raise ValueError(f"Invalid number of feature parts: {parts}")
-    return (feature, None)
+    return self._parse_feature_parts(feature)
+
+  @abc.abstractmethod
+  def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
+    pass
 
   def enable(self, feature: str) -> None:
     name, value = self._parse_feature(feature)
@@ -313,13 +325,15 @@ class ChromeFeatures:
       raise ValueError(f"Cannot disable previously enabled feature={name}")
     self._disabled[name] = None
 
-  def update(self, other: ChromeFeatures) -> None:
+  def update(self, other: ChromeBaseFeatures) -> None:
+    if not isinstance(other, type(self)):
+      raise TypeError(f"Cannot merge {type(self)} with {type(other)}")
     for disabled in other.disabled_ordered:
       self.disable(disabled)
     for name, value in other.enabled.items():
       self._enable(name, value)
 
-  def merge(self, other: ChromeFeatures) -> None:
+  def merge(self, other: ChromeBaseFeatures) -> None:
     self.update(other)
 
   def items(self) -> Iterable[Tuple[str, str]]:
@@ -338,3 +352,49 @@ class ChromeFeatures:
   def __str__(self) -> str:
     result = " ".join(self.get_list())
     return result
+
+
+class ChromeFeatures(ChromeBaseFeatures):
+  """
+  Chrome Features set, throws if features are enabled and disabled at the same
+  time.
+  Examples:
+    --disable-features="MyFeature1"
+    --enable-features="MyFeature1,MyFeature2"
+    --enable-features="MyFeature1:k1/v1/k2/v2,MyFeature2"
+    --enable-features="MyFeature3<Trial2:k1/v1/k2/v2"
+  """
+
+  ENABLE_FLAG: Final[str] = "--enable-features"
+  DISABLE_FLAG: Final[str] = "--disable-features"
+
+  def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
+    parts = feature.split("<")
+    if len(parts) == 2:
+      return (parts[0], "<" + parts[1])
+    if len(parts) != 1:
+      raise ValueError(f"Invalid number of feature parts: {parts}")
+    parts = feature.split(":")
+    if len(parts) == 2:
+      return (parts[0], ":" + parts[1])
+    if len(parts) != 1:
+      raise ValueError(f"Invalid number of feature parts: {parts}")
+    return (feature, None)
+
+
+class ChromeBlinkFeatures(ChromeBaseFeatures):
+  """
+  Chrome Features set, throws if features are enabled and disabled at the same
+  time.
+  Examples:
+    --disable-blink-features="MyFeature1"
+    --enable-blink-features="MyFeature1,MyFeature2"
+  """
+
+  ENABLE_FLAG: Final[str] = "--enable-blink-features"
+  DISABLE_FLAG: Final[str] = "--disable-blink-features"
+
+  def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
+    if "<" in feature or ":" in feature:
+      raise ValueError("blink feature do not have params.")
+    return (feature, None)
