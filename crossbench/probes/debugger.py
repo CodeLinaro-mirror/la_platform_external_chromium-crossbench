@@ -52,6 +52,14 @@ class DebuggerProbe(Probe):
         default=True,
         help="Automatically start the renderer process in the debugger.")
     parser.add_argument(
+        "spare_renderer_process",
+        type=bool,
+        default=False,
+        help=("Chrome-only: Enable/Disable spare renderer processes via \n"
+              "--enable-/--disable-features=SpareRendererForSitePerProcess.\n"
+              "Spare renderers are disabled by default when profiling "
+              "for fewer uninteresting processes."))
+    parser.add_argument(
         "geometry",
         type=str,
         default=DEFAULT_GEOMETRY,
@@ -68,6 +76,7 @@ class DebuggerProbe(Probe):
       self,
       debugger: pathlib.Path,
       auto_run: bool = True,
+      spare_renderer_process: bool = False,
       geometry: str = DEFAULT_GEOMETRY,
       args: Iterable[str] = ()) -> None:
     super().__init__()
@@ -75,6 +84,7 @@ class DebuggerProbe(Probe):
     self._debugger_args = args
     self._auto_run = auto_run
     self._geometry = geometry
+    self._spare_renderer_process = spare_renderer_process
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
@@ -95,6 +105,8 @@ class DebuggerProbe(Probe):
     flags.set("--no-sandbox")
     flags.set("--disable-hang-monitor")
     flags["--renderer-cmd-prefix"] = self.renderer_cmd_prefix()
+    if not self._spare_renderer_process:
+      browser.features.disable("SpareRendererForSitePerProcess")
 
   def renderer_cmd_prefix(self) -> str:
     # TODO: support more terminals.
