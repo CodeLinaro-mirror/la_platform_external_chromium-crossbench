@@ -11,6 +11,8 @@ import re
 from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
                     Tuple, Type, TypeVar, cast)
 
+from ordered_set import OrderedSet
+
 from crossbench import cli_helper, helper
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from crossbench.stories.story import Story
@@ -245,8 +247,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                separate: bool = False,
                url: Optional[str] = None):
     self.url = url
-    # Using dict instead as ordered set
-    self._selected_names: Dict[str, None] = {}
+    self._selected_names: OrderedSet[str] = OrderedSet()
     super().__init__(story_cls, patterns, separate)
     assert issubclass(self.story_cls, PressBenchmarkStory)
     for name in self._known_names:
@@ -301,13 +302,13 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
   def _add_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
     substories = self._regexp_match(regexp, original_pattern)
-    self._selected_names.update(dict.fromkeys(substories))
+    self._selected_names.update(substories)
 
   def _remove_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
     substories = self._regexp_match(regexp, original_pattern)
     for substory in substories:
       try:
-        del self._selected_names[substory]
+        self._selected_names.remove(substory)
       except KeyError as e:
         raise ValueError(
             "Removing Story failed: "
@@ -337,7 +338,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
     logging.info("SELECTED STORIES: %s",
                  str(list(map(str, self._selected_names))))
-    names = list(self._selected_names.keys())
+    names = list(self._selected_names)
     return self.create_stories_from_names(names, separate)
 
   def create_stories_from_names(

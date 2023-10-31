@@ -11,6 +11,8 @@ import re
 import shutil
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Tuple
 
+from ordered_set import OrderedSet
+
 from crossbench.flags import Flags
 from crossbench import plt
 
@@ -74,7 +76,7 @@ class Browser(abc.ABC):
     self.cache_dir: Optional[pathlib.Path] = cache_dir
     self.clear_cache_dir: bool = True
     self._pid: Optional[int] = None
-    self._probes: Set[Probe] = set()
+    self._probes: OrderedSet[Probe] = OrderedSet()
     self._flags: Flags = self.default_flags(flags)
     assert not js_flags, "Base Browser doesn't support js_flags directly"
     self.log_file: Optional[pathlib.Path] = None

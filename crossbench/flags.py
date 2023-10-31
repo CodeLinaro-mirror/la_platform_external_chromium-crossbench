@@ -3,14 +3,15 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import abc
 
+import abc
 import collections
 import logging
 import pathlib
 import re
-from typing import (Dict, Final, Iterable, Iterator, Optional, Set, Tuple,
-                    Union)
+from typing import Dict, Final, Iterable, Iterator, Optional, Tuple, Union
+
+from ordered_set import OrderedSet
 
 
 class Flags(collections.UserDict):
@@ -282,8 +283,7 @@ class ChromeBaseFeatures(abc.ABC):
 
   def __init__(self) -> None:
     self._enabled: Dict[str, Optional[str]] = {}
-    # Use dict as ordered set.
-    self._disabled: Dict[str, None] = {}
+    self._disabled: OrderedSet[str] = OrderedSet()
 
   @property
   def is_empty(self) -> bool:
@@ -294,12 +294,8 @@ class ChromeBaseFeatures(abc.ABC):
     return dict(self._enabled)
 
   @property
-  def disabled(self) -> Set[str]:
-    return set(self._disabled.keys())
-
-  @property
-  def disabled_ordered(self) -> Dict[str, None]:
-    return dict(self._disabled)
+  def disabled(self) -> OrderedSet[str]:
+    return OrderedSet(self._disabled)
 
   def _parse_feature(self, feature: str) -> Tuple[str, Optional[str]]:
     if not feature:
@@ -333,12 +329,12 @@ class ChromeBaseFeatures(abc.ABC):
     name, _ = self._parse_feature(feature)
     if name in self._enabled:
       raise ValueError(f"Cannot disable previously enabled feature={name}")
-    self._disabled[name] = None
+    self._disabled.add(name)
 
   def update(self, other: ChromeBaseFeatures) -> None:
     if not isinstance(other, type(self)):
       raise TypeError(f"Cannot merge {type(self)} with {type(other)}")
-    for disabled in other.disabled_ordered:
+    for disabled in other.disabled:
       self.disable(disabled)
     for name, value in other.enabled.items():
       self._enable(name, value)
@@ -352,7 +348,7 @@ class ChromeBaseFeatures(abc.ABC):
           k if v is None else f"{k}{v}" for k, v in self._enabled.items())
       yield (self.ENABLE_FLAG, joined)
     if self._disabled:
-      joined = ",".join(self._disabled.keys())
+      joined = ",".join(self._disabled)
       yield (self.DISABLE_FLAG, joined)
 
   def get_list(self) -> Iterable[str]:

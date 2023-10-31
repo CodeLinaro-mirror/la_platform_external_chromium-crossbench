@@ -24,6 +24,7 @@ selenium = "^4.1.0"
 tabulate = "^0.8.10"
 websockets = "^11.0.3"
 colorama = "^0.4.6"
+ordered-set = "^4.1.0"
 
 [tool.poetry.scripts]
 crossbench = 'scripts:crossbench'
