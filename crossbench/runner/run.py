@@ -376,6 +376,11 @@ class Run:
         f"Default browser log file {browser_log_file} already exists.")
     self._browser.set_log_file(browser_log_file)
 
+    if not self.browser_session.is_first_run(self):
+      if self.browser.is_running:
+        logging.debug("Skipping browser setup (not first in session): %s", self)
+        return
+
     with self.measure("browser-setup"):
       try:
         # pytype somehow gets the package path wrong here, disabling for now.
@@ -449,6 +454,18 @@ class Run:
 
   def tear_down(self, is_shutdown: bool = False) -> None:
     self._advance_state(RunState.RUN, RunState.DONE)
+    self._tear_down_browser(is_shutdown)
+
+    with self.measure("probes-tear_down"):
+      self._tear_down_probe_contexts(self._probe_contexts)
+      self._probe_contexts = []
+    self._rm_browser_tmp_dir()
+
+  def _tear_down_browser(self, is_shutdown: bool) -> None:
+    if not self.browser_session.is_last_run(self):
+      logging.debug("Skipping browser teardown (not first in session): %s",
+                    self)
+      return
     with self.measure("browser-tear_down"):
       if self._browser.is_running is False:
         logging.warning("Browser is no longer running (crashed or closed).")
@@ -461,10 +478,6 @@ class Run:
             return
         with self._exceptions.capture("Quit browser"):
           self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
-    with self.measure("probes-tear_down"):
-      self._tear_down_probe_contexts(self._probe_contexts)
-      self._probe_contexts = []
-    self._rm_browser_tmp_dir()
 
   def _tear_down_probe_contexts(self,
                                 probe_contexts: List[ProbeContext]) -> None:

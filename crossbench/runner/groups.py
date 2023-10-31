@@ -361,6 +361,10 @@ class BrowsersRunGroup(RunGroup):
 
 
 class RunThreadGroup(threading.Thread):
+  """The main interface to start Runs.
+  - Typically only a single RunThreadGroup is used.
+  - If runs are executed in parallel, multiple RunThreadGroup are used
+  """
 
   def __init__(self, runs: Iterable[Run]) -> None:
     super().__init__()
@@ -519,3 +523,11 @@ class BrowserSessionRunGroup(RunGroup):
   def _stop_browser(self) -> None:
     assert self._state == self.State.STOPPING
     # TODO: implement
+
+  # TODO: remove once cleanly implemented
+  def is_first_run(self, run: Run) -> bool:
+    return self._runs[0] is run
+
+  # TODO: remove once cleanly implemented
+  def is_last_run(self, run: Run) -> bool:
+    return self._runs[-1] is run
