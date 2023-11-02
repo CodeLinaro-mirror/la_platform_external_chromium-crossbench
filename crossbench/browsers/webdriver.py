@@ -167,7 +167,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def details_json(self) -> JsonDict:
     details: JsonDict = super().details_json()
     log = cast(JsonDict, details["log"])
-    log["driver"] = str(self.driver_log_file)
+    if self.log_file:
+      log["driver"] = str(self.driver_log_file)
     return details
 
   def show_url(self,

@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Tuple, cast
 
 from crossbench import helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -60,11 +60,18 @@ class PerfettoProbe(Probe):
     self._perfetto_bin = perfetto_bin
 
   @property
-  def textproto(self):
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (
+        ("textproto", self.textproto),
+        ("perfetto_bin", str(self.perfetto_bin)),
+    )
+
+  @property
+  def textproto(self) -> str:
     return self._textproto
 
   @property
-  def perfetto_bin(self):
+  def perfetto_bin(self) -> str:
     return self._perfetto_bin
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:

@@ -301,7 +301,7 @@ class Run:
   def run(self, is_dry_run: bool = False) -> None:
     assert self.browser_session.is_running
     self._advance_state(RunState.INITIAL, RunState.SETUP)
-    self._setup()
+    self._setup_dirs()
     with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       assert not self._probe_contexts
       try:
@@ -318,7 +318,7 @@ class Run:
         if not is_dry_run:
           self.tear_down()
 
-  def _setup(self) -> None:
+  def _setup_dirs(self) -> None:
     self._start_datetime = dt.datetime.now()
     self._out_dir.mkdir(parents=True, exist_ok=True)
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"

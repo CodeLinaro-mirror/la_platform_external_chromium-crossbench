@@ -10,7 +10,7 @@ import os
 import pathlib
 import re
 import subprocess
-from typing import TYPE_CHECKING, Iterable, List, Optional, cast
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, cast
 
 from crossbench import cli_helper, compat, helper, plt
 from crossbench.browsers.browser import Browser
@@ -113,6 +113,15 @@ class V8LogProbe(ChromiumProbe):
         raise ValueError(f"{self}: Non-v8.log-related flag detected: {flag}")
     if len(self._js_flags) == 0:
       raise ValueError(f"{self}: V8LogProbe has no effect")
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (
+        ("profview", self._profview),
+        ("js_flags", str(self.js_flags)),
+        ("d8_binary", str(self._d8_binary)),
+        ("v8_checkout", str(self._v8_checkout)),
+    )
 
   @property
   def js_flags(self) -> JSFlags:

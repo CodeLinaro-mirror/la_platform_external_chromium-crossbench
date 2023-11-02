@@ -412,6 +412,7 @@ class BrowserSessionRunGroup(RunGroup):
   """
 
   class State(compat.StrEnum):
+    BUILDING = "building"
     READY = "ready"
     STARTING = "starting"
     RUNNING = "running"
@@ -421,23 +422,58 @@ class BrowserSessionRunGroup(RunGroup):
   def __init__(self, browser: Browser, index: int, root_dir: pathlib.Path,
                throw: bool) -> None:
     super().__init__(throw)
-    self._state = self.State.READY
+    self._state = self.State.BUILDING
     self._browser = browser
     self._index = index
     self._runs: List[Run] = []
     self._root_dir: pathlib.Path = root_dir
     self._browser_tmp_dir: Optional[pathlib.Path] = None
-    self._path = (
-        self.root_dir / self.browser.unique_name / "sessions" / str(self.index))
 
   def append(self, run: Run) -> None:
-    assert self._state == self.State.READY
+    assert self._state == self.State.BUILDING
     assert run.browser_session == self
-    assert run.browser == self._browser
+    assert run.browser is self._browser
     # TODO: assert that the runs have compatible flags (likely we're only
     # allowing changes in the cache temperature)
     # TODO: Add session/run switch for probe results
     self._runs.append(run)
+
+  def set_ready(self) -> None:
+    assert self._state == self.State.BUILDING
+    self._state = self.State.READY
+    self._validate()
+    self._set_path(self._get_session_dir())
+
+  def _validate(self) -> None:
+    if not self._runs:
+      raise ValueError("BrowserSessionRunGroup must be non-empty.")
+    self._validate_same_browser_probes()
+
+  def _validate_same_browser_probes(self) -> None:
+    first_run = self._runs[0]
+    first_probes = tuple(first_run.probes)
+    for index, run in enumerate(self.runs):
+      if first_run.browser is not run.browser:
+        raise ValueError("A browser session can only contain "
+                         "Runs with the same Browser.\n"
+                         f"runs[0].browser == {first_run.browser} vs. "
+                         f"runs[{index}].browser == {run.browser}")
+      if first_probes != tuple(run.probes):
+        raise ValueError("Got conflicting Probes within a browser session.")
+
+  @property
+  def raw_sessions_dir(self) -> pathlib.Path:
+    return (self.root_dir / self.browser.unique_name / "sessions" /
+            str(self.index))
+
+  @property
+  def is_single_run(self) -> bool:
+    return len(self._runs) == 1
+
+  def _get_session_dir(self) -> pathlib.Path:
+    if self.is_single_run:
+      return self._runs[0].out_dir
+    return self.raw_sessions_dir
 
   @property
   def browser(self) -> Browser:
@@ -503,9 +539,18 @@ class BrowserSessionRunGroup(RunGroup):
   def _setup(self) -> None:
     assert self._state == self.State.READY
     self._state = self.State.STARTING
+    self._setup_session_dir()
     self._start_browser()
-    self.path.mkdir(parents=True)
+    # TODO: figure ouy when this is created the first time
+    self.path.mkdir(parents=True, exist_ok=True)
     self._state = self.State.RUNNING
+
+  def _setup_session_dir(self):
+    self.path.mkdir(parents=True, exist_ok=True)
+    if self.is_single_run:
+      # If there is a single run per session we reuse the run-dir.
+      self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
+      self.raw_sessions_dir.symlink_to(self.path)
 
   def _start_browser(self) -> None:
     assert self._state == self.State.STARTING

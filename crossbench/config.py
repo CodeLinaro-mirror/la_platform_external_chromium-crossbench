@@ -14,12 +14,15 @@ import pathlib
 import re
 import textwrap
 from typing import (Any, Callable, Dict, Generic, Iterable, List, Optional,
-                    Tuple, Type, TypeVar, Union, cast)
+                    Tuple, Type, TypeVar, Union, cast, TYPE_CHECKING)
 
 import tabulate
 
 from crossbench import cli_helper, helper
 from crossbench import exception
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 ArgParserType = Union[Callable[[Any], Any], Type]
 
@@ -214,6 +217,12 @@ _PATH_PREFIX = re.compile(r"(\./|/|[a-zA-Z]:\\)[^\\/]")
 
 
 class ConfigObject(abc.ABC):
+  """A ConfigObject is a placeholder object with parsed values from 
+  a ConfigParser.
+  - It is used to do complex input validation when the final instantiated
+    objects contain other nested config-parsed objects,
+  - It is then used to create a real instance of an object.
+  """
   VALID_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
 
   @classmethod
@@ -313,9 +322,9 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def __str__(self) -> str:
     parts: List[str] = []
     doc_string = self.doc
-    wdith = 80
+    width = 80
     if doc_string:
-      parts.append("\n".join(textwrap.wrap(doc_string, width=wdith)))
+      parts.append("\n".join(textwrap.wrap(doc_string, width=width)))
       parts.append("")
     if not self._args:
       if parts:
@@ -325,6 +334,6 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     parts.append("")
     for arg in self._args.values():
       parts.append(f"{arg.name}:")
-      parts.extend(helper.wrap_lines(arg.help_text, width=wdith, indent="  "))
+      parts.extend(helper.wrap_lines(arg.help_text, width=width, indent="  "))
       parts.append("")
     return "\n".join(parts)

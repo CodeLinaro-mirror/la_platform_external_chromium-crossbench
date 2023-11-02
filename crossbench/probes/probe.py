@@ -133,6 +133,21 @@ class Probe(abc.ABC):
   def __str__(self) -> str:
     return type(self).__name__
 
+  def __eq__(self, other) -> bool:
+    if self is other:
+      return True
+    if type(self) is not type(other):
+      return False
+    return self.key == other.key
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    """Return a sort key."""
+    return (("name", self.name),)
+
+  def __hash__(self) -> int:
+    return hash(self.key)
+
   @property
   def runner_platform(self) -> plt.Platform:
     return plt.PLATFORM

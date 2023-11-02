@@ -50,6 +50,11 @@ class PollingProbe(cb_probe.Probe, abc.ABC):
       raise ValueError(f"Polling interval must be >= 0.1s, but got: {interval}")
 
   @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (("cmd", tuple(self.cmd)),
+                          ("interval", self.interval.total_seconds()))
+
+  @property
   def interval(self) -> dt.timedelta:
     return self._interval
 

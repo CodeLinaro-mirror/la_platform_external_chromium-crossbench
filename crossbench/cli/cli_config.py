@@ -814,7 +814,7 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
 
 
 @dataclasses.dataclass(frozen=True)
-class SingleProbeConfig(ConfigObject):
+class ProbeConfig(ConfigObject):
   cls: Type[Probe]
   config: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
@@ -825,7 +825,7 @@ class SingleProbeConfig(ConfigObject):
       raise ValueError(f"{type(self).__name__}.config cannot be None.")
 
   @classmethod
-  def loads(cls, value: str) -> SingleProbeConfig:
+  def loads(cls, value: str) -> ProbeConfig:
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
@@ -846,7 +846,7 @@ class SingleProbeConfig(ConfigObject):
     return cls.load_dict(config)
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> SingleProbeConfig:
+  def load_dict(cls, config: Dict[str, Any]) -> ProbeConfig:
     probe_name = config.pop("name")
     if probe_name not in PROBE_LOOKUP:
       raise ProbeConfigError(f"Unknown probe: '{probe_name}'")
@@ -858,27 +858,26 @@ class SingleProbeConfig(ConfigObject):
     return self.cls.NAME
 
 
-class ProbeConfig:
+class ProbeListConfig:
 
   _PROBE_RE: Final[re.Pattern] = re.compile(
       r"(?P<probe_name>[\w.]+)(:?(?P<config>\{.*\}))?",
       re.MULTILINE | re.DOTALL)
 
   @classmethod
-  def from_cli_args(cls, args: argparse.Namespace) -> ProbeConfig:
+  def from_cli_args(cls, args: argparse.Namespace) -> ProbeListConfig:
     if args.probe_config:
       with args.probe_config.open(encoding="utf-8") as f:
         return cls.load(f)
     return cls(args.probe)
 
   @classmethod
-  def load(cls, file: TextIO) -> ProbeConfig:
+  def load(cls, file: TextIO) -> ProbeListConfig:
     probe_config = cls()
     probe_config.load_config_file(file)
     return probe_config
 
-  def __init__(self,
-               probe_configs: Optional[Iterable[SingleProbeConfig]] = None):
+  def __init__(self, probe_configs: Optional[Iterable[ProbeConfig]] = None):
     self._probes: List[Probe] = []
     if not probe_configs:
       return
@@ -891,7 +890,7 @@ class ProbeConfig:
   def probes(self) -> List[Probe]:
     return self._probes
 
-  def add_probe(self, probe_config: SingleProbeConfig) -> None:
+  def add_probe(self, probe_config: ProbeConfig) -> None:
     probe: Probe = probe_config.cls.from_config(probe_config.config)
     self._probes.append(probe)
 

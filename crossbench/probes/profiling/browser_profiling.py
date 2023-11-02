@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import json
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
 
@@ -101,6 +101,11 @@ class BrowserProfilingProbe(Probe):
     super().__init__()
     self._moz_profiler_startup_features: List[
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (("moz_profiler_startup_features",
+                           tuple(self.moz_profiler_startup_features)),)
 
   @property
   def moz_profiler_startup_features(self) -> List[MozProfilerStartupFeatures]:

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pathlib
 import shlex
-from typing import TYPE_CHECKING, Dict, Iterable
+from typing import TYPE_CHECKING, Dict, Iterable, Tuple
 from crossbench import cli_helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium import chromium
@@ -85,6 +85,16 @@ class DebuggerProbe(Probe):
     self._auto_run = auto_run
     self._geometry = geometry
     self._spare_renderer_process = spare_renderer_process
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (
+        ("debugger", str(self._debugger_bin)),
+        ("debugger_args", tuple(self._debugger_args)),
+        ("auto_run", self._auto_run),
+        ("geometry", str(self._geometry)),
+        ("spare_renderer_process", self._spare_renderer_process),
+    )
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)

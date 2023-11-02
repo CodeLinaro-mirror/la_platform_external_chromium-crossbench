@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import atexit
-import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from crossbench import cli_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -32,13 +31,17 @@ class DTraceProbe(Probe):
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
-    parser.add_argument("script_path", type=pathlib.Path)
+    parser.add_argument(
+        "script_path", type=cli_helper.parse_non_empty_file_path)
     return parser
 
   def __init__(self, script_path: pathlib.Path):
     super().__init__()
-    self._script_path = cli_helper.parse_non_empty_file_path(
-        script_path).resolve()
+    self._script_path = script_path.resolve()
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (("script_path", str(self.script_path)),)
 
   @property
   def script_path(self) -> pathlib.Path:

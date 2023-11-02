@@ -13,7 +13,7 @@ import pathlib
 import signal
 import subprocess
 import time
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast
 
 from crossbench import helper, plt
 from crossbench.browsers.chromium.chromium import Chromium
@@ -99,6 +99,16 @@ class ProfilingProbe(Probe):
     self._expose_v8_interpreted_frames: bool = v8_interpreted_frames
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (
+        ("js", self._sample_js),
+        ("v8_interpreted_frames", self._expose_v8_interpreted_frames),
+        ("pprof", self._run_pprof),
+        ("browser_process", self._sample_browser_process),
+        ("spare_renderer_process", self._spare_renderer_process),
+    )
 
   def is_compatible(self, browser: Browser) -> bool:
     if browser.platform.is_linux:

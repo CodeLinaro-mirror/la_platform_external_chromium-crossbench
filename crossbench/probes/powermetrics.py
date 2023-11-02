@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import atexit
+import datetime as dt
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import compat, helper
+from crossbench import cli_helper, compat, helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
@@ -48,22 +49,32 @@ class PowerMetricsProbe(Probe):
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
-    parser.add_argument("sampling_interval", type=int, default=1000)
+    parser.add_argument(
+        "sampling_interval",
+        type=cli_helper.Duration.parse_non_zero,
+        default=1000)
     parser.add_argument(
         "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)
     return parser
 
   def __init__(self,
-               sampling_interval: int = 0,
+               sampling_interval: dt.timedelta = dt.timedelta(),
                samplers: Sequence[SamplerType] = SAMPLERS):
     super().__init__()
     self._sampling_interval = sampling_interval
-    assert sampling_interval >= 0, (
-        f"Invalid sampling_interval={sampling_interval}")
+    if sampling_interval.total_seconds() < 0:
+      raise ValueError(f"Invalid sampling_interval={sampling_interval}")
     self._samplers = tuple(samplers)
 
   @property
-  def sampling_interval(self) -> int:
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (
+        ("sampling_interval", self.sampling_interval.total_seconds()),
+        ("samplers", tuple(map(str, self.samplers))),
+    )
+
+  @property
+  def sampling_interval(self) -> dt.timedelta:
     return self._sampling_interval
 
   @property
@@ -93,7 +104,7 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
         "plist",
         f"--samplers={','.join(map(str, self.probe.samplers))}",
         "-i",
-        f"{self.probe.sampling_interval}",
+        f"{int(self.probe.sampling_interval.total_seconds())}",
         "--output-file",
         self._output_plist_file,
         stdout=subprocess.DEVNULL)

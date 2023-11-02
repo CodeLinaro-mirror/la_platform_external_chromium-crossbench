@@ -58,12 +58,11 @@ class AppendDebuggerProbeAction(argparse.Action):
   """
 
   def __call__(self, parser, namespace, values, option_string=None):
-    probes: List[cli_config.SingleProbeConfig] = getattr(
-        namespace, self.dest, [])
+    probes: List[cli_config.ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:
       probe_settings["debugger"] = "lldb"
-    probes.append(cli_config.SingleProbeConfig(DebuggerProbe, probe_settings))
+    probes.append(cli_config.ProbeConfig(DebuggerProbe, probe_settings))
     if not getattr(namespace, "timeout_unit", None):
       # Set a very large --timeout-unit to allow for very slow debugging without
       # causing timeouts (for instance when waiting on a breakpoint).
@@ -499,7 +498,7 @@ class CrossBenchCLI:
     probe_config_group.add_argument(
         "--probe",
         action="append",
-        type=cli_config.SingleProbeConfig.parse,
+        type=cli_config.ProbeConfig.parse,
         default=[],
         help="Enable general purpose probes to measure data on all cb.stories. "
         "This argument can be specified multiple times to add more probes. "
@@ -758,7 +757,7 @@ class CrossBenchCLI:
     return args.browser_config.variants
 
   def _get_probes(self, args: argparse.Namespace) -> Sequence[Probe]:
-    args.probe_config = cli_config.ProbeConfig.from_cli_args(args)
+    args.probe_config = cli_config.ProbeListConfig.from_cli_args(args)
     return args.probe_config.probes
 
   def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:

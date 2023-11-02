@@ -375,6 +375,7 @@ class Runner:
                 timeout=self.timing.run_timeout,
                 throw=throw)
             index += 1
+          browser_session.set_ready()
 
   def assert_successful_runs(self) -> None:
     failed_runs = list(run for run in self.runs if not run.is_success)

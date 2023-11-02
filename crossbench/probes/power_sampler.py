@@ -6,14 +6,15 @@ from __future__ import annotations
 
 import atexit
 import csv
+import datetime as dt
 import logging
 import pathlib
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import compat, helper
+from crossbench import cli_helper, compat, helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeValidationError, ResultLocation)
+                                     ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
@@ -56,7 +57,10 @@ class PowerSamplerProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument("bin_path", type=pathlib.Path)
-    parser.add_argument("sampling_interval", type=int, default=10)
+    parser.add_argument(
+        "sampling_interval",
+        type=cli_helper.Duration.parse_non_zero,
+        default=dt.timedelta(seconds=10))
     parser.add_argument(
         "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)
     parser.add_argument(
@@ -69,7 +73,7 @@ class PowerSamplerProbe(Probe):
 
   def __init__(self,
                bin_path: pathlib.Path,
-               sampling_interval: int = 0,
+               sampling_interval: dt.timedelta = dt.timedelta(),
                samplers: Sequence[SamplerType] = SAMPLERS,
                wait_for_battery: bool = True):
     super().__init__()
@@ -77,18 +81,27 @@ class PowerSamplerProbe(Probe):
     assert self._bin_path.exists(), ("Could not find power_sampler binary at "
                                      f"'{self._bin_path}'")
     self._sampling_interval = sampling_interval
-    assert sampling_interval >= 0, (
-        f"Invalid sampling_interval={sampling_interval}")
+    if sampling_interval.total_seconds() < 0:
+      raise ValueError(f"Invalid sampling_interval={sampling_interval}")
     assert SamplerType.BATTERY not in samplers
     self._samplers = tuple(samplers)
     self._wait_for_battery = wait_for_battery
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (
+        ("bin_path", str(self.bin_path)),
+        ("sampling_interval", self.sampling_interval.total_seconds()),
+        ("samplers", tuple(map(str, self.samplers))),
+        ("wait_for_battery", self.wait_for_battery),
+    )
 
   @property
   def bin_path(self) -> pathlib.Path:
     return self._bin_path
 
   @property
-  def sampling_interval(self) -> int:
+  def sampling_interval(self) -> dt.timedelta:
     return self._sampling_interval
 
   @property
@@ -137,10 +150,10 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def start(self) -> None:
     assert self._active_user_process
-    if self.probe.sampling_interval > 0:
+    if sampling_interval := self.probe.sampling_interval.total_seconds():
       self._power_process = self.browser_platform.popen(
           self._bin_path,
-          f"--sample-interval={self.probe.sampling_interval}",
+          f"--sample-interval={int(sampling_interval)}",
           f"--samplers={','.join(map(str, self.probe.samplers))}",
           f"--json-output-file={self._power_output}",
           f"--resource-coalition-pid={self.browser_pid}",
@@ -165,7 +178,7 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def tear_down(self) -> ProbeResult:
     self.stop_processes()
-    if self.probe.sampling_interval > 0:
+    if self.probe.sampling_interval:
       return self.browser_result(
           json=[self._power_output, self._power_battery_output])
     return self.browser_result(json=[self._power_battery_output])

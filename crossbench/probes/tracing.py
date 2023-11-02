@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple
 
 from crossbench import cli_helper, compat
 from crossbench.browsers.chromium.chromium import Chromium
@@ -210,6 +210,7 @@ class TracingProbe(ChromiumProbe):
     super().__init__()
     self._trace_config = trace_config
     self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
+    self._preset = preset
     if preset:
       self._categories.update(TRACE_PRESETS[preset])
     if self._trace_config:
@@ -223,6 +224,15 @@ class TracingProbe(ChromiumProbe):
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
     self._traceconv = traceconv
+
+  @property
+  def key(self) -> Tuple[Tuple, ...]:
+    return super().key + (("preset", self._preset),
+                          ("categories", tuple(self._categories)),
+                          ("startup_duration", self._startup_duration),
+                          ("record_mode", str(self._record_mode)),
+                          ("record_format", str(self._record_format)),
+                          ("traceconv", str(self._traceconv)))
 
   @property
   def result_path_name(self) -> str:

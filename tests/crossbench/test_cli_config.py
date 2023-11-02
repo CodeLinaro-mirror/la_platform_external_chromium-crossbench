@@ -17,8 +17,8 @@ from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
                                        BrowserDriverType, BrowserVariantsConfig,
                                        ConfigError, DriverConfig,
-                                       FlagGroupConfig, ProbeConfig,
-                                       SingleProbeConfig)
+                                       FlagGroupConfig, ProbeListConfig,
+                                       ProbeConfig)
 from crossbench import plt
 from crossbench.exception import MultiException
 from crossbench.probes.power_sampler import PowerSamplerProbe
@@ -350,12 +350,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 class TestProbeConfig(CrossbenchFakeFsTestCase):
   # pylint: disable=expression-not-assigned
 
-  def parse_config(self, config_data) -> ProbeConfig:
+  def parse_config(self, config_data) -> ProbeListConfig:
     probe_config_file = pathlib.Path("/probe.config.hjson")
     with probe_config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with probe_config_file.open(encoding="utf-8") as f:
-      return ProbeConfig.load(f)
+      return ProbeListConfig.load(f)
 
   def test_invalid_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -400,7 +400,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     args = mock.Mock(probe_config=file)
-    config = ProbeConfig.from_cli_args(args)
+    config = ProbeListConfig.from_cli_args(args)
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     assert isinstance(probe, V8LogProbe)
@@ -414,17 +414,17 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     args = mock.Mock(probe_config=None, throw=True, wraps=False)
 
     args.probe = [
-        SingleProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}"),
+        ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}"),
     ]
-    config = ProbeConfig.from_cli_args(args)
+    config = ProbeListConfig.from_cli_args(args)
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     self.assertTrue(isinstance(probe, V8LogProbe))
 
     args.probe = [
-        SingleProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}"),
+        ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}"),
     ]
-    config = ProbeConfig.from_cli_args(args)
+    config = ProbeListConfig.from_cli_args(args)
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     self.assertTrue(isinstance(probe, V8LogProbe))
@@ -435,36 +435,34 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     config_data = {"d8_binary": str(mock_d8_file)}
     trailing_brace = "}"
     with self.assertRaises(argparse.ArgumentTypeError):
-      SingleProbeConfig.parse(
-          f"v8.log{hjson.dumps(config_data)}{trailing_brace}")
+      ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}{trailing_brace}")
     with self.assertRaises(argparse.ArgumentTypeError):
-      SingleProbeConfig.parse(
-          f"v8.log:{hjson.dumps(config_data)}{trailing_brace}")
+      ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}{trailing_brace}")
     with self.assertRaises(argparse.ArgumentTypeError):
-      SingleProbeConfig.parse("v8.log::")
+      ProbeConfig.parse("v8.log::")
 
   def test_inline_config_dir_instead_of_file(self):
     mock_dir = pathlib.Path("some/dir")
     mock_dir.mkdir(parents=True)
     config_data = {"d8_binary": str(mock_dir)}
     args = mock.Mock(
-        probe=[SingleProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
+        probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
         probe_config=None,
         throw=True,
         wraps=False)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      ProbeConfig.from_cli_args(args)
+      ProbeListConfig.from_cli_args(args)
     self.assertIn(str(mock_dir), str(cm.exception))
 
   def test_inline_config_non_existent_file(self):
     config_data = {"d8_binary": "does/not/exist/d8"}
     args = mock.Mock(
-        probe=[SingleProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
+        probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
         probe_config=None,
         throw=True,
         wraps=False)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      ProbeConfig.from_cli_args(args)
+      ProbeListConfig.from_cli_args(args)
     expected_path = pathlib.Path("does/not/exist/d8")
     self.assertIn(str(expected_path), str(cm.exception))
 

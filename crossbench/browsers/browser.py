@@ -7,14 +7,13 @@ from __future__ import annotations
 import abc
 import logging
 import pathlib
-import re
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
 
-from crossbench.flags import Flags
 from crossbench import plt
+from crossbench.flags import Flags
 
 from .splash_screen import SplashScreen
 from .viewport import Viewport
@@ -166,6 +165,8 @@ class Browser(abc.ABC):
     return candidate
 
   def attach_probe(self, probe: Probe) -> None:
+    if probe in self._probes:
+      raise ValueError(f"Cannot attach same probe twice: {probe}")
     self._probes.add(probe)
     probe.attach(self)
 
@@ -271,6 +272,10 @@ class Browser(abc.ABC):
     if self.platform.is_remote:
       platform_prefix = str(self.platform)
     return f"{platform_prefix}{self.type.capitalize()}:{self.label}"
+
+  def __hash__(self) -> int:
+    # Poor-man's hash, browsers should be unique.
+    return hash(id(self))
 
   def performance_mark(self, runner: Runner, name: str):
     self.js(runner, "performance.mark(arguments[0]);", arguments=[name])

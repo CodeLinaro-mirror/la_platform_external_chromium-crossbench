@@ -134,6 +134,20 @@ class ViewportTestCase(unittest.TestCase):
     self.assertTupleEqual(viewport.size, (100, 200))
     self.assertTupleEqual(viewport.position, (22, 33))
 
+  def test_str(self):
+    self.assertEqual(
+        str(Viewport.parse("100x200,22x33")), "Viewport(100x200,22x33)")
+    self.assertEqual(str(Viewport.MAXIMIZED), "Viewport(maximized)")
+
+  def test_equal(self):
+    self.assertFalse(Viewport.DEFAULT == "other")
+    self.assertTrue(Viewport.DEFAULT == Viewport.DEFAULT)
+    self.assertFalse(Viewport.DEFAULT != Viewport.DEFAULT)
+    self.assertTrue(Viewport.MAXIMIZED == Viewport.MAXIMIZED)
+    self.assertFalse(Viewport.DEFAULT == Viewport.MAXIMIZED)
+    self.assertTrue(
+        Viewport.parse("100x200,22x33"), Viewport.parse("100x200,22x33"))
+
 
 if __name__ == "__main__":
   run_helper.run_pytest(__file__)
