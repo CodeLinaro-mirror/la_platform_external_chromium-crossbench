@@ -177,10 +177,7 @@ class GetAction(Action):
     expected_end_time = start_time + self.duration.total_seconds()
 
     with run.actions(f"Get {self.url}", measure=False) as action:
-      if self.target:
-        action.js(f"window.open('{self.url}','{self.target}');")
-      else:
-        action.show_url(self.url)
+      action.show_url(self.url, str(self.target))
 
       if self._ready_state != ReadyState.ANY:
         # Make sure we also finish if readyState jumps directly

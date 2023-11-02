@@ -170,8 +170,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     log["driver"] = str(self.driver_log_file)
     return details
 
-  def show_url(self, runner: Runner, url: str) -> None:
-    logging.debug("WebDriverBrowser.show_url(%s)", url)
+  def show_url(self,
+               runner: Runner,
+               url: str,
+               target: Optional[str] = None) -> None:
+    logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     assert self._driver.window_handles, "Browser has no more opened windows."
     self._driver.switch_to.window(self._driver.window_handles[0])
     try:

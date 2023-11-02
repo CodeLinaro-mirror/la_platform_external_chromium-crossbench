@@ -248,7 +248,10 @@ class Browser(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def show_url(self, runner: Runner, url: str) -> None:
+  def show_url(self,
+               runner: Runner,
+               url: str,
+               target: Optional[str] = None) -> None:
     pass
 
   def _sync_viewport_flag(self, flags: Flags, flag: str,

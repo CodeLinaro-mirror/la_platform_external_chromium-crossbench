@@ -131,7 +131,10 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
       raise AppleScript.JavaScriptFromAppleScriptException(result)
     return result
 
-  def show_url(self, runner: Runner, url: str) -> None:
+  def show_url(self,
+               runner: Runner,
+               url: str,
+               target: Optional[str] = None) -> None:
     del runner
     self._exec_apple_script(self.APPLE_SCRIPT_SET_URL, url=url)
     self.platform.sleep(0.5)

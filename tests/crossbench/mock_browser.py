@@ -87,7 +87,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def user_agent(self, runner: Runner) -> str:
     return f"Mock Browser {self.type}, {self.VERSION}"
 
-  def show_url(self, runner: Runner, url) -> None:
+  def show_url(self, runner: Runner, url, target: Optional[str] = None) -> None:
     self.url_list.append(url)
 
   def js(self,

@@ -111,11 +111,16 @@ class Actions(helper.TimeScope):
           f"js_code did not return a bool, but got: {result}\n"
           f"js-code: {js_code}")
 
-  def show_url(self, url: str) -> None:
+  def show_url(self, url: str, target: Optional[str] = None) -> None:
     self._assert_is_active()
-    self._browser.show_url(
-        self._runner,  # pytype: disable=wrong-arg-types
-        url)
+    if target:
+      # TODO: use target in the driver instead.
+      self.js(f"window.open('{url}','{target}');")
+    else:
+      self._browser.show_url(
+          self._runner,  # pytype: disable=wrong-arg-types
+          url,
+          target=None)
 
   def wait(
       self, seconds: Union[dt.timedelta,
