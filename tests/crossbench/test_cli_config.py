@@ -528,6 +528,51 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertGreaterEqual(len(config.flag_groups), 1)
     self.assertGreaterEqual(len(config.variants), 1)
 
+  def test_browser_labels(self):
+    browsers = BrowserVariantsConfig(
+        {
+            "browsers": {
+                "chrome-stable-default": {
+                    "path": "chrome-stable",
+                },
+                "chrome-stable-noopt": {
+                    "path": "chrome-stable",
+                    "flags": ["--js-flags=--max-opt=0",]
+                },
+                "chrome-stable-custom": {
+                    "label": "custom-label-property",
+                    "path": "chrome-stable",
+                    "flags": ["--js-flags=--max-opt=0",]
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args).variants
+    self.assertEqual(len(browsers), 3)
+    self.assertEqual(browsers[0].label, "chrome-stable-default")
+    self.assertEqual(browsers[1].label, "chrome-stable-noopt")
+    self.assertEqual(browsers[2].label, "custom-label-property")
+
+  def test_browser_non_unique_label(self):
+    with self.assertRaises(ConfigError) as cm:
+      BrowserVariantsConfig(
+          {
+              "browsers": {
+                  "chrome-stable-label": {
+                      "path": "chrome-stable",
+                  },
+                  "chrome-stable-custom": {
+                      "label": "chrome-stable-label",
+                      "path": "chrome-stable",
+                  }
+              }
+          },
+          browser_lookup_override=self.browser_lookup,
+          args=self.mock_args).variants
+    message = str(cm.exception)
+    self.assertIn("chrome-stable-label", message)
+    self.assertIn("chrome-stable-custom", message)
+
   def test_flag_combination_invalid(self):
     with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(

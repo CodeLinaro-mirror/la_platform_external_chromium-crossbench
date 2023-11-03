@@ -8,8 +8,8 @@ import argparse
 import itertools
 import logging
 import pathlib
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TextIO,
-                    Tuple, Type, Union, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set,
+                    TextIO, Tuple, Type, Union, cast)
 
 import hjson
 
@@ -95,6 +95,7 @@ class BrowserVariantsConfig:
                args: Optional[argparse.Namespace] = None):
     self.flag_groups: Dict[str, FlagGroupConfig] = {}
     self._variants: List[Browser] = []
+    self._unique_names: Set[str] = set()
     self._browser_lookup_override = browser_lookup_override or {}
     self._cache_dir: pathlib.Path = BROWSERS_CACHE
     if raw_config_data:
@@ -210,9 +211,15 @@ class BrowserVariantsConfig:
       logging.info("   %s: %s", i, variants_flags[i])
     browser_platform = self._get_browser_platform(browser_config)
     for flags in variants_flags:
+      label = raw_browser_data.get("label", name)
+      if len(variants_flags) > 1:
+        label = self._flags_to_label(name, flags)
+      if label in self._unique_names:
+        raise ConfigError(f"browsers['{name}'] has non-unique label: {label}")
+      self._unique_names.add(label)
       # pytype: disable=not-instantiable
       browser_instance = browser_cls(
-          label=self._flags_to_label(name, flags),
+          label=label,
           path=browser_config.path,
           flags=flags,
           driver_path=args.driver_path or browser_config.driver.path,

@@ -320,6 +320,7 @@ class Run:
 
   def _setup_dirs(self) -> None:
     self._start_datetime = dt.datetime.now()
+    logging.debug("Creating Run(%s) out dir: %s", self, self._out_dir)
     self._out_dir.mkdir(parents=True, exist_ok=True)
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
     # Target: BROWSER / "sessions" / SESSION
