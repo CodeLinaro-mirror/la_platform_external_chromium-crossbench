@@ -292,7 +292,8 @@ class WaitRange:
 
 
 def wait_with_backoff(
-    wait_range: Union[int, float, WaitRange]) -> Iterator[Tuple[float, float]]:
+    wait_range: Union[int, float, dt.timedelta, WaitRange]
+) -> Iterator[Tuple[float, float]]:
   if not isinstance(wait_range, WaitRange):
     wait_range = WaitRange(timeout=wait_range)
   start = dt.datetime.now()

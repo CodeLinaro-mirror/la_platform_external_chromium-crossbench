@@ -25,6 +25,7 @@ from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
+from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 
 ABSTRACT_PROBES: Tuple[Type[Probe], ...] = (Probe, JsonResultProbe)
 
@@ -64,6 +65,7 @@ GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     V8RCSProbe,
     V8TurbolizerProbe,
     VideoProbe,
+    WebPageReplayProbe,
 )
 
 for probe_cls in GENERAL_PURPOSE_PROBES:
