@@ -191,6 +191,18 @@ def parse_dict_hjson_file(value: Union[str, pathlib.Path]) -> Any:
   return data
 
 
+def try_resolve_existing_path(value: str) -> Optional[pathlib.Path]:
+  if not value:
+    return None
+  maybe_path = pathlib.Path(value)
+  if maybe_path.exists():
+    return maybe_path
+  maybe_path = maybe_path.expanduser()
+  if maybe_path.exists():
+    return maybe_path
+  return None
+
+
 def parse_float(value: Any, name: str = "float") -> float:
   try:
     return float(value)

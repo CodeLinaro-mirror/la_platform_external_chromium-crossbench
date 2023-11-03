@@ -11,15 +11,17 @@ from unittest import mock
 import hjson
 from frozendict import frozendict
 
+from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.safari.safari import Safari
-from crossbench.cli.cli_config import (AmbiguousDriverIdentifier, BrowserConfig,
-                                       BrowserDriverType, BrowserVariantsConfig,
-                                       ConfigError, DriverConfig,
-                                       FlagGroupConfig, ProbeListConfig,
-                                       ProbeConfig)
-from crossbench import plt
+from crossbench.cli.config.base import ConfigError
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser_variants import (BrowserVariantsConfig,
+                                                    FlagGroupConfig)
+from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
+                                          BrowserDriverType, DriverConfig)
+from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 from crossbench.exception import MultiException
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe

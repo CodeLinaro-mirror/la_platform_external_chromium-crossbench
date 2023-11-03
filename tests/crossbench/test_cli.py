@@ -3,24 +3,20 @@
 # found in the LICENSE file.
 
 import argparse
-import gettext
 import io
 import json
-import logging
 import pathlib
 import unittest
 from typing import Dict, List, Tuple, Type
 from unittest import mock
 
 import hjson
-import pytest
 
 from crossbench import cli_helper, plt
 from crossbench.browsers import splash_screen, viewport
 from crossbench.cli import CrossBenchCLI
-from crossbench.cli.cli_config import (BrowserConfig, BrowserDriverType,
-                                       BrowserVariantsConfig, DriverConfig,
-                                       ProbeConfigError)
+from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
+from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
 from tests import run_helper

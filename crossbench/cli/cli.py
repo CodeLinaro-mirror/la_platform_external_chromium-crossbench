@@ -13,7 +13,7 @@ import sys
 import tempfile
 import traceback
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+                    Type, Union)
 
 from tabulate import tabulate
 
@@ -28,8 +28,8 @@ from crossbench.probes.internal import ErrorsProbe
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
 from crossbench.benchmarks.benchmark import Benchmark
+from crossbench.cli import config as cli_config
 
-from . import cli_config
 from .devtools_recorder_proxy import CrossbenchDevToolsRecorderProxy
 
 if TYPE_CHECKING:
@@ -45,7 +45,11 @@ argparse.ArgumentError = cli_helper.CrossBenchArgumentError
 class EnableDebuggingAction(argparse.Action):
   """Custom action to set both --throw and -vvv."""
 
-  def __call__(self, parser, namespace, values, option_string=None):
+  def __call__(self,
+               parser: argparse.ArgumentParser,
+               namespace: argparse.Namespace,
+               values: Union[str, Sequence[Any], None],
+               option_string: Optional[str] = None) -> None:
     setattr(namespace, "throw", True)
     setattr(namespace, "verbosity", 3)
 
@@ -57,7 +61,11 @@ class AppendDebuggerProbeAction(argparse.Action):
     longer time.
   """
 
-  def __call__(self, parser, namespace, values, option_string=None):
+  def __call__(self,
+               parser: argparse.ArgumentParser,
+               namespace: argparse.Namespace,
+               values: Union[str, Sequence[Any], None],
+               option_string: Optional[str] = None) -> None:
     probes: List[cli_config.ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:

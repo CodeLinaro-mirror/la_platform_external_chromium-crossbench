@@ -3,4 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-from .cli import CrossBenchCLI
+import argparse
+
+
+class ConfigError(argparse.ArgumentTypeError):
+  pass
