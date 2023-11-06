@@ -24,6 +24,9 @@ class Flags(collections.UserDict):
   InitialDataType = Optional[
       Union[Dict[str, str], "Flags", Iterable[Union[Tuple[str, str], str]]]]
 
+  _WHITE_SPACE_RE = re.compile(r"\s+")
+  _FLAG_NAME_RE = re.compile(r"(--?)[^\s=-][^\s=]*")
+
   @classmethod
   def split(cls, flag_str: str) -> Tuple[str, Optional[str]]:
     if "=" in flag_str:
@@ -49,9 +52,11 @@ class Flags(collections.UserDict):
            override: bool = False) -> None:
     if not flag_name:
       raise ValueError("Cannot set empty flag")
+    if self._WHITE_SPACE_RE.search(flag_name):
+      raise ValueError(f"Flag name cannot contains whitespaces: {flag_name}")
     if "=" in flag_name:
       raise ValueError(f"Flag name contains '=': {flag_name}, please split")
-    if not flag_name.startswith("-"):
+    if not self._FLAG_NAME_RE.fullmatch(flag_name):
       raise ValueError(f"Invalid flag name: {flag_name}")
     if flag_value and not isinstance(flag_value, str):
       raise ValueError(
@@ -109,7 +114,51 @@ class JSFlags(Flags):
   with the --no-.../--no... prefix are not contradicting each other.
   """
   _NO_PREFIX = "--no"
-  _NAME_RE = re.compile(r"--[a-zA-Z_-]+")
+  _NAME_RE = re.compile(r"--[a-zA-Z_\-]+")
+
+  # We allow two forms:
+  # - space separated: --foo="1" --bar  --baz='2'  --boo=3
+  # - comma separated: --foo="1",--bar ,--baz='2', --boo=3
+  _VALUE_PATTERN = (r"('(?P<value_single_quotes>[^',]+)')|"
+                    r"(\"(?P<value_double_quotes>[^\",]+)\")|"
+                    r"(?P<value_no_quotes>[^'\", =]+)")
+  _END_OR_SEPARATOR_PATTERN = r"(\s*[,\s]\s*|$)"
+  _PARSE_RE = re.compile(fr"(?P<name>{_NAME_RE.pattern})"
+                         fr"((?P<equal>=)({_VALUE_PATTERN})?)?"
+                         fr"{_END_OR_SEPARATOR_PATTERN}")
+
+  @classmethod
+  def parse(cls, raw_flags: str) -> Iterable[Tuple[str, Optional[str]]]:
+    raw_flags = raw_flags.strip()
+    if not raw_flags:
+      return
+    current_end: Optional[int] = None
+    for match in cls._PARSE_RE.finditer(raw_flags):
+      if current_end is None:
+        if match.start() != 0:
+          part = raw_flags[:match.start()]
+          raise ValueError(f"Invalid --js-flags part at pos=0: {part}")
+      else:
+        if current_end != match.start():
+          raise ValueError("Invalid --js-flags: could not consume all data")
+      current_end = match.end()
+
+      groups = match.groupdict()
+      flag_name = groups.get("name")
+      if not flag_name:
+        raise ValueError(f"Invalid --js-flags: {raw_flags}")
+      flag_value = (
+          groups.get("value_single_quotes") or
+          groups.get("value_double_quotes") or groups.get("value_no_quotes"))
+      if groups.get("equal") and not flag_value:
+        raise ValueError(
+            f"Invalid --js-flags: missing V8 flag value for '{flag_name}'")
+      yield (flag_name, flag_value)
+
+    if current_end != len(raw_flags):
+      part = raw_flags[current_end:]
+      raise ValueError(
+          f"Invalid --js-flags part at pos={current_end}: '{part}'")
 
   def copy(self) -> JSFlags:
     return self.__class__(self)
@@ -123,11 +172,16 @@ class JSFlags(Flags):
         raise ValueError(
             "--js-flags: Comma in V8 flag value, flag escaping for chrome's "
             f"--js-flags might not work: {flag_name}={flag_value}")
+      if self._WHITE_SPACE_RE.search(flag_value):
+        raise ValueError(
+            "--js-flags: V8 flag-values cannot contain whitespaces:"
+            f"{flag_name}={flag_value}")
     if not flag_name.startswith("--"):
       raise ValueError("--js-flags: Only long-form flag names allowed, "
                        f"but got '{flag_name}'")
     if not self._NAME_RE.fullmatch(flag_name):
-      raise ValueError(f"--js-flags: Invalid flag name '{flag_name}'")
+      raise ValueError(f"--js-flags: Invalid flag name '{flag_name}'. \n"
+                       "Check invalid characters in the V8 flag name?")
     self._check_negated_flag(flag_name, override)
     super()._set(flag_name, flag_value, override)
 
@@ -206,14 +260,16 @@ class ChromeFlags(Flags):
     elif flag_name == self._JS_FLAG:
       if flag_value is None:
         raise ValueError(f"{self._JS_FLAG} cannot be None")
-      new_js_flags = JSFlags(self._js_flags)
-      for js_flag in flag_value.split(","):
-        js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
-        new_js_flags.set(js_flag_name, js_flag_value, override=override)
-      self._js_flags.update(new_js_flags)
+      self._set_js_flag(flag_value, override)
     else:
       flag_value = self._verify_flag(flag_name, flag_value)
       super()._set(flag_name, flag_value, override)
+
+  def _set_js_flag(self, raw_js_flags: str, override: bool) -> None:
+    new_js_flags = JSFlags(self._js_flags)
+    for js_flag_name, js_flag_value in JSFlags.parse(raw_js_flags):
+      new_js_flags.set(js_flag_name, js_flag_value, override=override)
+    self._js_flags.update(new_js_flags)
 
   def _verify_flag(self, name: str, value: Optional[str]) -> Optional[str]:
     if candidate := self._find_misspelled_flag(name):

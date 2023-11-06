@@ -64,6 +64,13 @@ class TestFlags(unittest.TestCase):
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v4")
 
+  def test_set_invalid_flag_name(self):
+    flags = self.CLASS()
+    for invalid in ("- -foo", "--f oo", "", "-", "--"):
+      with self.assertRaises(ValueError):
+        flags.set(invalid)
+      self.assertFalse(invalid in flags)
+
   def test_get_list(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
     self.assertEqual(list(flags.get_list()), ["--foo=v1", "--bar"])
@@ -261,11 +268,45 @@ class TestChromeFlags(TestFlags):
     flags_copy.update(flags)
     self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
 
+  def test_set_js_flags(self):
+    flags = self.CLASS()
+    flags["--js-flags"] = "--foo=a/b/c-d-e.log,--bar=a--b/c ,--no-baz"
+    self.assertEqual(flags.js_flags["--foo"], "a/b/c-d-e.log")
+    self.assertEqual(flags.js_flags["--bar"], "a--b/c")
+    self.assertEqual(flags.js_flags["--no-baz"], None)
+
+  def test_js_flags_separators(self):
+    flags_1 = self.CLASS()
+    flags_1["--js-flags"] = "--f-one=1,--no-f-two,--f-three=3"
+    flags_2 = self.CLASS()
+    flags_2["--js-flags"] = "--f-one=1 --no-f-two --f-three=3"
+    flags_3 = self.CLASS()
+    flags_3["--js-flags"] = "--f-one='1',--no-f-two,--f-three=\"3\""
+    flags_4 = self.CLASS()
+    flags_4["--js-flags"] = "--f-one='1' --no-f-two, --f-three=\"3\""
+
+    list_1 = list(flags_1.js_flags.get_list())
+    list_2 = list(flags_2.js_flags.get_list())
+    self.assertListEqual(list_1, list_2)
+    list_3 = list(flags_3.js_flags.get_list())
+    self.assertListEqual(list_1, list_3)
+    list_4 = list(flags_4.js_flags.get_list())
+    self.assertListEqual(list_1, list_4)
+
+    for flags in (flags_1, flags_2, flags_3):
+      self.assertEqual(flags.js_flags["--f-one"], "1")
+      self.assertEqual(flags.js_flags["--no-f-two"], None)
+      self.assertEqual(flags.js_flags["--f-three"], "3")
+
   def test_set_invalid_js_flags(self):
     flags = self.CLASS()
-    for invalid in ("--bar,=", "-bar=1", "--bar,,", "--", "-", "a=b"):
-      with self.assertRaises(ValueError):
-        flags["--js-flags"] = invalid
+    flags["--js-flags"] = "--foo=1--bar"
+    for invalid in ("--bar,=", "-bar=1", "--bar,,", "--", "-", "a=b",
+                    "--bar==1", "--bar==--bar", "--bar='1\", --foo=1",
+                    "--foo='1'--bar", "--bar='a b c'"):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(ValueError):
+          flags["--js-flags"] = invalid
 
   def test_merge(self):
     flags = self.CLASS({
@@ -360,6 +401,11 @@ class TestJSFlags(TestFlags):
     self.assertIn("comma", str(cm.exception).lower())
     self.assertIn("--v8-log", str(cm.exception))
     self.assertIn("foo,bar", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      flags["--foo"] = "a b c d"
+    self.assertIn("whitespace", str(cm.exception).lower())
+    self.assertIn("--foo", str(cm.exception))
+    self.assertIn("a b c d", str(cm.exception))
 
   def test_conflicting_flags(self):
     with self.assertRaises(ValueError):
