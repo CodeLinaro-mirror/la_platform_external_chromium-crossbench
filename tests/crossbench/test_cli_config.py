@@ -21,6 +21,8 @@ from crossbench.cli.config.browser_variants import (BrowserVariantsConfig,
                                                     FlagGroupConfig)
 from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
                                           BrowserDriverType, DriverConfig)
+from crossbench.cli.config.network import (NetworkConfig, NetworkSpeedConfig,
+                                           NetworkType)
 from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 from crossbench.exception import MultiException
 from crossbench.probes.power_sampler import PowerSamplerProbe
@@ -1120,6 +1122,49 @@ class TestFlagGroupConfig(unittest.TestCase):
         ("--bar", "b1"),
         ("--bar", "b2"),
     ))
+
+
+class NetworkConfigTestCase(BaseConfigTestCase):
+
+  def test_parse_default(self):
+    config = NetworkConfig.parse("default")
+    self.assertEqual(config, NetworkConfig.default())
+
+  def test_default(self):
+    config = NetworkConfig.default()
+    self.assertEqual(config.type, NetworkType.LIVE)
+    self.assertEqual(config.speed, NetworkSpeedConfig.default())
+
+  def test_parse_replay_archive_invalid(self):
+    path = pathlib.Path("/foo/bar/wprgo.archive")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse(str(path))
+    message = str(cm.exception)
+    self.assertIn("wpr.go archive", message)
+    self.assertIn("exist", message)
+
+    self.fs.create_file(path)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse(str(path))
+    message = str(cm.exception)
+    self.assertIn("wpr.go archive", message)
+    self.assertIn("empty", message)
+
+  def test_parse_wprgo_archive(self):
+    path = pathlib.Path("/foo/bar/wprgo.archive")
+    self.fs.create_file(path, st_size=1024)
+    config = NetworkConfig.parse(str(path))
+    assert isinstance(config, NetworkConfig)
+    self.assertEqual(config.type, NetworkType.REPLAY)
+    self.assertEqual(config.path, path)
+
+  def test_invalid_constructor_params(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = NetworkConfig(path=pathlib.Path("foo/bar"))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = NetworkConfig(type=NetworkType.LOCAL, path=None)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = NetworkConfig(type=NetworkType.REPLAY, path=None)
 
 
 if __name__ == "__main__":

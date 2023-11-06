@@ -21,7 +21,8 @@ import hjson
 from crossbench import plt
 
 
-def parse_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
+def parse_path(value: Union[str, pathlib.Path],
+               name: str = "File") -> pathlib.Path:
   if not value:
     raise argparse.ArgumentTypeError("Invalid empty path.")
   try:
@@ -29,39 +30,52 @@ def parse_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   except RuntimeError as e:
     raise argparse.ArgumentTypeError(f"Invalid Path '{value}': {e}") from e
   if not path.exists():
-    raise argparse.ArgumentTypeError(f"Path '{path}' does not exist.")
+    raise argparse.ArgumentTypeError(f"{name} '{path}' does not exist.")
   return path
 
 
-def parse_existing_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
-  path = parse_path(value)
+def parse_existing_file_path(value: Union[str, pathlib.Path],
+                             name: str = "File") -> pathlib.Path:
+  path = parse_path(value, name)
   if not path.is_file():
-    raise argparse.ArgumentTypeError(f"Path '{path}' is not a file.")
+    raise argparse.ArgumentTypeError(f"{name} '{path}' is not a file.")
   return path
 
 
-def parse_non_empty_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
-  path: pathlib.Path = parse_existing_file_path(value)
+def parse_non_empty_file_path(value: Union[str, pathlib.Path],
+                              name: str = "File") -> pathlib.Path:
+  path: pathlib.Path = parse_existing_file_path(value, name)
   if path.stat().st_size == 0:
-    raise argparse.ArgumentTypeError(f"Path '{path}' is an empty file.")
+    raise argparse.ArgumentTypeError(f"{name} '{path}' is an empty file.")
   return path
 
 
-def parse_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
-  return parse_non_empty_file_path(value)
+def parse_file_path(value: Union[str, pathlib.Path],
+                    name: str = "Path") -> pathlib.Path:
+  return parse_non_empty_file_path(value, name)
 
 
-def parse_dir_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
-  path = parse_path(value)
+def parse_dir_path(value: Union[str, pathlib.Path],
+                   name: str = "Path") -> pathlib.Path:
+  path = parse_path(value, name)
   if not path.is_dir():
-    raise argparse.ArgumentTypeError(f"Path '{path}', is not a folder.")
+    raise argparse.ArgumentTypeError(f"{name} '{path}', is not a folder.")
   return path
 
 
-def parse_existing_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
-  path = parse_path(value)
+def parse_non_empty_dir_path(value: Union[str, pathlib.Path],
+                             name: str = "Path") -> pathlib.Path:
+  dir_path = parse_dir_path(value, name)
+  for _ in dir_path.iterdir():
+    return dir_path
+  raise argparse.ArgumentTypeError(f"{name} '{dir_path}', must be non empty.")
+
+
+def parse_existing_path(value: Union[str, pathlib.Path],
+                        name: str = "Path") -> pathlib.Path:
+  path = parse_path(value, name)
   if not path.exists():
-    raise argparse.ArgumentTypeError(f"Path '{path}' does not exist.")
+    raise argparse.ArgumentTypeError(f"{name} '{path}' does not exist.")
   return path
 
 

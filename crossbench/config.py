@@ -229,17 +229,26 @@ class ConfigObject(abc.ABC):
   def value_has_path_prefix(cls, value: str) -> bool:
     return _PATH_PREFIX.match(value) is not None
 
+  def __post_init__(self):
+    self.validate()
+
+  def validate(self) -> None:
+    """Override to perform validation of config properties that cannot be
+    checked individually (aka depend on each other).
+    """
+
   @classmethod
   def parse(cls, value: Any) -> ConfigObject:
     if not value:
       raise argparse.ArgumentTypeError("Empty config value")
     if isinstance(value, dict):
       return cls.load_dict(value)
-    if isinstance(value, (str, pathlib.Path)):
-      maybe_config = cls.maybe_load_path(value)
-      if maybe_config:
-        return maybe_config
+    if isinstance(value, pathlib.Path):
+      return cls.load_path(value)
     if isinstance(value, str):
+      maybe_path = pathlib.Path(value)
+      if cls.is_valid_path(maybe_path):
+        return cls.load_path(maybe_path)
       return cls.loads(value)
     raise argparse.ArgumentTypeError(
         f"Invalid config input type {type(value).__name__}: {value}")
@@ -247,16 +256,15 @@ class ConfigObject(abc.ABC):
   @classmethod
   @abc.abstractmethod
   def loads(cls, value: str) -> ConfigObject:
+    """Custom implementation for parsing config values that are
+    not handled by the default .parse(...) method."""
     raise NotImplementedError()
 
   @classmethod
-  def maybe_load_path(
-      cls, value: Union[str, pathlib.Path]) -> Optional[ConfigObject]:
-    maybe_config_path = pathlib.Path(value)
-    if (maybe_config_path.suffix in cls.VALID_EXTENSIONS and
-        maybe_config_path.is_file()):
-      return cls.load_path(maybe_config_path)
-    return None
+  def is_valid_path(cls, path: pathlib.Path) -> bool:
+    if not path.is_file():
+      return False
+    return path.suffix in cls.VALID_EXTENSIONS
 
   @classmethod
   def load_path(cls, path: pathlib.Path) -> ConfigObject:
@@ -318,6 +326,10 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     if not self._cls.__doc__:
       return ""
     return self._cls.__doc__.strip()
+
+  @property
+  def help(self) -> str:
+    return str(self)
 
   def __str__(self) -> str:
     parts: List[str] = []
