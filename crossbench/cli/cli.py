@@ -19,6 +19,7 @@ from tabulate import tabulate
 
 import crossbench.benchmarks.all as benchmarks
 from crossbench import cli_helper, helper
+from crossbench.benchmarks.benchmark import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
@@ -27,9 +28,7 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
 from crossbench.probes.internal import ErrorsProbe
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
-from crossbench.benchmarks.benchmark import Benchmark
-from crossbench.cli import config as cli_config
-
+from . import config as cli_config
 from .devtools_recorder_proxy import CrossbenchDevToolsRecorderProxy
 
 if TYPE_CHECKING:
