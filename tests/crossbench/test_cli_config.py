@@ -350,6 +350,21 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, BrowserConfig)
     self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
 
+  def test_parse_inline_driver(self):
+    driver_path = pathlib.Path("custom/chromedriver")
+    config_dict: JsonDict = {
+        "browser": "chrome",
+        "driver": str(driver_path),
+    }
+    with self.assertRaises(ValueError):
+      BrowserConfig.parse(hjson.dumps(config_dict))
+    self.fs.create_file(driver_path, st_size=100)
+    config = BrowserConfig.parse(hjson.dumps(config_dict))
+    assert isinstance(config, BrowserConfig)
+    self.assertEqual(config.browser, mock_browser.MockChromeStable.APP_PATH)
+    self.assertEqual(config.driver.type, BrowserDriverType.WEB_DRIVER)
+    self.assertEqual(config.driver.path, driver_path)
+
 
 class TestProbeConfig(CrossbenchFakeFsTestCase):
   # pylint: disable=expression-not-assigned
