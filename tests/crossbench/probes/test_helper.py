@@ -316,6 +316,16 @@ class TestFlatten(unittest.TestCase):
         "d": 4,
     })
 
+  def test_null(self):
+    data = {
+        "a": 1,
+        "b": None,
+    }
+    flattened = self.flatten(data)
+    self.assertDictEqual(flattened, {
+        "a": 1,
+    })
+
 
 class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
 

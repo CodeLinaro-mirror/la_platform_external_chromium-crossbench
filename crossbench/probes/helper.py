@@ -66,6 +66,8 @@ class Flatten:
                data,
                ignore_toplevel: bool = False) -> None:
     for name, item in data.items():
+      if item is None:
+        continue
       path = parent_path + (name,)
       if self._is_leaf_item(item):
         if ignore_toplevel and parent_path == ():
