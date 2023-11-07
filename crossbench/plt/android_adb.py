@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import re
+import shlex
 import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
                     Union)
@@ -114,6 +115,24 @@ class Adb:
   def device_info(self) -> Dict[str, str]:
     return self._device_info
 
+  def popen(self,
+            *args: Union[str, pathlib.Path],
+            shell: bool = False,
+            stdout=None,
+            stderr=None,
+            stdin=None,
+            env: Optional[Mapping[str, str]] = None,
+            quiet: bool = False) -> subprocess.Popen:
+    del shell
+    assert not env, "ADB does not support setting env vars."
+    if not quiet:
+      logging.debug("SHELL: %s", shlex.join(map(str, args)))
+    adb_cmd: List[Union[str, pathlib.Path]] = []
+    adb_cmd = [self._adb_bin, "-s", self._serial_id, "shell"]
+    adb_cmd.extend(args)
+    return self._host_platform.popen(
+        *adb_cmd, stdout=stdout, stderr=stderr, stdin=stdin)
+
   def _adb(self,
            *args: Union[str, pathlib.Path],
            shell: bool = False,
@@ -125,6 +144,7 @@ class Adb:
            quiet: bool = False,
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
+    del shell
     adb_cmd: List[Union[str, pathlib.Path]] = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
@@ -133,7 +153,6 @@ class Adb:
     adb_cmd.extend(args)
     return self._host_platform.sh(
         *adb_cmd,
-        shell=shell,
         capture_output=capture_output,
         stdout=stdout,
         stderr=stderr,
@@ -451,6 +470,23 @@ class AndroidAdbPlatform(PosixPlatform):
     del shell
     return self.adb.shell_stdout(
         *args, env=env, quiet=quiet, encoding=encoding, check=check)
+
+  def popen(self,
+            *args: Union[str, pathlib.Path],
+            shell: bool = False,
+            stdout=None,
+            stderr=None,
+            stdin=None,
+            env: Optional[Mapping[str, str]] = None,
+            quiet: bool = False) -> subprocess.Popen:
+    return self.adb.popen(
+        *args,
+        shell=shell,
+        stdout=stdout,
+        stderr=stderr,
+        stdin=stdin,
+        env=env,
+        quiet=quiet)
 
   def rsync(self, from_path: pathlib.Path,
             to_path: pathlib.Path) -> pathlib.Path:
