@@ -95,10 +95,18 @@ TRACE_PRESETS: Dict[str, frozenset[str]] = {
     "v8-gc-stats": V8_GC_STATS_TRACE_CONFIG,
 }
 
-class RecordMode(compat.StrEnum):
-  CONTINUOUSLY = "record-continuously"
-  UNTIL_FULL = "record-until-full"
-  AS_MUCH_AS_POSSIBLE = "record-as-much-as-possible"
+
+class RecordMode(compat.StrEnumWithHelp):
+  CONTINUOUSLY = ("record-continuously",
+                  "Record until the trace buffer is full.")
+  UNTIL_FULL = ("record-until-full", "Record until the user ends the trace. "
+                "The trace buffer is a fixed size and we use it as "
+                "a ring buffer during recording.")
+  AS_MUCH_AS_POSSIBLE = ("record-as-much-as-possible",
+                         "Record until the trace buffer is full, "
+                         "but with a huge buffer size.")
+  TRACE_TO_CONSOLE = ("trace-to-console",
+                      "Echo to console. Events are discarded.")
 
 
 class RecordFormat(compat.StrEnumWithHelp):
