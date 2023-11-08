@@ -229,7 +229,7 @@ class TsProxyProcess:
   def socks_proxy_port(self) -> int:
     if self._socks_proxy_port is None:
       raise RuntimeError("ts_proxy didn't start")
-    return self._socks_proxy_port
+    return self._socks_proxy_port # pytype: disable=bad-return-type
 
   def _verify_default_encoding(self) -> None:
     # In python3 subprocess handles encoding/decoding; this warns if it won't
