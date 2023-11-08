@@ -227,7 +227,8 @@ class TsProxyProcess:
 
   @property
   def socks_proxy_port(self) -> int:
-    assert self._socks_proxy_port is not None, "ts_proxy didn't start"
+    if self._socks_proxy_port is None:
+      raise RuntimeError("ts_proxy didn't start")
     return self._socks_proxy_port
 
   def _verify_default_encoding(self) -> None:
