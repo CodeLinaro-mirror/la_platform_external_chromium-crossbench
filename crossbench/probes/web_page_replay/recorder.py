@@ -77,12 +77,13 @@ class WebPageReplayProbe(Probe):
     if not self.runner_platform.which("go"):
       raise ValueError(f"'go' binary not available on r{self.runner_platform}")
 
-    if wpr_go_bin:
-      self._wpr_go_bin = wpr_go_bin
-    else:
-      self._wpr_go_bin = WprGoToolFinder(plt.PLATFORM).path
-    if not (self._wpr_go_bin and self._wpr_go_bin.exists()):
+    if not wpr_go_bin:
+      wpr_go_bin = WprGoToolFinder(plt.PLATFORM).path
+    if not wpr_go_bin:
+      raise ValueError("Could not find wpr.go binary")
+    if wpr_go_bin.exists():
       raise ValueError(f"wpr.go binary does not exist: {wpr_go_bin}")
+    self._wpr_go_bin = wpr_go_bin
     wpr_root = self.wpr_go_bin.parents[1]
 
     if key_file:

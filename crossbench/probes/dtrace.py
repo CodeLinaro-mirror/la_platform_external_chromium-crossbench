@@ -7,7 +7,7 @@ from __future__ import annotations
 import atexit
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, TextIO, Tuple
 
 from crossbench import cli_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -91,7 +91,7 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
     self._output_path = self.result_path.with_suffix(".output.txt")
     self._log_path = self.result_path.with_suffix(".log")
     self._dtrace_process: Optional[subprocess.Popen] = None
-    self._log_file = None
+    self._log_file: Optional[TextIO] = None
     atexit.register(self.stop_dtrace_process)
 
   def start(self) -> None:
@@ -112,6 +112,8 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
     assert self._dtrace_process is not None, ("Could not start DTrace")
 
   def stop(self) -> None:
+    if not self._dtrace_process:
+      return
     # DTrace will close by itself once the browser exits.
     returncode = self._dtrace_process.poll()
     if returncode is not None:
@@ -123,6 +125,7 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
 
   def tear_down(self) -> ProbeResult:
     self.stop_dtrace_process()
+    assert self._log_file, "Did not open log file."
     self._log_file.close()
     return self.browser_result(file=(self._output_path,))
 

@@ -83,10 +83,9 @@ class TsProxyServer:
                out_kbps: Optional[int] = None,
                window: Optional[int] = None,
                verbose: bool = False):
-    self._is_running = False
+    self._proc: Optional[TsProxyProcess] = None
     self._ts_proxy_path = cli_helper.parse_existing_file_path(ts_proxy_path)
-    self._proc = None
-    self._socks_proxy_port = self._initial_socks_proxy_port = socks_proxy_port
+    self._socks_proxy_port = socks_proxy_port
     self._host_ip = host_ip
     self._http_port = http_port
     self._https_port = https_port
@@ -95,10 +94,12 @@ class TsProxyServer:
     self._out_kbps = out_kbps
     self._window = window
     self._verbose = verbose
+    self.verify_ports(http_port, https_port)
 
-  def _verify_ports(self,
-                    http_port: Optional[int] = None,
-                    https_port: Optional[int] = None) -> None:
+  @classmethod
+  def verify_ports(cls,
+                   http_port: Optional[int] = None,
+                   https_port: Optional[int] = None) -> None:
     if bool(http_port) != bool(https_port):
       raise ValueError(
           "Both https and http-port should be specified or omitted, "
@@ -112,57 +113,122 @@ class TsProxyServer:
       cli_helper.parse_port(https_port, "https_port")
 
   @property
-  def socks_proxy_port(self) -> int:
-    assert self._socks_proxy_port, "Cannot access port of stopped TsProxy"
-    return self._socks_proxy_port
+  def is_running(self) -> bool:
+    return self._proc is not None
+
+  def set_traffic_settings(self,
+                           rtt_ms: Optional[int] = None,
+                           in_kbps: Optional[int] = None,
+                           out_kbps: Optional[int] = None,
+                           window: Optional[int] = None,
+                           timeout=DEFAULT_TIMEOUT) -> None:
+    assert self._proc, "ts_proxy is not running."
+    self._proc.set_traffic_settings(rtt_ms, in_kbps, out_kbps, window, timeout)
 
   @property
-  def is_running(self) -> bool:
-    return self._is_running
+  def socks_proxy_port(self) -> int:
+    assert self._proc, "ts_proxy is not running."
+    return self._proc.socks_proxy_port
 
-  def start(self, timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
+  def start(self) -> None:
+    assert not self._proc, "ts_proxy is already running."
+    self._proc = TsProxyProcess(self._ts_proxy_path, self._host_ip,
+                                self._socks_proxy_port, self._http_port,
+                                self._https_port, self._rtt_ms, self._in_kbps,
+                                self._out_kbps, self._window, self._verbose)
+    atexit.register(self.stop)
+
+  def stop(self) -> Optional[str]:
+    if not self._proc:
+      logging.debug("TsProxy: Attempting to stop server that is not running.")
+      return None
+    assert self._proc
+    err = self._proc.stop()
+    self._proc = None
+    return err
+
+  def __enter__(self):
+    self.start()
+    return self
+
+  def __exit__(self, unused_exc_type, unused_exc_val, unused_exc_tb):
+    self.stop()
+
+
+class TsProxyProcess:
+  """Separate wrapper around the ts_proxy to simplify pytype testing."""
+
+  def __init__(self,
+               ts_proxy_path: pathlib.Path,
+               host_ip: Optional[str] = None,
+               socks_proxy_port: Optional[int] = None,
+               http_port: Optional[int] = None,
+               https_port: Optional[int] = None,
+               rtt_ms: Optional[int] = None,
+               in_kbps: Optional[int] = None,
+               out_kbps: Optional[int] = None,
+               window: Optional[int] = None,
+               verbose: bool = False,
+               timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
     """Start TsProxy server and verify that it started."""
     cmd = [
         sys.executable,
-        self._ts_proxy_path,
+        ts_proxy_path,
     ]
-    if not self._socks_proxy_port:
+    self._socks_proxy_port = self._initial_socks_proxy_port = socks_proxy_port
+    if not socks_proxy_port:
       # Use port 0 so tsproxy picks a random available port.
       cmd.append("--port=0")
     else:
-      cmd.append(f"--port={self._socks_proxy_port}")
-    if self._verbose:
+      cmd.append(f"--port={socks_proxy_port}")
+    if verbose:
       cmd.append("--verbose")
-    if self._in_kbps:
-      cmd.append(f"--inkbps={self._in_kbps}")
-    if self._out_kbps:
-      cmd.append(f"--outkbps={self._out_kbps}")
-    if self._window:
-      cmd.append(f"--window={self._window}")
-    if self._rtt_ms:
-      cmd.append(f"--rtt={self._rtt_ms}")
-    if self._host_ip:
-      cmd.append(f"--desthost={self._host_ip}")
-    if self._http_port:
-      cmd.append(f"--mapports=443:{self._https_port},*:{self._http_port}")
+    self._in_kbps = in_kbps
+    if in_kbps:
+      cmd.append(f"--inkbps={in_kbps}")
+    self._out_kbps = out_kbps
+    if out_kbps:
+      cmd.append(f"--outkbps={out_kbps}")
+    self._window = window
+    if window:
+      cmd.append(f"--window={window}")
+    self._rtt_ms = rtt_ms
+    if rtt_ms:
+      cmd.append(f"--rtt={rtt_ms}")
+    self._host_ip = host_ip
+    if host_ip:
+      cmd.append(f"--desthost={host_ip}")
+    self._http_port = http_port
+    self._https_port = https_port
+    TsProxyServer.verify_ports(http_port, https_port)
+    if http_port:
+      cmd.append(f"--mapports=443:{https_port},*:{http_port}")
     logging.info("TsProxy: commandline: %s", shlex.join(cmd))
     self._verify_default_encoding()
     # In python3 universal_newlines forces subprocess to encode/decode,
     # allowing per-line buffering.
-    self._proc = subprocess.Popen(
+    proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
         stderr=subprocess.PIPE,
         bufsize=1,
         universal_newlines=True)
-    atexit.register(self.stop)
     logging.debug("TsProxy: fcntl is supported, trying to set "
                   "non blocking I/O for the ts_proxy process")
-    fd = self._proc.stdout.fileno()
+    assert proc and proc.stdout and proc.stdin, "Could not start ts_proxy"
+    self._proc = proc
+    self._stdout = proc.stdout
+    self._stdin = proc.stdin
+    fd = proc.stdout.fileno()
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
     self._wait_for_startup(timeout)
+
+  @property
+  def socks_proxy_port(self) -> int:
+    assert self._socks_proxy_port is not None, "ts_proxy didn't start"
+    return self._socks_proxy_port
 
   def _verify_default_encoding(self) -> None:
     # In python3 subprocess handles encoding/decoding; this warns if it won't
@@ -175,7 +241,6 @@ class TsProxyServer:
     for _ in helper.wait_with_backoff(timeout):
       if self._has_started():
         logging.info("TsProxy: port=%i", self._socks_proxy_port)
-        self._is_running = True
         return
     if err := self.stop():
       logging.error("TsProxy: Error stopping WPR server:\n%s", err)
@@ -183,11 +248,9 @@ class TsProxyServer:
         f"Starting tsproxy timed out after {timeout} seconds")
 
   def _has_started(self) -> bool:
-    assert not self._is_running
-    assert self._proc
     if self._proc.poll() is not None:
       return False
-    self._proc.stdout.flush()
+    self._stdout.flush()
     output_line = self._read_line_ts_proxy_stdout(timeout=5)
     logging.debug("TsProxy: output: %s", output_line)
     port = parse_ts_socks_proxy_port(output_line)
@@ -197,7 +260,7 @@ class TsProxyServer:
   def _read_line_ts_proxy_stdout(self, timeout: Union[int, float]) -> str:
     for _ in helper.wait_with_backoff(timeout):
       try:
-        return self._proc.stdout.readline().strip()
+        return self._stdout.readline().strip()
       except IOError as e:
         logging.debug("TsProxy: Error while reading tsproxy line: %s", e)
     return ""
@@ -206,7 +269,7 @@ class TsProxyServer:
                     command: str,
                     timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
     logging.debug("TsProxy: Sending command to ts_proxy_server: %s", command)
-    self._proc.stdin.write(f"{command}\n")
+    self._stdin.write(f"{command}\n")
     command_output = self._wait_for_status_response(timeout)
     success = "OK" in command_output
     logging.log(logging.DEBUG if success else logging.ERROR,
@@ -218,24 +281,13 @@ class TsProxyServer:
     logging.debug("TsProxy: waiting for status response")
     command_output = []
     for _ in helper.wait_with_backoff(timeout):
-      self._proc.stdin.flush()
-      self._proc.stdout.flush()
+      self._stdin.flush()
+      self._stdout.flush()
       last_output = self._read_line_ts_proxy_stdout(timeout)
       command_output.append(last_output)
       if last_output in ("OK", "ERROR"):
         break
     return command_output
-
-  def set_outbound_ports(self,
-                         http_port: int,
-                         https_port: int,
-                         timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
-    if self._http_port == http_port and self._https_port == https_port:
-      return
-    self._verify_ports(http_port, https_port)
-    self._send_command(f"set mapports 443:{https_port},*:{http_port}", timeout)
-    self._http_port = http_port
-    self._https_port = https_port
 
   def set_traffic_settings(self,
                            rtt_ms: Optional[int] = None,
@@ -264,22 +316,8 @@ class TsProxyServer:
       self._window = window
 
   def stop(self) -> Optional[str]:
-    if not self._is_running:
-      logging.debug("TsProxy: Attempting to stop server that is not running.")
-      return None
-    if not self._proc:
-      return None
     self._send_command("exit")
     helper.wait_and_kill(self._proc, signal=signal.SIGINT)
     _, err = self._proc.communicate()
-    self._proc = None
     self._socks_proxy_port = self._initial_socks_proxy_port
-    self._is_running = False
     return err
-
-  def __enter__(self):
-    self.start()
-    return self
-
-  def __exit__(self, unused_exc_type, unused_exc_val, unused_exc_tb):
-    self.stop()
