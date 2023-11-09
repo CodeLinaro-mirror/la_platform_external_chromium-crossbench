@@ -71,14 +71,14 @@ class PowerBenchmarkStoryFilter(StoryFilter[PowerBenchmarkStory]):
 
   def create_stories(self, separate: bool) -> Sequence[PowerBenchmarkStory]:
     stories = []
-    duration = dt.timedelta(15 * 60)
+    duration = dt.timedelta(minutes=15)
     for story_name in self.story_names:
       stories.append(globals()[story_name + "Story"](duration))
     return stories
 
 class BrowsingStory(PowerBenchmarkStory):
 
-  def __init__(self, duration: dt.timedelta = dt.timedelta(15 * 60)):
+  def __init__(self, duration: dt.timedelta = dt.timedelta(minutes=15)):
     super().__init__("Browsing", duration)
     self._url_file = pathlib.Path(__file__).parent.absolute() / "browsing_urls.txt"
     self._urls = self.get_urls()
@@ -113,7 +113,7 @@ class BrowsingStory(PowerBenchmarkStory):
 
 class ZoomMeetingStory(PowerBenchmarkStory):
 
-  def __init__(self, duration: dt.timedelta = dt.timedelta(15 * 60)):
+  def __init__(self, duration: dt.timedelta = dt.timedelta(minutes=15)):
     super().__init__("ZoomMeeting", duration)
 
   def run(self, run: Run) -> None:
@@ -165,7 +165,7 @@ class ZoomMeetingStory(PowerBenchmarkStory):
 
 class YoutubeFullscreenStory(PowerBenchmarkStory):
 
-  def __init__(self, duration: dt.timedelta = dt.timedelta(15 * 60)):
+  def __init__(self, duration: dt.timedelta = dt.timedelta(minutes=15)):
     super().__init__("YoutubeFullscreen", duration)
 
   def click_button_by_xpath(self, xpath: str):
