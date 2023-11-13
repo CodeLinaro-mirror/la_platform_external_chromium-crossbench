@@ -154,8 +154,7 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def load(cls, f: TextIO) -> BrowserConfig:
-    with exception.annotate_argparsing(
-        f"Loading browser config file: {f.name}"):
+    with exception.annotate(f"Loading browser config file: {f.name}"):
       config = {}
       with exception.annotate(f"Parsing {hjson.__name__}"):
         config = hjson.load(f)

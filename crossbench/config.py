@@ -239,6 +239,12 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def parse(cls, value: Any) -> ConfigObject:
+    # Make sure we wrap any exception in a argparse.ArgumentTypeError)
+    with exception.annotate_argparsing():
+      return cls._parse(value)
+
+  @classmethod
+  def _parse(cls, value: Any) -> ConfigObject:
     if not value:
       raise argparse.ArgumentTypeError("Empty config value")
     if isinstance(value, dict):
@@ -250,8 +256,7 @@ class ConfigObject(abc.ABC):
       if cls.is_valid_path(maybe_path):
         return cls.load_path(maybe_path)
       return cls.loads(value)
-    raise argparse.ArgumentTypeError(
-        f"Invalid config input type {type(value).__name__}: {value}")
+    raise argparse.ArgumentTypeError(f"Invalid config input type {value}")
 
   @classmethod
   @abc.abstractmethod

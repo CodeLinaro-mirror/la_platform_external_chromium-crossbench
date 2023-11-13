@@ -108,8 +108,7 @@ class BrowserVariantsConfig:
     return self._variants
 
   def load(self, f: TextIO, args: argparse.Namespace) -> None:
-    with exception.annotate_argparsing(
-        f"Loading browser config file: {f.name}"):
+    with exception.annotate(f"Loading browser config file: {f.name}"):
       config = {}
       with exception.annotate(f"Parsing {hjson.__name__}"):
         config = hjson.load(f)
@@ -442,6 +441,7 @@ class BrowserVariantsConfig:
 
     label = convert_flags_to_label(*flags.get_list())
     browser_platform = self._get_browser_platform(browser_config)
+
     browser_instance = browser_cls(  # pytype: disable=not-instantiable
         label=label,
         path=path,

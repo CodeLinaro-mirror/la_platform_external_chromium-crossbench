@@ -76,6 +76,7 @@ class ProbeConfig(ConfigObject):
     return self.cls.NAME
 
 
+# TODO: Migrate to ConfigObject
 class ProbeListConfig:
 
   _PROBE_RE: Final[re.Pattern] = re.compile(
@@ -84,24 +85,26 @@ class ProbeListConfig:
 
   @classmethod
   def from_cli_args(cls, args: argparse.Namespace) -> ProbeListConfig:
-    if args.probe_config:
-      with args.probe_config.open(encoding="utf-8") as f:
-        return cls.load(f)
-    return cls(args.probe)
+    with exception.annotate_argparsing():
+      if args.probe_config:
+        with args.probe_config.open(encoding="utf-8") as f:
+          return cls.load(f)
+      return cls(args.probe)
 
   @classmethod
   def load(cls, file: TextIO) -> ProbeListConfig:
-    probe_config = cls()
-    probe_config.load_config_file(file)
-    return probe_config
+    # Make sure we wrap any exception in a argparse.ArgumentTypeError)
+    with exception.annotate_argparsing():
+      probe_config = cls()
+      probe_config.load_config_file(file)
+      return probe_config
 
   def __init__(self, probe_configs: Optional[Iterable[ProbeConfig]] = None):
     self._probes: List[Probe] = []
     if not probe_configs:
       return
     for probe_config in probe_configs:
-      with exception.annotate_argparsing(
-          f"Parsing --probe={probe_config.name}"):
+      with exception.annotate(f"Parsing --probe={probe_config.name}"):
         self.add_probe(probe_config)
 
   @property
@@ -113,8 +116,7 @@ class ProbeListConfig:
     self._probes.append(probe)
 
   def load_config_file(self, file: TextIO) -> None:
-    with exception.annotate_argparsing(
-        f"Loading probe config file: {file.name}"):
+    with exception.annotate(f"Loading probe config file: {file.name}"):
       data = None
       with exception.annotate(f"Parsing {hjson.__name__}"):
         try:
@@ -128,8 +130,7 @@ class ProbeListConfig:
 
   def load_dict(self, config: Dict[str, Any]) -> None:
     for probe_name, config_data in config.items():
-      with exception.annotate_argparsing(
-          f"Parsing probe config probes['{probe_name}']"):
+      with exception.annotate(f"Parsing probe config probes['{probe_name}']"):
         if probe_name not in PROBE_LOOKUP:
           self.raise_unknown_probe(probe_name)
         probe_cls = PROBE_LOOKUP[probe_name]
