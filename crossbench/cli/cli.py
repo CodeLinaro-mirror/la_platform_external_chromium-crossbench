@@ -615,10 +615,36 @@ class CrossBenchCLI:
       if args.probe_config:
         raise argparse.ArgumentTypeError(
             "--config cannot be used together with --probe-config")
-      # Propagate the global config file to all sub-configs
-      args.env_config = cli_config.parse_env_config_file(args.config)
-      args.browser_config = args.config
-      args.probe_config = args.config
+
+      config_file = args.config
+      config_data = cli_helper.parse_hjson_file(config_file)
+      found_any_config = False
+
+      if config_data.get("env"):
+        args.env_config = cli_config.parse_env_config_file(config_file)
+        found_any_config = True
+      else:
+        logging.warning("Skipping env config: no 'env' property in %s",
+                        config_file)
+
+      if config_data.get("browsers"):
+        args.browser_config = config_file
+        found_any_config = True
+      else:
+        logging.warning(
+            "Skipping browsers config: No 'browsers' property in %s",
+            config_file)
+
+      if config_data.get("probes"):
+        args.probe_config = config_file
+        found_any_config = True
+      else:
+        logging.warning("Skipping probes config: no 'probes' property in %s",
+                        config_file)
+
+      if not found_any_config:
+        raise argparse.ArgumentTypeError(
+            f"--config: config file has no config properties {config_file}")
 
   def _log_benchmark_subcommand_failure(self, benchmark: Optional[Benchmark],
                                         runner: Optional[Runner],

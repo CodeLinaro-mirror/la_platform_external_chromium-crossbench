@@ -336,9 +336,9 @@ class CliTestCase(BaseCrossbenchTestCase):
                      "--throw")
     self.assertIn("invalid probe name", str(cm.exception))
 
-  def test_invalid_config_file(self):
+  def test_empty_config_file_properties(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "browsers": {}}
+    config_data = {"probes": {}, "env": {}, "browsers": {}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -347,7 +347,20 @@ class CliTestCase(BaseCrossbenchTestCase):
         url = "http://test.com"
         self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                      "--env-validation=skip", "--throw")
-    self.assertIn("env", str(cm.exception))
+    self.assertIn("no config properties", str(cm.exception))
+
+  def test_empty_config_files(self):
+    config_file = pathlib.Path("/config.hjson")
+    config_data = {}
+    with config_file.open("w", encoding="utf-8") as f:
+      hjson.dump(config_data, f)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      with mock.patch.object(
+          CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+        url = "http://test.com"
+        self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
+                     "--env-validation=skip", "--throw")
+    self.assertIn("no config properties", str(cm.exception))
 
   def test_conflicting_config_flags(self):
     config_file = pathlib.Path("/config.hjson")
@@ -362,20 +375,6 @@ class CliTestCase(BaseCrossbenchTestCase):
       message = str(cm.exception)
       self.assertIn("--config", message)
       self.assertIn(config_flag, message)
-
-  def test_empty_config_file(self):
-    config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}}
-    with config_file.open("w", encoding="utf-8") as f:
-      hjson.dump(config_data, f)
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
-      url = "http://test.com"
-      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                   "--env-validation=skip")
-      for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
-        self.assertNotIn("--log", browser.js_flags)
 
   def test_config_file_with_probe(self):
     config_file = pathlib.Path("/config.hjson")
