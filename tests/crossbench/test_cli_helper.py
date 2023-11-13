@@ -15,9 +15,10 @@ import unittest
 from crossbench.cli_helper import (
     Duration, parse_bool, parse_dir_path, parse_existing_file_path, parse_float,
     parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson, parse_int,
-    parse_json_file, parse_json_file_path, parse_non_empty_file_path,
-    parse_non_empty_str, parse_path, parse_port, parse_positive_int,
-    parse_positive_zero_float, parse_positive_zero_int, parse_sh_cmd)
+    parse_json_file, parse_json_file_path, parse_non_empty_dir_path,
+    parse_non_empty_file_path, parse_non_empty_str, parse_path, parse_port,
+    parse_positive_int, parse_positive_zero_float, parse_positive_zero_int,
+    parse_sh_cmd)
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -280,6 +281,17 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     folder = pathlib.Path("folder")
     folder.mkdir()
     self.assertEqual(folder, parse_dir_path(folder))
+    self.assertEqual(folder, parse_dir_path(str(folder)))
+
+  def test_parse_non_empty_dir_path(self):
+    folder = pathlib.Path("folder")
+    folder.mkdir()
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      parse_non_empty_dir_path(folder)
+    self.assertIn("empty", str(cm.exception))
+    (folder / "foo").touch()
+    self.assertEqual(folder, parse_non_empty_dir_path(folder))
+    self.assertEqual(folder, parse_non_empty_dir_path(str(folder)))
 
   def test_parse_non_empty_file_path(self):
     with self.assertRaises(argparse.ArgumentTypeError):

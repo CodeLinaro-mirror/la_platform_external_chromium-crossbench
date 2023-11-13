@@ -37,7 +37,7 @@ class NetworkSpeedPreset(compat.StrEnumWithHelp):
       f"Regular 3G network settings: {_settings_str('3G-regular')}")
   MOBILE_3G_FAST = ("3G-fast",
                     f"Slow 3G network settings: {_settings_str('3G-fast')}")
-  MOBILE_4G = ("4G", f"Regular $G network settings: {_settings_str('4G')}")
+  MOBILE_4G = ("4G", f"Regular 4G network settings: {_settings_str('4G')}")
 
 
 @dataclasses.dataclass(frozen=True)

@@ -10,8 +10,8 @@ from crossbench.runner.run import Run
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 
-class TestingStory(PressBenchmarkStory):
-  NAME = "TestingStory"
+class MockStory(PressBenchmarkStory):
+  NAME = "MockStory"
   URL = "http://test.com"
   SUBSTORIES = (
       "Story-1",
@@ -32,41 +32,41 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
 
   def test_empty(self):
     with self.assertRaises(ValueError):
-      _ = PressBenchmarkStoryFilter(TestingStory, [])
+      _ = PressBenchmarkStoryFilter(MockStory, [])
 
   def test_all(self):
-    stories = PressBenchmarkStoryFilter(TestingStory, ["all"]).stories
+    stories = PressBenchmarkStoryFilter(MockStory, ["all"]).stories
     self.assertEqual(len(stories), 1)
-    story: TestingStory = stories[0]
-    self.assertSequenceEqual(story.substories, TestingStory.SUBSTORIES)
+    story: MockStory = stories[0]
+    self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)
 
   def test_all_separate(self):
     stories = PressBenchmarkStoryFilter(
-        TestingStory, ["all"], separate=True).stories
+        MockStory, ["all"], separate=True).stories
     self.assertSequenceEqual([story.substories[0] for story in stories],
-                             TestingStory.SUBSTORIES)
+                             MockStory.SUBSTORIES)
     for story in stories:
       self.assertTrue(len(story.substories), 1)
 
   def test_match_regexp_none(self):
     with self.assertRaises(ValueError) as cm:
-      _ = PressBenchmarkStoryFilter(TestingStory, ["Story"]).stories
+      _ = PressBenchmarkStoryFilter(MockStory, ["Story"]).stories
     self.assertIn("Story", str(cm.exception))
 
   def test_match_regexp_some(self):
-    stories = PressBenchmarkStoryFilter(TestingStory, [".*-3"]).stories
+    stories = PressBenchmarkStoryFilter(MockStory, [".*-3"]).stories
     self.assertEqual(len(stories), 1)
-    story: TestingStory = stories[0]
+    story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, ["Story-3"])
 
   def test_match_regexp_all(self):
-    stories = PressBenchmarkStoryFilter(TestingStory, ["Story.*"]).stories
+    stories = PressBenchmarkStoryFilter(MockStory, ["Story.*"]).stories
     self.assertEqual(len(stories), 1)
-    story: TestingStory = stories[0]
-    self.assertSequenceEqual(story.substories, TestingStory.SUBSTORIES)
+    story: MockStory = stories[0]
+    self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)
 
   def test_match_regexp_all_wrong_case(self):
-    stories = PressBenchmarkStoryFilter(TestingStory, ["StOrY.*"]).stories
+    stories = PressBenchmarkStoryFilter(MockStory, ["StOrY.*"]).stories
     self.assertEqual(len(stories), 1)
-    story: TestingStory = stories[0]
-    self.assertSequenceEqual(story.substories, TestingStory.SUBSTORIES)
+    story: MockStory = stories[0]
+    self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)

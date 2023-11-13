@@ -171,7 +171,7 @@ def urlopen(url: str):
   try:
     logging.debug("Opening url: %s", url)
     return urllib.request.urlopen(url)
-  except urllib.error.HTTPError as e:
+  except (urllib.error.HTTPError, urllib.error.URLError) as e:
     logging.info("Could not load url=%s", url)
     raise e
 
@@ -188,6 +188,7 @@ class ChangeCWD:
   def __enter__(self) -> None:
     self.prev_dir = os.getcwd()
     os.chdir(self.new_dir)
+    logging.debug("CWD=%s", self.new_dir)
 
   def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
     assert self.prev_dir, "ChangeCWD was not entered correctly."

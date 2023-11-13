@@ -7,4 +7,5 @@ from __future__ import annotations
 from .browser import BrowserConfig
 from .browser_variants import BrowserVariantsConfig
 from .env import parse_env_config_file, parse_inline_env_config
-from .probe import ProbeConfig, ProbeListConfig, PROBE_LOOKUP
+from .network import NetworkConfig
+from .probe import PROBE_LOOKUP, ProbeConfig, ProbeListConfig

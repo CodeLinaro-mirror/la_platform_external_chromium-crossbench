@@ -370,6 +370,14 @@ class CrossBenchCLI:
         "Runs will be aborted after the given timeout. "
         f"Format: {cli_helper.Duration.help()}")
 
+    network_group = subparser.add_argument_group("Network Options", "")
+    network_settings_group = network_group.add_mutually_exclusive_group()
+    network_settings_group.add_argument(
+        "--network", "--network-config",
+        type=cli_config.NetworkConfig.parse,
+        default=cli_config.NetworkConfig.default(),
+        help=cli_config.NetworkConfig.help())
+
     env_group = subparser.add_argument_group("Environment Options", "")
     env_settings_group = env_group.add_mutually_exclusive_group()
     env_settings_group.add_argument(
@@ -449,7 +457,7 @@ class CrossBenchCLI:
         "--config",
         type=cli_helper.parse_hjson_file_path,
         help="Specify a common config for "
-        "--probe-config, --browser-config and --env-config.")
+        "--probe-config, --browser-config, --network-config and --env-config.")
 
     splashscreen_group = browser_group.add_mutually_exclusive_group()
     splashscreen_group.add_argument(
