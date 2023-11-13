@@ -53,6 +53,19 @@ class EnableDebuggingAction(argparse.Action):
     setattr(namespace, "verbosity", 3)
 
 
+class EnableFastAction(argparse.Action):
+  """Custom action to enable fast test runs"""
+
+  def __call__(self,
+               parser: argparse.ArgumentParser,
+               namespace: argparse.Namespace,
+               values: Union[str, Sequence[Any], None],
+               option_string: Optional[str] = None) -> None:
+    setattr(namespace, "cool_down_time", dt.timedelta())
+    setattr(namespace, "splash_screen", splash_screen.SplashScreen.NONE)
+    setattr(namespace, "env_validation", ValidationMode.SKIP)
+
+
 class AppendDebuggerProbeAction(argparse.Action):
   """Custom action to set multiple args when --gdb or --lldb are set:
   - Add a DebuggerProbe config.
@@ -326,6 +339,13 @@ class CrossBenchCLI:
         const=dt.timedelta(seconds=0),
         help="Disable cool-down between runs (might cause CPU throttling), "
         "equivalent to --cool-down=0.")
+    cooldown_group.add_argument(
+        "--fast",
+        action=EnableFastAction,
+        nargs=0,
+        help="Switch to a fast run mode "
+        "which might yield unstable performance results. "
+        "Equivalent to --cool-down=0 --no-splash --env-validation=skip.")
 
     runner_group.add_argument(
         "--time-unit",
