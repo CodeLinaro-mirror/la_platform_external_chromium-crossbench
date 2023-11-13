@@ -213,9 +213,8 @@ class BrowserVariantsConfig:
       label = raw_browser_data.get("label", name)
       if len(variants_flags) > 1:
         label = self._flags_to_label(name, flags)
-      if label in self._unique_names:
+      if not self._check_unique_label(label):
         raise ConfigError(f"browsers['{name}'] has non-unique label: {label}")
-      self._unique_names.add(label)
       # pytype: disable=not-instantiable
       browser_instance = browser_cls(
           label=label,
@@ -231,6 +230,12 @@ class BrowserVariantsConfig:
 
   def _flags_to_label(self, name: str, flags: Flags) -> str:
     return f"{name}_{convert_flags_to_label(*flags.get_list())}"
+
+  def _check_unique_label(self, label: str) -> bool:
+    if label in self._unique_names:
+      return False
+    self._unique_names.add(label)
+    return True
 
   def _parse_flags(self, name: str,
                    data: Dict[str, Any]) -> List[Tuple[FlagItemT, ...]]:
@@ -439,8 +444,12 @@ class BrowserVariantsConfig:
       flag_name, flag_value = Flags.split(flag_str)
       flags.set(flag_name, flag_value)
 
-    label = convert_flags_to_label(*flags.get_list())
     browser_platform = self._get_browser_platform(browser_config)
+
+    # Ignore the flags for the label since --browser only has a single
+    # flag variant.
+    label = f"{browser_platform}_{len(self._unique_names)}"
+    assert self._check_unique_label(label), f"Non-unique label: {label}"
 
     browser_instance = browser_cls(  # pytype: disable=not-instantiable
         label=label,

@@ -159,6 +159,19 @@ if not TYPE_CHECKING:
   assert issubclass(MockChromeStable, Chrome)
 
 
+class MockChromeAndroidStable(MockChromeStable):
+
+  @property
+  def platform(self) -> plt.AndroidAdbPlatform:
+    assert isinstance(
+        self._platform,
+        plt.AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
+    return cast(plt.AndroidAdbPlatform, self._platform)
+
+  def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
+    return path
+
+
 class MockChromeBeta(MockChromeBrowser):
   VERSION = "101.22.33.44"
   if plt.PLATFORM.is_macos:

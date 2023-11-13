@@ -39,8 +39,6 @@ class MockPlatform(ActivePlatformClass):
   def __init__(self, is_battery_powered=False):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self._key = plt.PLATFORM.key
-    self._machine: MachineArch = plt.PLATFORM.machine
     self.sh_cmds: List[ShellArgsT] = []
     self.expected_sh_cmds: Optional[List[ShellArgsT]] = None
     self.sh_results: List[str] = []
@@ -54,12 +52,12 @@ class MockPlatform(ActivePlatformClass):
     self.sh_results.insert(0, result)
 
   @property
-  def key(self) -> str:
-    return f"mock-{self._key}"
+  def name(self) -> str:
+    return "mock"
 
   @property
   def machine(self) -> MachineArch:
-    return self._machine
+    return MachineArch.ARM_64
 
   @property
   def version(self) -> str:
@@ -216,6 +214,19 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.js_side_effects, [])
+    self.mock_args = mock.Mock(
+        wraps=False,
+        driver_path=None,
+        browser_config=None,
+        viewport=None,
+        splash_screen=None,
+        cache_dir=pathlib.Path("test_cache_dir"),
+        enable_features=None,
+        disable_features=None,
+        js_flags=None,
+        enable_field_trial_config=False,
+        probe=[],
+        other_browser_args=[])
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)

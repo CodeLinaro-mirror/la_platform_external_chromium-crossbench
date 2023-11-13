@@ -506,7 +506,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     self.assertEqual(powersampler_probe.bin_path, powersampler_bin)
 
 
-class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
+class TestBrowserVariantsConfig(BaseConfigTestCase):
   # pylint: disable=expression-not-assigned
 
   EXAMPLE_CONFIG_PATH = pathlib.Path(
@@ -529,7 +529,6 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
         }
     for _, (_, browser_config) in self.browser_lookup.items():
       self.assertTrue(browser_config.path.exists())
-    self.mock_args = mock.Mock(driver_path=None)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_load_browser_config_template(self):
@@ -545,7 +544,7 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertGreaterEqual(len(config.flag_groups), 1)
     self.assertGreaterEqual(len(config.variants), 1)
 
-  def test_browser_labels(self):
+  def test_browser_labels_attributes(self):
     browsers = BrowserVariantsConfig(
         {
             "browsers": {
@@ -570,7 +569,40 @@ class TestBrowserVariantsConfig(BaseCrossbenchTestCase):
     self.assertEqual(browsers[1].label, "chrome-stable-noopt")
     self.assertEqual(browsers[2].label, "custom-label-property")
 
-  def test_browser_non_unique_label(self):
+  def test_browser_label_args(self):
+    self.platform.sh_results = [ADB_SAMPLE_OUTPUT_SINGLE]
+    args = self.mock_args
+    adb_config = BrowserConfig.parse("adb:chrome")
+    desktop_config = BrowserConfig.parse("chrome")
+    args.browser = [
+        adb_config,
+        desktop_config,
+    ]
+    self.assertFalse(self.platform.sh_results)
+    self.platform.sh_results = [
+        ADB_SAMPLE_OUTPUT_SINGLE,
+        ADB_SAMPLE_OUTPUT_SINGLE,
+    ]
+
+    def mock_get_browser_cls(browser_config: BrowserConfig):
+      if browser_config is adb_config:
+        return mock_browser.MockChromeAndroidStable
+      if browser_config is desktop_config:
+        return mock_browser.MockChromeStable
+      raise ValueError("Unknown browser_config")
+
+    with mock.patch.object(
+        BrowserVariantsConfig,
+        "_get_browser_cls",
+        side_effect=mock_get_browser_cls), mock.patch(
+            "crossbench.plt.AndroidAdbPlatform.machine",
+            new_callable=mock.PropertyMock,
+            return_value=plt.MachineArch.ARM_64):
+      browsers = BrowserVariantsConfig.from_cli_args(args).variants
+    self.assertEqual(len(browsers), 2)
+    self.assertEqual(browsers[0].label, "android.arm64.remote_0")
+    self.assertEqual(browsers[1].label, "mock.arm64.local_1")
+
     with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(
           {

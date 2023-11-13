@@ -409,6 +409,8 @@ class CrossBenchCLI:
         "android devices or --browser='adb:chrome' if only once device is "
         "attached.\n"
         "Repeat for adding multiple browsers. "
+        "The browser result dir's name is '${BROWSER}_${PLATFORM}_${INDEX}' "
+        "$INDEX corresponds to the order on the command line."
         "Cannot be used together with --browser-config")
     browser_config_group.add_argument(
         "--browser-config",
