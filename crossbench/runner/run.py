@@ -322,12 +322,18 @@ class Run:
     self._start_datetime = dt.datetime.now()
     logging.debug("Creating Run(%s) out dir: %s", self, self._out_dir)
     self._out_dir.mkdir(parents=True, exist_ok=True)
+    self._create_session_dir()
+
+  def _create_session_dir(self) -> None:
+    session_run_dir = self._out_dir / "session"
+    assert not session_run_dir.exists(), (
+        f"Cannot setup session dir twice: {session_run_dir}")
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
     # Target: BROWSER / "sessions" / SESSION
     relative_session_dir = (
         pathlib.Path("../../../..") /
         self.browser_session.path.relative_to(self.out_dir.parents[3]))
-    (self._out_dir / "session").symlink_to(relative_session_dir)
+    session_run_dir.symlink_to(relative_session_dir)
 
   def _setup_probes(self, is_dry_run: bool) -> List[ProbeContext[Any]]:
     assert self._state == RunState.SETUP

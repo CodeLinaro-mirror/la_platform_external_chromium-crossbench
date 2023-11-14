@@ -364,8 +364,7 @@ class Runner:
                                                    self.out_dir, throw)
           session_index += 1
           for temp_index, temperature in enumerate(self.cache_temperatures):
-            yield Run(
-                self,
+            yield self.create_run(
                 browser_session,
                 story,
                 repetition,
@@ -376,6 +375,12 @@ class Runner:
                 throw=throw)
             index += 1
           browser_session.set_ready()
+
+  def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
+                 repetition: int, temperature: str, index: int, name: str,
+                 timeout: dt.timedelta, throw: bool) -> Run:
+    return Run(self, browser_session, story, repetition, temperature, index,
+               name, timeout, throw)
 
   def assert_successful_runs(self) -> None:
     failed_runs = list(run for run in self.runs if not run.is_success)
