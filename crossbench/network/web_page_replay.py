@@ -44,7 +44,8 @@ class WebPageReplay(abc.ABC):
     ) + self.cmd
 
     try:
-      self._log_file = self._log_path.open("w")
+      if self._log_path:
+        self._log_file = self._log_path.open("w")
       with helper.ChangeCWD(self._bin_path.parent):
         self._process = self._platform.popen(
             *gp_cmd, stdout=self._log_file, stderr=self._log_file)
