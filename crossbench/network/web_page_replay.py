@@ -6,94 +6,23 @@ from __future__ import annotations
 
 import abc
 import atexit
-import contextlib
 import logging
 import pathlib
 import re
 import subprocess
 import time
-from typing import Iterable, Iterator, Optional, TextIO, Tuple
+from typing import Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper, plt
 
 
-class WebPageReplay(abc.ABC):
-
-  def __init__(self,
-               bin_path: pathlib.Path,
-               log_path: Optional[pathlib.Path] = None,
-               platform: plt.Platform = plt.PLATFORM):
-    self._platform = platform
-    self._process: Optional[subprocess.Popen] = None
-    self._log_path: Optional[pathlib.Path] = log_path
-    self._log_file: Optional[TextIO] = None
-    self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
-    if not self._platform.which("go"):
-      raise ValueError(f"'go' binary not available on {self._platform}")
-
-  @property
-  @abc.abstractmethod
-  def cmd(self) -> Tuple[str, ...]:
-    pass
-
-  def start(self):
-    gp_cmd = (
-        "go",
-        "run",
-        self._bin_path,
-    ) + self.cmd
-
-    try:
-      if self._log_path:
-        self._log_file = self._log_path.open("w")
-      with helper.ChangeCWD(self._bin_path.parent):
-        self._process = self._platform.popen(
-            *gp_cmd, stdout=self._log_file, stderr=self._log_file)
-
-      if not self._process:
-        raise RuntimeError(f"Could not start {type(self).__name__}")
-
-      atexit.register(self.stop)
-      logging.info("WPR: waiting for startup")
-      self._wait_for_startup()
-      logging.info("WPR: Starting wpr.go recorder: DONE")
-
-    except:
-      self.stop()
-      self._log_startup_error()
-      raise
-
-  def _log_startup_error(self):
-    logging.error("WPR: Could not start %s", type(self).__name__)
-    if not self._log_path or not self._log_path.exists():
-      return
-    logging.error("WPR: Check log files %s", self._log_path)
-    try:
-      with self._log_path.open() as f:
-        log_lines = list(f.readlines())
-        logging.error("  %s", "  ".join(log_lines[-4:]))
-    except Exception as e:
-      logging.debug("Got exception while reading wpr log file: %s", e)
-
-  def stop(self) -> None:
-    if self._log_file:
-      self._log_file.close()
-      self._log_file = None
-    if self._process:
-      helper.wait_and_kill(self._process, timeout=5)
-    self._process = None
-
-  @abc.abstractmethod
-  def _wait_for_startup(self) -> None:
-    pass
+_WPR_PORT_RE = re.compile(r".*Starting server on "
+                          r"(?P<protocol>http|https)://"
+                          r"(?P<host>[^:]+):"
+                          r"(?P<port>\d+)")
 
 
-class WebPageReplayRecord(WebPageReplay):
-
-  _WPR_PORT_RE = re.compile(r".*Starting server on "
-                            r"(?P<protocol>http|https)://"
-                            r"(?P<host>[^:]+):"
-                            r"(?P<port>\d+)")
+class WprBase(abc.ABC):
 
   def __init__(self,
                result_path: pathlib.Path,
@@ -106,7 +35,13 @@ class WebPageReplayRecord(WebPageReplay):
                cert_file: Optional[pathlib.Path] = None,
                log_path: Optional[pathlib.Path] = None,
                platform: plt.Platform = plt.PLATFORM):
-    super().__init__(bin_path, log_path, platform)
+    self._platform = platform
+    self._process: Optional[subprocess.Popen] = None
+    self._log_path: Optional[pathlib.Path] = log_path
+    self._log_file: Optional[TextIO] = None
+    self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
+    if not self._platform.which("go"):
+      raise ValueError(f"'go' binary not available on {self._platform}")
     self._result_path = result_path
     if result_path.exists():
       raise ValueError(f"Wpr.go result archive exists already: '{result_path}'")
@@ -157,9 +92,13 @@ class WebPageReplayRecord(WebPageReplay):
     return self._cert_file
 
   @property
+  @abc.abstractmethod
   def cmd(self) -> Tuple[str, ...]:
+    pass
+
+  @property
+  def base_cmd_flags(self) -> Tuple[str, ...]:
     cmd = (
-        "record",
         f"--http_port={self._http_port}",
         f"--https_port={self._https_port}",
         f"--https_key_file={self._key_file}",
@@ -168,8 +107,46 @@ class WebPageReplayRecord(WebPageReplay):
     if self._inject_scripts is not None:
       injected_scripts = ",".join(str(path) for path in self._inject_scripts)
       cmd += (f"--inject_scripts={injected_scripts}",)
-    cmd += (str(self._result_path),)
     return cmd
+
+  def start(self):
+    gp_cmd = (
+        "go",
+        "run",
+        self._bin_path,
+    ) + self.cmd
+
+    try:
+      if self._log_path:
+        self._log_file = self._log_path.open("w")
+      with helper.ChangeCWD(self._bin_path.parent):
+        self._process = self._platform.popen(
+            *gp_cmd, stdout=self._log_file, stderr=self._log_file)
+
+      if not self._process:
+        raise RuntimeError(f"Could not start {type(self).__name__}")
+
+      atexit.register(self.stop)
+      logging.info("WPR: waiting for startup")
+      self._wait_for_startup()
+      logging.info("WPR: Starting wpr.go recorder: DONE")
+
+    except:
+      self.stop()
+      self._log_startup_error()
+      raise
+
+  def _log_startup_error(self):
+    logging.error("WPR: Could not start %s", type(self).__name__)
+    if not self._log_path or not self._log_path.exists():
+      return
+    logging.error("WPR: Check log files %s", self._log_path)
+    try:
+      with self._log_path.open() as f:
+        log_lines = list(f.readlines())
+        logging.error("  %s", "  ".join(log_lines[-4:]))
+    except Exception as e:
+      logging.debug("Got exception while reading wpr log file: %s", e)
 
   def _wait_for_startup(self) -> None:
     assert self._process and self._log_path
@@ -196,7 +173,7 @@ class WebPageReplayRecord(WebPageReplay):
       logging.error(line)
       raise ValueError(f"Could not start wpr.go server, address in use: {line}")
     line = line.strip()
-    if match := self._WPR_PORT_RE.match(line):
+    if match := _WPR_PORT_RE.match(line):
       protocol = match["protocol"].lower()
       port = int(match["port"])
       if protocol == "http":
@@ -221,10 +198,62 @@ class WebPageReplayRecord(WebPageReplay):
 
   def stop(self) -> None:
     if self._process:
-      logging.info("WPR: shutting down recorder.")
-      try:
-        with self._open_wpr_cmd_url("command-exit"):
-          pass
-      except IOError as e:
-        logging.debug("WPR: exit failed: %s", e)
-    super().stop()
+      self._shut_down()
+    if self._log_file:
+      self._log_file.close()
+      self._log_file = None
+    if self._process:
+      helper.wait_and_kill(self._process, timeout=5)
+    self._process = None
+
+  def _shut_down(self) -> None:
+    logging.info("WPR: shutting down recorder.")
+    try:
+      with self._open_wpr_cmd_url("command-exit"):
+        pass
+    except IOError as e:
+      logging.debug("WPR: clean shut down failed: %s", e)
+
+
+class WprRecorder(WprBase):
+
+  @property
+  def cmd(self) -> Tuple[str, ...]:
+    return ("record",) + super().base_cmd_flags + (str(self._result_path),)
+
+
+class WprReplayServer(WprBase):
+
+  def __init__(self,
+               result_path: pathlib.Path,
+               bin_path: pathlib.Path,
+               http_port: int = 0,
+               https_port: int = 0,
+               host: str = "127.0.0.1",
+               inject_scripts: Optional[Iterable[pathlib.Path]] = None,
+               key_file: Optional[pathlib.Path] = None,
+               cert_file: Optional[pathlib.Path] = None,
+               rules_file: Optional[pathlib.Path] = None,
+               log_path: Optional[pathlib.Path] = None,
+               fuzzy_url_matching: bool = True,
+               serve_chronologically: bool = True,
+               platform: plt.Platform = plt.PLATFORM):
+    super().__init__(result_path, bin_path, http_port, https_port, host,
+                     inject_scripts, key_file, cert_file, log_path, platform)
+    self._rules_file = None
+    if rules_file:
+      self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
+    self._fuzzy_url_matching = fuzzy_url_matching
+    self._serve_chronologically = serve_chronologically
+
+  @property
+  def cmd(self) -> Tuple[str, ...]:
+    cmd = ("replay",) + super().base_cmd_flags
+    if self._rules_file:
+      cmd += (f"--rules_file={self._rules_file }",)
+    if not self._fuzzy_url_matching:
+      cmd += ("--disable_fuzzy_url_matching",)
+    if self._serve_chronologically:
+      cmd += ("--serve_response_in_chronological_sequence",)
+    cmd += (str(self._result_path),)
+    return cmd

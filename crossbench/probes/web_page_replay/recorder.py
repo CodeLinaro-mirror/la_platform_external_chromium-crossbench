@@ -19,7 +19,7 @@ from frozendict import frozendict
 
 from crossbench import cli_helper, helper, plt
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.network.web_page_replay import WebPageReplayRecord
+from crossbench.network.web_page_replay import WprRecorder
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
@@ -113,8 +113,8 @@ class WebPageReplayProbe(Probe):
   def is_compatible(self, browser: Browser) -> bool:
     return isinstance(browser, Chromium) and browser.platform.is_local
 
-  def get_context(self, run: Run) -> WebPageReplayRecorderProbeContext:
-    return WebPageReplayRecorderProbeContext(self, run)
+  def get_context(self, run: Run) -> WprRecorderProbeContext:
+    return WprRecorderProbeContext(self, run)
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     results = [run.results[self].file for run in group.runs]
@@ -157,7 +157,7 @@ class WebPageReplayProbe(Probe):
       self.runner_platform.sh(*cmd)
 
 
-class WebPageReplayRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
+class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def __init__(self, probe: WebPageReplayProbe, run: Run) -> None:
     super().__init__(probe, run)
@@ -169,7 +169,7 @@ class WebPageReplayRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
         "log_path": self._wprgo_log,
         "result_path": self.result_path,
     })
-    self._recorder = WebPageReplayRecord(**kwargs)
+    self._recorder = WprRecorder(**kwargs)
 
   def setup(self) -> None:
     self._recorder.start()
