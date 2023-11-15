@@ -136,7 +136,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       logging.info("Disabling webdriver timeouts")
     else:
       factor = timing.timeout_unit.total_seconds()
-      logging.info("Increasing webdriver timeouts by %fx", factor)
+      if factor != 1.0:
+        logging.info("Increasing webdriver timeouts by %fx", factor)
     timeouts: Timeouts = self.driver.timeouts
     if implicit_wait := getattr(timeouts, "implicit_wait", None):
       timeouts.implicit_wait = timing.timeout_timedelta(
