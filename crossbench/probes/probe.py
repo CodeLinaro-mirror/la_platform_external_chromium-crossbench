@@ -23,7 +23,8 @@ if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.runner.groups import (BrowsersRunGroup,
                                         CacheTemperatureRunGroup,
-                                        RepetitionsRunGroup, StoriesRunGroup)
+                                        RepetitionsRunGroup, StoriesRunGroup,
+                                        BrowserSessionRunGroup)
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
@@ -305,6 +306,10 @@ class ProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   @property
   def run(self) -> Run:
     return self._run
+
+  @property
+  def session(self) -> BrowserSessionRunGroup:
+    return self._run.session
 
   @property
   def browser(self) -> Browser:

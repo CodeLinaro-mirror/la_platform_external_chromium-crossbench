@@ -25,11 +25,11 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from .firefox import Firefox
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
-  from crossbench import plt
-  from crossbench.runner.run import Run
+  from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class FirefoxWebDriver(WebDriverBrowser, Firefox):
@@ -53,7 +53,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     finder = FirefoxDriverFinder(self)
     return finder.download()
 
-  def _start_driver(self, run: Run,
+  def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> webdriver.Firefox:
     assert not self._is_running
     assert self.log_file
@@ -61,13 +61,12 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     options.set_capability("browserVersion", str(self.major_version))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "eager")
-    args = self._get_browser_flags_for_run(run)
+    args = self._get_browser_flags_for_session(session)
     for arg in args:
       options.add_argument(arg)
     options.binary_location = str(self.path)
 
-    for probe_context in run.probe_contexts:
-      probe_context.setup_selenium_options(options)
+    session.setup_selenium_options(options)
 
     logging.info("STARTING BROWSER: %s", self.path)
     logging.info("STARTING BROWSER: driver: %s", driver_path)

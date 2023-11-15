@@ -49,7 +49,7 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
     return turbolizer_log_dir
 
   def setup(self) -> None:
-    js_flags = self.run.extra_js_flags
+    js_flags = self.session.extra_js_flags
     js_flags["--trace-turbo-path"] = str(self.results_dir)
     js_flags["--trace-turbo-cfg-file"] = str(self.results_dir / "cfg.graph")
 

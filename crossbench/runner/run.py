@@ -12,7 +12,7 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Iterable, Iterator, List, Optional,
                     Tuple)
 
-from crossbench import exception, helper, compat, plt
+from crossbench import compat, exception, helper, plt
 from crossbench.flags import Flags, JSFlags
 from crossbench.probes import internal as internal_probe
 from crossbench.probes.probe import ResultLocation
@@ -34,9 +34,10 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class RunState(enum.Enum):
+class RunState(enum.IntEnum):
   INITIAL = enum.auto()
   SETUP = enum.auto()
+  READY = enum.auto()
   RUN = enum.auto()
   DONE = enum.auto()
 
@@ -76,8 +77,6 @@ class Run:
     self._out_dir = self._get_out_dir(browser_session.root_dir).absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
     self._probe_contexts: List[ProbeContext] = []
-    self._extra_js_flags = JSFlags()
-    self._extra_flags = Flags()
     self._durations = helper.Durations()
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
     self._timeout = timeout
@@ -116,8 +115,8 @@ class Run:
     return {
         "name": self.name,
         "repetition": self.repetition,
-        "temperature": self.temperature,
         "browser_session": self.browser_session.index,
+        "temperature": self.temperature,
         "story": str(self.story),
         "probes": [probe.name for probe in self.probes],
         "duration": self.story.duration.total_seconds(),
@@ -219,14 +218,6 @@ class Run:
     return self._name
 
   @property
-  def extra_js_flags(self) -> JSFlags:
-    return self._extra_js_flags
-
-  @property
-  def extra_flags(self) -> Flags:
-    return self._extra_flags
-
-  @property
   def probes(self) -> Iterable[Probe]:
     return self._runner.probes
 
@@ -241,6 +232,10 @@ class Run:
   @property
   def probe_contexts(self) -> Iterator[ProbeContext]:
     return iter(self._probe_contexts)
+
+  @property
+  def session(self) -> BrowserSessionRunGroup:
+    return self._browser_session
 
   @contextlib.contextmanager
   def measure(
@@ -266,10 +261,7 @@ class Run:
 
   def get_browser_details_json(self) -> JsonDict:
     details_json = self.browser.details_json()
-    assert isinstance(details_json["js_flags"], (list, tuple))
-    details_json["js_flags"] += tuple(self.extra_js_flags.get_list())
-    assert isinstance(details_json["flags"], (list, tuple))
-    details_json["flags"] += tuple(self.extra_flags.get_list())
+    self.session.add_flag_details(details_json)
     return details_json
 
   def get_default_probe_result_path(self, probe: Probe) -> pathlib.Path:
@@ -298,25 +290,16 @@ class Run:
                   self.browser_platform)
     return path
 
-  def run(self, is_dry_run: bool = False) -> None:
-    assert self.browser_session.is_running
+  def setup(self, is_dry_run: bool = False) -> None:
     self._advance_state(RunState.INITIAL, RunState.SETUP)
     self._setup_dirs()
     with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       assert not self._probe_contexts
       try:
         self._probe_contexts = self._setup_probes(is_dry_run)
-        self._setup_browser(is_dry_run)
       except Exception as e:  # pylint: disable=broad-except
         self._handle_setup_error(e)
         return
-      try:
-        self._run(is_dry_run)
-      except Exception as e:  # pylint: disable=broad-except
-        self._exceptions.append(e)
-      finally:
-        if not is_dry_run:
-          self.tear_down()
 
   def _setup_dirs(self) -> None:
     self._start_datetime = dt.datetime.now()
@@ -372,32 +355,6 @@ class Run:
           probe_context.setup()  # pytype: disable=wrong-arg-types
     return probe_run_contexts
 
-  def _setup_browser(self, is_dry_run: bool) -> None:
-    assert self._state == RunState.SETUP
-    if is_dry_run:
-      logging.info("BROWSER: %s", self.browser.path)
-      return
-
-    browser_log_file = self._out_dir / "browser.log"
-    assert not browser_log_file.exists(), (
-        f"Default browser log file {browser_log_file} already exists.")
-    self._browser.set_log_file(browser_log_file)
-
-    if not self.browser_session.is_first_run(self):
-      if self.browser.is_running:
-        logging.debug("Skipping browser setup (not first in session): %s", self)
-        return
-
-    with self.measure("browser-setup"):
-      try:
-        # pytype somehow gets the package path wrong here, disabling for now.
-        self._browser.setup(self)  # pytype: disable=wrong-arg-types
-      except Exception as e:
-        logging.debug("Browser setup failed: %s", e)
-        # Clean up half-setup browser instances
-        self._browser.force_quit()
-        raise
-
   def _handle_setup_error(self, setup_exception: BaseException) -> None:
     self._advance_state(RunState.SETUP, RunState.DONE)
     self._exceptions.append(setup_exception)
@@ -410,8 +367,23 @@ class Run:
     ]
     self._tear_down_probe_contexts(internal_probe_contexts)
 
+  def run(self, is_dry_run: bool = False) -> None:
+    self._advance_state(RunState.SETUP, RunState.READY)
+    self._start_datetime = dt.datetime.now()
+    with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
+      assert self._probe_contexts
+      try:
+        self._run(is_dry_run)
+      except Exception as e:  # pylint: disable=broad-except
+        self._exceptions.append(e)
+      finally:
+        if not is_dry_run:
+          self.tear_down()
+
   def _run(self, is_dry_run: bool) -> None:
-    self._advance_state(RunState.SETUP, RunState.RUN)
+    self._advance_state(RunState.READY, RunState.RUN)
+
+    self.browser.splash_screen.run(self)
     assert self._probe_contexts
     probe_start_time = dt.datetime.now()
     probe_context_manager = contextlib.ExitStack()

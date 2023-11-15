@@ -224,7 +224,7 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     return log_dir / self.probe.result_path_name
 
   def setup(self) -> None:
-    self.run.extra_js_flags["--logfile"] = str(self.result_path)
+    self.session.extra_js_flags["--logfile"] = str(self.result_path)
 
   def start(self) -> None:
     pass

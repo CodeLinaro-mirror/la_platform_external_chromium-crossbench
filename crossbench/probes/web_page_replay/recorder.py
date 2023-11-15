@@ -182,13 +182,13 @@ class WebPageReplayRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
         raise ValueError(
             f"Could not read public key hash file: {cert_hash_file}")
       cert_skip_list = ",".join(cert_hash_file.read_text().strip().splitlines())
-      self.run.extra_flags[
+      self.session.extra_flags[
           "--ignore-certificate-errors-spki-list"] = cert_skip_list
     # TODO: support ts_proxy traffic shaping
-    # run.extra_flags[
+    # session.extra_flags[
     #     "--proxy-server"] = "socks://{self._ts_proxy_host}:{self._ts_proxy_port}"
-    # run.extra_flags["--proxy-bypass-list"] = "<-loopback>"
-    self.run.extra_flags["--host-resolver-rules"] = (
+    # session.extra_flags["--proxy-bypass-list"] = "<-loopback>"
+    self.session.extra_flags["--host-resolver-rules"] = (
         f"MAP *:80 {self._host}:{self._recorder.http_port},"
         f"MAP *:443 {self._host}:{self._recorder.https_port},"
         "EXCLUDE localhost")

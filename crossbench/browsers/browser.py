@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict
+  from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class Browser(abc.ABC):
@@ -188,13 +189,12 @@ class Browser(abc.ABC):
   def setup_binary(self, runner: Runner) -> None:
     pass
 
-  def setup(self, run: Run) -> None:
+  def setup(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running
-    runner = run.runner
+    runner = session.runner
     self.clear_cache(runner)
-    self.start(run)
+    self.start(session)
     assert self._is_running
-    self.splash_screen.run(run)
 
   @abc.abstractmethod
   def _extract_version(self) -> str:
@@ -206,12 +206,13 @@ class Browser(abc.ABC):
       shutil.rmtree(self.cache_dir)
 
   @abc.abstractmethod
-  def start(self, run: Run) -> None:
+  def start(self, session: BrowserSessionRunGroup) -> None:
     pass
 
-  def _get_browser_flags_for_run(self, run: Run) -> Tuple[str, ...]:
+  def _get_browser_flags_for_session(
+      self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()
-    flags_copy.update(run.extra_flags)
+    flags_copy.update(session.extra_flags)
     flags_copy = self._filter_flags_for_run(flags_copy)
     return tuple(flags_copy.get_list())
 

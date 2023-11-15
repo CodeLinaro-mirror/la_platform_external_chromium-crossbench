@@ -21,9 +21,8 @@ from crossbench.types import JsonDict
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench import plt
-  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-
+  from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class Chromium(Browser):
@@ -194,12 +193,13 @@ class Chromium(Browser):
     details["js_flags"] = tuple(self.js_flags.get_list())
     return details
 
-  def _get_browser_flags_for_run(self, run: Run) -> Tuple[str, ...]:
+  def _get_browser_flags_for_session(
+      self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     js_flags_copy = self.js_flags.copy()
-    js_flags_copy.update(run.extra_js_flags)
+    js_flags_copy.update(session.extra_js_flags)
 
     flags_copy = self.flags.copy()
-    flags_copy.update(run.extra_flags)
+    flags_copy.update(session.extra_flags)
     self._handle_viewport_flags(flags_copy)
 
     if len(js_flags_copy):

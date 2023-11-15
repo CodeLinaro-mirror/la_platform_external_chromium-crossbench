@@ -22,14 +22,15 @@ from .browser import Browser
 if TYPE_CHECKING:
   import datetime as dt
 
+  from selenium.webdriver.common.timeouts import Timeouts
+
+  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
-  from crossbench import plt
+  from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-
-  from selenium.webdriver.common.timeouts import Timeouts
 
 
 class DriverException(RuntimeError):
@@ -93,18 +94,18 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def _check_driver_version(self) -> None:
     pass
 
-  def start(self, run: Run) -> None:
+  def start(self, session: BrowserSessionRunGroup) -> None:
     self._check_driver_version()
     assert self._driver_path
     try:
-      self._driver = self._start_driver(run, self._driver_path)
+      self._driver = self._start_driver(session, self._driver_path)
     except selenium.common.exceptions.SessionNotCreatedException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e
     self._is_running = True
     atexit.register(self.force_quit)
     self._find_driver_pid()
-    self._set_driver_timeouts(run)
+    self._set_driver_timeouts(session)
     self._setup_window()
     self._check_driver_version()
 
@@ -124,11 +125,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
           "Could not find unique browser process for webdriver: %s, got %s",
           self, candidates)
 
-  def _set_driver_timeouts(self, run: Run) -> None:
+  def _set_driver_timeouts(self, session: BrowserSessionRunGroup) -> None:
     """Adjust the global webdriver timeouts if the runner has custom timeout
     unit values.
     If timing.has_no_timeout each value is set to SAFE_MAX_TIMEOUT_TIMEDELTA."""
-    timing = run.timing
+    timing = session.timing
     if not timing.timeout_unit:
       return
     if timing.has_no_timeout:
@@ -160,7 +161,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       self._driver.set_window_size(self.viewport.width, self.viewport.height)
 
   @abc.abstractmethod
-  def _start_driver(self, run: Run,
+  def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> webdriver.Remote:
     pass
 
@@ -258,14 +259,14 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   def _find_driver(self) -> pathlib.Path:
     raise NotImplementedError()
 
-  def _start_driver(self, run: Run,
+  def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> webdriver.Remote:
     raise NotImplementedError()
 
   def setup_binary(self, runner: Runner) -> None:
     pass
 
-  def start(self, run: Run) -> None:
+  def start(self, session: BrowserSessionRunGroup) -> None:
     # Driver has already been started. We just need to mark it as running.
     self._is_running = True
     if self.viewport.is_fullscreen:

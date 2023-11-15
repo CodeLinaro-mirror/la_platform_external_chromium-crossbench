@@ -282,7 +282,7 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
   _record_format: RecordFormat
 
   def setup(self) -> None:
-    self.run.extra_flags["--trace-startup-file"] = str(self.result_path)
+    self.session.extra_flags["--trace-startup-file"] = str(self.result_path)
     self._record_format = self.probe.record_format
     if self._record_format == RecordFormat.PROTO:
       self._traceconv = self.probe.traceconv or TraceconvFinder(

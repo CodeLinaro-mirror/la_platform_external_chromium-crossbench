@@ -5,9 +5,12 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
+import enum
+import logging
+from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
-from crossbench import compat
+from crossbench import compat, helper
+from crossbench.flags import Flags, JSFlags
 from crossbench.probes.results import EmptyProbeResult
 
 from .base import RunGroup
@@ -15,12 +18,15 @@ from .base import RunGroup
 if TYPE_CHECKING:
   import pathlib
 
+  from selenium.webdriver.common.options import ArgOptions
+
   from crossbench import exception, plt
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
+  from crossbench.runner.timing import Timing
   from crossbench.types import JsonDict
 
 
@@ -31,23 +37,28 @@ class BrowserSessionRunGroup(RunGroup):
   browser is (re-)started.
   """
 
-  class State(compat.StrEnum):
-    BUILDING = "building"
-    READY = "ready"
-    STARTING = "starting"
-    RUNNING = "running"
-    STOPPING = "stopping"
-    DONE = "done"
+  @enum.unique
+  class State(enum.IntEnum):
+    BUILDING = enum.auto()
+    READY = enum.auto()
+    STARTING = enum.auto()
+    RUNNING = enum.auto()
+    STOPPING = enum.auto()
+    DONE = enum.auto()
 
-  def __init__(self, browser: Browser, index: int, root_dir: pathlib.Path,
-               throw: bool) -> None:
+  def __init__(self, runner: Runner, browser: Browser, index: int,
+               root_dir: pathlib.Path, throw: bool) -> None:
     super().__init__(throw)
     self._state = self.State.BUILDING
+    self._runner = runner
+    self._durations = helper.Durations()
     self._browser = browser
     self._index = index
     self._runs: List[Run] = []
     self._root_dir: pathlib.Path = root_dir
     self._browser_tmp_dir: Optional[pathlib.Path] = None
+    self._extra_js_flags = JSFlags()
+    self._extra_flags = Flags()
 
   def append(self, run: Run) -> None:
     assert self._state == self.State.BUILDING
@@ -93,7 +104,13 @@ class BrowserSessionRunGroup(RunGroup):
   def _get_session_dir(self) -> pathlib.Path:
     if self.is_single_run:
       return self._runs[0].out_dir
+    if not self._runs:
+      raise ValueError("Cannot have empty browser session")
     return self.raw_sessions_dir
+
+  @property
+  def runner(self) -> Runner:
+    return self._runner
 
   @property
   def browser(self) -> Browser:
@@ -124,6 +141,31 @@ class BrowserSessionRunGroup(RunGroup):
     return iter(self._runs)
 
   @property
+  def timing(self) -> Timing:
+    return self._runs[0].timing
+
+  @property
+  def extra_js_flags(self) -> JSFlags:
+    assert self._state < self.State.RUNNING
+    return self._extra_js_flags
+
+  @property
+  def extra_flags(self) -> Flags:
+    assert self._state < self.State.RUNNING
+    return self._extra_flags
+
+  def add_flag_details(self, details_json: JsonDict) -> None:
+    assert isinstance(details_json["js_flags"], (list, tuple))
+    details_json["js_flags"] += tuple(self._extra_js_flags.get_list())
+    assert isinstance(details_json["flags"], (list, tuple))
+    details_json["flags"] += tuple(self._extra_flags.get_list())
+
+  def setup_selenium_options(self, options: ArgOptions):
+    # Using only the first run, since all runs need to have the same probes.
+    for probe_context in self._runs[0].probe_contexts:
+      probe_context.setup_selenium_options(options)
+
+  @property
   def info_stack(self) -> exception.TInfoStack:
     return ("Merging results from multiple browser sessions",
             f"browser={self.browser.unique_name}", f"session={self.index}")
@@ -141,6 +183,17 @@ class BrowserSessionRunGroup(RunGroup):
       self._browser_tmp_dir = self.browser_platform.mkdtemp(prefix)
     return self._browser_tmp_dir
 
+  @contextlib.contextmanager
+  def measure(
+      self, label: str
+  ) -> Iterator[Tuple[exception.ExceptionAnnotationScope,
+                      helper.DurationMeasureContext]]:
+    # Return a combined context manager that adds a named exception info
+    # and measures the time during the with-scope.
+    with self._exceptions.info(label) as stack, self._durations.measure(
+        label) as timer:
+      yield (stack, timer)
+
   def merge(self, runner: Runner) -> None:
     # TODO: implement merging of session probes
     pass
@@ -149,21 +202,22 @@ class BrowserSessionRunGroup(RunGroup):
     return EmptyProbeResult()
 
   @contextlib.contextmanager
-  def open(self) -> Iterator[BrowserSessionRunGroup]:
-    self._setup()
-    try:
-      yield self
-    finally:
-      self._teardown()
+  def open(self, is_dry_run: bool = False) -> Iterator[BrowserSessionRunGroup]:
+    self._setup_session_dir()
+    with helper.ChangeCWD(self.path):
+      try:
+        self._setup(is_dry_run)
+        yield self
+      finally:
+        self._teardown(is_dry_run)
 
-  def _setup(self) -> None:
+  def _setup(self, is_dry_run: bool) -> None:
     assert self._state == self.State.READY
     self._state = self.State.STARTING
-    self._setup_session_dir()
-    self._start_browser()
-    # TODO: figure ouy when this is created the first time
-    self.path.mkdir(parents=True, exist_ok=True)
-    self._state = self.State.RUNNING
+    with self.measure("browser-session-setup"):
+      self._setup_runs(is_dry_run)
+      self._start_browser(is_dry_run)
+      self._state = self.State.RUNNING
 
   def _setup_session_dir(self):
     self.path.mkdir(parents=True, exist_ok=True)
@@ -172,18 +226,44 @@ class BrowserSessionRunGroup(RunGroup):
       self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
       self.raw_sessions_dir.symlink_to(self.path)
 
-  def _start_browser(self) -> None:
-    assert self._state == self.State.STARTING
-    # TODO: implement
+  def _setup_runs(self, is_dry_run: bool) -> None:
+    # TODO: handle session vs run probe.
+    for run in self.runs:
+      logging.info("Preparing SESSION %s RUN %s", self.index, run.index)
+      run.setup(is_dry_run)
 
-  def _teardown(self) -> None:
+  def _start_browser(self, is_dry_run: bool) -> None:
+    assert self._state == self.State.STARTING
+    if is_dry_run:
+      logging.info("BROWSER: %s", self.browser.path)
+      return
+
+    browser_log_file = self.path / "browser.log"
+    assert not browser_log_file.exists(), (
+        f"Default browser log file {browser_log_file} already exists.")
+    self._browser.set_log_file(browser_log_file)
+
+    with self.measure("browser-setup"):
+      try:
+        # pytype somehow gets the package path wrong here, disabling for now.
+        self._browser.setup(self)  # pytype: disable=wrong-arg-types
+      except Exception as e:
+        logging.debug("Browser setup failed: %s", e)
+        # Clean up half-setup browser instances
+        self._browser.force_quit()
+        raise
+
+  def _teardown(self, is_dry_run: bool) -> None:
     assert self._state == self.State.RUNNING
     self._state = self.State.STOPPING
-    try:
-      self._stop_browser()
-    finally:
-      assert self._state == self.State.STOPPING
-      self._state = self.State.DONE
+    if is_dry_run:
+      return
+    with self.measure("browser-session-teardown"):
+      try:
+        self._stop_browser()
+      finally:
+        assert self._state == self.State.STOPPING
+        self._state = self.State.DONE
 
   def _stop_browser(self) -> None:
     assert self._state == self.State.STOPPING

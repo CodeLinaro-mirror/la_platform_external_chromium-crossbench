@@ -15,10 +15,10 @@ from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.flags import Flags
-  from crossbench import plt
-  from crossbench.runner.run import Run
+  from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class Firefox(Browser):
@@ -84,9 +84,10 @@ class Firefox(Browser):
     # "Firefox 107.0" => "107.0"
     return str(re.findall(r"[\d\.]+", version_string)[0])
 
-  def _get_browser_flags_for_run(self, run: Run) -> Tuple[str, ...]:
+  def _get_browser_flags_for_session(
+      self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy = self.flags.copy()
-    flags_copy.update(run.extra_flags)
+    flags_copy.update(session.extra_flags)
     self._handle_viewport_flags(flags_copy)
     if self.cache_dir and self.cache_dir:
       flags_copy["--profile"] = str(self.cache_dir)

@@ -360,7 +360,7 @@ class Runner:
       for story in self.stories:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
-          browser_session = BrowserSessionRunGroup(browser, session_index,
+          browser_session = BrowserSessionRunGroup(self, browser, session_index,
                                                    self.out_dir, throw)
           session_index += 1
           for temp_index, temperature in enumerate(self.cache_temperatures):

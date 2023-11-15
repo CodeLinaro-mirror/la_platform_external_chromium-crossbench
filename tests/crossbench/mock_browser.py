@@ -9,16 +9,16 @@ import copy
 import pathlib
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, cast
 
-from crossbench import helper
-from crossbench.browsers.all import (Chrome, Chromium, Edge, Firefox, Safari)
+from crossbench import helper, plt
+from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.browser import Browser
 from crossbench.flags import ChromeFlags, Flags, JSFlags
-from crossbench import plt
 
 if TYPE_CHECKING:
   import datetime as dt
+
+  from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
-  from crossbench.runner.run import Run
 
 
 class MockBrowser(Browser, metaclass=abc.ABCMeta):
@@ -71,7 +71,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def clear_cache(self, runner: Runner) -> None:
     pass
 
-  def start(self, run: Run) -> None:
+  def start(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running
     self._is_running = True
     self.did_run = True

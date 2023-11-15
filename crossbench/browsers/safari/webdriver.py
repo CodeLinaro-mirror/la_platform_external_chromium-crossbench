@@ -11,20 +11,21 @@ from typing import TYPE_CHECKING, Optional
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
-from crossbench import helper
 
+from crossbench import helper
 from crossbench.browsers.splash_screen import SplashScreen
-from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.browsers.viewport import Viewport
+from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.runner.run import Run
 
 from .safari import Safari, find_safaridriver
 
 if TYPE_CHECKING:
-  from crossbench.flags import Flags
   from crossbench import plt
-  from crossbench.runner.runner import Runner
+  from crossbench.flags import Flags
+  from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 class SafariWebDriver(WebDriverBrowser, Safari):
@@ -53,17 +54,15 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   def _find_driver(self) -> pathlib.Path:
     return find_safaridriver(self.path)
 
-  def _start_driver(self, run: Run,
+  def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> webdriver.Safari:
     assert not self._is_running
     logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
                  driver_path)
 
-    options: SafariOptions = self._get_driver_options(run)
-    for probe_context in run.probe_contexts:
-      probe_context.setup_selenium_options(options)
-
-    self._force_clear_cache(run)
+    options: SafariOptions = self._get_driver_options(session)
+    session.setup_selenium_options(options)
+    self._force_clear_cache(session)
 
     service = SafariService(executable_path=str(driver_path))
     driver_kwargs = {"service": service, "options": options}
@@ -90,18 +89,19 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     options.binary_location = str(self.path)
     driver_kwargs["desired_capabilities"] = options.to_capabilities()
 
-  def _force_clear_cache(self, run: Run) -> None:
-    with run.actions("Clearing Browser Cache"):
+  def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
+    with session.runner.actions("Clearing Browser Cache"):
       self._clear_cache()
       self.platform.exec_apple_script(f"""
         tell application "{self.app_path}" to quit """)
 
-  def _get_driver_options(self, run: Run) -> SafariOptions:
+  def _get_driver_options(self,
+                          session: BrowserSessionRunGroup) -> SafariOptions:
     options = SafariOptions()
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "eager")
 
-    args = self._get_browser_flags_for_run(run)
+    args = self._get_browser_flags_for_session(session)
     for arg in args:
       options.add_argument(arg)
 
@@ -141,22 +141,23 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
 class SafariWebdriverIOS(SafariWebDriver):
   # TODO(cbruni): implement iOS platform
-  def _start_driver(self, run: Run,
+  def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> webdriver.Safari:
     # safaridriver for iOS seems to be brittle for starting up, we give it
     # several chances to start up.
     for timeout in helper.wait_with_backoff(
         helper.WaitRange(min=2, timeout=15)):
       try:
-        return super()._start_driver(run, driver_path)
+        return super()._start_driver(session, driver_path)
       except Exception as e:  # pylint: disable=disable=broad-except
         logging.warning("SafariWebDriver: startup failed, retrying (%s)",
                         timeout)
         logging.debug("SafariWebDriver: startup error %s", e)
-    return super()._start_driver(run, driver_path)
+    return super()._start_driver(session, driver_path)
 
-  def _get_driver_options(self, run: Run) -> SafariOptions:
-    options = super()._get_driver_options(run)
+  def _get_driver_options(self,
+                          session: BrowserSessionRunGroup) -> SafariOptions:
+    options = super()._get_driver_options(session)
     desired_cap = {
         # "browserName": "Safari",
         # "browserVersion": "17.0.3", # iOS version
@@ -175,7 +176,7 @@ class SafariWebdriverIOS(SafariWebDriver):
   def _setup_window(self) -> None:
     pass
 
-  def _force_clear_cache(self, run: Run) -> None:
+  def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
     pass
 
   def quit(self, runner: Runner) -> None:

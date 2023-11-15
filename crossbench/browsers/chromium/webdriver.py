@@ -35,6 +35,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.viewport import Viewport
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict, JsonList
+  from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
@@ -84,12 +85,12 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       # to make an old pytype version happy
       return pathlib.Path()
 
-  def _start_driver(self, run: Run,
+  def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file
-    args = self._get_browser_flags_for_run(run)
-    options = self._create_options(run, args)
+    args = self._get_browser_flags_for_session(session)
+    options = self._create_options(session, args)
     logging.info("STARTING BROWSER: %s", self.path)
     logging.info("STARTING BROWSER: driver: %s", driver_path)
     logging.info("STARTING BROWSER: args: %s", shlex.join(args))
@@ -106,7 +107,8 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     driver.execute_cdp_cmd("Runtime.setMaxCallStackSizeToCapture", {"size": 0})
     return driver
 
-  def _create_options(self, run: Run, args: Sequence[str]) -> ChromiumOptions:
+  def _create_options(self, session: BrowserSessionRunGroup,
+                      args: Sequence[str]) -> ChromiumOptions:
     assert not self._is_running
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
     options.set_capability("browserVersion", str(self.major_version))
@@ -115,10 +117,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     for arg in args:
       options.add_argument(arg)
     options.binary_location = str(self.path)
-
-    for probe_context in run.probe_contexts:
-      probe_context.setup_selenium_options(options)
-
+    session.setup_selenium_options(options)
     return options
 
   @abc.abstractmethod
@@ -191,8 +190,9 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                     flag_value)
     return chrome_flags
 
-  def _create_options(self, run: Run, args: Sequence[str]) -> ChromiumOptions:
-    options: ChromiumOptions = super()._create_options(run, args)
+  def _create_options(self, session: BrowserSessionRunGroup,
+                      args: Sequence[str]) -> ChromiumOptions:
+    options: ChromiumOptions = super()._create_options(session, args)
     options.binary_location = ""
     package = self.platform.app_path_to_package(self.path)
     options.add_experimental_option("androidPackage", package)
@@ -254,6 +254,7 @@ class ChromeDriverFinder:
     logging.info("CHROMEDRIVER Downloading from %s v%s", self.browser.type,
                  major_version)
     url: Optional[str] = None
+    listing_url: Optional[str] = None
     if major_version >= 115:
       listing_url, url = self._find_chrome_for_testing_url(major_version)
     if not url:
