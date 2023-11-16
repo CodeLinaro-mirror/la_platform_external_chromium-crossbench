@@ -17,7 +17,7 @@ import shlex
 import signal
 import subprocess
 import sys
-from typing import List, Optional, Union
+from typing import IO, List, Optional, Union
 
 from crossbench import cli_helper, helper
 
@@ -175,7 +175,8 @@ class TsProxyProcess:
         sys.executable,
         ts_proxy_path,
     ]
-    self._socks_proxy_port = self._initial_socks_proxy_port = socks_proxy_port
+    self._socks_proxy_port: Optional[int] = socks_proxy_port
+    self._initial_socks_proxy_port: Optional[int] = socks_proxy_port
     if not socks_proxy_port:
       # Use port 0 so tsproxy picks a random available port.
       cmd.append("--port=0")
@@ -183,23 +184,23 @@ class TsProxyProcess:
       cmd.append(f"--port={socks_proxy_port}")
     if verbose:
       cmd.append("--verbose")
-    self._in_kbps = in_kbps
+    self._in_kbps: Optional[int] = in_kbps
     if in_kbps:
       cmd.append(f"--inkbps={in_kbps}")
-    self._out_kbps = out_kbps
+    self._out_kbps: Optional[int] = out_kbps
     if out_kbps:
       cmd.append(f"--outkbps={out_kbps}")
-    self._window = window
+    self._window: Optional[int] = window
     if window:
       cmd.append(f"--window={window}")
-    self._rtt_ms = rtt_ms
+    self._rtt_ms: Optional[int] = rtt_ms
     if rtt_ms:
       cmd.append(f"--rtt={rtt_ms}")
-    self._host_ip = host_ip
+    self._host_ip: Optional[str] = host_ip
     if host_ip:
       cmd.append(f"--desthost={host_ip}")
-    self._http_port = http_port
-    self._https_port = https_port
+    self._http_port: Optional[int] = http_port
+    self._https_port: Optional[int] = https_port
     TsProxyServer.verify_ports(http_port, https_port)
     if http_port:
       cmd.append(f"--mapports=443:{https_port},*:{http_port}")
@@ -218,8 +219,8 @@ class TsProxyProcess:
                   "non blocking I/O for the ts_proxy process")
     assert proc and proc.stdout and proc.stdin, "Could not start ts_proxy"
     self._proc = proc
-    self._stdout = proc.stdout
-    self._stdin = proc.stdin
+    self._stdout: IO[str] = proc.stdout
+    self._stdin: IO[str] = proc.stdin
     fd = proc.stdout.fileno()
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)

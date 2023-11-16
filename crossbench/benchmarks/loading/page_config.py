@@ -119,6 +119,8 @@ class PageConfig(AbstractPageConfig):
         f"Parsing details  ...[{i}]{{ action: \"{action_type}\", ...}}:"):
       kwargs = action_cls.kwargs_from_dict(action_config)
       return action_cls(**kwargs)
+    # make mypy happy
+    raise RuntimeError("Should not happen")
 
 
 class DevToolsRecorderPageConfig(AbstractPageConfig):

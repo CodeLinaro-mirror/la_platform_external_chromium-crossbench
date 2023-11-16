@@ -217,14 +217,14 @@ class ChromeDriverFinder:
                browser: ChromiumWebDriver,
                cache_dir: pathlib.Path = BROWSERS_CACHE):
     self.browser = browser
-    self.platform = browser.platform
-    self.host_platform = browser.platform.host_platform
+    self.platform: plt.Platform = browser.platform
+    self.host_platform: plt.Platform = browser.platform.host_platform
     assert self.browser.is_local, (
         "Cannot download chromedriver for remote browser yet")
-    extension = ""
+    extension: str = ""
     if self.host_platform.is_win:
       extension = ".exe"
-    self.driver_path = (
+    self.driver_path: pathlib.Path = (
         cache_dir / f"chromedriver-{self.browser.major_version}{extension}")
 
   def find_local_build(self) -> pathlib.Path:
@@ -235,7 +235,7 @@ class ChromeDriverFinder:
     is_build_dir = (lookup_dir / "args.gn").exists()
     if driver_path.is_file():
       return driver_path
-    error_message = [f"Driver '{driver_path}' does not exist."]
+    error_message: List[str] = [f"Driver '{driver_path}' does not exist."]
     if is_build_dir:
       error_message += [build_chromedriver_instructions(lookup_dir)]
     else:

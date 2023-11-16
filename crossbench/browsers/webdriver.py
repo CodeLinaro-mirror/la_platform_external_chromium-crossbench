@@ -53,6 +53,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   _driver: webdriver.Remote
   _driver_path: Optional[pathlib.Path]
   _driver_pid: int
+  _pid: int
   log_file: Optional[pathlib.Path]
 
   def __init__(

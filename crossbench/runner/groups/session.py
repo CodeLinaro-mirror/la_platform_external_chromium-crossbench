@@ -30,6 +30,16 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@enum.unique
+class _State(enum.IntEnum):
+  BUILDING = enum.auto()
+  READY = enum.auto()
+  STARTING = enum.auto()
+  RUNNING = enum.auto()
+  STOPPING = enum.auto()
+  DONE = enum.auto()
+
+
 class BrowserSessionRunGroup(RunGroup):
   """
   Groups Run objects together that are run within the same browser session.
@@ -37,19 +47,10 @@ class BrowserSessionRunGroup(RunGroup):
   browser is (re-)started.
   """
 
-  @enum.unique
-  class State(enum.IntEnum):
-    BUILDING = enum.auto()
-    READY = enum.auto()
-    STARTING = enum.auto()
-    RUNNING = enum.auto()
-    STOPPING = enum.auto()
-    DONE = enum.auto()
-
   def __init__(self, runner: Runner, browser: Browser, index: int,
                root_dir: pathlib.Path, throw: bool) -> None:
     super().__init__(throw)
-    self._state = self.State.BUILDING
+    self._state: _State = _State.BUILDING
     self._runner = runner
     self._durations = helper.Durations()
     self._browser = browser
@@ -61,7 +62,7 @@ class BrowserSessionRunGroup(RunGroup):
     self._extra_flags = Flags()
 
   def append(self, run: Run) -> None:
-    assert self._state == self.State.BUILDING
+    assert self._state == _State.BUILDING
     assert run.browser_session == self
     assert run.browser is self._browser
     # TODO: assert that the runs have compatible flags (likely we're only
@@ -70,8 +71,8 @@ class BrowserSessionRunGroup(RunGroup):
     self._runs.append(run)
 
   def set_ready(self) -> None:
-    assert self._state == self.State.BUILDING
-    self._state = self.State.READY
+    assert self._state == _State.BUILDING
+    self._state = _State.READY
     self._validate()
     self._set_path(self._get_session_dir())
 
@@ -126,7 +127,7 @@ class BrowserSessionRunGroup(RunGroup):
 
   @property
   def is_running(self) -> bool:
-    return self._state == self.State.RUNNING
+    return self._state == _State.RUNNING
 
   @property
   def is_remote(self) -> bool:
@@ -146,12 +147,12 @@ class BrowserSessionRunGroup(RunGroup):
 
   @property
   def extra_js_flags(self) -> JSFlags:
-    assert self._state < self.State.RUNNING
+    assert self._state < _State.RUNNING
     return self._extra_js_flags
 
   @property
   def extra_flags(self) -> Flags:
-    assert self._state < self.State.RUNNING
+    assert self._state < _State.RUNNING
     return self._extra_flags
 
   def add_flag_details(self, details_json: JsonDict) -> None:
@@ -212,12 +213,12 @@ class BrowserSessionRunGroup(RunGroup):
         self._teardown(is_dry_run)
 
   def _setup(self, is_dry_run: bool) -> None:
-    assert self._state == self.State.READY
-    self._state = self.State.STARTING
+    assert self._state == _State.READY
+    self._state = _State.STARTING
     with self.measure("browser-session-setup"):
       self._setup_runs(is_dry_run)
       self._start_browser(is_dry_run)
-      self._state = self.State.RUNNING
+      self._state = _State.RUNNING
 
   def _setup_session_dir(self):
     self.path.mkdir(parents=True, exist_ok=True)
@@ -233,7 +234,7 @@ class BrowserSessionRunGroup(RunGroup):
       run.setup(is_dry_run)
 
   def _start_browser(self, is_dry_run: bool) -> None:
-    assert self._state == self.State.STARTING
+    assert self._state == _State.STARTING
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
@@ -254,19 +255,19 @@ class BrowserSessionRunGroup(RunGroup):
         raise
 
   def _teardown(self, is_dry_run: bool) -> None:
-    assert self._state == self.State.RUNNING
-    self._state = self.State.STOPPING
+    assert self._state == _State.RUNNING
+    self._state = _State.STOPPING
     if is_dry_run:
       return
     with self.measure("browser-session-teardown"):
       try:
         self._stop_browser()
       finally:
-        assert self._state == self.State.STOPPING
-        self._state = self.State.DONE
+        assert self._state == _State.STOPPING
+        self._state = _State.DONE
 
   def _stop_browser(self) -> None:
-    assert self._state == self.State.STOPPING
+    assert self._state == _State.STOPPING
     # TODO: implement
 
   # TODO: remove once cleanly implemented

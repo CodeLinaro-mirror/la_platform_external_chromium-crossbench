@@ -109,7 +109,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
                substories: Sequence[str] = (),
                iterations: Optional[int] = None,
                url: Optional[str] = None):
-    self._iterations = iterations or self.DEFAULT_ITERATIONS
+    self._iterations: int = iterations or self.DEFAULT_ITERATIONS
     assert self.iterations >= 1, f"Invalid iterations count: '{iterations}'."
     super().__init__(url=url, substories=substories)
 

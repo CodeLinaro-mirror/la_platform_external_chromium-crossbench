@@ -26,7 +26,7 @@ class DTraceProbe(Probe):
   """
 
   NAME = "dtrace"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -87,9 +87,10 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
 
   def __init__(self, probe: DTraceProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._script_path = probe.script_path
-    self._output_path = self.result_path.with_suffix(".output.txt")
-    self._log_path = self.result_path.with_suffix(".log")
+    self._script_path: pathlib.Path = probe.script_path
+    self._output_path: pathlib.Path = self.result_path.with_suffix(
+        ".output.txt")
+    self._log_path: pathlib.Path = self.result_path.with_suffix(".log")
     self._dtrace_process: Optional[subprocess.Popen] = None
     self._log_file: Optional[TextIO] = None
     atexit.register(self.stop_dtrace_process)

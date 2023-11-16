@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import selenium.common.exceptions
 from selenium import webdriver
@@ -67,7 +67,7 @@ class ChromeWebDriver(ChromiumWebDriver):
           options=options,
           service=service)
     except selenium.common.exceptions.WebDriverException as e:
-      msg = [f"Could not start WebDriver: {e.msg}"]
+      msg: List[str] = [f"Could not start WebDriver: {e.msg}"]
       if self.platform.is_android:
         msg += [
             "Possibly missing chrome settings on {self.platform}.",

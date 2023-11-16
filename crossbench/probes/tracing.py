@@ -153,7 +153,7 @@ class TracingProbe(ChromiumProbe):
   Currently WIP
   """
   NAME = "tracing"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
   CHROMIUM_FLAGS = ("--enable-perfetto",)
 
   HELP_URL = "https://bit.ly/chrome-about-tracing"
@@ -216,9 +216,9 @@ class TracingProbe(ChromiumProbe):
                record_format: RecordFormat = RecordFormat.PROTO,
                traceconv: Optional[pathlib.Path] = None) -> None:
     super().__init__()
-    self._trace_config = trace_config
+    self._trace_config: Optional[pathlib.Path] = trace_config
     self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
-    self._preset = preset
+    self._preset: Optional[str] = preset
     if preset:
       self._categories.update(TRACE_PRESETS[preset])
     if self._trace_config:
@@ -231,7 +231,7 @@ class TracingProbe(ChromiumProbe):
     self._startup_duration: int = startup_duration
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
-    self._traceconv = traceconv
+    self._traceconv: Optional[pathlib.Path] = traceconv
 
   @property
   def key(self) -> Tuple[Tuple, ...]:

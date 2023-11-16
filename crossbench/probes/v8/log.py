@@ -41,7 +41,7 @@ class V8LogProbe(ChromiumProbe):
   config-properties for more details.
   """
   NAME = "v8.log"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
 
   _FLAG_RE = re.compile("^--(prof|log-|no-log-).*$")
 
@@ -92,10 +92,10 @@ class V8LogProbe(ChromiumProbe):
                d8_binary: Optional[pathlib.Path] = None,
                v8_checkout: Optional[pathlib.Path] = None) -> None:
     super().__init__()
-    self._profview = profview
+    self._profview: bool = profview
     self._js_flags = JSFlags()
-    self._d8_binary = d8_binary
-    self._v8_checkout = v8_checkout
+    self._d8_binary: Optional[pathlib.Path] = d8_binary
+    self._v8_checkout: Optional[pathlib.Path] = v8_checkout
     assert isinstance(log_all,
                       bool), (f"Expected bool value, got log_all={log_all}")
     assert isinstance(prof, bool), f"Expected bool value, got log_all={prof}"
@@ -271,12 +271,13 @@ class V8ToolsFinder:
                v8_checkout: Optional[pathlib.Path]) -> None:
     self.platform = platform
     self.d8_binary: Optional[pathlib.Path] = d8_binary
+    self.v8_checkout: Optional[pathlib.Path] = None
     if v8_checkout:
       self.v8_checkout = v8_checkout
     else:
       self.v8_checkout = probe_helper.V8CheckoutFinder(self.platform).path
     self.tick_processor: Optional[pathlib.Path] = None
-    self.d8_binary = self._find_d8()
+    self.d8_binary: Optional[pathlib.Path] = self._find_d8()
     if self.d8_binary:
       self.tick_processor = self._find_v8_tick_processor()
     logging.debug("V8ToolsFinder found d8_binary='%s' tick_processor='%s'",

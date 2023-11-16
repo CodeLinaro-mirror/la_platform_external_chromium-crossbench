@@ -17,9 +17,12 @@ if TYPE_CHECKING:
   from .timing import Timing
   from crossbench.browsers.browser import Browser
   from crossbench import plt
+  from crossbench.exception import ExceptionAnnotationScope
 
 
 class Actions(helper.TimeScope):
+
+  _max_end_datetime: dt.datetime
 
   def __init__(self,
                message: str,
@@ -31,7 +34,8 @@ class Actions(helper.TimeScope):
                timeout: dt.timedelta = dt.timedelta()):
     assert message, "Actions need a name"
     super().__init__(message)
-    self._exception_annotation = run.exceptions.info(f"Action: {message}")
+    self._exception_annotation: ExceptionAnnotationScope = run.exceptions.info(
+        f"Action: {message}")
     self._run: Run = run
     self._browser: Browser = browser or run.browser
     self._runner: Runner = runner or run.runner

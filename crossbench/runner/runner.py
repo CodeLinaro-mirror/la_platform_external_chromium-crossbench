@@ -164,7 +164,7 @@ class Runner:
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._timing = timing
-    self._browsers = tuple(browsers)
+    self._browsers: Tuple[Browser, ...] = tuple(browsers)
     self._validate_browsers()
     self._benchmark = benchmark
     self._stories = tuple(benchmark.stories)

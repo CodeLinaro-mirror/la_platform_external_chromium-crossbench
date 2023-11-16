@@ -64,7 +64,7 @@ class ExceptionAnnotationScope:
     self._exception_types = exception_types
     self._ignore_exception_types = ignore_exception_types
     self._added_info_stack_entries = entries
-    self._throw_cls = throw_cls
+    self._throw_cls: Optional[Type[BaseException]] = throw_cls
     self._previous_info_stack: TInfoStack = ()
 
   def __enter__(self) -> ExceptionAnnotationScope:

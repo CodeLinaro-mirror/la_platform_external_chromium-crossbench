@@ -15,6 +15,8 @@ from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
+  import pathlib
+
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.runner.run import Run
@@ -39,7 +41,7 @@ class PowerMetricsProbe(Probe):
   """
 
   NAME = "powermetrics"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
   SAMPLERS: Tuple[SamplerType,
                   ...] = (SamplerType.BATTERY, SamplerType.CPU_POWER,
                           SamplerType.DISK, SamplerType.GPU_POWER,
@@ -94,7 +96,8 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
   def __init__(self, probe: PowerMetricsProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._power_metrics_process: Optional[subprocess.Popen] = None
-    self._output_plist_file = self.result_path.with_suffix(".plist")
+    self._output_plist_file: pathlib.Path = self.result_path.with_suffix(
+        ".plist")
 
   def start(self) -> None:
     self._power_metrics_process = self.browser_platform.popen(

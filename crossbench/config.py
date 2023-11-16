@@ -13,18 +13,15 @@ import logging
 import pathlib
 import re
 import textwrap
-from typing import (Any, Callable, Dict, Generic, Iterable, List, Optional,
-                    Tuple, Type, TypeVar, Union, cast, TYPE_CHECKING)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
+                    Optional, Tuple, Type, TypeVar, Union, cast)
 
 import tabulate
 
-from crossbench import cli_helper, helper
-from crossbench import exception
+from crossbench import cli_helper, exception, helper
 
 if TYPE_CHECKING:
-  from crossbench.types import JsonDict
-
-ArgParserType = Union[Callable[[Any], Any], Type]
+  ArgParserType = Union[Callable[[Any], Any], Type]
 
 
 class _ConfigArg:
@@ -39,13 +36,13 @@ class _ConfigArg:
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False):
-    self.parser = parser
-    self.name = name
-    self.type = type
+    self.parser: ConfigParser = parser
+    self.name: str = name
+    self.type: Optional[ArgParserType] = type
     self.default = default
-    self.help = help
-    self.is_list = is_list
-    self.required = required
+    self.help: Optional[str] = help
+    self.is_list: bool = is_list
+    self.required: bool = required
     self.is_enum: bool = inspect.isclass(type) and issubclass(type, enum.Enum)
     if self.type:
       assert callable(self.type), (

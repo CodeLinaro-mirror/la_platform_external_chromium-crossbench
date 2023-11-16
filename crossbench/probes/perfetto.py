@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import subprocess
-from typing import TYPE_CHECKING, Tuple, cast
+from typing import TYPE_CHECKING, Tuple, cast, Optional
 
 from crossbench import helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -42,7 +42,7 @@ class PerfettoProbe(Probe):
   "perfetto.trace.pb.gz".
   """
   NAME = "perfetto"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
 
   IS_GENERAL_PURPOSE = True
 
@@ -91,12 +91,12 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe]):
 
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._host_config_file = run.out_dir / "perfetto_config.textproto"
-    self._browser_config_file = (
+    self._host_config_file: pathlib.Path = run.out_dir / "perfetto_config.textproto"
+    self._browser_config_file: pathlib.Path = (
         _PERFETTO_CONFIG_REMOTE_DIR / "perfetto_config.textproto")
-    self._browser_trace_file = (
+    self._browser_trace_file: pathlib.Path = (
         _PERFETTO_TRACE_REMOTE_DIR / "perfetto.trace.pb")
-    self._pid = None
+    self._pid: Optional[int] = None
 
   def setup(self) -> None:
     assert self._pid is None
@@ -135,7 +135,8 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe]):
   def stop(self) -> None:
     self.browser.performance_mark(self.runner, 'crossbench-probe-perfetto-stop')
     logging.info("PERFETTO: stopping")
-
+    if not self._pid:
+      raise RuntimeError("Perfetto was not started")
     # TODO(cbruni): replace with wait_and_terminate
     self.browser_platform.terminate(self._pid)
     try:

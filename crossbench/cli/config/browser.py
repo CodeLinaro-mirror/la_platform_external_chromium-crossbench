@@ -70,12 +70,13 @@ class BrowserConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Got empty browser identifier.")
     driver_type = driver_type or BrowserDriverType.default()
     identifier = maybe_path_or_identifier.lower()
+    path = None
     if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
       # Assume a path since short-names never contain back-/slashes.
       path = cli_helper.parse_existing_path(maybe_path_or_identifier)
     else:
-      if path := cls._try_parse_short_name(identifier, driver_type):
-        return path
+      if maybe_path := cls._try_parse_short_name(identifier, driver_type):
+        return maybe_path
       if ChromeDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
         return maybe_path_or_identifier
       if FirefoxDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):

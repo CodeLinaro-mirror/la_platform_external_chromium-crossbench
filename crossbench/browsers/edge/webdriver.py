@@ -76,13 +76,13 @@ class EdgeWebDriverDownloader:
 
   def __init__(self, browser: EdgeWebDriver) -> None:
     self.browser = browser
-    self.platform = browser.platform
+    self.platform: plt.Platform = browser.platform
     assert self.browser.is_local, (
         "Cannot download chromedriver for remote browser yet")
-    self.extension = ""
+    self.extension: str = ""
     if self.platform.is_win:
       self.extension = ".exe"
-    self.driver_path = (
+    self.driver_path: pathlib.Path = (
         BROWSERS_CACHE /
         f"edgedriver-{self.browser.major_version}{self.extension}")
 

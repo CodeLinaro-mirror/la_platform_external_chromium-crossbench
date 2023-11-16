@@ -35,7 +35,7 @@ class ReplayNetwork(Network):
   def __init__(self,
                archive_path: pathlib.Path,
                traffic_shaper: Optional[TrafficShaper] = None,
-               platform: Optional[plt.Platform] = plt.PLATFORM):
+               platform: plt.Platform = plt.PLATFORM):
     super().__init__(traffic_shaper, platform)
     self._archive_path = archive_path
     self._replay_server = ReplayServer(archive_path)

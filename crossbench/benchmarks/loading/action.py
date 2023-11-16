@@ -64,11 +64,11 @@ class Action(abc.ABC):
     return kwargs
 
   @classmethod
-  def pop_required_input(cls, value: JsonDict, key: str) -> Any:
-    if key not in value:
+  def pop_required_input(cls, data: JsonDict, key: str) -> Any:
+    if key not in data:
       raise argparse.ArgumentTypeError(
-          f"{cls.__name__}: Missing '{key}' property in {json.dumps(value)}")
-    value = value.pop(key)
+          f"{cls.__name__}: Missing '{key}' property in {json.dumps(data)}")
+    value = data.pop(key)
     if value is None:
       raise argparse.ArgumentTypeError(
           f"{cls.__name__}: {key} should not be None")

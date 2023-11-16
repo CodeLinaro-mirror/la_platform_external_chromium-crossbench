@@ -75,7 +75,8 @@ class Speedometer30Story(SpeedometerStory):
         sync_wait or dt.timedelta(0), "sync_wait")
     self._sync_warmup = cli_helper.Duration.parse_zero(
         sync_warmup or dt.timedelta(0), "sync_warmup")
-    self._measurement_method = measurement_method or MeasurementMethod.RAF
+    self._measurement_method: MeasurementMethod = (
+        measurement_method or MeasurementMethod.RAF)
     super().__init__(url=url, substories=substories, iterations=iterations)
 
   @property

@@ -282,6 +282,7 @@ class AndroidAdbPlatform(PosixPlatform):
     super().__init__()
     self._machine: Optional[MachineArch] = None
     self._system_details: Optional[Dict[str, Any]] = None
+    self._cpu_details: Optional[Dict[str, Any]] = None
     self._host_platform = host_platform
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
@@ -395,17 +396,6 @@ class AndroidAdbPlatform(PosixPlatform):
     # TODO figure out
     return 1.0
 
-  _GETPROP_RE = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
-
-  def system_details(self) -> Dict[str, Any]:
-    details = super().system_details()
-    properties: Dict[str, str] = {}
-    for line in self.adb.shell_stdout("getprop").strip().splitlines():
-      result = self._GETPROP_RE.fullmatch(line)
-      if result:
-        properties[result.group("key")] = result.group("value")
-    details["android"] = properties
-    return details
 
   def python_details(self) -> JsonDict:
     # Python is not available on android.
@@ -414,10 +404,6 @@ class AndroidAdbPlatform(PosixPlatform):
   def os_details(self) -> JsonDict:
     # TODO: add more info
     return {"version": self.version}
-
-  def cpu_details(self) -> JsonDict:
-    # TODO: add more info
-    return {"info": self.cpu}
 
   def check_autobrightness(self) -> bool:
     # adb shell dumpsys display
@@ -515,19 +501,32 @@ class AndroidAdbPlatform(PosixPlatform):
     return res
 
   def cpu_details(self) -> Dict[str, Any]:
+    if self._cpu_details:
+      return self._cpu_details
     # TODO: Implement properly (i.e. remove all n/a values)
-    details = {
+    self._cpu_details = {
+        "info": self.cpu,
         "physical cores": "n/a",
         "logical cores": "n/a",
         "usage": "n/a",
         "total usage": "n/a",
-        "system load": "n/a"
-    }
-    details.update({
+        "system load": "n/a",
         "max frequency": "n/a",
         "min frequency": "n/a",
         "current frequency": "n/a",
-    })
+    }
+    return self._cpu_details
+
+  _GETPROP_RE = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
+
+  def _getprop_system_details(self) -> Dict[str, Any]:
+    details = super().system_details()
+    properties: Dict[str, str] = {}
+    for line in self.adb.shell_stdout("getprop").strip().splitlines():
+      result = self._GETPROP_RE.fullmatch(line)
+      if result:
+        properties[result.group("key")] = result.group("value")
+    details["android"] = properties
     return details
 
   def system_details(self) -> Dict[str, Any]:
@@ -548,5 +547,6 @@ class AndroidAdbPlatform(PosixPlatform):
             "bits": "n/a",
         },
         "CPU": self.cpu_details(),
+        "Adnroid": self._getprop_system_details(),
     }
     return self._system_details

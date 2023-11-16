@@ -3,17 +3,11 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import argparse
 
-import atexit
-import logging
+import argparse
 import pathlib
-import re
 import shutil
-import signal
-import subprocess
-import time
-from typing import TYPE_CHECKING, Iterable, List, Optional, TextIO, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional
 
 from frozendict import frozendict
 
@@ -23,12 +17,13 @@ from crossbench.network.web_page_replay import WprRecorder
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
+                                      RunGroup, StoriesRunGroup)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
 
-from crossbench.runner.groups import BrowsersRunGroup, RepetitionsRunGroup, RunGroup, StoriesRunGroup
 
 
 class WebPageReplayProbe(Probe):
@@ -161,8 +156,8 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def __init__(self, probe: WebPageReplayProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._wprgo_log = self.result_path.with_name("wpr_record.log")
-    self._host = "127.0.0.1"
+    self._wprgo_log: pathlib.Path = self.result_path.with_name("wpr_record.log")
+    self._host: str = "127.0.0.1"
     kwargs = dict(self.probe.recorder_kwargs)
     kwargs.update({
         "platform": run.runner_platform,
@@ -211,7 +206,7 @@ class WprGoToolFinder:
 
   def __init__(self, platform: plt.Platform) -> None:
     self.platform = platform
-    self.path = None
+    self.path: Optional[pathlib.Path] = None
     if maybe_chrome := probe_helper.ChromiumCheckoutFinder(platform).path:
       candidate = (maybe_chrome / self._WPR_GO)
       if self.platform.is_file(candidate):

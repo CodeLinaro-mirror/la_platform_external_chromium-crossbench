@@ -47,8 +47,8 @@ class PowerSamplerProbe(Probe):
   """
 
   NAME = "powersampler"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  BATTERY_ONLY = True
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  BATTERY_ONLY: bool = True
   SAMPLERS: Tuple[SamplerType,
                   ...] = (SamplerType.SMC, SamplerType.USER_IDLE_LEVEL,
                           SamplerType.MAIN_DISPLAY)
@@ -128,12 +128,13 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._bin_path = probe.bin_path
+    self._bin_path: pathlib.Path = probe.bin_path
     self._active_user_process: Optional[subprocess.Popen] = None
     self._power_process: Optional[subprocess.Popen] = None
     self._power_battery_process: Optional[subprocess.Popen] = None
-    self._power_output = self.result_path.with_suffix(".power.json")
-    self._power_battery_output = self.result_path.with_suffix(
+    self._power_output: pathlib.Path = self.result_path.with_suffix(
+        ".power.json")
+    self._power_battery_output: pathlib.Path = self.result_path.with_suffix(
         ".power_battery.json")
 
   def setup(self) -> None:

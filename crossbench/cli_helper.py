@@ -13,7 +13,7 @@ import pathlib
 import re
 import shlex
 import sys
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from typing import Any, Iterator, List, NoReturn, Optional, Union
 from urllib.parse import urlparse
 
 import hjson
@@ -353,7 +353,7 @@ if sys.version_info < (3, 9, 0):
 
   class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
 
-    def error(self, message) -> None:
+    def error(self, message) -> NoReturn:
       # Let the CrossBenchCLI handle all errors and simplify testing.
       exception = sys.exc_info()[1]
       if isinstance(exception, BaseException):
@@ -394,9 +394,6 @@ def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
     raise LateArgumentError(flag, str(e)) from e
 
 
-DurationInputT = Union[float, int, str, dt.timedelta]
-
-
 class Duration:
 
   @classmethod
@@ -420,14 +417,12 @@ class Duration:
         "Make sure to use a supported time unit/suffix")
 
   @classmethod
-  def parse(cls,
-            time_value: DurationInputT,
-            name: str = "duration") -> dt.timedelta:
+  def parse(cls, time_value: Any, name: str = "duration") -> dt.timedelta:
     return cls.parse_non_zero(time_value, name)
 
   @classmethod
   def parse_non_zero(cls,
-                     time_value: DurationInputT,
+                     time_value: Any,
                      name: str = "duration") -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value)
     if duration.total_seconds() <= 0:
@@ -436,9 +431,7 @@ class Duration:
     return duration
 
   @classmethod
-  def parse_zero(cls,
-                 time_value: DurationInputT,
-                 name: str = "duration") -> dt.timedelta:
+  def parse_zero(cls, time_value: Any, name: str = "duration") -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value, name)
     if duration.total_seconds() < 0:
       raise argparse.ArgumentTypeError(
@@ -446,9 +439,7 @@ class Duration:
     return duration
 
   @classmethod
-  def parse_any(cls,
-                time_value: DurationInputT,
-                name: str = "duration") -> dt.timedelta:
+  def parse_any(cls, time_value: Any, name: str = "duration") -> dt.timedelta:
     """
     This function will parse the measurement and the value from string value.
 

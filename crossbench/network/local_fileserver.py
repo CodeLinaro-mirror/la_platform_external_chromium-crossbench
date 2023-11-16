@@ -36,7 +36,7 @@ class LocalFileNetwork(Network):
   def __init__(self,
                path: pathlib.Path,
                traffic_shaper: Optional[TrafficShaper] = None,
-               platform: Optional[plt.Platform] = plt.PLATFORM):
+               platform: plt.Platform = plt.PLATFORM):
     super().__init__(traffic_shaper, platform)
     self._local_file_server = LocalFileServer(path, platform)
 

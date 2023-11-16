@@ -128,7 +128,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
                story_cls: Type[StoryT],
                patterns: Sequence[str],
                separate: bool = False) -> None:
-    self.story_cls = story_cls
+    self.story_cls: Type[StoryT] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
     # Using order-preserving dict instead of set
@@ -246,7 +246,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                patterns: Sequence[str],
                separate: bool = False,
                url: Optional[str] = None):
-    self.url = url
+    self.url: Optional[str] = url
     self._selected_names: OrderedSet[str] = OrderedSet()
     super().__init__(story_cls, patterns, separate)
     assert issubclass(self.story_cls, PressBenchmarkStory)

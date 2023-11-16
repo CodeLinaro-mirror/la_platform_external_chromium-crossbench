@@ -35,7 +35,7 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
 
   def __init__(self, probe_cls: Type[ProbeT]) -> None:
     super().__init__("Probe", probe_cls)
-    self._probe_cls = probe_cls
+    self._probe_cls: Type[ProbeT] = probe_cls
 
 
 class ResultLocation(compat.EnumWithHelp):

@@ -37,7 +37,7 @@ class VideoProbe(Probe):
   for visually comparing various browsers / variants / cb.stories
   """
   NAME = "video"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
   VIDEO_QUALITY = ["-vcodec", "libx264", "-crf", "20"]
   IMAGE_FORMAT = "png"
   TIMESTRIP_FILE_SUFFIX = f".timestrip.{IMAGE_FORMAT}"

@@ -61,10 +61,10 @@ class Run:
                name: Optional[str] = None,
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
-    self._state = RunState.INITIAL
+    self._state: RunState = RunState.INITIAL
     self._runner = runner
     self._browser_session = browser_session
-    self._browser = browser_session.browser
+    self._browser: Browser = browser_session.browser
     browser_session.append(self)
     self._story = story
     assert repetition >= 0

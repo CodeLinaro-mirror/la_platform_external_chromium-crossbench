@@ -12,11 +12,10 @@ from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
 
-from crossbench import helper
+from crossbench import exception, helper
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
-from crossbench.runner.run import Run
 
 from .safari import Safari, find_safaridriver
 
@@ -24,7 +23,6 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.flags import Flags
   from crossbench.runner.groups import BrowserSessionRunGroup
-  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
 
@@ -90,7 +88,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     driver_kwargs["desired_capabilities"] = options.to_capabilities()
 
   def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
-    with session.runner.actions("Clearing Browser Cache"):
+    del session
+    with exception.annotate("Clearing Browser Cache"):
       self._clear_cache()
       self.platform.exec_apple_script(f"""
         tell application "{self.app_path}" to quit """)

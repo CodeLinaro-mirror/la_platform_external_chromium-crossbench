@@ -68,7 +68,7 @@ class Safari(Browser):
     assert not js_flags, "Safari doesn't support custom js_flags"
     assert self.platform.is_macos, "Safari only works on MacOS"
     assert self.path
-    self.bundle_name = self.path.stem.replace(" ", "")
+    self.bundle_name: str = self.path.stem.replace(" ", "")
     assert cache_dir is None, "Cannot set custom cache dir for Safari"
     self.cache_dir = pathlib.Path(
         f"~/Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches"

@@ -110,9 +110,9 @@ SIZE_UNITS: Final[Tuple[str, ...]] = ("B", "KiB", "MiB", "GiB", "TiB")
 
 
 def get_file_size(file: pathlib.Path, digits: int = 2) -> str:
-  size = file.stat().st_size
+  size: float = float(file.stat().st_size)
   unit_index = 0
-  divisor = 1024
+  divisor = 1024.0
   while (unit_index < len(SIZE_UNITS)) and size >= divisor:
     unit_index += 1
     size /= divisor
@@ -227,7 +227,7 @@ class TimeScope:
     self._message = message
     self._level = level
     self._start: Optional[dt.datetime] = None
-    self._duration = dt.timedelta()
+    self._duration: dt.timedelta = dt.timedelta()
 
   @property
   def message(self) -> str:
@@ -251,6 +251,7 @@ class WaitRange:
   min: dt.timedelta
   max: dt.timedelta
   current: dt.timedelta
+  max_iterations: Optional[int]
 
   def __init__(
       self,

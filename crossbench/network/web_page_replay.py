@@ -24,6 +24,9 @@ _WPR_PORT_RE = re.compile(r".*Starting server on "
 
 class WprBase(abc.ABC):
 
+  _key_file: pathlib.Path
+  _cert_file: pathlib.Path
+
   def __init__(self,
                result_path: pathlib.Path,
                bin_path: pathlib.Path,
@@ -35,7 +38,7 @@ class WprBase(abc.ABC):
                cert_file: Optional[pathlib.Path] = None,
                log_path: Optional[pathlib.Path] = None,
                platform: plt.Platform = plt.PLATFORM):
-    self._platform = platform
+    self._platform: plt.Platform = platform
     self._process: Optional[subprocess.Popen] = None
     self._log_path: Optional[pathlib.Path] = log_path
     self._log_file: Optional[TextIO] = None
@@ -52,9 +55,9 @@ class WprBase(abc.ABC):
     self._http_port = http_port
     self._https_port = https_port
 
-    self._host = host
+    self._host: str = host
 
-    wpr_root = self._bin_path.parents[1]
+    wpr_root: pathlib.Path = self._bin_path.parents[1]
 
     if key_file:
       self._key_file = key_file
@@ -77,7 +80,7 @@ class WprBase(abc.ABC):
         raise ValueError(f"Injected script path cannot contain ',': {script}")
       if not script.is_file():
         raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts = tuple(inject_scripts)
+    self._inject_scripts: Tuple[pathlib.Path, ...] = tuple(inject_scripts)
 
   @property
   def http_port(self) -> int:
@@ -240,11 +243,11 @@ class WprReplayServer(WprBase):
                platform: plt.Platform = plt.PLATFORM):
     super().__init__(result_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
-    self._rules_file = None
+    self._rules_file: Optional[pathlib.Path] = None
     if rules_file:
       self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
-    self._fuzzy_url_matching = fuzzy_url_matching
-    self._serve_chronologically = serve_chronologically
+    self._fuzzy_url_matching: bool = fuzzy_url_matching
+    self._serve_chronologically: bool = serve_chronologically
 
   @property
   def cmd(self) -> Tuple[str, ...]:

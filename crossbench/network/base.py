@@ -27,7 +27,7 @@ class Network(abc.ABC):
 
   def __init__(self,
                traffic_shaper: Optional[TrafficShaper] = None,
-               platform: Optional[plt.Platform] = plt.PLATFORM) -> None:
+               platform: plt.Platform = plt.PLATFORM) -> None:
     self._traffic_shaper = traffic_shaper or TrafficShaper()
     self._platform = platform
 
