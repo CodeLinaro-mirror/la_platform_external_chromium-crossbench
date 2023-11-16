@@ -17,8 +17,8 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench
 from crossbench import plt
-from crossbench.benchmarks.benchmark import SubStoryBenchmark
-from crossbench.cli import CrossBenchCLI
+from crossbench.benchmarks.base import SubStoryBenchmark
+from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.base import MachineArch
 from crossbench.stories.story import Story
 

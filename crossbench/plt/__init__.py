@@ -3,10 +3,11 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import pathlib
 import re
 
 import sys
-from typing import Final
+from typing import Callable, Final, Optional, Sequence
 import unicodedata
 
 from .android_adb import AndroidAdbPlatform, adb_devices

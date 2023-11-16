@@ -21,7 +21,7 @@ import crossbench.browsers.webdriver as cb_webdriver
 import crossbench.env
 import crossbench.runner.run
 import crossbench.runner.runner
-from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.benchmarks.base import PressBenchmark
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 press_benchmarks = [

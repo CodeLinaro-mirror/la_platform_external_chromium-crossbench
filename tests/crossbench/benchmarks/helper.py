@@ -5,7 +5,7 @@
 import abc
 from typing import List, Sequence, Type
 
-from crossbench.benchmarks import benchmark
+from crossbench.benchmarks import base as benchmark
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 

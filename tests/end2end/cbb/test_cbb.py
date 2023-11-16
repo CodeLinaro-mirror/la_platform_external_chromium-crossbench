@@ -9,7 +9,7 @@ import pytest
 from crossbench import plt
 
 from crossbench.benchmarks import all as benchmarks
-from crossbench.benchmarks.benchmark import PressBenchmark
+from crossbench.benchmarks.base import PressBenchmark
 from crossbench.browsers.chrome import webdriver as chrome_webdriver
 from crossbench.cbb import cbb_adapter
 from tests import run_helper

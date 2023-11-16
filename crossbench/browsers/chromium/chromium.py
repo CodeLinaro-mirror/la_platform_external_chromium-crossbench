@@ -11,7 +11,7 @@ import re
 import tempfile
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
-from crossbench import helper
+from crossbench import plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.viewport import Viewport
@@ -20,7 +20,6 @@ from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
-  from crossbench import plt
   from crossbench.runner.runner import Runner
   from crossbench.runner.groups import BrowserSessionRunGroup
 
@@ -55,7 +54,7 @@ class Chromium(Browser):
 
   @classmethod
   def default_path(cls) -> pathlib.Path:
-    return helper.search_app_or_executable(
+    return plt.PLATFORM.search_app_or_executable(
         "Chromium",
         macos=["Chromium.app"],
         linux=["google-chromium", "chromium"],

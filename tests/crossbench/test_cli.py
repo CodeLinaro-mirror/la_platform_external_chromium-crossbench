@@ -14,7 +14,7 @@ import hjson
 
 from crossbench import cli_helper, plt
 from crossbench.browsers import splash_screen, viewport
-from crossbench.cli import CrossBenchCLI
+from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.probes import internal

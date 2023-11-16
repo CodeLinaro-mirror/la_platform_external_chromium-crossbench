@@ -17,7 +17,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
-from crossbench.probes.probe import ProbeIncompatibleBrowser, Probe
+from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 
 from .groups import (BrowserSessionRunGroup, BrowsersRunGroup,
                      CacheTemperatureRunGroup, RepetitionsRunGroup,
@@ -26,10 +26,10 @@ from .run import Run
 from .timing import Timing
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.benchmark import Benchmark
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.stories.story import Story
 
-from crossbench.stories.story import Story
 
 
 class RunnerException(exception.MultiException):

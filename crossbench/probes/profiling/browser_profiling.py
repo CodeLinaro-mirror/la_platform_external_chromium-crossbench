@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 from selenium.webdriver.safari.options import Options as SafariOptions
 
 from crossbench import compat
-from crossbench.browsers.all import ChromiumWebDriver, Firefox, SafariWebDriver
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
+from crossbench.browsers.firefox.firefox import Firefox
+from crossbench.browsers.safari.webdriver import SafariWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeResult,
                                      ProbeValidationError, ResultLocation)

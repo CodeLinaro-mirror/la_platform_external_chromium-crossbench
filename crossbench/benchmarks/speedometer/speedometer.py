@@ -14,7 +14,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 import crossbench.probes.helper as probes_helper
 from crossbench import cli_helper, helper
-from crossbench.benchmarks import PressBenchmark, PressBenchmarkStoryFilter
+from crossbench.benchmarks.base import PressBenchmark, PressBenchmarkStoryFilter
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict

@@ -20,8 +20,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping,
-                    Optional, Tuple, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+                    List, Mapping, Optional, Sequence, Tuple, Union)
 
 import psutil
 
@@ -180,6 +180,48 @@ class Platform(abc.ABC):
     if not status:
       return False
     return not status.power_plugged
+
+  def _search_executable(
+      self,
+      name: str,
+      macos: Sequence[str],
+      win: Sequence[str],
+      linux: Sequence[str],
+      lookup_callable: Callable[[pathlib.Path], Optional[pathlib.Path]],
+  ) -> pathlib.Path:
+    executables: Sequence[str] = []
+    if self.is_macos:
+      executables = macos
+    elif self.is_win:
+      executables = win
+    elif self.is_linux:
+      executables = linux
+    if not executables:
+      raise ValueError(f"Executable {name} not supported on {self}")
+    for name_or_path in executables:
+      path = pathlib.Path(name_or_path).expanduser()
+      binary = lookup_callable(path)
+      if binary and binary.exists():
+        return binary
+    raise ValueError(f"Executable {name} not found on {self}")
+
+  def search_app_or_executable(
+      self,
+      name: str,
+      macos: Sequence[str] = (),
+      win: Sequence[str] = (),
+      linux: Sequence[str] = ()
+  ) -> pathlib.Path:
+    return self._search_executable(name, macos, win, linux, self.search_app)
+
+  def search_platform_binary(
+      self,
+      name: str,
+      macos: Sequence[str] = (),
+      win: Sequence[str] = (),
+      linux: Sequence[str] = ()
+  ) -> pathlib.Path:
+    return self._search_executable(name, macos, win, linux, self.search_binary)
 
   def search_app(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
     """Look up a application bundle (macos) or binary (all other platforms) in 

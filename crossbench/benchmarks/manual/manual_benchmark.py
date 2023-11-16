@@ -15,7 +15,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 import colorama
 
-from crossbench.benchmarks.benchmark import Benchmark
+from crossbench.benchmarks.base import Benchmark
 from crossbench import cli_helper, helper
 from crossbench.stories.story import Story
 

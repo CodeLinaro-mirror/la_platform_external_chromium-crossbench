@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
 from urllib.parse import urlparse
 from crossbench import cli_helper
 
-from crossbench.benchmarks.benchmark import StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 
 from . import page_config
 from .page import (PAGE_LIST, PAGE_LIST_SMALL, PAGES, CombinedPage, LivePage,

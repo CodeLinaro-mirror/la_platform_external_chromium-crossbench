@@ -19,7 +19,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
 from crossbench import helper
-from crossbench.benchmarks.benchmark import StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.stories.story import Story
 

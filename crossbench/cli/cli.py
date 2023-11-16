@@ -19,7 +19,7 @@ from tabulate import tabulate
 
 import crossbench.benchmarks.all as benchmarks
 from crossbench import cli_helper, helper
-from crossbench.benchmarks.benchmark import Benchmark
+from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,

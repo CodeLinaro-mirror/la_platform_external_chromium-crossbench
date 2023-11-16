@@ -9,13 +9,12 @@ import re
 import tempfile
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from crossbench import helper
+from crossbench import plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
-  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.flags import Flags
   from crossbench.runner.groups import BrowserSessionRunGroup
@@ -25,7 +24,7 @@ class Firefox(Browser):
 
   @classmethod
   def default_path(cls) -> pathlib.Path:
-    return helper.search_app_or_executable(
+    return plt.PLATFORM.search_app_or_executable(
         "Firefox",
         macos=["Firefox.app"],
         linux=["firefox"],
@@ -33,7 +32,7 @@ class Firefox(Browser):
 
   @classmethod
   def developer_edition_path(cls) -> pathlib.Path:
-    return helper.search_app_or_executable(
+    return plt.PLATFORM.search_app_or_executable(
         "Firefox Developer Edition",
         macos=["Firefox Developer Edition.app"],
         linux=["firefox-developer-edition"],
@@ -41,7 +40,7 @@ class Firefox(Browser):
 
   @classmethod
   def nightly_path(cls) -> pathlib.Path:
-    return helper.search_app_or_executable(
+    return plt.PLATFORM.search_app_or_executable(
         "Firefox Nightly",
         macos=["Firefox Nightly.app"],
         linux=["firefox-nightly", "firefox-trunk"],

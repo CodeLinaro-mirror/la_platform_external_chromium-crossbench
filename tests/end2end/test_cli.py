@@ -13,7 +13,7 @@ from unittest import mock
 import pytest
 
 import crossbench.browsers.all as browsers
-from crossbench.cli import CrossBenchCLI
+from crossbench.cli.cli import CrossBenchCLI
 from crossbench import plt
 from tests import run_helper
 

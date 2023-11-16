@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Type
 from crossbench import plt
 
 if TYPE_CHECKING:
-  from crossbench.probes import Probe
+  from crossbench.probes.probe import Probe
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 

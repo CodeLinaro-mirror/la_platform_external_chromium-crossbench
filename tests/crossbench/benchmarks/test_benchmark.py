@@ -5,7 +5,7 @@
 import unittest
 import datetime as dt
 
-from crossbench.benchmarks.benchmark import PressBenchmarkStoryFilter
+from crossbench.benchmarks.base import PressBenchmarkStoryFilter
 from crossbench.runner.run import Run
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 

@@ -12,7 +12,6 @@ import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
                     Union)
 
-from crossbench import helper
 
 from .arch import MachineArch
 from .base import SubprocessError
@@ -24,12 +23,11 @@ if TYPE_CHECKING:
 
 
 def _find_adb_bin(platform: Platform) -> pathlib.Path:
-  adb_bin = helper.search_binary(
+  adb_bin = platform.search_platform_binary(
       name="adb",
       macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
       linux=["adb"],
-      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"],
-      platform=platform)
+      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"])
   if adb_bin:
     return adb_bin
   raise ValueError(

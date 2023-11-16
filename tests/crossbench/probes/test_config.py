@@ -6,8 +6,7 @@ import argparse
 import unittest
 
 from crossbench import compat
-from crossbench.probes import Probe
-from crossbench.probes.probe import ProbeConfigParser
+from crossbench.probes.probe import Probe, ProbeConfigParser
 from tests import run_helper
 
 
