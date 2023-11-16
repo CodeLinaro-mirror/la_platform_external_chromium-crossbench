@@ -114,6 +114,7 @@ class Run:
   def details_json(self) -> JsonDict:
     return {
         "name": self.name,
+        "index": self.index,
         "repetition": self.repetition,
         "browser_session": self.browser_session.index,
         "temperature": self.temperature,

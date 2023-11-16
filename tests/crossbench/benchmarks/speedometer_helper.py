@@ -228,7 +228,7 @@ class SpeedometerBaseTestCase(
       runner: Runner,
       expected_num_urls: Optional[int] = None) -> List[Dict[str, str]]:
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
         self.assertEqual(len(urls), expected_num_urls)
       self.assertIn(self.probe_cls.JS, browser.js_list)
@@ -272,7 +272,7 @@ class SpeedometerBaseTestCase(
     runner = self._test_run(iterations=10)
     self._verify_results(runner)
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
@@ -281,7 +281,7 @@ class SpeedometerBaseTestCase(
     runner = self._test_run(custom_url=custom_url, iterations=10)
     self._verify_results(runner)
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(custom_url, urls)
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
@@ -290,7 +290,7 @@ class SpeedometerBaseTestCase(
     runner = self._test_run(iterations=7)
     self._verify_results(runner)
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(f"{self.story_cls.URL}?iterationCount=7", urls)
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(f"{self.story_cls.URL_LOCAL}?iterationCount=7", urls)

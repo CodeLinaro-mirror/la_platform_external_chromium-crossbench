@@ -86,7 +86,7 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
   def test_run_default(self):
     self._test_run()
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
@@ -94,7 +94,7 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
     custom_url = "http://test.example.com/speedometer"
     self._test_run(custom_url)
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(custom_url, urls)
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
@@ -133,7 +133,7 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
     cm.assert_called_once()
     assert runner.is_success
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(MotionMark12Probe.JS, browser.js_list)
     with (self.out_dir /

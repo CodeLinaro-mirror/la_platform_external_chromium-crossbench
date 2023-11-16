@@ -178,8 +178,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                url: str,
                target: Optional[str] = None) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
-    assert self._driver.window_handles, "Browser has no more opened windows."
-    self._driver.switch_to.window(self._driver.window_handles[0])
+    handles = self._driver.window_handles
+    assert handles, "Browser has no more opened windows."
+    self._driver.switch_to.window(handles[0])
     try:
       self._driver.get(url)
     except selenium.common.exceptions.WebDriverException as e:

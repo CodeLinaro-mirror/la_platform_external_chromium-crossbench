@@ -189,8 +189,11 @@ class CrossbenchFakeFsTestCase(
 
 class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
-  def filter_data_urls(self, urls: Sequence[str]) -> List[str]:
-    return [url for url in urls if not url.startswith("data:")]
+  def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
+    return [
+        url for url in urls
+        if not url.startswith("data:") and not url.startswith("about:")
+    ]
 
   def setUp(self) -> None:
     # Instantiate MockPlatform before setting up fake_filesystem so we can

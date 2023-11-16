@@ -219,9 +219,9 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self.assertTrue(self.browsers[1].did_run)
 
   def _assert_urls_loaded(self, story_urls):
-    browser_1_urls = self.filter_data_urls(self.browsers[0].url_list)
+    browser_1_urls = self.filter_splashscreen_urls(self.browsers[0].url_list)
     self.assertEqual(browser_1_urls, story_urls)
-    browser_2_urls = self.filter_data_urls(self.browsers[1].url_list)
+    browser_2_urls = self.filter_splashscreen_urls(self.browsers[1].url_list)
     self.assertEqual(browser_2_urls, story_urls)
 
 

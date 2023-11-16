@@ -41,7 +41,7 @@ class JetStream2BaseTestCase(
   def test_run_default(self):
     self._test_run()
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
@@ -49,7 +49,7 @@ class JetStream2BaseTestCase(
     custom_url = "http://test.example.com/jetstream"
     self._test_run(custom_url)
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(custom_url, urls)
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
@@ -98,7 +98,7 @@ class JetStream2BaseTestCase(
       runner.run()
     cm.assert_called_once()
     for browser in self.browsers:
-      urls = self.filter_data_urls(browser.url_list)
+      urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.probe_cls.JS, browser.js_list)
 

@@ -7,7 +7,7 @@ import io
 import json
 import pathlib
 import unittest
-from typing import Dict, List, Tuple, Type
+from typing import Dict, Final, List, Tuple, Type
 from unittest import mock
 
 import hjson
@@ -29,6 +29,10 @@ class SysExitException(Exception):
   def __init__(self, exit_code=0):
     super().__init__("sys.exit")
     self.exit_code = exit_code
+
+
+SPLASHSCREEN_URL_COUNT: Final[int] = 2
+
 
 class CliTestCase(BaseCrossbenchTestCase):
 
@@ -244,7 +248,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
                    "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
 
   def test_invalid_probe(self):
     with self.assertRaises(argparse.ArgumentError), mock.patch.object(
@@ -258,7 +262,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", "--probe=v8.log", f"--urls={url}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         self.assertIn("--log-all", browser.js_flags)
 
   def test_invalid_empty_probe_config_file(self):
@@ -274,7 +278,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.assertIn("--probe-config", message)
       self.assertIn("empty", message)
       for browser in self.browsers:
-        self.assertListEqual([], browser.url_list[1:])
+        self.assertListEqual([], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_empty_probe_config_file(self):
@@ -288,7 +292,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_invalid_probe_config_file(self):
@@ -319,7 +323,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -397,7 +401,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -716,7 +720,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", "--probe=v8.log{}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         for flag in js_flags:
           self.assertNotIn(flag, browser.js_flags)
 
@@ -729,7 +733,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.run_cli("loading", f"--probe=v8.log{json_config}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[1:])
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -899,7 +903,7 @@ class CliTestCase(BaseCrossbenchTestCase):
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.splash_screen,
                          splash_screen.SplashScreen.MINIMAL)
-        self.assertEqual(len(browser.url_list), 2)
+        self.assertEqual(len(browser.url_list), 3)
         self.assertIn(url, browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
 
@@ -916,7 +920,7 @@ class CliTestCase(BaseCrossbenchTestCase):
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIsInstance(browser.splash_screen,
                               splash_screen.URLSplashScreen)
-        self.assertEqual(len(browser.url_list), 2)
+        self.assertEqual(len(browser.url_list), 3)
         self.assertEqual(splash_url, browser.url_list[0])
         self.assertEqual(len(browser.js_flags), 0)
 
@@ -939,7 +943,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.viewport, viewport.Viewport.MAXIMIZED)
-        self.assertEqual(len(browser.url_list), 2)
+        self.assertEqual(len(browser.url_list), 3)
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_powersampler_invalid_multiple_runs(self):
