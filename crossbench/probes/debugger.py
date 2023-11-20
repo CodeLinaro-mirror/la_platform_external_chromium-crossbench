@@ -67,7 +67,7 @@ class DebuggerProbe(Probe):
     parser.add_argument(
         "args",
         type=str,
-        default=None,
+        default=tuple(),
         is_list=True,
         help="Additional args that are passed to the debugger.")
     return parser
@@ -132,15 +132,17 @@ class DebuggerProbe(Probe):
     if self._debugger_bin.name == "lldb":
       if self._auto_run:
         debugger_cmd += ["-o", "run"]
+      if self._debugger_args:
+        debugger_cmd.extend(self._debugger_args)
       debugger_cmd += ["--"]
     else:
       assert self._debugger_bin.name == "gdb", (
           f"Unsupported debugger: {self._debugger_bin}")
       if self._auto_run:
         debugger_cmd += ["-ex", "run"]
+      if self._debugger_args:
+        debugger_cmd.extend(self._debugger_args)
       debugger_cmd += ["--args"]
-    if self._debugger_args is not None:
-      debugger_cmd.extend(self._debugger_args)
     return shlex.join(debugger_cmd)
 
   def get_context(self, run: Run) -> DebuggerContext:
