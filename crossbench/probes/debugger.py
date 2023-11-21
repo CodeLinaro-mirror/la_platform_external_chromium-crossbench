@@ -33,7 +33,7 @@ class DebuggerProbe(Probe):
   Probe debugging chrome's renderer process.
   """
   NAME = "debugger"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
   IS_GENERAL_PURPOSE = True
 
   @classmethod

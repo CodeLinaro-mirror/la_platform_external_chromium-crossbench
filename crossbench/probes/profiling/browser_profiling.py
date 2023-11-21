@@ -86,7 +86,7 @@ class BrowserProfilingProbe(Probe):
   - Safari: Timelines https://developer.apple.com/safari/tools
   """
   NAME = "browser-profiling"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
   IS_GENERAL_PURPOSE = True
 
   @classmethod

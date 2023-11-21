@@ -41,7 +41,7 @@ class ProfilingProbe(Probe):
   pprof.
   """
   NAME = "profiling"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
   IS_GENERAL_PURPOSE = True
 
   V8_PERF_PROF_FLAG = ("--perf-prof",)

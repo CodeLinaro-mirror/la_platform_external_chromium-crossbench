@@ -42,7 +42,7 @@ class PerfettoProbe(Probe):
   "perfetto.trace.pb.gz".
   """
   NAME = "perfetto"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
 
   IS_GENERAL_PURPOSE = True
 

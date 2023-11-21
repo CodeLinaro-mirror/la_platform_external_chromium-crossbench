@@ -25,7 +25,7 @@ class V8TurbolizerProbe(ChromiumProbe):
   Tool: https://v8.dev/tools/head/turbolizer
   """
   NAME = "v8.turbolizer"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
 
   def attach(self, browser: Browser) -> None:
     super().attach(browser)

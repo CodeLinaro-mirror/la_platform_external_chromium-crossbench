@@ -43,7 +43,7 @@ class PowerMetricsProbe(Probe):
   """
 
   NAME = "powermetrics"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
   SAMPLERS: Tuple[SamplerType,
                   ...] = (SamplerType.BATTERY, SamplerType.CPU_POWER,
                           SamplerType.DISK, SamplerType.GPU_POWER,

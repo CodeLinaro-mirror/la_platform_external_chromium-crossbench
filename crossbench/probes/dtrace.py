@@ -26,7 +26,7 @@ class DTraceProbe(Probe):
   """
 
   NAME = "dtrace"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:

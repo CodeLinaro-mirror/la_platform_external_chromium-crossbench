@@ -41,7 +41,7 @@ class V8LogProbe(ChromiumProbe):
   config-properties for more details.
   """
   NAME = "v8.log"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
 
   _FLAG_RE = re.compile("^--(prof|log-|no-log-).*$")
 

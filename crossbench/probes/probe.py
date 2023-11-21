@@ -123,7 +123,7 @@ class Probe(abc.ABC):
   PRODUCES_DATA: bool = True
   # Set the default probe result location, used to figure out whether result
   # files need to be transferred from a remote machine.
-  RESULT_LOCATION: ResultLocation = ResultLocation.LOCAL
+  RESULT_LOCATION = ResultLocation.LOCAL
   # Set to True if the probe only works on battery power with single runs
   BATTERY_ONLY: bool = False
 

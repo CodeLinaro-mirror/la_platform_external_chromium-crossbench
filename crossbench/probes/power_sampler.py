@@ -49,7 +49,7 @@ class PowerSamplerProbe(Probe):
   """
 
   NAME = "powersampler"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
   BATTERY_ONLY: bool = True
   SAMPLERS: Tuple[SamplerType,
                   ...] = (SamplerType.SMC, SamplerType.USER_IDLE_LEVEL,

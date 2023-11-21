@@ -156,7 +156,7 @@ class TracingProbe(ChromiumProbe):
   Currently WIP
   """
   NAME = "tracing"
-  RESULT_LOCATION: ResultLocation = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.BROWSER
   CHROMIUM_FLAGS = ("--enable-perfetto",)
 
   HELP_URL = "https://bit.ly/chrome-about-tracing"
