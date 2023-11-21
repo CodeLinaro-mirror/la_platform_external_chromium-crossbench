@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import enum
 import inspect
 import logging
 import pathlib
@@ -36,6 +37,7 @@ class RunnerException(exception.MultiException):
   pass
 
 
+@enum.unique
 class ThreadMode(compat.StrEnumWithHelp):
   NONE = ("none", (
       "Execute all browser-sessions sequentially, default. "

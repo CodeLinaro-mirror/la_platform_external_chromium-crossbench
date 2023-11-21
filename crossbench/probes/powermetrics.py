@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import atexit
 import datetime as dt
+import enum
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
+@enum.unique
 class SamplerType(compat.StrEnumWithHelp):
   BATTERY = ("battery", "Battery level")
   CPU_POWER = ("cpu_power",

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import enum
 import json
 from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
+@enum.unique
 class MozProfilerStartupFeatures(compat.StrEnumWithHelp):
   """Options for MOZ_PROFILER_STARTUP_FEATURES env var.
     Extracted via MOZ_PROFILER_HELP=1 ./firefox-nightly-en/firefox

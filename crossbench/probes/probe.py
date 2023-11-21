@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import datetime as dt
+import enum
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, Set,
                     Tuple, Type, TypeVar, Union)
@@ -38,7 +39,8 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
     self._probe_cls: Type[ProbeT] = probe_cls
 
 
-class ResultLocation(compat.EnumWithHelp):
+@enum.unique
+class ResultLocation(compat.StrEnumWithHelp):
   LOCAL = ("local",
            "Probe always produces results on the runner's local platform.")
   BROWSER = ("browser",

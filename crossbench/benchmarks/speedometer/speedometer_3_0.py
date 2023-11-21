@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from crossbench import cli_helper, compat
@@ -23,6 +24,7 @@ class Speedometer30Probe(SpeedometerProbe):
   NAME: str = "speedometer_3.0"
 
 
+@enum.unique
 class MeasurementMethod(compat.StrEnumWithHelp):
   RAF = ("raf", "requestAnimationFrame-based measurement")
   TIMER = ("timer", "setTimeout-based measurement")

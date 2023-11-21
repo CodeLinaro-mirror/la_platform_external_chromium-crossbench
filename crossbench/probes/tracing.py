@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import enum
 import logging
 import pathlib
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple
@@ -96,6 +97,7 @@ TRACE_PRESETS: Dict[str, frozenset[str]] = {
 }
 
 
+@enum.unique
 class RecordMode(compat.StrEnumWithHelp):
   CONTINUOUSLY = ("record-continuously",
                   "Record until the trace buffer is full.")
@@ -109,6 +111,7 @@ class RecordMode(compat.StrEnumWithHelp):
                       "Echo to console. Events are discarded.")
 
 
+@enum.unique
 class RecordFormat(compat.StrEnumWithHelp):
   JSON = ("json", "Old about://tracing compatible file format.")
   PROTO = ("proto", "New https://ui.perfetto.dev/ compatible format")

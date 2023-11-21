@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import datetime as dt
+import enum
 import pathlib
 import unittest
 
@@ -225,15 +226,16 @@ class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(output.read_text(encoding="utf-8"), "AAABBB")
 
 
-class EnumWithHelpTestCase(unittest.TestCase):
+class StrEnumWithHelpTestCase(unittest.TestCase):
 
-  class TestEnum(compat.EnumWithHelp):
+  @enum.unique
+  class TestEnum(compat.StrEnumWithHelp):
     A = ("a", "help a")
     B = ("b", "help b")
 
   def test_lookup(self):
-    self.assertIs(self.TestEnum("a"), self.TestEnum.A)
-    self.assertIs(self.TestEnum("b"), self.TestEnum.B)
+    self.assertIs(self.TestEnum("a"), self.TestEnum.A)  # pytype: disable=wrong-arg-types
+    self.assertIs(self.TestEnum("b"), self.TestEnum.B)  # pytype: disable=wrong-arg-types
     self.assertIs(self.TestEnum["A"], self.TestEnum.A)
     self.assertIs(self.TestEnum["B"], self.TestEnum.B)
 
@@ -251,8 +253,8 @@ class EnumWithHelpTestCase(unittest.TestCase):
     self.assertIn(self.TestEnum.B, self.TestEnum)
 
   def test_str(self):
-    self.assertEqual(str(self.TestEnum.A), "TestEnum.A")
-    self.assertEqual(str(self.TestEnum.B), "TestEnum.B")
+    self.assertEqual(str(self.TestEnum.A), "a")
+    self.assertEqual(str(self.TestEnum.B), "b")
 
   def test_list(self):
     self.assertEqual(len(self.TestEnum), 2)
@@ -262,17 +264,6 @@ class EnumWithHelpTestCase(unittest.TestCase):
   def test_help_items(self):
     self.assertListEqual(self.TestEnum.help_text_items(), [("'a'", "help a"),
                                                            ("'b'", "help b")])
-
-
-class StrEnumWithHelpTestCase(EnumWithHelpTestCase):
-
-  class TestEnum(compat.StrEnumWithHelp):
-    A = ("a", "help a")
-    B = ("b", "help b")
-
-  def test_str(self):
-    self.assertEqual(str(self.TestEnum.A), "a")
-    self.assertEqual(str(self.TestEnum.B), "b")
 
 
 class UpdateUrlQueryTestCase(unittest.TestCase):

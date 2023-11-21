@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import enum
 import logging
 import pathlib
 import re
@@ -17,7 +18,8 @@ from crossbench import cli_helper, compat, plt
 from crossbench.config import ConfigObject, ConfigParser
 
 
-class BrowserDriverType(compat.EnumWithHelp):
+@enum.unique
+class BrowserDriverType(compat.StrEnumWithHelp):
   WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
   APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
   ANDROID = ("Android",

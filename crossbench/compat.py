@@ -9,7 +9,7 @@ import enum
 import pathlib
 import sys
 import textwrap
-from typing import List, Tuple
+from typing import List, Optional, Tuple, NamedTuple, cast
 
 import tabulate
 
@@ -37,26 +37,26 @@ else:
       return False
 
 
-class EnumWithHelp(enum.Enum):
+class StrHelpDataMixin(NamedTuple):
+  value: str
+  help: str
 
-  def __new__(cls, value, help_str: str = ""):
-    del help_str
-    obj = object.__new__(cls)
-    obj._value_ = value
-    return obj
 
-  def __init__(self, value, help_str: str = "") -> None:
-    del value
-    assert help_str, "Missing help_str"
-    self._help = help_str
+class StrEnumWithHelp(StrHelpDataMixin, enum.Enum):
 
-  @property
-  def help(self) -> str:
-    return self._help
+  @classmethod
+  def _missing_(cls, value) -> Optional[StrEnumWithHelp]:
+    value = str(value)
+    for member in cls:  # pytype: disable=missing-parameter
+      if member.value == value:
+        return member
+    return None
 
   @classmethod
   def help_text_items(cls) -> List[Tuple[str, str]]:
-    return [(repr(instance.value), instance.help) for instance in cls]
+    return [
+        (repr(instance.value), instance.help) for instance in cls  # pytype: disable=missing-parameter
+    ]
 
   @classmethod
   def help_text(cls, indent: int = 0) -> str:
@@ -65,8 +65,5 @@ class EnumWithHelp(enum.Enum):
       return textwrap.indent(text, " " * indent)
     return text
 
-
-class StrEnumWithHelp(EnumWithHelp):
-
   def __str__(self) -> str:
-    return str(self.value)
+    return cast(str, self.value)

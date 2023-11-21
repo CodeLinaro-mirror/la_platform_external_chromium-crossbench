@@ -154,7 +154,7 @@ class _ConfigArg:
 
   def _enum_help_text(self) -> List[Tuple[str, str]]:
     if self.type and hasattr(self.type, "help_text_items"):
-      # See compat.EnumWithHelp
+      # See compat.StrEnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
     assert self.choices
     return [self._choices_help_text(choice.value for choice in self.choices)]

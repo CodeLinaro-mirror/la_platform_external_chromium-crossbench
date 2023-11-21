@@ -7,6 +7,7 @@ from __future__ import annotations
 import atexit
 import csv
 import datetime as dt
+import enum
 import logging
 import pathlib
 import subprocess
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
+@enum.unique
 class SamplerType(compat.StrEnumWithHelp):
   MAIN_DISPLAY = ("main_display",
                   "Samples the backlight level of the main display.")

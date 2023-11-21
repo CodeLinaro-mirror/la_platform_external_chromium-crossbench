@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+import enum
 import logging
 import os
 import pathlib
@@ -109,6 +110,7 @@ class HostEnvironmentConfig:
     return HostEnvironmentConfig(**kwargs)
 
 
+@enum.unique
 class ValidationMode(compat.StrEnumWithHelp):
   THROW = ("throw", "Strict mode, throw and abort on env issues")
   PROMPT = ("prompt", "Prompt to accept potential env issues")

@@ -219,8 +219,14 @@ class TsProxyProcess:
                   "non blocking I/O for the ts_proxy process")
     assert proc and proc.stdout and proc.stdin, "Could not start ts_proxy"
     self._proc = proc
-    self._stdout: IO[str] = proc.stdout
-    self._stdin: IO[str] = proc.stdin
+    if stdout := proc.stdout:
+      self._stdout: IO[str] = stdout
+    else:
+      raise RuntimeError("Missing stdout")
+    if stdin := proc.stdin:
+      self._stdin: IO[str] = stdin
+    else:
+      raise RuntimeError("Missing stdin")
     fd = proc.stdout.fileno()
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)

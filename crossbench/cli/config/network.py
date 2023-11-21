@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 
 import dataclasses
+import enum
 import pathlib
 from typing import Any, Dict, Optional
 
@@ -14,6 +15,7 @@ from crossbench.config import ConfigObject, ConfigParser
 from crossbench.network import ts_proxy
 
 
+@enum.unique
 class NetworkType(compat.StrEnumWithHelp):
   LIVE = ("live", "Live network.")
   REPLAY = ("replay", "Replayed network from a wpr.go archive.")
@@ -27,6 +29,7 @@ def _settings_str(name: str) -> str:
           f"out={settings['out_kbps']} kbps")
 
 
+@enum.unique
 class NetworkSpeedPreset(compat.StrEnumWithHelp):
   """Presets that match ts_proxy settings."""
   LIVE = ("live", "Untroubled default network settings")
