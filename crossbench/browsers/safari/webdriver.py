@@ -14,14 +14,16 @@ from selenium.webdriver.safari.service import Service as SafariService
 
 from crossbench import exception, helper
 from crossbench.browsers.splash_screen import SplashScreen
-from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 from .safari import Safari, find_safaridriver
 
 if TYPE_CHECKING:
   from crossbench import plt
+  from crossbench.browsers.splash_screen import SplashScreen
+  from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
+  from crossbench.network.base import Network
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
@@ -36,12 +38,13 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "safari",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
       platform: Optional[plt.MacOSPlatform] = None):
-    super().__init__(label, path, flags, js_flags, cache_dir, type, driver_path,
-                     viewport, splash_screen, platform)
+    super().__init__(label, path, flags, js_flags, cache_dir, type, network,
+                     driver_path, viewport, splash_screen, platform)
     assert self.platform.is_macos
 
   def clear_cache(self, runner: Runner) -> None:

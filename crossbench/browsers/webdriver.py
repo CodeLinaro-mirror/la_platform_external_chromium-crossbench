@@ -28,8 +28,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
+  from crossbench.network.base import Network
   from crossbench.runner.groups import BrowserSessionRunGroup
-  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
 
@@ -64,12 +64,13 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "webdriver",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
       platform: Optional[plt.Platform] = None):
-    super().__init__(label, path, flags, js_flags, cache_dir, type, None,
-                     viewport, splash_screen, platform)
+    super().__init__(label, path, flags, js_flags, cache_dir, type, network,
+                     None, viewport, splash_screen, platform)
     self._driver_path = driver_path
 
   @property

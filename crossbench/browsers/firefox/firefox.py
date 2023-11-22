@@ -17,6 +17,7 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.flags import Flags
+  from crossbench.network.base import Network
   from crossbench.runner.groups import BrowserSessionRunGroup
 
 
@@ -54,6 +55,7 @@ class Firefox(Browser):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "firefox",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
@@ -71,6 +73,7 @@ class Firefox(Browser):
         flags,
         js_flags=None,
         type=type,
+        network=network,
         driver_path=driver_path,
         viewport=viewport,
         splash_screen=splash_screen,

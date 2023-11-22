@@ -33,6 +33,7 @@ from .chromium import Chromium
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
+  from crossbench.network.base import Network
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict, JsonList
   from crossbench.runner.groups import BrowserSessionRunGroup
@@ -51,12 +52,13 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "chromium",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
       platform: Optional[plt.Platform] = None):
-    super().__init__(label, path, flags, js_flags, cache_dir, type, driver_path,
-                     viewport, splash_screen, platform)
+    super().__init__(label, path, flags, js_flags, cache_dir, type, network,
+                     driver_path, viewport, splash_screen, platform)
 
   def use_local_chromedriver(self) -> bool:
     return self.major_version == 0 or self.is_locally_compiled()

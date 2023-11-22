@@ -27,6 +27,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
+  from crossbench.network.base import Network
 
 
 class ChromeWebDriver(ChromiumWebDriver):
@@ -42,6 +43,7 @@ class ChromeWebDriver(ChromiumWebDriver):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "chrome",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
@@ -53,6 +55,7 @@ class ChromeWebDriver(ChromiumWebDriver):
         js_flags,
         cache_dir,
         type=type,
+        network=network,
         driver_path=driver_path,
         viewport=viewport,
         splash_screen=splash_screen,

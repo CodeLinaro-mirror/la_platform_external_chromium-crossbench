@@ -5,20 +5,39 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import copy
 import pathlib
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, cast
+from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
+                    cast)
 
-from crossbench import helper, plt
+from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.browser import Browser
 from crossbench.flags import ChromeFlags, Flags, JSFlags
+from crossbench.network.base import Network
 
 if TYPE_CHECKING:
   import datetime as dt
 
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
+
+
+class MockNetwork(Network):
+
+  def __init__(self, *args, **kwargs):  # pylint: disable=super-init-not-called
+    del args, kwargs
+    self.is_running = False
+
+  @contextlib.contextmanager
+  def open(self, browser: Browser) -> Iterator[Network]:
+    assert not self.is_running
+    assert browser.network is self
+    self.is_running = True
+    yield self
+    assert self.is_running
+    self.is_running = False
 
 
 class MockBrowser(Browser, metaclass=abc.ABCMeta):

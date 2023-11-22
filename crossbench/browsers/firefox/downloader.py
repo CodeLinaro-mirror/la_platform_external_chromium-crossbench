@@ -8,10 +8,12 @@ import abc
 import pathlib
 import re
 import urllib.parse
-from typing import Dict, Final, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Dict, Final, Optional, Tuple, Type, Union
 
 from crossbench.browsers.downloader import DMGArchiveHelper, Downloader
-from crossbench import plt
+
+if TYPE_CHECKING:
+  from crossbench import plt
 
 _PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
     ("win", "ia32"): "win32",
@@ -178,4 +180,4 @@ class FirefoxDownloaderWin(FirefoxDownloader):
     return False
 
   def _extract_archive(self, archive_path: pathlib.Path) -> None:
-    raise NotImplementedError("Missing windows supoprt")
+    raise NotImplementedError("Missing windows support")

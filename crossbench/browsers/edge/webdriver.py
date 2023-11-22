@@ -18,19 +18,20 @@ from selenium.webdriver.edge.service import Service as EdgeService
 
 import crossbench
 import crossbench.exception
-import crossbench.flags
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
-from crossbench.browsers.splash_screen import SplashScreen
-from crossbench.browsers.viewport import Viewport
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
+  import crossbench.flags
   import crossbench.runner
   from crossbench import plt
+  from crossbench.browsers.splash_screen import SplashScreen
+  from crossbench.browsers.viewport import Viewport
+  from crossbench.network.base import Network
 
-FlagsInitialDataType = crossbench.flags.Flags.InitialDataType
+  FlagsInitialDataType = crossbench.flags.Flags.InitialDataType
 
 
 class EdgeWebDriver(ChromiumWebDriver):
@@ -46,6 +47,7 @@ class EdgeWebDriver(ChromiumWebDriver):
       js_flags: FlagsInitialDataType = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "edge",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
@@ -57,6 +59,7 @@ class EdgeWebDriver(ChromiumWebDriver):
         js_flags,
         cache_dir,
         type=type,
+        network=network,
         driver_path=driver_path,
         viewport=viewport,
         splash_screen=splash_screen,

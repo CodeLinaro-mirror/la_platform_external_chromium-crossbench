@@ -9,7 +9,7 @@ import enum
 import logging
 from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
-from crossbench import compat, helper
+from crossbench import helper
 from crossbench.flags import Flags, JSFlags
 from crossbench.probes.results import EmptyProbeResult
 
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
+  from crossbench.network.base import Network
   from crossbench.runner.runner import Runner
   from crossbench.runner.timing import Timing
   from crossbench.types import JsonDict
@@ -54,6 +55,7 @@ class BrowserSessionRunGroup(RunGroup):
     self._runner = runner
     self._durations = helper.Durations()
     self._browser = browser
+    self._network: Network = browser.network
     self._index = index
     self._runs: List[Run] = []
     self._root_dir: pathlib.Path = root_dir
@@ -112,6 +114,10 @@ class BrowserSessionRunGroup(RunGroup):
   @property
   def runner(self) -> Runner:
     return self._runner
+
+  @property
+  def network(self) -> Network:
+    return self._network
 
   @property
   def browser(self) -> Browser:

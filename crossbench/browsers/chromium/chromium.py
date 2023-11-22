@@ -19,9 +19,11 @@ from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
 from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
-  from crossbench.runner.runner import Runner
+  from crossbench.network.base import Network
   from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.runner import Runner
 
 
 class Chromium(Browser):
@@ -73,6 +75,7 @@ class Chromium(Browser):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: str = "chromium",  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
@@ -82,6 +85,7 @@ class Chromium(Browser):
         path,
         flags=None,
         type=type,
+        network=network,
         driver_path=driver_path,
         viewport=viewport,
         splash_screen=splash_screen,

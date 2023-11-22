@@ -129,6 +129,7 @@ class MockBrowser:
   def __init__(self, unique_name: str, platform) -> None:
     self.unique_name = unique_name
     self.platform = platform
+    self.network = MockNetwork()
 
   def __str__(self):
     return self.unique_name
@@ -159,6 +160,9 @@ class MockPlatform:
 class MockRunner:
   pass
 
+
+class MockNetwork:
+  pass
 
 # Skip strict type checks for better mocking
 # pytype: disable=wrong-arg-types

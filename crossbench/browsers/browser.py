@@ -14,6 +14,8 @@ from ordered_set import OrderedSet
 
 from crossbench import plt
 from crossbench.flags import Flags
+from crossbench.network.base import Network
+from crossbench.network.live import LiveNetwork
 
 from .splash_screen import SplashScreen
 from .viewport import Viewport
@@ -42,6 +44,7 @@ class Browser(abc.ABC):
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
       type: Optional[str] = None,  # pylint: disable=redefined-builtin
+      network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
@@ -70,8 +73,9 @@ class Browser(abc.ABC):
       # binary path.
       self.path = pathlib.Path()
       self.unique_name = f"{self.type}_{self.label}".lower()
-    self._viewport = viewport or Viewport.DEFAULT
-    self._splash_screen = splash_screen or SplashScreen.DEFAULT
+    self._network: Network = network or LiveNetwork()
+    self._viewport: Viewport = viewport or Viewport.DEFAULT
+    self._splash_screen: SplashScreen = splash_screen or SplashScreen.DEFAULT
     self._is_running: bool = False
     self.cache_dir: Optional[pathlib.Path] = cache_dir
     self.clear_cache_dir: bool = True
@@ -94,6 +98,10 @@ class Browser(abc.ABC):
     assert name
     # Replace any potentially unsafe chars in the name
     self._unique_name = plt.safe_filename(name).lower()
+
+  @property
+  def network(self) -> Network:
+    return self._network
 
   @property
   def splash_screen(self) -> SplashScreen:
