@@ -104,9 +104,13 @@ class BrowserSessionRunGroup(RunGroup):
   def is_single_run(self) -> bool:
     return len(self._runs) == 1
 
+  @property
+  def first_run(self) -> Run:
+    return self._runs[0]
+
   def _get_session_dir(self) -> pathlib.Path:
     if self.is_single_run:
-      return self._runs[0].out_dir
+      return self.first_run.out_dir
     if not self._runs:
       raise ValueError("Cannot have empty browser session")
     return self.raw_sessions_dir
@@ -169,7 +173,7 @@ class BrowserSessionRunGroup(RunGroup):
 
   def setup_selenium_options(self, options: ArgOptions):
     # Using only the first run, since all runs need to have the same probes.
-    for probe_context in self._runs[0].probe_contexts:
+    for probe_context in self.first_run.probe_contexts:
       probe_context.setup_selenium_options(options)
 
   @property
@@ -278,7 +282,7 @@ class BrowserSessionRunGroup(RunGroup):
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:
-    return self._runs[0] is run
+    return self.first_run is run
 
   # TODO: remove once cleanly implemented
   def is_last_run(self, run: Run) -> bool:

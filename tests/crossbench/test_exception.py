@@ -40,6 +40,20 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertTupleEqual(entry.info_stack, ("BBB", "AAA", "000"))
     self.assertIsInstance(entry.exception, ValueError)
 
+  def test_annotate_collecting(self):
+    annotator = ExceptionAnnotator()
+    with self.assertRaises(MultiException) as cm:
+      with annotator.annotate("AAA"):
+        with annotator.annotate("000"):
+          raise ValueError("an exception")
+    exception: MultiException = cm.exception
+    self.assertIsInstance(exception, MultiException)
+    self.assertFalse(annotator.is_success)
+    self.assertTrue(len(annotator.exceptions), 1)
+    entry: Entry = annotator.exceptions[0]
+    self.assertTupleEqual(entry.info_stack, ("AAA", "000"))
+    self.assertIsInstance(entry.exception, ValueError)
+
   def test_empty(self):
     annotator = ExceptionAnnotator()
     self.assertTrue(annotator.is_success)

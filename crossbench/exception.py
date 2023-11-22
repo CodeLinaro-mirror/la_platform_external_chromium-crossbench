@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 import argparse
+import contextlib
 
 import logging
 import sys
@@ -176,6 +177,16 @@ class ExceptionAnnotator:
     return ExceptionAnnotationScope(self, exceptions, ignore, stack_entries,
                                     self._throw_cls)
 
+  @contextlib.contextmanager
+  def annotate(self,
+               *stack_entries,
+               exceptions: TExceptionTypes = (Exception,),
+               ignore: TExceptionTypes = tuple()):
+    """Sets info stack entries and rethrows an annotated MultiException by default ."""
+    with self.capture(*stack_entries, exceptions=exceptions, ignore=ignore):
+      yield self
+    self.assert_success()
+
   def extend(self, annotator: ExceptionAnnotator,
              is_nested: bool = False) -> None:
     if is_nested:
@@ -277,7 +288,7 @@ def annotate(
     ignore: TExceptionTypes = tuple(),
     throw_cls: Optional[Type[BaseException]] = MultiException
 ) -> ExceptionAnnotationScope:
-  """Use to annotate an exception.UserWarning.
+  """Use to annotate an exception.
   By default this will throw a MultiException which can keep track of 
   more annotations."""
   return ExceptionAnnotator(throw_cls=throw_cls).capture(

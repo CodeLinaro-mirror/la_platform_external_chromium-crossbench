@@ -319,8 +319,7 @@ class Run:
         self.browser_session.path.relative_to(self.out_dir.parents[3]))
     session_run_dir.symlink_to(relative_session_dir)
 
-  def _setup_probes(self, is_dry_run: bool) -> List[ProbeContext[Any]]:
-    assert self._state == RunState.SETUP
+  def _log_setup(self) -> None:
     logging.debug("SETUP")
     logging.info("PROBES: %s", ", ".join(probe.NAME for probe in self.probes))
     logging.info("STORY: %s", self.story)
@@ -330,6 +329,9 @@ class Run:
     logging.info("RUN DIR: %s", self._out_dir)
     logging.debug("CWD %s", self._out_dir)
 
+  def _setup_probes(self, is_dry_run: bool) -> List[ProbeContext[Any]]:
+    assert self._state == RunState.SETUP
+    self._log_setup()
     if is_dry_run:
       return []
 

@@ -158,7 +158,9 @@ class MockPlatform:
 
 
 class MockRunner:
-  pass
+
+  def __init__(self) -> None:
+    self.runs = tuple()
 
 
 class MockNetwork:
@@ -221,6 +223,7 @@ class TestThreadModeTestCase(unittest.TestCase):
                 self.runner, self.browser_b_2, 8, self.root_dir, throw=True),
             "run 8"),
     )
+    self.runner.runs = self.runs
 
   def test_group_none(self):
     groups = ThreadMode.NONE.group(self.runs)

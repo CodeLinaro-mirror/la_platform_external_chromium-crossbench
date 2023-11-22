@@ -319,8 +319,11 @@ class Runner:
 
   def run(self, is_dry_run: bool = False) -> None:
     with helper.SystemSleepPreventer():
-      self._setup()
-      self._run(is_dry_run)
+      with self._exceptions.annotate("Preparing"):
+        self._setup()
+      with self._exceptions.annotate("Running"):
+        self._run(is_dry_run)
+
     if self._exceptions.throw:
       # Ensure that we bail out on the first exception.
       self.assert_successful_runs()
@@ -342,17 +345,15 @@ class Runner:
                                     f"unique_name={browser.unique_name}"):
         browser.setup_binary(self)  # pytype: disable=wrong-arg-types
     self._exceptions.assert_success()
-    with self._exceptions.capture("Preparing Runs"):
+    with self._exceptions.annotate("Preparing Runs"):
       self._runs = list(self.get_runs())
       assert self._runs, f"{type(self)}.get_runs() produced no runs"
       logging.info("DISCOVERED %d RUN(S)", len(self._runs))
-    self._exceptions.assert_success()
     with self._exceptions.capture("Preparing Environment"):
       self._env.setup()
-    with self._exceptions.capture(
+    with self._exceptions.annotate(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)  # pytype:  disable=wrong-arg-types
-    self._exceptions.assert_success()
 
   def get_runs(self) -> Iterable[Run]:
     index = 0
@@ -394,16 +395,25 @@ class Runner:
     return self._thread_mode.group(self._runs)
 
   def _run(self, is_dry_run: bool = False) -> None:
-    thread_groups: List[RunThreadGroup] = self._get_thread_groups()
-    if len(thread_groups) == 1:
+    thread_groups: List[RunThreadGroup] = []
+    with self._exceptions.info("Creating thread groups for all Runs"):
+      thread_groups = self._get_thread_groups()
+
+    group_count = len(thread_groups)
+    if group_count == 1:
       # Special case single thread groups
-      thread_groups[0].run()
-      return
-    for thread_group in thread_groups:
-      thread_group.is_dry_run = is_dry_run
-      thread_group.start()
-    for thread_group in thread_groups:
-      thread_group.join()
+      with self._exceptions.annotate("Running single thread group"):
+        thread_groups[0].run()
+        return
+
+    with self._exceptions.annotate(f"Starting {group_count} thread groups."):
+      for thread_group in thread_groups:
+        thread_group.is_dry_run = is_dry_run
+        thread_group.start()
+    with self._exceptions.annotate(
+        "Waiting for all thread groups to complete."):
+      for thread_group in thread_groups:
+        thread_group.join()
 
   def _tear_down(self) -> None:
     logging.info("=" * 80)
