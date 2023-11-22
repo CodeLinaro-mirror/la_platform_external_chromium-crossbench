@@ -124,6 +124,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     else:
       self.sh("rm", path)
 
+  def touch(self, path: Union[str, pathlib.Path]) -> None:
+    if not self.is_remote:
+      super().touch(path)
+    else:
+      self.sh("touch", path)
+
   def mkdir(self, path: Union[str, pathlib.Path]) -> None:
     if not self.is_remote:
       super().mkdir(path)

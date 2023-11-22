@@ -348,6 +348,10 @@ class Platform(abc.ABC):
     else:
       pathlib.Path(path).unlink()
 
+  def touch(self, path: Union[str, pathlib.Path]) -> None:
+    assert self.is_local, "Unsupported operation on remote platform"
+    pathlib.Path(path).touch(exist_ok=True)
+
   def mkdir(self, path: Union[str, pathlib.Path]) -> None:
     assert self.is_local, "Unsupported operation on remote platform"
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)

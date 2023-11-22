@@ -17,11 +17,13 @@ import hjson
 import crossbench
 import crossbench.env
 import crossbench.runner
-from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter, PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
+                                                             PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, InteractivePage,
                                                 LivePage)
-from crossbench.benchmarks.loading.page_config import PageConfig
+from crossbench.benchmarks.loading.page_config import (
+    DevToolsRecorderPageConfig, PageConfig)
 from crossbench.benchmarks.loading.playback_controller import (
     PlaybackController, RepeatPlaybackController, TimeoutPlaybackController)
 from crossbench.runner.runner import Runner
@@ -91,6 +93,7 @@ class PlaybackControllerTest(unittest.TestCase):
     self.assertIsInstance(playback, TimeoutPlaybackController)
     assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
+
 
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
@@ -426,6 +429,70 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
                 ]
             }
         })
+
+
+DEVTOOLS_RECORDER_EXAMPLE = {
+    "title":
+        "cnn load",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 1628,
+            "height": 397,
+            "deviceScaleFactor": 1,
+            "isMobile": False,
+            "hasTouch": False,
+            "isLandscape": False
+        },
+        {
+            "type":
+                "navigate",
+            "url":
+                "https://edition.cnn.com/",
+            "assertedEvents": [{
+                "type": "navigation",
+                "url": "https://edition.cnn.com/",
+                "title": ""
+            }]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                ["aria/Opinion"],
+                [
+                    "#pageHeader > div > div > div.header__container div:nth-of-type(5) > a"
+                ],
+                [
+                    "xpath///*[@id=\"pageHeader\"]/div/div/div[1]/div[1]/nav/div/div[5]/a"
+                ],
+                [
+                    "pierce/#pageHeader > div > div > div.header__container div:nth-of-type(5) > a"
+                ]
+            ],
+            "offsetY": 17,
+            "offsetX": 22.515625
+        },
+    ]
+}
+
+
+class DevToolsRecorderPageConfigTestCase(unittest.TestCase):
+
+  def test_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      DevToolsRecorderPageConfig().load_dict({})
+    self.assertIn("empty", str(cm.exception))
+
+  def test_missing_title(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      DevToolsRecorderPageConfig().load_dict({"foo": {}})
+    self.assertIn("title", str(cm.exception))
+
+  def test_basic(self):
+    config = DevToolsRecorderPageConfig()
+    config.load_dict(DEVTOOLS_RECORDER_EXAMPLE)
+    self.assertEqual(len(config.stories), 1)
 
 
 if __name__ == "__main__":

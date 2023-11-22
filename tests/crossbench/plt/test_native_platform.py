@@ -145,6 +145,20 @@ class PlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(tmp_dir))
       self.assertFalse(self.platform.exists(tmp_dir / "foo"))
 
+  def test_set_filecontents(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.mkdir(tmp_file.parent)
+      self.platform.touch(tmp_file)
+      self.assertFalse(self.platform.cat(tmp_file))
+
+      self.platform.set_filecontents(tmp_file, "custom data")
+      self.assertTrue(self.platform.exists(tmp_file))
+      self.assertEqual(self.platform.cat(tmp_file), "custom data")
+
   def test_path_tests(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       tmp_dir = pathlib.Path(tmp_dirname)
@@ -156,7 +170,7 @@ class PlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(foo_dir))
       self.assertFalse(self.platform.is_dir(foo_dir))
       self.assertFalse(self.platform.is_file(foo_dir))
-      foo_dir.mkdir()
+      self.platform.mkdir(foo_dir)
       self.assertTrue(self.platform.exists(foo_dir))
       self.assertTrue(self.platform.is_dir(foo_dir))
       self.assertFalse(self.platform.is_file(foo_dir))
@@ -165,7 +179,7 @@ class PlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(bar_file))
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertFalse(self.platform.is_file(bar_file))
-      bar_file.touch()
+      self.platform.touch(bar_file)
       self.assertTrue(self.platform.exists(bar_file))
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
