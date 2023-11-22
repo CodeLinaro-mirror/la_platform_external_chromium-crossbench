@@ -312,6 +312,9 @@ class Run:
     session_run_dir = self._out_dir / "session"
     assert not session_run_dir.exists(), (
         f"Cannot setup session dir twice: {session_run_dir}")
+    if self.runner_platform.is_win:
+      logging.debug("Skipping session_dir symlink on windows.")
+      return
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
     # Target: BROWSER / "sessions" / SESSION
     relative_session_dir = (

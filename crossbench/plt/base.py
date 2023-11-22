@@ -348,6 +348,15 @@ class Platform(abc.ABC):
     else:
       pathlib.Path(path).unlink()
 
+  def symlink_or_copy(self, src: pathlib.Path,
+                      dst: pathlib.Path) -> pathlib.Path:
+    """Windows does not support symlinking without admin support.
+    Copy files on windows but symlink everywhere else."""
+    assert self.is_local, "Unsupported operation on remote platform"
+    assert not self.is_win, "Unsupported operation on windows"
+    dst.symlink_to(src)
+    return dst
+
   def touch(self, path: Union[str, pathlib.Path]) -> None:
     assert self.is_local, "Unsupported operation on remote platform"
     pathlib.Path(path).touch(exist_ok=True)

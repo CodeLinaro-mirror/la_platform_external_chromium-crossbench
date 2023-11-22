@@ -18,7 +18,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 from tabulate import tabulate
 
 import crossbench.benchmarks.all as benchmarks
-from crossbench import cli_helper, helper
+from crossbench import cli_helper, helper, plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
@@ -747,9 +747,15 @@ class CrossBenchCLI:
       self._log_results(args, runner, is_success=False)
       raise
     finally:
-      if not args.out_dir and runner.out_dir.exists():
-        self._update_default_results_symlinks(runner)
-        self._create_runs_results_symlinks(runner)
+      self._update_symlinks(args, runner)
+
+  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
+    if plt.PLATFORM.is_win:
+      logging.debug("Skipping session_dir symlink on windows.")
+      return
+    if not args.out_dir and runner.out_dir.exists():
+      self._update_default_results_symlinks(runner)
+      self._create_runs_results_symlinks(runner)
 
   def _update_default_results_symlinks(self, runner: Runner) -> None:
     results_root = runner.out_dir.parent

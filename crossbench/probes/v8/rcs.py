@@ -75,8 +75,7 @@ class V8RCSProbe(ChromiumProbe):
         continue
       dest_file = (
           merged_result_path / f"{story_group.browser.unique_name}.rcs.txt")
-      logging.debug("Symlinking result %s => %s", story_group_file, dest_file)
-      dest_file.symlink_to(story_group_file)
+      self.runner_platform.symlink_or_copy(story_group_file, dest_file)
       files.append(dest_file)
     return LocalProbeResult(file=files)
 

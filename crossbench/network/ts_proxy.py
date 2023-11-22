@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import atexit
-import fcntl
+
 import locale
 import logging
 import os
@@ -18,6 +18,12 @@ import signal
 import subprocess
 import sys
 from typing import IO, List, Optional, Union
+
+fnctl = None
+try:
+  import fcntl
+except ModuleNotFoundError as e:
+  logging.debug("No fcntl support %s", e)
 
 from crossbench import cli_helper, helper
 
@@ -215,8 +221,6 @@ class TsProxyProcess:
         stderr=subprocess.PIPE,
         bufsize=1,
         universal_newlines=True)
-    logging.debug("TsProxy: fcntl is supported, trying to set "
-                  "non blocking I/O for the ts_proxy process")
     assert proc and proc.stdout and proc.stdin, "Could not start ts_proxy"
     self._proc = proc
     if stdout := proc.stdout:
@@ -227,10 +231,16 @@ class TsProxyProcess:
       self._stdin: IO[str] = stdin
     else:
       raise RuntimeError("Missing stdin")
-    fd = proc.stdout.fileno()
-    fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+    if fcntl:
+      self._setup_non_blocking_io()
     self._wait_for_startup(timeout)
+
+  def _setup_non_blocking_io(self) -> None:
+    logging.debug("TsProxy: fcntl is supported, trying to set "
+                  "non blocking I/O for the ts_proxy process")
+    fd = self._stdout.fileno()
+    fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)  # pylint: disable=no-member
 
   @property
   def socks_proxy_port(self) -> int:

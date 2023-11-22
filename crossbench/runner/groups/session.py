@@ -120,6 +120,9 @@ class BrowserSessionRunGroup(RunGroup):
     return self._runner
 
   @property
+  def runner_platform(self) -> plt.Platform:
+    return self.runner.platform
+  
   def network(self) -> Network:
     return self._network
 
@@ -232,6 +235,9 @@ class BrowserSessionRunGroup(RunGroup):
 
   def _setup_session_dir(self):
     self.path.mkdir(parents=True, exist_ok=True)
+    if self.runner_platform.is_win:
+      logging.debug("Skipping session_dir symlink on windows.")
+      return
     if self.is_single_run:
       # If there is a single run per session we reuse the run-dir.
       self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
