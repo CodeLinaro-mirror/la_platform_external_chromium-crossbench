@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import atexit
+import contextlib
 import datetime as dt
 import logging
 import os
@@ -20,8 +21,7 @@ import urllib.parse as urlparse
 import urllib.request
 from subprocess import Popen, TimeoutExpired
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
-                    Iterator, List, Optional, Sequence, Tuple, Type, TypeVar,
-                    Union)
+                    Iterator, List, Optional, Tuple, Type, TypeVar, Union)
 
 from colorama import init, Fore, Style
 
@@ -29,7 +29,6 @@ from crossbench import plt
 
 if TYPE_CHECKING:
   import signal
-
 
 init()
 
@@ -418,6 +417,12 @@ class RepeatTimer(threading.Timer):
   def run(self):
     while not self.finished.wait(self.interval):
       self.function(*self.args, **self.kwargs)
+
+  def __enter__(self, *args, **kwargs):
+    self.start()
+
+  def __exit__(self, *args, **kwargs):
+    self.cancel()
 
 
 def input_with_timeout(timeout=dt.timedelta(seconds=10), default=None):

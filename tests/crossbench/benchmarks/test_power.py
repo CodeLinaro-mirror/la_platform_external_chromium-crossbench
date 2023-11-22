@@ -10,6 +10,8 @@ import unittest
 import hjson
 
 from crossbench.benchmarks.loading.page_config import PageConfig
+from tests import run_helper
+
 
 class TestExamplePageConfig(unittest.TestCase):
 
@@ -20,18 +22,22 @@ class TestExamplePageConfig(unittest.TestCase):
       'meet_story.hjson',
       'netflix_story.hjson'
     ]:
-        config_file = pathlib.Path(
-            __file__).parents[3] / "crossbench" / "benchmarks" \
-              / "experimental" / "power" / config_file_name
-        with config_file.open(encoding="utf-8") as f:
-            file_config = PageConfig()
-            file_config.load(f)
-        with config_file.open(encoding="utf-8") as f:
-            data = hjson.load(f)
-        dict_config = PageConfig()
-        dict_config.load_dict(data)
-        self.assertTrue(dict_config.stories)
-        self.assertTrue(file_config.stories)
-        for story in dict_config.stories:
-            json_data = story.details_json()
-            self.assertIn("actions", json_data)
+      config_file = pathlib.Path(
+          __file__).parents[3] / "crossbench" / "benchmarks" \
+            / "experimental" / "power" / config_file_name
+      with config_file.open(encoding="utf-8") as f:
+        file_config = PageConfig()
+        file_config.load(f)
+      with config_file.open(encoding="utf-8") as f:
+        data = hjson.load(f)
+      dict_config = PageConfig()
+      dict_config.load_dict(data)
+      self.assertTrue(dict_config.stories)
+      self.assertTrue(file_config.stories)
+      for story in dict_config.stories:
+        json_data = story.details_json()
+        self.assertIn("actions", json_data)
+
+
+if __name__ == "__main__":
+  run_helper.run_pytest(__file__)

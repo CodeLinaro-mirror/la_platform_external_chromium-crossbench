@@ -8,6 +8,7 @@ import datetime as dt
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter
 from crossbench.runner.run import Run
 from crossbench.stories.press_benchmark import PressBenchmarkStory
+from tests import run_helper
 
 
 class MockStory(PressBenchmarkStory):
@@ -70,3 +71,7 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
     self.assertEqual(len(stories), 1)
     story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)
+
+
+if __name__ == "__main__":
+  run_helper.run_pytest(__file__)

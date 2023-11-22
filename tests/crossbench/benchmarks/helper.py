@@ -26,14 +26,6 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         issubclass(self.benchmark_cls, benchmark.Benchmark),
         f"Expected Benchmark subclass, but got: BENCHMARK={self.benchmark_cls}")
 
-  def test_instantiate_no_stories(self):
-    with self.assertRaises(AssertionError):
-      self.benchmark_cls(stories=[])
-    with self.assertRaises(AssertionError):
-      self.benchmark_cls(stories="")
-    with self.assertRaises(AssertionError):
-      self.benchmark_cls(stories=["", ""])
-
   def test_describe(self):
     self.assertIsInstance(self.benchmark_cls.describe(), dict)
 
@@ -51,6 +43,13 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
         patterns=patterns,
         **kwargs)
 
+  def test_instantiate_no_stories(self):
+    with self.assertRaises(AssertionError):
+      self.benchmark_cls(stories=[])
+    with self.assertRaises(AssertionError):
+      self.benchmark_cls(stories="")
+    with self.assertRaises(AssertionError):
+      self.benchmark_cls(stories=["", ""])
 
   def test_stories_creation(self):
     for name in self.story_cls.all_story_names():

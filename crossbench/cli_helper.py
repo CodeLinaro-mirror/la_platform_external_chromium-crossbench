@@ -16,9 +16,11 @@ import sys
 from typing import Any, Iterator, List, NoReturn, Optional, Union
 from urllib.parse import urlparse
 
+import colorama
+
 import hjson
 
-from crossbench import plt
+from crossbench import helper, plt
 
 
 def parse_path(value: Union[str, pathlib.Path],
@@ -480,3 +482,16 @@ class Duration:
       # If no time unit provided we assume it is in seconds.
       return dt.timedelta(seconds=time_value)
     return cls._to_timedelta(time_value, time_unit)
+
+
+@contextlib.contextmanager
+def timer(msg: str = "Elapsed Time"):
+  _start_time = dt.datetime.now()
+
+  def print_timer():
+    delta = dt.datetime.now() - _start_time
+    indent = colorama.Cursor.FORWARD() * 3
+    sys.stdout.write(f"{indent}{msg}: {delta}\r")
+
+  with helper.RepeatTimer(interval=0.25, function=print_timer):
+    yield
