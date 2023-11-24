@@ -7,9 +7,14 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import enum
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+import logging
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
+                    Type)
 
-from crossbench import cli_helper, compat
+from crossbench import cli_helper, compat, helper
+
+if TYPE_CHECKING:
+  from crossbench.runner.run import Run
 
 from .speedometer import (ProbeClsTupleT, SpeedometerBenchmark,
                           SpeedometerBenchmarkStoryFilter, SpeedometerProbe,
@@ -103,6 +108,15 @@ class Speedometer30Story(SpeedometerStory):
     if self.measurement_method != MeasurementMethod.RAF:
       url_params["measurementMethod"] = str(self.measurement_method)
     return url_params
+
+  def log_run_test_url(self, run: Run) -> None:
+    del run
+    params = self.url_params
+    params["suites"] = ",".join(self.substories)
+    params["developerMode"] = "true"
+    params["startAutomatically"] = "true"
+    official_test_url = helper.update_url_query(self.URL, params)
+    logging.info("STORY PUBLIC TEST URL: %s", official_test_url)
 
 
 class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):

@@ -325,10 +325,7 @@ class Run:
   def _log_setup(self) -> None:
     logging.debug("SETUP")
     logging.info("PROBES: %s", ", ".join(probe.NAME for probe in self.probes))
-    logging.info("STORY: %s", self.story)
-    logging.info("STORY DURATION: expected=%s timeout=%s",
-                 self.timing.timedelta(self.story.duration),
-                 self.timing.timeout_timedelta(self.story.duration))
+    self.story.log_run_details(self)
     logging.info("RUN DIR: %s", self._out_dir)
     logging.debug("CWD %s", self._out_dir)
 
