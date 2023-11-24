@@ -195,7 +195,7 @@ class Downloader(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def _archive_url(self, folder_url: str, version_str: str) -> str:
+  def _archive_urls(self, folder_url: str, version_str: str) -> Tuple[str, ...]:
     pass
 
   def _version_matches(self, version: Tuple[int, ...]) -> bool:
@@ -237,7 +237,7 @@ class ArchiveHelper(abc.ABC):
     pass
 
 
-class RPMArchiveHelper():
+class RPMArchiveHelper(ArchiveHelper):
 
   @classmethod
   def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
