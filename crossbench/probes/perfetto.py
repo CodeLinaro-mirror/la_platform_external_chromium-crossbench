@@ -13,7 +13,7 @@ from crossbench import helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ResultLocation)
-from crossbench.probes.results import ProbeResult
+from crossbench.probes.results import (ProbeResult, LocalProbeResult)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -149,10 +149,15 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe]):
     self._pid = None
 
   def tear_down(self) -> ProbeResult:
-    browser_trace_file = self.run.browser_tmp_dir / self._browser_trace_file.name
-    self.browser_platform.sh("mv", self._browser_trace_file, browser_trace_file)
-    self.browser_platform.sh("gzip", browser_trace_file)
+    browser_trace_file = self.run.out_dir / self._browser_trace_file.name
+    
+    assert isinstance(self.browser_platform, AndroidAdbPlatform)
+    cast(AndroidAdbPlatform,
+         self.browser_platform).rsync(self._browser_trace_file,
+                                      browser_trace_file)
+
+    self.runner_platform.sh("gzip", browser_trace_file)
     browser_trace_file = (
         browser_trace_file.parent / f"{browser_trace_file.name}.gz")
 
-    return self.browser_result(file=[browser_trace_file])
+    return LocalProbeResult(file=[browser_trace_file])
