@@ -122,7 +122,7 @@ class BrowserSessionRunGroup(RunGroup):
   @property
   def runner_platform(self) -> plt.Platform:
     return self.runner.platform
-  
+
   def network(self) -> Network:
     return self._network
 
@@ -271,7 +271,7 @@ class BrowserSessionRunGroup(RunGroup):
         raise
 
   def _teardown(self, is_dry_run: bool) -> None:
-    assert self._state == _State.RUNNING
+    assert self._state == _State.RUNNING or self._state == _State.STARTING
     self._state = _State.STOPPING
     if is_dry_run:
       return
