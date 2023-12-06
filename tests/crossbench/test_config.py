@@ -9,6 +9,7 @@ import dataclasses
 import json
 import pathlib
 from typing import Any, Dict, List, Optional
+import unittest
 from frozendict import frozendict
 
 from crossbench import cli_helper
@@ -62,11 +63,34 @@ class CustomConfigObject(ConfigObject):
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomConfigObject]:
     parser = ConfigParser("CustomConfigObject parser", cls)
-    parser.add_argument("name", type=str, required=True)
+    parser.add_argument(
+        "name", aliases=("name_alias", "name_alias2"), type=str, required=True)
     parser.add_argument("array", type=list)
     parser.add_argument("integer", type=cli_helper.parse_positive_int)
     parser.add_argument("nested", type=CustomNestedConfigObject)
     return parser
+
+
+class ConfigParserTestCase(unittest.TestCase):
+
+  def setUp(self):
+    super().setUp()
+    self.parser = ConfigParser("ConfigParserTestCase parser",
+                               CustomConfigObject)
+
+  def test_invalid_alias(self):
+    with self.assertRaises(ValueError):
+      self.parser.add_argument("foo", aliases=("foo",), type=str)
+    with self.assertRaises(ValueError):
+      self.parser.add_argument(
+          "foo", aliases=("foo_alias", "foo_alias"), type=str)
+
+  def test_duplicate(self):
+    self.parser.add_argument("foo", type=str)
+    with self.assertRaises(ValueError):
+      self.parser.add_argument("foo", type=str)
+    with self.assertRaises(ValueError):
+      self.parser.add_argument("foo2", aliases=("foo",), type=str)
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
@@ -81,6 +105,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       CustomConfigObject.parse({})
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({"name": "foo", "array": 1})
+    with self.assertRaises(argparse.ArgumentTypeError):
+      CustomConfigObject.parse({"name": "foo", "name_alias": "foo"})
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({"name": "foo", "array": [], "integer": "a"})
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -102,6 +128,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config_2 = CustomConfigObject.load_dict(dict(data))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config, config_2)
+
+  def test_load_dict_alias(self):
+    config = CustomConfigObject.parse({"name_alias": "foo"})
+    assert isinstance(config, CustomConfigObject)
+    self.assertEqual(config.name, "foo")
 
   def test_loads(self):
     config = CustomConfigObject.parse("a name")

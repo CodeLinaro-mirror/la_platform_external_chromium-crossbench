@@ -14,7 +14,7 @@ import pathlib
 import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
-                    Optional, Tuple, Type, TypeVar, Union, cast)
+                    Optional, Set, Tuple, Type, TypeVar, Union, cast)
 
 import tabulate
 
@@ -33,11 +33,14 @@ class _ConfigArg:
       type: Optional[ArgParserType],
       default: Any = None,
       choices: Optional[frozenset[Any]] = None,
+      aliases: Iterable[str] = tuple(),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False):
     self.parser: ConfigParser = parser
     self.name: str = name
+    self.aliases = tuple(aliases)
+    self._validate_aliases()
     self.type: Optional[ArgParserType] = type
     self.default = default
     self.help: Optional[str] = help
@@ -50,6 +53,14 @@ class _ConfigArg:
     self.choices: Optional[frozenset] = self._validate_choices(choices)
     if self.default is not None:
       self._validate_default()
+
+  def _validate_aliases(self):
+    unique = set(self.aliases)
+    if self.name in unique:
+      raise ValueError(f"Config name '{self.name}' cannot be part "
+                       f"of the aliases='{self.aliases}'")
+    if len(unique) != len(self.aliases):
+      raise ValueError(f"aliases={self.aliases} contain duplicates")
 
   def _validate_choices(
       self, choices: Optional[frozenset[Any]]) -> Optional[frozenset]:
@@ -160,18 +171,46 @@ class _ConfigArg:
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
   def parse(self, config_data: Dict[str, Any]) -> Any:
-    data = config_data.pop(self.name, None)
+    data = None
+    if self.name in config_data:
+      data = config_data.pop(self.name)
+    elif self.aliases:
+      data = self._pop_alias(config_data)
+
     if data is None:
       if self.required and self.default is None:
         raise ValueError(
             f"{self.cls_name}: "
             f"No value provided for required config option '{self.name}'")
       data = self.default
+    else:
+      self._validate_no_aliases(config_data)
     if data is None:
       return None
     if self.is_list:
       return self.parse_list_data(data)
     return self.parse_data(data)
+
+  def _pop_alias(self, config_data) -> Optional[Any]:
+    value: Optional[Any] = None
+    found: bool = False
+    for alias in self.aliases:
+      if alias not in config_data:
+        continue
+      if found:
+        raise ValueError(f"Ambiguous arguments, got alias for {self.name} "
+                         "specified more than once.")
+      value = config_data.pop(alias, None)
+      found = True
+    return value
+
+  def _validate_no_aliases(self, config_data):
+    for alias in self.aliases:
+      if alias in config_data:
+        raise ValueError(
+            f"{self.cls_name}: ",
+            f"Got conflicting argument, '{self.name}' and '{alias}' "
+            "cannot be specified together.")
 
   def parse_list_data(self, data: Any) -> List[Any]:
     if not isinstance(data, (list, tuple)):
@@ -290,6 +329,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     assert title, "No title provided"
     self._cls = cls
     self._args: Dict[str, _ConfigArg] = {}
+    self._arg_names: Set[str] = set()
 
   def add_argument(  # pylint: disable=redefined-builtin
       self,
@@ -297,12 +337,20 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       type: Optional[ArgParserType],
       default: Optional[Any] = None,
       choices: Optional[Iterable[Any]] = None,
+      aliases: Tuple[str, ...] = tuple(),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False) -> None:
-    assert name not in self._args, f"Duplicate argument: {name}"
-    self._args[name] = _ConfigArg(self, name, type, default, choices, help,
-                                  is_list, required)
+    if name in self._arg_names:
+      raise ValueError(f"Duplicate argument: {name}")
+    arg = self._args[name] = _ConfigArg(self, name, type, default, choices,
+                                        aliases, help, is_list, required)
+    self._arg_names.add(name)
+    for alias in arg.aliases:
+      if alias in self._arg_names:
+        raise ValueError(f"Argument alias ({alias}) from {name}"
+                         " was previously added as argument.")
+      self._arg_names.add(alias)
 
   def kwargs_from_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
     with exception.annotate_argparsing(

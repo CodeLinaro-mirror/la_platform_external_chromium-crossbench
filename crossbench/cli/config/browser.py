@@ -171,7 +171,10 @@ class BrowserConfig(ConfigObject):
   def config_parse(cls) -> ConfigParser[BrowserConfig]:
     parser = ConfigParser("BrowserConfig parser", cls)
     parser.add_argument(
-        "browser", type=cls._parse_path_or_identifier, required=True)
+        "browser",
+        aliases=("path",),
+        type=cls._parse_path_or_identifier,
+        required=True)
     parser.add_argument(
         "driver", type=DriverConfig.parse, default=DriverConfig.default())
     return parser

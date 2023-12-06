@@ -52,7 +52,7 @@ class ProbeConfigTestCase(unittest.TestCase):
   def test_invalid_config_duplicate(self):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("bool", type=bool)
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError):
       parser.add_argument("bool", type=bool)
 
   def test_config_defaults(self):
