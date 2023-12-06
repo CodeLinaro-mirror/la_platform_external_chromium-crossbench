@@ -8,6 +8,7 @@ import abc
 import logging
 import pathlib
 import platform
+import shlex
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
                     Tuple, Type, Union)
 from unittest import mock
@@ -121,7 +122,8 @@ class MockPlatform(ActivePlatformClass):
       assert expected == args, f"Expected sh_cmd: {expected}, got: {args}"
     self.sh_cmds.append(args)
     if not self.sh_results:
-      raise ValueError("MockPlatform has no more sh outputs.")
+      cmd = shlex.join(map(str, args))
+      raise ValueError(f"MockPlatform has no more sh outputs for cmd: {cmd}")
     return self.sh_results.pop()
 
   def sh(self,

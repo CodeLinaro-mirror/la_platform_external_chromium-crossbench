@@ -182,15 +182,14 @@ class BrowserVariantsConfig:
 
   def _parse_browser(self, name: str, raw_browser_data: Dict[str, Any],
                      args: argparse.Namespace) -> None:
-    # TODO: turn this into a dispatching sub-parser
-    path_or_identifier: str = raw_browser_data["path"]
+    path_or_identifier: Optional[str] = raw_browser_data.get("path")
     browser_cls: Type[Browser]
     if path_or_identifier in self._browser_lookup_override:
       browser_cls, browser_config = self._browser_lookup_override[
           path_or_identifier]
     else:
       browser_config = self._maybe_downloaded_binary(
-          cast(BrowserConfig, BrowserConfig.parse(path_or_identifier)))
+          cast(BrowserConfig, BrowserConfig.parse(raw_browser_data)))
       browser_cls = self._get_browser_cls(browser_config)
     if browser_config.driver.type != BrowserDriverType.ANDROID and (
         not browser_config.path.exists()):

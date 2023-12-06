@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import argparse
+import copy
 import pathlib
 import unittest
 from typing import Dict, Tuple, Type
@@ -950,6 +951,38 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browser_1 = config.variants[1]
     assert isinstance(browser_1, mock_browser.MockChromeDev)
     self.assertEqual(browser_1.app_path, mock_browser.MockChromeDev.APP_PATH)
+
+  def test_custom_driver(self):
+    chromedriver = pathlib.Path("path/to/chromedriver")
+    variants_config = {
+        "browsers": {
+            "chrome-stable": {
+                "browser": "chrome-stable",
+                "driver": str(chromedriver),
+            }
+        }
+    }
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserVariantsConfig(
+          copy.deepcopy(variants_config),
+          browser_lookup_override=self.browser_lookup,
+          args=self.mock_args)
+    self.assertIn(str(chromedriver), str(cm.exception))
+
+    self.fs.create_file(chromedriver, st_size=100)
+    with mock.patch.object(
+        BrowserVariantsConfig,
+        "_get_browser_cls",
+        return_value=mock_browser.MockChromeStable):
+      config = BrowserVariantsConfig(
+          variants_config,
+          browser_lookup_override=self.browser_lookup,
+          args=self.mock_args)
+    self.assertFalse(variants_config["browsers"]["chrome-stable"])
+    self.assertEqual(len(config.variants), 1)
+    browser_0 = config.variants[0]
+    assert isinstance(browser_0, mock_browser.MockChromeStable)
+    self.assertEqual(browser_0.app_path, mock_browser.MockChromeStable.APP_PATH)
 
   def test_inline_flags(self):
     with mock.patch.object(

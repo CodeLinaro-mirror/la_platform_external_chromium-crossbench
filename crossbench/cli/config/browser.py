@@ -176,7 +176,7 @@ class BrowserConfig(ConfigObject):
         type=cls._parse_path_or_identifier,
         required=True)
     parser.add_argument(
-        "driver", type=DriverConfig.parse, default=DriverConfig.default())
+        "driver", type=DriverConfig, default=DriverConfig.default())
     return parser
 
   @property

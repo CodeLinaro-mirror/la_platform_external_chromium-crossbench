@@ -275,6 +275,9 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def parse(cls, value: Any) -> ConfigObject:
+    # Quick return for default values used by parsers.
+    if isinstance(value, cls):
+      return value
     # Make sure we wrap any exception in a argparse.ArgumentTypeError)
     with exception.annotate_argparsing():
       return cls._parse(value)
