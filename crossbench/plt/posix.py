@@ -36,7 +36,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def _raw_machine_arch(self):
     if not self.is_remote:
       return super()._raw_machine_arch()
-    return self.sh_stdout("arch").strip()
+    return self.sh_stdout("uname", "-m").strip()
 
   _GET_CPONF_PROC_RE = re.compile(r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
 
