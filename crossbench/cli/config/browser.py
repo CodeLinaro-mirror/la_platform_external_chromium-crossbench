@@ -112,6 +112,10 @@ class BrowserConfig(ConfigObject):
       if driver_type == BrowserDriverType.ANDROID:
         return pathlib.Path("com.chrome.canary")
       return browsers.Chrome.canary_path()
+    if identifier == "chromium":
+      if driver_type == BrowserDriverType.ANDROID:
+        return pathlib.Path("org.chromium.chrome")
+      return browsers.Chromium.default_path()
     if identifier in ("edge", "edge-stable"):
       return browsers.Edge.stable_path()
     if identifier == "edge-beta":

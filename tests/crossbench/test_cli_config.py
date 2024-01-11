@@ -267,6 +267,16 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
+    self.platform.sh_results = [
+        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("android:chromium"),
+        BrowserConfig(
+            pathlib.Path("org.chromium.chrome"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
   @unittest.skipIf(plt.PLATFORM.is_win,
                    "Chrome downloading not supported on windows.")
   def test_parse_chrome_version(self):
