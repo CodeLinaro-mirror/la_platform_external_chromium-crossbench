@@ -13,7 +13,7 @@ import pathlib
 import re
 import shlex
 import sys
-from typing import Any, Iterator, List, NoReturn, Optional, Union
+from typing import Any, Iterator, List, NoReturn, Optional, TypeVar, Union
 from urllib.parse import urlparse
 
 import colorama
@@ -25,6 +25,7 @@ from crossbench import helper, plt
 
 def parse_path(value: Union[str, pathlib.Path],
                name: str = "File") -> pathlib.Path:
+  value = parse_not_none(value, "path")
   if not value:
     raise argparse.ArgumentTypeError("Invalid empty path.")
   try:
@@ -265,8 +266,7 @@ def parse_port(value: Any, msg: str = "port") -> int:
 
 
 def parse_non_empty_str(value: Any, name: str = "string") -> str:
-  if value is None:
-    raise argparse.ArgumentTypeError(f"Expected non-empty {name}, but got None")
+  value = parse_not_none(value, f"non-empty {name}")
   if not isinstance(value, str):
     raise argparse.ArgumentTypeError(
         f"Expected non-empty {name}, but got {type(value)}: {value}")
@@ -308,7 +308,18 @@ def parse_bool(value: Any) -> bool:
       f"Expected bool but got {type(value)}: {value}")
 
 
+NotNoneT = TypeVar("NotNoneT")
+
+
+def parse_not_none(value: Optional[NotNoneT],
+                   name: str = "not None") -> NotNoneT:
+  if value is None:
+    raise argparse.ArgumentTypeError(f"Expected {name}, but got None")
+  return value
+
+
 def parse_sh_cmd(value: Any) -> List[str]:
+  value = parse_not_none(value, "shell cmd")
   if not value:
     raise argparse.ArgumentTypeError(
         f"Expected non-empty shell cmd, but got: {value}")

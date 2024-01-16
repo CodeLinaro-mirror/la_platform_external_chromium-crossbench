@@ -64,11 +64,15 @@ class BrowserConfig(ConfigObject):
   def _parse_path_or_identifier(
       cls,
       maybe_path_or_identifier: str,
-      driver_type: Optional[BrowserDriverType] = None
-  ) -> Union[str, pathlib.Path]:
+      driver_type: Optional[BrowserDriverType] = None,
+      driver: Optional[DriverConfig] = None) -> Union[str, pathlib.Path]:
     if not maybe_path_or_identifier:
       raise argparse.ArgumentTypeError("Got empty browser identifier.")
-    driver_type = driver_type or BrowserDriverType.default()
+    if not driver_type:
+      if driver:
+        driver_type = driver.type
+      else:
+        driver_type = BrowserDriverType.default()
     identifier = maybe_path_or_identifier.lower()
     path = None
     if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
@@ -178,7 +182,8 @@ class BrowserConfig(ConfigObject):
         "browser",
         aliases=("path",),
         type=cls._parse_path_or_identifier,
-        required=True)
+        required=True,
+        depends_on=("driver",))
     parser.add_argument(
         "driver", type=DriverConfig, default=DriverConfig.default())
     return parser

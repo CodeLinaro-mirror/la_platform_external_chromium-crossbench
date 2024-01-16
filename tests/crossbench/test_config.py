@@ -12,9 +12,14 @@ from typing import Any, Dict, List, Optional
 import unittest
 from frozendict import frozendict
 
-from crossbench import cli_helper
+from crossbench import cli_helper, compat
 from crossbench.config import ConfigObject, ConfigParser
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+
+
+class ConfigEnum(compat.StrEnumWithHelp):
+  A = ("a", "A Help")
+  B = ("b", "B Help")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -47,6 +52,9 @@ class CustomConfigObject(ConfigObject):
   array: Optional[List[str]] = None
   integer: Optional[int] = None
   nested: Optional[CustomNestedConfigObject] = None
+  choices: str = None
+  depending_nested: Optional[Dict[str, Any]] = None
+  depending_many: Optional[Dict[str, Any]] = None
 
   @classmethod
   def loads(cls, value: str) -> CustomConfigObject:
@@ -55,6 +63,26 @@ class CustomConfigObject(ConfigObject):
     if not value:
       raise ValueError("Got empty input")
     return cls(name=value)
+
+  @classmethod
+  def parse_depending_nested(cls, value: str,
+                             nested: CustomNestedConfigObject) -> Dict:
+
+    return {
+        "value": cli_helper.parse_non_empty_str(value),
+        "nested": cli_helper.parse_not_none(nested, "nested")
+    }
+
+  @classmethod
+  def parse_depending_many(cls, value: str, array: List[Any], integer: int,
+                           nested: CustomNestedConfigObject) -> Dict:
+    return {
+        "value": cli_helper.parse_non_empty_str(value),
+        "nested": cli_helper.parse_not_none(nested, "nested"),
+        "array": cli_helper.parse_not_none(array, "array"),
+        "integer": cli_helper.parse_positive_int(integer, "integer"),
+    }
+
 
   @classmethod
   def load_dict(cls, config: Dict[str, Any]) -> CustomConfigObject:
@@ -68,6 +96,15 @@ class CustomConfigObject(ConfigObject):
     parser.add_argument("array", type=list)
     parser.add_argument("integer", type=cli_helper.parse_positive_int)
     parser.add_argument("nested", type=CustomNestedConfigObject)
+    parser.add_argument("choices", type=str, choices=("x", "y", "z"))
+    parser.add_argument(
+        "depending_nested",
+        type=CustomConfigObject.parse_depending_nested,
+        depends_on=("nested",))
+    parser.add_argument(
+        "depending_many",
+        type=CustomConfigObject.parse_depending_many,
+        depends_on=("array", "integer", "nested"))
     return parser
 
 
@@ -77,6 +114,10 @@ class ConfigParserTestCase(unittest.TestCase):
     super().setUp()
     self.parser = ConfigParser("ConfigParserTestCase parser",
                                CustomConfigObject)
+
+  def test_invalid_type(self):
+    with self.assertRaises(TypeError):
+      self.parser.add_argument("foo", type="something")
 
   def test_invalid_alias(self):
     with self.assertRaises(ValueError):
@@ -92,8 +133,51 @@ class ConfigParserTestCase(unittest.TestCase):
     with self.assertRaises(ValueError):
       self.parser.add_argument("foo2", aliases=("foo",), type=str)
 
+  def test_invalid_string_depends_on(self):
+    with self.assertRaises(TypeError):
+      self.parser.add_argument(
+          "custom",
+          type=CustomConfigObject.parse_depending_nested,
+          depends_on="other")
+
+  def test_invalid_depends_on_nof_arguments(self):
+    with self.assertRaises(TypeError) as cm:
+      self.parser.add_argument("any", type=lambda x: x, depends_on=("other",))
+    self.assertIn("arguments", str(cm.exception))
+
+  def test_invalid_depends_on(self):
+    with self.assertRaises(ValueError):
+      self.parser.add_argument("any", type=None, depends_on=("other",))
+
+    with self.assertRaises(ValueError):
+      self.parser.add_argument("enum", type=ConfigEnum, depends_on=("other",))
+
+    for primitive_type in (bool, float, int, str):
+      with self.assertRaises(TypeError):
+        self.parser.add_argument(
+            "param", type=primitive_type, depends_on=("other",))
+
+  def test_recursive_depends_on(self):
+    self.parser.add_argument(
+        "x", type=lambda value, y: value + y, depends_on=("y",))
+    self.parser.add_argument(
+        "y", type=lambda value, x: value + x, depends_on=("x",))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      self.parser.parse({"x": 1, "y": 100})
+    self.assertIn("Recursive", str(cm.exception))
+
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
+
+  def test_help(self):
+    help_text = CustomConfigObject.config_parser().help
+    self.assertIn("name", help_text)
+    self.assertIn("array", help_text)
+    self.assertIn("integer", help_text)
+    self.assertIn("nested", help_text)
+    self.assertIn("choices", help_text)
+    self.assertIn("depending_nested", help_text)
+    self.assertIn("depending_many", help_text)
 
   def test_load_invalid_str(self):
     for invalid in ("", None, 1, []):
@@ -244,3 +328,28 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.nested,
                      CustomNestedConfigObject(name="a nested name"))
+
+  def test_load_missing_depending(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      CustomConfigObject.parse({"name": "foo", "depending_nested": "a value"})
+    self.assertIn("depending_nested", str(cm.exception))
+    self.assertIn("Expected nested", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      CustomConfigObject.parse({
+          "name": "foo",
+          "depending_nested": "a value",
+          "nested": None
+      })
+    self.assertIn("depending_nested", str(cm.exception))
+    self.assertIn("Expected nested", str(cm.exception))
+
+  def test_load_depending_simple(self):
+    config = CustomConfigObject.parse({
+        "name": "foo",
+        "nested": "nested string value",
+        "depending_nested": "a value"
+    })
+    self.assertDictEqual(config.depending_nested, {
+        "value": "a value",
+        "nested": config.nested
+    })
