@@ -24,7 +24,6 @@ from .driver import DriverConfig, BrowserDriverType
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 
-
 @dataclasses.dataclass(frozen=True)
 class BrowserConfig(ConfigObject):
   browser: Union[pathlib.Path, str]
@@ -60,6 +59,7 @@ class BrowserConfig(ConfigObject):
     assert path, "Invalid path"
     return cls(path, driver)
 
+
   @classmethod
   def _parse_path_or_identifier(
       cls,
@@ -79,6 +79,11 @@ class BrowserConfig(ConfigObject):
       # Assume a path since short-names never contain back-/slashes.
       path = cli_helper.parse_existing_path(maybe_path_or_identifier)
     else:
+      if ":" in maybe_path_or_identifier:
+        raise argparse.ArgumentTypeError(
+            f"Got unexpected short-form string '{maybe_path_or_identifier}'. \n"
+            "  Use it directly on the parent config attribute: \n"
+            f"   {{my-browser: '{maybe_path_or_identifier}'}}")
       if maybe_path := cls._try_parse_short_name(identifier, driver_type):
         return maybe_path
       if ChromeDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):

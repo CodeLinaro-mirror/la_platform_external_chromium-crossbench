@@ -277,6 +277,29 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
+  @unittest.skip("Non-path browser short names are not yet supported "
+                 "in complex configs.")
+  def test_parse_inline_hjson_android(self):
+    self.platform.sh_results = [
+        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+    ]
+    config_dict: JsonDict = {
+        "browser": "com.android.chrome",
+        "driver": "android",
+    }
+    self.assertEqual(
+        BrowserConfig.parse(config_dict),
+        BrowserConfig(
+            pathlib.Path("com.android.chrome"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
+  def test_parse_fail_android_browser_string_not_dict(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse({"browser": "adb:chrome"})
+    self.assertIn("browser", str(cm.exception))
+    self.assertIn("short-form", str(cm.exception))
+
   @unittest.skipIf(plt.PLATFORM.is_win,
                    "Chrome downloading not supported on windows.")
   def test_parse_chrome_version(self):
