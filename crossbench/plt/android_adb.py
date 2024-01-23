@@ -14,7 +14,6 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
 
 
 from .arch import MachineArch
-from .base import SubprocessError
 from .posix import PosixPlatform
 
 if TYPE_CHECKING:
@@ -393,7 +392,6 @@ class AndroidAdbPlatform(PosixPlatform):
   def get_relative_cpu_speed(self) -> float:
     # TODO figure out
     return 1.0
-
 
   def python_details(self) -> JsonDict:
     # Python is not available on android.

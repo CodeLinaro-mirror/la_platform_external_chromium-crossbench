@@ -15,6 +15,7 @@ from .arch import MachineArch
 from .base import Platform, SubprocessError
 from .linux import LinuxPlatform
 from .macos import MacOSPlatform
+from .ios import ios_devices
 from .posix import PosixPlatform
 from .win import WinPlatform
 

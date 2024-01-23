@@ -34,12 +34,39 @@ from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
                                           CrossbenchFakeFsTestCase)
 
-ADB_SAMPLE_OUTPUT_SINGLE = """List of devices attached
+ADB_DEVICES_SINGLE_OUTPUT = """List of devices attached
 emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64"""
 
-ADB_SAMPLE_OUTPUT = f"""{ADB_SAMPLE_OUTPUT_SINGLE}
+ADB_DEVICES_OUTPUT = f"""{ADB_DEVICES_SINGLE_OUTPUT}
 emulator-5554 device product:sdk_google_phone_x86 model:Android_SDK_built_for_x86 device:generic_x86
 0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo"""
+
+XCTRACE_DEVICES_SINGLE_OUTPUT = """
+== Devices ==
+a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
+An iPhone (17.1.2) (00001111-11AA22BB33DD)
+
+== Devices Offline ==
+An iPhone Pro (17.1.1) (00002222-11AA22BB33DD)
+
+== Simulators ==
+iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
+iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
+"""
+
+XCTRACE_DEVICES_OUTPUT = """
+== Devices ==
+a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
+An iPhone (17.1.2) (00001111-11AA22BB33DD)
+An iPhone Pro (17.1.1) (00002222-11AA22BB33DD)
+
+== Devices Offline ==
+An iPhone Pro Max (17.1.0) (00003333-11AA22BB33DD)
+
+== Simulators ==
+iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
+iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
+"""
 
 
 class BaseConfigTestCase(BaseCrossbenchTestCase):
@@ -81,28 +108,30 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertIn("empty", message)
 
   def test_parse_inline_json(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {"type": 'adb', "settings": {"serial": "0a388e93"}}
     config = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.settings["serial"], "0a388e93")
 
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config = DriverConfig.load_dict(config_dict)
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.settings["serial"], "0a388e93")
 
-  def test_parse_phone_identifier_unknown(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+  def test_parse_adb_phone_identifier_unknown(self):
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
+    if self.platform.is_macos:
+      self.platform.sh_results.append(XCTRACE_DEVICES_SINGLE_OUTPUT)
+
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse("Unknown Device X")
     self.assertIn("Unknown Device X", str(cm.exception))
-    self.assertEqual(len(self.platform.sh_cmds), 1)
 
-  def test_parse_phone_identifier_multiple(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+  def test_parse_adb_phone_identifier_multiple(self):
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(AmbiguousDriverIdentifier) as cm:
       _ = DriverConfig.parse("emulator.*")
     message: str = str(cm.exception)
@@ -110,8 +139,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertIn("emulator-5556", message)
     self.assertEqual(len(self.platform.sh_cmds), 1)
 
-  def test_parse_phone_identifier(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT, ADB_SAMPLE_OUTPUT]
+  def test_parse_adb_phone_identifier(self):
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
 
     config = DriverConfig.parse("Nexus_7")
     assert isinstance(config, DriverConfig)
@@ -120,8 +149,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.settings["serial"], "0a388e93")
 
-  def test_parse_phone_serial(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT, ADB_SAMPLE_OUTPUT]
+  def test_parse_adb_phone_serial(self):
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
 
     config = DriverConfig.parse("0a388e93")
     assert isinstance(config, DriverConfig)
@@ -129,6 +158,20 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.settings["serial"], "0a388e93")
+
+  @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
+  def test_parse_ios_phone_serial(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT,
+        XCTRACE_DEVICES_SINGLE_OUTPUT
+    ]
+
+    config = DriverConfig.parse("00001111-11AA22BB33DD")
+    assert isinstance(config, DriverConfig)
+    self.assertEqual(len(self.platform.sh_cmds), 3)
+
+    self.assertEqual(config.type, BrowserDriverType.IOS)
+    self.assertEqual(config.settings["uuid"], "00001111-11AA22BB33DD")
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):
@@ -214,21 +257,30 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(Chrome.stable_path(),
                       DriverConfig(BrowserDriverType.APPLE_SCRIPT)))
 
+  def test_parse_simple_ambiguous_with_driver_ios(self):
+    self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = BrowserConfig.parse("ios:chrome")
+    self.assertIn("devices", str(cm.exception))
+
   def test_parse_simple_with_driver_ios(self):
+    self.platform.sh_results = [
+        XCTRACE_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT
+    ]
     self.assertEqual(
         BrowserConfig.parse("ios:chrome"),
         BrowserConfig(Chrome.stable_path(),
                       DriverConfig(BrowserDriverType.IOS)))
 
   def test_parse_simple_ambiguous_with_driver_android(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = BrowserConfig.parse("adb:chrome")
     self.assertIn("devices", str(cm.exception))
 
   def test_parse_simple_with_driver_android(self):
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:chrome"),
@@ -238,7 +290,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertListEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
         BrowserConfig.parse("android:chrome-beta"),
@@ -248,7 +300,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertListEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:chrome-dev"),
@@ -258,7 +310,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertListEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
         BrowserConfig.parse("android:chrome-canary"),
@@ -268,7 +320,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertListEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
         BrowserConfig.parse("android:chromium"),
@@ -281,7 +333,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
                  "in complex configs.")
   def test_parse_inline_hjson_android(self):
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE, ADB_SAMPLE_OUTPUT_SINGLE
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     config_dict: JsonDict = {
         "browser": "com.android.chrome",
@@ -321,13 +373,13 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("116.845.4", str(cm.exception))
 
   def test_parse_adb_phone_serial(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT, ADB_SAMPLE_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
     config = BrowserConfig.parse("0a388e93:chrome")
     assert isinstance(config, BrowserConfig)
     self.assertListEqual(self.platform.sh_results, [])
     self.assertEqual(len(self.platform.sh_cmds), 2)
 
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     expected_driver = DriverConfig(
         BrowserDriverType.ANDROID, settings=frozendict(serial="0a388e93"))
     self.assertEqual(len(self.platform.sh_results), 0)
@@ -336,12 +388,21 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         config,
         BrowserConfig(pathlib.Path("com.android.chrome"), expected_driver))
 
-  def test_parse_adb_phone_serial_invalid(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+  @unittest.skipIf(plt.PLATFORM.is_macos, "Incompatible platform")
+  def test_parse_adb_phone_serial_invalid_macos(self):
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = BrowserConfig.parse("0XXXXXX:chrome")
     self.assertIn("0XXXXXX", str(cm.exception))
     self.assertEqual(len(self.platform.sh_cmds), 1)
+
+  @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
+  def test_parse_adb_phone_serial_invalid_non_macos(self):
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_OUTPUT]
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = BrowserConfig.parse("0XXXXXX:chrome")
+    self.assertIn("0XXXXXX", str(cm.exception))
+    self.assertEqual(len(self.platform.sh_cmds), 2)
 
   def test_parse_invalid_driver(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -369,22 +430,22 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         }
     }
 
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(MultiException) as cm:
       _ = BrowserConfig.parse(hjson.dumps(config_dict))
     self.assertIn("devices", str(cm.exception))
 
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT_SINGLE]
+    self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
     config = BrowserConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config, BrowserConfig)
     self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
 
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT_SINGLE]
+    self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
     config = BrowserConfig.load_dict(config_dict)
     assert isinstance(config, BrowserConfig)
     self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
 
-  def test_parse_inline_driver(self):
+  def test_parse_inline_driver_browser(self):
     driver_path = pathlib.Path("custom/chromedriver")
     config_dict: JsonDict = {
         "browser": "chrome",
@@ -604,7 +665,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(browsers[2].label, "custom-label-property")
 
   def test_browser_label_args(self):
-    self.platform.sh_results = [ADB_SAMPLE_OUTPUT_SINGLE]
+    self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
     args = self.mock_args
     adb_config = BrowserConfig.parse("adb:chrome")
     desktop_config = BrowserConfig.parse("chrome")
@@ -614,8 +675,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     ]
     self.assertFalse(self.platform.sh_results)
     self.platform.sh_results = [
-        ADB_SAMPLE_OUTPUT_SINGLE,
-        ADB_SAMPLE_OUTPUT_SINGLE,
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):

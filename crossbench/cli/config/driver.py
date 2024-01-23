@@ -41,13 +41,16 @@ class BrowserDriverType(compat.StrEnumWithHelp):
       return BrowserDriverType.APPLE_SCRIPT
     if identifier in ("android", "adb"):
       return BrowserDriverType.ANDROID
-    if identifier == "ios":
+    if identifier in ("iphone", "ios"):
       return BrowserDriverType.IOS
     raise argparse.ArgumentTypeError(f"Unknown driver type: {value}")
 
 
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
   pass
+
+
+IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -69,8 +72,10 @@ class DriverConfig(ConfigObject):
   def validate(self) -> None:
     if self.type == BrowserDriverType.ANDROID:
       self.validate_android()
+    if self.type == BrowserDriverType.IOS:
+      self.validate_ios()
 
-  def validate_android(self):
+  def validate_android(self) -> None:
     devices = plt.adb_devices(plt.PLATFORM)
     names = list(devices.keys())
     if not devices:
@@ -86,6 +91,24 @@ class DriverConfig(ConfigObject):
       if serial not in devices:
         raise argparse.ArgumentTypeError(
             f"Could not find ADB device with serial={serial}. "
+            f"Choices are {names}.")
+
+  def validate_ios(self) -> None:
+    devices = plt.ios_devices(plt.PLATFORM)
+    if not devices:
+      raise argparse.ArgumentTypeError("No iOS devices attached.")
+    names = list(map(str, devices))
+    if not self.settings:
+      if len(devices) == 1:
+        # Default device "ios" (no settings) with exactly one device is ok.
+        return
+      raise AmbiguousDriverIdentifier(
+          f"{len(devices)} ios devices connected: {names}. "
+          "Please explicitly specify a device UUID.")
+    if uuid := self.settings.get("uuid"):
+      if uuid not in devices:
+        raise argparse.ArgumentTypeError(
+            f"Could not find ios device with serial={uuid}. "
             f"Choices are {names}.")
 
   @classmethod
@@ -130,6 +153,9 @@ class DriverConfig(ConfigObject):
     candidate: Optional[DriverConfig]
     if candidate := cls.try_load_adb_settings(value, platform):
       return candidate
+    if platform.is_macos:
+      if candiate := cls.try_load_ios_settings(value, platform):
+        return candiate
     # TODO: add more custom parsing here
     raise ValueError("Unknown setting")
 
@@ -137,7 +163,7 @@ class DriverConfig(ConfigObject):
   def try_load_adb_settings(cls, value: str,
                             platform: plt.Platform) -> Optional[DriverConfig]:
     candidate_serials: List[str] = []
-    pattern: re.Pattern = re.compile(value)
+    pattern: re.Pattern = cls.compile_search_pattern(value)
     for serial, info in plt.adb_devices(platform).items():
       if pattern.fullmatch(serial):
         candidate_serials.append(serial)
@@ -158,6 +184,39 @@ class DriverConfig(ConfigObject):
     return DriverConfig(
         BrowserDriverType.ANDROID,
         settings=frozendict(serial=candidate_serials[0]))
+
+  @classmethod
+  def try_load_ios_settings(cls, value: str,
+                            platform: plt.Platform) -> Optional[DriverConfig]:
+    candidate_serials: List[str] = []
+    pattern: re.Pattern = cls.compile_search_pattern(value)
+    for uuid, device_info in plt.ios_devices(platform).items():
+      if pattern.fullmatch(uuid):
+        candidate_serials.append(uuid)
+        continue
+      if pattern.fullmatch(device_info.name):
+        candidate_serials.append(uuid)
+        continue
+    if len(candidate_serials) > 1:
+      raise AmbiguousDriverIdentifier(
+          "Found more than one ios devices matching "
+          f"'{value}': {candidate_serials}")
+    if len(candidate_serials) == 0:
+      logging.debug("No matching ios devices found.")
+      return None
+    assert len(candidate_serials) == 1
+    return DriverConfig(
+        BrowserDriverType.IOS, settings=frozendict(uuid=candidate_serials[0]))
+
+  @classmethod
+  def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
+    try:
+      return re.compile(maybe_pattern)
+    except Exception as e:
+      logging.debug(
+          "Falling back to full string match for "
+          "invalid regexp search pattern: %s %s", maybe_pattern, e)
+      return re.compile(re.escape(maybe_pattern))
 
   @classmethod
   def load_dict(cls, config: Dict[str, Any]) -> DriverConfig:

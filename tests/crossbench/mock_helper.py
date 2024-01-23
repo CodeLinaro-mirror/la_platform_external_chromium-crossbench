@@ -49,8 +49,8 @@ class MockPlatform(ActivePlatformClass):
                 result: str = "") -> None:
     if self.expected_sh_cmds is None:
       self.expected_sh_cmds = []
-    self.expected_sh_cmds.insert(0, args)
-    self.sh_results.insert(0, result)
+    self.expected_sh_cmds.append(args)
+    self.sh_results.append(result)
 
   @property
   def name(self) -> str:
@@ -118,13 +118,13 @@ class MockPlatform(ActivePlatformClass):
     del shell, quiet, encoding, env, check
     if self.expected_sh_cmds is not None:
       assert self.expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
-      expected = self.expected_sh_cmds.pop()
+      expected = self.expected_sh_cmds.pop(0)
       assert expected == args, f"Expected sh_cmd: {expected}, got: {args}"
     self.sh_cmds.append(args)
     if not self.sh_results:
       cmd = shlex.join(map(str, args))
       raise ValueError(f"MockPlatform has no more sh outputs for cmd: {cmd}")
-    return self.sh_results.pop()
+    return self.sh_results.pop(0)
 
   def sh(self,
          *args: Union[str, pathlib.Path],
