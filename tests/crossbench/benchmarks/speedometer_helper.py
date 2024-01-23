@@ -43,21 +43,17 @@ class SpeedometerBaseTestCase(
   def name(self) -> str:
     pass
 
+  @property
+  def name_all(self) -> str:
+    # Override if default() != all() stories.
+    return self.name
+
   @dataclass
   class Namespace(argparse.Namespace):
     stories = "all"
     iterations = 10
     separate: bool = False
     custom_benchmark_url: Optional[str] = None
-
-  def test_default_all(self):
-    default_story_names = [
-        story.name for story in self.story_cls.default(separate=True)
-    ]
-    all_story_names = [
-        story.name for story in self.story_cls.all(separate=True)
-    ]
-    self.assertListEqual(default_story_names, all_story_names)
 
   def test_iterations_kwargs(self):
     args = self.Namespace()
@@ -75,7 +71,7 @@ class SpeedometerBaseTestCase(
       self.assertEqual(story.iterations, 1234)
 
   def test_story_filtering_cli_args_all_separate(self):
-    stories = self.story_cls.default(separate=True)
+    stories = self.story_cls.all(separate=True)
     args = self.Namespace()
     args.stories = "all"
     args.separate = True
@@ -86,7 +82,7 @@ class SpeedometerBaseTestCase(
     )
 
   def test_story_filtering_cli_args_all(self):
-    stories = self.story_cls.default(separate=False)
+    stories = self.story_cls.all(separate=False)
     args = self.Namespace()
     args.stories = "all"
     args.custom_benchmark_url = self.story_cls.URL_LOCAL
@@ -97,10 +93,10 @@ class SpeedometerBaseTestCase(
     self.assertEqual(len(stories_all), 1)
     story = stories[0]
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.name, self.name)
+    self.assertEqual(story.name, self.name_all)
     story = stories_all[0]
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.name, self.name)
+    self.assertEqual(story.name, self.name_all)
     self.assertEqual(story.url, self.story_cls.URL_LOCAL)
     self.assertEqual(story.iterations, 503)
 
@@ -111,7 +107,7 @@ class SpeedometerBaseTestCase(
     self.assertEqual(len(stories_all), 1)
     story = stories_all[0]
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.name, self.name)
+    self.assertEqual(story.name, self.name_all)
     self.assertEqual(story.url, self.story_cls.URL)
     self.assertEqual(story.iterations, 701)
 
@@ -124,7 +120,7 @@ class SpeedometerBaseTestCase(
     with self.assertRaises(ValueError):
       self.story_cls.from_names([], separate=True)
     stories = self.story_cls.default(separate=True)
-    self.assertEqual(len(stories), len(self.story_cls.SUBSTORIES))
+    self.assertEqual(len(stories), len(self.story_cls.default_story_names()))
 
   def test_story_filtering_regexp_invalid(self):
     with self.assertRaises(ValueError):
@@ -132,7 +128,7 @@ class SpeedometerBaseTestCase(
           ".*", separate=True).stories
 
   def test_story_filtering_regexp(self):
-    stories = self.story_cls.default(separate=True)
+    stories = self.story_cls.all(separate=True)
     stories_b = self.story_filter([".*"], separate=True).stories
     self.assertListEqual(
         [story.name for story in stories],

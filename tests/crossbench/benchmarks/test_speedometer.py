@@ -5,6 +5,7 @@
 import argparse
 from dataclasses import dataclass
 import datetime as dt
+from crossbench.browsers.viewport import Viewport
 
 from tests import run_helper
 
@@ -31,6 +32,16 @@ class Speedometer20TestCase(speedometer_helper.SpeedometerBaseTestCase):
   @property
   def name(self):
     return "speedometer_2.0"
+
+  def test_default_all(self):
+    default_story_names = [
+        story.name for story in self.story_cls.default(separate=True)
+    ]
+    all_story_names = [
+        story.name for story in self.story_cls.all(separate=True)
+    ]
+    self.assertListEqual(default_story_names, all_story_names)
+
 
 
 class Speedometer21TestCase(speedometer_helper.SpeedometerBaseTestCase):
@@ -70,6 +81,10 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
   def name(self):
     return "speedometer_3.0"
 
+  @property
+  def name_all(self):
+    return "speedometer_3.0_all"
+
   def test_run_combined(self):
     self._run_combined(["TodoMVC-JavaScript-ES5", "TodoMVC-Backbone"])
 
@@ -81,6 +96,8 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
     sync_wait = dt.timedelta(0)
     sync_warmup = dt.timedelta(0)
     measurement_method = speedometer_3_0.MeasurementMethod.RAF
+    story_viewport = None
+    shuffle_seed = None
 
   def test_measurement_method_kwargs(self):
     args = self.Namespace()
@@ -134,6 +151,41 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
       self.assertEqual(story.sync_warmup, dt.timedelta(seconds=123.4))
       self.assertDictEqual(story.url_params, {"warmupBeforeSync": "123400"})
 
+  def test_viewport_kwargs(self):
+    args = self.Namespace()
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.viewport, None)
+
+    with self.assertRaises(argparse.ArgumentTypeError):
+      args.story_viewport = Viewport.FULLSCREEN
+      self.benchmark_cls.from_cli_args(args)
+
+    args.story_viewport = Viewport(999, 888)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.viewport, Viewport(999, 888))
+      self.assertDictEqual(story.url_params, {"viewport": "999x888"})
+
+  def test_shuffle_seed_kwargs(self):
+    args = self.Namespace()
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.shuffle_seed, None)
+
+    with self.assertRaises(argparse.ArgumentTypeError):
+      args.shuffle_seed = "some invalid value"
+      self.benchmark_cls.from_cli_args(args)
+
+    args.shuffle_seed = 1234
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.shuffle_seed, 1234)
+      self.assertDictEqual(story.url_params, {"shuffleSeed": "1234"})
 
 if __name__ == "__main__":
   run_helper.run_pytest(__file__)

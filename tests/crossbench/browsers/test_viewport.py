@@ -134,6 +134,24 @@ class ViewportTestCase(unittest.TestCase):
     self.assertTupleEqual(viewport.size, (100, 200))
     self.assertTupleEqual(viewport.position, (22, 33))
 
+  def test_parse_sized_invalid(self):
+    for invalid in (None, 1, tuple()):
+      with self.assertRaises(ArgumentTypeError):
+        Viewport.parse_sized(invalid)
+
+  def test_parse_sized_invalid_no_size(self):
+    for invalid in ("fullscreen", Viewport.FULLSCREEN, "headless",
+                    Viewport.HEADLESS):
+      with self.assertRaises(ArgumentTypeError) as cm:
+        Viewport.parse_sized(invalid)
+      self.assertIn("explicit size", str(cm.exception))
+
+  def test_parse_sized(self):
+    sized = Viewport.parse_sized("500x500,11x22")
+    self.assertEqual(sized, Viewport(500, 500, 11, 22))
+    sized = Viewport.parse_sized(Viewport.DEFAULT)
+    self.assertIs(sized, Viewport.DEFAULT)
+
   def test_str(self):
     self.assertEqual(
         str(Viewport.parse("100x200,22x33")), "Viewport(100x200,22x33)")
