@@ -327,10 +327,7 @@ class TestFlatten(unittest.TestCase):
     })
 
 
-class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
-
-  def test_find_none(self):
-    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
+class BaseCheckoutTestCase(BaseCrossbenchTestCase):
 
   def _add_v8_checkout_files(self, checkout_dir: pathlib.Path) -> None:
     self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
@@ -344,6 +341,12 @@ class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
     (checkout_dir / ".git").mkdir(parents=True)
     self.assertIsNone(helper.ChromiumCheckoutFinder(self.platform).path)
     (checkout_dir / "chrome").mkdir(parents=True)
+
+
+class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
+
+  def test_find_none(self):
+    self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
 
   def test_D8_PATH(self):
     with mock.patch.dict(os.environ, {}, clear=True):
@@ -372,14 +375,53 @@ class V8CheckoutFinderTestCase(BaseCrossbenchTestCase):
       path = pathlib.Path(__file__)
       self.assertFalse(path.exists())
       if "google3" in path.parts:
-        fake_chrome_root = path.parents[5]
+        fake_chrome_root = path.parents[6]
       else:
-        fake_chrome_root = path.parents[4]
+        # In:   chromium/src/third_party/crossbench/tests/crossbench/probes/test_helper.py
+        # Out:  chromium/src
+        fake_chrome_root = path.parents[5]
       checkout_dir = fake_chrome_root / "v8"
       self.assertIsNone(helper.V8CheckoutFinder(self.platform).path)
       self._add_chrome_checkout_files(fake_chrome_root)
+      self.assertIsNotNone(helper.ChromiumCheckoutFinder(self.platform).path)
       self.assertEqual(
           helper.V8CheckoutFinder(self.platform).path, checkout_dir)
+
+
+class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
+
+  def test_find_none(self):
+    finder = helper.ChromiumBuildBinaryFinder(self.platform, "custom_binary")
+    self.assertIsNone(finder.path)
+    self.assertIsNone(finder.path)
+    self.assertEqual(finder.binary_name, "custom_binary")
+    candidate_dir = pathlib.Path("/chr/src/out/x64.Release")
+    self.assertIsNone(
+        helper.ChromiumBuildBinaryFinder(self.platform, "custom_binary",
+                                         (candidate_dir,)).path)
+
+  def test_find_candidate(self):
+    checkout_dir = pathlib.Path("/foo/bar/chr/src/")
+    candidate = checkout_dir / "out/x64.Release/custom_binary"
+    self.fs.create_file(candidate, st_size=100)
+    self.assertTrue(candidate.is_file)
+    self.assertIsNone(
+        helper.ChromiumBuildBinaryFinder(self.platform, "custom_binary",
+                                         (candidate.parent,)).path)
+    self._add_chrome_checkout_files(checkout_dir)
+    self.assertEqual(
+        helper.ChromiumBuildBinaryFinder(self.platform, "custom_binary",
+                                         (candidate.parent,)).path, candidate)
+
+  def test_find_default(self):
+    checkout_dir = pathlib.Path.home() / "Documents/chromium/src"
+    candidate = checkout_dir / "out/Release/custom_binary"
+    self.fs.create_file(candidate, st_size=100)
+    assert checkout_dir.is_dir()
+    self._add_chrome_checkout_files(checkout_dir)
+    self.assertEqual(
+        helper.ChromiumBuildBinaryFinder(self.platform, "custom_binary").path,
+        candidate)
 
 
 if __name__ == "__main__":
