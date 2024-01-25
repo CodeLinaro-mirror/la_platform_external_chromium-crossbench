@@ -472,6 +472,10 @@ class AndroidAdbPlatform(PosixPlatform):
 
   def rsync(self, from_path: pathlib.Path,
             to_path: pathlib.Path) -> pathlib.Path:
+    return self.pull(from_path, to_path)
+
+  def pull(self, from_path: pathlib.Path,
+           to_path: pathlib.Path) -> pathlib.Path:
     assert self.exists(from_path), (
         f"Source file '{from_path}' does not exist on {self}")
     to_path.parent.mkdir(parents=True, exist_ok=True)

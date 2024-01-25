@@ -77,7 +77,10 @@ class BrowserConfig(ConfigObject):
     path = None
     if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
       # Assume a path since short-names never contain back-/slashes.
-      path = cli_helper.parse_existing_path(maybe_path_or_identifier)
+      if driver_type.is_remote:
+        path = cli_helper.parse_path(maybe_path_or_identifier)
+      else:
+        path = cli_helper.parse_existing_path(maybe_path_or_identifier)
     else:
       if ":" in maybe_path_or_identifier:
         raise argparse.ArgumentTypeError(

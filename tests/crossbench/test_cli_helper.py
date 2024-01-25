@@ -333,10 +333,6 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       parse_path("")
     folder = pathlib.Path("folder")
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_path(folder)
-    self.assertIn("does not exist", str(cm.exception))
-
     folder.mkdir()
     self.assertEqual(folder, parse_path(folder))
     file = pathlib.Path("file")

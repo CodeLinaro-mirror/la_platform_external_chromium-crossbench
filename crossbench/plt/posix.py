@@ -24,7 +24,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     self._default_tmp_dir = pathlib.Path("")
 
   def app_version(self, app_or_bin: pathlib.Path) -> str:
-    assert app_or_bin.exists(), f"Binary {app_or_bin} does not exist."
+    assert self.exists(app_or_bin), f"Binary {app_or_bin} does not exist."
     return self.sh_stdout(app_or_bin, "--version")
 
   @property

@@ -25,6 +25,8 @@ class BrowserDriverType(compat.StrEnumWithHelp):
   ANDROID = ("Android",
              "Use Webdriver for android. Allows to specify additional settings")
   IOS = ("iOS", "Placeholder, unsupported at the moment")
+  LINUX_SSH = ("Remote Linux",
+               "Use remote webdriver and execute commands via SSH")
 
   @classmethod
   def default(cls) -> BrowserDriverType:
@@ -43,7 +45,15 @@ class BrowserDriverType(compat.StrEnumWithHelp):
       return BrowserDriverType.ANDROID
     if identifier in ("iphone", "ios"):
       return BrowserDriverType.IOS
+    if identifier == "ssh":
+      return BrowserDriverType.LINUX_SSH
     raise argparse.ArgumentTypeError(f"Unknown driver type: {value}")
+
+  @property
+  def is_remote(self):
+    if self.name in ("ANDROID", "LINUX_SSH"):
+      return True
+    return False
 
 
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
@@ -246,4 +256,18 @@ class DriverConfig(ConfigObject):
       # for attached simulators or devices. Currently only a single device
       # is supported
       pass
+    if self.type == BrowserDriverType.LINUX_SSH:
+      assert self.settings
+      host = cli_helper.parse_non_empty_str(self.settings.get("host"), "host")
+      port = cli_helper.parse_port(self.settings.get("port"), "port")
+      ssh_port = cli_helper.parse_port(
+          self.settings.get("ssh_port"), "ssh port")
+      ssh_user = cli_helper.parse_non_empty_str(
+          self.settings.get("ssh_user"), "ssh user")
+      return plt.LinuxSshPlatform(
+          plt.PLATFORM,
+          host=host,
+          port=port,
+          ssh_port=ssh_port,
+          ssh_user=ssh_user)
     return plt.PLATFORM
