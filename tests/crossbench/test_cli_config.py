@@ -1329,7 +1329,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(path, st_size=1024)
     config = NetworkConfig.parse(str(path))
     assert isinstance(config, NetworkConfig)
-    self.assertEqual(config.type, NetworkType.REPLAY)
+    self.assertEqual(config.type, NetworkType.WPR)
     self.assertEqual(config.path, path)
 
   def test_invalid_constructor_params(self):
@@ -1338,7 +1338,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = NetworkConfig(type=NetworkType.LOCAL, path=None)
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = NetworkConfig(type=NetworkType.REPLAY, path=None)
+      _ = NetworkConfig(type=NetworkType.WPR, path=None)
 
 
 if __name__ == "__main__":

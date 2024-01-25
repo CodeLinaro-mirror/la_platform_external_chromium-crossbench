@@ -377,6 +377,13 @@ class CrossBenchCLI:
         type=cli_config.NetworkConfig.parse,
         default=cli_config.NetworkConfig.default(),
         help=cli_config.NetworkConfig.help())
+    network_settings_group.add_argument(
+        "--wpr",
+        "--web-page-replay",
+        type=cli_config.NetworkConfig.parse_wpr,
+        dest="network",
+        help=("Use wpr.archive to replay network requests "
+              "via a local proxy server."))
 
     env_group = subparser.add_argument_group("Environment Options", "")
     env_settings_group = env_group.add_mutually_exclusive_group()

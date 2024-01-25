@@ -15,7 +15,6 @@ from typing import Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper, plt
 
-
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"
                           r"(?P<host>[^:]+):"
@@ -113,18 +112,18 @@ class WprBase(abc.ABC):
     return cmd
 
   def start(self):
-    gp_cmd = (
+    go_cmd = (
         "go",
         "run",
         self._bin_path,
     ) + self.cmd
-
+    logging.info("WPR: startup")
     try:
       if self._log_path:
         self._log_file = self._log_path.open("w")
       with helper.ChangeCWD(self._bin_path.parent):
         self._process = self._platform.popen(
-            *gp_cmd, stdout=self._log_file, stderr=self._log_file)
+            *go_cmd, stdout=self._log_file, stderr=self._log_file)
 
       if not self._process:
         raise RuntimeError(f"Could not start {type(self).__name__}")

@@ -12,13 +12,13 @@ from typing import Any, Dict, Optional
 
 from crossbench import cli_helper, compat
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.network import ts_proxy
+from crossbench.network.traffic_shaping import ts_proxy
 
 
 @enum.unique
 class NetworkType(compat.StrEnumWithHelp):
   LIVE = ("live", "Live network.")
-  REPLAY = ("replay", "Replayed network from a wpr.go archive.")
+  WPR = ("wpr", "Replayed network from a wpr.go archive.")
   LOCAL = ("local", "Serve content from a local http file server.")
 
 
@@ -88,6 +88,13 @@ class NetworkConfig(ConfigObject):
     return cls.config_parser().help
 
   @classmethod
+  def parse_wpr(cls, value: Any) -> NetworkConfig:
+    config: NetworkConfig = cls.parse(value)
+    if config.type != NetworkType.WPR:
+      raise argparse.ArgumentTypeError(f"Expected wpr, but got {config.type}")
+    return config
+
+  @classmethod
   def loads(cls, value: str) -> NetworkConfig:
     # TODO: implement
     if not value:
@@ -102,14 +109,14 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def load_path(cls, path: pathlib.Path) -> NetworkConfig:
-    if path.suffix == ".archive":
+    if path.suffix == ".archive" or ".wpr" in path.name:
       return cls._load_wpr_archive(path)
     return super().load_path(path)
 
   @classmethod
   def _load_wpr_archive(cls, path: pathlib.Path) -> NetworkConfig:
     path = cli_helper.parse_non_empty_file_path(path, "wpr.go archive")
-    return NetworkConfig(type=NetworkType.REPLAY, path=path)
+    return NetworkConfig(type=NetworkType.WPR, path=path)
 
   @classmethod
   def load_dict(cls, config: Dict[str, Any]) -> NetworkConfig:
@@ -122,7 +129,7 @@ class NetworkConfig(ConfigObject):
       if self.path:
         raise argparse.ArgumentTypeError(
             "NetworkConfig path cannot be used with type=live")
-    elif self.type == NetworkType.REPLAY:
+    elif self.type == NetworkType.WPR:
       if not self.path:
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=replay requires "
