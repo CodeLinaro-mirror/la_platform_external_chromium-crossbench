@@ -360,10 +360,10 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def _parse(cls, value: Any) -> ConfigObject:
-    if not value:
-      raise argparse.ArgumentTypeError("Empty config value")
     if isinstance(value, dict):
       return cls.load_dict(value)
+    if not value:
+      raise argparse.ArgumentTypeError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pathlib.Path):
       return cls.load_path(value)
     if isinstance(value, str):
@@ -388,6 +388,10 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def load_path(cls, path: pathlib.Path) -> ConfigObject:
+    return cls.load_config_path(path)
+
+  @classmethod
+  def load_config_path(cls, path: pathlib.Path) -> ConfigObject:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       data = cli_helper.parse_dict_hjson_file(path)
       return cls.load_dict(data)
@@ -453,12 +457,24 @@ ConfigResultObjectT = TypeVar("ConfigResultObjectT", bound="object")
 
 class ConfigParser(Generic[ConfigResultObjectT]):
 
-  def __init__(self, title: str, cls: Type[ConfigResultObjectT]) -> None:
+  def __init__(self,
+               title: str,
+               cls: Type[ConfigResultObjectT],
+               default: Optional[ConfigResultObjectT] = None) -> None:
     self.title = title
     assert title, "No title provided"
     self._cls = cls
+    if default:
+      if not isinstance(default, cls):
+        raise TypeError(
+            f"Default value '{default}' is not an instance of {cls.__name__}")
+    self._default = default
     self._args: Dict[str, _ConfigArgParser] = {}
     self._arg_names: Set[str] = set()
+
+  @property
+  def default(self) -> Optional[ConfigResultObjectT]:
+    return self._default
 
   def add_argument(  # pylint: disable=redefined-builtin
       self,
@@ -493,6 +509,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       return kwargs.as_dict()
 
   def parse(self, config_data: Dict[str, Any]) -> ConfigResultObjectT:
+    if self._default and config_data == {}:
+      return self._default
     kwargs = self.kwargs_from_config(config_data)
     if config_data:
       logging.debug("Got unused properties: %s", config_data.keys())

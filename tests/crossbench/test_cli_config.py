@@ -23,7 +23,7 @@ from crossbench.cli.config.browser_variants import (BrowserVariantsConfig,
 from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
                                           BrowserDriverType, DriverConfig)
 from crossbench.cli.config.network import (NetworkConfig, NetworkSpeedConfig,
-                                           NetworkType)
+                                           NetworkSpeedPreset, NetworkType)
 from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 from crossbench.exception import MultiException
 from crossbench.probes.power_sampler import PowerSamplerProbe
@@ -239,6 +239,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.parse(":chrome")
     self.assertIn("driver", str(cm.exception))
 
+  def test_parse_invalid_network_preset(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("selenium:chrome:1xx2")
+    self.assertIn("network", str(cm.exception))
+    self.assertIn("1xx2", str(cm.exception))
+
   def test_parse_simple_with_driver(self):
     self.assertEqual(
         BrowserConfig.parse("selenium:chrome"),
@@ -247,7 +253,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("webdriver:chrome"),
         BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.WEB_DRIVER)))
+                      DriverConfig(BrowserDriverType.WEB_DRIVER),
+                      NetworkConfig.default()))
     self.assertEqual(
         BrowserConfig.parse("applescript:chrome"),
         BrowserConfig(Chrome.stable_path(),
@@ -256,6 +263,18 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig.parse("osa:chrome"),
         BrowserConfig(Chrome.stable_path(),
                       DriverConfig(BrowserDriverType.APPLE_SCRIPT)))
+
+  def test_parse_simple_with_driver_with_network(self):
+    self.assertEqual(
+        BrowserConfig.parse("chrome:4G"),
+        BrowserConfig(Chrome.stable_path(),
+                      DriverConfig(BrowserDriverType.WEB_DRIVER),
+                      NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G)))
+    self.assertEqual(
+        BrowserConfig.parse("selenium:chrome:4G"),
+        BrowserConfig(Chrome.stable_path(),
+                      DriverConfig(BrowserDriverType.WEB_DRIVER),
+                      NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G)))
 
   def test_parse_simple_ambiguous_with_driver_ios(self):
     self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]
@@ -267,10 +286,24 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.platform.sh_results = [
         XCTRACE_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT
     ]
+    config = BrowserConfig.parse("ios:chrome")
     self.assertEqual(
-        BrowserConfig.parse("ios:chrome"),
+        config,
         BrowserConfig(Chrome.stable_path(),
                       DriverConfig(BrowserDriverType.IOS)))
+    self.assertEqual(config.network, NetworkConfig.default())
+
+  def test_parse_simple_with_driver_ios_with_network(self):
+    self.platform.sh_results = [
+        XCTRACE_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT
+    ]
+    config = BrowserConfig.parse("ios:chrome:4G")
+    self.assertEqual(
+        config,
+        BrowserConfig(Chrome.stable_path(), DriverConfig(BrowserDriverType.IOS),
+                      NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G)))
+    self.assertEqual(config.network,
+                     NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G))
 
   def test_parse_simple_ambiguous_with_driver_android(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -1298,7 +1331,49 @@ class TestFlagGroupConfig(unittest.TestCase):
     ))
 
 
+class NetworkSpeedConfigTestCase(BaseConfigTestCase):
+
+  def test_parse_invalid(self):
+    for invalid in ("", None, "---"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        NetworkSpeedConfig.parse(invalid)
+      with self.assertRaises(argparse.ArgumentTypeError):
+        NetworkSpeedConfig.loads(str(invalid))
+
+  def test_parse_default(self):
+    config = NetworkSpeedConfig.parse("default")
+    self.assertEqual(config, NetworkSpeedConfig.default())
+
+  def test_default(self):
+    config = NetworkSpeedConfig.default()
+    self.assertEqual(config.rtt_ms, None)
+    self.assertEqual(config.in_kbps, None)
+    self.assertEqual(config.out_kbps, None)
+    self.assertEqual(config.window, None)
+
+  def test_parse_speed_preset(self):
+    config = NetworkSpeedConfig.parse("4G")
+    self.assertNotEqual(config, NetworkSpeedConfig.default())
+
+    for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
+      config = NetworkSpeedConfig.parse(str(preset))
+      self.assertEqual(config, NetworkSpeedConfig.load_preset(preset))
+
+  def test_parse_invalid_preset(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkSpeedConfig.parse("1xx4")
+    self.assertIn("1xx4", str(cm.exception))
+    self.assertIn("Choices are", str(cm.exception))
+
+
 class NetworkConfigTestCase(BaseConfigTestCase):
+
+  def test_parse_invalid(self):
+    for invalid in ("", None, "---"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        NetworkConfig.parse(invalid)
+      with self.assertRaises(argparse.ArgumentTypeError):
+        NetworkConfig.loads(str(invalid))
 
   def test_parse_default(self):
     config = NetworkConfig.parse("default")
@@ -1331,6 +1406,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, NetworkConfig)
     self.assertEqual(config.type, NetworkType.WPR)
     self.assertEqual(config.path, path)
+    self.assertEqual(config.speed, NetworkSpeedConfig.default())
 
   def test_invalid_constructor_params(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -1339,6 +1415,52 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       _ = NetworkConfig(type=NetworkType.LOCAL, path=None)
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = NetworkConfig(type=NetworkType.WPR, path=None)
+
+  def test_parse_speed_preset(self):
+    for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
+      config = NetworkConfig.loads(preset.value)
+      self.assertEqual(config.speed, NetworkSpeedConfig.load_preset(preset))
+
+  def test_parse_wpr_invalid(self):
+    dir_path = pathlib.Path("test/dir")
+    dir_path.mkdir(parents=True)
+    for invalid in ("", "default", "4G", dir_path, str(dir_path)):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        NetworkConfig.parse_wpr(invalid)
+
+  def test_parse_wpr(self):
+    archive_path = pathlib.Path("test/archive.wprgo")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse_wpr(archive_path)
+    self.assertIn(str(archive_path), str(cm.exception))
+    self.fs.create_file(archive_path, st_size=100)
+    config = NetworkConfig.parse_wpr(archive_path)
+    self.assertEqual(config.type, NetworkType.WPR)
+    self.assertEqual(config.speed, NetworkSpeedConfig.default())
+    self.assertEqual(config.path, archive_path)
+    self.assertEqual(config, NetworkConfig.parse(archive_path))
+
+  def test_parse_dict_default(self):
+    config = NetworkConfig.parse({})
+    self.assertEqual(config, NetworkConfig.default())
+
+  def test_parse_dict_speed(self):
+    config: NetworkConfig = NetworkConfig.parse({"speed": "4G"})
+    self.assertNotEqual(config, NetworkConfig.default())
+    self.assertEqual(config.type, NetworkType.LIVE)
+    self.assertEqual(
+        config.speed,
+        NetworkSpeedConfig.load_preset(NetworkSpeedPreset.MOBILE_4G))
+    self.assertIsNone(config.path)
+
+  def test_parse_dict_wpr(self):
+    archive_path = pathlib.Path("test/archive.wprgo")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "wpr", "path": archive_path})
+    self.assertIn(str(archive_path), str(cm.exception))
+    self.fs.create_file(archive_path, st_size=100)
+    config = NetworkConfig.parse({"type": "wpr", "path": archive_path})
+    self.assertEqual(config, NetworkConfig.parse_wpr(archive_path))
 
 
 if __name__ == "__main__":

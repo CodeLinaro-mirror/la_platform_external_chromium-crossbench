@@ -52,9 +52,13 @@ class CustomConfigObject(ConfigObject):
   array: Optional[List[str]] = None
   integer: Optional[int] = None
   nested: Optional[CustomNestedConfigObject] = None
-  choices: str = None
+  choices: str = ""
   depending_nested: Optional[Dict[str, Any]] = None
   depending_many: Optional[Dict[str, Any]] = None
+
+  @classmethod
+  def default(cls) -> CustomConfigObject:
+    return cls("default")
 
   @classmethod
   def loads(cls, value: str) -> CustomConfigObject:
@@ -90,7 +94,7 @@ class CustomConfigObject(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomConfigObject]:
-    parser = ConfigParser("CustomConfigObject parser", cls)
+    parser = cls.base_config_parse()
     parser.add_argument(
         "name", aliases=("name_alias", "name_alias2"), type=str, required=True)
     parser.add_argument("array", type=list)
@@ -107,6 +111,17 @@ class CustomConfigObject(ConfigObject):
         depends_on=("array", "integer", "nested"))
     return parser
 
+  @classmethod
+  def base_config_parse(cls) -> ConfigParser[CustomConfigObject]:
+    return ConfigParser("CustomConfigObject parser", cls)
+
+
+class CustomConfigObjectWithDefault(CustomConfigObject):
+
+  @classmethod
+  def base_config_parse(cls) -> ConfigParser[CustomConfigObjectWithDefault]:
+    return ConfigParser("CustomConfigObject parser", cls, default=cls.default())
+
 
 class ConfigParserTestCase(unittest.TestCase):
 
@@ -117,7 +132,7 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_invalid_type(self):
     with self.assertRaises(TypeError):
-      self.parser.add_argument("foo", type="something")
+      self.parser.add_argument("foo", type="something")  # pytype: disable=wrong-arg-types
 
   def test_invalid_alias(self):
     with self.assertRaises(ValueError):
@@ -138,7 +153,7 @@ class ConfigParserTestCase(unittest.TestCase):
       self.parser.add_argument(
           "custom",
           type=CustomConfigObject.parse_depending_nested,
-          depends_on="other")
+          depends_on="other")  # pytype: disable=wrong-arg-types
 
   def test_invalid_depends_on_nof_arguments(self):
     with self.assertRaises(TypeError) as cm:
@@ -165,6 +180,26 @@ class ConfigParserTestCase(unittest.TestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       self.parser.parse({"x": 1, "y": 100})
     self.assertIn("Recursive", str(cm.exception))
+
+  def test_default(self):
+    self.parser.add_argument("name", type=str, required=True)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      self.parser.parse({})
+    self.assertIn("no value", str(cm.exception).lower())
+    parser = ConfigParser(
+        "ConfigParserTestCase parser",
+        CustomConfigObject,
+        default=CustomConfigObject.default())
+    config = parser.parse({})
+    self.assertEqual(config, CustomConfigObject.default())
+
+  def test_invalid_default(self):
+    with self.assertRaises(TypeError) as cm:
+      ConfigParser(  # pytype: disable=wrong-arg-types
+          "ConfigParserTestCase parser",
+          CustomConfigObject,
+          default="something else")
+    self.assertIn("instance", str(cm.exception))
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
@@ -212,6 +247,15 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config_2 = CustomConfigObject.load_dict(dict(data))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config, config_2)
+
+  def test_load_dict_default(self):
+    self.assertIsNone(CustomConfigObject.config_parser().default)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      CustomConfigObject.parse({})
+    self.assertIsNone(CustomConfigObject.config_parser().default,
+                      CustomConfigObjectWithDefault.default())
+    config = CustomConfigObjectWithDefault.parse({})
+    self.assertEqual(config, CustomConfigObjectWithDefault.default())
 
   def test_load_dict_alias(self):
     config = CustomConfigObject.parse({"name_alias": "foo"})
