@@ -82,6 +82,12 @@ def test_motionmark_12(output_dir, webdriver):
 
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+def test_motionmark_13(output_dir, webdriver):
+  run_benchmark(output_dir, webdriver, benchmarks.MotionMark13Benchmark)
+
+
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_jetstream_20(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.JetStream20Benchmark)
 

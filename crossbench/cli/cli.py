@@ -97,6 +97,7 @@ class CrossBenchCLI:
       benchmarks.JetStream21Benchmark,
       benchmarks.JetStream20Benchmark,
       benchmarks.MotionMark12Benchmark,
+      benchmarks.MotionMark13Benchmark,
       benchmarks.PageLoadBenchmark,
       benchmarks.PowerBenchmark,
       benchmarks.ManualBenchmark,

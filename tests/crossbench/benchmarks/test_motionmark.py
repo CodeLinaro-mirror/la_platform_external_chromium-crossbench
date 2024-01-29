@@ -2,26 +2,44 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import abc
 import copy
 import csv
-from typing import Optional
+from typing import Optional, Type
 from unittest import mock
 
-
+from crossbench.benchmarks.motionmark.motionmark_1 import (MotionMark1Benchmark,
+                                                           MotionMark1Probe,
+                                                           MotionMark1Story)
 from crossbench.benchmarks.motionmark.motionmark_1_2 import (
     MotionMark12Benchmark, MotionMark12Probe, MotionMark12Story)
+from crossbench.benchmarks.motionmark.motionmark_1_3 import (
+    MotionMark13Benchmark, MotionMark13Probe, MotionMark13Story)
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner.runner import Runner
-from tests.crossbench.benchmarks import helper
 from tests import run_helper
+from tests.crossbench.benchmarks import helper
 
 
-class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
+class MotionMark1BaseTestCase(
+    helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta):
 
   @property
-  def benchmark_cls(self):
-    return MotionMark12Benchmark
+  @abc.abstractmethod
+  def benchmark_cls(self) -> Type[MotionMark1Benchmark]:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def story_cls(self) -> Type[MotionMark1Story]:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def probe_cls(self) -> Type[MotionMark1Probe]:
+    pass
+
 
   EXAMPLE_PROBE_DATA = [{
       "testsResults": {
@@ -65,20 +83,19 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
     stories = self.story_filter(["all"], separate=True).stories
     self.assertGreater(len(stories), 1)
     for story in stories:
-      self.assertIsInstance(story, MotionMark12Story)
+      self.assertIsInstance(story, self.story_cls)
     names = set(story.name for story in stories)
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(len(names), len(MotionMark12Story.SUBSTORIES))
+    self.assertEqual(len(names), len(self.story_cls.SUBSTORIES))
 
   def test_default_stories(self):
     stories = self.story_filter(["default"], separate=True).stories
     self.assertGreater(len(stories), 1)
     for story in stories:
-      self.assertIsInstance(story, MotionMark12Story)
+      self.assertIsInstance(story, self.story_cls)
     names = set(story.name for story in stories)
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(
-        len(names), len(MotionMark12Story.ALL_STORIES["MotionMark"]))
+    self.assertEqual(len(names), len(self.story_cls.ALL_STORIES["MotionMark"]))
 
   def test_run_throw(self):
     self._test_run(throw=True)
@@ -100,7 +117,7 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
   def _test_run(self, custom_url: Optional[str] = None, throw: bool = False):
-    stories = MotionMark12Story.from_names(['Multiply'], url=custom_url)
+    stories = self.story_cls.from_names(['Multiply'], url=custom_url)
     repetitions = 3
     # The order should match Runner.get_runs
     for _ in range(repetitions):
@@ -135,9 +152,9 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
-      self.assertIn(MotionMark12Probe.JS, browser.js_list)
+      self.assertIn(self.probe_cls.JS, browser.js_list)
     with (self.out_dir /
-          f"{MotionMark12Probe.NAME}.csv").open(encoding="utf-8") as f:
+          f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
     self.assertListEqual(list(csv_data[0].keys()), ["label", "dev", "stable"])
     self.assertDictEqual(csv_data[1], {
@@ -146,6 +163,38 @@ class MotionMark2Test(helper.PressBaseBenchmarkTestCase):
         "stable": "100.22.33.44",
     })
 
+
+class MotionMark12TestCse(MotionMark1BaseTestCase):
+
+  @property
+  def benchmark_cls(self):
+    return MotionMark12Benchmark
+
+  @property
+  def story_cls(self):
+    return MotionMark12Story
+
+  @property
+  def probe_cls(self):
+    return MotionMark12Probe
+
+
+class MotionMark13TestCse(MotionMark1BaseTestCase):
+
+  @property
+  def benchmark_cls(self):
+    return MotionMark13Benchmark
+
+  @property
+  def story_cls(self):
+    return MotionMark13Story
+
+  @property
+  def probe_cls(self):
+    return MotionMark13Probe
+
+
+del MotionMark1BaseTestCase
 
 if __name__ == "__main__":
   run_helper.run_pytest(__file__)
