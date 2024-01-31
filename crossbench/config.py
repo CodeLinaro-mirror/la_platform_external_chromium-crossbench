@@ -319,17 +319,28 @@ class _ConfigArgParser:
   def parse_enum_data(self, data: Any) -> enum.Enum:
     assert self.is_enum
     assert self.choices
+    try:
+      # Try direct conversion, relying on the Enum._missing_ hook:
+      enum_value = self.type(data)
+      assert isinstance(enum_value, enum.Enum)
+      assert isinstance(enum_value, self.type)
+      return enum_value
+    except Exception as e:
+      logging.debug("Could not auto-convert data '%s' to enum %s: %s", data,
+                    self.type, e)
+
     for enum_instance in self.choices:
       if data in (enum_instance, enum_instance.value):
         return enum_instance
-    raise ValueError("Expected enum {self.type}, but got {data}")
+    raise ValueError(
+        f"Expected enum {self.type.__name__}, but got {type(data)}: {data}")
 
 
 _PATH_PREFIX = re.compile(r"(\./|/|[a-zA-Z]:\\)[^\\/]")
 
 
 class ConfigObject(abc.ABC):
-  """A ConfigObject is a placeholder object with parsed values from 
+  """A ConfigObject is a placeholder object with parsed values from
   a ConfigParser.
   - It is used to do complex input validation when the final instantiated
     objects contain other nested config-parsed objects,

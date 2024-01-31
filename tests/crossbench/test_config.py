@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import enum
 import json
 import pathlib
 from typing import Any, Dict, List, Optional
@@ -20,6 +21,21 @@ from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 class ConfigEnum(compat.StrEnumWithHelp):
   A = ("a", "A Help")
   B = ("b", "B Help")
+
+
+class CustomValueEnum(enum.Enum):
+
+  @classmethod
+  def _missing_(cls, value: Any) -> Optional[CustomValueEnum]:
+    if value is True:
+      return CustomValueEnum.A_OR_TRUE
+    if value is False:
+      return CustomValueEnum.B_OR_FALSE
+    return super()._missing_(value)
+
+  DEFAULT = "default"
+  A_OR_TRUE = "a"
+  B_OR_FALSE = "b"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -53,6 +69,7 @@ class CustomConfigObject(ConfigObject):
   integer: Optional[int] = None
   nested: Optional[CustomNestedConfigObject] = None
   choices: str = ""
+  custom_value_enum: CustomValueEnum = CustomValueEnum.DEFAULT
   depending_nested: Optional[Dict[str, Any]] = None
   depending_many: Optional[Dict[str, Any]] = None
 
@@ -100,6 +117,10 @@ class CustomConfigObject(ConfigObject):
     parser.add_argument("array", type=list)
     parser.add_argument("integer", type=cli_helper.parse_positive_int)
     parser.add_argument("nested", type=CustomNestedConfigObject)
+    parser.add_argument(
+        "custom_value_enum",
+        type=CustomValueEnum,
+        default=CustomValueEnum.DEFAULT)
     parser.add_argument("choices", type=str, choices=("x", "y", "z"))
     parser.add_argument(
         "depending_nested",
@@ -210,6 +231,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("array", help_text)
     self.assertIn("integer", help_text)
     self.assertIn("nested", help_text)
+    self.assertIn("custom_value_enum", help_text)
     self.assertIn("choices", help_text)
     self.assertIn("depending_nested", help_text)
     self.assertIn("depending_many", help_text)
@@ -261,6 +283,30 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse({"name_alias": "foo"})
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "foo")
+
+  def test_load_dict_custom_value_enum(self):
+    config = CustomConfigObject.parse({"name_alias": "foo"})
+    assert isinstance(config, CustomConfigObject)
+    self.assertIs(config.custom_value_enum, CustomValueEnum.DEFAULT)
+    for config_value, result in (("a", CustomValueEnum.A_OR_TRUE),
+                                 (True, CustomValueEnum.A_OR_TRUE),
+                                 ("b", CustomValueEnum.B_OR_FALSE),
+                                 (False, CustomValueEnum.B_OR_FALSE),
+                                 ("default", CustomValueEnum.DEFAULT)):
+      config = CustomConfigObject.parse({
+          "name_alias": "foo",
+          "custom_value_enum": config_value
+      })
+      self.assertIs(config.custom_value_enum, result)
+
+  def test_load_dict_custom_value_enum_invalid(self):
+    for invalid in (1, 2, {}, "A", "B"):
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        CustomConfigObject.parse({
+            "name_alias": "foo",
+            "custom_value_enum": invalid
+        })
+      self.assertIn(f"{invalid}", str(cm.exception))
 
   def test_loads(self):
     config = CustomConfigObject.parse("a name")

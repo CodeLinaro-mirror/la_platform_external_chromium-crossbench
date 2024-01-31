@@ -195,8 +195,8 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser.add_argument("my-enum-one", type=MyEnum, choices=[MyEnum.ONE])
     with self.assertRaises(argparse.ArgumentTypeError):
       parser.kwargs_from_config({"my-enum-one": ""})
-    with self.assertRaises(argparse.ArgumentTypeError):
-      parser.kwargs_from_config({"my-enum-one": "two"})
+    kwargs = parser.kwargs_from_config({"my-enum-one": "two"})
+    self.assertIs(kwargs["my-enum-one"], MyEnum.TWO)
     kwargs = parser.kwargs_from_config({"my-enum-one": "one"})
     self.assertIs(kwargs["my-enum-one"], MyEnum.ONE)
 
