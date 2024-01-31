@@ -9,7 +9,7 @@ from unittest import mock
 from crossbench.exception import (ArgumentTypeMultiException, Entry,
                                   ExceptionAnnotator, MultiException, annotate,
                                   annotate_argparsing)
-from tests import run_helper
+from tests import test_helper
 
 
 class ExceptionHandlerTestCase(unittest.TestCase):
@@ -197,4 +197,4 @@ class ExceptionHandlerTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

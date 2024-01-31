@@ -7,7 +7,7 @@ from unittest import mock
 
 from crossbench import plt
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -161,4 +161,4 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

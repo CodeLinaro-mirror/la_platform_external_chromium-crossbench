@@ -10,7 +10,7 @@ from crossbench import plt
 from crossbench.plt import linux_ssh
 
 from crossbench.plt.arch import MachineArch
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.plt.helper import PosixPlatformTestCase
 
 
@@ -63,4 +63,4 @@ class LinuxSshPlatformTest(PosixPlatformTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

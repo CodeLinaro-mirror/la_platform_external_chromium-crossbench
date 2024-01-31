@@ -2,11 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import argparse
 import unittest
+from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 
 from crossbench.probes.all import PerfettoProbe
-from tests import run_helper
+from tests import test_helper
 
 
 class TestProbe(unittest.TestCase):
@@ -20,6 +20,16 @@ class TestProbe(unittest.TestCase):
     self.assertEqual("TEXTPROTO", probe.textproto)
     self.assertEqual("perfetto", probe.perfetto_bin)
 
+  def test_parse_example_config(self):
+    config_file = (
+        test_helper.config_dir() / "probe" /
+        "perfetto.probe.config.example.hjson")
+    self.assertTrue(config_file.is_file())
+    probes = ProbeListConfig.load_path(config_file).probes
+    self.assertEqual(len(probes), 1)
+    probe = probes[0]
+    self.assertIsInstance(probe, PerfettoProbe)
+
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

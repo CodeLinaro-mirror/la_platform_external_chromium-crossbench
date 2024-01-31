@@ -6,7 +6,7 @@ import argparse
 import unittest
 
 from crossbench.probes.all import V8LogProbe
-from tests import run_helper
+from tests import test_helper
 
 
 class TestV8LogProbe(unittest.TestCase):
@@ -81,4 +81,4 @@ class TestV8LogProbe(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

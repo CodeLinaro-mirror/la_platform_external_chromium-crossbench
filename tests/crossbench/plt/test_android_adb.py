@@ -11,7 +11,7 @@ from crossbench.plt import android_adb
 
 from crossbench.plt.android_adb import Adb
 from crossbench.plt.arch import MachineArch
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.plt.helper import PosixPlatformTestCase
 
 ADB_DEVICES_SAMPLE_OUTPUT = """List of devices attached
@@ -198,4 +198,4 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

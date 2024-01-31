@@ -28,7 +28,7 @@ from crossbench.benchmarks.loading.playback_controller import (
     PlaybackController, RepeatPlaybackController, TimeoutPlaybackController)
 from crossbench.runner.runner import Runner
 from crossbench.stories.story import Story
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.benchmarks import helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -232,8 +232,7 @@ class TestExamplePageConfig(unittest.TestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):
-    example_config_file = pathlib.Path(
-        __file__).parents[3] / "config" / "page.config.example.hjson"
+    example_config_file = test_helper.config_dir() / "page.config.example.hjson"
     with example_config_file.open(encoding="utf-8") as f:
       file_config = PageConfig()
       file_config.load(f)
@@ -496,4 +495,4 @@ class DevToolsRecorderPageConfigTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

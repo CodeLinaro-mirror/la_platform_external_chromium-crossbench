@@ -19,7 +19,7 @@ from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase, MockCLI
 from tests.crossbench.test_cli_config import XCTRACE_DEVICES_SINGLE_OUTPUT
@@ -965,4 +965,4 @@ class CliTestCase(BaseCrossbenchTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

@@ -18,7 +18,7 @@ from crossbench.benchmarks.motionmark.motionmark_1_3 import (
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner.runner import Runner
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.benchmarks import helper
 
 
@@ -197,4 +197,4 @@ class MotionMark13TestCse(MotionMark1BaseTestCase):
 del MotionMark1BaseTestCase
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

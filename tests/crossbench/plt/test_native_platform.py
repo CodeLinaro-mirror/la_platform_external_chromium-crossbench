@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 from crossbench import compat, plt
-from tests import run_helper
+from tests import test_helper
 
 
 class PlatformTestCase(unittest.TestCase):
@@ -417,4 +417,4 @@ class WinPlatformTestCase(PlatformTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

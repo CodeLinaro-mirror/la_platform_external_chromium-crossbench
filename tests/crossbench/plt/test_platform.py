@@ -8,7 +8,7 @@ import unittest
 from crossbench import plt
 
 from crossbench.plt import MachineArch
-from tests import run_helper
+from tests import test_helper
 
 
 class MachineArchTestCase(unittest.TestCase):
@@ -56,4 +56,4 @@ class PlatformHelperTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

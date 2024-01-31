@@ -10,7 +10,7 @@ import unittest
 import hjson
 
 from crossbench.benchmarks.loading.page_config import PageConfig
-from tests import run_helper
+from tests import test_helper
 
 
 class TestExamplePageConfig(unittest.TestCase):
@@ -40,4 +40,4 @@ class TestExamplePageConfig(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

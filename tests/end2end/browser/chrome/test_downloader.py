@@ -16,7 +16,7 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
-from tests import run_helper
+from tests import test_helper
 
 
 if plt.PLATFORM.which("gsutil") is None and plt.PLATFORM.is_macos:
@@ -166,4 +166,4 @@ def test_download_old_major_version(output_dir, archive_dir) -> None:
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

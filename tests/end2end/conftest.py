@@ -14,6 +14,7 @@ import pytest
 
 from crossbench import cli_helper
 from crossbench.browsers import all as browsers
+from tests import test_helper
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
@@ -69,7 +70,7 @@ def output_dir():
 
 @pytest.fixture(scope="session")
 def root_dir() -> pathlib.Path:
-  return pathlib.Path(__file__).parents[2]
+  return test_helper.root_dir()
 
 
 @pytest.fixture

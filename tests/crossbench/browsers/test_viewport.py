@@ -6,7 +6,7 @@ import unittest
 from argparse import ArgumentTypeError
 
 from crossbench.browsers.viewport import Viewport, ViewportMode
-from tests import run_helper
+from tests import test_helper
 
 
 class ViewportTestCase(unittest.TestCase):
@@ -168,4 +168,4 @@ class ViewportTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

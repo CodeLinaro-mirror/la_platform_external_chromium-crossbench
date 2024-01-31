@@ -29,7 +29,7 @@ from crossbench.exception import MultiException
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.types import JsonDict
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
                                           CrossbenchFakeFsTestCase)
@@ -637,8 +637,8 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
 class TestBrowserVariantsConfig(BaseConfigTestCase):
   # pylint: disable=expression-not-assigned
 
-  EXAMPLE_CONFIG_PATH = pathlib.Path(
-      __file__).parent.parent / "config" / "browser.config.example.hjson"
+  EXAMPLE_CONFIG_PATH = (
+      test_helper.config_dir() / "browser.config.example.hjson")
 
   def setUp(self):
     super().setUp()
@@ -1464,4 +1464,4 @@ class NetworkConfigTestCase(BaseConfigTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

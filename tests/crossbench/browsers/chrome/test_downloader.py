@@ -7,7 +7,7 @@ import pathlib
 from unittest import mock
 
 from crossbench.browsers.chrome.downloader import ChromeDownloader
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
@@ -92,4 +92,4 @@ class BasicChromeDownloaderTestCaseMacOS(AbstractChromeDownloaderTestCase):
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

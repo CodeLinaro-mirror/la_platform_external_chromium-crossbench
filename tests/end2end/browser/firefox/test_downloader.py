@@ -14,7 +14,7 @@ from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.firefox.webdriver import (FirefoxWebDriver,
                                                    FirefoxDriverFinder)
 from crossbench import plt
-from tests import run_helper
+from tests import test_helper
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Only supported on macOS")
@@ -134,4 +134,4 @@ class FirefoxDownloaderTestCase():
 
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

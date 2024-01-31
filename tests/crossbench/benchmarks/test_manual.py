@@ -13,7 +13,7 @@ import hjson
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 
 
@@ -77,4 +77,4 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
 del BaseBenchmarkTestCase
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

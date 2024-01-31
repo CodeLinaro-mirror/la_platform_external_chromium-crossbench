@@ -5,9 +5,20 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Union
-import pytest
 import sys
+from typing import Union
+
+import pytest
+
+
+def root_dir() -> pathlib.Path:
+  # Input:  /foo/bar/crossbench/tests/test_helper.py
+  # Output: /foo/bar/crossbench/
+  return pathlib.Path(__file__).parents[1]
+
+
+def config_dir() -> pathlib.Path:
+  return root_dir() / "config"
 
 
 def run_pytest(path: Union[str, pathlib.Path], *args):

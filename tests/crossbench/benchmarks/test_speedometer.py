@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import datetime as dt
 from crossbench.browsers.viewport import Viewport
 
-from tests import run_helper
+from tests import test_helper
 
 from crossbench.benchmarks.speedometer import speedometer_2_0
 from crossbench.benchmarks.speedometer import speedometer_2_1
@@ -188,4 +188,4 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
       self.assertDictEqual(story.url_params, {"shuffleSeed": "1234"})
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

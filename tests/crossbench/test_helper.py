@@ -9,7 +9,7 @@ import unittest
 
 from crossbench import compat, helper
 from crossbench import plt
-from tests import run_helper
+from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -301,4 +301,4 @@ class UpdateUrlQueryTestCase(unittest.TestCase):
                                 {"foo": "bar"}))
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)

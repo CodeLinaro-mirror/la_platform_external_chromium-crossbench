@@ -7,7 +7,7 @@ import unittest
 
 from crossbench.flags import ChromeBaseFeatures, ChromeBlinkFeatures, ChromeFeatures, ChromeFlags, Flags, JSFlags
 
-from tests import run_helper
+from tests import test_helper
 
 
 class TestFlags(unittest.TestCase):
@@ -672,4 +672,4 @@ class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
 del _ChromeBaseFeaturesTestCase
 
 if __name__ == "__main__":
-  run_helper.run_pytest(__file__)
+  test_helper.run_pytest(__file__)
