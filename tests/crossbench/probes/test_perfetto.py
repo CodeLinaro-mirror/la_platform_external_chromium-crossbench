@@ -12,8 +12,9 @@ from tests import test_helper
 class TestProbe(unittest.TestCase):
 
   def test_missing_config(self):
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(ValueError) as cm:
       PerfettoProbe.from_config({})
+    self.assertIn("config", str(cm.exception))
 
   def test_parse_config(self):
     probe: PerfettoProbe = PerfettoProbe.from_config({"textproto": "TEXTPROTO"})
