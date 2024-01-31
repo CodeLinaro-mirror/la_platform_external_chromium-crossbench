@@ -17,6 +17,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from tabulate import tabulate
 
+from crossbench import __version__
 import crossbench.benchmarks.all as benchmarks
 from crossbench import cli_helper, helper, plt
 from crossbench.benchmarks.base import Benchmark
@@ -113,7 +114,6 @@ class CrossBenchCLI:
     self.parser = cli_helper.CrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
                      "with configurable measurement probes."))
-    self.help_parser = cli_helper.CrossBenchArgumentParser()
     self.describe_parser = cli_helper.CrossBenchArgumentParser()
     self.recorder_parser = cli_helper.CrossBenchArgumentParser()
     self.args = argparse.Namespace()
@@ -130,6 +130,8 @@ class CrossBenchCLI:
         action="store_false",
         default=has_color,
         help="Disable colored output")
+    self.parser.add_argument(
+        '--version', action='version', version=f"%(prog)s {__version__}")
 
   def _add_verbosity_argument(self, parser: argparse.ArgumentParser) -> None:
     debug_group = parser.add_argument_group("Verbosity / Debugging Options")
@@ -223,10 +225,14 @@ class CrossBenchCLI:
 
   def _setup_help_subparser(self) -> None:
     # Just for completeness we want to support "--help" and "help"
-    self.help_parser = self.subparsers.add_parser(
-        "help", help="Print the top-level --help")
+    help_parser = self.subparsers.add_parser(
+        "help", help="Print the top-level, same as --help")
+    help_parser.set_defaults(subcommand_fn=self.help_subcommand)
+    version_parser = self.subparsers.add_parser(
+        "version",
+        help="Show program's version number and exit, same as --version")
+    version_parser.set_defaults(subcommand_fn=self.version_subcommand)
     assert isinstance(self.describe_parser, cli_helper.CrossBenchArgumentParser)
-    self.help_parser.set_defaults(subcommand_fn=self.help_subcommand)
     self._add_verbosity_argument(self.describe_parser)
 
   def describe_subcommand(self, args: argparse.Namespace) -> None:
@@ -305,6 +311,11 @@ class CrossBenchCLI:
   def help_subcommand(self, args: argparse.Namespace) -> None:
     del args
     self.parser.print_help()
+    sys.exit(0)
+
+  def version_subcommand(self, args: argparse.Namespace) -> None:
+    del args
+    print(f"{sys.argv[0]} {__version__}")
     sys.exit(0)
 
   def _setup_benchmark_subparser(self, benchmark_cls: Type[Benchmark]) -> None:
