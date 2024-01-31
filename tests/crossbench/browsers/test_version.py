@@ -25,14 +25,14 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
   def parse(self, value: str) -> BrowserVersion:
     pass
 
-  def _parse_helper(self, value: str) -> BrowserVersion:
+  def _parse_helper(self, value: str):
     self.assertTrue(value)
     version: BrowserVersion = self.parse(value)
     self.assertGreater(version.major, 0)
     self.assertGreaterEqual(version.minor, 0)
     return version
 
-  def test_parse_lts(self) -> BrowserVersion:
+  def test_parse_lts(self):
     if self.LTS_VERSION_STR is None:
       self.skipTest("lts version not supported")
     version: BrowserVersion = self._parse_helper(self.LTS_VERSION_STR)
@@ -42,9 +42,8 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(version.is_beta)
     self.assertFalse(version.is_alpha)
     self.assertFalse(version.is_pre_alpha)
-    return version
 
-  def test_parse_stable(self) -> BrowserVersion:
+  def test_parse_stable(self):
     version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
     self.assertEqual(version.channel, BrowserVersionChannel.STABLE)
     self.assertFalse(version.is_lts)
@@ -52,9 +51,8 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(version.is_beta)
     self.assertFalse(version.is_alpha)
     self.assertFalse(version.is_pre_alpha)
-    return version
 
-  def test_parse_beta(self) -> BrowserVersion:
+  def test_parse_beta(self):
     if not self.BETA_VERSION_STR:
       self.skipTest("beta version not supported.")
     version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
@@ -64,9 +62,8 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertTrue(version.is_beta)
     self.assertFalse(version.is_alpha)
     self.assertFalse(version.is_pre_alpha)
-    return version
 
-  def test_parse_alpha(self) -> BrowserVersion:
+  def test_parse_alpha(self):
     if self.ALPHA_VERSION_STR is None:
       self.skipTest("alpha version not supported")
     version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
@@ -76,9 +73,8 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(version.is_beta)
     self.assertTrue(version.is_alpha)
     self.assertFalse(version.is_pre_alpha)
-    return version
 
-  def test_parse_pre_alpha(self) -> BrowserVersion:
+  def test_parse_pre_alpha(self):
     if self.PRE_ALPHA_VERSION_STR is None:
       self.skipTest("nightly version not supported")
     version: BrowserVersion = self._parse_helper(self.PRE_ALPHA_VERSION_STR)
@@ -88,7 +84,6 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(version.is_beta)
     self.assertFalse(version.is_alpha)
     self.assertTrue(version.is_pre_alpha)
-    return version
 
   def test_equal_stable(self):
     version_a = self.parse(self.STABLE_VERSION_STR)
@@ -162,8 +157,8 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(
         str(self.parse(self.PRE_ALPHA_VERSION_STR)), "117.0.5921.0 canary")
 
-  def test_parse_stable(self) -> BrowserVersion:
-    version = super().test_parse_stable()
+  def test_parse_stable_chrome(self):
+    version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
     self.assertEqual(version.major, 115)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.minor, 0)
@@ -173,10 +168,9 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(chrome_version.patch, 114)
     self.assertFalse(chrome_version.is_dev)
     self.assertFalse(chrome_version.is_canary)
-    return version
 
-  def test_parse_beta(self) -> BrowserVersion:
-    version = super().test_parse_beta()
+  def test_parse_beta_chrome(self):
+    version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(version.major, 116)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "beta")
@@ -185,10 +179,9 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(chrome_version.patch, 50)
     self.assertFalse(chrome_version.is_dev)
     self.assertFalse(chrome_version.is_canary)
-    return version
 
-  def test_parse_alpha(self) -> BrowserVersion:
-    version = super().test_parse_alpha()
+  def test_parse_alpha_chrome(self):
+    version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
     self.assertEqual(version.major, 117)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "dev")
@@ -197,10 +190,9 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(chrome_version.patch, 2)
     self.assertTrue(chrome_version.is_dev)
     self.assertFalse(chrome_version.is_canary)
-    return version
 
-  def test_parse_pre_alpha(self) -> BrowserVersion:
-    version = super().test_parse_pre_alpha()
+  def test_parse_pre_alpha_chrome(self):
+    version: BrowserVersion = self._parse_helper(self.PRE_ALPHA_VERSION_STR)
     self.assertEqual(version.major, 117)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "canary")
@@ -209,7 +201,6 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(chrome_version.patch, 0)
     self.assertFalse(chrome_version.is_dev)
     self.assertTrue(chrome_version.is_canary)
-    return version
 
 
 class FirefoxVersionTestCase(_BrowserVersionTestCase):
@@ -236,33 +227,29 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
     with self.assertRaises(ValueError):
       self.parse("Mozilla Firefox 116..0a")
 
-  def test_parse_lts(self) -> BrowserVersion:
-    version = super().test_parse_lts()
+  def test_parse_lts_firefox(self):
+    version: BrowserVersion = self._parse_helper(self.LTS_VERSION_STR)
     self.assertEqual(version.major, 114)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "esr")
-    return version
 
-  def test_parse_stable(self) -> BrowserVersion:
-    version = super().test_parse_stable()
+  def test_parse_stable_firefox(self):
+    version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
     self.assertEqual(version.major, 115)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "stable")
-    return version
 
-  def test_parse_beta(self) -> BrowserVersion:
-    version = super().test_parse_beta()
+  def test_parse_beta_firefox(self):
+    version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(version.major, 116)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "dev")
-    return version
 
-  def test_parse_alpha(self) -> BrowserVersion:
-    version = super().test_parse_alpha()
+  def test_parse_alpha_firefox(self):
+    version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
     self.assertEqual(version.major, 117)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "nightly")
-    return version
 
   def test_str(self):
     self.assertEqual(str(self.parse(self.LTS_VERSION_STR)), "114.0.1 esr")
@@ -295,25 +282,23 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
     with self.assertRaises(ValueError):
       self.parse("16.6 XXX (18615.3)")
 
-  def test_parse_stable(self) -> BrowserVersion:
-    version = super().test_parse_stable()
+  def test_parse_stable_safari(self):
+    version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
     self.assertEqual(version.major, 16)
     self.assertEqual(version.minor, 6)
     safari_version = cast(SafariVersion, version)
     self.assertFalse(safari_version.is_tech_preview)
     self.assertEqual(safari_version.release, 0)
     self.assertEqual(version.channel_name, "stable")
-    return version
 
-  def test_parse_beta(self) -> BrowserVersion:
-    version = super().test_parse_beta()
+  def test_parse_beta_safari(self):
+    version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(version.major, 17)
     self.assertEqual(version.minor, 0)
     safari_version = cast(SafariVersion, version)
     self.assertTrue(safari_version.is_tech_preview)
     self.assertEqual(safari_version.release, 175)
     self.assertEqual(version.channel_name, "technology preview")
-    return version
 
   def test_str(self):
     self.assertEqual(

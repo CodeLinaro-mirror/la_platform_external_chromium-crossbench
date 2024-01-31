@@ -482,7 +482,7 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertDictEqual(features.enabled, {})
     self.assertSetEqual(features.disabled, set())
 
-  def test_enable_simple(self) -> str:
+  def test_enable_simple(self):
     features = self.instance()
     features.enable("feature1")
     features.enable("feature2")
@@ -490,9 +490,8 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertEqual(len(features_list), 1)
     features_str = str(features)
     self.assertIn("=feature1,feature2", features_str)
-    return features_str
 
-  def test_disable_simple(self) -> str:
+  def test_disable_simple(self):
     features = self.instance()
     features.disable("feature1")
     features.disable("feature2")
@@ -500,9 +499,8 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertEqual(len(features_list), 1)
     features_str = str(features)
     self.assertIn("=feature1,feature2", features_str)
-    return features_str
 
-  def test_enable_disable(self) -> str:
+  def test_enable_disable(self):
     features = self.instance()
     features.enable("feature1")
     features.disable("feature2")
@@ -513,7 +511,6 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertIn("feature2", features_str)
     self.assertDictEqual(features.enabled, {"feature1": None})
     self.assertSetEqual(features.disabled, {"feature2"})
-    return features_str
 
   def test_update_same(self):
     features_1 = self.instance()
@@ -574,21 +571,24 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     self.assertIn("feature3", features_str)
     self.assertIn("feature4", features_str)
 
-  def test_enable_simple(self) -> str:
-    features_str = super().test_enable_simple()
-    self.assertEqual(features_str, "--enable-features=feature1,feature2")
-    return features_str
+  def test_enable_simple_chrome(self):
+    features = self.instance()
+    features.enable("feature1")
+    features.enable("feature2")
+    self.assertEqual(str(features), "--enable-features=feature1,feature2")
 
-  def test_disable_simple(self) -> str:
-    features_str = super().test_disable_simple()
-    self.assertEqual(features_str, "--disable-features=feature1,feature2")
-    return features_str
+  def test_disable_simple_chrome(self):
+    features = self.instance()
+    features.disable("feature1")
+    features.disable("feature2")
+    self.assertEqual(str(features), "--disable-features=feature1,feature2")
 
-  def test_enable_disable(self) -> str:
-    features_str = super().test_enable_disable()
-    self.assertEqual(features_str,
-                     "--enable-features=feature1 --disable-features=feature2")
-    return features_str
+  def test_enable_disable_chrome(self):
+    features = self.instance()
+    features.enable("feature1")
+    features.disable("feature2")
+    self.assertEqual(
+        str(features), "--enable-features=feature1 --disable-features=feature2")
 
   def test_enable_disable_complex(self):
     features = self.instance()
@@ -651,22 +651,26 @@ class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
         features.enable(invalid)
     self.assertTrue(features.is_empty)
 
-  def test_enable_simple(self) -> str:
-    features_str = super().test_enable_simple()
-    self.assertEqual(features_str, "--enable-blink-features=feature1,feature2")
-    return features_str
+  def test_enable_simple_chrome_blink(self):
+    features = self.instance()
+    features.enable("feature1")
+    features.enable("feature2")
+    self.assertEqual(str(features), "--enable-blink-features=feature1,feature2")
 
-  def test_disable_simple(self) -> str:
-    features_str = super().test_disable_simple()
-    self.assertEqual(features_str, "--disable-blink-features=feature1,feature2")
-    return features_str
-
-  def test_enable_disable(self) -> str:
-    features_str = super().test_enable_disable()
+  def test_disable_simple_chrome_blink(self):
+    features = self.instance()
+    features.disable("feature1")
+    features.disable("feature2")
     self.assertEqual(
-        features_str,
+        str(features), "--disable-blink-features=feature1,feature2")
+
+  def test_enable_disable_chrome_blink(self):
+    features = self.instance()
+    features.enable("feature1")
+    features.disable("feature2")
+    self.assertEqual(
+        str(features),
         "--enable-blink-features=feature1 --disable-blink-features=feature2")
-    return features_str
 
 
 del _ChromeBaseFeaturesTestCase
