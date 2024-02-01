@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import abc
 
 import contextlib
 import pathlib
@@ -28,6 +27,5 @@ class WprReplayNetworkServer(ReplayNetworkServer):
 
 class WprReplayNetwork(ReplayNetwork):
 
-  @abc.abstractmethod
   def _init_server(self, archive_path: pathlib.Path) -> WprReplayNetworkServer:
     return WprReplayNetworkServer(archive_path)

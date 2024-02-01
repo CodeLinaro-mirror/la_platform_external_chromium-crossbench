@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import hjson
 import pathlib
+import unittest
 from crossbench.cli.config.probe import ProbeListConfig
 
 from crossbench.probes.dtrace import DTraceProbe
@@ -12,6 +14,7 @@ from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 class TestProbe(CrossbenchFakeFsTestCase):
 
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_config(self):
     config_file = (
         test_helper.config_dir() / "probe" /

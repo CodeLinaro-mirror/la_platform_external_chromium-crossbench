@@ -89,7 +89,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       return pathlib.Path()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> ChromiumDriver:
+                    driver_path: pathlib.Path) -> RemoteWebDriver:
     assert not self._is_running
     assert self.log_file
     args = self._get_browser_flags_for_session(session)
