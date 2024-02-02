@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crossbench"
-version = "1.0.2"
+version = "1.0.3"
 authors = [ "Camillo Bruni <cbruni@chromium.org>" ]
 description = "A cross-browser, cross-system web benchmark runner"
 readme = "README.md"
@@ -31,8 +31,8 @@ colorama = "^0.4.6"
 ordered-set = "^4.1.0"
 
 [tool.poetry.scripts]
-crossbench = 'scripts:crossbench'
-cb = 'scripts:crossbench'
+crossbench = 'crossbench.scripts:crossbench'
+cb = 'crossbench.scripts:crossbench'
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "^1.6.3"
