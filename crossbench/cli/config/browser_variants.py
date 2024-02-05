@@ -19,7 +19,7 @@ from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
-from crossbench.flags import ChromeFlags, Flags
+from crossbench.flags import ChromeFlags, Flags, JSFlags
 
 from .base import ConfigError
 from .browser import BrowserConfig
@@ -362,35 +362,52 @@ class BrowserVariantsConfig:
     unique_names = set(names)
     return len(unique_names) == len(names)
 
-  def _extract_chrome_flags(self, args: argparse.Namespace) -> ChromeFlags:
-    flags = ChromeFlags()
+  def _extract_chrome_flags(self,
+                            args: argparse.Namespace) -> List[ChromeFlags]:
+    flags_sets = [ChromeFlags()]
+
     if args.enable_features:
-      flags["--enable-features"] = args.enable_features
+      for flags in flags_sets:
+        flags["--enable-features"] = args.enable_features
     if args.disable_features:
-      flags["--disable-features"] = args.disable_features
+      for flags in flags_sets:
+        flags["--disable-features"] = args.disable_features
 
     if args.js_flags:
-      for js_flag in args.js_flags.split(","):
-        js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
-        flags.js_flags.set(js_flag_name, js_flag_value)
+
+      def copy_and_set_js_flags(flags: ChromeFlags,
+                                js_flags_str: str) -> ChromeFlags:
+        flags = flags.copy()
+        for js_flag in js_flags_str.split(","):
+          js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
+          flags.js_flags.set(js_flag_name, js_flag_value)
+        return flags
+
+      flags_sets = [
+          copy_and_set_js_flags(flags, js_flags_str)
+          for flags in flags_sets
+          for js_flags_str in args.js_flags
+      ]
 
     if args.enable_field_trial_config is True:
-      flags.set("--enable-field-trial-config")
+      for flags in flags_sets:
+        flags.set("--enable-field-trial-config")
     if args.enable_field_trial_config is False:
-      flags.set("--disable-field-trial-config")
-    return flags
+      for flags in flags_sets:
+        flags.set("--disable-field-trial-config")
+    return flags_sets
 
   def _verify_browser_flags(self, args: argparse.Namespace) -> None:
-    chrome_flags = self._extract_chrome_flags(args)
-    for flag_name, value in chrome_flags.items():
-      if not value:
-        continue
-      for browser in self._variants:
-        if not isinstance(browser, browsers.Chromium):
-          raise argparse.ArgumentTypeError(
-              f"Used chrome/chromium-specific flags {flag_name} "
-              f"for non-chrome {browser.unique_name}.\n"
-              "Use --browser-config for complex variants.")
+    for chrome_flags in self._extract_chrome_flags(args):
+      for flag_name, value in chrome_flags.items():
+        if not value:
+          continue
+        for browser in self._variants:
+          if not isinstance(browser, browsers.Chromium):
+            raise argparse.ArgumentTypeError(
+                f"Used chrome/chromium-specific flags {flag_name} "
+                f"for non-chrome {browser.unique_name}.\n"
+                "Use --browser-config for complex variants.")
     browser_types = set(browser.type for browser in self._variants)
     if len(browser_types) == 1:
       return
@@ -430,36 +447,43 @@ class BrowserVariantsConfig:
     browser_config = self._maybe_downloaded_binary(browser_config)
     browser_cls: Type[Browser] = self._get_browser_cls(browser_config)
     path: pathlib.Path = browser_config.path
-    flags = browser_cls.default_flags()
+    flags_sets = [browser_cls.default_flags()]
 
     if browser_config.driver.type != BrowserDriverType.ANDROID and (
         not path.exists()):
       raise argparse.ArgumentTypeError(f"Browser binary does not exist: {path}")
 
     if issubclass(browser_cls, browsers.Chromium):
-      assert isinstance(flags, ChromeFlags)
-      extra_flags = self._extract_chrome_flags(args)
-      flags.merge(extra_flags)
+      assert all(isinstance(flags, ChromeFlags) for flags in flags_sets)
+
+      extra_flag_sets = self._extract_chrome_flags(args)
+      flags_sets = [
+          flags.merge_copy(extra_flags)
+          for flags in flags_sets
+          for extra_flags in extra_flag_sets
+      ]
 
     for flag_str in args.other_browser_args:
       flag_name, flag_value = Flags.split(flag_str)
-      flags.set(flag_name, flag_value)
+      for flags in flags_sets:
+        flags.set(flag_name, flag_value)
 
     browser_platform = self._get_browser_platform(browser_config)
 
-    # Ignore the flags for the label since --browser only has a single
-    # flag variant.
-    label = f"{browser_platform}_{len(self._unique_names)}"
-    assert self._check_unique_label(label), f"Non-unique label: {label}"
-
-    browser_instance = browser_cls(  # pytype: disable=not-instantiable
-        label=label,
-        path=path,
-        flags=flags,
-        driver_path=args.driver_path or browser_config.driver.path,
-        viewport=args.viewport,
-        splash_screen=args.splash_screen,
-        platform=browser_platform)
-    logging.info("SELECTED BROWSER: name=%s path='%s' ",
-                 browser_instance.unique_name, path)
-    self._variants.append(browser_instance)
+    name = f"{browser_platform}_{len(self._unique_names)}"
+    for flags in flags_sets:
+      label = name
+      if len(flags_sets) > 1:
+        label = self._flags_to_label(label, flags)
+      assert self._check_unique_label(label), f"Non-unique label: {label}"
+      browser_instance = browser_cls(  # pytype: disable=not-instantiable
+          label=label,
+          path=path,
+          flags=flags,
+          driver_path=args.driver_path or browser_config.driver.path,
+          viewport=args.viewport,
+          splash_screen=args.splash_screen,
+          platform=browser_platform)
+      logging.info("SELECTED BROWSER: name=%s path='%s' ",
+                   browser_instance.unique_name, path)
+      self._variants.append(browser_instance)

@@ -385,7 +385,8 @@ class CrossBenchCLI:
     network_group = subparser.add_argument_group("Network Options", "")
     network_settings_group = network_group.add_mutually_exclusive_group()
     network_settings_group.add_argument(
-        "--network", "--network-config",
+        "--network",
+        "--network-config",
         type=cli_config.NetworkConfig.parse,
         default=cli_config.NetworkConfig.default(),
         help=cli_config.NetworkConfig.help())
@@ -520,7 +521,8 @@ class CrossBenchCLI:
         "Browsers Options: Chrome/Chromium",
         "For convenience these arguments are directly are forwarded "
         "directly to chrome. ")
-    chrome_args.add_argument("--js-flags", dest="js_flags")
+    chrome_args.add_argument(
+        "--js-flags", dest="js_flags", action="append", default=[])
 
     doc_str = "See chrome's base/feature_list.h source file for more details"
     chrome_args.add_argument(

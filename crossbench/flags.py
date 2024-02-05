@@ -94,6 +94,11 @@ class Flags(collections.UserDict):
   def copy(self) -> Flags:
     return self.__class__(self)
 
+  def merge_copy(self, other: Flags.InitialDataType):
+    ret = self.copy()
+    ret.merge(other)
+    return ret
+
   def _describe(self, flag_name: str) -> str:
     value = self.get(flag_name)
     if value is None:
