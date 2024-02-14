@@ -155,8 +155,8 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
           f"perfetto bin '{self.probe.perfetto_bin}' cannot be found "
           f"on {self.browser_platform}")
 
-    self.runner_platform.set_filecontents(self._host_config_file,
-                                          self.probe.textproto)
+    self.runner_platform.set_file_contents(self._host_config_file,
+                                           self.probe.textproto)
     self.browser_platform.push(self._host_config_file,
                                self._browser_config_file)
 

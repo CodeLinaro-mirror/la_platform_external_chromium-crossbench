@@ -487,6 +487,20 @@ class AndroidAdbPlatform(PosixPlatform):
     self.adb.push(from_path, to_path)
     return to_path
 
+  def set_file_contents(self,
+                        file: Union[str, pathlib.Path],
+                        data: str,
+                        encoding: str = "utf-8") -> None:
+    # self.push a tmp file with the given contents
+    with self.host_platform.mkdtemp() as tmp_dir:
+      tmp_file = tmp_dir / "push.data"
+      try:
+        with tmp_file.open("w", encoding=encoding) as f:
+          f.write(data)
+        self.push(tmp_file, pathlib.Path(file))
+      finally:
+        self.host_platform.rm(tmp_file)
+
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()

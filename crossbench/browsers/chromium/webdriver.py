@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import atexit
 import json
 import logging
 import os
@@ -162,7 +163,20 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     return data
 
 
+# Android is high-tech and reads chrome flags from an app-specific file.
+# TODO: extend support to more than just chrome.
+_FLAG_ROOT = pathlib.Path("/data/local/tmp/")
+FLAGS_WEBLAYER = _FLAG_ROOT / "weblayer-command-line"
+FLAGS_WEBVIEW = _FLAG_ROOT / "webview-command-line"
+FLAGS_CONTENT_SHELL = _FLAG_ROOT / "content-shell-command-line"
+FLAGS_CHROME = _FLAG_ROOT / "chrome-command-line"
+
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
+
+  def __init__(self, *args, **kwargs):
+    self._chrome_command_line_path = FLAGS_CHROME
+    self._previous_command_line_contents: Optional[str] = None
+    super().__init__(*args, **kwargs)
 
   @property
   def platform(self) -> plt.AndroidAdbPlatform:
@@ -192,6 +206,45 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
       logging.debug("Chrome Android: Removed unsupported flag: %s=%s", flag,
                     flag_value)
     return chrome_flags
+
+  def _start_driver(self, session: BrowserSessionRunGroup,
+                    driver_path: pathlib.Path) -> ChromiumDriver:
+    self._backup_chrome_flags()
+    atexit.register(self._restore_chrome_flags)
+    return super()._start_driver(session, driver_path)
+
+  def _backup_chrome_flags(self) -> None:
+    assert self._previous_command_line_contents is None
+    self._previous_command_line_contents = self._read_device_flags()
+
+  def _read_device_flags(self) -> str:
+    if not self.platform.exists(self._chrome_command_line_path):
+      return ""
+    return self.platform.cat(self._chrome_command_line_path)
+
+  def force_quit(self) -> None:
+    try:
+      super().force_quit()
+    finally:
+      self._restore_chrome_flags()
+
+  def _restore_chrome_flags(self) -> None:
+    atexit.unregister(self._restore_chrome_flags)
+    if self._previous_command_line_contents is None:
+      return
+    current_flags = self._read_device_flags()
+    if current_flags != self._previous_command_line_contents:
+      logging.warning("%s: flags file changed during run", self)
+    if not self._previous_command_line_contents:
+      logging.debug("%s: deleting chrome flags file: %s", self,
+                    self._chrome_command_line_path)
+      self.platform.rm(self._chrome_command_line_path)
+    else:
+      logging.debug("%s: restoring previous flags file contents in %s", self,
+                    self._chrome_command_line_path)
+      self.platform.set_file_contents(self._chrome_command_line_path,
+                                      self._previous_command_line_contents)
+      self._previous_command_line_contents = None
 
   def _create_options(self, session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromiumOptions:

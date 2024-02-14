@@ -324,8 +324,10 @@ class Platform(abc.ABC):
     with pathlib.Path(file).open(encoding=encoding) as f:
       return f.read()
 
-  def set_filecontents(self, file: Union[str, pathlib.Path],
-                       data: str, encoding: str = "utf-8") -> None:
+  def set_file_contents(self,
+                        file: Union[str, pathlib.Path],
+                        data: str,
+                        encoding: str = "utf-8") -> None:
     assert not self.is_remote, "Unsupported operation on remote platform"
     with pathlib.Path(file).open("w", encoding=encoding) as f:
       f.write(data)
