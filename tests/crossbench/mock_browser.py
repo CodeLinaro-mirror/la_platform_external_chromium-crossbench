@@ -96,8 +96,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.did_run = True
 
   def force_quit(self) -> None:
-    # Assert that start() was called before force_quit()
-    assert self._is_running
+    if not self._is_running:
+      return
     self._is_running = False
 
   def _extract_version(self) -> str:

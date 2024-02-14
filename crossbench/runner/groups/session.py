@@ -191,6 +191,9 @@ class BrowserSessionRunGroup(RunGroup):
     info_dict.update({"index": self.index})
     return info_dict
 
+  def __str__(self) -> str:
+    return f"Session({self.browser}, {self.index})"
+
   @property
   def browser_tmp_dir(self) -> pathlib.Path:
     if not self._browser_tmp_dir:
@@ -200,14 +203,13 @@ class BrowserSessionRunGroup(RunGroup):
 
   @contextlib.contextmanager
   def measure(
-      self, label: str
-  ) -> Iterator[Tuple[exception.ExceptionAnnotationScope,
-                      helper.DurationMeasureContext]]:
-    # Return a combined context manager that adds a named exception info
+      self,
+      label: str,
+  ) -> Iterator[None]:
+    # Return a combined context manager that captures all exceptions
     # and measures the time during the with-scope.
-    with self._exceptions.info(label) as stack, self._durations.measure(
-        label) as timer:
-      yield (stack, timer)
+    with self._exceptions.capture(label), self._durations.measure(label):
+      yield
 
   def merge(self, runner: Runner) -> None:
     # TODO: implement merging of session probes
@@ -217,39 +219,60 @@ class BrowserSessionRunGroup(RunGroup):
     return EmptyProbeResult()
 
   @contextlib.contextmanager
-  def open(self, is_dry_run: bool = False) -> Iterator[BrowserSessionRunGroup]:
-    self._setup_session_dir()
-    with helper.ChangeCWD(self.path):
+  def open(self, is_dry_run: bool = False) -> Iterator[bool]:
+    yielded = False
+    with self.exceptions.capture():
+      self._setup_session_dir()
+      with helper.ChangeCWD(self.path):
+        try:
+          with self._open(is_dry_run):
+            yielded = True
+            yield self.is_success
+        finally:
+          self._teardown(is_dry_run)
+    # Contextmanager always needs to yield, even in the case of early
+    # exceptions, the caller is responsible for skipping the body.
+    if not yielded:
+      assert not self.is_success
+      yield False
+
+  @contextlib.contextmanager
+  def _open(self, is_dry_run: bool = False) -> Iterator[None]:
+    with self.network.open(self.browser):
+      self._setup(is_dry_run)
       try:
-        with self.network.open(self.browser):
-          self._setup(is_dry_run)
-          yield self
-      finally:
-        self._teardown(is_dry_run)
+        yield
+      except Exception as e:
+        logging.debug(
+            "BrowserSessionRunGroup: got unexpected inner exception: %s", e)
+        raise e
+
+  def _setup_session_dir(self):
+    with self.measure("browser-session-setup-dir"):
+      self.path.mkdir(parents=True, exist_ok=True)
+      if self.runner_platform.is_win:
+        logging.debug("Skipping session_dir symlink on windows.")
+        return
+      if self.is_single_run:
+        # If there is a single run per session we reuse the run-dir.
+        self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
+        self.raw_sessions_dir.symlink_to(self.path)
 
   def _setup(self, is_dry_run: bool) -> None:
     assert self._state == _State.READY
     self._state = _State.STARTING
     with self.measure("browser-session-setup"):
       self._setup_runs(is_dry_run)
-      self._start_browser(is_dry_run)
-      self._state = _State.RUNNING
+      with self._exceptions.annotate(f"Starting Browser: {self.browser}"):
+        self._start_browser(is_dry_run)
 
-  def _setup_session_dir(self):
-    self.path.mkdir(parents=True, exist_ok=True)
-    if self.runner_platform.is_win:
-      logging.debug("Skipping session_dir symlink on windows.")
-      return
-    if self.is_single_run:
-      # If there is a single run per session we reuse the run-dir.
-      self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
-      self.raw_sessions_dir.symlink_to(self.path)
 
   def _setup_runs(self, is_dry_run: bool) -> None:
     # TODO: handle session vs run probe.
     for run in self.runs:
-      logging.info("Preparing SESSION %s RUN %s", self.index, run.index)
-      run.setup(is_dry_run)
+      with self._exceptions.annotate(f"Setting up {run}"):
+        logging.info("Preparing SESSION %s RUN %s", self.index, run.index)
+        run.setup(is_dry_run)
 
   def _start_browser(self, is_dry_run: bool) -> None:
     assert self._state == _State.STARTING
@@ -286,7 +309,12 @@ class BrowserSessionRunGroup(RunGroup):
 
   def _stop_browser(self) -> None:
     assert self._state == _State.STOPPING
-    # TODO: implement
+    # TODO: move complete implementation here
+    # This can happen if a browser / probe setup error occurs and we're
+    # in a unclean state.
+    if self.browser.is_running:
+      self._runs[-1]._tear_down_browser()
+
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:

@@ -69,6 +69,13 @@ class ThreadMode(compat.StrEnumWithHelp):
     return [RunThreadGroup(runs) for runs in groups.values()]
 
 
+@enum.unique
+class RunnerState(compat.StrEnum):
+  INITIAL = "INITIAL"
+  SETUP = "SETUP"
+  RUNNING = "RUNNING"
+  TEARDOWN = "TEARDOWN"
+
 class Runner:
 
   @classmethod
@@ -162,6 +169,7 @@ class Runner:
       timing: Timing = Timing(),
       thread_mode: ThreadMode = ThreadMode.NONE,
       throw: bool = False):
+    self._state = RunnerState.INITIAL
     self.out_dir = out_dir
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
@@ -174,6 +182,7 @@ class Runner:
     assert repetitions > 0, f"Invalid repetitions={repetitions}"
     self._cache_temperatures: Tuple[str, ...] = tuple(cache_temperatures)
     self._probes: List[Probe] = []
+    self._default_probes: List[Probe] = []
     self._runs: List[Run] = []
     self._thread_mode = thread_mode
     self._exceptions = exception.Annotator(throw)
@@ -189,6 +198,12 @@ class Runner:
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
     self._browser_group: Optional[BrowsersRunGroup] = None
 
+  def _assert_state(self, current: RunnerState,
+                    next_state: RunnerState) -> None:
+    assert self._state is current, (
+        f"Expected state == {current}, but got {self._state}")
+    self._state = next_state
+
   def _validate_stories(self) -> None:
     for probe_cls in self.stories[0].PROBES:
       assert inspect.isclass(probe_cls), (
@@ -203,8 +218,11 @@ class Runner:
 
   def _attach_default_probes(self, probe_list: Iterable[Probe]) -> None:
     assert len(self._probes) == 0
+    assert len(self._default_probes) == 0
     for probe_cls in all_probes.INTERNAL_PROBES:
-      self.attach_probe(probe_cls())  # pytype: disable=not-instantiable
+      default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
+      self.attach_probe(default_probe)
+      self._default_probes.append(default_probe)
     for probe in probe_list:
       self.attach_probe(probe)
     # Results probe must be first in the list, and thus last to be processed
@@ -214,12 +232,14 @@ class Runner:
   def attach_probe(self,
                    probe: Probe,
                    matching_browser_only: bool = False) -> Probe:
-    assert probe not in self._probes, "Cannot add the same probe twice"
-    self._probes.append(probe)
+    if probe in self._probes:
+      raise ValueError(f"Cannot add the same probe twice: {probe.NAME}")
+    probe_was_used = False
     for browser in self.browsers:
       try:
         probe.validate_browser(self.env, browser)
         browser.attach_probe(probe)
+        probe_was_used = True
       except ProbeIncompatibleBrowser as e:
         if matching_browser_only:
           logging.error("Skipping incompatible probe=%s for browser=%s:",
@@ -227,6 +247,8 @@ class Runner:
           logging.error("    %s", e)
           continue
         raise
+    if probe_was_used:
+      self._probes.append(probe)
     return probe
 
   @property
@@ -248,6 +270,10 @@ class Runner:
   @property
   def probes(self) -> Iterable[Probe]:
     return iter(self._probes)
+
+  @property
+  def default_probes(self) -> Iterable[Probe]:
+    return iter(self._default_probes)
 
   @property
   def repetitions(self) -> int:
@@ -302,9 +328,6 @@ class Runner:
   def has_browser_group(self) -> bool:
     return self._browser_group is not None
 
-  def sh(self, *args, shell: bool = False, stdout=None):
-    return self._platform.sh(*args, shell=shell, stdout=stdout)
-
   def wait(self,
            time: Union[int, float, dt.timedelta],
            absolute_time: bool = False) -> None:
@@ -318,6 +341,7 @@ class Runner:
     self._platform.sleep(delta)
 
   def run(self, is_dry_run: bool = False) -> None:
+    assert self._state is RunnerState.INITIAL, "Cannot reuse Runner"
     with helper.SystemSleepPreventer():
       with self._exceptions.annotate("Preparing"):
         self._setup()
@@ -326,12 +350,13 @@ class Runner:
 
     if self._exceptions.throw:
       # Ensure that we bail out on the first exception.
-      self.assert_successful_runs()
+      self.assert_successful_sessions_and_runs()
     if not is_dry_run:
       self._tear_down()
-    self.assert_successful_runs()
+    self.assert_successful_sessions_and_runs()
 
   def _setup(self) -> None:
+    self._assert_state(RunnerState.INITIAL, RunnerState.SETUP)
     logging.info("-" * 80)
     logging.info("SETUP")
     logging.info("-" * 80)
@@ -385,7 +410,7 @@ class Runner:
     return Run(self, browser_session, story, repetition, temperature, index,
                name, timeout, throw)
 
-  def assert_successful_runs(self) -> None:
+  def assert_successful_sessions_and_runs(self) -> None:
     failed_runs = list(run for run in self.runs if not run.is_success)
     self._exceptions.assert_success(
         f"Runs Failed: {len(failed_runs)}/{len(tuple(self.runs))} runs failed.",
@@ -395,16 +420,15 @@ class Runner:
     return self._thread_mode.group(self._runs)
 
   def _run(self, is_dry_run: bool = False) -> None:
+    self._assert_state(RunnerState.SETUP, RunnerState.RUNNING)
     thread_groups: List[RunThreadGroup] = []
     with self._exceptions.info("Creating thread groups for all Runs"):
       thread_groups = self._get_thread_groups()
 
     group_count = len(thread_groups)
     if group_count == 1:
-      # Special case single thread groups
-      with self._exceptions.annotate("Running single thread group"):
-        thread_groups[0].run()
-        return
+      self._run_single_threaded(thread_groups[0])
+      return
 
     with self._exceptions.annotate(f"Starting {group_count} thread groups."):
       for thread_group in thread_groups:
@@ -415,7 +439,13 @@ class Runner:
       for thread_group in thread_groups:
         thread_group.join()
 
+  def _run_single_threaded(self, thread_groups: RunThreadGroup) -> None:
+    # Special case single thread groups
+    with self._exceptions.annotate("Running single thread group"):
+      thread_groups.run()
+
   def _tear_down(self) -> None:
+    self._assert_state(RunnerState.RUNNING, RunnerState.TEARDOWN)
     logging.info("=" * 80)
     logging.info("RUNS COMPLETED")
     logging.info("-" * 80)
@@ -453,7 +483,7 @@ class Runner:
     if not self._platform.is_thermal_throttled():
       return
     logging.info("COOLDOWN")
-    for _ in helper.wait_with_backoff(helper.WaitRange(1, 100)):
+    for _ in helper.wait_with_backoff(helper.WaitRange(1, 100), self._platform):
       if not self._platform.is_thermal_throttled():
         break
       logging.info("COOLDOWN: still hot, waiting some more")

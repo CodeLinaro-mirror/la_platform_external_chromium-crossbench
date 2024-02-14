@@ -18,9 +18,10 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench
 from crossbench import plt
-from crossbench.benchmarks.base import SubStoryBenchmark
+from crossbench.benchmarks.base import Benchmark, SubStoryBenchmark
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.base import MachineArch
+from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -141,10 +142,17 @@ class MockPlatform(ActivePlatformClass):
 
 
 class MockStory(Story):
-  pass
+
+  @classmethod
+  def all_story_names(cls):
+    return ["story_1", "story_2"]
+
+  def run(self, run: Run) -> None:
+    pass
 
 
 class MockBenchmark(SubStoryBenchmark):
+  NAME = "mock-benchmark"
   DEFAULT_STORY_CLS = MockStory
 
 

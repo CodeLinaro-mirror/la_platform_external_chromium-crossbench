@@ -247,8 +247,8 @@ class WaitRange:
 
 
 def wait_with_backoff(
-    wait_range: Union[int, float, dt.timedelta, WaitRange]
-) -> Iterator[Tuple[float, float]]:
+    wait_range: Union[int, float, dt.timedelta, WaitRange],
+    platform: plt.Platform = plt.PLATFORM) -> Iterator[Tuple[float, float]]:
   if not isinstance(wait_range, WaitRange):
     wait_range = WaitRange(timeout=wait_range)
   start = dt.datetime.now()
@@ -259,7 +259,7 @@ def wait_with_backoff(
       raise TimeoutError(f"Waited for {duration}")
     time_left = timeout - duration
     yield duration.total_seconds(), time_left.total_seconds()
-    plt.PLATFORM.sleep(sleep_for.total_seconds())
+    platform.sleep(sleep_for.total_seconds())
 
 
 class DurationMeasureContext:

@@ -148,6 +148,10 @@ class Browser(abc.ABC):
   def is_local(self) -> bool:
     return True
 
+  @property
+  def is_running(self) -> bool:
+    return self._is_running
+
   def set_log_file(self, path: pathlib.Path) -> None:
     self.log_file = path
 
@@ -199,7 +203,8 @@ class Browser(abc.ABC):
     pass
 
   def setup(self, session: BrowserSessionRunGroup) -> None:
-    assert not self._is_running
+    assert not self._is_running, (
+        "Previously used browser was not correctly stopped.")
     runner = session.runner
     self.clear_cache(runner)
     self.start(session)
@@ -230,13 +235,15 @@ class Browser(abc.ABC):
 
   def quit(self, runner: Runner) -> None:
     del runner
-    assert self._is_running
+    assert self._is_running, "Browser is already stopped"
     try:
       self.force_quit()
     finally:
       self._pid = None
 
   def force_quit(self) -> None:
+    if not self._is_running:
+      return
     logging.info("Browser.force_quit()")
     if self.platform.is_macos:
       self.platform.exec_apple_script(f"""

@@ -11,7 +11,7 @@ import sys
 import traceback as tb
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from crossbench import helper
 
@@ -63,6 +63,8 @@ class ExceptionAnnotationScope:
     logging.debug("ExceptionAnnotationScope: %s", entries)
     self._annotator = annotator
     self._exception_types = exception_types
+    self._ignore_exception_types = ignore_exception_types + (
+        StopIteration, GeneratorExit, StopAsyncIteration)
     self._ignore_exception_types = ignore_exception_types
     self._added_info_stack_entries = entries
     self._throw_cls: Optional[Type[BaseException]] = throw_cls
@@ -142,6 +144,11 @@ class ExceptionAnnotator:
   def exceptions(self) -> List[Entry]:
     return self._exceptions
 
+  def __getitem__(self, key: Any) -> Entry:
+    if not isinstance(key, int):
+      raise TypeError(f"Expected int key, but got: {key}")
+    return self._exceptions[key]
+
   def __len__(self) -> int:
     return len(self._exceptions)
 
@@ -158,8 +165,8 @@ class ExceptionAnnotator:
     message = message.format(self)
     if issubclass(exception_cls, MultiException):
       exception = exception_cls(message, self)
-      if len(self.exceptions) == 1:
-        raise exception from self.exceptions[0].exception
+      if len(self) == 1:
+        raise exception from self[0].exception
       raise exception
     raise exception_cls(message)
 
@@ -173,7 +180,10 @@ class ExceptionAnnotator:
       exceptions: TExceptionTypes = (Exception,),
       ignore: TExceptionTypes = tuple(),
   ) -> ExceptionAnnotationScope:
-    """Sets info stack entries and captures exceptions."""
+    """Sets info stack entries and captures exceptions.
+    - Does not rethrow captured exceptions
+    - Does not directly throw a MultiExceptions, unless assert_success()
+      is called. """
     return ExceptionAnnotationScope(self, exceptions, ignore, stack_entries,
                                     self._throw_cls)
 

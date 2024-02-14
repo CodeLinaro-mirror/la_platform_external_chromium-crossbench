@@ -403,14 +403,17 @@ class Run:
       try:
         with self.measure("run"), helper.Spinner():
           if not is_dry_run:
-            self._run_story_setup()
-            self._story.run(self)
-            self._run_story_tear_down()
+            self._run_story()
       except TimeoutError as e:
         # Handle TimeoutError earlier since they might be caused by
         # throttled down non-foreground browser.
         self._exceptions.append(e)
       self.environment.check_browser_focused(self.browser)
+
+  def _run_story(self) -> None:
+    self._run_story_setup()
+    self._story.run(self)
+    self._run_story_tear_down()
 
   def _run_story_setup(self) -> None:
     with self.measure("story-setup"):
@@ -435,32 +438,29 @@ class Run:
         f"Invalid state got={self._state} expected={expected}")
     self._state = next_state
 
-  def tear_down(self, is_shutdown: bool = False) -> None:
+  def tear_down(self) -> None:
     self._advance_state(RunState.RUN, RunState.DONE)
-    self._tear_down_browser(is_shutdown)
+    self._tear_down_browser()
 
     with self.measure("probes-tear_down"):
       self._tear_down_probe_contexts(self._probe_contexts)
       self._probe_contexts = []
     self._rm_browser_tmp_dir()
 
-  def _tear_down_browser(self, is_shutdown: bool) -> None:
+  def _tear_down_browser(self) -> None:
     if not self.browser_session.is_last_run(self):
-      logging.debug("Skipping browser teardown (not first in session): %s",
-                    self)
+      logging.debug("Skipping browser teardown (not last in session): %s", self)
       return
-    with self.measure("browser-tear_down"):
-      if self._browser.is_running is False:
-        logging.warning("Browser is no longer running (crashed or closed).")
-      else:
-        if is_shutdown:
-          try:
-            self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
-          except Exception as e:  # pylint: disable=broad-except
-            logging.warning("Error quitting browser: %s", e)
-            return
-        with self._exceptions.capture("Quit browser"):
-          self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
+    if self._browser.is_running is False:
+      logging.warning("Browser is no longer running (crashed or closed).")
+      return
+    with self.measure("browser-tear_down"), self._exceptions.capture(
+        "Quit browser"):
+      try:
+        self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
+      except Exception as e:  # pylint: disable=broad-except
+        logging.warning("Error quitting browser: %s", e)
+        return
 
   def _tear_down_probe_contexts(self,
                                 probe_contexts: List[ProbeContext],
