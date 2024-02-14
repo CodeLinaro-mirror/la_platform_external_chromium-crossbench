@@ -337,7 +337,10 @@ class Platform(abc.ABC):
     if not from_path.exists():
       raise ValueError(f"Cannot copy non-existing source path: {from_path}")
     to_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(from_path, to_path)
+    if from_path.is_dir():
+      shutil.copytree(from_path, to_path)
+    else:
+      shutil.copy2(from_path, to_path)
     return to_path
 
   def rm(self, path: Union[str, pathlib.Path], dir: bool = False) -> None:

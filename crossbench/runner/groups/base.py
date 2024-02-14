@@ -33,7 +33,7 @@ class RunGroup(abc.ABC):
 
   @property
   def results(self) -> ProbeResultDict:
-    assert self._merged_probe_results
+    assert self._merged_probe_results is not None
     return self._merged_probe_results
 
   @property
@@ -82,7 +82,7 @@ class RunGroup(abc.ABC):
     return new_file
 
   def merge(self, runner: Runner) -> None:
-    assert self._merged_probe_results
+    assert self._merged_probe_results is not None
     with self._exceptions.info(*self.info_stack):
       for probe in reversed(tuple(runner.probes)):
         with self._exceptions.capture(f"Probe {probe.name} merge results"):

@@ -36,8 +36,27 @@ class ProbeResult(abc.ABC):
     return not any(
         (self._url_list, self._file_list, self._json_list, self._csv_list))
 
+  @property
+  def is_remote(self) -> bool:
+    return False
+
   def __bool__(self) -> bool:
     return not self.is_empty
+
+  def __eq__(self, other: Any) -> bool:
+    if not isinstance(other, ProbeResult):
+      return False
+    if self is other:
+      return True
+    if self.is_empty and other.is_empty:
+      return True
+    if self._file_list != other._file_list:
+      return False
+    if self._json_list != other._json_list:
+      return False
+    if self._csv_list != other._csv_list:
+      return False
+    return self._url_list == other._url_list
 
   def merge(self, other: ProbeResult) -> ProbeResult:
     if self.is_empty:
@@ -75,6 +94,11 @@ class ProbeResult(abc.ABC):
     if self._csv_list:
       result["csv"] = list(map(str, self._csv_list))
     return result
+
+  @property
+  def has_files(self) -> bool:
+    return (bool(self._file_list) or bool(self._json_list) or
+            bool(self._csv_list))
 
   def all_files(self) -> Iterable[pathlib.Path]:
     yield from self._file_list
@@ -147,6 +171,7 @@ class BrowserProbeResult(ProbeResult):
     self._browser_file = file
     self._browser_json = json
     self._browser_csv = csv
+    self._is_remote = run.is_remote
 
     file = self._copy_files(run, file)
     json = self._copy_files(run, json)
@@ -154,10 +179,14 @@ class BrowserProbeResult(ProbeResult):
 
     super().__init__(url, file, json, csv)
 
+  @property
+  def is_remote(self) -> bool:
+    return self._is_remote
+
   def _copy_files(
       self, run: Run, paths: Optional[Iterable[pathlib.Path]]
   ) -> Optional[Iterable[pathlib.Path]]:
-    if not paths or not run.is_remote:
+    if not paths or not self._is_remote:
       return paths
     # Copy result files from remote tmp dir to local results dir
     browser_platform = run.browser_platform
@@ -200,6 +229,12 @@ class ProbeResultDict:
 
   def __contains__(self, probe: Probe) -> bool:
     return probe.name in self._dict
+
+  def __bool__(self) -> bool:
+    return bool(self._dict)
+
+  def __len__(self) -> int:
+    return len(self._dict)
 
   def get(self, probe: Probe, default: Any = None) -> ProbeResult:
     return self._dict.get(probe.name, default)

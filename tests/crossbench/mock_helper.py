@@ -188,6 +188,12 @@ class CrossbenchFakeFsTestCase(
     sleep_patcher = mock.patch('time.sleep', return_value=None)
     self.addCleanup(sleep_patcher.stop)
 
+  def create_file(self,
+                  path_str: str,
+                  contents: Optional[str] = None) -> pathlib.Path:
+    path = pathlib.Path(path_str)
+    self.fs.create_file(path, contents=contents)
+    return path
 
 class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
