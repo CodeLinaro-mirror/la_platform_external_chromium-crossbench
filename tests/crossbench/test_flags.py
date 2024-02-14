@@ -122,6 +122,45 @@ class TestFlags(unittest.TestCase):
     self.assertEqual(flags["--foo"], "v1")
     self.assertIsNone(flags["--bar"])
 
+  def test_parse_single(self):
+    flags = self.CLASS.parse("--foo")
+    self.assertEqual(len(flags), 1)
+    self.assertEqual(flags["--foo"], None)
+    self.assertEqual(str(flags), "--foo")
+
+    flags = self.CLASS.parse("--foo=123")
+    self.assertEqual(len(flags), 1)
+    self.assertEqual(flags["--foo"], "123")
+    self.assertEqual(str(flags), "--foo=123")
+
+    flags = self.CLASS.parse("--foo=--bar123")
+    self.assertEqual(len(flags), 1)
+    self.assertEqual(flags["--foo"], "--bar123")
+    self.assertEqual(str(flags), "--foo=--bar123")
+
+  def test_parse_nested(self):
+    flags = self.CLASS.parse("--foo=--bar=123")
+    self.assertEqual(len(flags), 1)
+    self.assertEqual(flags["--foo"], "--bar=123")
+    self.assertEqual(str(flags), "--foo=--bar=123")
+
+  def test_parse_multiple(self):
+    flags = self.CLASS.parse("--foo --bar")
+    self.assertEqual(len(flags), 2)
+    self.assertEqual(flags["--foo"], None)
+    self.assertEqual(flags["--bar"], None)
+    flags = self.CLASS.parse("--foo --bar=1")
+    self.assertEqual(len(flags), 2)
+    self.assertEqual(flags["--foo"], None)
+    self.assertEqual(flags["--bar"], "1")
+    flags = self.CLASS.parse("--foo=1 --bar=2")
+    self.assertEqual(len(flags), 2)
+    self.assertEqual(flags["--foo"], "1")
+    self.assertEqual(flags["--bar"], "2")
+    flags = self.CLASS.parse("--foo='1' --bar='2'")
+    self.assertEqual(len(flags), 2)
+    self.assertEqual(flags["--foo"], "1")
+    self.assertEqual(flags["--bar"], "2")
 
 class TestChromeFlags(TestFlags):
 
@@ -518,6 +557,8 @@ class TestJSFlags(TestFlags):
     flags_copy.update(flags)
     self.assertEqual(str(flags), str(flags_copy))
 
+  def test_parse_nested(self):
+    self.skipTest("Not supported for JSFlags")
 
 class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 

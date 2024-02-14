@@ -24,6 +24,9 @@ if TYPE_CHECKING:
   ArgParserType = Union[Callable[..., Any], Type]
 
 
+class ConfigError(argparse.ArgumentTypeError):
+  pass
+
 class _ConfigArgParser:
 
   def __init__(  # pylint: disable=redefined-builtin
@@ -339,6 +342,8 @@ class _ConfigArgParser:
 _PATH_PREFIX = re.compile(r"(\./|/|[a-zA-Z]:\\)[^\\/]")
 
 
+ConfigObjectT = TypeVar("ConfigObjectT", bound="ConfigObject")
+
 class ConfigObject(abc.ABC):
   """A ConfigObject is a placeholder object with parsed values from
   a ConfigParser.
@@ -361,7 +366,7 @@ class ConfigObject(abc.ABC):
     """
 
   @classmethod
-  def parse(cls, value: Any) -> ConfigObject:
+  def parse(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
     # Quick return for default values used by parsers.
     if isinstance(value, cls):
       return value
@@ -370,11 +375,11 @@ class ConfigObject(abc.ABC):
       return cls._parse(value)
 
   @classmethod
-  def _parse(cls, value: Any) -> ConfigObject:
+  def _parse(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
     if isinstance(value, dict):
       return cls.load_dict(value)
     if not value:
-      raise argparse.ArgumentTypeError(f"{cls.__name__}: Empty config value")
+      raise ConfigError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pathlib.Path):
       return cls.load_path(value)
     if isinstance(value, str):
@@ -382,11 +387,11 @@ class ConfigObject(abc.ABC):
       if cls.is_valid_path(maybe_path):
         return cls.load_path(maybe_path)
       return cls.loads(value)
-    raise argparse.ArgumentTypeError(f"Invalid config input type {value}")
+    raise ConfigError(f"Invalid config input type {value}")
 
   @classmethod
   @abc.abstractmethod
-  def loads(cls, value: str) -> ConfigObject:
+  def loads(cls: Type[ConfigObjectT], value: str) -> ConfigObjectT:
     """Custom implementation for parsing config values that are
     not handled by the default .parse(...) method."""
     raise NotImplementedError()
@@ -398,18 +403,20 @@ class ConfigObject(abc.ABC):
     return path.suffix in cls.VALID_EXTENSIONS
 
   @classmethod
-  def load_path(cls, path: pathlib.Path) -> ConfigObject:
+  def load_path(cls: Type[ConfigObjectT], path: pathlib.Path) -> ConfigObjectT:
     return cls.load_config_path(path)
 
   @classmethod
-  def load_config_path(cls, path: pathlib.Path) -> ConfigObject:
+  def load_config_path(cls: Type[ConfigObjectT],
+                       path: pathlib.Path) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       data = cli_helper.parse_dict_hjson_file(path)
       return cls.load_dict(data)
 
   @classmethod
   @abc.abstractmethod
-  def load_dict(cls, config: Dict[str, Any]) -> ConfigObject:
+  def load_dict(cls: Type[ConfigObjectT], config: Dict[str,
+                                                       Any]) -> ConfigObjectT:
     raise NotImplementedError()
 
 

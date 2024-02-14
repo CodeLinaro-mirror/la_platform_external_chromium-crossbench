@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional, Te
 
 import hjson
 from crossbench import cli_helper, exception
-from crossbench.config import ConfigObject
+from crossbench.config import ConfigError, ConfigObject
 
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
 
-class ProbeConfigError(argparse.ArgumentTypeError):
+class ProbeConfigError(ConfigError):
   pass
 
 
