@@ -64,12 +64,23 @@ class TestFlags(unittest.TestCase):
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v4")
 
+  def test_set_invalid(self):
+    flags = self.CLASS()
+    with self.assertRaises(TypeError) as cm:
+      flags["--foo"] = 123
+    self.assertIn("123", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      flags["foo"] = 123
+    self.assertIn("-", str(cm.exception))
+
   def test_set_invalid_flag_name(self):
     flags = self.CLASS()
-    for invalid in ("- -foo", "--f oo", "", "-", "--"):
-      with self.assertRaises(ValueError):
-        flags.set(invalid)
-      self.assertFalse(invalid in flags)
+    for invalid in ("- -foo", "--f oo", "", "-", "--", "--foo\n", "--\nfoo",
+                    "--foo,"):
+      with self.subTest(invalid_flag=invalid):
+        with self.assertRaises(ValueError):
+          flags.set(invalid)
+        self.assertFalse(invalid in flags)
 
   def test_get_list(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
@@ -123,10 +134,6 @@ class TestChromeFlags(TestFlags):
     })
     self.assertIsNone(flags["--foo"])
     self.assertEqual(flags["--bar"], "v1")
-    self.assertNotIn("--js-flags", flags)
-    with self.assertRaises(ValueError):
-      flags["--js-flags"] = None
-    self.assertNotIn("--js-flags", flags)
     with self.assertRaises(ValueError):
       flags["--js-flags"] = "--js-foo, --no-js-foo"
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
@@ -135,6 +142,35 @@ class TestChromeFlags(TestFlags):
     js_flags = flags.js_flags
     self.assertEqual(js_flags["--js-foo"], "v3")
     self.assertIsNone(js_flags["--no-js-bar"])
+
+  def test_set_empty_js_flags(self):
+    flags = self.CLASS({
+        "--foo": None,
+        "--bar": "v1",
+    })
+    self.assertNotIn("--js-flags", flags)
+    with self.assertRaises(ValueError):
+      flags["--js-flags"] = None
+    self.assertNotIn("--js-flags", flags)
+    flags["--js-flags"] = ""
+    self.assertNotIn("--js-flags", flags)
+    flags["--js-flags"] = "  "
+    self.assertNotIn("--js-flags", flags)
+
+  def test_set_js_flags_invalid(self):
+    flags = self.CLASS()
+    for invalid in ("-foo", "--bar'f'", "--", "-8", "--8"):
+      with self.subTest(js_flag=invalid):
+        with self.assertRaises(ValueError) as cm:
+          flags["--js-flags"] = invalid
+        self.assertNotIn("--js-flags", flags)
+        self.assertIn(invalid, str(cm.exception))
+    for invalid in ("--foo=", "--foo,--bar=,--baz", "---foo", "--foo,--,--bar",
+                    "--foo;;;,;;;--bar"):
+      with self.subTest(js_flag=invalid):
+        with self.assertRaises(ValueError) as cm:
+          flags["--js-flags"] = invalid
+        self.assertNotIn("--js-flags", flags)
 
   def test_js_flags_initial_data(self):
     flags = self.CLASS({
@@ -191,6 +227,14 @@ class TestChromeFlags(TestFlags):
     with self.assertRaises(ValueError):
       flags["--enable-blink-features"] = None
     self.assertTrue(features.is_empty)
+
+  def test_user_data_dir(self):
+    flags = self.CLASS()
+    for invalid in (None, "", "  "):
+      with self.subTest(user_dat_dir=invalid):
+        with self.assertRaises(ValueError) as cm:
+          flags["--user-data-dir"] = invalid
+        self.assertIn("empty string", str(cm.exception))
 
   def test_get_list(self):
     flags = self.CLASS()
@@ -433,11 +477,18 @@ class TestJSFlags(TestFlags):
       flags.set("--foo", "v2")
     self.assertIsNone(flags["--foo"])
     self.assertIsNone(flags["--no-bar"])
+
     flags.set("--no-foo", override=True)
     self.assertNotIn("--foo", flags)
     self.assertIn("--no-foo", flags)
     self.assertNotIn("--bar", flags)
     self.assertIn("--no-bar", flags)
+
+    flags.set("--bar", override=True)
+    self.assertNotIn("--foo", flags)
+    self.assertIn("--no-foo", flags)
+    self.assertIn("--bar", flags)
+    self.assertNotIn("--no-bar", flags)
 
   def test_str_multiple(self):
     flags = self.CLASS({

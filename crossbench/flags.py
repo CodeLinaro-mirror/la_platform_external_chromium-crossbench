@@ -14,7 +14,7 @@ from typing import Dict, Final, Iterable, Iterator, Optional, Tuple, Union
 from ordered_set import OrderedSet
 
 
-class Flags(collections.UserDict):
+class BasicFlags(collections.UserDict):
   """Basic implementation for command line flags (similar to Dic[str, str].
 
   This class is mostly used to make sure command-line flags for browsers
@@ -25,7 +25,7 @@ class Flags(collections.UserDict):
       Union[Dict[str, str], "Flags", Iterable[Union[Tuple[str, str], str]]]]
 
   _WHITE_SPACE_RE = re.compile(r"\s+")
-  _FLAG_NAME_RE = re.compile(r"(--?)[^\s=-][^\s=]*")
+  _BASIC_FLAG_NAME_RE = re.compile(r"(--?)[^\s=-][^\s=]*")
 
   @classmethod
   def split(cls, flag_str: str) -> Tuple[str, Optional[str]]:
@@ -50,25 +50,43 @@ class Flags(collections.UserDict):
            flag_name: str,
            flag_value: Optional[str] = None,
            override: bool = False) -> None:
+    self._validate_flag_name(flag_name)
+    if flag_value:
+      self._validate_flag_value(flag_name, flag_value)
+    self._validate_override(flag_name, flag_value, override)
+    self.data[flag_name] = flag_value
+
+  def _validate_flag_name(self, flag_name: str) -> None:
     if not flag_name:
       raise ValueError("Cannot set empty flag")
     if self._WHITE_SPACE_RE.search(flag_name):
-      raise ValueError(f"Flag name cannot contains whitespaces: {flag_name}")
-    if "=" in flag_name:
-      raise ValueError(f"Flag name contains '=': {flag_name}, please split")
-    if not self._FLAG_NAME_RE.fullmatch(flag_name):
-      raise ValueError(f"Invalid flag name: {flag_name}")
-    if flag_value and not isinstance(flag_value, str):
       raise ValueError(
+          f"Flag name cannot contain whitespaces: {repr(flag_name)}")
+    if "=" in flag_name:
+      raise ValueError(
+          f"Flag name contains '=': '{repr(flag_name)}', please split")
+    if flag_name[0] != "-":
+      raise ValueError(
+          f"Flag name must begin with a '-', but got {repr(flag_name)}")
+    if not self._BASIC_FLAG_NAME_RE.fullmatch(flag_name):
+      raise ValueError(
+          f"Flag name contains invalid characters: {repr(flag_name)}")
+
+  def _validate_flag_value(self, flag_name: str, flag_value: str) -> None:
+    assert flag_value, "Got invalid empty flag_value."
+    if not isinstance(flag_value, str):
+      raise TypeError(
           f"Expected None or string flag-value for flag '{flag_name}', "
           f"but got: {repr(flag_value)}")
-    if not override and flag_name in self:
-      old_value = self[flag_name]
-      if flag_value != old_value:
-        raise ValueError(f"Flag {flag_name}={flag_value} was already set "
-                         f"with a different previous value: '{old_value}'")
+
+  def _validate_override(self, flag_name: str, flag_value: Optional[str],
+                         override: bool) -> None:
+    if override or flag_name not in self:
       return
-    self.data[flag_name] = flag_value
+    old_value = self[flag_name]
+    if flag_value != old_value:
+      raise ValueError(f"Flag {flag_name}={repr(flag_value)} was already set "
+                       f"with a different previous value: {repr(old_value)}")
 
   # pylint: disable=arguments-differ
   def update(self,
@@ -91,7 +109,7 @@ class Flags(collections.UserDict):
   def merge(self, other: Flags.InitialDataType):
     self.update(other)
 
-  def copy(self) -> Flags:
+  def copy(self) -> BasicFlags:
     return self.__class__(self)
 
   def merge_copy(self, other: Flags.InitialDataType):
@@ -112,6 +130,20 @@ class Flags(collections.UserDict):
     return " ".join(self.get_list())
 
 
+class Flags(BasicFlags):
+  """
+  Subclass with slightly stricter flag name checking.
+  Most command-line programs adhere to this.
+  """
+  _FLAG_NAME_RE = re.compile(r"(--?)[a-zA-Z0-9][a-zA-Z0-9_-]*")
+
+  def _validate_flag_name(self, flag_name: str) -> None:
+    super()._validate_flag_name(flag_name)
+    if not self._FLAG_NAME_RE.fullmatch(flag_name):
+      raise ValueError(
+          f"Flag name contains invalid characters: {repr(flag_name)}")
+
+
 class JSFlags(Flags):
   """Custom flags implementation for V8 flags (--js-flags in chrome)
 
@@ -119,7 +151,7 @@ class JSFlags(Flags):
   with the --no-.../--no... prefix are not contradicting each other.
   """
   _NO_PREFIX = "--no"
-  _NAME_RE = re.compile(r"--[a-zA-Z_\-]+")
+  _NAME_RE = re.compile(r"--[a-zA-Z_][a-zA-Z0-9_-]+")
 
   # We allow two forms:
   # - space separated: --foo="1" --bar  --baz='2'  --boo=3
@@ -142,7 +174,7 @@ class JSFlags(Flags):
       if current_end is None:
         if match.start() != 0:
           part = raw_flags[:match.start()]
-          raise ValueError(f"Invalid --js-flags part at pos=0: {part}")
+          raise ValueError(f"Invalid --js-flags part at pos=0: {repr(part)}")
       else:
         if current_end != match.start():
           raise ValueError("Invalid --js-flags: could not consume all data")
@@ -151,19 +183,19 @@ class JSFlags(Flags):
       groups = match.groupdict()
       flag_name = groups.get("name")
       if not flag_name:
-        raise ValueError(f"Invalid --js-flags: {raw_flags}")
+        raise ValueError(f"Invalid --js-flags: {repr(raw_flags)}")
       flag_value = (
           groups.get("value_single_quotes") or
           groups.get("value_double_quotes") or groups.get("value_no_quotes"))
       if groups.get("equal") and not flag_value:
         raise ValueError(
-            f"Invalid --js-flags: missing V8 flag value for '{flag_name}'")
+            f"Invalid --js-flags: missing V8 flag value for {repr(flag_name)}")
       yield (flag_name, flag_value)
 
     if current_end != len(raw_flags):
       part = raw_flags[current_end:]
       raise ValueError(
-          f"Invalid --js-flags part at pos={current_end}: '{part}'")
+          f"Invalid --js-flags part at pos={current_end or 0}: {repr(part)}")
 
   def copy(self) -> JSFlags:
     return self.__class__(self)
@@ -172,23 +204,31 @@ class JSFlags(Flags):
            flag_name: str,
            flag_value: Optional[str] = None,
            override: bool = False) -> None:
+    self._validate_js_flag_name(flag_name)
     if flag_value is not None:
-      if "," in flag_value:
-        raise ValueError(
-            "--js-flags: Comma in V8 flag value, flag escaping for chrome's "
-            f"--js-flags might not work: {flag_name}={flag_value}")
-      if self._WHITE_SPACE_RE.search(flag_value):
-        raise ValueError(
-            "--js-flags: V8 flag-values cannot contain whitespaces:"
-            f"{flag_name}={flag_value}")
-    if not flag_name.startswith("--"):
-      raise ValueError("--js-flags: Only long-form flag names allowed, "
-                       f"but got '{flag_name}'")
-    if not self._NAME_RE.fullmatch(flag_name):
-      raise ValueError(f"--js-flags: Invalid flag name '{flag_name}'. \n"
-                       "Check invalid characters in the V8 flag name?")
+      self._validate_js_flag_value(flag_name, flag_value)
     self._check_negated_flag(flag_name, override)
     super()._set(flag_name, flag_value, override)
+
+  def _validate_js_flag_value(self, flag_name: str, flag_value: str) -> None:
+    if not isinstance(flag_value, str):
+      raise TypeError("JSFlag value must be str, "
+                      f"but got {type(flag_value)}: {repr(flag_value)}")
+    if "," in flag_value:
+      raise ValueError(
+          "--js-flags: Comma in V8 flag value, flag escaping for chrome's "
+          f"--js-flags might not work: {flag_name}={repr(flag_value)}")
+    if self._WHITE_SPACE_RE.search(flag_value):
+      raise ValueError("--js-flags: V8 flag-values cannot contain whitespaces:"
+                       f"{flag_name}={repr(flag_value)}")
+
+  def _validate_js_flag_name(self, flag_name: str) -> None:
+    if not flag_name.startswith("--"):
+      raise ValueError("--js-flags: Only long-form flag names allowed, "
+                       f"but got {repr(flag_name)}")
+    if not self._NAME_RE.fullmatch(flag_name):
+      raise ValueError(f"--js-flags: Invalid flag name {repr(flag_name)}. \n"
+                       "Check invalid characters in the V8 flag name?")
 
   def _check_negated_flag(self, flag_name: str, override: bool) -> None:
     if flag_name.startswith(self._NO_PREFIX):
@@ -201,8 +241,8 @@ class JSFlags(Flags):
         del self[enabled]
       elif enabled in self:
         raise ValueError(
-            f"Conflicting flag '{flag_name}', "
-            f"it has already been enabled by '{self._describe(enabled)}'")
+            f"Conflicting flag {flag_name}, "
+            f"it has already been enabled by {repr(self._describe(enabled))}")
     else:
       # --foo => --no-foo
       disabled = f"--no-{flag_name[2:]}"
@@ -214,9 +254,9 @@ class JSFlags(Flags):
       if override:
         del self[disabled]
       else:
-        raise ValueError(
-            f"Conflicting flag '{flag_name}', "
-            f"it has previously been disabled by '{self._describe(flag_name)}'")
+        raise ValueError(f"Conflicting flag {flag_name}, "
+                         "it has previously been disabled by "
+                         f"{repr(self._describe(flag_name))}")
 
   def __str__(self) -> str:
     return ",".join(self.get_list())
@@ -282,7 +322,7 @@ class ChromeFlags(Flags):
           "Potentially misspelled flag: '%s'. "
           "Did you mean to use %s ?", name, candidate)
     if name == "--user-data-dir":
-      if not value:
+      if not value or not value.strip():
         raise ValueError("--user-data-dir cannot be the empty string.")
       expanded_dir = str(pathlib.Path(value).expanduser())
       if expanded_dir != value:
@@ -362,8 +402,8 @@ class ChromeBaseFeatures(abc.ABC):
     if not feature:
       raise ValueError("Cannot parse empty feature")
     if "," in feature:
-      raise ValueError(
-          f"'{feature}' contains multiple features. Please split them first.")
+      raise ValueError(f"{repr(feature)} contains multiple features. "
+                       "Please split them first.")
     return self._parse_feature_parts(feature)
 
   @abc.abstractmethod
@@ -376,20 +416,22 @@ class ChromeBaseFeatures(abc.ABC):
 
   def _enable(self, name: str, value: Optional[str]) -> None:
     if name in self._disabled:
-      raise ValueError(f"Cannot enable previously disabled feature={name}")
+      raise ValueError(
+          f"Cannot enable previously disabled feature={repr(name)}")
     if name in self._enabled:
       prev_value = self._enabled[name]
       if value != prev_value:
-        raise ValueError(
-            f"Cannot set conflicting values ('{prev_value}', vs. '{value}') "
-            f"for the same feature={name}")
+        raise ValueError("Cannot set conflicting values "
+                         f"({repr(prev_value)}, vs. {repr(value)}) "
+                         f"for the same feature={repr(name)}")
     else:
       self._enabled[name] = value
 
   def disable(self, feature: str) -> None:
     name, _ = self._parse_feature(feature)
     if name in self._enabled:
-      raise ValueError(f"Cannot disable previously enabled feature={name}")
+      raise ValueError(
+          f"Cannot disable previously enabled feature={repr(name)}")
     self._disabled.add(name)
 
   def update(self, other: ChromeBaseFeatures) -> None:
@@ -440,12 +482,12 @@ class ChromeFeatures(ChromeBaseFeatures):
     if len(parts) == 2:
       return (parts[0], "<" + parts[1])
     if len(parts) != 1:
-      raise ValueError(f"Invalid number of feature parts: {parts}")
+      raise ValueError(f"Invalid number of feature parts: {repr(parts)}")
     parts = feature.split(":")
     if len(parts) == 2:
       return (parts[0], ":" + parts[1])
     if len(parts) != 1:
-      raise ValueError(f"Invalid number of feature parts: {parts}")
+      raise ValueError(f"Invalid number of feature parts: {repr(parts)}")
     return (feature, None)
 
 
@@ -463,5 +505,6 @@ class ChromeBlinkFeatures(ChromeBaseFeatures):
 
   def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
     if "<" in feature or ":" in feature:
-      raise ValueError("blink feature do not have params.")
+      raise ValueError("blink feature do not have params, "
+                       f"but found param separator in {repr(feature)}")
     return (feature, None)

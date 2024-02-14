@@ -45,6 +45,17 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
     self.assertIn("--force-fieldtrials", browser_field_trial.flags)
     self.assertNotIn("--disable-field-trial-config", browser_field_trial.flags)
 
+  def test_auto_disabling_field_trials_all(self):
+    for field_trial_flag in ChromeWebDriver.FIELD_TRIAL_FLAGS:
+      browser = ChromeWebDriverForTesting(
+          label="browser-label",
+          path=mock_browser.MockChromeStable.APP_PATH,
+          flags=[field_trial_flag],
+          platform=self.platform)
+      flags = browser.flags
+      for no_experiment_flag in ChromeWebDriver.NO_EXPERIMENTS_FLAGS:
+        self.assertNotIn(no_experiment_flag, flags)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
