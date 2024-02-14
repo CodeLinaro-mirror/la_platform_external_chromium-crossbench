@@ -65,7 +65,7 @@ class MacOSPlatform(PosixPlatform):
     return "Battery Power" in self.sh_stdout("pmset", "-g", "batt")
 
   def _find_app_binary_path(self, app_path: pathlib.Path) -> pathlib.Path:
-    assert app_path.suffix == ".app"
+    assert app_path.suffix == ".app", f"Expected .app but got {app_path}"
     bin_path = app_path / "Contents" / "MacOS" / app_path.stem
     if self.exists(bin_path):
       return bin_path
@@ -120,7 +120,7 @@ class MacOSPlatform(PosixPlatform):
     # input: /Applications/Safari.app/Contents/MacOS/Safari
     # output: /Applications/Safari.app
     app_path = binary.parents[2]
-    assert app_path.suffix == ".app"
+    assert app_path.suffix == ".app", f"Expected .app but got {app_path}"
     assert app_path.is_dir()
     return app_path
 

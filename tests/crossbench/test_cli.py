@@ -3,20 +3,22 @@
 # found in the LICENSE file.
 
 import argparse
+import datetime as dt
 import io
 import json
 import pathlib
 import unittest
-from typing import Dict, Final, List, Tuple, Type
+from typing import Dict, Final, List, Optional, Tuple, Type
 from unittest import mock
 
 import hjson
 
-from crossbench import cli_helper, plt
+from crossbench import __version__, cli_helper, plt
 from crossbench.browsers import splash_screen, viewport
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -66,6 +68,12 @@ class CliTestCase(BaseCrossbenchTestCase):
     mock_stdout.close()
     mock_stderr.close()
     return cli, stdout, stderr
+
+  def mock_chrome_stable(self):
+    return mock.patch.object(
+        BrowserVariantsConfig,
+        "_get_browser_cls",
+        return_value=mock_browser.MockChromeStable)
 
   def test_invalid(self):
     with self.assertRaises(SysExitException):
@@ -242,6 +250,23 @@ class CliTestCase(BaseCrossbenchTestCase):
         output = stderr + stdout
         self.assertIn("See `describe benchmark ", output)
 
+  def test_version(self):
+    with self.assertRaises(SysExitException) as cm:
+      self.run_cli("--version")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "--version", raises=SysExitException)
+    self.assertFalse(stderr)
+    self.assertIn(__version__, stdout)
+
+  def test_version_subcommand(self):
+    with self.assertRaises(SysExitException) as cm:
+      self.run_cli("version")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output("version", raises=SysExitException)
+    self.assertFalse(stderr)
+    self.assertIn(__version__, stdout)
+
   def test_subcommand_run_subcommand(self):
     with mock.patch.object(
         CrossBenchCLI, "_get_browsers", return_value=self.browsers):
@@ -405,6 +430,70 @@ class CliTestCase(BaseCrossbenchTestCase):
         self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
+
+  def test_config_file_with_env(self):
+    config_file = pathlib.Path("/config.hjson")
+    config_data = {
+        "probes": {},
+        "env": {
+            "screen_brightness_percent": 66,
+            "cpu_max_usage_percent": 77,
+        },
+        "browsers": {}
+    }
+    with config_file.open("w", encoding="utf-8") as f:
+      hjson.dump(config_data, f)
+
+    with mock.patch.object(
+        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+      url = "http://test.com"
+      cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
+                         "--env-validation=skip")
+      for browser in self.browsers:
+        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertFalse(browser.js_flags)
+      config = cli.runner.env.config
+      self.assertEqual(config.disk_min_free_space_gib,
+                       HostEnvironmentConfig.IGNORE)
+      self.assertEqual(config.screen_brightness_percent, 66)
+      self.assertEqual(config.cpu_max_usage_percent, 77)
+
+  def test_config_file_with_browser(self):
+    config_file = pathlib.Path("/config.hjson")
+    config_data = {
+        "probes": {},
+        "env": {},
+        "browsers": {
+            "browser_1": {
+                "path": "chrome-dev",
+            },
+            "browser_2": {
+                "path": "chrome-stable"
+            }
+        }
+    }
+    with config_file.open("w", encoding="utf-8") as f:
+      hjson.dump(config_data, f)
+
+    def mock_get_browser_cls(browser_config: BrowserConfig):
+      path_str = str(browser_config.path).lower()
+      if "dev" in path_str:
+        return mock_browser.MockChromeDev
+      return mock_browser.MockChromeStable
+
+    with mock.patch.object(
+        BrowserVariantsConfig,
+        "_get_browser_cls",
+        side_effect=mock_get_browser_cls):
+      url = "http://test.com"
+      cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
+                         "--env-validation=skip")
+      browsers = cli.runner.browsers
+      self.assertEqual(len(browsers), 2)
+      self.assertEqual(browsers[0].label, "browser_1")
+      self.assertEqual(browsers[1].label, "browser_2")
+      for browser in browsers:
+        self.assertFalse(browser.js_flags)
 
   def test_invalid_browser_identifier(self):
     with self.assertRaises(argparse.ArgumentError) as cm:
@@ -880,10 +969,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     self.assertIn("unknown-value", message)
 
   def test_splash_screen_none(self):
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "_get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
+    with self.mock_chrome_stable():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--splash-screen=none")
@@ -894,10 +980,7 @@ class CliTestCase(BaseCrossbenchTestCase):
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_splash_screen_minimal(self):
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "_get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
+    with self.mock_chrome_stable():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--splash-screen=minimal")
@@ -910,10 +993,7 @@ class CliTestCase(BaseCrossbenchTestCase):
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_splash_screen_url(self):
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "_get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
+    with self.mock_chrome_stable():
       splash_url = "http://splash.com"
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
@@ -935,10 +1015,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     self.assertIn("-123", message)
 
   def test_viewport_maximized(self):
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "_get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
+    with self.mock_chrome_stable():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--viewport=maximized")
@@ -952,10 +1029,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     powersampler_bin = self.out_dir / "powersampler"
     self.fs.create_file(powersampler_bin, st_size=1024)
     config_str = json.dumps({"bin_path": str(powersampler_bin)})
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "_get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
+    with self.mock_chrome_stable():
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         self.run_cli("loading", "--browser=chrome",
                      f"--probe=powersampler:{config_str}", "--repeat=10",
@@ -963,6 +1037,50 @@ class CliTestCase(BaseCrossbenchTestCase):
                      "--throw")
       self.assertIn("powersampler", str(cm.exception))
 
+  def test_fast(self):
+    with self.mock_chrome_stable():
+      url = "http://test.com"
+      cli = self.run_cli("loading", f"--urls={url}", "--throw", "--fast")
+      self.assertEqual(cli.args.splash_screen, splash_screen.SplashScreen.NONE)
+      self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
+      self.assertEqual(cli.args.env_validation, ValidationMode.SKIP)
+      for browser in cli.runner.browsers:
+        assert isinstance(browser, mock_browser.MockChromeStable)
+        self.assertIs(browser.splash_screen, splash_screen.SplashScreen.NONE)
+        self.assertListEqual(browser.url_list, [url])
+        self.assertEqual(len(browser.js_flags), 0)
+
+  def test_debug(self):
+    with self.mock_chrome_stable():
+      url = "http://test.com"
+      cli = self.run_cli("loading", f"--urls={url}", "--debug")
+      self.assertTrue(cli.args.throw)
+      self.assertEqual(cli.args.verbosity, 3)
+      for browser in cli.runner.browsers:
+        assert isinstance(browser, mock_browser.MockChromeStable)
+        self.assertEqual(len(browser.url_list), 3)
+        self.assertEqual(len(browser.js_flags), 0)
+
+  def test_debugger_not_found(self):
+    for debugger in ("lldb", "gdb", "lldb"):
+      searched_binaries = []
+      original_search_binary = plt.PLATFORM.search_binary
+
+      def mock_search_binary(binary) -> Optional[pathlib.Path]:
+        searched_binaries.append(binary)
+        if "gdb" in str(binary) or "lldb" in str(binary):
+          return None
+        return original_search_binary(binary)
+
+      with self.mock_chrome_stable(), mock.patch.object(
+          plt.PLATFORM, "search_binary", side_effect=mock_search_binary):
+        with self.assertRaises(ValueError) as cm:
+          self.run_cli("loading", "--urls=cnn", f"--{debugger}", "--throw")
+        self.assertIn(debugger, str(cm.exception))
+        _, _, stderr = self.run_cli_output(
+            "loading", "--urls=cnn", f"--{debugger}", raises=SysExitException)
+        self.assertIn(f"Unknown binary: {debugger}", stderr)
+        self.assertIn(pathlib.Path(debugger), searched_binaries)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
