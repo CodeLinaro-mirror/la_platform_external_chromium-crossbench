@@ -100,7 +100,7 @@ class BrowsingStory(PowerBenchmarkStory):
     try:
       self._driver.get(url)
     except WebDriverException as e:
-      logging.info("Error while loading {}, error: {}".format(url, e))
+      logging.info("Error while loading %s, error: %s", url, e)
 
   def run(self, run: Run) -> None:
     self.get_driver(run)

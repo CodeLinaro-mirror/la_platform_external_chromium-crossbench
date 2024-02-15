@@ -7,8 +7,6 @@ from dataclasses import dataclass
 import re
 from typing import TYPE_CHECKING, Dict
 
-from crossbench import plt
-
 if TYPE_CHECKING:
   from .base import Platform
 

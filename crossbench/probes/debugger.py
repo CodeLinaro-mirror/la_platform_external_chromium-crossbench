@@ -8,7 +8,6 @@ import pathlib
 import shlex
 from typing import TYPE_CHECKING, Dict, Iterable, Tuple
 from crossbench import cli_helper, plt
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium import chromium
 
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,

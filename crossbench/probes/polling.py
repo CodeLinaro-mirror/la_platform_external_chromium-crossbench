@@ -10,7 +10,7 @@ import time
 import logging
 import pathlib
 import threading
-from typing import TYPE_CHECKING, Iterable, Sequence, Tuple
+from typing import TYPE_CHECKING, Iterable, Tuple
 from crossbench import cli_helper
 
 from crossbench.probes import probe as cb_probe
@@ -148,6 +148,6 @@ class CMDPoller(threading.Thread):
                         self._interval_seconds, self._cmd)
 
       # Calculate wait_time against fixed start time to avoid drifting.
-      total_time = ((time.monotonic_ns() - start_time) / 10.0**9)
+      total_time = (time.monotonic_ns() - start_time) / 10.0**9
       wait_time = self._interval_seconds - (total_time % self._interval_seconds)
       self._event.wait(wait_time)

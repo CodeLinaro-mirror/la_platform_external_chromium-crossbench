@@ -68,4 +68,4 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
     assert local_log_dir.is_dir
     # Sort files locally after transferring them.
     log_files = helper.sort_by_file_size(local_log_dir.glob("*"))
-    return LocalProbeResult(file=(log_files))
+    return LocalProbeResult(file=log_files)

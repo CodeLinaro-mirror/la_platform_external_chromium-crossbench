@@ -131,7 +131,7 @@ class InteractivePage(Page):
 
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      self.action_runner.runAll(run, self._actions)
+      self.action_runner.run_all(run, self._actions)
 
   def details_json(self) -> JsonDict:
     result = super().details_json()

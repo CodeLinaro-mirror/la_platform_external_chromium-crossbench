@@ -19,7 +19,6 @@ from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
 from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
-  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.network.base import Network
   from crossbench.runner.groups import BrowserSessionRunGroup

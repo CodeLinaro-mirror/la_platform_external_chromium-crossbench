@@ -102,7 +102,7 @@ class Adb:
     return f"adb(serial={self._serial_id}, info='{self._device_info}')"
 
   def has_root(self) -> bool:
-    return self.shell_stdout('id').startswith('uid=0(root)')
+    return self.shell_stdout("id").startswith("uid=0(root)")
 
   @property
   def serial_id(self) -> str:

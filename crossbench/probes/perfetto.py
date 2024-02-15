@@ -147,7 +147,7 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
     assert self._pid is None
     for p in self.browser_platform.processes():
       if p["name"] == "perfetto":
-        logging.warning("PERFETTO: killing existing session pid: %s", p['pid'])
+        logging.warning("PERFETTO: killing existing session pid: %s", p["pid"])
         self.browser_platform.terminate(p["pid"])
 
     if not self.browser_platform.which(self.probe.perfetto_bin):
@@ -178,10 +178,10 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
     self._pid = int(proc.stdout.decode("utf-8").rstrip())
     self.browser.performance_mark(self.runner,
-                                  'crossbench-probe-perfetto-start')
+                                  "crossbench-probe-perfetto-start")
 
   def stop(self) -> None:
-    self.browser.performance_mark(self.runner, 'crossbench-probe-perfetto-stop')
+    self.browser.performance_mark(self.runner, "crossbench-probe-perfetto-stop")
     logging.info("PERFETTO: stopping")
     if not self._pid:
       raise RuntimeError("Perfetto was not started")

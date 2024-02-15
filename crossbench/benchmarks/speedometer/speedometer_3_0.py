@@ -14,14 +14,13 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 from crossbench import cli_helper, compat, helper
 from crossbench.browsers import viewport as vp
 
-if TYPE_CHECKING:
-  from crossbench.runner.run import Run
-  ShuffleSeedT = Optional[Union[str, int]]
-
 from .speedometer import (ProbeClsTupleT, SpeedometerBenchmark,
                           SpeedometerBenchmarkStoryFilter, SpeedometerProbe,
                           SpeedometerStory)
 
+if TYPE_CHECKING:
+  from crossbench.runner.run import Run
+  ShuffleSeedT = Optional[Union[str, int]]
 
 class Speedometer30Probe(SpeedometerProbe):
   """

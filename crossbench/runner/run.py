@@ -13,7 +13,6 @@ from typing import (TYPE_CHECKING, Any, Iterable, Iterator, List, Optional,
                     Tuple)
 
 from crossbench import compat, exception, helper, plt
-from crossbench.flags import Flags, JSFlags
 from crossbench.probes import internal as internal_probe
 from crossbench.probes.probe import ResultLocation
 from crossbench.probes.results import (EmptyProbeResult, ProbeResult,

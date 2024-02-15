@@ -4,10 +4,7 @@
 
 from __future__ import annotations
 
-import logging
-import time
 import pathlib
-import re
 import shlex
 import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
@@ -137,7 +134,7 @@ class LinuxSshPlatform(LinuxPlatform):
             to_path: pathlib.Path) -> pathlib.Path:
     to_path.parent.mkdir(parents=True, exist_ok=True)
     scp_cmd = [
-        "scp", "-P", f"{self._ssh_port}", '-r',
+        "scp", "-P", f"{self._ssh_port}", "-r",
         f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"
     ]
     self._host_platform.sh_stdout(*scp_cmd)

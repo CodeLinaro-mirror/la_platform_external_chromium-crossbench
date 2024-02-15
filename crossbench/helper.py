@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import atexit
-import contextlib
 import datetime as dt
 import logging
 import os

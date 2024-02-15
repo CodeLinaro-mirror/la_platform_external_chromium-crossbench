@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 class ActionRunner(abc.ABC):
 
-  def runAll(self, run: Run, actions: Iterable[i_action.Action]):
+  def run_all(self, run: Run, actions: Iterable[i_action.Action]):
     for action in actions:
-      action.runWith(run, self)
+      action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
     with run.actions("WaitAction", measure=False) as actions:

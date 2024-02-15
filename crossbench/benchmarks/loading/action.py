@@ -8,8 +8,6 @@ import abc
 import argparse
 import datetime as dt
 import json
-import logging
-import time
 from typing import TYPE_CHECKING, Any, Dict, Tuple, Type
 
 from crossbench import cli_helper, compat
@@ -91,7 +89,7 @@ class Action(abc.ABC):
     return self._timeout != dt.timedelta.max
 
   @abc.abstractmethod
-  def runWith(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     pass
 
   def validate(self) -> None:
@@ -172,7 +170,7 @@ class GetAction(Action):
   def target(self) -> WindowTarget:
     return self._target
 
-  def runWith(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.get(run, self)
 
   def validate(self) -> None:
@@ -229,7 +227,7 @@ class DurationAction(Action):
 class WaitAction(DurationAction):
   TYPE: ActionType = ActionType.WAIT
 
-  def runWith(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.wait(run, self)
 
 
@@ -254,7 +252,7 @@ class ScrollAction(DurationAction):
   def direction(self) -> ScrollDirection:
     return self._direction
 
-  def runWith(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.scroll(run, self)
 
   def validate(self) -> None:
@@ -296,7 +294,7 @@ class ClickAction(Action):
   def selector(self) -> str:
     return self._selector
 
-  def runWith(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.click(run, self)
 
   def validate(self) -> None:

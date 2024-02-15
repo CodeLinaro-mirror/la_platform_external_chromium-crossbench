@@ -208,6 +208,6 @@ class WprGoToolFinder:
     self.platform = platform
     self.path: Optional[pathlib.Path] = None
     if maybe_chrome := probe_helper.ChromiumCheckoutFinder(platform).path:
-      candidate = (maybe_chrome / self._WPR_GO)
+      candidate = maybe_chrome / self._WPR_GO
       if self.platform.is_file(candidate):
         self.path = candidate

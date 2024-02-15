@@ -13,7 +13,6 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
 
 from crossbench import exception, helper
-from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 from .safari import Safari, find_safaridriver
@@ -68,7 +67,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     service = SafariService(executable_path=str(driver_path))
     driver_kwargs = {"service": service, "options": options}
 
-    if webdriver.__version__ == '4.1.0':
+    if webdriver.__version__ == "4.1.0":
       # Manually inject desired options for older selenium versions
       # (currently fixed version from vpython3).
       self._legacy_settings(options, driver_kwargs)

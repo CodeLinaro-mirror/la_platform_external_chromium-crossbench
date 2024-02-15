@@ -9,14 +9,12 @@ from typing import TYPE_CHECKING, Optional
 
 import crossbench
 import crossbench.exception
-import crossbench.flags
-from crossbench import helper, plt
+from crossbench import plt
 from crossbench.browsers.chromium.chromium import Chromium
 
 if TYPE_CHECKING:
   import crossbench.flags
   import crossbench.runner
-  from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.network.base import Network

@@ -14,7 +14,7 @@ class FirefoxVersion(BrowserVersion):
   _VERSION_RE = re.compile(r"[^\d]+ (?P<version>"
                            r"(?P<parts>\d+\.\d+(?P<channel>[ab.])\d+)"
                            r")(?P<channel_esr>esr)?")
-  _SPLIT_RE = re.compile(r'[ab.]')
+  _SPLIT_RE = re.compile(r"[ab.]")
   _CHANNEL_LOOKUP: Dict[str, Tuple[BrowserVersionChannel, int]] = {
       "esr": (BrowserVersionChannel.LTS, 3),
       ".": (BrowserVersionChannel.STABLE, 2),

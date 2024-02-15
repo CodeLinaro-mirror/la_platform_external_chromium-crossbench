@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import os
 import pathlib
-import platform
 import shutil
 from typing import Optional
 

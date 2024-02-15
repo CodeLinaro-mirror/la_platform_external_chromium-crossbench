@@ -131,7 +131,7 @@ class CrossBenchCLI:
         default=has_color,
         help="Disable colored output")
     self.parser.add_argument(
-        '--version', action='version', version=f"%(prog)s {__version__}")
+        "--version", action="version", version=f"%(prog)s {__version__}")
 
   def _add_verbosity_argument(self, parser: argparse.ArgumentParser) -> None:
     debug_group = parser.add_argument_group("Verbosity / Debugging Options")

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Final, Tuple
+from typing import Tuple
 
 from .speedometer import ProbeClsTupleT, SpeedometerBenchmark, SpeedometerProbe
 from .speedometer_2 import Speedometer2Story

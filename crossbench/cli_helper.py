@@ -105,6 +105,7 @@ def parse_inline_hjson(value: Any) -> Any:
     raise argparse.ArgumentTypeError(message) from e
 
 
+_MAX_LEN = 70
 def _extract_decoding_error(message: str, value: Union[str, pathlib.Path],
                             e: ValueError) -> str:
   lineno = getattr(e, "lineno", -1) - 1
@@ -117,26 +118,25 @@ def _extract_decoding_error(message: str, value: Union[str, pathlib.Path],
     line = value.open().readlines()[lineno]
   else:
     line = value.splitlines()[lineno]
-  MAX_LEN = 70
-  if len(line) > MAX_LEN:
+  if len(line) > _MAX_LEN:
     # Only show line around error:
-    start = colno - MAX_LEN // 2
-    end = colno + MAX_LEN // 2
+    start = colno - _MAX_LEN // 2
+    end = colno + _MAX_LEN // 2
     prefix = "..."
     suffix = "..."
     if start < 0:
       start = 0
-      end = MAX_LEN
+      end = _MAX_LEN
       prefix = ""
     elif end > len(line):
       end = len(line)
-      start = len(line) - MAX_LEN
+      start = len(line) - _MAX_LEN
       suffix = ""
     colno -= start
     line = prefix + line[start:end] + suffix
     marker_space = (" " * len(prefix)) + (" " * colno)
   else:
-    marker_space = (" " * colno)
+    marker_space = " " * colno
   marker = "_▲_"
   # Adjust line to be aligned with marker size
   line = (" " * (len(marker) // 2)) + line
@@ -494,10 +494,10 @@ class Duration:
 
 @contextlib.contextmanager
 def timer(msg: str = "Elapsed Time"):
-  _start_time = dt.datetime.now()
+  start_time = dt.datetime.now()
 
   def print_timer():
-    delta = dt.datetime.now() - _start_time
+    delta = dt.datetime.now() - start_time
     indent = colorama.Cursor.FORWARD() * 3
     sys.stdout.write(f"{indent}{msg}: {delta}\r")
 

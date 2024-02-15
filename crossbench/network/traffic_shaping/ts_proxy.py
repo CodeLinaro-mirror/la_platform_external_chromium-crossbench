@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import atexit
-
 import locale
 import logging
 import os
@@ -19,13 +18,14 @@ import subprocess
 import sys
 from typing import IO, List, Optional, Union
 
+from crossbench import cli_helper, helper
+
 fnctl = None
 try:
   import fcntl
-except ModuleNotFoundError as e:
-  logging.debug("No fcntl support %s", e)
+except ModuleNotFoundError as not_found:
+  logging.debug("No fcntl support %s", not_found)
 
-from crossbench import cli_helper, helper
 
 
 class TsProxyServerError(Exception):
@@ -279,8 +279,8 @@ class TsProxyProcess:
     for _ in helper.wait_with_backoff(timeout):
       try:
         return self._stdout.readline().strip()
-      except IOError as e:
-        logging.debug("TsProxy: Error while reading tsproxy line: %s", e)
+      except IOError as io_error:
+        logging.debug("TsProxy: Error while reading tsproxy line: %s", io_error)
     return ""
 
   def _send_command(self,

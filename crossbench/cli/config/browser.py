@@ -4,25 +4,22 @@
 
 from __future__ import annotations
 
-import dataclasses
 import argparse
 import dataclasses
 import pathlib
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
-                    TextIO, Tuple, Type, Union, cast)
+from typing import Any, Dict, Optional, TextIO, Tuple, Union, cast
 
 import hjson
 
-from crossbench import cli_helper, exception, plt
-
 import crossbench.browsers.all as browsers
+from crossbench import cli_helper, exception, plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.network import NetworkConfig, NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
 
-from .driver import DriverConfig, BrowserDriverType
+from .driver import BrowserDriverType, DriverConfig
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 

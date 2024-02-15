@@ -51,18 +51,18 @@ class DTraceProbe(Probe):
     super().validate_browser(env, browser)
     self.expect_macos(browser)
 
-    # Check that it is possible to execute 'sudo dtrace' without prompting for a
+    # Check that it is possible to execute "sudo dtrace" without prompting for a
     # password. The best way to do this is to actually run the command and check
     # the return value of `sudo`.
     #
-    # Under normal usage, DTrace expects an input script file and returns '2'
+    # Under normal usage, DTrace expects an input script file and returns "2"
     # when it is missing. To force a return value of zero, without actually
-    # providing a valid script file, the '-l -P $dtrace_probe_name' argument is
+    # providing a valid script file, the "-l -P $dtrace_probe_name" argument is
     # used, which tells DTrace to simply print all DTrace probes (do not confuse
     # with crossbench probes) whose name matches $dtrace_probe_name. This will
-    # ensure the command either succeeds or fails fast. Use a non-existant probe
+    # ensure the command either succeeds or fails fast. Use a non-existent probe
     # name to reduce output size
-    dtrace_probe_name = 'nonexistantprobename'
+    dtrace_probe_name = "nonexistantprobename"
     # Execute and check the returncode, while ignoring output.
     try:
       browser.platform.sh(
@@ -98,9 +98,9 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
   def start(self) -> None:
     self._log_file = open(self._log_path, "w")
     self._dtrace_process = self.browser_platform.popen(
-        'sudo',
-        '-n',
-        'dtrace',
+        "sudo",
+        "-n",
+        "dtrace",
         "-p",
         str(self.browser_pid),
         "-o",

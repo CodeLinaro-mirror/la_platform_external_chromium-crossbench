@@ -136,7 +136,7 @@ class V8LogProbe(ChromiumProbe):
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     # --prof sometimes causes issues on enterprise chrome on linux.
-    if not _PROF_FLAG in self._js_flags:
+    if _PROF_FLAG not in self._js_flags:
       return
     if not browser.platform.is_linux or browser.major_version <= 106:
       return

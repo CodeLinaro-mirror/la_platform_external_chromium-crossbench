@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Tuple
 
 from crossbench import helper
 
+from .speedometer import SpeedometerStory
+
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
-
-from .speedometer import SpeedometerStory
 
 
 class Speedometer2Story(SpeedometerStory):

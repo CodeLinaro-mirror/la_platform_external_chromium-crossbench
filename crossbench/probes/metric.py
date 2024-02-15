@@ -3,17 +3,17 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import datetime as dt
 
 import json
 import logging
 import math
 import pathlib
+from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
                     Optional, Sequence, Set, Tuple, Union)
-from math import floor, log10
 
 from ordered_set import OrderedSet
+
 from . import helper
 
 if TYPE_CHECKING:

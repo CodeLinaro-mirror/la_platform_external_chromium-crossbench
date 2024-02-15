@@ -138,20 +138,20 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     assert isinstance(self._driver, ChromiumDriver)
     # TODO: reuse the TraceProbe categories,
     self._driver.execute_cdp_cmd(
-        'Tracing.start', {
+        "Tracing.start", {
             "transferMode":
                 "ReturnAsStream",
             "includedCategories": [
-                'devtools.timeline',
-                'v8.execute',
-                'disabled-by-default-devtools.timeline',
-                'disabled-by-default-devtools.timeline.frame',
-                'toplevel',
-                'blink.console',
-                'blink.user_timing',
-                'latencyInfo',
-                'disabled-by-default-devtools.timeline.stack',
-                'disabled-by-default-v8.cpu_profiler',
+                "devtools.timeline",
+                "v8.execute",
+                "disabled-by-default-devtools.timeline",
+                "disabled-by-default-devtools.timeline.frame",
+                "toplevel",
+                "blink.console",
+                "blink.user_timing",
+                "latencyInfo",
+                "disabled-by-default-devtools.timeline.stack",
+                "disabled-by-default-v8.cpu_profiler",
             ],
         })
 
@@ -159,7 +159,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     assert isinstance(self._driver, ChromiumDriver)
     data = self._driver.execute_cdp_cmd("Tracing.tracingComplete", {})
     # TODO: use webdriver bidi to get the async Tracing.end event.
-    # self._driver.execute_cdp_cmd('Tracing.end', {})
+    # self._driver.execute_cdp_cmd("Tracing.end", {})
     return data
 
 
@@ -483,7 +483,7 @@ class ChromeDriverFinder:
            f"chromedriver_{arch_suffix}.zip")
     return listing_url, url
 
-  CHROMIUM_DASH_URL: str = ("https://chromiumdash.appspot.com/fetch_releases")
+  CHROMIUM_DASH_URL: str = "https://chromiumdash.appspot.com/fetch_releases"
   CHROMIUM_LISTING_URL: str = (
       "https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/")
   CHROMIUM_DASH_PARAMS: Dict[Tuple[str, str], Dict] = {
