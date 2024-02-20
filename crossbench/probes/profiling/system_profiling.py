@@ -247,9 +247,9 @@ class ProfilingProbe(Probe):
                      largest_perf_file.parent, len(perf_files))
 
   def get_context(self, run: Run) -> ProfilingContext:
-    if run.platform.is_linux:
+    if run.browser_platform.is_linux:
       return LinuxProfilingContext(self, run)
-    if run.platform.is_macos:
+    if run.browser_platform.is_macos:
       return MacOSProfilingContext(self, run)
     raise NotImplementedError("Invalid platform")
 
@@ -280,7 +280,7 @@ class MacOSProfilingContext(ProfilingContext):
     assert self._process
     self._process.send_signal(signal.SIGINT)
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     self.stop_process()
     return self.browser_result(file=(self.result_path,))
 
@@ -330,7 +330,7 @@ class LinuxProfilingContext(ProfilingContext):
       helper.wait_and_kill(self._perf_process)
       self._perf_process = None
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     # Waiting for linux-perf to flush all perf data
     if self.probe.sample_browser_process:
       logging.debug("Waiting for browser process to stop")

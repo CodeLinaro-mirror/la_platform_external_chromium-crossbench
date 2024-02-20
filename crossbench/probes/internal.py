@@ -25,6 +25,10 @@ if TYPE_CHECKING:
 class InternalProbe(probe.Probe):
   IS_GENERAL_PURPOSE = False
 
+  @property
+  def is_internal(self) -> bool:
+    return True
+
 
 class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
   IS_GENERAL_PURPOSE = False
@@ -38,12 +42,12 @@ class InternalJsonResultProbeContext(
     JsonResultProbeContext[InternalJsonResultProbe]):
 
   def stop(self) -> None:
-    # Only extract data in the late tear_down phase.
+    # Only extract data in the late teardown phase.
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     self._json_data = self.extract_json(self.run)  # pylint: disable=no-member
-    return super().tear_down()
+    return super().teardown()
 
 
 class LogProbe(InternalProbe):
@@ -78,7 +82,7 @@ class LogProbeContext(probe.ProbeContext[LogProbe]):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     assert self._log_handler
     logging.getLogger().removeHandler(self._log_handler)
     self._log_handler = None

@@ -238,7 +238,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     else:
       self._record_process.terminate()
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     assert self._record_process, "Screen recorder stopped early."
     if self._recorder_log_file:
       self._recorder_log_file.close()

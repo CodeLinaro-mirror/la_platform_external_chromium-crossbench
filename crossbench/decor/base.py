@@ -87,9 +87,10 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
   | |  Browser active / measured section.
   | +- stop()
   |
-  *- tear_down()
+  *- teardown()
   """
 
+  # TOOD: use StateMachine
   class _State(compat.StrEnum):
     READY = "ready"
     STARTING = "startup"
@@ -181,10 +182,10 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
     Called immediately after finishing the given Target with the browser still
     running.
     This method should have as little overhead as possible.
-    If possible, delegate heavy computation to the "tear_down" method.
+    If possible, delegate heavy computation to the "teardown" method.
     """
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     """
     Non time-critical, called after stopping all Decorators and after stopping
     the target.

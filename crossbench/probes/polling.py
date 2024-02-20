@@ -108,7 +108,7 @@ class PollingProbeContext(cb_probe.ProbeContext[PollingProbe]):
   def stop(self) -> None:
     self._poller.stop()
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     return LocalProbeResult(file=(self.result_path,))
 
 

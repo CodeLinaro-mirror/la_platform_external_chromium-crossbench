@@ -208,7 +208,7 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
     if self._power_battery_process:
       self._power_battery_process.terminate()
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     self.stop_processes()
     if self.probe.sampling_interval:
       return self.browser_result(

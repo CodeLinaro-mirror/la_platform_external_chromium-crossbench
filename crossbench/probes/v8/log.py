@@ -232,7 +232,7 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     log_dir = self.result_path.parent
     log_files = helper.sort_by_file_size(log_dir.glob("*-v8.log"))
     # Only convert a v8.log file with profile ticks.

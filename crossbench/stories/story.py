@@ -63,7 +63,7 @@ class Story(abc.ABC):
     """The main workload of a story that is measured by all Probes.
     """
 
-  def tear_down(self, run: Run) -> None:
+  def teardown(self, run: Run) -> None:
     """Cleanup work for a story that is not part of the main workload should
     be put in this method. Probes can skip measuring this section.
     """

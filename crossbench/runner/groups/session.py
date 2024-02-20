@@ -10,8 +10,14 @@ import logging
 from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
 from crossbench import helper
+from crossbench.exception import (Annotator, ExceptionAnnotationScope,
+                                  TInfoStack)
 from crossbench.flags import Flags, JSFlags
-from crossbench.probes.results import EmptyProbeResult
+from crossbench.probes.probe_context import ProbeSessionContext
+from crossbench.probes.result_location import ResultLocation
+from crossbench.probes.results import EmptyProbeResult, ProbeResultDict
+from crossbench.runner.probe_context_manager import ProbeContextManager
+from crossbench.runner.result_origin import ResultOrigin
 
 from .base import RunGroup
 
@@ -20,12 +26,12 @@ if TYPE_CHECKING:
 
   from selenium.webdriver.common.options import ArgOptions
 
-  from crossbench import exception, plt
+  from crossbench import plt
   from crossbench.browsers.browser import Browser
+  from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
-  from crossbench.network.base import Network
   from crossbench.runner.runner import Runner
   from crossbench.runner.timing import Timing
   from crossbench.types import JsonDict
@@ -41,7 +47,7 @@ class _State(enum.IntEnum):
   DONE = enum.auto()
 
 
-class BrowserSessionRunGroup(RunGroup):
+class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   """
   Groups Run objects together that are run within the same browser session.
   At the beginning of a new session the caches are cleared and the
@@ -62,6 +68,10 @@ class BrowserSessionRunGroup(RunGroup):
     self._browser_tmp_dir: Optional[pathlib.Path] = None
     self._extra_js_flags = JSFlags()
     self._extra_flags = Flags()
+    # Temporary objects, reset after all runs are ready (see set_ready).
+    self._probe_results = ProbeResultDict(root_dir)
+    self._probe_context_manager = ProbeSessionContextManager(
+        self, self._probe_results)
 
   def append(self, run: Run) -> None:
     assert self._state == _State.BUILDING
@@ -77,6 +87,9 @@ class BrowserSessionRunGroup(RunGroup):
     self._state = _State.READY
     self._validate()
     self._set_path(self._get_session_dir())
+    self._probe_results = ProbeResultDict(self.path)
+    self._probe_context_manager = ProbeSessionContextManager(
+        self, self._probe_results)
 
   def _validate(self) -> None:
     if not self._runs:
@@ -116,12 +129,16 @@ class BrowserSessionRunGroup(RunGroup):
     return self.raw_sessions_dir
 
   @property
-  def runner(self) -> Runner:
-    return self._runner
+  def out_dir(self) -> pathlib.Path:
+    return self._get_session_dir()
 
   @property
-  def runner_platform(self) -> plt.Platform:
-    return self.runner.platform
+  def durations(self) -> helper.Durations:
+    return self._durations
+
+  @property
+  def runner(self) -> Runner:
+    return self._runner
 
   @property
   def network(self) -> Network:
@@ -136,16 +153,8 @@ class BrowserSessionRunGroup(RunGroup):
     return self._index
 
   @property
-  def browser_platform(self) -> plt.Platform:
-    return self._browser.platform
-
-  @property
   def is_running(self) -> bool:
     return self._state == _State.RUNNING
-
-  @property
-  def is_remote(self) -> bool:
-    return self.browser_platform.is_remote
 
   @property
   def root_dir(self) -> pathlib.Path:
@@ -177,11 +186,10 @@ class BrowserSessionRunGroup(RunGroup):
 
   def setup_selenium_options(self, options: ArgOptions):
     # Using only the first run, since all runs need to have the same probes.
-    for probe_context in self.first_run.probe_contexts:
-      probe_context.setup_selenium_options(options)
+    self.first_run.setup_selenium_options(options)
 
   @property
-  def info_stack(self) -> exception.TInfoStack:
+  def info_stack(self) -> TInfoStack:
     return ("Merging results from multiple browser sessions",
             f"browser={self.browser.unique_name}", f"session={self.index}")
 
@@ -201,16 +209,6 @@ class BrowserSessionRunGroup(RunGroup):
       self._browser_tmp_dir = self.browser_platform.mkdtemp(prefix)
     return self._browser_tmp_dir
 
-  @contextlib.contextmanager
-  def measure(
-      self,
-      label: str,
-  ) -> Iterator[None]:
-    # Return a combined context manager that captures all exceptions
-    # and measures the time during the with-scope.
-    with self._exceptions.capture(label), self._durations.measure(label):
-      yield
-
   def merge(self, runner: Runner) -> None:
     # TODO: implement merging of session probes
     pass
@@ -224,12 +222,9 @@ class BrowserSessionRunGroup(RunGroup):
     with self.exceptions.capture():
       self._setup_session_dir()
       with helper.ChangeCWD(self.path):
-        try:
-          with self._open(is_dry_run):
-            yielded = True
-            yield self.is_success
-        finally:
-          self._teardown(is_dry_run)
+        with self._open(is_dry_run):
+          yielded = True
+          yield self.is_success
     # Contextmanager always needs to yield, even in the case of early
     # exceptions, the caller is responsible for skipping the body.
     if not yielded:
@@ -238,14 +233,27 @@ class BrowserSessionRunGroup(RunGroup):
 
   @contextlib.contextmanager
   def _open(self, is_dry_run: bool = False) -> Iterator[None]:
-    with self.network.open(self.browser):
+    with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
-      try:
-        yield
-      except Exception as e:
-        logging.debug(
-            "BrowserSessionRunGroup: got unexpected inner exception: %s", e)
-        raise e
+    try:
+      with self.network.open(self.browser), self._probe_context_manager.open():
+        self._start(is_dry_run)
+        try:
+          yield
+        except Exception as e:
+          logging.debug(
+              "BrowserSessionRunGroup: got unexpected inner exception: %s", e)
+          raise e
+    finally:
+      self._teardown(is_dry_run)
+
+  def _setup(self, is_dry_run: bool) -> None:
+    self._probe_context_manager.setup(self.probes, is_dry_run)
+    # TODO: handle session vs run probe.
+    for run in self.runs:
+      with self._exceptions.annotate(f"Setting up {run}"):
+        logging.info("Preparing SESSION %s RUN %s", self.index, run.index)
+        run.setup(is_dry_run)
 
   def _setup_session_dir(self):
     with self.measure("browser-session-setup-dir"):
@@ -258,28 +266,19 @@ class BrowserSessionRunGroup(RunGroup):
         self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
         self.raw_sessions_dir.symlink_to(self.path)
 
-  def _setup(self, is_dry_run: bool) -> None:
+  def _start(self, is_dry_run: bool) -> None:
     assert self._state == _State.READY
     self._state = _State.STARTING
-    with self.measure("browser-session-setup"):
-      self._setup_runs(is_dry_run)
+    with self.measure("browser-session-start"):
       with self._exceptions.annotate(f"Starting Browser: {self.browser}"):
         self._start_browser(is_dry_run)
-
-
-  def _setup_runs(self, is_dry_run: bool) -> None:
-    # TODO: handle session vs run probe.
-    for run in self.runs:
-      with self._exceptions.annotate(f"Setting up {run}"):
-        logging.info("Preparing SESSION %s RUN %s", self.index, run.index)
-        run.setup(is_dry_run)
 
   def _start_browser(self, is_dry_run: bool) -> None:
     assert self._state == _State.STARTING
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
-
+    assert self._probe_context_manager.is_ready
     browser_log_file = self.path / "browser.log"
     assert not browser_log_file.exists(), (
         f"Default browser log file {browser_log_file} already exists.")
@@ -306,6 +305,7 @@ class BrowserSessionRunGroup(RunGroup):
       finally:
         assert self._state == _State.STOPPING
         self._state = _State.DONE
+    self._probe_context_manager.teardown()
 
   def _stop_browser(self) -> None:
     assert self._state == _State.STOPPING
@@ -313,7 +313,7 @@ class BrowserSessionRunGroup(RunGroup):
     # This can happen if a browser / probe setup error occurs and we're
     # in a unclean state.
     if self.browser.is_running:
-      self._runs[-1]._tear_down_browser()
+      self._runs[-1]._teardown_browser()
 
 
   # TODO: remove once cleanly implemented
@@ -323,3 +323,14 @@ class BrowserSessionRunGroup(RunGroup):
   # TODO: remove once cleanly implemented
   def is_last_run(self, run: Run) -> bool:
     return self._runs[-1] is run
+
+
+class ProbeSessionContextManager(ProbeContextManager[BrowserSessionRunGroup,
+                                                     ProbeSessionContext]):
+
+  def __init__(self, session: BrowserSessionRunGroup,
+               probe_results: ProbeResultDict):
+    super().__init__(session, probe_results)
+
+  def get_probe_context(self, probe: Probe) -> Optional[ProbeSessionContext]:
+    return probe.get_session_context(self._origin)

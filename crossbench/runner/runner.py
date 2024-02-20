@@ -61,7 +61,8 @@ class ThreadMode(compat.StrEnumWithHelp):
       groups = helper.group_by(
           runs, lambda run: run.browser_session, sort_key=None)
     elif self == ThreadMode.PLATFORM:
-      groups = helper.group_by(runs, lambda run: run.platform, sort_key=None)
+      groups = helper.group_by(
+          runs, lambda run: run.browser_platform, sort_key=None)
     elif self == ThreadMode.BROWSER:
       groups = helper.group_by(runs, lambda run: run.browser, sort_key=None)
     else:
@@ -352,7 +353,7 @@ class Runner:
       # Ensure that we bail out on the first exception.
       self.assert_successful_sessions_and_runs()
     if not is_dry_run:
-      self._tear_down()
+      self._teardown()
     self.assert_successful_sessions_and_runs()
 
   def _setup(self) -> None:
@@ -444,7 +445,7 @@ class Runner:
     with self._exceptions.annotate("Running single thread group"):
       thread_groups.run()
 
-  def _tear_down(self) -> None:
+  def _teardown(self) -> None:
     self._assert_state(RunnerState.RUNNING, RunnerState.TEARDOWN)
     logging.info("=" * 80)
     logging.info("RUNS COMPLETED")

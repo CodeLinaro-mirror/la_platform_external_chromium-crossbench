@@ -196,7 +196,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     self._recorder.stop()
     return self.browser_result(file=(self.result_path,))
 

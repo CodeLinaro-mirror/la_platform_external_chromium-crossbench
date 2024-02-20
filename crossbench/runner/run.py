@@ -4,41 +4,33 @@
 
 from __future__ import annotations
 
-import contextlib
 import datetime as dt
 import enum
 import logging
 import pathlib
-from typing import (TYPE_CHECKING, Any, Iterable, Iterator, List, Optional,
-                    Tuple)
+from typing import TYPE_CHECKING, Optional
 
-from crossbench import compat, exception, helper, plt
-from crossbench.probes import internal as internal_probe
-from crossbench.probes.probe import ResultLocation
-from crossbench.probes.results import (EmptyProbeResult, ProbeResult,
-                                       ProbeResultDict)
-
-from .actions import Actions
-from .timing import Timing
+from crossbench import compat, plt
+from crossbench.exception import Annotator, TInfoStack
+from crossbench.helper import (ChangeCWD, Durations, Spinner, State,
+                               StateMachine)
+from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.results import ProbeResultDict
+from crossbench.runner.actions import Actions
+from crossbench.runner.probe_context_manager import ProbeContextManager
+from crossbench.runner.result_origin import ResultOrigin
+from crossbench.runner.timing import Timing
 
 if TYPE_CHECKING:
+  from selenium.webdriver.common.options import ArgOptions
+
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.probes.probe import Probe, ProbeContext
+  from crossbench.probes.probe import Probe
+  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.runner import Runner
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
-
-  from .groups import BrowserSessionRunGroup
-  from .runner import Runner
-
-
-@enum.unique
-class RunState(compat.StrEnum):
-  INITIAL = "INITIAL"
-  SETUP = "SETUP"
-  READY = "READY"
-  RUN = "RUN"
-  DONE = "DONE"
 
 
 @enum.unique
@@ -48,7 +40,7 @@ class Temperature(compat.StrEnumWithHelp):
   HOT = ("hot", "third run")
 
 
-class Run:
+class Run(ResultOrigin):
 
   def __init__(self,
                runner: Runner,
@@ -60,7 +52,7 @@ class Run:
                name: Optional[str] = None,
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
-    self._state: RunState = RunState.INITIAL
+    self._state = StateMachine()
     self._runner = runner
     self._browser_session = browser_session
     self._browser: Browser = browser_session.browser
@@ -75,12 +67,13 @@ class Run:
     self._name = name
     self._out_dir = self._get_out_dir(browser_session.root_dir).absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
-    self._probe_contexts: List[ProbeContext] = []
-    self._durations = helper.Durations()
+    self._durations = Durations()
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
     self._timeout = timeout
-    self._exceptions = exception.Annotator(throw)
+    self._exceptions = Annotator(throw)
     self._browser_tmp_dir: Optional[pathlib.Path] = None
+    self._probe_context_manager = ProbeRunContextManager(
+        self, self._probe_results)
 
   def __str__(self) -> str:
     return f"Run({self.name}, {self._state}, {self.browser})"
@@ -101,7 +94,7 @@ class Run:
     return Actions(name, self, verbose=verbose, measure=measure)
 
   @property
-  def info_stack(self) -> exception.TInfoStack:
+  def info_stack(self) -> TInfoStack:
     return (
         f"Run({self.name})",
         (f"browser={self.browser.type} label={self.browser.label} "
@@ -133,7 +126,7 @@ class Run:
     return self.runner.timing
 
   @property
-  def durations(self) -> helper.Durations:
+  def durations(self) -> Durations:
     return self._durations
 
   @property
@@ -170,25 +163,9 @@ class Run:
     return self._browser
 
   @property
-  def platform(self) -> plt.Platform:
-    return self.browser_platform
-
-  @property
   def environment(self) -> HostEnvironment:
     # TODO: replace with custom BrowserEnvironment
     return self.runner.env
-
-  @property
-  def browser_platform(self) -> plt.Platform:
-    return self._browser.platform
-
-  @property
-  def runner_platform(self) -> plt.Platform:
-    return self.runner.platform
-
-  @property
-  def is_remote(self) -> bool:
-    return self.browser_platform.is_remote
 
   @property
   def out_dir(self) -> pathlib.Path:
@@ -218,11 +195,7 @@ class Run:
     return self._name
 
   @property
-  def probes(self) -> Iterable[Probe]:
-    return self._runner.probes
-
-  @property
-  def exceptions(self) -> exception.Annotator:
+  def exceptions(self) -> Annotator:
     return self._exceptions
 
   @property
@@ -230,76 +203,29 @@ class Run:
     return self._exceptions.is_success
 
   @property
-  def probe_contexts(self) -> Iterator[ProbeContext]:
-    return iter(self._probe_contexts)
-
-  @property
   def session(self) -> BrowserSessionRunGroup:
     return self._browser_session
-
-  @contextlib.contextmanager
-  def measure(
-      self, label: str
-  ) -> Iterator[Tuple[exception.ExceptionAnnotationScope,
-                      helper.DurationMeasureContext]]:
-    # Return a combined context manager that adds an named exception info
-    # and measures the time during the with-scope.
-    with self._exceptions.info(label) as stack, self._durations.measure(
-        label) as timer:
-      yield (stack, timer)
-
-  def exception_info(self,
-                     *stack_entries: str) -> exception.ExceptionAnnotationScope:
-    return self._exceptions.info(*stack_entries)
-
-  def exception_handler(
-      self,
-      *stack_entries: str,
-      exceptions: exception.TExceptionTypes = (Exception,)
-  ) -> exception.ExceptionAnnotationScope:
-    return self._exceptions.capture(*stack_entries, exceptions=exceptions)
 
   def get_browser_details_json(self) -> JsonDict:
     details_json = self.browser.details_json()
     self.session.add_flag_details(details_json)
     return details_json
 
-  def get_default_probe_result_path(self, probe: Probe) -> pathlib.Path:
-    """Return a local or remote/browser-based result path depending on the
-    Probe default RESULT_LOCATION."""
-    if probe.RESULT_LOCATION == ResultLocation.BROWSER:
-      return self.get_browser_probe_result_path(probe)
-    if probe.RESULT_LOCATION == ResultLocation.LOCAL:
-      return self.get_local_probe_result_path(probe)
-    raise ValueError(f"Invalid probe.RESULT_LOCATION {probe.RESULT_LOCATION} "
-                     f"for probe {probe}")
-
   def get_local_probe_result_path(self, probe: Probe) -> pathlib.Path:
     file = self._out_dir / probe.result_path_name
     assert not file.exists(), f"Probe results file exists already. file={file}"
     return file
 
-  def get_browser_probe_result_path(self, probe: Probe) -> pathlib.Path:
-    """Returns a temporary path on the remote browser or the same as
-    get_local_probe_result_path() on a local browser."""
-    if not self.is_remote:
-      return self.get_local_probe_result_path(probe)
-    path = self.browser_tmp_dir / probe.result_path_name
-    self.browser_platform.mkdir(path.parent)
-    logging.debug("Creating remote result dir=%s on platform=%s", path.parent,
-                  self.browser_platform)
-    return path
-
   def setup(self, is_dry_run: bool = False) -> None:
-    self._advance_state(RunState.INITIAL, RunState.SETUP)
+    self._state.transition(State.INITIAL, to=State.SETUP)
     self._setup_dirs()
-    with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
-      assert not self._probe_contexts
-      try:
-        self._probe_contexts = self._setup_probes(is_dry_run)
-      except Exception as e:  # pylint: disable=broad-except
-        self._handle_setup_error(e)
-        return
+    self._cool_down(is_dry_run)
+    with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
+      self._probe_context_manager.setup(self.probes, is_dry_run)
+
+  def setup_selenium_options(self, options: ArgOptions):
+    # TODO: move explicitly to session.
+    self._probe_context_manager.setup_selenium_options(options)
 
   def _setup_dirs(self) -> None:
     self._start_datetime = dt.datetime.now()
@@ -328,79 +254,34 @@ class Run:
     logging.info("RUN DIR: %s", self._out_dir)
     logging.debug("CWD %s", self._out_dir)
 
-  def _setup_probes(self, is_dry_run: bool) -> List[ProbeContext[Any]]:
-    assert self._state == RunState.SETUP
-    self._log_setup()
+  def _cool_down(self, is_dry_run: bool) -> None:
     if is_dry_run:
-      return []
-
+      return
     with self.measure("runner-cooldown"):
       self._runner.wait(self._runner.timing.cool_down_time, absolute_time=True)
       self._runner.cool_down()
 
-    probe_run_contexts: List[ProbeContext] = []
-    with self.measure("probes-creation"):
-      probe_set = set()
-      for probe in self.probes:
-        assert probe not in probe_set, (
-            f"Got duplicate probe name={probe.name}")
-        probe_set.add(probe)
-        if probe.PRODUCES_DATA:
-          self._probe_results[probe] = EmptyProbeResult()
-        assert probe.is_attached, (
-            f"Probe {probe.name} is not properly attached to a browser")
-        probe_run_contexts.append(probe.get_context(self))
-
-    with self.measure("probes-setup"):
-      for probe_context in probe_run_contexts:
-        with self.measure(f"probes-setup {probe_context.name}"):
-          probe_context.setup()  # pytype: disable=wrong-arg-types
-    return probe_run_contexts
-
-  def _handle_setup_error(self, setup_exception: BaseException) -> None:
-    self._advance_state(RunState.SETUP, RunState.DONE)
-    logging.debug("Handling setup error")
-    self._exceptions.append(setup_exception)
-    assert self._state == RunState.DONE
-    assert not self._exceptions.is_success
-    # Special handling for crucial runner probes
-    internal_probe_contexts = [
-        context for context in self._probe_contexts
-        if isinstance(context.probe, internal_probe.InternalProbe)
-    ]
-    self._tear_down_probe_contexts(internal_probe_contexts, setup_error=True)
-
   def run(self, is_dry_run: bool = False) -> None:
-    self._advance_state(RunState.SETUP, RunState.READY)
+    self._state.transition(State.SETUP, to=State.READY)
     self._start_datetime = dt.datetime.now()
-    with helper.ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
-      assert self._probe_contexts
+    with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
+      assert self._probe_context_manager.is_ready
       try:
         self._run(is_dry_run)
       except Exception as e:  # pylint: disable=broad-except
         self._exceptions.append(e)
       finally:
         if not is_dry_run:
-          self.tear_down()
+          self.teardown()
 
   def _run(self, is_dry_run: bool) -> None:
-    self._advance_state(RunState.READY, RunState.RUN)
-
+    self._state.transition(State.READY, to=State.RUN)
     self.browser.splash_screen.run(self)
-    assert self._probe_contexts
-    probe_start_time = dt.datetime.now()
-    probe_context_manager = contextlib.ExitStack()
-
-    for probe_context in self._probe_contexts:
-      probe_context.set_start_time(probe_start_time)
-      probe_context_manager.enter_context(probe_context)
-
-    with probe_context_manager:
-      self._durations["probes-start"] = dt.datetime.now() - probe_start_time
+    with self._probe_context_manager.open():
       logging.info("RUNNING STORY")
-      assert self._state == RunState.RUN, "Invalid state"
+      assert self._state == State.RUN, "Invalid state"
       try:
-        with self.measure("run"), helper.Spinner():
+        with self.measure("run"), Spinner():
           if not is_dry_run:
             self._run_story()
       except TimeoutError as e:
@@ -412,71 +293,39 @@ class Run:
   def _run_story(self) -> None:
     self._run_story_setup()
     self._story.run(self)
-    self._run_story_tear_down()
+    self._run_story_teardown()
 
   def _run_story_setup(self) -> None:
     with self.measure("story-setup"):
       self._story.setup(self)
-    with self.measure("probes-start_story_run"):
-      for probe_context in self._probe_contexts:
-        with self.exception_handler(
-            f"Probe {probe_context.name} start_story_run"):
-          probe_context.start_story_run()
+    self._probe_context_manager.start_story()
 
-  def _run_story_tear_down(self) -> None:
-    with self.measure("probes-stop_story_run"):
-      for probe_context in self._probe_contexts:
-        with self.exception_handler(
-            f"Probe {probe_context.name} stop_story_run"):
-          probe_context.stop_story_run()
+  def _run_story_teardown(self) -> None:
+    self._probe_context_manager.stop_story()
     with self.measure("story-tear-down"):
-      self._story.tear_down(self)
+      self._story.teardown(self)
 
-  def _advance_state(self, expected: RunState, next_state: RunState) -> None:
-    assert self._state == expected, (
-        f"Invalid state got={self._state} expected={expected}")
-    self._state = next_state
+  def teardown(self) -> None:
+    self._state.transition(State.RUN, to=State.DONE)
+    self._teardown_browser()
 
-  def tear_down(self) -> None:
-    self._advance_state(RunState.RUN, RunState.DONE)
-    self._tear_down_browser()
-
-    with self.measure("probes-tear_down"):
-      self._tear_down_probe_contexts(self._probe_contexts)
-      self._probe_contexts = []
+    self._probe_context_manager.teardown()
     self._rm_browser_tmp_dir()
 
-  def _tear_down_browser(self) -> None:
+  def _teardown_browser(self) -> None:
     if not self.browser_session.is_last_run(self):
       logging.debug("Skipping browser teardown (not last in session): %s", self)
       return
     if self._browser.is_running is False:
       logging.warning("Browser is no longer running (crashed or closed).")
       return
-    with self.measure("browser-tear_down"), self._exceptions.capture(
+    with self.measure("browser-teardown"), self._exceptions.capture(
         "Quit browser"):
       try:
         self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
       except Exception as e:  # pylint: disable=broad-except
         logging.warning("Error quitting browser: %s", e)
         return
-
-  def _tear_down_probe_contexts(self,
-                                probe_contexts: List[ProbeContext],
-                                setup_error: bool = False) -> None:
-    assert self._state == RunState.DONE
-    if not setup_error:
-      assert probe_contexts, "Expected non-empty probe_contexts list."
-    logging.debug("PROBE SCOPE TEARDOWN")
-    for probe_context in reversed(probe_contexts):
-      with self.exceptions.capture(f"Probe {probe_context.name} teardown"):
-        assert probe_context.run == self
-        probe_results: ProbeResult = probe_context.tear_down()  # pytype: disable=wrong-arg-types
-        probe = probe_context.probe
-        if probe_results.is_empty:
-          logging.warning("Probe did not extract any data. probe=%s run=%s",
-                          probe, self)
-        self._probe_results[probe] = probe_results
 
   def _rm_browser_tmp_dir(self) -> None:
     if not self._browser_tmp_dir:
@@ -486,3 +335,30 @@ class Run:
   def log_results(self) -> None:
     for probe in self.probes:
       probe.log_run_result(self)
+
+
+class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
+
+  def __init__(self, run: Run, probe_results: ProbeResultDict):
+    super().__init__(run, probe_results)
+
+  def get_probe_context(self, probe: Probe) -> Optional[ProbeContext]:
+    return probe.get_context(self._origin)
+
+  def setup_selenium_options(self, options: ArgOptions):
+    for probe_context in self._probe_contexts:
+      probe_context.setup_selenium_options(options)
+
+  def start_story(self) -> None:
+    with self.measure("probes-start_story_run"):
+      for probe_context in self._probe_contexts:
+        with self._origin.exception_handler(
+            f"Probe {probe_context.name} start_story_run"):
+          probe_context.start_story_run()
+
+  def stop_story(self) -> None:
+    with self.measure("probes-stop_story_run"):
+      for probe_context in self._probe_contexts:
+        with self._origin.exception_handler(
+            f"Probe {probe_context.name} stop_story_run"):
+          probe_context.stop_story_run()

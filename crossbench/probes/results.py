@@ -10,9 +10,10 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
 
 if TYPE_CHECKING:
-  from crossbench.types import JsonDict
   from crossbench.probes.probe import Probe
+  from crossbench.runner.result_origin import ResultOrigin
   from crossbench.runner.run import Run
+  from crossbench.types import JsonDict
 
 
 class ProbeResult(abc.ABC):
@@ -163,7 +164,7 @@ class BrowserProbeResult(ProbeResult):
   """
 
   def __init__(self,
-               run: Run,
+               result_origin: ResultOrigin,
                url: Optional[Iterable[str]] = None,
                file: Optional[Iterable[pathlib.Path]] = None,
                json: Optional[Iterable[pathlib.Path]] = None,
@@ -171,11 +172,11 @@ class BrowserProbeResult(ProbeResult):
     self._browser_file = file
     self._browser_json = json
     self._browser_csv = csv
-    self._is_remote = run.is_remote
-
-    file = self._copy_files(run, file)
-    json = self._copy_files(run, json)
-    csv = self._copy_files(run, csv)
+    self._is_remote = result_origin.is_remote
+    if self._is_remote:
+      file = self._copy_files(result_origin, file)
+      json = self._copy_files(result_origin, json)
+      csv = self._copy_files(result_origin, csv)
 
     super().__init__(url, file, json, csv)
 
@@ -184,14 +185,14 @@ class BrowserProbeResult(ProbeResult):
     return self._is_remote
 
   def _copy_files(
-      self, run: Run, paths: Optional[Iterable[pathlib.Path]]
+      self, result_origin: ResultOrigin, paths: Optional[Iterable[pathlib.Path]]
   ) -> Optional[Iterable[pathlib.Path]]:
-    if not paths or not self._is_remote:
+    if not paths:
       return paths
     # Copy result files from remote tmp dir to local results dir
-    browser_platform = run.browser_platform
-    remote_tmp_dir = run.browser_tmp_dir
-    out_dir = run.out_dir
+    browser_platform = result_origin.browser_platform
+    remote_tmp_dir = result_origin.browser_tmp_dir
+    out_dir = result_origin.out_dir
     local_result_paths: List[pathlib.Path] = []
     for remote_path in paths:
       try:

@@ -300,5 +300,60 @@ class UpdateUrlQueryTestCase(unittest.TestCase):
         helper.update_url_query("http://test.com?foo=BAR&xyz=10#status",
                                 {"foo": "bar"}))
 
+
+class StateMachineTestCase(unittest.TestCase):
+
+  def test_init(self):
+    state_machine = helper.StateMachine()
+    self.assertIs(state_machine.state, helper.State.INITIAL)
+    state_machine = helper.StateMachine(helper.State.READY)
+    self.assertIs(state_machine.state, helper.State.READY)
+
+  def test_eq(self):
+    state_machine = helper.StateMachine(helper.State.READY)
+    state_machine_2 = helper.StateMachine(helper.State.READY)
+    self.assertEqual(state_machine, state_machine)
+    self.assertEqual(state_machine, state_machine_2)
+    self.assertEqual(state_machine, helper.State.READY)
+    self.assertNotEqual(state_machine, None)
+    self.assertNotEqual(state_machine, helper.State.INITIAL)
+    self.assertNotEqual(state_machine, helper.StateMachine())
+
+  def test_transition(self):
+    state_machine = helper.StateMachine()
+    state_machine.transition(helper.State.INITIAL, to=helper.State.READY)
+    self.assertEqual(state_machine.state, helper.State.READY)
+    with self.assertRaises(RuntimeError) as cm:
+      state_machine.transition(helper.State.INITIAL, to=helper.State.READY)
+    self.assertIn("INITIAL", str(cm.exception))
+    self.assertIn("READY", str(cm.exception))
+
+  def test_transition_multi_current(self):
+    state_machine = helper.StateMachine()
+    state_machine.transition(
+        helper.State.INITIAL, helper.State.READY, to=helper.State.READY)
+    self.assertEqual(state_machine.state, helper.State.READY)
+    state_machine.transition(
+        helper.State.INITIAL, helper.State.READY, to=helper.State.READY)
+    self.assertEqual(state_machine.state, helper.State.READY)
+    state_machine.transition(
+        helper.State.INITIAL, helper.State.READY, to=helper.State.DONE)
+    self.assertEqual(state_machine.state, helper.State.DONE)
+    with self.assertRaises(RuntimeError) as cm:
+      state_machine.transition(
+          helper.State.INITIAL, helper.State.READY, to=helper.State.DONE)
+    self.assertIn("INITIAL", str(cm.exception))
+    self.assertIn("READY", str(cm.exception))
+    self.assertIn("DONE", str(cm.exception))
+
+  def test_expect(self):
+    state_machine = helper.StateMachine()
+    state_machine.expect(helper.State.INITIAL)
+    with self.assertRaises(RuntimeError) as cm:
+      state_machine.expect(helper.State.READY)
+    self.assertIn("INITIAL", str(cm.exception))
+    self.assertIn("READY", str(cm.exception))
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -124,7 +124,7 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
       raise RuntimeError(f"DTrace exited early with error {returncode}.\n"
                          f"Check {self._log_path} for the program's log.")
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     self.stop_dtrace_process()
     assert self._log_file, "Did not open log file."
     self._log_file.close()

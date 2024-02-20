@@ -204,7 +204,7 @@ class JsonResultProbeContext(ProbeContext[JsonResultProbeT],
   def stop(self) -> None:
     self._json_data = self.extract_json(self.run)
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     if self._json_data is None:
       return EmptyProbeResult()
     self._json_data = self.process_json_data(self._json_data)

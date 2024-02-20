@@ -156,5 +156,5 @@ class DebuggerContext(ProbeContext[DebuggerProbe]):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     return EmptyProbeResult()

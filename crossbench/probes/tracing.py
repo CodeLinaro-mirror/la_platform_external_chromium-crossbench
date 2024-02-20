@@ -299,7 +299,7 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     if self._record_format == RecordFormat.JSON:
       return self.browser_result(json=(self.result_path,))
     if not self._traceconv:

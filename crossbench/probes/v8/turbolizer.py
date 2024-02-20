@@ -59,7 +59,7 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     log_dir = self.result_path.parent
     # Copy the files from a potentially remote browser to a the local result
     # dir.

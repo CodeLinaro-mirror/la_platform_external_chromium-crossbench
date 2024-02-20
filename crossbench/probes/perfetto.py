@@ -196,7 +196,7 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
                     "The trace might be incomplete.")
     self._pid = None
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     # Copy files:
     browser_result = self.browser_result(file=[self.result_path])
     local_result_file = browser_result.file

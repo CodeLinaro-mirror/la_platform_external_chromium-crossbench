@@ -121,7 +121,7 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
     if self._power_metrics_process:
       self._power_metrics_process.terminate()
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     self.stop_process()
     return self.browser_result(file=(self._output_plist_file,))
 

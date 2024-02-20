@@ -152,7 +152,7 @@ class MockRun:
     self.runner = runner
     self.browser_session = browser_session
     self.browser = browser_session.browser
-    self.platform = self.browser.platform
+    self.browser_platform = self.browser.platform
     self.name = name
 
   def __str__(self):
@@ -302,7 +302,7 @@ class MockProbeContext(ProbeContext):
   def stop(self) -> None:
     pass
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     with self.result_path.open("w") as f:
       json.dump(self.probe.test_data, f)
     return LocalProbeResult(json=(self.result_path,))
@@ -500,9 +500,12 @@ class RunThreadGroupTestCase(_BaseRunnerTestCase):
     self.assertSequenceEqual(thread.runs, runs)
     self.assertEqual(run_count, 4)
 
-  def test_run_fail_run_probe_setup(self):
+  def test_run_fail_run_probe_get_context(self):
     # 2 runs, same browser different stories
     runner = self.default_runner(browsers=[self.browsers[1]], throw=False)
+    probe = MockProbe("custom_probe_data")
+    runner.attach_probe(probe)
+    self.assertTrue(probe.is_attached)
     runs = tuple(runner.get_runs())
     thread = RunThreadGroup(runs)
     failing_session, successful_session = thread.browser_sessions
@@ -510,13 +513,14 @@ class RunThreadGroupTestCase(_BaseRunnerTestCase):
 
     setup_fail_count = 0
 
-    def mock_setup_probes_fail(is_dry_run):
-      del is_dry_run
+    def mock_get_context_fail(run):
+      if run == successful_run:
+        return MockProbeContext(probe, run)
       nonlocal setup_fail_count
       setup_fail_count += 1
       raise CustomException()
 
-    failing_run._setup_probes = mock_setup_probes_fail
+    probe.get_context = mock_get_context_fail
 
     self.assertEqual(setup_fail_count, 0)
     thread.run()
@@ -525,7 +529,48 @@ class RunThreadGroupTestCase(_BaseRunnerTestCase):
     self.assertTrue(successful_session.is_success)
     self.assertTrue(successful_run.is_success)
 
-    # Errors are propagate up:
+    # Errors are propagated up:
+    for exceptions_holder in (runner, thread, failing_session, failing_run):
+      self.assertFalse(exceptions_holder.is_success)
+      exceptions = exceptions_holder.exceptions
+      self.assertEqual(len(exceptions), 1)
+      exception_entry = exceptions[0]
+      self.assertIsInstance(exception_entry.exception, CustomException)
+
+  def test_run_fail_run_probe_setup(self):
+    # 2 runs, same browser different stories
+    runner = self.default_runner(browsers=[self.browsers[1]], throw=False)
+    probe = MockProbe("custom_probe_data")
+    runner.attach_probe(probe)
+    self.assertTrue(probe.is_attached)
+    runs = tuple(runner.get_runs())
+    thread = RunThreadGroup(runs)
+    failing_session, successful_session = thread.browser_sessions
+    failing_run, successful_run = runs
+
+    setup_fail_count = 0
+
+    def mock_setup_fail() -> None:
+      nonlocal setup_fail_count
+      setup_fail_count += 1
+      raise CustomException()
+
+    def mock_get_context_fail(run):
+      context = MockProbeContext(probe, run)
+      if run == failing_run:
+        context.setup = mock_setup_fail
+      return context
+
+    probe.get_context = mock_get_context_fail
+
+    self.assertEqual(setup_fail_count, 0)
+    thread.run()
+    self.assertEqual(setup_fail_count, 1)
+
+    self.assertTrue(successful_session.is_success)
+    self.assertTrue(successful_run.is_success)
+
+    # Errors are propagated up:
     for exceptions_holder in (runner, thread, failing_session, failing_run):
       self.assertFalse(exceptions_holder.is_success)
       exceptions = exceptions_holder.exceptions

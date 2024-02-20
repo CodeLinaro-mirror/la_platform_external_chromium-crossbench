@@ -93,7 +93,7 @@ class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
     with self.run.actions("Extract RCS") as actions:
       self._rcs_table = actions.js("return %GetAndResetRuntimeCallStats();")
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     if not self._rcs_table:
       raise ProbeMissingDataError(
           "Chrome didn't produce any RCS data. "

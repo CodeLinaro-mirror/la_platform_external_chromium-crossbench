@@ -35,6 +35,7 @@ def CheckChange(input_api, output_api, on_commit):
       "useless-return",
       "line-too-long",  # Annoying false-positives on URLs
       "cyclic-import",  # TODO: This is not working as expected with pytype
+      "no-member",  # Need newer pylint to handle issues with generics
   ]
   tests += input_api.canned_checks.GetPylint(
       input_api,

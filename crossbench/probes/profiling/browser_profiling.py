@@ -175,7 +175,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
       with self.result_path.open("w", encoding="utf-8") as f:
         json.dump(profile, f)
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     return self.browser_result(json=[self.result_path])
 
 
@@ -192,7 +192,7 @@ class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
           str(feature) for feature in self.probe.moz_profiler_startup_features)
     env[FirefoxProfilerEnvVars.SHUTDOWN] = str(self.result_path)
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     env = self.browser.platform.environ
     del env[FirefoxProfilerEnvVars.STARTUP]
     del env[FirefoxProfilerEnvVars.STARTUP_FEATURES]
@@ -237,5 +237,5 @@ class SafariWebdriverBrowserProfilerProbeContext(BrowserProfilingProbeContext):
         end tell
       end tell""")
 
-  def tear_down(self) -> ProbeResult:
+  def teardown(self) -> ProbeResult:
     return self.browser_result(json=[self.result_path])

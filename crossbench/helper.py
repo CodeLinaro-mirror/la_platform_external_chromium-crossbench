@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import atexit
 import datetime as dt
+import enum
 import logging
 import os
 import pathlib
@@ -24,7 +25,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
 
 from colorama import init, Fore, Style
 
-from crossbench import plt
+from crossbench import compat, plt
 
 if TYPE_CHECKING:
   import signal
@@ -441,3 +442,39 @@ def _input(results_container):
     results_container[0] = input()
   except KeyboardInterrupt:
     pass
+
+
+@enum.unique
+class State(compat.StrEnum):
+  INITIAL = "INITIAL"
+  SETUP = "SETUP"
+  READY = "READY"
+  RUN = "RUN"
+  DONE = "DONE"
+
+
+class StateMachine:
+
+  def __init__(self, default: State = State.INITIAL) -> None:
+    self._state = default
+
+  @property
+  def state(self) -> State:
+    return self._state
+
+  def __eq__(self, other: Any) -> bool:
+    if self is other:
+      return True
+    if isinstance(other, StateMachine):
+      return self._state is other._state
+    if isinstance(other, State):
+      return self._state is other
+    return False
+
+  def transition(self, *args: State, to: State) -> None:
+    self.expect(*args)
+    self._state = to
+
+  def expect(self, *args: State) -> None:
+    if self._state not in args:
+      raise RuntimeError(f"Invalid state got={self._state} expected={args}")

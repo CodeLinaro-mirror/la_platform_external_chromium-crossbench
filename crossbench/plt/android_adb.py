@@ -509,8 +509,8 @@ class AndroidAdbPlatform(PosixPlatform):
 
     res = []
     for line in lines[1:]:
-      tokens = line.split()
-      assert len(tokens) == 2
+      tokens = line.strip().split(maxsplit=1)
+      assert len(tokens) == 2, f"Got invalid process tokens: {tokens}"
       res.append({"pid": int(tokens[0]), "name": tokens[1]})
     return res
 

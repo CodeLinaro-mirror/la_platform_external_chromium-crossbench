@@ -58,7 +58,7 @@ class Actions(helper.TimeScope):
 
   @property
   def platform(self) -> plt.Platform:
-    return self._run.platform
+    return self._run.browser_platform
 
   def __enter__(self) -> Actions:
     self._exception_annotation.__enter__()
