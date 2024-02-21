@@ -40,6 +40,12 @@ class MultiException(ValueError):
     super().__init__(message)
     self.exceptions = exceptions
 
+  def __len__(self) -> int:
+    return len(self.exceptions)
+
+  def matching(self, *args: Type[BaseException]) -> List[BaseException]:
+    return self.exceptions.matching(*args)
+
   @property
   def annotator(self) -> ExceptionAnnotator:
     return self.exceptions
@@ -152,6 +158,14 @@ class ExceptionAnnotator:
   def __len__(self) -> int:
     return len(self._exceptions)
 
+  def matching(self, *args: Type[BaseException]) -> List[BaseException]:
+    result = []
+    for entry in self._exceptions:
+      excption = entry.exception
+      if isinstance(excption, *args):
+        result.append(excption)
+    return result
+
   def assert_success(self,
                      message: Optional[str] = None,
                      exception_cls: Type[BaseException] = MultiException,
@@ -165,8 +179,6 @@ class ExceptionAnnotator:
     message = message.format(self)
     if issubclass(exception_cls, MultiException):
       exception = exception_cls(message, self)
-      if len(self) == 1:
-        raise exception from self[0].exception
       raise exception
     raise exception_cls(message)
 
@@ -299,7 +311,7 @@ def annotate(
     throw_cls: Optional[Type[BaseException]] = MultiException
 ) -> ExceptionAnnotationScope:
   """Use to annotate an exception.
-  By default this will throw a MultiException which can keep track of 
+  By default this will throw a MultiException which can keep track of
   more annotations."""
   return ExceptionAnnotator(throw_cls=throw_cls).capture(
       *stack_entries, exceptions=exceptions, ignore=ignore)
@@ -319,5 +331,4 @@ def annotate_argparsing(*stack_entries: str,
   return annotate(
       *stack_entries,
       exceptions=exceptions,
-      ignore=(argparse.ArgumentTypeError,),
       throw_cls=ArgumentTypeMultiException)

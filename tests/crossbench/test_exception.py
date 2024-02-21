@@ -20,6 +20,10 @@ class CustomException(Exception):
 class CustomException2(Exception):
   pass
 
+
+class CustomValueError(ValueError):
+  pass
+
 class ExceptionHandlerTestCase(unittest.TestCase):
 
   def test_invalid_get_item(self):
@@ -68,6 +72,36 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     entry: Entry = annotator[0]
     self.assertTupleEqual(entry.info_stack, ("BBB", "AAA", "000"))
     self.assertIsInstance(entry.exception, ValueError)
+
+  def test_annotate_argparse_nested(self):
+    with self.assertRaises(ArgumentTypeMultiException) as cm:
+      with annotate_argparsing("BBB"):
+        with annotate_argparsing("AAA"):
+          with annotate_argparsing("000"):
+            raise CustomValueError("an exception")
+    exception: MultiException = cm.exception
+    self.assertIsInstance(exception, argparse.ArgumentTypeError)
+    annotator: ExceptionAnnotator = exception.annotator
+    self.assertTrue(len(annotator), 1)
+    entry: Entry = annotator[0]
+    self.assertListEqual(
+        annotator.matching(CustomValueError), [
+            entry.exception,
+        ])
+    self.assertTupleEqual(entry.info_stack, ("BBB", "AAA", "000"))
+    self.assertIsInstance(entry.exception, ValueError)
+
+  def test_annotate_argparse_pass_through(self):
+    with self.assertRaises(ArgumentTypeMultiException) as cm:
+      with annotate_argparsing("BBB"):
+        with annotate_argparsing("AAA"):
+          with annotate_argparsing("000"):
+            raise argparse.ArgumentTypeError("some arg type error")
+    self.assertEqual(len(cm.exception), 1)
+    exception: argparse.ArgumentTypeError = cm.exception.matching(
+        argparse.ArgumentTypeError)[0]
+    self.assertIsInstance(exception, argparse.ArgumentTypeError)
+    self.assertEqual(str(exception), "some arg type error")
 
   def test_annotate_collecting(self):
     annotator = ExceptionAnnotator()

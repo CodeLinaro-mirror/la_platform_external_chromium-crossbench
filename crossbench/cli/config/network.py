@@ -10,13 +10,13 @@ import enum
 import pathlib
 from typing import Any, Dict, Optional
 
-from crossbench import cli_helper, compat
-from crossbench.config import ConfigObject, ConfigParser
+from crossbench import cli_helper, exception
+from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.traffic_shaping import ts_proxy
 
 
 @enum.unique
-class NetworkType(compat.StrEnumWithHelp):
+class NetworkType(ConfigEnum):
   LIVE = ("live", "Live network.")
   WPR = ("wpr", "Replayed network from a wpr.go archive.")
   LOCAL = ("local", "Serve content from a local http file server.")
@@ -30,7 +30,7 @@ def _settings_str(name: str) -> str:
 
 
 @enum.unique
-class NetworkSpeedPreset(compat.StrEnumWithHelp):
+class NetworkSpeedPreset(ConfigEnum):
   """Presets that match ts_proxy settings."""
   LIVE = ("live", "Untroubled default network settings")
   MOBILE_3G_SLOW = ("3G-slow",
@@ -41,7 +41,6 @@ class NetworkSpeedPreset(compat.StrEnumWithHelp):
   MOBILE_3G_FAST = ("3G-fast",
                     f"Slow 3G network settings: {_settings_str('3G-fast')}")
   MOBILE_4G = ("4G", f"Regular 4G network settings: {_settings_str('4G')}")
-
 
 @dataclasses.dataclass(frozen=True)
 class NetworkSpeedConfig(ConfigObject):
@@ -55,19 +54,19 @@ class NetworkSpeedConfig(ConfigObject):
     return NetworkSpeedConfig()
 
   @classmethod
+  def parse(cls, value: Any) -> NetworkSpeedConfig:
+    if isinstance(value, NetworkSpeedPreset):
+      return cls.load_preset(value)
+    return super().parse(value)
+
+  @classmethod
   def loads(cls, value: str) -> NetworkSpeedConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     if value == "default":
       return cls.default()
-    try:
-      preset = NetworkSpeedPreset(value)  # pytype: disable=wrong-arg-types
-      return cls.load_preset(preset)
-    except ValueError as e:
-      choices: str = ", ".join(preset.value for preset in NetworkSpeedPreset)  # pytype: disable=missing-parameter
-      raise argparse.ArgumentTypeError(
-          f"Unknown network speed preset: '{value}'.\n"
-          f"Choices are {choices}.") from e
+    preset = NetworkSpeedPreset.parse(value)  # pytype: disable=wrong-arg-types
+    return cls.load_preset(preset)
 
   @classmethod
   def load_preset(cls, preset: NetworkSpeedPreset) -> NetworkSpeedConfig:
@@ -99,7 +98,7 @@ class NetworkConfig(ConfigObject):
   @classmethod
   def config_parser(cls) -> ConfigParser[NetworkConfig]:
     parser = ConfigParser(
-        "DriverConfig parser", cls, default=NetworkConfig.default())
+        "NetworkConfig parser", cls, default=NetworkConfig.default())
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
     parser.add_argument(
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
@@ -124,19 +123,13 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
       return cls.default()
-    try:
-      preset = NetworkSpeedPreset(value)  # pytype: disable=wrong-arg-types
-      return cls.load_preset(preset)
-    except ValueError as e:
-      raise argparse.ArgumentTypeError(
-          f"Unknown network config string: '{value}'") from e
-    # TODO: implement more
-    return cls.default()
+    return cls.load_live(value)
 
   @classmethod
-  def load_preset(cls, preset: NetworkSpeedPreset) -> NetworkConfig:
-    speed = NetworkSpeedConfig.load_preset(preset)
-    return cls(NetworkType.LIVE, speed)
+  def load_live(cls, value: Any) -> NetworkConfig:
+    with exception.annotate_argparsing("Live network with speed config"):
+      speed = NetworkSpeedConfig.parse(value)
+      return cls(NetworkType.LIVE, speed)
 
   @classmethod
   def is_valid_path(cls, path: pathlib.Path) -> bool:

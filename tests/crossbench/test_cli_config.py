@@ -29,7 +29,7 @@ from crossbench.cli.config.network import (NetworkConfig, NetworkSpeedConfig,
                                            NetworkSpeedPreset, NetworkType)
 from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 from crossbench.config import ConfigError
-from crossbench.exception import MultiException
+from crossbench.exception import ArgumentTypeMultiException, MultiException
 from crossbench.flags import Flags
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
@@ -137,11 +137,13 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_adb_phone_identifier_multiple(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    with self.assertRaises(AmbiguousDriverIdentifier) as cm:
+    with self.assertRaises(ArgumentTypeMultiException) as cm:
       _ = DriverConfig.parse("emulator.*")
     message: str = str(cm.exception)
     self.assertIn("emulator-5554", message)
     self.assertIn("emulator-5556", message)
+    self.assertTrue(len(cm.exception), 1)
+    self.assertTrue(cm.exception.matching(AmbiguousDriverIdentifier))
     self.assertEqual(len(self.platform.sh_cmds), 1)
 
   def test_parse_adb_phone_identifier(self):
@@ -274,12 +276,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig.parse("chrome:4G"),
         BrowserConfig(Chrome.stable_path(),
                       DriverConfig(BrowserDriverType.WEB_DRIVER),
-                      NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G)))
+                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
     self.assertEqual(
         BrowserConfig.parse("selenium:chrome:4G"),
         BrowserConfig(Chrome.stable_path(),
                       DriverConfig(BrowserDriverType.WEB_DRIVER),
-                      NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G)))
+                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
 
   def test_parse_simple_ambiguous_with_driver_ios(self):
     self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]
@@ -306,9 +308,9 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         config,
         BrowserConfig(Chrome.stable_path(), DriverConfig(BrowserDriverType.IOS),
-                      NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G)))
+                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
     self.assertEqual(config.network,
-                     NetworkConfig.load_preset(NetworkSpeedPreset.MOBILE_4G))
+                     NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G))
 
   def test_parse_simple_ambiguous_with_driver_android(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -1310,7 +1312,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 class FlagsConfigTestCase(unittest.TestCase):
 
   def test_invalid_empty(self):
-    with self.assertRaises(ConfigError) as cm:
+    with self.assertRaises(ArgumentTypeMultiException) as cm:
       FlagsConfig.parse("")
     self.assertIn("empty", str(cm.exception).lower())
     with self.assertRaises(ConfigError) as cm:
@@ -1643,14 +1645,19 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
       group_a.product(group_b)
     self.assertIn("different previous value", str(cm.exception))
 
+
 class NetworkSpeedConfigTestCase(BaseConfigTestCase):
 
   def test_parse_invalid(self):
     for invalid in ("", None, "---"):
-      with self.assertRaises(argparse.ArgumentTypeError):
-        NetworkSpeedConfig.parse(invalid)
-      with self.assertRaises(argparse.ArgumentTypeError):
-        NetworkSpeedConfig.loads(str(invalid))
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          NetworkSpeedConfig.parse(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          NetworkSpeedConfig.loads(str(invalid))
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        NetworkSpeedConfig.parse("not a speed preset value")
+      self.assertIn("choices are", str(cm.exception).lower())
 
   def test_parse_default(self):
     config = NetworkSpeedConfig.parse("default")
@@ -1681,7 +1688,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
 class NetworkConfigTestCase(BaseConfigTestCase):
 
   def test_parse_invalid(self):
-    for invalid in ("", None, "---"):
+    for invalid in ("", None, "---", "something"):
       with self.assertRaises(argparse.ArgumentTypeError):
         NetworkConfig.parse(invalid)
       with self.assertRaises(argparse.ArgumentTypeError):
@@ -1732,6 +1739,16 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
       config = NetworkConfig.loads(preset.value)
       self.assertEqual(config.speed, NetworkSpeedConfig.load_preset(preset))
+
+  def test_parse_live_preset(self):
+    live_a = NetworkConfig.load_live("4G")
+    live_b = NetworkConfig.load_live(NetworkSpeedConfig.parse("4G"))
+    live_c = NetworkConfig.load_live(
+        NetworkSpeedConfig.parse(NetworkSpeedPreset.MOBILE_4G))
+    live_d = NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)
+    self.assertEqual(live_a, live_b)
+    self.assertEqual(live_a, live_c)
+    self.assertEqual(live_a, live_d)
 
   def test_parse_wpr_invalid(self):
     dir_path = pathlib.Path("test/dir")
