@@ -11,7 +11,7 @@ import json
 import pathlib
 from typing import Any, Dict, List, Optional
 import unittest
-from frozendict import frozendict
+from immutabledict import immutabledict
 
 from crossbench import cli_helper, compat
 from crossbench.config import ConfigObject, ConfigParser
@@ -367,7 +367,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config_2 = CustomConfigObject.parse(str(path))
     self.assertEqual(config, config_2)
 
-  TEST_DICT = frozendict({
+  TEST_DICT = immutabledict({
       "name": "Config Name",
       "array": [1, 3],
       "integer": 166
@@ -394,7 +394,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.integer, 166)
     self.assertIsNone(config.nested)
 
-  TEST_DICT_NESTED = frozendict({"name": "a nested name"})
+  TEST_DICT_NESTED = immutabledict({"name": "a nested name"})
 
   def test_load_dict_nested(self):
     test_dict = dict(self.TEST_DICT)

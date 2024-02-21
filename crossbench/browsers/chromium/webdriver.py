@@ -91,7 +91,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
         # TODO: support clean logging of chrome stdout / stderr
         service_args=["--verbose"])
     service.log_file = self.stdout_log_file.open("w", encoding="utf-8")
-    driver = self._create_driver(options, service)
+    driver: ChromiumDriver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.
     driver.execute_cdp_cmd("Runtime.setMaxCallStackSizeToCapture", {"size": 0})

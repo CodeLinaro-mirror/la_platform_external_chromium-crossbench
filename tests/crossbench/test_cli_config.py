@@ -10,7 +10,7 @@ from typing import Dict, Tuple, Type
 from unittest import mock
 
 import hjson
-from frozendict import frozendict
+from immutabledict import immutabledict
 
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
@@ -191,7 +191,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             path,
             DriverConfig(
-                BrowserDriverType.default(), settings=frozendict(custom=1))))
+                BrowserDriverType.default(), settings=immutabledict(custom=1))))
     self.assertNotEqual(
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())),
         BrowserConfig(
@@ -203,7 +203,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pathlib.Path("foo"),
             DriverConfig(
-                BrowserDriverType.default(), settings=frozendict(custom=1))))
+                BrowserDriverType.default(), settings=immutabledict(custom=1))))
 
   def test_parse_name_or_path(self):
     path = Chrome.stable_path()
@@ -419,7 +419,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     expected_driver = DriverConfig(
-        BrowserDriverType.ANDROID, settings=frozendict(serial="0a388e93"))
+        BrowserDriverType.ANDROID, settings=immutabledict(serial="0a388e93"))
     self.assertEqual(len(self.platform.sh_results), 0)
     self.assertEqual(len(self.platform.sh_cmds), 3)
     self.assertEqual(

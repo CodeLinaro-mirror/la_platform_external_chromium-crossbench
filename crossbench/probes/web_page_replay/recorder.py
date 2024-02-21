@@ -9,7 +9,7 @@ import pathlib
 import shutil
 from typing import TYPE_CHECKING, Iterable, List, Optional
 
-from frozendict import frozendict
+from immutabledict import immutabledict
 
 from crossbench import cli_helper, helper, plt
 from crossbench.network.replay.web_page_replay import WprRecorder
@@ -71,7 +71,7 @@ class WebPageReplayProbe(Probe):
       raise argparse.ArgumentTypeError(f"'{wpr_go_bin}' does not exist.")
     self._wpr_go_bin = cli_helper.parse_non_empty_file_path(wpr_go_bin)
 
-    self._recorder_kwargs = frozendict(
+    self._recorder_kwargs = immutabledict(
         bin_path=wpr_go_bin,
         http_port=http_port,
         https_port=https_port,
@@ -93,7 +93,7 @@ class WebPageReplayProbe(Probe):
     return self._http_port
 
   @property
-  def recorder_kwargs(self) -> frozendict:
+  def recorder_kwargs(self) -> immutabledict:
     return self._recorder_kwargs
 
   @property

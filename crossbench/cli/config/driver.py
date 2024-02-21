@@ -12,7 +12,7 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional
 
-from frozendict import frozendict
+from immutabledict import immutabledict
 
 from crossbench import cli_helper, compat, plt
 from crossbench.config import ConfigObject, ConfigParser
@@ -67,7 +67,7 @@ IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
   path: Optional[pathlib.Path] = None
-  settings: Optional[frozendict] = None
+  settings: Optional[immutabledict] = None
 
   def __post_init__(self):
     if not self.type:
@@ -193,7 +193,7 @@ class DriverConfig(ConfigObject):
     assert len(candidate_serials) == 1
     return DriverConfig(
         BrowserDriverType.ANDROID,
-        settings=frozendict(serial=candidate_serials[0]))
+        settings=immutabledict(serial=candidate_serials[0]))
 
   @classmethod
   def try_load_ios_settings(cls, value: str,
@@ -216,7 +216,8 @@ class DriverConfig(ConfigObject):
       return None
     assert len(candidate_serials) == 1
     return DriverConfig(
-        BrowserDriverType.IOS, settings=frozendict(uuid=candidate_serials[0]))
+        BrowserDriverType.IOS,
+        settings=immutabledict(uuid=candidate_serials[0]))
 
   @classmethod
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
@@ -241,7 +242,7 @@ class DriverConfig(ConfigObject):
         default=BrowserDriverType.default())
     parser.add_argument(
         "settings",
-        type=frozendict,
+        type=immutabledict,
         help="Additional driver settings (Driver dependent).")
     return parser
 

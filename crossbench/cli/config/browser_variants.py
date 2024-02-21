@@ -13,7 +13,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set,
                     TextIO, Tuple, Type, cast)
 
 import hjson
-from frozendict import frozendict
+from immutabledict import immutabledict
 from ordered_set import OrderedSet
 
 import crossbench.browsers.all as browsers
@@ -233,14 +233,7 @@ class FlagsGroupConfig(tuple_t):
     return f"{default}_{len(label_set)}"
 
 
-try:
-  frozendict_t = frozendict[str, FlagsGroupConfig]
-except:  # pylint: disable=bare-except
-  # Python 3.8 fallback
-  frozendict_t = frozendict
-
-
-class FlagsConfig(ConfigObject, frozendict_t):
+class FlagsConfig(ConfigObject, immutabledict[str, FlagsGroupConfig]):
 
   @classmethod
   def loads(cls, value: str) -> FlagsConfig:
