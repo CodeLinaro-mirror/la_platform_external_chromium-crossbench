@@ -11,7 +11,6 @@ import subprocess
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
 
 from crossbench import helper
-from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ResultLocation)
@@ -98,7 +97,7 @@ class PerfettoProbe(Probe):
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")
 
   def attach(self, browser: Browser) -> None:
-    assert isinstance(browser, Chromium)
+    assert browser.attributes.is_chromium_based
     browser.features.enable("EnablePerfettoSystemTracing")
     super().attach(browser)
 

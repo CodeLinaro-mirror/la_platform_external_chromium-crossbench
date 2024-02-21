@@ -8,10 +8,9 @@ import argparse
 import enum
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple, cast
 
 from crossbench import cli_helper, compat
-from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
@@ -21,8 +20,6 @@ from crossbench.probes.results import ProbeResult
 if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
-  from crossbench.flags import ChromeFlags
   from crossbench.runner.run import Run
 
 # TODO: go over these again and clean the categories.
@@ -258,8 +255,8 @@ class TracingProbe(ChromiumProbe):
     return self._record_format
 
   def attach(self, browser: Browser) -> None:
-    assert isinstance(browser, Chromium)
-    flags: ChromeFlags = browser.flags
+    assert browser.attributes.is_chromium_based
+    flags = browser.flags
     flags.update(self.CHROMIUM_FLAGS)
     # Force proto file so we can convert it to legacy json as well.
     flags["--trace-startup-format"] = str(self._record_format)

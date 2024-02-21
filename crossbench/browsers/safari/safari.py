@@ -9,6 +9,7 @@ import pathlib
 from typing import TYPE_CHECKING, Optional
 
 from crossbench import compat
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 
 if TYPE_CHECKING:
@@ -51,7 +52,6 @@ class Safari(Browser):
       flags: Optional[Flags.InitialDataType] = None,
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
-      type: str = "safari",  # pylint: disable=redefined-builtin
       network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
@@ -62,7 +62,6 @@ class Safari(Browser):
         path,
         flags,
         js_flags=None,
-        type=type,
         network=network,
         driver_path=driver_path,
         viewport=viewport,
@@ -76,6 +75,14 @@ class Safari(Browser):
     self.cache_dir = pathlib.Path(
         f"~/Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches"
     ).expanduser()
+
+  @property
+  def type_name(self) -> str:
+    return "safari"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.SAFARI
 
   def clear_cache(self, runner: Runner) -> None:
     self._clear_cache()

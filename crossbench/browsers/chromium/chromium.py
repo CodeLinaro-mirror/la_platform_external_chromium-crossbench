@@ -12,6 +12,7 @@ import tempfile
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from crossbench import plt
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.viewport import Viewport
@@ -73,7 +74,6 @@ class Chromium(Browser):
       flags: Optional[Flags.InitialDataType] = None,
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
-      type: str = "chromium",  # pylint: disable=redefined-builtin
       network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
@@ -83,7 +83,6 @@ class Chromium(Browser):
         label,
         path,
         flags=None,
-        type=type,
         network=network,
         driver_path=driver_path,
         viewport=viewport,
@@ -97,7 +96,7 @@ class Chromium(Browser):
     if cache_dir is None:
       # pylint: disable=bad-option-value, consider-using-with
       self.cache_dir = pathlib.Path(
-          tempfile.TemporaryDirectory(prefix=type).name)
+          tempfile.TemporaryDirectory(prefix=self.type_name).name)
       self.clear_cache_dir = True
     else:
       self.cache_dir = cache_dir
@@ -166,13 +165,21 @@ class Chromium(Browser):
     return str(matches[0])
 
   @property
+  def type_name(self) -> str:
+    return "chromium"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
+
+  @property
   def is_headless(self) -> bool:
     return "--headless" in self._flags
 
   @property
   def chrome_log_file(self) -> pathlib.Path:
     assert self.log_file
-    return self.log_file.with_suffix(f".{self.type}.log")
+    return self.log_file.with_suffix(f".{self.type_name}.log")
 
   @property
   def flags(self) -> ChromeFlags:
@@ -190,7 +197,7 @@ class Chromium(Browser):
     details: JsonDict = super().details_json()
     if self.log_file:
       log = cast(JsonDict, details["log"])
-      log[self.type] = str(self.chrome_log_file)
+      log[self.type_name] = str(self.chrome_log_file)
       log["stdout"] = str(self.stdout_log_file)
     details["js_flags"] = tuple(self.js_flags.get_list())
     return details

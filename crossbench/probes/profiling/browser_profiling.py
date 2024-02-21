@@ -13,8 +13,6 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 
 from crossbench import compat
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
-from crossbench.browsers.firefox.firefox import Firefox
-from crossbench.browsers.safari.webdriver import SafariWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeResult,
                                      ProbeValidationError, ResultLocation)
@@ -120,9 +118,10 @@ class BrowserProfilingProbe(Probe):
     if browser.platform.is_remote:
       raise ProbeValidationError(
           self, f"Only works on local browser, but got {browser}.")
-    if isinstance(browser, (ChromiumWebDriver, SafariWebDriver)):
+    attributes = browser.attributes
+    if attributes.is_chromium_based or attributes.is_safari:
       return
-    if isinstance(browser, Firefox):
+    if attributes.is_firefox:
       browser_env = browser.platform.environ
       for env_var in list(FirefoxProfilerEnvVars):
         if env_var.value in browser_env:
@@ -132,11 +131,12 @@ class BrowserProfilingProbe(Probe):
     raise ProbeIncompatibleBrowser(self, browser)
 
   def get_context(self, run: Run) -> BrowserProfilingProbeContext:
-    if isinstance(run.browser, ChromiumWebDriver):
+    attributes = run.browser.attributes
+    if attributes.is_chromium_based:
       return ChromiumWebDriverBrowserProfilerProbeContext(self, run)
-    if isinstance(run.browser, Firefox):
+    if attributes.is_firefox:
       return FirefoxBrowserProfilerProbeContext(self, run)
-    if isinstance(run.browser, SafariWebDriver):
+    if attributes.is_safari:
       return SafariWebdriverBrowserProfilerProbeContext(self, run)
     raise NotImplementedError(
         f"Probe({self}): Unsupported browser: {run.browser}")
@@ -160,7 +160,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
 
   def get_default_result_path(self) -> pathlib.Path:
     return (super().get_default_result_path().parent /
-            f"{self.browser.type}.profile.json")
+            f"{self.browser.type_name}.profile.json")
 
   @property
   def chromium(self) -> ChromiumWebDriver:

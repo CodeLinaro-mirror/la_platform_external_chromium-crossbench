@@ -99,7 +99,10 @@ class Adb:
     return matches[0], devices[matches[0]]
 
   def __str__(self) -> str:
-    return f"adb(serial={self._serial_id}, info='{self._device_info}')"
+    info = f"info='{self._device_info}'"
+    if model := self._device_info.get("model"):
+      info = f"model={repr(model)}"
+    return f"adb(serial={self._serial_id}, {info})"
 
   def has_root(self) -> bool:
     return self.shell_stdout("id").startswith("uid=0(root)")

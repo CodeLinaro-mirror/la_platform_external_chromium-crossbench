@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Iterable, List, Optional
 from frozendict import frozendict
 
 from crossbench import cli_helper, helper, plt
-from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -106,7 +105,7 @@ class WebPageReplayProbe(Probe):
     return "archive.wprgo"
 
   def is_compatible(self, browser: Browser) -> bool:
-    return isinstance(browser, Chromium) and browser.platform.is_local
+    return browser.attributes.is_chromium_based and browser.platform.is_local
 
   def get_context(self, run: Run) -> WprRecorderProbeContext:
     return WprRecorderProbeContext(self, run)

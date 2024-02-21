@@ -10,6 +10,7 @@ import tempfile
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from crossbench import plt
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
@@ -54,7 +55,6 @@ class Firefox(Browser):
       flags: Optional[Flags.InitialDataType] = None,
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
-      type: str = "firefox",  # pylint: disable=redefined-builtin
       network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
@@ -72,13 +72,20 @@ class Firefox(Browser):
         path,
         flags,
         js_flags=None,
-        type=type,
         network=network,
         driver_path=driver_path,
         viewport=viewport,
         splash_screen=splash_screen,
         platform=platform)
     assert not js_flags, "Firefox doesn't support custom js_flags"
+
+  @property
+  def type_name(self) -> str:
+    return "firefox"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.FIREFOX
 
   def _extract_version(self) -> str:
     assert self.path

@@ -11,6 +11,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type,
                     TypeVar, Union)
 
 from crossbench import compat, plt
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.config import ConfigParser
 from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
 from crossbench.probes.result_location import ResultLocation
@@ -52,7 +53,7 @@ class ProbeIncompatibleBrowser(ProbeValidationError):
                probe: Probe,
                browser: Browser,
                message: str = "Incompatible browser") -> None:
-    super().__init__(probe, f"{message}, got {browser}")
+    super().__init__(probe, f"{message}, got {browser.attributes}")
 
 
 class Probe(abc.ABC):
@@ -188,15 +189,12 @@ class Probe(abc.ABC):
 
   def expect_browser(self,
                      browser: Browser,
-                     types: Union[Type, Tuple[Type]],
+                     attributes: BrowserAttributes,
                      message: Optional[str] = None) -> None:
-    if isinstance(browser, types):
+    if attributes in browser.attributes:
       return
     if not message:
-      if not isinstance(types, tuple):
-        types = (types,)
-      type_names = ",".join(str(type.__name__) for type in types)
-      message = f"Incompatible browser, expected {type_names}"
+      message = f"Incompatible browser, expected {attributes}"
     raise ProbeIncompatibleBrowser(self, browser, message)
 
   def expect_macos(self, browser: Browser) -> None:

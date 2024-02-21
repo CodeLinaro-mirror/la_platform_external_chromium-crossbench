@@ -44,3 +44,7 @@ class ChromePathMixin:
         "Chrome Canary",
         macos=["Google Chrome Canary.app"],
         win=["Google/Chrome SxS/Application/chrome.exe"])
+
+  @property
+  def type_name(self) -> str:
+    return "chrome"

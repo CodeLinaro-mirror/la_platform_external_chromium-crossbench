@@ -8,7 +8,7 @@ import pathlib
 import shlex
 from typing import TYPE_CHECKING, Dict, Iterable, Tuple
 from crossbench import cli_helper, plt
-from crossbench.browsers.chromium import chromium
+from crossbench.browsers.attributes import BrowserAttributes
 
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeValidationError, ResultLocation)
@@ -97,7 +97,7 @@ class DebuggerProbe(Probe):
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
-    self.expect_browser(browser, chromium.Chromium)
+    self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
     # TODO: support more platforms
     if not (browser.platform.is_macos or browser.platform.is_linux):
       raise ValueError(f"Only supported on linux and macOS, but got {browser}")
@@ -109,7 +109,7 @@ class DebuggerProbe(Probe):
 
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
-    assert isinstance(browser, chromium.Chromium)
+    assert browser.attributes.is_chromium_based
     flags = browser.flags
     flags.set("--no-sandbox")
     flags.set("--disable-hang-monitor")

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from crossbench.browsers.attributes import BrowserAttributes
+
 from ..applescript import AppleScriptBrowser
 from .safari import Safari
 
@@ -52,3 +54,7 @@ class SafariAppleScript(Safari, AppleScriptBrowser):
         tell application "{self.bundle_name}"
           quit
         end tell""")
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.SAFARI | BrowserAttributes.APPLESCRIPT

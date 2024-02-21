@@ -140,7 +140,7 @@ class ProfilingProbe(Probe):
 
   def is_compatible(self, browser: Browser) -> bool:
     if browser.platform.is_linux:
-      return isinstance(browser, Chromium)
+      return browser.attributes.is_chromium_based
     if browser.platform.is_macos:
       return True
     return False
@@ -164,9 +164,9 @@ class ProfilingProbe(Probe):
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     if browser.platform.is_linux:
-      assert isinstance(browser, Chromium), (
+      assert browser.attributes.is_chromium_based, (
           f"Expected Chromium-based browser, found {type(browser)}.")
-    if isinstance(browser, Chromium):
+    if browser.attributes.is_chromium_based:
       chromium = cast(Chromium, browser)
       if not self._spare_renderer_process:
         chromium.features.disable("SpareRendererForSitePerProcess")

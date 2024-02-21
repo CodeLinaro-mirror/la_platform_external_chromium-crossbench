@@ -13,6 +13,7 @@ from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
 
 from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.flags import ChromeFlags, Flags, JSFlags
 from crossbench.network.base import Network
@@ -68,15 +69,12 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               path: Optional[pathlib.Path],
                *args,
-               browser_name: str = "",
+               path: Optional[pathlib.Path] = None,
                **kwargs):
-    assert browser_name, "Mock browser needs a name / type"
     assert self.APP_PATH
     path = path or pathlib.Path(self.APP_PATH)
     self.app_path = path
-    kwargs["type"] = browser_name
     maybe_driver = kwargs.pop("driver_path", None)
     if maybe_driver:
       assert isinstance(maybe_driver, pathlib.Path) and maybe_driver.exists()
@@ -104,7 +102,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return self.VERSION
 
   def user_agent(self, runner: Runner) -> str:
-    return f"Mock Browser {self.type}, {self.VERSION}"
+    return f"Mock Browser {self.type_name}, {self.VERSION}"
 
   def show_url(self, runner: Runner, url, target: Optional[str] = None) -> None:
     self.url_list.append(url)
@@ -144,6 +142,10 @@ class MockChromiumBrowser(MockBrowser, metaclass=abc.ABCMeta):
     assert isinstance(chrome_flags, ChromeFlags)
     return chrome_flags.js_flags  # pylint: disable=no-member
 
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
+
 
 # Inject MockBrowser into the browser hierarchy for easier testing.
 Chromium.register(MockChromiumBrowser)
@@ -151,12 +153,13 @@ Chromium.register(MockChromiumBrowser)
 
 class MockChromeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
 
-  def __init__(self,
-               label: str,
-               *args,
-               path: Optional[pathlib.Path] = None,
-               **kwargs):
-    super().__init__(label, path, browser_name="chrome", *args, **kwargs)
+  @property
+  def type_name(self) -> str:
+    return "chrome"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
 
 
 Chrome.register(MockChromeBrowser)
@@ -189,6 +192,11 @@ class MockChromeAndroidStable(MockChromeStable):
 
   def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
     return path
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
+            | BrowserAttributes.MOBILE)
 
 
 class MockChromeBeta(MockChromeBrowser):
@@ -223,13 +231,13 @@ class MockChromeCanary(MockChromeBrowser):
 
 class MockEdgeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
 
-  def __init__(self,
-               label: str,
-               *args,
-               path: Optional[pathlib.Path] = None,
-               **kwargs):
-    super().__init__(label, path, browser_name="edge", *args, **kwargs)
+  @property
+  def type_name(self) -> str:
+    return "edge"
 
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
 
 Edge.register(MockEdgeBrowser)
 if not TYPE_CHECKING:
@@ -278,12 +286,14 @@ class MockEdgeCanary(MockEdgeBrowser):
 
 class MockSafariBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  def __init__(self,
-               label: str,
-               *args,
-               path: Optional[pathlib.Path] = None,
-               **kwargs):
-    super().__init__(label, path, browser_name="safari", *args, **kwargs)
+  @property
+  def type_name(self) -> str:
+    return "safari"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.SAFARI
+
 
 
 Safari.register(MockSafariBrowser)
@@ -311,12 +321,13 @@ class MockSafariTechnologyPreview(MockSafariBrowser):
 
 class MockFirefoxBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  def __init__(self,
-               label: str,
-               *args,
-               path: Optional[pathlib.Path] = None,
-               **kwargs):
-    super().__init__(label, path, browser_name="firefox", *args, **kwargs)
+  @property
+  def type_name(self) -> str:
+    return "firefox"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.FIREFOX
 
 
 Firefox.register(MockFirefoxBrowser)

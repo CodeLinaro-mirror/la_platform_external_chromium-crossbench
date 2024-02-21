@@ -367,8 +367,9 @@ class Runner:
     assert self.stories, "No stories provided: self.stories is empty"
     logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
     for browser in self.browsers:
-      with self._exceptions.capture(f"Preparing browser type={browser.type} "
-                                    f"unique_name={browser.unique_name}"):
+      with self._exceptions.capture(
+          f"Preparing browser type={browser.type_name} "
+          f"unique_name={browser.unique_name}"):
         browser.setup_binary(self)  # pytype: disable=wrong-arg-types
     self._exceptions.assert_success()
     with self._exceptions.annotate("Preparing Runs"):

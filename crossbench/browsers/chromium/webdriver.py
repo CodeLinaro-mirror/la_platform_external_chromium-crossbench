@@ -26,6 +26,7 @@ from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
 from crossbench import exception, helper, plt
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, Flags
@@ -33,12 +34,8 @@ from crossbench.flags import ChromeFlags, Flags
 from .chromium import Chromium
 
 if TYPE_CHECKING:
-  from crossbench.browsers.splash_screen import SplashScreen
-  from crossbench.browsers.viewport import Viewport
-  from crossbench.network.base import Network
-  from crossbench.runner.run import Run
-  from crossbench.types import JsonDict, JsonList
   from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.types import JsonDict, JsonList
 
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
@@ -46,21 +43,10 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
   WEB_DRIVER_OPTIONS: Type[ChromiumOptions] = ChromiumOptions
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
 
-  def __init__(
-      self,
-      label: str,
-      path: Optional[pathlib.Path] = None,
-      flags: Optional[Flags.InitialDataType] = None,
-      js_flags: Optional[Flags.InitialDataType] = None,
-      cache_dir: Optional[pathlib.Path] = None,
-      type: str = "chromium",  # pylint: disable=redefined-builtin
-      network: Optional[Network] = None,
-      driver_path: Optional[pathlib.Path] = None,
-      viewport: Optional[Viewport] = None,
-      splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[plt.Platform] = None):
-    super().__init__(label, path, flags, js_flags, cache_dir, type, network,
-                     driver_path, viewport, splash_screen, platform)
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
+            | BrowserAttributes.WEBDRIVER)
 
   def use_local_chromedriver(self) -> bool:
     return self.major_version == 0 or self.is_locally_compiled()
@@ -326,7 +312,7 @@ class ChromeDriverFinder:
 
   def _download(self) -> None:
     major_version = self.browser.major_version
-    logging.info("CHROMEDRIVER Downloading from %s v%s", self.browser.type,
+    logging.info("CHROMEDRIVER Downloading from %s v%s", self.browser.type_name,
                  major_version)
     url: Optional[str] = None
     listing_url: Optional[str] = None
@@ -340,7 +326,7 @@ class ChromeDriverFinder:
     if not url:
       raise DriverNotFoundError(
           "Please manually compile/download chromedriver for "
-          f"{self.browser.type} {self.browser.version}")
+          f"{self.browser.type_name} {self.browser.version}")
 
     logging.info("CHROMEDRIVER Downloading for version %s: %s", major_version,
                  listing_url or url)

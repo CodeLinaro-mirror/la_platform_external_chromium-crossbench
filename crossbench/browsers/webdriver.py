@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 import selenium.common.exceptions
 from selenium import webdriver
 
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.types import JsonDict
 
 from .browser import Browser
@@ -63,15 +64,22 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       flags: Optional[Flags.InitialDataType] = None,
       js_flags: Optional[Flags.InitialDataType] = None,
       cache_dir: Optional[pathlib.Path] = None,
-      type: str = "webdriver",  # pylint: disable=redefined-builtin
       network: Optional[Network] = None,
       driver_path: Optional[pathlib.Path] = None,
       viewport: Optional[Viewport] = None,
       splash_screen: Optional[SplashScreen] = None,
       platform: Optional[plt.Platform] = None):
-    super().__init__(label, path, flags, js_flags, cache_dir, type, network,
-                     None, viewport, splash_screen, platform)
+    super().__init__(label, path, flags, js_flags, cache_dir, network, None,
+                     viewport, splash_screen, platform)
     self._driver_path = driver_path
+
+  @property
+  def type_name(self) -> str:
+    return "webdriver"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.WEBDRIVER
 
   @property
   def driver(self) -> webdriver.Remote:
@@ -249,10 +257,18 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   """Represent a remote WebDriver that has already been started"""
 
   def __init__(self, label: str, driver: webdriver.Remote) -> None:
-    super().__init__(label=label, path=None, type="remote")
+    super().__init__(label=label, path=None)
     self._driver = driver
     self.version: str = driver.capabilities["browserVersion"]
     self.major_version: int = int(self.version.split(".")[0])
+
+  @property
+  def type_name(self) -> str:
+    return "remote"
+
+  @property
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE
 
   def _check_driver_version(self) -> None:
     raise NotImplementedError()
