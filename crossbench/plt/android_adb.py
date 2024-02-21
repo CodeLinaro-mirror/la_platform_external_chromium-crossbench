@@ -12,13 +12,12 @@ import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
                     Union)
 
-
-from .arch import MachineArch
-from .posix import PosixPlatform
+from crossbench.plt.arch import MachineArch
+from crossbench.plt.posix import PosixPlatform
 
 if TYPE_CHECKING:
+  from crossbench.plt.base import Platform
   from crossbench.types import JsonDict
-  from .base import Platform
 
 
 def _find_adb_bin(platform: Platform) -> pathlib.Path:

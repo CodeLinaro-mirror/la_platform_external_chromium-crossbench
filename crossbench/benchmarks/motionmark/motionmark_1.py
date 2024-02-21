@@ -10,12 +10,11 @@ import itertools
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import crossbench.probes.helper as probes_helper
+from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.probes import metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult
 from crossbench.stories.press_benchmark import PressBenchmarkStory
-
-from .base import MotionMarkBenchmark
 
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions

@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
 from crossbench.stories.story import Story
 
-from .action import Action
-from .action_runner.base import ActionRunner
-from .action_runner.basic_action_runner import BasicActionRunner
-from .playback_controller import PlaybackController
+from crossbench.benchmarks.loading.action import Action
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run

@@ -22,11 +22,10 @@ from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.flags import ChromeFlags, Flags
-
-from .browser import BrowserConfig
-from .driver import BrowserDriverType
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

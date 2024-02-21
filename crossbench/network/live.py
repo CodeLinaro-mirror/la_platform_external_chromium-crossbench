@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 from typing import TYPE_CHECKING, Iterator
 
-from .base import Network
+from crossbench.network.base import Network
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

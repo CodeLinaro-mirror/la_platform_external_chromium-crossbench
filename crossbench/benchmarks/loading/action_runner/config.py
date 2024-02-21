@@ -7,8 +7,9 @@ from __future__ import annotations
 import argparse
 from typing import Any
 
-from .base import ActionRunner
-from .basic_action_runner import BasicActionRunner
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
+    BasicActionRunner
 
 
 # TODO: migrate to full config.ConfigObject

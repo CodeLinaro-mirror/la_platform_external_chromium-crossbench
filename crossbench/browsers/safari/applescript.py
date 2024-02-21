@@ -6,10 +6,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from crossbench.browsers.applescript import AppleScriptBrowser
 from crossbench.browsers.attributes import BrowserAttributes
-
-from ..applescript import AppleScriptBrowser
-from .safari import Safari
+from crossbench.browsers.safari.safari import Safari
 
 if TYPE_CHECKING:
   from crossbench.runner.runner import Runner

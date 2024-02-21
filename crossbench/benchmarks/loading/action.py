@@ -11,8 +11,7 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, Tuple, Type
 
 from crossbench import cli_helper, compat
-
-from .action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run

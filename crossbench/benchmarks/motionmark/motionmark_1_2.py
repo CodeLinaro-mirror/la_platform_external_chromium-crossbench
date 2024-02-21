@@ -6,8 +6,9 @@ from __future__ import annotations
 
 from typing import Tuple
 
-from .motionmark_1 import (MotionMark1Benchmark, MotionMark1Probe,
-                           MotionMark1Story)
+from crossbench.benchmarks.motionmark.motionmark_1 import (MotionMark1Benchmark,
+                                                           MotionMark1Probe,
+                                                           MotionMark1Story)
 
 
 class MotionMark12Probe(MotionMark1Probe):

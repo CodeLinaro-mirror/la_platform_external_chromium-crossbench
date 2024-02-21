@@ -12,13 +12,15 @@ from urllib.parse import urlparse
 
 from crossbench import cli_helper
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
-
-from . import page_config
-from .action_runner.base import ActionRunner
-from .action_runner.config import ActionRunnerConfig
-from .page import (PAGE_LIST, PAGE_LIST_SMALL, PAGES, CombinedPage,
-                   InteractivePage, LivePage, Page)
-from .playback_controller import PlaybackController
+from crossbench.benchmarks.loading import page_config
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.config import \
+    ActionRunnerConfig
+from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
+                                                PAGES, CombinedPage,
+                                                InteractivePage, LivePage, Page)
+from crossbench.benchmarks.loading.playback_controller import \
+    PlaybackController
 
 if TYPE_CHECKING:
   from crossbench.stories.story import Story

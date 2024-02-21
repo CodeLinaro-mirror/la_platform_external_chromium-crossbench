@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.env import HostEnvironment
 
-from .probe import Probe
+from crossbench.probes.probe import Probe
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

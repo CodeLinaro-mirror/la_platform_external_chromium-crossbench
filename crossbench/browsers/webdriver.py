@@ -18,7 +18,7 @@ from selenium import webdriver
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.types import JsonDict
 
-from .browser import Browser
+from crossbench.browsers.browser import Browser
 
 if TYPE_CHECKING:
   import datetime as dt

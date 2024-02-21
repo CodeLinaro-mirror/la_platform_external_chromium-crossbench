@@ -3,12 +3,13 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-from dataclasses import dataclass
+
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
-  from .base import Platform
+  from crossbench.plt.base import Platform
 
 pattern = re.compile(
     r"(?P<name>[^\(\)]) \((?P<version>[0-9\.]+)\) \((?P<uuid>[0-9A-Z-]+)\)")

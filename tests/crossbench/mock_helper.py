@@ -23,11 +23,11 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.base import MachineArch
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
+from tests.crossbench import mock_browser
 
 if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
-from . import mock_browser
 
 GIB = 1014**3
 

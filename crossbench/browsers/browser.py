@@ -17,8 +17,8 @@ from crossbench.flags import ChromeFeatures, Flags, JSFlags
 from crossbench.network.base import Network
 from crossbench.network.live import LiveNetwork
 
-from .splash_screen import SplashScreen
-from .viewport import Viewport
+from crossbench.browsers.splash_screen import SplashScreen
+from crossbench.browsers.viewport import Viewport
 
 if TYPE_CHECKING:
   import datetime as dt

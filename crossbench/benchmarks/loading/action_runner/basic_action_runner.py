@@ -9,9 +9,8 @@ import logging
 import time
 
 from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.runner.run import Run
-
-from .base import ActionRunner
 
 
 class BasicActionRunner(ActionRunner):

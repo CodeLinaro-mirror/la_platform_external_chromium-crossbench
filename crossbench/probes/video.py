@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import atexit
 
+import atexit
 import logging
 import os
 import pathlib
@@ -15,16 +15,16 @@ import tempfile
 from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
 
 from crossbench import helper
+from crossbench.probes.probe import (Probe, ProbeContext, ProbeMissingDataError,
+                                     ResultLocation)
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
-
-from .probe import Probe, ProbeMissingDataError, ProbeContext, ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
+  from crossbench.runner.groups import BrowsersRunGroup, RepetitionsRunGroup
   from crossbench.runner.run import Run
-  from crossbench.runner.groups import (RepetitionsRunGroup, BrowsersRunGroup)
   from crossbench.stories.story import Story
 
 

@@ -19,12 +19,12 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
-
-from .groups import (BrowserSessionRunGroup, BrowsersRunGroup,
-                     CacheTemperatureRunGroup, RepetitionsRunGroup,
-                     RunThreadGroup, StoriesRunGroup)
-from .run import Run
-from .timing import Timing
+from crossbench.runner.groups import (BrowserSessionRunGroup, BrowsersRunGroup,
+                                      CacheTemperatureRunGroup,
+                                      RepetitionsRunGroup, RunThreadGroup,
+                                      StoriesRunGroup)
+from crossbench.runner.run import Run
+from crossbench.runner.timing import Timing
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark

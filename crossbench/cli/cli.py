@@ -17,20 +17,20 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from tabulate import tabulate
 
-from crossbench import __version__
 import crossbench.benchmarks.all as benchmarks
-from crossbench import cli_helper, helper, plt
+import crossbench.cli.config as cli_config
+from crossbench import __version__, cli_helper, helper, plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
+from crossbench.cli.devtools_recorder_proxy import \
+    CrossbenchDevToolsRecorderProxy
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
 from crossbench.probes.internal import ErrorsProbe
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
-from . import config as cli_config
-from .devtools_recorder_proxy import CrossbenchDevToolsRecorderProxy
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

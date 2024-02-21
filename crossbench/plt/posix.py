@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 
 from crossbench.types import JsonDict
 
-from .base import Environ, Platform, SubprocessError
+from crossbench.plt.base import Environ, Platform, SubprocessError
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):

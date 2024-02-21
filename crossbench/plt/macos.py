@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import psutil
 
-from .posix import PosixPlatform
+from crossbench.plt.posix import PosixPlatform
 
 
 class MacOSPlatform(PosixPlatform):

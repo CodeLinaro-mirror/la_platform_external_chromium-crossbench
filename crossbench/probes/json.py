@@ -16,10 +16,9 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
 from tabulate import tabulate
 
 from crossbench.probes import helper, metric
+from crossbench.probes.probe import Probe, ProbeContext, ProbeMissingDataError
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
-
-from .probe import Probe, ProbeMissingDataError, ProbeContext
 
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions

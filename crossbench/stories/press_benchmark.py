@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import abc
+import datetime as dt
 import logging
 from typing import List, Optional, Sequence, Tuple, Type, TypeVar
 
 from crossbench.runner.run import Run
-
-from .story import Story
+from crossbench.stories.story import Story
 
 PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound="PressBenchmarkStory")

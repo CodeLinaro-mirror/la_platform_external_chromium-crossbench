@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.applescript import ChromiumAppleScript
 
-from .helper import ChromePathMixin
+from crossbench.browsers.chrome.helper import ChromePathMixin
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver

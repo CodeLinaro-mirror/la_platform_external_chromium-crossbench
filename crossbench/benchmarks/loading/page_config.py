@@ -18,8 +18,8 @@ from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.types import JsonDict
 
-from . import action
-from .page import InteractivePage
+from crossbench.benchmarks.loading import action
+from crossbench.benchmarks.loading.page import InteractivePage
 
 
 # TODO: migrate to config.ConfigObject

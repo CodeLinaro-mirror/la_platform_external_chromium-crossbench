@@ -9,7 +9,7 @@ import pathlib
 import shutil
 from typing import Optional
 
-from .base import Platform
+from crossbench.plt.base import Platform
 
 
 class WinPlatform(Platform):

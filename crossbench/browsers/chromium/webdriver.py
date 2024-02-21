@@ -31,7 +31,7 @@ from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, Flags
 
-from .chromium import Chromium
+from crossbench.browsers.chromium.chromium import Chromium
 
 if TYPE_CHECKING:
   from crossbench.runner.groups import BrowserSessionRunGroup

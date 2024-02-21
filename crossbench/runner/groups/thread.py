@@ -14,10 +14,9 @@ from crossbench import exception
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-
-  from .session import BrowserSessionRunGroup
 
 
 class RunThreadGroup(threading.Thread):

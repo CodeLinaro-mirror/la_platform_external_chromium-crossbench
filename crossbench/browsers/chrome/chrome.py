@@ -7,7 +7,7 @@ from __future__ import annotations
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.chromium import Chromium
 
-from .helper import ChromePathMixin
+from crossbench.browsers.chrome.helper import ChromePathMixin
 
 
 class Chrome(ChromePathMixin, Chromium):

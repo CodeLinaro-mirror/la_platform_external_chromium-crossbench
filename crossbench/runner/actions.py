@@ -12,12 +12,12 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 from crossbench import helper
 
 if TYPE_CHECKING:
-  from .runner import Runner
-  from .run import Run
-  from .timing import Timing
-  from crossbench.browsers.browser import Browser
   from crossbench import plt
+  from crossbench.browsers.browser import Browser
   from crossbench.exception import ExceptionAnnotationScope
+  from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
+  from crossbench.runner.timing import Timing
 
 
 class Actions(helper.TimeScope):

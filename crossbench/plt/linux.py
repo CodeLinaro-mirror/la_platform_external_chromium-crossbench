@@ -9,8 +9,8 @@ import os
 import pathlib
 from typing import Any, Dict, Optional
 
-from .base import SubprocessError
-from .posix import PosixPlatform
+from crossbench.plt.base import SubprocessError
+from crossbench.plt.posix import PosixPlatform
 
 
 class LinuxPlatform(PosixPlatform):

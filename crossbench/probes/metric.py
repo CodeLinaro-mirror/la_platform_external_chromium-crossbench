@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import logging
 import math
@@ -14,7 +15,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
 
 from ordered_set import OrderedSet
 
-from . import helper
+from crossbench.probes import helper
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict

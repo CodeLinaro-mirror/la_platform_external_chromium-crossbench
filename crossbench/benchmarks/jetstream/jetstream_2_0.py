@@ -3,10 +3,13 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 from typing import Tuple
 
-from .jetstream_2 import (JetStream2Probe, JetStream2Story, JetStream2Benchmark,
-                          ProbeClsTupleT)
+from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
+                                                         JetStream2Probe,
+                                                         JetStream2Story,
+                                                         ProbeClsTupleT)
 
 
 class JetStream20Probe(JetStream2Probe):

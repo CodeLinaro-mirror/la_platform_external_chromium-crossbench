@@ -25,7 +25,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
 
 import psutil
 
-from .arch import MachineArch
+from crossbench.plt.arch import MachineArch
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict

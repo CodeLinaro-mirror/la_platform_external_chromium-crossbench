@@ -10,7 +10,7 @@ from typing import Iterator, Optional, TYPE_CHECKING
 
 from crossbench import plt
 
-from .base import Network, TrafficShaper
+from crossbench.network.base import Network, TrafficShaper
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

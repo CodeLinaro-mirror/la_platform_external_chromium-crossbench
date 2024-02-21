@@ -16,10 +16,9 @@ import crossbench.browsers.all as browsers
 from crossbench import cli_helper, exception, plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
+from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.cli.config.network import NetworkConfig, NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
-
-from .driver import BrowserDriverType, DriverConfig
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 

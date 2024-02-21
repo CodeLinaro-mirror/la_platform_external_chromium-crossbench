@@ -4,5 +4,5 @@
 
 from __future__ import annotations
 
-from .jetstream_2_0 import JetStream20Benchmark
-from .jetstream_2_1 import JetStream21Benchmark
+from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
+from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark

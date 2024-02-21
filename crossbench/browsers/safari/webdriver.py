@@ -16,7 +16,7 @@ from crossbench import exception, helper
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.webdriver import WebDriverBrowser
 
-from .safari import Safari, find_safaridriver
+from crossbench.browsers.safari.safari import Safari, find_safaridriver
 
 if TYPE_CHECKING:
   from crossbench import plt

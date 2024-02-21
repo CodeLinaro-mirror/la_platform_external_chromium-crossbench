@@ -10,15 +10,15 @@ import sys
 from typing import Callable, Final, Optional, Sequence
 import unicodedata
 
-from .android_adb import AndroidAdbPlatform, adb_devices
-from .arch import MachineArch
-from .base import Platform, SubprocessError
-from .linux import LinuxPlatform
-from .linux_ssh import LinuxSshPlatform
-from .macos import MacOSPlatform
-from .ios import ios_devices
-from .posix import PosixPlatform
-from .win import WinPlatform
+from crossbench.plt.android_adb import AndroidAdbPlatform, adb_devices
+from crossbench.plt.arch import MachineArch
+from crossbench.plt.base import Platform, SubprocessError
+from crossbench.plt.linux import LinuxPlatform
+from crossbench.plt.linux_ssh import LinuxSshPlatform
+from crossbench.plt.macos import MacOSPlatform
+from crossbench.plt.ios import ios_devices
+from crossbench.plt.posix import PosixPlatform
+from crossbench.plt.win import WinPlatform
 
 
 def _get_default() -> Platform:

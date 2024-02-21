@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from typing import Tuple
 
-from .speedometer import ProbeClsTupleT, SpeedometerBenchmark, SpeedometerProbe
-from .speedometer_2 import Speedometer2Story
+from crossbench.benchmarks.speedometer.speedometer import (ProbeClsTupleT,
+                                                           SpeedometerBenchmark,
+                                                           SpeedometerProbe)
+from crossbench.benchmarks.speedometer.speedometer_2 import Speedometer2Story
 
 
 class Speedometer21Probe(SpeedometerProbe):

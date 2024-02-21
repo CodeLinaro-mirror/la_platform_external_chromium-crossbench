@@ -7,26 +7,22 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
 
 from crossbench import helper
-from crossbench.exception import (Annotator, ExceptionAnnotationScope,
-                                  TInfoStack)
+from crossbench.exception import TInfoStack
 from crossbench.flags import Flags, JSFlags
 from crossbench.probes.probe_context import ProbeSessionContext
-from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResultDict
+from crossbench.runner.groups.base import RunGroup
 from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
-
-from .base import RunGroup
 
 if TYPE_CHECKING:
   import pathlib
 
   from selenium.webdriver.common.options import ArgOptions
 
-  from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
