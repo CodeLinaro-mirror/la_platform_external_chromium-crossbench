@@ -12,39 +12,29 @@ from typing import TYPE_CHECKING, Any, Dict, Tuple, Type
 
 from crossbench import cli_helper, compat
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.config import ConfigEnum
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
-class ParsingEnum(compat.StrEnum):
-
-  @classmethod
-  def parse(cls, value: Any) -> ParsingEnum:
-    value_str: str = cli_helper.parse_non_empty_str(value, cls.__name__).upper()
-    if enum_instance := getattr(cls, value_str, None):
-      return enum_instance
-    choices = ", ".join(e.name for e in cls)  # pytype: disable=missing-parameter
-    raise argparse.ArgumentTypeError(f"Unknown {cls.__name__}: '{value}', "
-                                     f"choices are {choices}")
+class ActionType(ConfigEnum):
+  GET = ("get", "Open a URL")
+  WAIT = ("wait", "Wait for a given time")
+  SCROLL = ("scroll", "Scroll on page")
+  CLICK = ("click", "Click on element")
 
 
-class ActionType(ParsingEnum):
-  GET = "get"
-  WAIT = "wait"
-  SCROLL = "scroll"
-  CLICK = "click"
-
-class ScrollDirection(ParsingEnum):
-  UP = "up"
-  DOWN = "down"
+class ScrollDirection(ConfigEnum):
+  UP = ("up", "Scroll Up")
+  DOWN = ("down", "Scroll down")
 
 
-class ButtonClick(ParsingEnum):
-  LEFT = "left"
-  RIGHT = "right"
-  MIDDLE = "middle"
+class ButtonClick(ConfigEnum):
+  LEFT = ("left", "Press left mouse button")
+  RIGHT = ("right", "Press right mouse button")
+  MIDDLE = ("middle", "Press middle mouse button")
 
 
 ACTION_TIMEOUT = dt.timedelta(seconds=20)
@@ -97,32 +87,31 @@ class Action(abc.ABC):
           f"{self}.timeout should be positive, but got {self.timeout}")
 
   def to_json(self) -> JsonDict:
-    return {"type": self.TYPE, "timeout": self.timeout.total_seconds()}
+    return {"type": str(self.TYPE), "timeout": self.timeout.total_seconds()}
 
 
-class ReadyState(ParsingEnum):
+class ReadyState(ConfigEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Document/readyState"""
   # Non-blocking:
-  ANY = "any"
+  ANY = ("any", "Ignore ready state")
   # Blocking (on dom event):
-  LOADING = "loading"
-  INTERACTIVE = "interactive"
-  COMPLETE = "complete"
+  LOADING = ("loading", "The document is still loading.")
+  INTERACTIVE = ("interactive", "The document has finished loading "
+                 "but sub-resources might still be loading")
+  COMPLETE = ("complete",
+              "The document and all sub-resources have finished loading.")
 
 
-class WindowTarget(ParsingEnum):
+class WindowTarget(ConfigEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Window/open"""
-  # The current browsing context. (Default)
-  SELF = "_self"
-  # Usually a new tab, but users can configure browsers to open a new window
-  # instead.
-  BLANK = "_blank"
-  # The parent browsing context of the current one. If no parent, behaves as
-  # _self.
-  PARENT = "_parent"
-  # The topmost browsing context (the "highest" context that's an ancestor of
-  # the current one). If no ancestors, behaves as _self.
-  TOP = "_top"
+  SELF = ("_self", "The current browsing context. (Default)")
+  BLANK = ("_blank", "Usually a new tab, but users can configure browsers "
+           "to open a new window instead.")
+  PARENT = ("_parent", "The parent browsing context of the current one. "
+            "If no parent, behaves as _self.")
+  TOP = ("_top", "The topmost browsing context "
+         "(the 'highest' context that's an ancestor of the current one). "
+         "If no ancestors, behaves as _self.")
 
 
 class GetAction(Action):

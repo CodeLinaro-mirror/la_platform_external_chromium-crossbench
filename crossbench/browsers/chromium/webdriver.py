@@ -28,14 +28,12 @@ from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 from crossbench import exception, helper, plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
-from crossbench.browsers.webdriver import WebDriverBrowser
-from crossbench.flags import ChromeFlags, Flags
-
 from crossbench.browsers.chromium.chromium import Chromium
+from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.flags import ChromeFlags, FlagsT
 
 if TYPE_CHECKING:
   from crossbench.runner.groups import BrowserSessionRunGroup
-  from crossbench.types import JsonDict, JsonList
 
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
@@ -151,16 +149,16 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
 # Android is high-tech and reads chrome flags from an app-specific file.
 # TODO: extend support to more than just chrome.
-_FLAG_ROOT = pathlib.Path("/data/local/tmp/")
-FLAGS_WEBLAYER = _FLAG_ROOT / "weblayer-command-line"
-FLAGS_WEBVIEW = _FLAG_ROOT / "webview-command-line"
-FLAGS_CONTENT_SHELL = _FLAG_ROOT / "content-shell-command-line"
-FLAGS_CHROME = _FLAG_ROOT / "chrome-command-line"
+_FLAG_ROOT: pathlib.Path = pathlib.Path("/data/local/tmp/")
+FLAGS_WEBLAYER: pathlib.Path = _FLAG_ROOT / "weblayer-command-line"
+FLAGS_WEBVIEW: pathlib.Path = _FLAG_ROOT / "webview-command-line"
+FLAGS_CONTENT_SHELL: pathlib.Path = _FLAG_ROOT / "content-shell-command-line"
+FLAGS_CHROME: pathlib.Path = _FLAG_ROOT / "chrome-command-line"
 
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def __init__(self, *args, **kwargs):
-    self._chrome_command_line_path = FLAGS_CHROME
+    self._chrome_command_line_path: pathlib.Path = FLAGS_CHROME
     self._previous_command_line_contents: Optional[str] = None
     super().__init__(*args, **kwargs)
 
@@ -175,14 +173,14 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     return path
 
   # TODO: implement setting a clean profile on android
-  _UNSUPPORTED_FLAGS = (
+  _UNSUPPORTED_FLAGS: Tuple[str, ...] = (
       "--user-data-dir",
       "--disable-sync",
       "--window-size",
       "--window-position",
   )
 
-  def _filter_flags_for_run(self, flags: Flags) -> Flags:
+  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
     chrome_flags = cast(ChromeFlags, flags)
     for flag in self._UNSUPPORTED_FLAGS:
@@ -197,7 +195,9 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                     driver_path: pathlib.Path) -> ChromiumDriver:
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
-    return super()._start_driver(session, driver_path)
+    driver = super()._start_driver(session, driver_path)
+    assert isinstance(driver, ChromiumDriver)
+    return driver
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None
@@ -256,8 +256,9 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
                     driver_path: pathlib.Path) -> RemoteWebDriver:
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
-    host = self._platform.host
-    port = self._platform.port
+    platform = self.platform
+    host = platform.host
+    port = platform.port
     driver = RemoteWebDriver(f"http://{host}:{port}", options=options)
     return driver
 
@@ -398,12 +399,12 @@ class ChromeDriverFinder:
         "ChromeDriverFinder: Invalid direct download %s, using milestone %s",
         direct_download_url, major_version)
     with helper.urlopen(self.CHROME_FOR_TESTING_MILESTONE_URL) as response:
-      milestones: JsonDict = json.loads(
+      milestones: Dict = json.loads(
           response.read().decode("utf-8"))["milestones"]
-    milestone: Optional[JsonDict] = milestones.get(str(major_version))
+    milestone: Optional[Dict] = milestones.get(str(major_version))
     if not milestone:
       return (None, None)
-    downloads: JsonList = milestone["downloads"].get("chromedriver", [])
+    downloads: Dict = milestone["downloads"].get("chromedriver", [])
     for download in downloads:
       if isinstance(download, dict) and download["platform"] == platform_name:
         return (self.CHROME_FOR_TESTING_MILESTONE_URL, download["url"])

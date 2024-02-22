@@ -23,8 +23,9 @@ class BasicFlags(collections.UserDict):
   don't end up having contradicting values.
   """
 
-  InitialDataType = Optional[
-      Union[Dict[str, str], "Flags", Iterable[Union[Tuple[str, str], str]]]]
+  InitialDataType = Optional[Union[Dict[str, str], "Flags",
+                                   Iterable[Union[Tuple[str, Optional[str]],
+                                                  str]]]]
 
   _WHITE_SPACE_RE = re.compile(r"\s+")
   _BASIC_FLAG_NAME_RE = re.compile(r"(--?)[^\s=-][^\s=]*")
@@ -205,6 +206,8 @@ class Flags(BasicFlags):
       raise ValueError(
           f"Flag name contains invalid characters: {repr(flag_name)}")
 
+
+FlagsT = TypeVar("FlagsT", bound=Flags)
 
 class JSFlags(Flags):
   """Custom flags implementation for V8 flags (--js-flags in chrome)
@@ -507,8 +510,8 @@ class ChromeFeatures(ChromeBaseFeatures):
     --enable-features="MyFeature3<Trial2:k1/v1/k2/v2"
   """
 
-  ENABLE_FLAG: Final[str] = "--enable-features"
-  DISABLE_FLAG: Final[str] = "--disable-features"
+  ENABLE_FLAG: str = "--enable-features"
+  DISABLE_FLAG: str = "--disable-features"
 
   def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
     parts = feature.split("<")
@@ -533,8 +536,8 @@ class ChromeBlinkFeatures(ChromeBaseFeatures):
     --enable-blink-features="MyFeature1,MyFeature2"
   """
 
-  ENABLE_FLAG: Final[str] = "--enable-blink-features"
-  DISABLE_FLAG: Final[str] = "--disable-blink-features"
+  ENABLE_FLAG: str = "--enable-blink-features"
+  DISABLE_FLAG: str = "--disable-blink-features"
 
   def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
     if "<" in feature or ":" in feature:

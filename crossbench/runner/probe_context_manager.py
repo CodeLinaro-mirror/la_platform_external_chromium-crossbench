@@ -36,8 +36,13 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
     self._durations = result_origin.durations
     self._exceptions = result_origin.exceptions
 
+  @property
   def is_ready(self) -> bool:
     return self._state == State.READY
+
+  @property
+  def is_running(self) -> bool:
+    return self._state == State.RUN
 
   def measure(self, name):
     return self._origin.measure(name)

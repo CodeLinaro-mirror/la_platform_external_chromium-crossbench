@@ -187,8 +187,10 @@ class ProfilingProbe(Probe):
           "Please install Xcode to use xctrace")
     if self.run_pprof:
       try:
-        browser_platform.sh(browser_platform.which("gcertstatus"))
-        return
+        if gcertstatus := browser_platform.which("gcertstatus"):
+          browser_platform.sh(gcertstatus)
+          return
+        env.handle_warning("Could not find gcertstatus")
       except plt.SubprocessError:
         env.handle_warning("Please run gcert for generating pprof results")
     # Only Linux-perf results can be merged

@@ -135,7 +135,7 @@ class _ConfigArgParser:
       self._validate_enum_default()
       return
     # TODO: Remove once pytype can handle self.type
-    maybe_class: ArgParserType = self.type
+    maybe_class: Optional[ArgParserType] = self.type
     if self.is_list:
       assert isinstance(self.default, collections.abc.Sequence), (
           f"List default must be a sequence, but got: {self.default}")
@@ -324,32 +324,13 @@ class _ConfigArgParser:
   def parse_enum_data(self, data: Any) -> enum.Enum:
     assert self.is_enum
     assert self.choices
+    assert self.type
     if issubclass(self.type, ConfigEnum):
       return self.type.parse(data)
-    return _parse_enum(self.name, self.type, data, self.choices)
+    assert issubclass(self.type, enum.Enum)
+    return cli_helper.parse_enum(self.name, self.type, data, self.choices)
 
 
-EnumT = TypeVar("EnumT", bound=enum.Enum)
-
-
-def _parse_enum(label: str, enum_cls: Type[EnumT], data: Any,
-                choices: Iterable[EnumT]) -> EnumT:
-  try:
-    # Try direct conversion, relying on the Enum._missing_ hook:
-    enum_value = enum_cls(data)
-    assert isinstance(enum_value, enum.Enum)
-    assert isinstance(enum_value, enum_cls)
-    return enum_value
-  except Exception as e:
-    logging.debug("Could not auto-convert data '%s' to enum %s: %s", data,
-                  enum_cls, e)
-
-  for enum_instance in choices:
-    if data in (enum_instance, enum_instance.value):
-      return enum_instance
-  choices: str = ", ".join(repr(item.value) for item in choices)  # pytype: disable=missing-parameter
-  raise argparse.ArgumentTypeError(f"Unknown {label}: {repr(data)}.\n"
-                                   f"Choices are {choices}.")
 
 
 ConfigEnumT = TypeVar("ConfigEnumT", bound="ConfigEnum")
@@ -359,7 +340,7 @@ class ConfigEnum(compat.StrEnumWithHelp):
 
   @classmethod
   def parse(cls: Type[ConfigEnumT], value: Any) -> ConfigEnumT:
-    return _parse_enum(cls.__name__, cls, value, cls)
+    return cli_helper.parse_enum(cls.__name__, cls, value, cls)
 
 
 _PATH_PREFIX = re.compile(r"(\./|/|[a-zA-Z]:\\)[^\\/]")
@@ -470,7 +451,7 @@ class _ConfigKwargsParser:
 
   def _maybe_parse_depending_args(
       self, arg_parser: _ConfigArgParser) -> Dict[str, Any]:
-    depending_args = {}
+    depending_args: Dict[str, Any] = {}
     if not arg_parser.depends_on:
       return depending_args
     with exception.annotate(f"Parsing ...['{arg_parser.name}'].depends_on:"):

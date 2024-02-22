@@ -31,6 +31,11 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+ListCmdArgsT = List[Union[str, pathlib.Path]]
+TupleCmdArgsT = Tuple[Union[str, pathlib.Path], ...]
+CmdArgsT = Union[ListCmdArgsT, TupleCmdArgsT]
+
+
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass
 

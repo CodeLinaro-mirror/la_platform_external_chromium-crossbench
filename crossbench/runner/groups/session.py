@@ -274,7 +274,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
-    assert self._probe_context_manager.is_ready
+    assert self._probe_context_manager.is_running
     browser_log_file = self.path / "browser.log"
     assert not browser_log_file.exists(), (
         f"Default browser log file {browser_log_file} already exists.")

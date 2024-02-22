@@ -11,6 +11,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
                     Union)
 
 from crossbench.plt.arch import MachineArch
+from crossbench.plt.base import CmdArgsT, ListCmdArgsT
 from crossbench.plt.linux import LinuxPlatform
 
 if TYPE_CHECKING:
@@ -18,7 +19,11 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
-class LinuxSshPlatform(LinuxPlatform):
+class SshPlatform:
+  """TODO: use abstract base class"""
+
+
+class LinuxSshPlatform(SshPlatform, LinuxPlatform):
 
   def __init__(self, host_platform: Platform, host: str, port: int,
                ssh_port: int, ssh_user: str) -> None:
@@ -56,8 +61,10 @@ class LinuxSshPlatform(LinuxPlatform):
   def port(self) -> int:
     return self._port
 
-  def _build_ssh_cmd(self, *args: Union[str, pathlib.Path], shell=False):
-    ssh_cmd = [
+  def _build_ssh_cmd(self,
+                     *args: Union[str, pathlib.Path],
+                     shell=False) -> ListCmdArgsT:
+    ssh_cmd: ListCmdArgsT = [
         "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"
     ]
     if shell:
@@ -73,7 +80,7 @@ class LinuxSshPlatform(LinuxPlatform):
                 encoding: str = "utf-8",
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
-    ssh_cmd = self._build_ssh_cmd(*args, shell=shell)
+    ssh_cmd: ListCmdArgsT = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.sh_stdout(
         *ssh_cmd, env=env, quiet=quiet, encoding=encoding, check=check)
 
@@ -87,7 +94,7 @@ class LinuxSshPlatform(LinuxPlatform):
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
-    ssh_cmd = self._build_ssh_cmd(*args, shell=shell)
+    ssh_cmd: ListCmdArgsT = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.sh(
         *ssh_cmd,
         capture_output=capture_output,
@@ -106,7 +113,7 @@ class LinuxSshPlatform(LinuxPlatform):
     if len(lines) == 1:
       return []
 
-    res = []
+    res: List[Dict[str, Any]] = []
     for line in lines[1:]:
       pid, name = line.split(maxsplit=1)
       res.append({"pid": int(pid), "name": name})
@@ -114,7 +121,7 @@ class LinuxSshPlatform(LinuxPlatform):
 
   def push(self, from_path: pathlib.Path,
            to_path: pathlib.Path) -> pathlib.Path:
-    scp_cmd = [
+    scp_cmd: CmdArgsT = [
         "scp", "-P", f"{self._ssh_port}", f"{from_path}",
         f"{self._ssh_user}@{self._host}:{to_path}"
     ]
@@ -123,7 +130,7 @@ class LinuxSshPlatform(LinuxPlatform):
 
   def pull(self, from_path: pathlib.Path,
            to_path: pathlib.Path) -> pathlib.Path:
-    scp_cmd = [
+    scp_cmd: CmdArgsT = [
         "scp", "-P", f"{self._ssh_port}",
         f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"
     ]
@@ -133,7 +140,7 @@ class LinuxSshPlatform(LinuxPlatform):
   def rsync(self, from_path: pathlib.Path,
             to_path: pathlib.Path) -> pathlib.Path:
     to_path.parent.mkdir(parents=True, exist_ok=True)
-    scp_cmd = [
+    scp_cmd: CmdArgsT = [
         "scp", "-P", f"{self._ssh_port}", "-r",
         f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"
     ]

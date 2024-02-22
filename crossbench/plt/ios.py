@@ -29,7 +29,7 @@ def ios_devices(platform: Platform,
                 show_all: bool = False) -> Dict[str, IOSDevice]:
   output = platform.sh_stdout("xcrun", "xctrace", "list", "devices")
   category_index = 0
-  results = {}
+  results: Dict[str, IOSDevice] = {}
   for line in output.splitlines():
     if line.startswith("== "):
       category_index += 1

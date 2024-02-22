@@ -53,7 +53,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     """
     return None
 
-  def flatten_json_data(self, json_data: Any) -> Dict[str, Any]:
+  def flatten_json_data(self, json_data: Any) -> JSON:
     return helper.Flatten(json_data).data
 
   def process_json_data(self, json_data) -> Any:

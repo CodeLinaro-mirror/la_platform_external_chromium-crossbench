@@ -458,22 +458,22 @@ class Runner:
     logging.debug("MERGING PROBE DATA: cache temperatures")
     self._cache_temperature_groups = CacheTemperatureRunGroup.groups(
         self._runs, throw)
-    for group in self._cache_temperature_groups:
-      group.merge(self)
-      self._exceptions.extend(group.exceptions, is_nested=True)
+    for cache_temp_group in self._cache_temperature_groups:
+      cache_temp_group.merge(self)
+      self._exceptions.extend(cache_temp_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: repetitions")
     self._repetitions_groups = RepetitionsRunGroup.groups(
         self._cache_temperature_groups, throw)
-    for group in self._repetitions_groups:
-      group.merge(self)
-      self._exceptions.extend(group.exceptions, is_nested=True)
+    for repetition_group in self._repetitions_groups:
+      repetition_group.merge(self)
+      self._exceptions.extend(repetition_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: stories")
     self._story_groups = StoriesRunGroup.groups(self._repetitions_groups, throw)
-    for group in self._story_groups:
-      group.merge(self)
-      self._exceptions.extend(group.exceptions, is_nested=True)
+    for story_group in self._story_groups:
+      story_group.merge(self)
+      self._exceptions.extend(story_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: browsers")
     self._browser_group = BrowsersRunGroup(self._story_groups, throw)

@@ -16,7 +16,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import PosixPlatform
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import Platform
+  from crossbench.plt.base import ListCmdArgsT, Platform
   from crossbench.types import JsonDict
 
 
@@ -126,8 +126,7 @@ class Adb:
     assert not env, "ADB does not support setting env vars."
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
-    adb_cmd: List[Union[str, pathlib.Path]] = []
-    adb_cmd = [self._adb_bin, "-s", self._serial_id, "shell"]
+    adb_cmd: ListCmdArgsT = [self._adb_bin, "-s", self._serial_id, "shell"]
     adb_cmd.extend(args)
     return self._host_platform.popen(
         *adb_cmd, stdout=stdout, stderr=stderr, stdin=stdin)
@@ -144,7 +143,7 @@ class Adb:
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
     del shell
-    adb_cmd: List[Union[str, pathlib.Path]] = []
+    adb_cmd: ListCmdArgsT = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
@@ -166,7 +165,7 @@ class Adb:
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
-    adb_cmd: List[Union[str, pathlib.Path]] = []
+    adb_cmd: ListCmdArgsT = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
@@ -202,7 +201,7 @@ class Adb:
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
     # See shell_stdout for more `adb shell` options.
-    adb_cmd = ["shell", *args]
+    adb_cmd: ListCmdArgsT = ["shell", *args]
     return self._adb(
         *adb_cmd,
         shell=shell,
@@ -238,21 +237,21 @@ class Adb:
           *args: str,
           quiet: bool = False,
           encoding: str = "utf-8") -> str:
-    cmd = ["cmd", *args]
+    cmd: ListCmdArgsT = ["cmd", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
   def dumpsys(self,
               *args: str,
               quiet: bool = False,
               encoding: str = "utf-8") -> str:
-    cmd = ["dumpsys", *args]
+    cmd: ListCmdArgsT = ["dumpsys", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
   def getprop(self,
               *args: str,
               quiet: bool = False,
               encoding: str = "utf-8") -> str:
-    cmd = ["getprop", *args]
+    cmd: ListCmdArgsT = ["getprop", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding).strip()
 
   def services(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:

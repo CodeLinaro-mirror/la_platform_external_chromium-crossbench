@@ -7,17 +7,19 @@ from __future__ import annotations
 import argparse
 import contextlib
 import datetime as dt
+import enum
 import json
+import logging
 import math
 import pathlib
 import re
 import shlex
 import sys
-from typing import Any, Iterator, List, NoReturn, Optional, TypeVar, Union
+from typing import (Any, Iterable, Iterator, List, NoReturn, Optional, Type,
+                    TypeVar, Union)
 from urllib.parse import urlparse
 
 import colorama
-
 import hjson
 
 from crossbench import helper, plt
@@ -88,6 +90,29 @@ def parse_binary_path(value: str,
   if not maybe_bin:
     raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
   return maybe_bin
+
+
+EnumT = TypeVar("EnumT", bound=enum.Enum)
+
+
+def parse_enum(label: str, enum_cls: Type[EnumT], data: Any,
+               choices: Iterable[EnumT]) -> EnumT:
+  try:
+    # Try direct conversion, relying on the Enum._missing_ hook:
+    enum_value = enum_cls(data)
+    assert isinstance(enum_value, enum.Enum)
+    assert isinstance(enum_value, enum_cls)
+    return enum_value
+  except Exception as e:
+    logging.debug("Could not auto-convert data '%s' to enum %s: %s", data,
+                  enum_cls, e)
+
+  for enum_instance in choices:
+    if data in (enum_instance, enum_instance.value):
+      return enum_instance
+  choices_str: str = ", ".join(repr(item.value) for item in choices)  # pytype: disable=missing-parameter
+  raise argparse.ArgumentTypeError(f"Unknown {label}: {repr(data)}.\n"
+                                   f"Choices are {choices_str}.")
 
 
 def parse_inline_hjson(value: Any) -> Any:

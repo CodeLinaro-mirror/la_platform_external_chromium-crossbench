@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import abc
 import argparse
-import enum
 from typing import (TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type,
-                    TypeVar, Union)
+                    TypeVar)
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.config import ConfigParser
 from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
@@ -81,11 +80,7 @@ class Probe(abc.ABC):
   - teardown(): Used for high-overhead Probe cleanup
 
   """
-
-  @property
-  @abc.abstractmethod
-  def NAME(self) -> str:
-    pass
+  NAME: str = ""
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -114,11 +109,9 @@ class Probe(abc.ABC):
   # Set to True if the probe only works on battery power with single runs
   BATTERY_ONLY: bool = False
 
-  _browsers: Set[Browser]
-
   def __init__(self) -> None:
     assert self.name is not None, "A Probe must define a name"
-    self._browsers = set()
+    self._browsers: Set[Browser] = set()
 
   def __str__(self) -> str:
     return type(self).__name__

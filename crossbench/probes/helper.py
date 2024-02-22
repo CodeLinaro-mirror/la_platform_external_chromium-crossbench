@@ -8,7 +8,7 @@ import abc
 import csv
 import pathlib
 from typing import (Any, Callable, Dict, Iterator, List, Optional, Sequence,
-                    Tuple)
+                    Set, Tuple)
 
 from crossbench import plt
 
@@ -84,8 +84,8 @@ class Flatten:
         self._flatten(path, item)
 
 
-def _ljust_row(sequence: List, n: int, fillvalue: Any = None) -> List:
-  return sequence + ([fillvalue] * (n - len(sequence)))
+def _ljust_row(sequence: List, n: int, fill_value: Any = None) -> List:
+  return sequence + ([fill_value] * (n - len(sequence)))
 
 
 def merge_csv(csv_list: Sequence[pathlib.Path],
@@ -126,11 +126,11 @@ def merge_csv(csv_list: Sequence[pathlib.Path],
     table_headers = []
 
   # Initial row-headers from the first csv file.
-  known_row_headers = set()
+  known_row_headers: Set[Tuple[str, ...]] = set()
   _merge_csv_prepare_row_headers(table, known_row_headers, csv_list[0],
                                  row_header_len, delimiter)
 
-  table_row_len = row_header_len
+  table_row_len: int = row_header_len
   for csv_file in csv_list:
     with csv_file.open(encoding="utf-8") as f:
       csv_data = list(csv.reader(f, delimiter=delimiter))
@@ -143,8 +143,10 @@ def merge_csv(csv_list: Sequence[pathlib.Path],
   return table
 
 
-def _merge_csv_prepare_row_headers(table, known_row_headers, csv_file,
-                                   row_header_len, delimiter):
+def _merge_csv_prepare_row_headers(table: List[List[Any]],
+                                   known_row_headers: Set[Tuple[str, ...]],
+                                   csv_file: pathlib.Path, row_header_len: int,
+                                   delimiter: str):
   with csv_file.open(encoding="utf-8") as first_file:
     for csv_row in csv.reader(first_file, delimiter=delimiter):
       assert csv_row, "Mergeable CSV files must have row names."
@@ -154,7 +156,8 @@ def _merge_csv_prepare_row_headers(table, known_row_headers, csv_file,
       known_row_headers.add(csv_row_header_key)
 
 
-def _merge_csv_append(csv_data, table, table_headers, row_header_len, headers,
+def _merge_csv_append(csv_data: List[List[Any]], table: List[List[Any]],
+                      table_headers, row_header_len: int, headers,
                       known_row_headers, table_row_len):
   # Find the max row width in added csv_data.
   max_csv_row_len = max(len(row) for row in csv_data) - row_header_len

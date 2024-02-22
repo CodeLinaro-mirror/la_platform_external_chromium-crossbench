@@ -7,7 +7,7 @@ from __future__ import annotations
 import enum
 
 
-class BrowserAttributes(enum.Flag):
+class BrowserAttributes(enum.IntFlag):
   SAFARI = enum.auto()
   FIREFOX = enum.auto()
   CHROMIUM = enum.auto()
@@ -26,20 +26,20 @@ class BrowserAttributes(enum.Flag):
 
   @property
   def is_chromium_based(self) -> bool:
-    return self.CHROMIUM_BASED in self
+    return bool(self.CHROMIUM_BASED & self)
 
   @property
   def is_chrome(self) -> bool:
-    return self.CHROME in self
+    return bool(self & self.CHROME)
 
   @property
   def is_safari(self) -> bool:
-    return self.SAFARI in self
+    return bool(self & self.SAFARI)
 
   @property
   def is_edge(self) -> bool:
-    return self.EDGE in self
+    return bool(self & self.EDGE)
 
   @property
   def is_firefox(self) -> bool:
-    return self.FIREFOX in self
+    return bool(self & self.FIREFOX)

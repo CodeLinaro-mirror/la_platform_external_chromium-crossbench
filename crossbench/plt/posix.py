@@ -7,21 +7,21 @@ from __future__ import annotations
 import abc
 import pathlib
 import re
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, Optional, Union
 
+from crossbench.plt.base import (Environ, ListCmdArgsT, Platform,
+                                 SubprocessError)
 from crossbench.types import JsonDict
-
-from crossbench.plt.base import Environ, Platform, SubprocessError
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
-    self._version = ""
-    self._device = ""
-    self._cpu = ""
-    self._default_tmp_dir = pathlib.Path("")
+    self._version: str = ""
+    self._device: str = ""
+    self._cpu: str = ""
+    self._default_tmp_dir: pathlib.Path = pathlib.Path("")
 
   def app_version(self, app_or_bin: pathlib.Path) -> str:
     assert self.exists(app_or_bin), f"Binary {app_or_bin} does not exist."
@@ -38,7 +38,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super()._raw_machine_arch()
     return self.sh_stdout("uname", "-m").strip()
 
-  _GET_CPONF_PROC_RE = re.compile(r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
+  _GET_CPONF_PROC_RE: re.Pattern = re.compile(
+      r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
 
   def cpu_details(self) -> Dict[str, Any]:
     if not self.is_remote:
@@ -65,7 +66,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         "platform": self.sh_stdout("uname", "-a").strip(),
     }
 
-  _PY_VERSION = "import sys; print(64 if sys.maxsize > 2**32 else 32)"
+  _PY_VERSION: str = "import sys; print(64 if sys.maxsize > 2**32 else 32)"
 
   def python_details(self) -> JsonDict:
     if not self.is_remote:
@@ -162,7 +163,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if not dir:
       dir = self.default_tmp_dir
     template = pathlib.Path(dir) / f"{prefix}.XXXXXXXXXXX"
-    args: List[str] = ["mktemp"]
+    args: ListCmdArgsT = ["mktemp"]
     if is_dir:
       args.append("-d")
     args.append(str(template))

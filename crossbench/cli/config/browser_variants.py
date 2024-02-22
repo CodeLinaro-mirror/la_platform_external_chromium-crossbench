@@ -200,8 +200,8 @@ class FlagsGroupConfig(tuple_t):
   def _product(self, other: FlagsGroupConfig) -> FlagsGroupConfig:
     """Create a new FlagsGroupConfig as the combination of
     self.variants x other.variants"""
-    new_variants = []
-    new_labels = set()
+    new_variants: List[FlagsVariantConfig] = []
+    new_labels: Set[str] = set()
     if not other:
       return self
     if not self:
@@ -211,7 +211,8 @@ class FlagsGroupConfig(tuple_t):
         new_label = self._unique_product_label(new_labels, variant,
                                                variant_other)
         new_labels.add(new_label)
-        new_variant = variant.merge_copy(variant_other, label=new_label)
+        new_variant: FlagsVariantConfig = variant.merge_copy(
+            variant_other, label=new_label)
         new_variants.append(new_variant)
 
     return FlagsGroupConfig(tuple(new_variants))
@@ -418,7 +419,7 @@ class BrowserVariantsConfig:
     if not isinstance(flag_group_names, list):
       raise ConfigError(
           f"'flags' is not a list for browser={repr(browser_name)}")
-    seen_flag_group_names = set()
+    seen_flag_group_names: Set[str] = set()
     for flag_group_name in flag_group_names:
       if flag_group_name in seen_flag_group_names:
         raise ConfigError(f"Duplicate group name {repr(flag_group_name)} "

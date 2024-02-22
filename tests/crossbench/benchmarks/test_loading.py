@@ -285,7 +285,7 @@ class TestPageConfig(CrossbenchFakeFsTestCase):
     story = stories[0]
     assert isinstance(story, InteractivePage)
     self.assertEqual(story.name, "Google_Story")
-    self.assertListEqual([action.TYPE for action in story.actions],
+    self.assertListEqual([str(action.TYPE) for action in story.actions],
                          ["get", "wait", "scroll"])
 
   def test_no_scenarios(self):

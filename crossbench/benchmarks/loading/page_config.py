@@ -14,12 +14,13 @@ from typing import Any, Dict, List, Optional, TextIO, Type
 import hjson
 
 from crossbench import cli_helper, exception
+from crossbench.benchmarks.loading.action import (ACTIONS, Action, ActionType,
+                                                  ClickAction, GetAction,
+                                                  ReadyState, WaitAction)
+from crossbench.benchmarks.loading.page import InteractivePage
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.types import JsonDict
-
-from crossbench.benchmarks.loading import action
-from crossbench.benchmarks.loading.page import InteractivePage
 
 
 # TODO: migrate to config.ConfigObject
@@ -93,17 +94,17 @@ class PageConfig(AbstractPageConfig):
         self.stories.append(InteractivePage(actions, scenario_name, playback))
 
   def _parse_actions(self, actions: List[Dict[str, Any]],
-                     scenario_name: str) -> List[action.Action]:
+                     scenario_name: str) -> List[Action]:
     if not actions:
       raise ValueError(f"Scenario '{scenario_name}' has no action")
     if not isinstance(actions, list):
       raise ValueError(f"Expected list, got={type(actions)}, '{actions}'")
-    actions_list: List[action.Action] = []
+    actions_list: List[Action] = []
     get_action_found = False
     for i, action_config in enumerate(actions):
       with exception.annotate(f"Parsing action   ...['{scenario_name}'][{i}]"):
         action_step = self._parse_action(i, action_config)
-        if action_step.TYPE == action.ActionType.GET:
+        if action_step.TYPE == ActionType.GET:
           get_action_found = True
         actions_list.append(action_step)
     assert get_action_found, ("Not a valid entry for scenario: "
@@ -112,12 +113,12 @@ class PageConfig(AbstractPageConfig):
                           "does not contain any valid actions")
     return actions_list
 
-  def _parse_action(self, i, action_config: JsonDict) -> action.Action:
+  def _parse_action(self, i, action_config: JsonDict) -> Action:
     if "action" not in action_config:
       raise argparse.ArgumentTypeError(
           f"Missing 'action' property in {json.dumps(action_config)}")
-    action_type = action.ActionType.parse(action_config.get("action"))
-    action_cls: Type[action.Action] = action.ACTIONS[action_type]
+    action_type: ActionType = ActionType.parse(action_config.get("action"))
+    action_cls: Type[Action] = ACTIONS[action_type]
     with exception.annotate(
         f"Parsing details  ...[{i}]{{ action: \"{action_type}\", ...}}:"):
       kwargs = action_cls.kwargs_from_dict(action_config)
@@ -136,22 +137,22 @@ class DevToolsRecorderPageConfig(AbstractPageConfig):
       actions = self._parse_steps(raw_config_data["steps"])
       self.stories.append(InteractivePage(actions, title, playback))
 
-  def _parse_steps(self, steps: List[Dict[str, Any]]) -> List[action.Action]:
-    actions: List[action.Action] = []
+  def _parse_steps(self, steps: List[Dict[str, Any]]) -> List[Action]:
+    actions: List[Action] = []
     for step in steps:
-      maybe_actions: Optional[action.Action] = self._parse_step(step)
+      maybe_actions: Optional[Action] = self._parse_step(step)
       if maybe_actions:
         actions.append(maybe_actions)
         # TODO(cbruni): make this configurable
-        actions.append(action.WaitAction(duration=dt.timedelta(seconds=1)))
+        actions.append(WaitAction(duration=dt.timedelta(seconds=1)))
     return actions
 
-  def _parse_step(self, step: Dict[str, Any]) -> Optional[action.Action]:
+  def _parse_step(self, step: Dict[str, Any]) -> Optional[Action]:
     step_type: str = step["type"]
     default_timeout = dt.timedelta(seconds=10)
     if step_type == "navigate":
-      return action.GetAction(  # type: ignore
-          step["url"], ready_state=action.ReadyState.COMPLETE)
+      return GetAction(  # type: ignore
+          step["url"], ready_state=ReadyState.COMPLETE)
     if step_type == "click":
       selectors: List[List[str]] = step["selectors"]
       xpath: Optional[str] = None
@@ -161,8 +162,7 @@ class DevToolsRecorderPageConfig(AbstractPageConfig):
             xpath = selector
             break
       assert xpath, "Need xpath selector for click action"
-      return action.ClickAction(
-          xpath, scroll_into_view=True, timeout=default_timeout)
+      return ClickAction(xpath, scroll_into_view=True, timeout=default_timeout)
     if step_type == "setViewport":
       # Resizing is ignored for now.
       return None

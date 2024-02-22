@@ -10,7 +10,8 @@ import logging
 import pathlib
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple, cast
 
-from crossbench import cli_helper, compat
+from crossbench import cli_helper
+from crossbench.config import ConfigEnum
 from crossbench.probes import helper as probe_helper
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
@@ -95,7 +96,7 @@ TRACE_PRESETS: Dict[str, frozenset[str]] = {
 
 
 @enum.unique
-class RecordMode(compat.StrEnumWithHelp):
+class RecordMode(ConfigEnum):
   CONTINUOUSLY = ("record-continuously",
                   "Record until the trace buffer is full.")
   UNTIL_FULL = ("record-until-full", "Record until the user ends the trace. "
@@ -109,7 +110,7 @@ class RecordMode(compat.StrEnumWithHelp):
 
 
 @enum.unique
-class RecordFormat(compat.StrEnumWithHelp):
+class RecordFormat(ConfigEnum):
   JSON = ("json", "Old about://tracing compatible file format.")
   PROTO = ("proto", "New https://ui.perfetto.dev/ compatible format")
 
@@ -130,15 +131,7 @@ def parse_trace_config_file_path(value: str) -> pathlib.Path:
                                                 not in config):
     raise argparse.ArgumentTypeError(
         "Empty trace config: no trace categories or memory dumps configured.")
-  record_mode = config.get("record_mode", RecordMode.CONTINUOUSLY)
-  try:
-    RecordMode(record_mode)
-  except ValueError as e:
-    # pytype: disable=missing-parameter
-    raise argparse.ArgumentTypeError(
-        f"Invalid record_mode: '{record_mode}'. "
-        f"Choices are: {', '.join(str(e) for e in RecordMode)}") from e
-    # pytype: enable=missing-parameter
+  RecordMode.parse(config.get("record_mode", RecordMode.CONTINUOUSLY))
   return pathlib.Path(value)
 
 

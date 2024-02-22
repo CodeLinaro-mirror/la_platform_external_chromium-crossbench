@@ -9,18 +9,17 @@ import json
 import logging
 import pathlib
 import re
-from typing import Dict, Final, List, Optional, Tuple, Type, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
-from crossbench import helper
+from crossbench import helper, plt
 from crossbench.browsers.downloader import (DMGArchiveHelper, Downloader,
                                             RPMArchiveHelper)
-from crossbench import plt
 
 
 class ChromeDownloader(Downloader):
-  VERSION_RE: Final = re.compile(
+  VERSION_RE: re.Pattern = re.compile(
       r"(chrome-)?(?P<version>(m[0-9]{2,})|([0-9]+(\.[0-9]+){3}))", re.I)
-  STORAGE_URL: Final = "gs://chrome-signed/desktop-5c0tCh/"
+  STORAGE_URL: str = "gs://chrome-signed/desktop-5c0tCh/"
   VERSION_URL = (
       "https://versionhistory.googleapis.com/v1/"
       "chrome/platforms/{platform}/channels/{channel}/versions?filter={filter}")

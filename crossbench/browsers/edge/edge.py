@@ -55,11 +55,11 @@ class EdgePathMixin:
 
 
 class Edge(EdgePathMixin, Chromium):
-  DEFAULT_FLAGS = [
+  DEFAULT_FLAGS = (
       "--enable-benchmarking",
       "--disable-extensions",
       "--no-first-run",
-  ]
+  )
 
   @property
   def attributes(self) -> BrowserAttributes:

@@ -29,10 +29,7 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
   temporarily modify Runs or BrowserSessions.
   """
 
-  @property
-  @abc.abstractmethod
-  def NAME(self) -> str:
-    pass
+  NAME: str = ""
 
   @classmethod
   def config_parser(cls) -> DecoratorConfigParser:

@@ -27,20 +27,20 @@ if TYPE_CHECKING:
 
 
 class Chromium(Browser):
-  MIN_HEADLESS_NEW_VERSION = 112
-  DEFAULT_FLAGS = (
+  MIN_HEADLESS_NEW_VERSION: int = 112
+  DEFAULT_FLAGS: Tuple[str, ...] = (
       "--no-default-browser-check",
       "--disable-component-update",
       "--disable-sync",
       "--disable-extensions",
       "--no-first-run",
   )
-  FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS = (
+  FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: Tuple[str, ...] = (
       "--disable-background-timer-throttling",
       "--disable-renderer-backgrounding",
   )
   # All flags that might affect how finch / field-trials are loaded.
-  FIELD_TRIAL_FLAGS = (
+  FIELD_TRIAL_FLAGS: Tuple[str, ...] = (
       "--force-fieldtrials",
       "--variations-server-url",
       "--variations-insecure-server-url",
@@ -48,7 +48,7 @@ class Chromium(Browser):
       "--enable-field-trial-config",
       "--disable-variations-safe-mode",
   )
-  NO_EXPERIMENTS_FLAGS = (
+  NO_EXPERIMENTS_FLAGS: Tuple[str, ...] = (
       "--no-experiments",
       "--enable-benchmarking",
       "--disable-field-trial-config",

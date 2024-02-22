@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import psutil
 
@@ -74,7 +74,7 @@ class AppleScript:
 def try_get_parent_app_name(platform: plt.Platform) -> str:
   if platform.is_remote:
     return ""
-  launched_apps = {}
+  launched_apps: Dict[str, str] = {}
   try:
     for line in platform.sh_stdout("launchctl", "list").splitlines():
       parts = line.split()
@@ -94,7 +94,7 @@ def try_get_parent_app_name(platform: plt.Platform) -> str:
     return ""
   try:
     for parent in psutil.Process(os.getpid()).parents():
-      if label := launched_apps.get(str(parent.pid), None):
+      if label := launched_apps.get(str(parent.pid), ""):
         return label
   except Exception as e:
     logging.debug("Could not find parent parent app process: %s", e)

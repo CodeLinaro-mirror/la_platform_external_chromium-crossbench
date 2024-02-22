@@ -80,7 +80,7 @@ class RepetitionsRunGroup(RunGroup):
 
   @property
   def info(self) -> JsonDict:
-    info = {"story": str(self.story)}
+    info: JsonDict = {"story": str(self.story)}
     info.update(super().info)
     return info
 

@@ -277,7 +277,7 @@ class V8ToolsFinder:
     else:
       self.v8_checkout = probe_helper.V8CheckoutFinder(self.platform).path
     self.tick_processor: Optional[pathlib.Path] = None
-    self.d8_binary: Optional[pathlib.Path] = self._find_d8()
+    self.d8_binary = self._find_d8()
     if self.d8_binary:
       self.tick_processor = self._find_v8_tick_processor()
     logging.debug("V8ToolsFinder found d8_binary='%s' tick_processor='%s'",

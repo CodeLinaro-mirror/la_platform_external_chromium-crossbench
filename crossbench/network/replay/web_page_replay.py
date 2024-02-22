@@ -13,7 +13,8 @@ import subprocess
 import time
 from typing import Iterable, Optional, TextIO, Tuple
 
-from crossbench import cli_helper, helper, plt
+from crossbench import cli_helper, helper
+from crossbench.plt import PLATFORM, Platform, TupleCmdArgsT
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"
@@ -36,8 +37,8 @@ class WprBase(abc.ABC):
                key_file: Optional[pathlib.Path] = None,
                cert_file: Optional[pathlib.Path] = None,
                log_path: Optional[pathlib.Path] = None,
-               platform: plt.Platform = plt.PLATFORM):
-    self._platform: plt.Platform = platform
+               platform: Platform = PLATFORM):
+    self._platform: Platform = platform
     self._process: Optional[subprocess.Popen] = None
     self._log_path: Optional[pathlib.Path] = log_path
     self._log_file: Optional[TextIO] = None
@@ -95,12 +96,12 @@ class WprBase(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def cmd(self) -> Tuple[str, ...]:
+  def cmd(self) -> TupleCmdArgsT:
     pass
 
   @property
-  def base_cmd_flags(self) -> Tuple[str, ...]:
-    cmd = (
+  def base_cmd_flags(self) -> TupleCmdArgsT:
+    cmd: TupleCmdArgsT = (
         f"--http_port={self._http_port}",
         f"--https_port={self._https_port}",
         f"--https_key_file={self._key_file}",
@@ -112,7 +113,7 @@ class WprBase(abc.ABC):
     return cmd
 
   def start(self):
-    go_cmd = (
+    go_cmd: TupleCmdArgsT = (
         "go",
         "run",
         self._bin_path,
@@ -220,7 +221,7 @@ class WprBase(abc.ABC):
 class WprRecorder(WprBase):
 
   @property
-  def cmd(self) -> Tuple[str, ...]:
+  def cmd(self) -> TupleCmdArgsT:
     return ("record",) + super().base_cmd_flags + (str(self._result_path),)
 
 
@@ -239,7 +240,7 @@ class WprReplayServer(WprBase):
                log_path: Optional[pathlib.Path] = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
-               platform: plt.Platform = plt.PLATFORM):
+               platform: Platform = PLATFORM):
     super().__init__(result_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
     self._rules_file: Optional[pathlib.Path] = None
@@ -249,7 +250,7 @@ class WprReplayServer(WprBase):
     self._serve_chronologically: bool = serve_chronologically
 
   @property
-  def cmd(self) -> Tuple[str, ...]:
+  def cmd(self) -> TupleCmdArgsT:
     cmd = ("replay",) + super().base_cmd_flags
     if self._rules_file:
       cmd += (f"--rules_file={self._rules_file }",)

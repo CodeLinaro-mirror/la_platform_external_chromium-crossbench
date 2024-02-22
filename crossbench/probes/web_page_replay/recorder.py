@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import pathlib
 import shutil
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
 
 from immutabledict import immutabledict
 
@@ -71,7 +71,7 @@ class WebPageReplayProbe(Probe):
       raise argparse.ArgumentTypeError(f"'{wpr_go_bin}' does not exist.")
     self._wpr_go_bin = cli_helper.parse_non_empty_file_path(wpr_go_bin)
 
-    self._recorder_kwargs = immutabledict(
+    self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
         bin_path=wpr_go_bin,
         http_port=http_port,
         https_port=https_port,
@@ -138,7 +138,7 @@ class WebPageReplayProbe(Probe):
 
   def httparchive_merge(self, input_archive: pathlib.Path,
                         output_archive: pathlib.Path) -> None:
-    cmd = [
+    cmd: List[Union[str, pathlib.Path]] = [
         "go",
         "run",
         self._wpr_go_bin.parent / "httparchive.go",

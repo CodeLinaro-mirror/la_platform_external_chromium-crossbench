@@ -61,7 +61,7 @@ class RunThreadGroup(threading.Thread):
     return tuple(self._runs)
 
   @property
-  def browser_sessions(self) -> Tuple[BrowserSessionRunGroup]:
+  def browser_sessions(self) -> Tuple[BrowserSessionRunGroup, ...]:
     return tuple(self._browser_sessions)
 
   @property

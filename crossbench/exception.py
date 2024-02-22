@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import argparse
 import contextlib
-
 import logging
 import sys
 import traceback as tb
@@ -14,6 +14,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from crossbench import helper
+from crossbench.types import JsonList
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -276,7 +277,7 @@ class ExceptionAnnotator:
   def error_messages(self) -> List[str]:
     return [self.format_exception(entry) for entry in self._exceptions]
 
-  def to_json(self) -> List[JsonDict]:
+  def to_json(self) -> JsonList:
     return [{
         "info_stack": entry.info_stack,
         "type": helper.type_name(type(entry.exception)),

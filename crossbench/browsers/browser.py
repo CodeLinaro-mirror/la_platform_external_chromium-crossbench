@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 from ordered_set import OrderedSet
 
 from crossbench import plt
-from crossbench.flags import ChromeFeatures, Flags, JSFlags
+from crossbench.flags import ChromeFeatures, Flags, FlagsT, JSFlags
 from crossbench.network.base import Network
 from crossbench.network.live import LiveNetwork
 
@@ -159,12 +159,12 @@ class Browser(abc.ABC):
     return False
 
   @property
-  def is_local(self) -> bool:
-    return True
-
-  @property
   def is_running(self) -> bool:
     return self._is_running
+
+  @property
+  def is_local(self) -> bool:
+    return True
 
   def set_log_file(self, path: pathlib.Path) -> None:
     self.log_file = path
@@ -244,7 +244,7 @@ class Browser(abc.ABC):
     flags_copy = self._filter_flags_for_run(flags_copy)
     return tuple(flags_copy.get_list())
 
-  def _filter_flags_for_run(self, flags: Flags) -> Flags:
+  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     return flags
 
   def quit(self, runner: Runner) -> None:

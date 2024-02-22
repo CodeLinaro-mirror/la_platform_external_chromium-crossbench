@@ -28,9 +28,9 @@ _PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
 
 class FirefoxDownloader(Downloader):
   # TODO: support nightly versions as well
-  VERSION_RE: Final = re.compile(
+  VERSION_RE: re.Pattern = re.compile(
       r"(firefox-)?(?P<version>([0-9]+(([.ab])[0-9]+){1,3}))", re.I)
-  STORAGE_URL: Final = "https://ftp.mozilla.org/pub/firefox/releases/"
+  STORAGE_URL: str = "https://ftp.mozilla.org/pub/firefox/releases/"
 
   @classmethod
   def _get_loader_cls(cls, platform: plt.Platform) -> Type[FirefoxDownloader]:

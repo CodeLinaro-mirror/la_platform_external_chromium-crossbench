@@ -16,9 +16,13 @@ import shlex
 import signal
 import subprocess
 import sys
-from typing import IO, List, Optional, Union
+from typing import IO, TYPE_CHECKING, List, Optional, Union
 
 from crossbench import cli_helper, helper
+from crossbench.plt.base import ListCmdArgsT
+
+if TYPE_CHECKING:
+  from crossbench.plt.base import CmdArgsT
 
 fnctl = None
 try:
@@ -177,7 +181,7 @@ class TsProxyProcess:
                verbose: bool = False,
                timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
     """Start TsProxy server and verify that it started."""
-    cmd = [
+    cmd: ListCmdArgsT = [
         sys.executable,
         ts_proxy_path,
     ]

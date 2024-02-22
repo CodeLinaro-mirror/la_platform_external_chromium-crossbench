@@ -95,10 +95,8 @@ def group_by(collection: Iterable[InputT],
       groups[group_key].append(group_item)
   if sort_key:
     # sort keys as well for more predictable behavior
-    items = sorted(groups.items(), key=sort_key)
-  else:
-    items = groups.items()
-  return dict(items)
+    return dict(sorted(groups.items(), key=sort_key))
+  return dict(groups.items())
 
 
 def sort_by_file_size(files: Iterable[pathlib.Path]) -> List[pathlib.Path]:
@@ -154,7 +152,7 @@ class SystemSleepPreventer:
   """
 
   def __init__(self) -> None:
-    self._process = None
+    self._process: Optional[Popen] = None
 
   def __enter__(self) -> None:
     if plt.PLATFORM.is_macos:
