@@ -81,8 +81,6 @@ def CheckChange(input_api, output_api, on_commit):
                 "pytype",
                 "--keep-going",
                 "--jobs=auto",
-                "--overriding-parameter-count-checks",
-                "--use-enum-overlay",
                 str(testing_path / "crossbench"),
                 # Skip tests to speed up type checking.
                 # str(testing_path / "tests")
