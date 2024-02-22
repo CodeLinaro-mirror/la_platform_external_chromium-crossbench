@@ -19,7 +19,7 @@ class MotionMark12Probe(MotionMark1Probe):
 class MotionMark12Story(MotionMark1Story):
   NAME = "motionmark_1.2"
   PROBES = (MotionMark12Probe,)
-  URL = "https://browserbench.org/MotionMark1.2/developer.html"
+  URL = "https://browserbench.org/MotionMark1.2"
 
 
 class MotionMark12Benchmark(MotionMark1Benchmark):

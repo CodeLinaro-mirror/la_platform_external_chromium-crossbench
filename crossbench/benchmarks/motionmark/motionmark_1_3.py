@@ -19,7 +19,12 @@ class MotionMark13Probe(MotionMark1Probe):
 class MotionMark13Story(MotionMark1Story):
   NAME = "motionmark_1.3"
   PROBES = (MotionMark13Probe,)
-  URL = "https://browserbench.org/MotionMark1.3/developer.html"
+  URL = "https://browserbench.org/MotionMark1.3"
+  DEVELOPER_READY_JS: str = (
+      "return !(document.querySelector('#frame-rate-detection span'));")
+  READY_JS: str = (
+      "return !!("
+      "   document.querySelector('#frame-rate-label')?.textContent?.trim());")
 
 
 class MotionMark13Benchmark(MotionMark1Benchmark):

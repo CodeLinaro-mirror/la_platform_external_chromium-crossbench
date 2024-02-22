@@ -120,6 +120,10 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     return list(self._substories)
 
   @property
+  def has_default_substories(self) -> bool:
+    return tuple(self.substories) == self.default_story_names()
+
+  @property
   def fast_duration(self) -> dt.timedelta:
     """Expected benchmark duration on fast machines.
     Keep this low enough to not have to wait needlessly at the end of a

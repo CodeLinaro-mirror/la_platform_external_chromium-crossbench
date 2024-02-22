@@ -7,10 +7,12 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import itertools
-from typing import TYPE_CHECKING, List, Optional, Tuple
+import logging
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import crossbench.probes.helper as probes_helper
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
+from crossbench.helper import update_url_query
 from crossbench.probes import metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult
@@ -60,7 +62,7 @@ class MotionMark1Probe(JsonResultProbe, abc.ABC):
 
 
 class MotionMark1Story(PressBenchmarkStory):
-  URL_LOCAL = "http://localhost:8000/developer.html"
+  URL_LOCAL = "http://localhost:8000/"
   ALL_STORIES = {
       "MotionMark": (
           "Multiply",
@@ -155,6 +157,10 @@ class MotionMark1Story(PressBenchmarkStory):
       )
   }
   SUBSTORIES = tuple(itertools.chain.from_iterable(ALL_STORIES.values()))
+  DEVELOPER_READY_JS: str = (
+      "return document.querySelector('tree > li') !== undefined;")
+  # The default page is ready immediately.
+  READY_JS = "return true;"
 
   @classmethod
   def default_story_names(cls) -> Tuple[str, ...]:
@@ -164,33 +170,55 @@ class MotionMark1Story(PressBenchmarkStory):
   def substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=35)
 
+  @property
+  def url_params(self) -> Dict[str, str]:
+    return {}
+
+  def prepare_test_url(self) -> str:
+    if (url_params := self.url_params) or not self.has_default_substories:
+      updated_url = update_url_query(f"{self.url}/developer.html", url_params)
+      logging.info("CUSTOM URL: %s", updated_url)
+      return updated_url
+    return self.url
+
   def setup(self, run: Run) -> None:
+    test_url = self.prepare_test_url()
+    use_developer_url = test_url != self.url
     with run.actions("Setup") as actions:
-      actions.show_url(self._url)
-      actions.wait_js_condition(
-          """return document.querySelector("tree > li") !== undefined""", 0.1,
-          10)
-      num_enabled = actions.js(
-          """
-        let benchmarks = arguments[0];
-        const list = document.querySelectorAll(".tree li");
-        let counter = 0;
-        for (const row of list) {
-          const name = row.querySelector("label.tree-label").textContent.trim();
-          let checked = benchmarks.includes(name);
-          const labels = row.querySelectorAll("input[type=checkbox]");
-          for (const label of labels) {
-            if (checked) {
-              label.click()
-              counter++;
-            }
+      actions.show_url(test_url)
+      self._setup_wait_until_ready(actions, use_developer_url)
+      if use_developer_url:
+        self._setup_filter_stories(actions)
+
+  def _setup_wait_until_ready(self, actions, use_developer_url) -> None:
+    if use_developer_url:
+      wait_js = self.DEVELOPER_READY_JS
+    else:
+      wait_js = self.READY_JS
+    actions.wait_js_condition(wait_js, 0.2, 10)
+
+  def _setup_filter_stories(self, actions) -> None:
+    num_enabled = actions.js(
+        """
+      let benchmarks = arguments[0];
+      const list = document.querySelectorAll(".tree li");
+      let counter = 0;
+      for (const row of list) {
+        const name = row.querySelector("label.tree-label").textContent.trim();
+        let checked = benchmarks.includes(name);
+        const labels = row.querySelectorAll("input[type=checkbox]");
+        for (const label of labels) {
+          if (checked) {
+            label.click()
+            counter++;
           }
         }
-        return counter
-        """,
-          arguments=[self._substories])
-      assert num_enabled > 0, "No tests were enabled"
-      actions.wait(0.1)
+      }
+      return counter
+      """,
+        arguments=[self._substories])
+    assert num_enabled > 0, "No tests were enabled"
+    actions.wait(0.1)
 
   def run(self, run: Run) -> None:
     with run.actions("Running") as actions:

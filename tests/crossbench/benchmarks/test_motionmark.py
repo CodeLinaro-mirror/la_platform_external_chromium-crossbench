@@ -104,15 +104,16 @@ class MotionMark1BaseTestCase(
     self._test_run()
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
-      self.assertIn(self.story_cls.URL, urls)
+      self.assertIn(f"{self.story_cls.URL}/developer.html", urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
+      self.assertNotIn(f"{self.story_cls.URL_LOCAL}/developer.html", urls)
 
   def test_run_custom_url(self):
-    custom_url = "http://test.example.com/speedometer"
+    custom_url = "http://test.example.com/motionmark"
     self._test_run(custom_url)
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
-      self.assertIn(custom_url, urls)
+      self.assertIn(f"{custom_url}/developer.html", urls)
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
@@ -164,7 +165,7 @@ class MotionMark1BaseTestCase(
     })
 
 
-class MotionMark12TestCse(MotionMark1BaseTestCase):
+class MotionMark12TestCase(MotionMark1BaseTestCase):
 
   @property
   def benchmark_cls(self):
@@ -179,7 +180,7 @@ class MotionMark12TestCse(MotionMark1BaseTestCase):
     return MotionMark12Probe
 
 
-class MotionMark13TestCse(MotionMark1BaseTestCase):
+class MotionMark13TestCase(MotionMark1BaseTestCase):
 
   @property
   def benchmark_cls(self):
