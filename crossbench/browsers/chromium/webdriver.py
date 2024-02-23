@@ -197,7 +197,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     atexit.register(self._restore_chrome_flags)
     driver = super()._start_driver(session, driver_path)
     assert isinstance(driver, ChromiumDriver)
-    return driver
+    return cast(ChromiumDriver, driver)
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None
