@@ -9,8 +9,8 @@ import collections
 import logging
 import pathlib
 import re
-from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional, Tuple,
-                    Type, TypeVar, Union)
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
+                    TypeVar, Union)
 
 from ordered_set import OrderedSet
 
@@ -77,14 +77,17 @@ class BasicFlags(collections.UserDict):
       current_end = match.end()
 
       groups = match.groupdict()
-      flag_name: Optional[str] = groups.get("name")
-      if not flag_name:
+      maybe_flag_name: Optional[str] = groups.get("name")
+      if not maybe_flag_name:
         raise ValueError(f"Invalid {msg}: {repr(raw_flags)}")
-      flag_value = (
+      # Re-assign since pytype doesn't remove the Optional.
+      flag_name: str = maybe_flag_name
+      flag_value: Optional[str] = (
           groups.get("value_single_quotes") or
           groups.get("value_double_quotes") or groups.get("value_no_quotes"))
       if groups.get("equal") and not flag_value:
         raise ValueError(f"Invalid {msg}: missing value for {repr(flag_name)}")
+      assert flag_name
       flag_parts.append((flag_name, flag_value))
 
     if current_end != len(raw_flags):
@@ -92,7 +95,6 @@ class BasicFlags(collections.UserDict):
       raise ValueError(
           f"Invalid {msg} part at pos={current_end or 0}: {repr(part)}")
     return cls(flag_parts)
-
 
   def __init__(self, initial_data: Flags.InitialDataType = None) -> None:
     super().__init__(initial_data)

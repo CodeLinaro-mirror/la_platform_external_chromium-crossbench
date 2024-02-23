@@ -444,11 +444,11 @@ def _input(results_container):
 
 @enum.unique
 class State(compat.StrEnum):
-  INITIAL = "INITIAL"
-  SETUP = "SETUP"
-  READY = "READY"
-  RUN = "RUN"
-  DONE = "DONE"
+  INITIAL: "State" = "INITIAL"
+  SETUP: "State" = "SETUP"
+  READY: "State" = "READY"
+  RUN: "State" = "RUN"
+  DONE: "State" = "DONE"
 
 
 class StateMachine:

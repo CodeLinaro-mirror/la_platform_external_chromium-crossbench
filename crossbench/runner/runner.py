@@ -72,10 +72,10 @@ class ThreadMode(compat.StrEnumWithHelp):
 
 @enum.unique
 class RunnerState(compat.StrEnum):
-  INITIAL = "INITIAL"
-  SETUP = "SETUP"
-  RUNNING = "RUNNING"
-  TEARDOWN = "TEARDOWN"
+  INITIAL: "RunnerState" = "INITIAL"
+  SETUP: "RunnerState" = "SETUP"
+  RUNNING: "RunnerState" = "RUNNING"
+  TEARDOWN: "RunnerState" = "TEARDOWN"
 
 class Runner:
 

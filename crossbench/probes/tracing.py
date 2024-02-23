@@ -97,22 +97,24 @@ TRACE_PRESETS: Dict[str, frozenset[str]] = {
 
 @enum.unique
 class RecordMode(ConfigEnum):
-  CONTINUOUSLY = ("record-continuously",
-                  "Record until the trace buffer is full.")
-  UNTIL_FULL = ("record-until-full", "Record until the user ends the trace. "
-                "The trace buffer is a fixed size and we use it as "
-                "a ring buffer during recording.")
-  AS_MUCH_AS_POSSIBLE = ("record-as-much-as-possible",
-                         "Record until the trace buffer is full, "
-                         "but with a huge buffer size.")
-  TRACE_TO_CONSOLE = ("trace-to-console",
-                      "Echo to console. Events are discarded.")
+  CONTINUOUSLY: "RecordMode" = ("record-continuously",
+                                "Record until the trace buffer is full.")
+  UNTIL_FULL: "RecordMode" = (
+      "record-until-full", "Record until the user ends the trace. "
+      "The trace buffer is a fixed size and we use it as "
+      "a ring buffer during recording.")
+  AS_MUCH_AS_POSSIBLE: "RecordMode" = ("record-as-much-as-possible",
+                                       "Record until the trace buffer is full, "
+                                       "but with a huge buffer size.")
+  TRACE_TO_CONSOLE: "RecordMode" = ("trace-to-console",
+                                    "Echo to console. Events are discarded.")
 
 
 @enum.unique
 class RecordFormat(ConfigEnum):
-  JSON = ("json", "Old about://tracing compatible file format.")
-  PROTO = ("proto", "New https://ui.perfetto.dev/ compatible format")
+  JSON: "RecordFormat" = ("json", "Old about://tracing compatible file format.")
+  PROTO: "RecordFormat" = ("proto",
+                           "New https://ui.perfetto.dev/ compatible format")
 
 
 def parse_trace_config_file_path(value: str) -> pathlib.Path:

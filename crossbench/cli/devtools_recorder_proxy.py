@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import enum
 import json
 import logging
 import os
@@ -26,14 +27,16 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@enum.unique
 class State(compat.StrEnum):
-  CONNECTED = "connected"
-  RUNNING = "running"
+  CONNECTED: "State" = "connected"
+  RUNNING: "State" = "running"
 
 
+@enum.unique
 class Response(compat.StrEnum):
-  STATUS = "status"
-  OUTPUT = "output"
+  STATUS: "Response" = "status"
+  OUTPUT: "Response" = "output"
 
 
 class AuthenticationError(ValueError):

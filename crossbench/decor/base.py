@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import datetime as dt
+import enum
 from typing import Any, Dict, Generic, Optional, Set, Type, TypeVar
 
 from crossbench import compat, plt
@@ -88,12 +89,13 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
   """
 
   # TOOD: use StateMachine
+  @enum.unique
   class _State(compat.StrEnum):
-    READY = "ready"
-    STARTING = "startup"
-    RUNNING = "running"
-    SUCCESS = "success"
-    FAILURE = "failure"
+    READY: "DecoratorContext._State" = "ready"
+    STARTING: "DecoratorContext._State" = "startup"
+    RUNNING: "DecoratorContext._State" = "running"
+    SUCCESS: "DecoratorContext._State" = "success"
+    FAILURE: "DecoratorContext._State" = "failure"
 
   def __init__(self, decorator: DecoratorT, target: DecoratorTargetT) -> None:
     self._decorator = decorator

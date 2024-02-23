@@ -66,14 +66,15 @@ class MozProfilerStartupFeatures(compat.StrEnumWithHelp):
   CPU = ("cpu", "CPU utilization")
 
 
+@enum.unique
 class FirefoxProfilerEnvVars(compat.StrEnum):
   # If set to any value other than '' or '0'/'N'/'n', starts the
   # profiler immediately on start-up.
-  STARTUP = "MOZ_PROFILER_STARTUP"
+  STARTUP: "FirefoxProfilerEnvVars" = "MOZ_PROFILER_STARTUP"
   # Contains a comma-separated list of MozProfilerStartupFeatures.
-  STARTUP_FEATURES = "MOZ_PROFILER_STARTUP_FEATURES"
+  STARTUP_FEATURES: "FirefoxProfilerEnvVars" = "MOZ_PROFILER_STARTUP_FEATURES"
   # If set, the profiler saves a profile to the named file on shutdown.
-  SHUTDOWN = "MOZ_PROFILER_SHUTDOWN"
+  SHUTDOWN: "FirefoxProfilerEnvVars" = "MOZ_PROFILER_SHUTDOWN"
 
 
 class BrowserProfilingProbe(Probe):
