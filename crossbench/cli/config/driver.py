@@ -97,14 +97,14 @@ class DriverConfig(ConfigObject):
       raise AmbiguousDriverIdentifier(
           f"{len(devices)} ADB devices connected: {names}. "
           "Please explicitly specify a device ID.")
-    if serial := self.settings.get("serial"):
-      if serial not in devices:
+    if device_id := self.settings.get("device_id"):
+      if device_id not in devices:
         raise argparse.ArgumentTypeError(
-            f"Could not find ADB device with serial={serial}. "
+            f"Could not find ADB device with device_id={repr(device_id)}. "
             f"Choices are {names}.")
 
   def validate_ios(self) -> None:
-    devices = plt.ios_devices(plt.PLATFORM)
+    devices: Dict[str, Any] = plt.ios_devices(plt.PLATFORM)
     if not devices:
       raise argparse.ArgumentTypeError("No iOS devices attached.")
     names = list(map(str, devices))
@@ -115,10 +115,10 @@ class DriverConfig(ConfigObject):
       raise AmbiguousDriverIdentifier(
           f"{len(devices)} ios devices connected: {names}. "
           "Please explicitly specify a device UUID.")
-    if uuid := self.settings.get("uuid"):
-      if uuid not in devices:
+    if device_id := self.settings.get("device_id"):
+      if device_id not in devices:
         raise argparse.ArgumentTypeError(
-            f"Could not find ios device with serial={uuid}. "
+            f"Could not find ios device with device_id={repr(device_id)}. "
             f"Choices are {names}.")
 
   @classmethod
@@ -134,7 +134,8 @@ class DriverConfig(ConfigObject):
     driver_type: BrowserDriverType = BrowserDriverType.default()
     if not path:
       if cls.value_has_path_prefix(value):
-        raise argparse.ArgumentTypeError(f"Driver path does not exist: {value}")
+        raise argparse.ArgumentTypeError(
+            f"Driver path does not exist: {repr(value)}")
       # Variant 2: $DRIVER_TYPE
       if "{" != value[0]:
         try:
@@ -164,8 +165,8 @@ class DriverConfig(ConfigObject):
     if candidate := cls.try_load_adb_settings(value, platform):
       return candidate
     if platform.is_macos:
-      if candiate := cls.try_load_ios_settings(value, platform):
-        return candiate
+      if candidate := cls.try_load_ios_settings(value, platform):
+        return candidate
     # TODO: add more custom parsing here
     raise ValueError("Unknown setting")
 
@@ -193,7 +194,7 @@ class DriverConfig(ConfigObject):
     assert len(candidate_serials) == 1
     return DriverConfig(
         BrowserDriverType.ANDROID,
-        settings=immutabledict(serial=candidate_serials[0]))
+        settings=immutabledict(device_id=candidate_serials[0]))
 
   @classmethod
   def try_load_ios_settings(cls, value: str,
@@ -217,7 +218,7 @@ class DriverConfig(ConfigObject):
     assert len(candidate_serials) == 1
     return DriverConfig(
         BrowserDriverType.IOS,
-        settings=immutabledict(uuid=candidate_serials[0]))
+        settings=immutabledict(device_id=candidate_serials[0]))
 
   @classmethod
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
@@ -250,7 +251,7 @@ class DriverConfig(ConfigObject):
     if self.type == BrowserDriverType.ANDROID:
       device_identifier = None
       if self.settings:
-        device_identifier = self.settings.get("serial", None)
+        device_identifier = self.settings.get("device_id", None)
       return plt.AndroidAdbPlatform(plt.PLATFORM, device_identifier)
     if self.type == BrowserDriverType.IOS:
       # TODO(cbruni): use `xcrun xctrace list devices` to find the UDID

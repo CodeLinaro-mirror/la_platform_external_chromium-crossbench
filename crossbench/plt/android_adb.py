@@ -101,7 +101,7 @@ class Adb:
     info = f"info='{self._device_info}'"
     if model := self._device_info.get("model"):
       info = f"model={repr(model)}"
-    return f"adb(serial={self._serial_id}, {info})"
+    return f"adb(device_id={repr(self._serial_id)}, {info})"
 
   def has_root(self) -> bool:
     return self.shell_stdout("id").startswith("uid=0(root)")

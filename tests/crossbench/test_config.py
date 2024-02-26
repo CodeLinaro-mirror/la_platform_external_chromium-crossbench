@@ -252,6 +252,15 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("depending_nested", help_text)
     self.assertIn("depending_many", help_text)
 
+  def test_value_has_path_prefix(self):
+    for value in ("/foo/bar", "~/foo/bar", "../foo/bar", "./foo/bar",
+                  "C:\\foo\\bar", "C:/foo/bar"):
+      with self.subTest(value=value):
+        self.assertTrue(CustomConfigObject.value_has_path_prefix(value))
+    for value in ("foo/bar", "foo:bar", "foo", "{foo:'/foo/bar'}"):
+      with self.subTest(value=value):
+        self.assertFalse(CustomConfigObject.value_has_path_prefix(value))
+
   def test_load_invalid_str(self):
     for invalid in ("", None, 1, []):
       with self.assertRaises(argparse.ArgumentTypeError):

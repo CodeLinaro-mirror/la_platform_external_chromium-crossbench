@@ -343,7 +343,10 @@ class ConfigEnum(compat.StrEnumWithHelp):
     return cli_helper.parse_enum(cls.__name__, cls, value, cls)
 
 
-_PATH_PREFIX = re.compile(r"(\./|/|[a-zA-Z]:\\)[^\\/]")
+_PATH_PREFIX = re.compile(r"("
+                          r"((\.\.?|~)?/)|"
+                          r"[a-zA-Z]:(\\|/)"
+                          r")[^\\/]")
 ConfigObjectT = TypeVar("ConfigObjectT", bound="ConfigObject")
 
 class ConfigObject(abc.ABC):

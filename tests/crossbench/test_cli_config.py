@@ -114,17 +114,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_inline_json(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    config_dict = {"type": 'adb', "settings": {"serial": "0a388e93"}}
+    config_dict = {"type": 'adb', "settings": {"device_id": "0a388e93"}}
     config = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
-    self.assertEqual(config.settings["serial"], "0a388e93")
+    self.assertEqual(config.settings["device_id"], "0a388e93")
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config = DriverConfig.load_dict(config_dict)
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
-    self.assertEqual(config.settings["serial"], "0a388e93")
+    self.assertEqual(config.settings["device_id"], "0a388e93")
 
   def test_parse_adb_phone_identifier_unknown(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -154,7 +154,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 2)
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
-    self.assertEqual(config.settings["serial"], "0a388e93")
+    self.assertEqual(config.settings["device_id"], "0a388e93")
 
   def test_parse_adb_phone_serial(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
@@ -164,7 +164,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 2)
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
-    self.assertEqual(config.settings["serial"], "0a388e93")
+    self.assertEqual(config.settings["device_id"], "0a388e93")
 
   @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_ios_phone_serial(self):
@@ -178,7 +178,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 3)
 
     self.assertEqual(config.type, BrowserDriverType.IOS)
-    self.assertEqual(config.settings["uuid"], "00001111-11AA22BB33DD")
+    self.assertEqual(config.settings["device_id"], "00001111-11AA22BB33DD")
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):
@@ -421,7 +421,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     expected_driver = DriverConfig(
-        BrowserDriverType.ANDROID, settings=immutabledict(serial="0a388e93"))
+        BrowserDriverType.ANDROID, settings=immutabledict(device_id="0a388e93"))
     self.assertEqual(len(self.platform.sh_results), 0)
     self.assertEqual(len(self.platform.sh_cmds), 3)
     self.assertEqual(
