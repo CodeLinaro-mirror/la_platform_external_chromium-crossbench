@@ -74,7 +74,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       return pathlib.Path()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> RemoteWebDriver:
+                    driver_path: pathlib.Path) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file
     args = self._get_browser_flags_for_session(session)
@@ -195,7 +195,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                     driver_path: pathlib.Path) -> ChromiumDriver:
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
-    driver = super()._start_driver(session, driver_path)
+    driver: ChromiumDriver = super()._start_driver(session, driver_path)
     assert isinstance(driver, ChromiumDriver)
     return cast(ChromiumDriver, driver)
 
