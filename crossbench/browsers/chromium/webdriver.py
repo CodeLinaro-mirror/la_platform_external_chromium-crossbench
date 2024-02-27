@@ -33,6 +33,8 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, FlagsT
 
 if TYPE_CHECKING:
+  from selenium import webdriver
+
   from crossbench.runner.groups import BrowserSessionRunGroup
 
 
@@ -74,7 +76,11 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       return pathlib.Path()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> ChromiumDriver:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
+    return self._start_chromedriver(session, driver_path)
+
+  def _start_chromedriver(self, session: BrowserSessionRunGroup,
+                          driver_path: pathlib.Path) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file
     args = self._get_browser_flags_for_session(session)
@@ -192,12 +198,10 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     return chrome_flags
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> ChromiumDriver:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
-    driver: ChromiumDriver = super()._start_driver(session, driver_path)
-    assert isinstance(driver, ChromiumDriver)
-    return cast(ChromiumDriver, driver)
+    return self._start_chromedriver(session, driver_path)
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None
@@ -254,6 +258,7 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> RemoteWebDriver:
+    del driver_path
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
     platform = self.platform

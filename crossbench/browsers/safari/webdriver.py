@@ -59,7 +59,11 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     return find_safaridriver(self.path)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> webdriver.Safari:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
+    return self._start_safari_driver(session, driver_path)
+
+  def _start_safari_driver(self, session: BrowserSessionRunGroup,
+                           driver_path: pathlib.Path) -> webdriver.Safari:
     assert not self._is_running
     logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
                  driver_path)
@@ -147,18 +151,18 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 class SafariWebdriverIOS(SafariWebDriver):
   # TODO(cbruni): implement iOS platform
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> webdriver.Safari:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
     # safaridriver for iOS seems to be brittle for starting up, we give it
     # several chances to start up.
     for timeout in helper.wait_with_backoff(
         helper.WaitRange(min=2, timeout=15)):
       try:
-        return super()._start_driver(session, driver_path)
+        return self._start_safari_driver(session, driver_path)
       except Exception as e:  # pylint: disable=disable=broad-except
         logging.warning("SafariWebDriver: startup failed, retrying (%s)",
                         timeout)
         logging.debug("SafariWebDriver: startup error %s", e)
-    return super()._start_driver(session, driver_path)
+    return self._start_safari_driver(session, driver_path)
 
   def _get_driver_options(self,
                           session: BrowserSessionRunGroup) -> SafariOptions:

@@ -39,7 +39,11 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     return finder.download()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> webdriver.Firefox:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
+    return self._start_firefox_driver(session, driver_path)
+
+  def _start_firefox_driver(self, session: BrowserSessionRunGroup,
+                            driver_path: pathlib.Path) -> webdriver.Firefox:
     assert not self._is_running
     assert self.log_file
     options = FirefoxOptions()
