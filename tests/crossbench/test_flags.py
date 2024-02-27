@@ -5,8 +5,9 @@
 import abc
 import unittest
 
-from crossbench.flags import ChromeBaseFeatures, ChromeBlinkFeatures, ChromeFeatures, ChromeFlags, Flags, JSFlags
-
+from crossbench.flags import (ChromeBaseFeatures, ChromeBlinkFeatures,
+                              ChromeFeatures, ChromeFlags, Flags,
+                              FrozenFlagsError, JSFlags)
 from tests import test_helper
 
 
@@ -90,6 +91,21 @@ class TestFlags(unittest.TestCase):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
     copy = flags.copy()
     self.assertEqual(list(flags.get_list()), list(copy.get_list()))
+    self.assertEqual(str(flags), str(copy))
+
+  def test_copy_frozen(self):
+    flags = self.CLASS({"--foo": "v1", "--bar": None})
+    flags.freeze()
+    self.assertTrue(flags.is_frozen)
+    copy = flags.copy()
+    with self.assertRaises(FrozenFlagsError):
+      flags["--custom"] = "123"
+    self.assertNotIn("--custom", flags)
+    copy["--custom"] = "123"
+    self.assertEqual(copy["--custom"], "123")
+    copy.freeze()
+    with self.assertRaises(FrozenFlagsError):
+      copy["--custom-other"] = "123"
 
   def test_update(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
@@ -161,6 +177,19 @@ class TestFlags(unittest.TestCase):
     self.assertEqual(len(flags), 2)
     self.assertEqual(flags["--foo"], "1")
     self.assertEqual(flags["--bar"], "2")
+
+  def test_hashable(self):
+    flags = self.CLASS.parse("--foo")
+    flags["--bar"] = "10"
+    test_set = {flags}
+    self.assertIn(flags, test_set)
+    self.assertIn(self.CLASS.parse("--foo --bar=10"), test_set)
+    self.assertNotIn(self.CLASS.parse("--foo --bar=999"), test_set)
+    # post-hash modification are not allowed anymore:
+    with self.assertRaises(FrozenFlagsError) as cm:
+      flags["--bar"] = "0"
+    self.assertIn("frozen", str(cm.exception))
+
 
 class TestChromeFlags(TestFlags):
 
@@ -631,6 +660,14 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     features_2.disable("feature1")
     with self.assertRaises(ValueError):
       features_1.update(features_2)
+
+  def test_enable_disable_frozen(self):
+    features = self.instance()
+    features.freeze()
+    with self.assertRaises(FrozenFlagsError):
+      features.disable("feature1")
+    with self.assertRaises(FrozenFlagsError):
+      features.enable("feature2")
 
 
 class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):

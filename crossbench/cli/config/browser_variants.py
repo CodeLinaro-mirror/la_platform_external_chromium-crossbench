@@ -44,17 +44,18 @@ FlagVariantsDictT = Dict[str, List[str]]
 @dataclasses.dataclass(frozen=True)
 class FlagsVariantConfig:
   label: str
-  flags: Flags = dataclasses.field(default_factory=Flags)
+  flags: Flags = dataclasses.field(default_factory=lambda: Flags().freeze())
 
   @classmethod
   def parse(cls, name: str, data: Any):
-    return cls(name, Flags.parse(data))
+    return cls(name, Flags.parse(data).freeze())
 
   def merge_copy(self,
                  other: FlagsVariantConfig,
                  label: Optional[str] = None) -> FlagsVariantConfig:
     new_label = label or f"{self.label}_{other.label}"
-    return FlagsVariantConfig(new_label, self.flags.merge_copy(other.flags))
+    return FlagsVariantConfig(new_label,
+                              self.flags.merge_copy(other.flags).freeze())
 
 
 try:
@@ -346,14 +347,10 @@ class BrowserVariantsConfig:
         name, raw_browser_data)
     self._log_browser_variants(name, flag_variants)
     browser_platform = self._get_browser_platform(browser_config)
+    labels_lookup = self._create_unique_variant_labels(name, raw_browser_data,
+                                                       flag_variants)
     for variant in flag_variants:
-      label = raw_browser_data.get("label", name)
-      if len(flag_variants) > 1:
-        # TODO: use variant.label
-        label = self._flags_to_label(name, variant.flags)
-      if not self._check_unique_label(label):
-        raise ConfigError(f"browsers[{repr(name)}] has non-unique label: "
-                          f"{repr(label)}")
+      label = labels_lookup[variant]
       browser_flags = browser_cls.default_flags(variant.flags)
       # pytype: disable=not-instantiable
       browser_instance = browser_cls(
@@ -370,6 +367,20 @@ class BrowserVariantsConfig:
 
   def _flags_to_label(self, name: str, flags: Flags) -> str:
     return f"{name}_{_flags_to_label(flags)}"
+
+  def _create_unique_variant_labels(self, name: str, raw_browser_data,
+                                    flag_variants: FlagsGroupConfig) -> Dict:
+    labels_lookup: Dict[FlagsVariantConfig, str] = {}
+    for variant in flag_variants:
+      label = raw_browser_data.get("label", name)
+      if len(flag_variants) > 1:
+        # TODO: use variant.label
+        label = self._flags_to_label(name, variant.flags)
+      if not self._check_unique_label(label):
+        raise ConfigError(f"browsers[{repr(name)}] has non-unique label: "
+                          f"{repr(label)}")
+      labels_lookup[variant] = label
+    return labels_lookup
 
   def _check_unique_label(self, label: str) -> bool:
     if label in self._unique_names:

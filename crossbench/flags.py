@@ -14,9 +14,44 @@ from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
 
 from ordered_set import OrderedSet
 
+
+class FrozenFlagsError(RuntimeError):
+  pass
+
+
+FreezableT = TypeVar("FreezableT", bound="Freezable")
+
+
+class Freezable:
+
+  def __init__(self, *args, **kwargs) -> None:
+    self._frozen = False
+    super().__init__(*args, **kwargs)
+
+  def __hash__(self):
+    self.freeze()
+    return hash(str(self))
+
+  @property
+  def is_frozen(self) -> bool:
+    return self._frozen
+
+  def freeze(self: FreezableT) -> FreezableT:
+    self._frozen = True
+    return self
+
+  def assert_not_frozen(self, msg: Optional[str] = None) -> None:
+    if not self._frozen:
+      return
+    if not msg:
+      msg = f"Cannot modify frozen {type(self).__name__}"
+    raise FrozenFlagsError(msg)
+
+
 BasicFlagsT = TypeVar("BasicFlagsT", bound="BasicFlags")
 
-class BasicFlags(collections.UserDict):
+
+class BasicFlags(Freezable, collections.UserDict):
   """Basic implementation for command line flags (similar to Dic[str, str].
 
   This class is mostly used to make sure command-line flags for browsers
@@ -112,6 +147,7 @@ class BasicFlags(collections.UserDict):
            flag_name: str,
            flag_value: Optional[str] = None,
            override: bool = False) -> None:
+    self.assert_not_frozen()
     self._validate_flag_name(flag_name)
     if flag_value:
       self._validate_flag_value(flag_name, flag_value)
@@ -315,10 +351,18 @@ class ChromeFlags(Flags):
     self._js_flags = JSFlags()
     super().__init__(initial_data)
 
+  def freeze(self) -> ChromeFlags:
+    super().freeze()
+    self._js_flags.freeze()
+    self._features.freeze()
+    self._blink_features.freeze()
+    return self
+
   def _set(self,
            flag_name: str,
            flag_value: Optional[str] = None,
            override: bool = False) -> None:
+    self.assert_not_frozen()
     # pylint: disable=signature-differs
     if flag_name == ChromeFeatures.ENABLE_FLAG:
       if flag_value is None:
@@ -416,11 +460,12 @@ class ChromeFlags(Flags):
     yield from self.blink_features.items()
 
 
-class ChromeBaseFeatures(abc.ABC):
+class ChromeBaseFeatures(Freezable, abc.ABC):
   ENABLE_FLAG: str = ""
   DISABLE_FLAG: str = ""
 
   def __init__(self) -> None:
+    super().__init__()
     self._enabled: Dict[str, Optional[str]] = {}
     self._disabled: OrderedSet[str] = OrderedSet()
 
@@ -453,6 +498,7 @@ class ChromeBaseFeatures(abc.ABC):
     self._enable(name, value)
 
   def _enable(self, name: str, value: Optional[str]) -> None:
+    self.assert_not_frozen()
     if name in self._disabled:
       raise ValueError(
           f"Cannot enable previously disabled feature={repr(name)}")
@@ -466,6 +512,7 @@ class ChromeBaseFeatures(abc.ABC):
       self._enabled[name] = value
 
   def disable(self, feature: str) -> None:
+    self.assert_not_frozen()
     name, _ = self._parse_feature(feature)
     if name in self._enabled:
       raise ValueError(
