@@ -331,7 +331,8 @@ class BrowserVariantsConfig:
                      args: argparse.Namespace) -> None:
     path_or_identifier: Optional[str] = raw_browser_data.get("path")
     browser_cls: Type[Browser]
-    if path_or_identifier in self._browser_lookup_override:
+    if path_or_identifier and (path_or_identifier
+                               in self._browser_lookup_override):
       browser_cls, browser_config = self._browser_lookup_override[
           path_or_identifier]
     else:

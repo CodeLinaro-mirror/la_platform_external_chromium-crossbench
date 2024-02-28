@@ -505,7 +505,7 @@ class CrossBenchCLI:
         type=viewport.Viewport.parse,
         help=("Set the browser window position."
               "Options: size and position, "
-              f"{', '.join(str(e.value) for e in viewport.ViewportMode)}. "
+              f"{', '.join(str(e) for e in viewport.ViewportMode)}. "
               "Examples: --viewport=1550x300 --viewport=fullscreen. "
               f"Default: {viewport.Viewport.DEFAULT}"))
     # pytype: enable=missing-parameter

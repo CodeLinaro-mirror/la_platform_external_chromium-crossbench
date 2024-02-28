@@ -71,14 +71,13 @@ class ChromeDownloader(Downloader):
     return (version_identifier, requested_version, requested_version_str,
             requested_exact_version)
 
-  VERSION_URL_PLATFORM_LOOKUP: Dict[Tuple[str, str], Tuple[str, str]] = {
-      ("win", "ia32"): ("win", "canary"),
-      ("win", "x64"): ("win64", "canary"),
-      # Linux doesn't have canary versions.
-      ("linux", "x64"): ("linux", "dev"),
-      ("macos", "x64"): ("mac", "canary"),
-      ("macos", "arm64"): ("mac_arm64", "canary"),
-      ("android", "arm64"): ("android", "canary"),
+  VERSION_URL_PLATFORM_LOOKUP: Dict[Tuple[str, str], str] = {
+      ("win", "ia32"): "win",
+      ("win", "x64"): "win64",
+      ("linux", "x64"): "linux",
+      ("macos", "x64"): "mac",
+      ("macos", "arm64"): "mac_arm64",
+      ("android", "arm64"): "android",
   }
 
   def _find_archive_url(self) -> Optional[str]:
@@ -89,14 +88,15 @@ class ChromeDownloader(Downloader):
 
   def _find_milestone_archive_url(self) -> Optional[str]:
     milestone: int = self._requested_version[0]
-    platform, channel = self.VERSION_URL_PLATFORM_LOOKUP.get(
-        self._platform.key, (None, None))
+    platform = self.VERSION_URL_PLATFORM_LOOKUP.get(self._platform.key)
     if not platform:
       raise ValueError(f"Unsupported platform {self._platform}")
+    # Version ordering is: stable < beta < dev < canary < canary_asan
+    # See https://developer.chrome.com/docs/web-platform/versionhistory/reference#filter
     url = self.VERSION_URL.format(
         platform=platform,
-        channel=channel,
-        filter=f"version>={milestone},version<{milestone+1}&")
+        channel="all",
+        filter=f"version>={milestone},version<{milestone+1},channel<=canary&")
     logging.info("LIST ALL VERSIONS for M%s (slow): %s", milestone, url)
     try:
       with helper.urlopen(url) as response:
