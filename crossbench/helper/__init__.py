@@ -289,7 +289,7 @@ class Durations:
     return self._durations[name]
 
   def __setitem__(self, name: str, duration: dt.timedelta) -> None:
-    assert name not in self._durations, (f"Cannot set '{name}' duration twice!")
+    assert name not in self._durations, f"Cannot set '{name}' duration twice!"
     self._durations[name] = duration
 
   def __len__(self) -> int:
@@ -376,6 +376,7 @@ def wait_and_kill(process: Popen,
   3. terminate(),
   4. Last stage: kill process.
   """
+  logging.debug("wait_and_kill: %s", process)
   try:
     wait_and_terminate(process, timeout, signal)
   finally:
@@ -400,7 +401,8 @@ def wait_and_terminate(process,
     # Propagate keyboard interrupts, unlike all other exceptions.
     raise
   except TimeoutExpired as e:
-    logging.debug("Got timeout while waiting for process (%s): %s", process, e)
+    logging.debug("Got timeout while waiting "
+                  "for process shutdown (%s): %s", process, e)
   except Exception as e:  # pylint: disable=broad-except
     logging.debug("Ignoring exception during process termination: %s", e)
   finally:
@@ -476,3 +478,6 @@ class StateMachine:
   def expect(self, *args: State) -> None:
     if self._state not in args:
       raise RuntimeError(f"Invalid state got={self._state} expected={args}")
+
+  def __str__(self) -> str:
+    return f"{self._state}"

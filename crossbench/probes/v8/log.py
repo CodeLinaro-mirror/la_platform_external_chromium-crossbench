@@ -16,7 +16,7 @@ from crossbench import cli_helper, compat, helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags import JSFlags
-from crossbench.probes import helper as probe_helper
+from crossbench.helper.path_finder import V8CheckoutFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
                                      ResultLocation)
@@ -275,7 +275,7 @@ class V8ToolsFinder:
     if v8_checkout:
       self.v8_checkout = v8_checkout
     else:
-      self.v8_checkout = probe_helper.V8CheckoutFinder(self.platform).path
+      self.v8_checkout = V8CheckoutFinder(self.platform).path
     self.tick_processor: Optional[pathlib.Path] = None
     self.d8_binary = self._find_d8()
     if self.d8_binary:
@@ -295,8 +295,7 @@ class V8ToolsFinder:
       if candidate.is_file():
         return candidate
     # Try potential build location
-    for candidate_dir in probe_helper.V8CheckoutFinder(
-        self.platform).candidates:
+    for candidate_dir in V8CheckoutFinder(self.platform).candidates:
       for build_type in ("release", "optdebug", "Default", "Release"):
         candidates = list(candidate_dir.glob(f"out/*{build_type}/d8"))
         if candidates and candidates[0].is_file():

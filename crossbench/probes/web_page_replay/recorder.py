@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
 from immutabledict import immutabledict
 
 from crossbench import cli_helper, helper, plt
+from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
-from crossbench.probes import helper as probe_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
@@ -67,9 +67,7 @@ class WebPageReplayProbe(Probe):
     super().__init__()
     if not wpr_go_bin:
       wpr_go_bin = WprGoToolFinder(plt.PLATFORM).path
-    if not wpr_go_bin:
-      raise argparse.ArgumentTypeError(f"'{wpr_go_bin}' does not exist.")
-    self._wpr_go_bin = cli_helper.parse_non_empty_file_path(wpr_go_bin)
+    self._wpr_go_bin = cli_helper.parse_binary_path(wpr_go_bin, "wpr.go")
 
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
         bin_path=wpr_go_bin,
@@ -198,15 +196,3 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
   def teardown(self) -> ProbeResult:
     self._recorder.stop()
     return self.browser_result(file=(self.result_path,))
-
-
-class WprGoToolFinder:
-  _WPR_GO = pathlib.Path("third_party/catapult/web_page_replay_go/src/wpr.go")
-
-  def __init__(self, platform: plt.Platform) -> None:
-    self.platform = platform
-    self.path: Optional[pathlib.Path] = None
-    if maybe_chrome := probe_helper.ChromiumCheckoutFinder(platform).path:
-      candidate = maybe_chrome / self._WPR_GO
-      if self.platform.is_file(candidate):
-        self.path = candidate

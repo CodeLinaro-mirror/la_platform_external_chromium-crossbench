@@ -81,9 +81,18 @@ def parse_existing_path(value: Union[str, pathlib.Path],
   return path
 
 
-def parse_binary_path(value: str,
+def parse_not_existing_path(value: Union[str, pathlib.Path],
+                            name: str = "Path") -> pathlib.Path:
+  path = parse_path(value)
+  if path.exists():
+    raise argparse.ArgumentTypeError(f"{name} '{path}' already exist.")
+  return path
+
+
+def parse_binary_path(value: Optional[Union[str, pathlib.Path]],
+                      name: str = "binary",
                       platform: Optional[plt.Platform] = None) -> pathlib.Path:
-  maybe_path = pathlib.Path(value)
+  maybe_path = pathlib.Path(parse_not_none(value, name))
   if maybe_path.is_file():
     return maybe_path
   maybe_bin = (platform or plt.PLATFORM).search_binary(maybe_path)

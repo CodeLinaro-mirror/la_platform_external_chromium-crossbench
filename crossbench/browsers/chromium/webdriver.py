@@ -86,8 +86,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
     logging.info("STARTING BROWSER: %s", self.path)
-    logging.info("STARTING BROWSER: driver: %s", driver_path)
-    logging.info("STARTING BROWSER: args: %s", shlex.join(args))
+    logging.info("STARTING BROWSER:  driver: %s", driver_path)
+    logging.info("STARTING BROWSER: network:  %s", self.network)
+    logging.info("STARTING BROWSER:    args: %s", shlex.join(args))
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=str(driver_path),

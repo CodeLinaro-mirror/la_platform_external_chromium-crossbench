@@ -24,8 +24,10 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import BrowserDriverType
+from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.flags import ChromeFlags, Flags
+from crossbench.network.base import Network
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -353,11 +355,13 @@ class BrowserVariantsConfig:
     for variant in flag_variants:
       label = labels_lookup[variant]
       browser_flags = browser_cls.default_flags(variant.flags)
+      network = self._get_browser_network(browser_config.network)
       # pytype: disable=not-instantiable
       browser_instance = browser_cls(
           label=label,
           path=browser_config.path,
           flags=browser_flags,
+          network=network,
           driver_path=args.driver_path or browser_config.driver.path,
           # TODO: support all args in the browser.config file
           viewport=args.viewport,
@@ -613,6 +617,7 @@ class BrowserVariantsConfig:
         flags.set(flag_name, flag_value)
 
     browser_platform = self._get_browser_platform(browser_config)
+    network = self._get_browser_network(args.network)
 
     name = f"{browser_platform}_{len(self._unique_names)}"
     for flags in flags_sets:
@@ -624,6 +629,7 @@ class BrowserVariantsConfig:
           label=label,
           path=path,
           flags=flags,
+          network=network,
           driver_path=args.driver_path or browser_config.driver.path,
           viewport=args.viewport,
           splash_screen=args.splash_screen,
@@ -631,3 +637,7 @@ class BrowserVariantsConfig:
       logging.info("SELECTED BROWSER: name=%s path='%s' ",
                    browser_instance.unique_name, path)
       self._variants.append(browser_instance)
+
+  def _get_browser_network(self, network_config: NetworkConfig) -> Network:
+    # TODO: pass in custom platform
+    return network_config.create(plt.PLATFORM)

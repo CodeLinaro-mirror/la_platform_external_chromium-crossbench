@@ -232,7 +232,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
     try:
-      with self.network.open(self.browser), self._probe_context_manager.open():
+      logging.debug("Starting network: %s", self.network)
+      with self.network.open(self), self._probe_context_manager.open():
         self._start(is_dry_run)
         try:
           yield
@@ -248,7 +249,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # TODO: handle session vs run probe.
     for run in self.runs:
       with self._exceptions.annotate(f"Setting up {run}"):
-        logging.info("Preparing SESSION %s RUN %s", self.index, run.index)
+        logging.info("Preparing SESSION %s, RUN %s", self.index, run.index)
         run.setup(is_dry_run)
 
   def _setup_session_dir(self):
@@ -271,6 +272,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _start_browser(self, is_dry_run: bool) -> None:
     assert self._state == _State.STARTING
+    assert self.network.is_running, "Network isn't running yet"
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
@@ -283,7 +285,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     with self.measure("browser-setup"):
       try:
         # pytype somehow gets the package path wrong here, disabling for now.
-        self._browser.setup(self)  # pytype: disable=wrong-arg-types
+        self._browser.setup(self)
       except Exception as e:
         logging.debug("Browser setup failed: %s", e)
         # Clean up half-setup browser instances

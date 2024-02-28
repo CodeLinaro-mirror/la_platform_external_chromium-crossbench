@@ -10,14 +10,18 @@ from typing import TYPE_CHECKING, Iterator
 from crossbench.network.base import Network
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 
 class LiveNetwork(Network):
 
   @contextlib.contextmanager
-  def open(self, browser: Browser) -> Iterator[Network]:
-    with self._traffic_shaper.open(self, browser):
-      # TODO: implement
-      yield self
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+    with super().open(session):
+      with self._traffic_shaper.open(self, session):
+        # TODO: implement
+        yield self
+
+  def __str__(self) -> str:
+    return f"LIVE(traffic={self.traffic_shaper})"

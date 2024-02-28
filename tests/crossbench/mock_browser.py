@@ -27,18 +27,12 @@ if TYPE_CHECKING:
 
 class MockNetwork(Network):
 
-  def __init__(self, *args, **kwargs):  # pylint: disable=super-init-not-called
-    del args, kwargs
-    self.is_running = False
-
   @contextlib.contextmanager
-  def open(self, browser: Browser) -> Iterator[Network]:
-    assert not self.is_running
-    assert browser.network is self
-    self.is_running = True
-    yield self
-    assert self.is_running
-    self.is_running = False
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+    with super().open(session):
+      assert session.browser.network is self
+      yield self
+      assert self.is_running
 
 
 class MockBrowser(Browser, metaclass=abc.ABCMeta):

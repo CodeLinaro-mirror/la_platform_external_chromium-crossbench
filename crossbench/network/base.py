@@ -9,30 +9,67 @@ import contextlib
 from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import plt
+from crossbench.flags import Flags
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
-class TrafficShaper:
+class TrafficShaper(abc.ABC):
 
   @contextlib.contextmanager
-  def open(self, network: Network, browser: Browser) -> Iterator[TrafficShaper]:
-    del network, browser
-    # TODO: implement port forwarding based on local server using ts_proxy
+  @abc.abstractmethod
+  def open(self, network: Network,
+           session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
+    pass
+
+
+class NoTrafficShaper(TrafficShaper):
+
+  @contextlib.contextmanager
+  def open(self, network: Network,
+           session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
+    del network, session
     yield self
+
+  def __str__(self) -> str:
+    return "live"
+
 
 
 class Network(abc.ABC):
 
   def __init__(self,
                traffic_shaper: Optional[TrafficShaper] = None,
-               platform: plt.Platform = plt.PLATFORM) -> None:
-    self._traffic_shaper = traffic_shaper or TrafficShaper()
-    self._platform = platform
+               runner_platform: plt.Platform = plt.PLATFORM) -> None:
+    self._traffic_shaper = traffic_shaper or NoTrafficShaper()
+    self._runner_platform = runner_platform
+    self._is_running: bool = False
 
-  @abc.abstractmethod
+  @property
+  def traffic_shaper(self) -> TrafficShaper:
+    return self._traffic_shaper
+
+  @property
+  def runner_platform(self) -> plt.Platform:
+    return self._runner_platform
+
+  @property
+  def is_running(self) -> bool:
+    return self._is_running
+
+  def extra_flags(self, browser: Browser) -> Flags:
+    del browser
+    assert self.is_running, "Network is not running."
+    return Flags()
+
   @contextlib.contextmanager
-  def open(self, browser: Browser) -> Iterator[Network]:
-    # Dummy implementation to make pytype happy
-    yield self
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+    del session
+    assert not self._is_running, "Cannot start network more than once."
+    self._is_running = True
+    try:
+      yield self
+    finally:
+      self._is_running = False

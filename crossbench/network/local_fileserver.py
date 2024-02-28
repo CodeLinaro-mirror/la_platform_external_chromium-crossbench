@@ -6,29 +6,13 @@ from __future__ import annotations
 
 import contextlib
 import pathlib
-from typing import Iterator, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import plt
-
 from crossbench.network.base import Network, TrafficShaper
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
-
-
-class LocalFileServer:
-
-  def __init__(self,
-               path: pathlib.Path,
-               platform: Optional[plt.Platform] = plt.PLATFORM) -> None:
-    self._path = path
-    self._platform = platform
-
-  @contextlib.contextmanager
-  def open(self, network: LocalFileNetwork,
-           browser: Browser) -> Iterator[LocalFileServer]:
-    del network, browser
-    yield self
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class LocalFileNetwork(Network):
@@ -38,10 +22,20 @@ class LocalFileNetwork(Network):
                traffic_shaper: Optional[TrafficShaper] = None,
                platform: plt.Platform = plt.PLATFORM):
     super().__init__(traffic_shaper, platform)
-    self._local_file_server = LocalFileServer(path, platform)
+    self._path = path
+
 
   @contextlib.contextmanager
-  def open(self, browser: Browser) -> Iterator[Network]:
-    with self._local_file_server.open(self, browser):
-      with self._traffic_shaper.open(self, browser):
-        yield self
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+    with super().open(session):
+      with self._open_local_file_server():
+        with self._traffic_shaper.open(self, session):
+          yield self
+
+  @contextlib.contextmanager
+  def _open_local_file_server(self):
+    # TODO: implement
+    yield
+
+  def __str__(self) -> str:
+    return f"LOCAL(path={self._path}, traffic={self.traffic_shaper})"

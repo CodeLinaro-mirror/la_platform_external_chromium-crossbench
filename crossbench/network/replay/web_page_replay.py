@@ -14,6 +14,7 @@ import time
 from typing import Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper
+from crossbench import plt
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgsT
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
@@ -22,13 +23,14 @@ _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<port>\d+)")
 
 
+
 class WprBase(abc.ABC):
 
   _key_file: pathlib.Path
   _cert_file: pathlib.Path
 
   def __init__(self,
-               result_path: pathlib.Path,
+               archive_path: pathlib.Path,
                bin_path: pathlib.Path,
                http_port: int = 0,
                https_port: int = 0,
@@ -40,15 +42,14 @@ class WprBase(abc.ABC):
                platform: Platform = PLATFORM):
     self._platform: Platform = platform
     self._process: Optional[subprocess.Popen] = None
-    self._log_path: Optional[pathlib.Path] = log_path
+    self._log_path: Optional[pathlib.Path] = None
+    if log_path:
+      self._log_path = cli_helper.parse_not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
     self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
     if not self._platform.which("go"):
       raise ValueError(f"'go' binary not available on {self._platform}")
-    self._result_path = result_path
-    if result_path.exists():
-      raise ValueError(f"Wpr.go result archive exists already: '{result_path}'")
-
+    self._archive_path = self._validate_archive_path(archive_path)
     if http_port == https_port:
       raise ValueError("http_port must be different from https_port, "
                        f"but got twice: {http_port}")
@@ -81,6 +82,10 @@ class WprBase(abc.ABC):
       if not script.is_file():
         raise ValueError(f"Injected script does not exist: {script}")
     self._inject_scripts: Tuple[pathlib.Path, ...] = tuple(inject_scripts)
+
+  @abc.abstractmethod
+  def _validate_archive_path(self, path: pathlib.Path) -> pathlib.Path:
+    pass
 
   @property
   def http_port(self) -> int:
@@ -118,7 +123,7 @@ class WprBase(abc.ABC):
         "run",
         self._bin_path,
     ) + self.cmd
-    logging.info("WPR: startup")
+    logging.info("STARTING WPR %s", go_cmd)
     try:
       if self._log_path:
         self._log_file = self._log_path.open("w")
@@ -134,7 +139,8 @@ class WprBase(abc.ABC):
       self._wait_for_startup()
       logging.info("WPR: Starting wpr.go recorder: DONE")
 
-    except:
+    except BaseException as e:
+      logging.debug("WPR got startup errors: %s %s", type(e), e)
       self.stop()
       self._log_startup_error()
       raise
@@ -152,7 +158,8 @@ class WprBase(abc.ABC):
       logging.debug("Got exception while reading wpr log file: %s", e)
 
   def _wait_for_startup(self) -> None:
-    assert self._process and self._log_path
+    assert self._process, "process not started"
+    assert self._log_path, "missing log_path"
     with self._log_path.open("r") as log_file:
       while self._process.poll() is None:
         line = log_file.readline()
@@ -163,6 +170,7 @@ class WprBase(abc.ABC):
           break
     if self._process.poll():
       self._raise_startup_failure()
+    time.sleep(0.1)
     with self._open_wpr_cmd_url("generate-200") as r:
       if r.status != 200:
         self._raise_startup_failure()
@@ -222,13 +230,16 @@ class WprRecorder(WprBase):
 
   @property
   def cmd(self) -> TupleCmdArgsT:
-    return ("record",) + super().base_cmd_flags + (str(self._result_path),)
+    return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
+
+  def _validate_archive_path(self, path: pathlib.Path) -> pathlib.Path:
+    return cli_helper.parse_not_existing_path(path, "Wpr.go result archive")
 
 
 class WprReplayServer(WprBase):
 
   def __init__(self,
-               result_path: pathlib.Path,
+               archive_path: pathlib.Path,
                bin_path: pathlib.Path,
                http_port: int = 0,
                https_port: int = 0,
@@ -241,13 +252,16 @@ class WprReplayServer(WprBase):
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
                platform: Platform = PLATFORM):
-    super().__init__(result_path, bin_path, http_port, https_port, host,
+    super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
     self._rules_file: Optional[pathlib.Path] = None
     if rules_file:
       self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
+
+  def _validate_archive_path(self, path: pathlib.Path) -> pathlib.Path:
+    return cli_helper.parse_non_empty_file_path(path, "WPR.go replay archive")
 
   @property
   def cmd(self) -> TupleCmdArgsT:
@@ -258,5 +272,5 @@ class WprReplayServer(WprBase):
       cmd += ("--disable_fuzzy_url_matching",)
     if self._serve_chronologically:
       cmd += ("--serve_response_in_chronological_sequence",)
-    cmd += (str(self._result_path),)
+    cmd += (str(self._archive_path),)
     return cmd

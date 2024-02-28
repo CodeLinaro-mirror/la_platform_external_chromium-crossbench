@@ -12,14 +12,13 @@ from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple, cast
 
 from crossbench import cli_helper
 from crossbench.config import ConfigEnum
-from crossbench.probes import helper as probe_helper
+from crossbench.helper.path_finder import TraceconvFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
-  from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
 
@@ -306,14 +305,3 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
                              json_trace_file)
     return self.browser_result(
         json=(json_trace_file,), file=(self.result_path,))
-
-
-class TraceconvFinder:
-
-  def __init__(self, platform: plt.Platform) -> None:
-    self.traceconv: Optional[pathlib.Path] = None
-    if chrome_checkout := probe_helper.ChromiumCheckoutFinder(platform).path:
-      candidate = (
-          chrome_checkout / "third_party" / "perfetto" / "tools" / "traceconv")
-      if candidate.is_file():
-        self.traceconv = candidate

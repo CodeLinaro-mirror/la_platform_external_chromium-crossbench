@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import argparse
 
+import argparse
 import dataclasses
 import enum
 import pathlib
@@ -12,7 +12,12 @@ from typing import Any, Dict, Optional
 
 from crossbench import cli_helper, exception
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from crossbench.network.base import Network, NoTrafficShaper, TrafficShaper
+from crossbench.network.live import LiveNetwork
+from crossbench.network.local_fileserver import LocalFileNetwork
+from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
+from crossbench.plt.base import Platform
 
 
 @enum.unique
@@ -28,7 +33,6 @@ def _settings_str(name: str) -> str:
   return (f"rtt={settings['rtt_ms']}ms, "
           f"in={settings['in_kbps']} kbps,"
           f"out={settings['out_kbps']} kbps")
-
 
 @enum.unique
 class NetworkSpeedPreset(ConfigEnum):
@@ -89,6 +93,7 @@ class NetworkConfig(ConfigObject):
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
   path: Optional[pathlib.Path] = None
+  wpr_go_bin: Optional[pathlib.Path] = None
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
@@ -106,6 +111,13 @@ class NetworkConfig(ConfigObject):
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
     parser.add_argument(
         "path", type=cli_helper.parse_existing_file_path, required=False)
+    parser.add_argument(
+        "wpr_go_bin",
+        type=cli_helper.parse_existing_file_path,
+        required=False,
+        help=("Location of the wpr.go binary or source, "
+              "used for WPR replay network. "
+              "If not specified, a default lookup in known locations is used."))
     return parser
 
   @classmethod
@@ -168,15 +180,35 @@ class NetworkConfig(ConfigObject):
       if self.path:
         raise argparse.ArgumentTypeError(
             "NetworkConfig path cannot be used with type=live")
-    elif self.type == NetworkType.WPR:
+    elif self.type is NetworkType.WPR:
       if not self.path:
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=replay requires "
             "a valid wpr.go archive path.")
       cli_helper.parse_non_empty_file_path(self.path, "wpr.go-archive")
-    elif self.type == NetworkType.LOCAL:
+    elif self.type is NetworkType.LOCAL:
       if not self.path:
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=local requires "
             "a valid local dir path to serve files.")
       cli_helper.parse_non_empty_dir_path(self.path, "local-serve dir")
+    if self.wpr_go_bin and self.type is not NetworkType.WPR:
+      raise argparse.ArgumentTypeError(
+          "wpr_go_bin can only be used for the WPR replay network")
+
+  def create(self, runner_platform: Platform) -> Network:
+    traffic_shaper = self._create_traffic_shaper()
+    if self.type is NetworkType.LIVE:
+      return LiveNetwork(traffic_shaper, runner_platform)
+    if self.type is NetworkType.LOCAL:
+      assert self.path
+      return LocalFileNetwork(self.path, traffic_shaper, runner_platform)
+    if self.type is NetworkType.WPR:
+      assert self.path
+      return WprReplayNetwork(self.path, traffic_shaper, self.wpr_go_bin,
+                              runner_platform)
+    raise ValueError(f"Unknown network type {self.type}")
+
+  def _create_traffic_shaper(self) -> TrafficShaper:
+    # TODO: implement
+    return NoTrafficShaper()

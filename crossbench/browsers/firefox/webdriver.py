@@ -58,8 +58,9 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     session.setup_selenium_options(options)
 
     logging.info("STARTING BROWSER: %s", self.path)
-    logging.info("STARTING BROWSER: driver: %s", driver_path)
-    logging.info("STARTING BROWSER: args: %s", shlex.join(args))
+    logging.info("STARTING BROWSER:  driver: %s", driver_path)
+    logging.info("STARTING BROWSER: network:  %s", self.network)
+    logging.info("STARTING BROWSER:    args: %s", shlex.join(args))
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(

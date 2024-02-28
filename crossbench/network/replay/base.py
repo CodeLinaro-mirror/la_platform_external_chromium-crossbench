@@ -11,38 +11,33 @@ from typing import Iterator, Optional
 from crossbench import cli_helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.network.base import Network, TrafficShaper
-
-
-class ReplayNetworkServer(abc.ABC):
-
-  def __init__(self, archive_path: pathlib.Path) -> None:
-    self._archive_path = cli_helper.parse_existing_file_path(archive_path)
-
-  @contextlib.contextmanager
-  @abc.abstractmethod
-  def open(self, network: ReplayNetwork,
-           browser: Browser) -> Iterator[ReplayNetworkServer]:
-    del network, browser
-    # TODO: implement
-    yield self
+from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class ReplayNetwork(Network):
   """ A network implementation that can be used to replay requests
   from a an archive."""
+
   def __init__(self,
                archive_path: pathlib.Path,
                traffic_shaper: Optional[TrafficShaper] = None,
-               platform: plt.Platform = plt.PLATFORM,):
-    super().__init__(traffic_shaper, platform)
-    self._server : ReplayNetworkServer = self._init_server(archive_path)
+               runner_platform: plt.Platform = plt.PLATFORM):
+    super().__init__(traffic_shaper, runner_platform)
+    self._archive_path = cli_helper.parse_existing_file_path(
+        archive_path).resolve()
 
-  @abc.abstractmethod
-  def _init_server(self, archive_path:pathlib.Path) ->  ReplayNetworkServer:
-    pass
+  @property
+  def archive_path(self) -> pathlib.Path:
+    return self._archive_path
 
   @contextlib.contextmanager
-  def open(self, browser: Browser) -> Iterator[Network]:
-    with self._server.open(self, browser):
-      with self._traffic_shaper.open(self, browser):
-        yield self
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+    with super().open(session):
+      with self._open_replay_sever(session):
+        with self._traffic_shaper.open(self, session):
+          yield self
+
+  @contextlib.contextmanager
+  def _open_replay_sever(self, session: BrowserSessionRunGroup):
+    del session
+    yield

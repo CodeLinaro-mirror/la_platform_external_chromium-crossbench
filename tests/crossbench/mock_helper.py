@@ -20,6 +20,7 @@ import crossbench
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark, SubStoryBenchmark
 from crossbench.cli.cli import CrossBenchCLI
+from crossbench.cli.config.network import NetworkConfig
 from crossbench.plt.base import MachineArch
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
@@ -203,6 +204,7 @@ class CrossbenchFakeFsTestCase(
     self.fs.create_file(path, contents=contents)
     return path
 
+
 class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
@@ -244,6 +246,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         disable_features=None,
         js_flags=None,
         enable_field_trial_config=False,
+        network=NetworkConfig.default(),
         probe=[],
         other_browser_args=[])
 
