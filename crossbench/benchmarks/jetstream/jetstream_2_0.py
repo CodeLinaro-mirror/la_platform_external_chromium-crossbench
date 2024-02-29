@@ -21,7 +21,6 @@ class JetStream20Story(JetStream2Story):
   __doc__ = JetStream2Story.__doc__
   NAME: str = "jetstream_2.0"
   URL: str = "https://browserbench.org/JetStream2.0/"
-  PROBES: ProbeClsTupleT = (JetStream20Probe,)
 
 
 class JetStream20Benchmark(JetStream2Benchmark):
@@ -31,6 +30,7 @@ class JetStream20Benchmark(JetStream2Benchmark):
 
   NAME: str = "jetstream_2.0"
   DEFAULT_STORY_CLS = JetStream20Story
+  PROBES: ProbeClsTupleT = (JetStream20Probe,)
 
   @classmethod
   def version(cls) -> Tuple[int, ...]:

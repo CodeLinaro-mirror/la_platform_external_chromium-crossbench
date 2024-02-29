@@ -174,7 +174,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def _extract_result_metrics_table(self, metrics: Dict[str, Any],
                                     table: Dict[str, List[str]]) -> None:
     """Add individual metrics to the table in here.
-    Typically you only add score and total values for each benchmark or 
+    Typically you only add score and total values for each benchmark or
     benchmark item."""
     del metrics
     del table
@@ -237,7 +237,7 @@ class JsonResultProbeContext(ProbeContext[JsonResultProbeT],
   def process_json_data(self, json_data: JSON) -> JSON:
     return self.probe.process_json_data(json_data)
 
-  def flatten_json_data(self, json_data: JSON) -> JSON:
+  def flatten_json_data(self, json_data: Any) -> JSON:
     return self.probe.flatten_json_data(json_data)
 
 

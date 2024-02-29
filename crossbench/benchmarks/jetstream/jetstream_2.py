@@ -12,7 +12,7 @@ import pathlib
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type
 
-from crossbench.benchmarks.base import PressBenchmark
+from crossbench.benchmarks.base import BenchmarkProbeMixin, PressBenchmark
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.results import ProbeResult, ProbeResultDict
@@ -24,12 +24,12 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class JetStream2Probe(JsonResultProbe, metaclass=abc.ABCMeta):
+class JetStream2Probe(
+    BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
   """
   JetStream2-specific Probe.
   Extracts all JetStream2 times and scores.
   """
-  IS_GENERAL_PURPOSE: bool = False
   FLATTEN: bool = False
   JS: str = """
   let results = Object.create(null);

@@ -21,9 +21,25 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
+class BenchmarkProbeMixin:
+  NAME: str = ""
+  IS_GENERAL_PURPOSE: bool = False
+
+  def __init__(self, *args, **kwargs):
+    self._benchmark = kwargs.pop("benchmark")
+    assert isinstance(self._benchmark, Benchmark)
+    super().__init__(*args, **kwargs)
+
+  @property
+  def benchmark(self) -> Benchmark:
+    return self._benchmark
+
+
+
 class Benchmark(abc.ABC):
   NAME: str = ""
   DEFAULT_STORY_CLS: Type[Story] = Story
+  PROBES: Tuple[Type[BenchmarkProbeMixin], ...] = ()
 
   @classmethod
   def cli_help(cls) -> str:
@@ -65,9 +81,11 @@ class Benchmark(abc.ABC):
         "description": "\n".join(helper.wrap_lines(cls.cli_description(), 70)),
         "stories": [],
         "probes-default": {
-            probe_cls.NAME: "\n".join(
-                list(helper.wrap_lines((probe_cls.__doc__ or "").strip(), 70)))
-            for probe_cls in cls.DEFAULT_STORY_CLS.PROBES
+            probe_cls.NAME:
+                "\n".join(
+                    list(
+                        helper.wrap_lines((probe_cls.__doc__ or "").strip(),
+                                          70))) for probe_cls in cls.PROBES
         }
     }
 
@@ -93,11 +111,6 @@ class Benchmark(abc.ABC):
       assert isinstance(story, self.DEFAULT_STORY_CLS), (
           f"story={story} should be a subclass/the same "
           f"class as {self.DEFAULT_STORY_CLS}")
-    first_story = stories[0]
-    expected_probes_cls_list = first_story.PROBES
-    for story in stories:
-      assert story.PROBES == expected_probes_cls_list, (
-          f"story={story} has different PROBES than {first_story}")
     return list(stories)
 
   def setup(self, runner: Runner) -> None:
@@ -394,6 +407,7 @@ class PressBenchmark(SubStoryBenchmark):
         help=f"Use live/online benchmark url ({default_live_url}).")
     benchmark_url_group.add_argument(
         "--local",
+        "--url",
         "--custom-benchmark-url",
         type=cli_helper.parse_httpx_url_str,
         nargs="?",

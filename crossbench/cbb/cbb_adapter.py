@@ -100,7 +100,7 @@ def get_probe_result_file(benchmark_name: str,
     if benchmark_name not in press_benchmarks_dict:
       return None
     benchmark_cls = press_benchmarks_dict[benchmark_name]
-    probe_cls = benchmark_cls.DEFAULT_STORY_CLS.PROBES[0]
+    probe_cls = benchmark_cls.PROBES[0]
     probe_name = probe_cls.NAME
 
   result_file = (

@@ -14,8 +14,7 @@ from unittest import mock
 from crossbench.benchmarks.speedometer.speedometer import (SpeedometerBenchmark,
                                                            SpeedometerProbe,
                                                            SpeedometerStory)
-from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
-                            ValidationMode)
+from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -51,7 +50,7 @@ class SpeedometerBaseTestCase(
   @dataclass
   class Namespace(argparse.Namespace):
     stories = "all"
-    iterations = 10
+    iterations: int = 10
     separate: bool = False
     custom_benchmark_url: Optional[str] = None
 
@@ -135,7 +134,6 @@ class SpeedometerBaseTestCase(
         [story.name for story in stories_b],
     )
 
-
   EXAMPLE_STORY_DATA = types.MappingProxyType({
       "tests": {
           "Adding100Items": {
@@ -180,16 +178,8 @@ class SpeedometerBaseTestCase(
     # The order should match Runner.get_runs
     for _ in range(repetitions):
       for story in stories:
-        speedometer_probe_results = [{
-            "tests": {
-                substory_name: dict(self.EXAMPLE_STORY_DATA)
-                for substory_name in story.substories
-            },
-            "total": 1000,
-            "mean": 2000,
-            "geomean": 3000,
-            "score": 10
-        }] * iterations
+        speedometer_probe_results = self._generate_test_probe_results(
+            iterations, story)
         js_side_effects = [
             True,  # Page is ready
             None,  # _setup_substories
@@ -218,6 +208,18 @@ class SpeedometerBaseTestCase(
       runner.run()
     cm.assert_called_once()
     return runner
+
+  def _generate_test_probe_results(self, iterations, story):
+    return [{
+        "tests": {
+            substory_name: dict(self.EXAMPLE_STORY_DATA)
+            for substory_name in story.substories
+        },
+        "total": 1000,
+        "mean": 2000,
+        "geomean": 3000,
+        "score": 10
+    }] * iterations
 
   def _verify_results(
       self,

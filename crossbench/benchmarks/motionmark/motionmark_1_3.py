@@ -18,7 +18,6 @@ class MotionMark13Probe(MotionMark1Probe):
 
 class MotionMark13Story(MotionMark1Story):
   NAME = "motionmark_1.3"
-  PROBES = (MotionMark13Probe,)
   URL = "https://browserbench.org/MotionMark1.3"
   DEVELOPER_READY_JS: str = (
       "return !(document.querySelector('#frame-rate-detection span'));")
@@ -36,6 +35,7 @@ class MotionMark13Benchmark(MotionMark1Benchmark):
 
   NAME = "motionmark_1.3"
   DEFAULT_STORY_CLS = MotionMark13Story
+  PROBES = (MotionMark13Probe,)
 
   @classmethod
   def version(cls) -> Tuple[int, ...]:

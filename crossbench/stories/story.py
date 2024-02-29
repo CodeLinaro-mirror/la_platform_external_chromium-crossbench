@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Sequence
 
 from crossbench import plt
 
@@ -18,8 +18,6 @@ if TYPE_CHECKING:
 
 
 class Story(abc.ABC):
-  PROBES: Tuple[Type[Probe], ...] = ()
-
   @classmethod
   @abc.abstractmethod
   def all_story_names(cls) -> Sequence[str]:

@@ -3,19 +3,19 @@
 # found in the LICENSE file.
 
 import argparse
-from dataclasses import dataclass
 import datetime as dt
+from dataclasses import dataclass
+import types
+
+from crossbench.benchmarks.speedometer import (speedometer_2_0, speedometer_2_1,
+                                               speedometer_3_0)
 from crossbench.browsers.viewport import Viewport
-
 from tests import test_helper
-
-from crossbench.benchmarks.speedometer import speedometer_2_0
-from crossbench.benchmarks.speedometer import speedometer_2_1
-from crossbench.benchmarks.speedometer import speedometer_3_0
-from tests.crossbench.benchmarks import speedometer_helper
+from tests.crossbench.benchmarks.speedometer_helper import \
+    SpeedometerBaseTestCase
 
 
-class Speedometer20TestCase(speedometer_helper.SpeedometerBaseTestCase):
+class Speedometer20TestCase(SpeedometerBaseTestCase):
 
   @property
   def benchmark_cls(self):
@@ -44,7 +44,7 @@ class Speedometer20TestCase(speedometer_helper.SpeedometerBaseTestCase):
 
 
 
-class Speedometer21TestCase(speedometer_helper.SpeedometerBaseTestCase):
+class Speedometer21TestCase(SpeedometerBaseTestCase):
 
   @property
   def benchmark_cls(self):
@@ -63,7 +63,7 @@ class Speedometer21TestCase(speedometer_helper.SpeedometerBaseTestCase):
     return "speedometer_2.1"
 
 
-class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
+class Speedometer30TestCase(SpeedometerBaseTestCase):
 
   @property
   def benchmark_cls(self):
@@ -92,12 +92,41 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
     self._run_separate(["TodoMVC-JavaScript-ES5", "TodoMVC-Backbone"])
 
   @dataclass
-  class Namespace(speedometer_helper.SpeedometerBaseTestCase.Namespace):
+  class Namespace(SpeedometerBaseTestCase.Namespace):
     sync_wait = dt.timedelta(0)
     sync_warmup = dt.timedelta(0)
     measurement_method = speedometer_3_0.MeasurementMethod.RAF
     story_viewport = None
     shuffle_seed = None
+    detailed_metrics = False
+
+  EXAMPLE_STORY_DATA = {}
+
+  def _generate_s3_metrics(self, name, values):
+    return {
+        "children": [],
+        "delta": 0,
+        "geomean": 39.20000000298023,
+        "max": 39.20000000298023,
+        "mean": 39.20000000298023,
+        "min": 39.20000000298023,
+        "name": name,
+        "percentDelta": 0,
+        "sum": 39.20000000298023,
+        "unit": "ms",
+        "values": values
+    }
+
+  def _generate_test_probe_results(self, iterations, story):
+    values = [21.3] * iterations
+    probe_result = {
+        "Geomean": self._generate_s3_metrics("Geomean", values),
+        "Score": self._generate_s3_metrics("Score", values),
+    }
+    for substory_name in story.substories:
+      probe_result[substory_name] = self._generate_s3_metrics(
+          substory_name, values)
+    return probe_result
 
   def test_measurement_method_kwargs(self):
     args = self.Namespace()
@@ -186,6 +215,9 @@ class Speedometer30TestCase(speedometer_helper.SpeedometerBaseTestCase):
       assert isinstance(story, self.story_cls)
       self.assertEqual(story.shuffle_seed, 1234)
       self.assertDictEqual(story.url_params, {"shuffleSeed": "1234"})
+
+#  Don't expose abstract BaseTestCase to test runner
+del SpeedometerBaseTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

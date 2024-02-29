@@ -14,6 +14,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type, Union)
 
 from crossbench import cli_helper, compat, exception, helper, plt
+from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes import all as all_probes
@@ -193,7 +194,7 @@ class Runner:
         env_config,
         env_validation_mode)
     self._attach_default_probes(additional_probes)
-    self._validate_stories()
+    self._prepare_benchmark()
     self._cache_temperature_groups: Tuple[CacheTemperatureRunGroup, ...] = ()
     self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
@@ -205,11 +206,20 @@ class Runner:
         f"Expected state == {current}, but got {self._state}")
     self._state = next_state
 
-  def _validate_stories(self) -> None:
-    for probe_cls in self.stories[0].PROBES:
-      assert inspect.isclass(probe_cls), (
-          f"Story.PROBES must contain classes only, but got {type(probe_cls)}")
-      self.attach_probe(probe_cls())
+  def _prepare_benchmark(self) -> None:
+    for benchmark_probe_cls in self._benchmark.PROBES:
+      assert inspect.isclass(benchmark_probe_cls), (
+          f"{self._benchmark}.PROBES must contain classes only, "
+          f"but got {type(benchmark_probe_cls)}")
+      assert issubclass(
+          benchmark_probe_cls,
+          Probe), (f"Expected Probe class but got {type(benchmark_probe_cls)}")
+      assert issubclass(benchmark_probe_cls, BenchmarkProbeMixin), (
+          f"{benchmark_probe_cls} should be BenchmarkProbeMixin "
+          f"for {type(self._benchmark)}.PROBES")
+      assert benchmark_probe_cls.NAME, (
+          f"Expected probe.NAME for {benchmark_probe_cls}")
+      self.attach_probe(benchmark_probe_cls(benchmark=self._benchmark))
 
   def _validate_browsers(self) -> None:
     assert self.browsers, "No browsers provided"

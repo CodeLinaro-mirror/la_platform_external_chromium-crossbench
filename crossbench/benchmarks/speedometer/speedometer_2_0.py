@@ -19,7 +19,6 @@ class Speedometer20Probe(SpeedometerProbe):
 class Speedometer20Story(Speedometer2Story):
   NAME: str = "speedometer_2.0"
   URL: str = "https://browserbench.org/Speedometer2.0"
-  PROBES: ProbeClsTupleT = (Speedometer20Probe,)
 
 
 class Speedometer20Benchmark(SpeedometerBenchmark):
@@ -28,6 +27,7 @@ class Speedometer20Benchmark(SpeedometerBenchmark):
   """
   NAME: str = "speedometer_2.0"
   DEFAULT_STORY_CLS = Speedometer20Story
+  PROBES: ProbeClsTupleT = (Speedometer20Probe,)
 
   @classmethod
   def version(cls) -> Tuple[int, ...]:

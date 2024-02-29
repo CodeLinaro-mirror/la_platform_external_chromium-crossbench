@@ -11,6 +11,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import crossbench.probes.helper as probes_helper
+from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.helper import update_url_query
 from crossbench.probes import metric
@@ -32,12 +33,11 @@ def _probe_skip_data_segments(path: Tuple[str, ...]) -> Optional[str]:
   return "/".join(path)
 
 
-class MotionMark1Probe(JsonResultProbe, abc.ABC):
+class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   """
   MotionMark-specific Probe.
   Extracts all MotionMark times and scores.
   """
-  IS_GENERAL_PURPOSE = False
   JS = """
     return window.benchmarkRunnerClient.results.results;
   """
