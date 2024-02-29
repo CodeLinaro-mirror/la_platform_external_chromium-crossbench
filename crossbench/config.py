@@ -388,9 +388,12 @@ class ConfigObject(abc.ABC):
     if isinstance(value, pathlib.Path):
       return cls.load_path(value)
     if isinstance(value, str):
-      maybe_path = pathlib.Path(value)
-      if cls.is_valid_path(maybe_path):
-        return cls.load_path(maybe_path)
+      try:
+        maybe_path = pathlib.Path(value)
+        if cls.is_valid_path(maybe_path):
+          return cls.load_path(maybe_path)
+      except OSError:
+        pass
       return cls.loads(value)
     raise ConfigError(f"Invalid config input type {value}")
 
