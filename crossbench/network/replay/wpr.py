@@ -41,6 +41,10 @@ class WprReplayNetwork(ReplayNetwork):
     if not browser.attributes.is_chromium_based:
       raise ValueError(
           "Only chromium-based browsers are supported for wpr replay.")
+    if browser.platform.is_remote:
+      self._setup_remote_port_forwarding(browser)
+    # TODO: make ports configurable.
+    # TODO: use traffic shaper settings.
     return Flags({
         "--host-resolver-rules":
             (f"MAP *:80 127.0.0.1:{self._server.http_port},"
@@ -51,6 +55,16 @@ class WprReplayNetwork(ReplayNetwork):
             ("PhrPvGIaAMmd29hj8BCZOq096yj7uMpRNHpn5PDxI6I=,"
              "2HcXCSKKJS0lEXLQEWhpHUfGuojiU0tiT5gOF9LP6IQ=")
     })
+
+  def _setup_remote_port_forwarding(self, browser: Browser) -> None:
+    logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
+                 browser.platform)
+    platform = browser.platform
+    # TODO: create port-forwarder service that is shut down properly.
+    # TODO: make ports configurable
+    platform.reverse_port_forward(8080, 8080)
+    platform.reverse_port_forward(8081, 8081)
+
 
   @contextlib.contextmanager
   def _open_replay_sever(self, session: BrowserSessionRunGroup):

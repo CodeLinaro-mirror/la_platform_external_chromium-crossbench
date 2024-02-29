@@ -225,6 +225,9 @@ class Adb:
   def devices(self) -> Dict[str, Dict[str, str]]:
     return adb_devices(self._host_platform, self._adb_bin)
 
+  def reverse(self, remote: int, local: int, protocol: str = "tcp") -> None:
+    self._adb("reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
+
   def pull(self, device_src_path: pathlib.Path,
            local_dest_path: pathlib.Path) -> None:
     self._adb("pull", device_src_path, local_dest_path)
@@ -470,6 +473,9 @@ class AndroidAdbPlatform(PosixPlatform):
         stdin=stdin,
         env=env,
         quiet=quiet)
+
+  def reverse_port_forward(self, remote_port: int, local_port: int) -> None:
+    self.adb.reverse(remote_port, local_port, protocol="tcp")
 
   def rsync(self, from_path: pathlib.Path,
             to_path: pathlib.Path) -> pathlib.Path:

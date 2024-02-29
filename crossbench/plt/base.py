@@ -229,7 +229,7 @@ class Platform(abc.ABC):
     return self._search_executable(name, macos, win, linux, self.search_binary)
 
   def search_app(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    """Look up a application bundle (macos) or binary (all other platforms) in 
+    """Look up a application bundle (macos) or binary (all other platforms) in
     the common search paths.
     """
     return self.search_binary(app_or_bin)
@@ -322,6 +322,11 @@ class Platform(abc.ABC):
   def default_tmp_dir(self) -> pathlib.Path:
     assert self.is_local, "Unsupported operation on remote platform"
     return pathlib.Path(tempfile.gettempdir())
+
+  def reverse_port_forward(self, remote_port: int, local_port: int) -> None:
+    if remote_port != local_port:
+      raise ValueError("Cannot forward a remote port on a local platform.")
+    assert self.is_local, "Unsupported operation on remote platform"
 
   def cat(self, file: Union[str, pathlib.Path], encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""
