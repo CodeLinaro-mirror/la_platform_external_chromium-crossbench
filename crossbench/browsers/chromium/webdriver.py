@@ -318,15 +318,15 @@ class ChromeDriverFinder:
     return self.driver_path
 
   def _download(self) -> None:
-    major_version = self.browser.major_version
+    milestone = self.browser.major_version
     logging.info("CHROMEDRIVER Downloading from %s v%s", self.browser.type_name,
-                 major_version)
+                 milestone)
     url: Optional[str] = None
     listing_url: Optional[str] = None
-    if major_version >= 115:
-      listing_url, url = self._get_chrome_for_testing_url(major_version)
+    if milestone >= self.CFT_MIN_MILESTONE:
+      listing_url, url = self._get_cft_url(milestone)
     if not url:
-      listing_url, url = self._get_pre_115_stable_url(major_version)
+      listing_url, url = self._get_pre_115_stable_url(milestone)
       if not url:
         listing_url, url = self._get_canary_url()
 
@@ -335,8 +335,8 @@ class ChromeDriverFinder:
           "Please manually compile/download chromedriver for "
           f"{self.browser.type_name} {self.browser.version}")
 
-    logging.info("CHROMEDRIVER Downloading for version %s: %s", major_version,
-                 listing_url or url)
+    logging.info("CHROMEDRIVER Downloading M%s: %s", milestone, listing_url or
+                 url)
     with tempfile.TemporaryDirectory() as tmp_dir:
       if ".zip" not in url:
         maybe_driver = pathlib.Path(tmp_dir) / "chromedriver"
@@ -367,12 +367,13 @@ class ChromeDriverFinder:
       shutil.move(os.fspath(maybe_driver), self.driver_path)
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
-  CHROME_FOR_TESTING_DOWNLOAD_URL: str = (
-      "https://googlechromelabs.github.io/chrome-for-testing/{version}.json")
-  CHROME_FOR_TESTING_MILESTONE_URL: str = (
-      "https://googlechromelabs.github.io/"
-      "chrome-for-testing/latest-versions-per-milestone-with-downloads.json")
-  CHROME_FOR_TESTING_PLATFORM: Final[Dict[Tuple[str, str], str]] = {
+  # Using CFT as abbreviation for Chrome For Testing here.
+  CFT_MIN_MILESTONE = 115
+  CFT_BASE_URL: str = "https://googlechromelabs.github.io/chrome-for-testing"
+  CFT_VERSION_URL: str = f"{CFT_BASE_URL}/{{version}}.json"
+  CFT_LATEST_URL: str = f"{CFT_BASE_URL}/LATEST_RELEASE_{{major}}"
+
+  CFT_PLATFORM: Final[Dict[Tuple[str, str], str]] = {
       ("linux", "x64"): "linux64",
       ("macos", "x64"): "mac-x64",
       ("macos", "arm64"): "mac-arm64",
@@ -380,47 +381,56 @@ class ChromeDriverFinder:
       ("win", "x64"): "win64"
   }
 
-  def _get_chrome_for_testing_url(
-      self, major_version: int) -> Tuple[str, Optional[str]]:
+  def _get_cft_url(self, milestone: int) -> Tuple[str, Optional[str]]:
     logging.debug("ChromeDriverFinder: Looking up chrome-for-testing version.")
-    platform_name: Optional[str] = self.CHROME_FOR_TESTING_PLATFORM.get(
-        self.host_platform.key)
+    platform_name: Optional[str] = self.CFT_PLATFORM.get(self.host_platform.key)
     if not platform_name:
       raise DriverNotFoundError(
           f"Unsupported platform {self.host_platform.key} for chromedriver.")
-    listing_url, version_data = self._get_chrome_for_testing_version_data(
-        platform_name, major_version)
+    listing_url, version_data = self._get_cft_version_data(milestone)
     download_url: Optional[str] = None
     if version_data:
-      download_url = self._get_chrome_for_testing_download_url(
-          version_data, platform_name)
+      download_url = self._get_cft_driver_download_url(version_data,
+                                                       platform_name)
     return (listing_url, download_url)
 
-  def _get_chrome_for_testing_version_data(
-      self, platform_name: str,
-      major_version: int) -> Tuple[str, Optional[Dict]]:
-    version_url = self.CHROME_FOR_TESTING_DOWNLOAD_URL.format(
-        platform=platform_name, version=self.browser.version)
+  def _get_cft_version_data(self, milestone: int) -> Tuple[str, Optional[Dict]]:
+    logging.debug("ChromeDriverFinder: Trying direct download url")
+    listing_url, data = self._get_cft_precise_version_data(self.browser.version)
+    if data:
+      return listing_url, data
+    logging.debug(
+        "ChromeDriverFinder: Invalid precise version url %s, "
+        "using M%s", listing_url, milestone)
+    return self._get_ctf_milestone_data(milestone)
+
+  def _get_cft_precise_version_data(self,
+                                    version: str) -> Tuple[str, Optional[Dict]]:
+    version_url = self.CFT_VERSION_URL.format(version=version)
     try:
-      logging.debug("ChromeDriverFinder: Trying direct download url")
       with helper.urlopen(version_url) as response:
         version_data = json.loads(response.read().decode("utf-8"))
         return (version_url, version_data)
     except urllib.error.HTTPError as e:
       logging.debug("ChromeDriverFinder: "
-                    "precise version download failed %s", e)
+                    "Precise version download failed %s", e)
+      return (version_url, None)
 
-    logging.debug(
-        "ChromeDriverFinder: Invalid precise version url %s, "
-        "using milestone %s", version_url, major_version)
-    listing_url = self.CHROME_FOR_TESTING_MILESTONE_URL
-    with helper.urlopen(listing_url) as response:
-      milestones: Dict = json.loads(
-          response.read().decode("utf-8"))["milestones"]
-    return listing_url, milestones.get(str(major_version))
+  def _get_ctf_milestone_data(self,
+                              milestone: int) -> Tuple[str, Optional[Dict]]:
+    latest_version_url = self.CFT_LATEST_URL.format(major=milestone)
+    try:
+      with helper.urlopen(latest_version_url) as response:
+        alternative_version = response.read().decode("utf-8").strip()
+        logging.debug(
+            "ChromeDriverFinder: Using alternative version %s "
+            "for M%s", alternative_version, milestone)
+        return self._get_cft_precise_version_data(alternative_version)
+    except urllib.error.HTTPError:
+      return (self.CFT_BASE_URL, None)
 
-  def _get_chrome_for_testing_download_url(self, version_data,
-                                           platform_name) -> Optional[str]:
+  def _get_cft_driver_download_url(self, version_data,
+                                   platform_name) -> Optional[str]:
     if all_downloads := version_data.get("downloads"):
       driver_downloads: Dict = all_downloads.get("chromedriver", [])
       for download in driver_downloads:
@@ -431,12 +441,13 @@ class ChromeDriverFinder:
   PRE_115_STABLE_URL: str = "http://chromedriver.storage.googleapis.com"
 
   def _get_pre_115_stable_url(self,
-                              major_version: int) -> Tuple[str, Optional[str]]:
-    logging.debug("ChromeDriverFinder: Looking upe old-style stable version.")
-    assert major_version < 115
+                              milestone: int) -> Tuple[str, Optional[str]]:
+    logging.debug(
+        "ChromeDriverFinder: "
+        "Looking upe old-style stable version M%s", milestone)
+    assert milestone < self.CFT_MIN_MILESTONE
     listing_url = f"{self.PRE_115_STABLE_URL}/index.html"
-    driver_version: Optional[str] = self._get_pre_115_driver_version(
-        major_version)
+    driver_version: Optional[str] = self._get_pre_115_driver_version(milestone)
     if not driver_version:
       return listing_url, None
     if self.host_platform.is_linux:
@@ -462,10 +473,10 @@ class ChromeDriverFinder:
            f"chromedriver_{arch_suffix}.zip")
     return listing_url, url
 
-  def _get_pre_115_driver_version(self, major_version) -> Optional[str]:
-    if major_version < 70:
-      return self._get_pre_70_driver_version(major_version)
-    url = f"{self.PRE_115_STABLE_URL}/LATEST_RELEASE_{major_version}"
+  def _get_pre_115_driver_version(self, milestone) -> Optional[str]:
+    if milestone < 70:
+      return self._get_pre_70_driver_version(milestone)
+    url = f"{self.PRE_115_STABLE_URL}/LATEST_RELEASE_{milestone}"
     try:
       with helper.urlopen(url) as response:
         return response.read().decode("utf-8")
@@ -476,7 +487,7 @@ class ChromeDriverFinder:
                     e)
     return None
 
-  def _get_pre_70_driver_version(self, major_version) -> Optional[str]:
+  def _get_pre_70_driver_version(self, milestone) -> Optional[str]:
     with helper.urlopen(
         f"{self.PRE_115_STABLE_URL}/2.46/notes.txt") as response:
       lines = response.read().decode("utf-8").splitlines()
@@ -484,7 +495,7 @@ class ChromeDriverFinder:
       if not line.startswith("---"):
         continue
       [min_version, max_version] = map(int, re.findall(r"\d+", lines[i + 1]))
-      if min_version <= major_version <= max_version:
+      if min_version <= milestone <= max_version:
         match = re.search(r"\d\.\d+", line)
         if not match:
           raise DriverNotFoundError(f"Could not parse version number: {line}")
@@ -530,15 +541,16 @@ class ChromeDriverFinder:
           f"Unsupported platform={self.platform}, key={self.host_platform.key}")
     dash_platform = properties["dash_platform"]
     dash_channel = properties.get("dash_channel", "canary")
-    # TODO: use milestone filtering once available
     # Limit should be > len(canary_versions) so we also get potentially
     # the latest dev version (only beta / stable have official driver binaries).
     dash_limit = properties.get("dash_limit", 100)
-    url = helper.update_url_query(self.CHROMIUM_DASH_URL, {
-        "platform": dash_platform,
-        "channel": dash_channel,
-        "num": str(dash_limit),
-    })
+    url = helper.update_url_query(
+        self.CHROMIUM_DASH_URL, {
+            "platform": dash_platform,
+            "channel": dash_channel,
+            "milestone": str(self.browser.major_version),
+            "num": str(dash_limit),
+        })
     chromium_base_position = 0
     with helper.urlopen(url) as response:
       version_infos = list(json.loads(response.read().decode("utf-8")))

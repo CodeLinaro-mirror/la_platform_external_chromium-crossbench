@@ -79,7 +79,19 @@ def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
   driver_dir.rmdir()
 
 
-def test_download_major_version(output_dir, archive_dir) -> None:
+@pytest.mark.skipif(
+    not plt.PLATFORM.is_linux, reason="No canary versions on linux.")
+def test_download_pre_115_canary(output_dir, archive_dir) -> None:
+  assert not list(output_dir.iterdir())
+  _load_and_check_version(
+      output_dir,
+      archive_dir,
+      "chrome-114.0.5735.2",
+      "114.0.5735.2",
+      expect_archive=False)
+
+
+def test_download_major_version_milestone(output_dir, archive_dir) -> None:
   assert not list(output_dir.iterdir())
   _load_and_check_version(
       output_dir, archive_dir, "chrome-M111", "111", expect_archive=False)
@@ -123,7 +135,8 @@ def test_download_major_version_chrome_for_testing(output_dir,
       output_dir, archive_dir, "chrome-M115", "115", expect_archive=False)
 
 
-def test_download_specific_version(output_dir, archive_dir) -> None:
+def test_download_specific_version_pre_115_stable(output_dir,
+                                                  archive_dir) -> None:
   assert not list(output_dir.iterdir())
   version_str = "111.0.5563.146"
   _load_and_check_version(output_dir, archive_dir, f"chrome-{version_str}",
