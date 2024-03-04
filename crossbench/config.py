@@ -288,6 +288,8 @@ class _ConfigArgParser:
 
   def parse_list_data(self, data: Any,
                       depending_kwargs: Dict[str, Any]) -> List[Any]:
+    if isinstance(data, str):
+      data = data.split(",")
     if not isinstance(data, (list, tuple)):
       raise ValueError(f"{self.cls_name}.{self.name}: "
                        f"Expected sequence got {type(data)}")
