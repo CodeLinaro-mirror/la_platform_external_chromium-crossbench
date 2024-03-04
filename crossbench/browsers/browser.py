@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 import pathlib
+import shlex
 import shutil
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
@@ -236,6 +237,17 @@ class Browser(abc.ABC):
   @abc.abstractmethod
   def start(self, session: BrowserSessionRunGroup) -> None:
     pass
+
+  def _log_browser_start(self,
+                         args: Tuple[str, ...],
+                         driver_path: Optional[pathlib.Path] = None) -> None:
+    logging.info("STARTING BROWSER Binary:  %s", self.path)
+    if driver_path:
+      logging.info("STARTING BROWSER Driver:  %s", driver_path)
+    logging.info("STARTING BROWSER Network: %s", self.network)
+    logging.info("STARTING BROWSER Probes:  %s",
+                 ", ".join(p.NAME for p in self.probes))
+    logging.info("STARTING BROWSER Flags:   %s", shlex.join(args))
 
   def _get_browser_flags_for_session(
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:

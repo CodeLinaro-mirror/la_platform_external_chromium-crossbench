@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import pathlib
-import shlex
 import shutil
 import stat
 import tempfile
@@ -54,13 +53,10 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     for arg in args:
       options.add_argument(arg)
     options.binary_location = str(self.path)
-
     session.setup_selenium_options(options)
 
-    logging.info("STARTING BROWSER: %s", self.path)
-    logging.info("STARTING BROWSER:  driver: %s", driver_path)
-    logging.info("STARTING BROWSER: network:  %s", self.network)
-    logging.info("STARTING BROWSER:    args: %s", shlex.join(args))
+    self._log_browser_start(args, driver_path)
+
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(

@@ -126,6 +126,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     assert not self._is_running
     # Start process directly
     startup_flags = self._get_browser_flags_for_session(session)
+    self._log_browser_start(startup_flags)
     self._browser_process = self.platform.popen(
         self.path, *startup_flags, shell=False)
     if self._browser_process.poll():

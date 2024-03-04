@@ -11,7 +11,6 @@ import logging
 import os
 import pathlib
 import re
-import shlex
 import shutil
 import stat
 import tempfile
@@ -85,10 +84,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     assert self.log_file
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
-    logging.info("STARTING BROWSER: %s", self.path)
-    logging.info("STARTING BROWSER:  driver: %s", driver_path)
-    logging.info("STARTING BROWSER: network:  %s", self.network)
-    logging.info("STARTING BROWSER:    args: %s", shlex.join(args))
+
+    self._log_browser_start(args, driver_path)
+
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=str(driver_path),
