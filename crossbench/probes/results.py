@@ -9,10 +9,11 @@ import logging
 import pathlib
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
 
+from crossbench.probes.helper import INTERNAL_NAME_PREFIX
+
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
   from crossbench.runner.result_origin import ResultOrigin
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -252,7 +253,8 @@ class ProbeResultDict:
         data[probe_name] = str(results)
       else:
         if results.is_empty:
-          logging.debug("probe=%s did not produce any data.", probe_name)
+          if not probe_name.startswith(INTERNAL_NAME_PREFIX):
+            logging.debug("probe=%s did not produce any data.", probe_name)
           data[probe_name] = None
         else:
           data[probe_name] = results.to_json()

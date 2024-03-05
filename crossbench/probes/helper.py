@@ -4,13 +4,12 @@
 
 from __future__ import annotations
 
-import abc
 import csv
 import pathlib
-from typing import (Any, Callable, Dict, Iterator, List, Optional, Sequence,
-                    Set, Tuple)
+from typing import (Any, Callable, Dict, Final, List, Optional, Sequence, Set,
+                    Tuple)
 
-from crossbench import plt
+INTERNAL_NAME_PREFIX: Final[str] = "cb."
 
 KeyFnType = Callable[[Tuple[str, ...]], Optional[str]]
 
