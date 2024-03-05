@@ -36,6 +36,7 @@ NETWORK_PRESETS: str = "|".join(
 SHORT_FORM_RE = re.compile(r"((?P<driver>\w{3,}):)??"
                            r"(?P<path>([A-Z]:[/\\])?[^:]+)"
                            f"(:(?P<network>{NETWORK_PRESETS}))?")
+ANDROID_PACKAGE_RE = re.compile(r"[a-z]+(\.[a-z]+){2,}")
 
 @dataclasses.dataclass(frozen=True)
 class BrowserConfig(ConfigObject):
@@ -111,6 +112,9 @@ class BrowserConfig(ConfigObject):
         return maybe_path_or_identifier
       if FirefoxDownloader.is_valid(maybe_path_or_identifier, plt.PLATFORM):
         return maybe_path_or_identifier
+      if driver_type == BrowserDriverType.ANDROID:
+        if ANDROID_PACKAGE_RE.fullmatch(maybe_path_or_identifier):
+          return pathlib.Path(maybe_path_or_identifier)
     if not path:
       path = cli_helper.try_resolve_existing_path(maybe_path_or_identifier)
       if not path:

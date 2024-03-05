@@ -333,6 +333,16 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
+        BrowserConfig.parse("android:com.chrome.beta"),
+        BrowserConfig(
+            pathlib.Path("com.chrome.beta"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
         BrowserConfig.parse("android:chrome-beta"),
         BrowserConfig(
             pathlib.Path("com.chrome.beta"),
@@ -385,6 +395,14 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             pathlib.Path("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
+
+  def test_parse_invalid_android_package(self):
+    self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
+    with self.assertRaises(argparse.ArgumentTypeError):
+      BrowserConfig.parse("")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse("adb:com.Foo .bar. com")
+    self.assertIn("com.Foo .bar. com", str(cm.exception))
 
   def test_parse_fail_android_browser_string_not_dict(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
