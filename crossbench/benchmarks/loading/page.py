@@ -147,6 +147,7 @@ class InteractivePage(Page):
 
 
 PAGE_LIST = (
+    LivePage("blank", "about:blank", dt.timedelta(seconds=1)),
     LivePage("amazon", "https://www.amazon.de/s?k=heizkissen",
              dt.timedelta(seconds=5)),
     LivePage("bing", "https://www.bing.com/images/search?q=not+a+squirrel",
