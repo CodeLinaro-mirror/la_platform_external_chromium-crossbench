@@ -159,7 +159,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     kwargs.update({
         "platform": run.runner_platform,
         "log_path": self._wprgo_log,
-        "result_path": self.result_path,
+        "archive_path": self.result_path,
     })
     self._recorder = WprRecorder(**kwargs)
 

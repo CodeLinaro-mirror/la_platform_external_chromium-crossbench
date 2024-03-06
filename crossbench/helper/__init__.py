@@ -118,10 +118,10 @@ def get_file_size(file: pathlib.Path, digits: int = 2) -> str:
 # =============================================================================
 
 
-def urlopen(url: str):
+def urlopen(url: str, timeout: Union[int, float] = 10):
   try:
     logging.debug("Opening url: %s", url)
-    return urllib.request.urlopen(url)
+    return urllib.request.urlopen(url, timeout=timeout)
   except (urllib.error.HTTPError, urllib.error.URLError) as e:
     logging.info("Could not load url=%s", url)
     raise e

@@ -9,6 +9,7 @@ import atexit
 import logging
 import pathlib
 import re
+import shlex
 import subprocess
 import time
 from typing import Iterable, Optional, TextIO, Tuple
@@ -23,6 +24,8 @@ _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<port>\d+)")
 
 
+class WprStartupError(RuntimeError):
+  pass
 
 class WprBase(abc.ABC):
 
@@ -55,6 +58,7 @@ class WprBase(abc.ABC):
                        f"but got twice: {http_port}")
     self._http_port = http_port
     self._https_port = https_port
+    self._num_parsed_ports: int = 0
 
     self._host: str = host
 
@@ -123,16 +127,18 @@ class WprBase(abc.ABC):
         "run",
         self._bin_path,
     ) + self.cmd
-    logging.info("STARTING WPR %s", go_cmd)
+    logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
+    self._num_parsed_ports = 0
     try:
       if self._log_path:
         self._log_file = self._log_path.open("w")
       with helper.ChangeCWD(self._bin_path.parent):
+        logging.debug("Logging to %s", self._log_path)
         self._process = self._platform.popen(
             *go_cmd, stdout=self._log_file, stderr=self._log_file)
 
       if not self._process:
-        raise RuntimeError(f"Could not start {type(self).__name__}")
+        raise WprStartupError(f"Could not start {type(self).__name__}")
 
       atexit.register(self.stop)
       logging.info("WPR: waiting for startup")
@@ -141,17 +147,18 @@ class WprBase(abc.ABC):
 
     except BaseException as e:
       logging.debug("WPR got startup errors: %s %s", type(e), e)
-      self.stop()
-      self._log_startup_error()
+      force_shutdown = isinstance(e, WprStartupError)
+      self.stop(force_shutdown)
+      self._handle_startup_error()
       raise
 
-  def _log_startup_error(self):
+  def _handle_startup_error(self):
     logging.error("WPR: Could not start %s", type(self).__name__)
     if not self._log_path or not self._log_path.exists():
       return
     logging.error("WPR: Check log files %s", self._log_path)
     try:
-      with self._log_path.open() as f:
+      with self._log_path.open("r") as f:
         log_lines = list(f.readlines())
         logging.error("  %s", "  ".join(log_lines[-4:]))
     except Exception as e:
@@ -160,6 +167,8 @@ class WprBase(abc.ABC):
   def _wait_for_startup(self) -> None:
     assert self._process, "process not started"
     assert self._log_path, "missing log_path"
+    assert self._num_parsed_ports == 0, "WPR did not shut down correctly."
+    time.sleep(1)
     with self._log_path.open("r") as log_file:
       while self._process.poll() is None:
         line = log_file.readline()
@@ -171,33 +180,40 @@ class WprBase(abc.ABC):
     if self._process.poll():
       self._raise_startup_failure()
     time.sleep(0.1)
-    with self._open_wpr_cmd_url("generate-200") as r:
-      if r.status != 200:
-        self._raise_startup_failure()
+    try:
+      with self._open_wpr_cmd_url("generate-200") as r:
+        if r.status == 200:
+          return
+    except Exception as e:
+      logging.debug("Could not query wpr server: %s", e)
+    self._raise_startup_failure()
 
   def _raise_startup_failure(self) -> None:
-    raise ValueError("Could not start wpr.go.\n"
-                     f"See log for more details: {self._log_path}")
+    raise WprStartupError("Could not start wpr.go.\n"
+                          f"See log for more details: {self._log_path}")
 
   def _parse_wpr_log_line(self, line: str) -> bool:
     if "Failed to start server on" in line:
       logging.error(line)
-      raise ValueError(f"Could not start wpr.go server, address in use: {line}")
+      raise WprStartupError(
+          f"Could not start wpr.go server, address in use: {line}")
     line = line.strip()
     if match := _WPR_PORT_RE.match(line):
       protocol = match["protocol"].lower()
       port = int(match["port"])
       if protocol == "http":
         self._http_port = port
+        self._num_parsed_ports += 1
       elif protocol == "https":
         self._https_port = port
+        self._num_parsed_ports += 1
       else:
         logging.error("WPR: got invalid protocol: %s", line)
       self._host = match["host"]
       if not self._host:
-        raise ValueError(f"WPR: could not parse host from: {line}")
+        raise WprStartupError(f"WPR: could not parse host from: {line}")
 
-    if self._http_port and self._https_port:
+    if self._num_parsed_ports == 2 and self._http_port and self._https_port:
       logging.debug("WPR: https_port=%s http_port=%s", self._http_port,
                     self._https_port)
       return True
@@ -205,16 +221,16 @@ class WprBase(abc.ABC):
 
   def _open_wpr_cmd_url(self, cmd: str):
     test_url = f"http://{self._host}:{self._http_port}/web-page-replay-{cmd}"
-    return helper.urlopen(test_url)
+    return helper.urlopen(test_url, timeout=1)
 
-  def stop(self) -> None:
-    if self._process:
+  def stop(self, force_shutdown: bool = False) -> None:
+    if self._process and not force_shutdown:
       self._shut_down()
     if self._log_file:
       self._log_file.close()
       self._log_file = None
     if self._process:
-      helper.wait_and_kill(self._process, timeout=5)
+      helper.wait_and_kill(self._process, timeout=1)
     self._process = None
 
   def _shut_down(self) -> None:
