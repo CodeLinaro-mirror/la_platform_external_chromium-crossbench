@@ -223,8 +223,8 @@ SPEEDOMETER_3_STORY_DATA = {
 class Speedometer30Story(SpeedometerStory):
   __doc__ = SpeedometerStory.__doc__
   NAME: str = "speedometer_3.0"
-  # TODO: Update once public version is available
-  URL: str = "https://sp3-alpha-testing.netlify.app/"
+  URL: str = "https://chromium-workloads.web.app/speedometer/v3.0/"
+  URL_OFFICIAL: str = "https://browserbench.org/Speedometer3.0/"
   URL_LOCAL: str = "http://127.0.0.1:7000"
   SUBSTORIES: Tuple[str, ...] = tuple(SPEEDOMETER_3_STORY_DATA.keys())
 

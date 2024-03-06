@@ -19,6 +19,7 @@ PressBenchmarkStoryT = TypeVar(
 class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   NAME: str = ""
   URL: str = ""
+  URL_OFFICIAL: str = ""
   URL_LOCAL: str = ""
   SUBSTORIES: Tuple[str, ...] = ()
 
@@ -82,6 +83,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     assert self.SUBSTORIES, f"{cls}.SUBSTORIES is not set."
     assert self.NAME is not None, f"{cls}.NAME is not set."
     self._verify_url(self.URL, "URL")
+    self._verify_url(self.URL_OFFICIAL, "URL_OFFICIAL")
     self._verify_url(self.URL_LOCAL, "URL_LOCAL")
     assert substories, f"No substories provided for {cls}"
     self._substories = substories

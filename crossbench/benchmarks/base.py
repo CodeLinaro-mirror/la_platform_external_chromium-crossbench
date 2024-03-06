@@ -397,23 +397,36 @@ class PressBenchmark(SubStoryBenchmark):
     parser = super().add_cli_parser(subparsers, aliases)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     benchmark_url_group = parser.add_mutually_exclusive_group()
-    default_live_url = cls.DEFAULT_STORY_CLS.URL
-    default_local_url = cls.DEFAULT_STORY_CLS.URL_LOCAL
+    live_url = cls.DEFAULT_STORY_CLS.URL
+    local_url = cls.DEFAULT_STORY_CLS.URL_LOCAL
+    official_url = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
     benchmark_url_group.add_argument(
         "--live",
+        "--live-url",
+        "--browser-ben",
         dest="custom_benchmark_url",
         const=None,
         action="store_const",
-        help=f"Use live/online benchmark url ({default_live_url}).")
+        help=(f"Use chrome live benchmark url ({live_url}) "
+              "on https://browserben.ch."))
+    benchmark_url_group.add_argument(
+        "--official",
+        "--official-url",
+        dest="custom_benchmark_url",
+        const=official_url,
+        action="store_const",
+        help=(f"Use officially hosted live/online benchmark url "
+              f"({official_url})."))
     benchmark_url_group.add_argument(
         "--local",
+        "--local-url",
         "--url",
         "--custom-benchmark-url",
         type=cli_helper.parse_httpx_url_str,
         nargs="?",
         dest="custom_benchmark_url",
-        const=default_local_url,
-        help=(f"Use custom or locally (default={default_local_url}) "
+        const=local_url,
+        help=(f"Use custom or locally (default={local_url}) "
               "hosted benchmark url."))
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
     return parser
@@ -429,6 +442,7 @@ class PressBenchmark(SubStoryBenchmark):
     data = super().describe()
     assert issubclass(cls.DEFAULT_STORY_CLS, PressBenchmarkStory)
     data["url"] = cls.DEFAULT_STORY_CLS.URL
+    data["url-official"] = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
     data["url-local"] = cls.DEFAULT_STORY_CLS.URL_LOCAL
     return data
 

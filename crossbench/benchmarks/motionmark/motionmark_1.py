@@ -62,7 +62,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
 
 
 class MotionMark1Story(PressBenchmarkStory):
-  URL_LOCAL = "http://localhost:8000/"
+  URL_LOCAL: str = "http://localhost:8000/"
   ALL_STORIES = {
       "MotionMark": (
           "Multiply",

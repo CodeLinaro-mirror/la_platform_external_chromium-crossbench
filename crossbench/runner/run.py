@@ -222,6 +222,7 @@ class Run(ResultOrigin):
     self._cool_down(is_dry_run)
     with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       self._probe_context_manager.setup(self.probes, is_dry_run)
+    self._log_setup()
 
   def setup_selenium_options(self, options: ArgOptions):
     # TODO: move explicitly to session.

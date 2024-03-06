@@ -18,7 +18,8 @@ class MotionMark13Probe(MotionMark1Probe):
 
 class MotionMark13Story(MotionMark1Story):
   NAME = "motionmark_1.3"
-  URL = "https://browserbench.org/MotionMark1.3"
+  URL: str = "https://chromium-workloads.web.app/motionmark/v1.3/"
+  URL_OFFICIAL: str = "https://browserbench.org/MotionMark1.3/"
   DEVELOPER_READY_JS: str = (
       "return !(document.querySelector('#frame-rate-detection span'));")
   READY_JS: str = (

@@ -18,7 +18,8 @@ class Speedometer21Probe(SpeedometerProbe):
 
 class Speedometer21Story(Speedometer2Story):
   NAME: str = "speedometer_2.1"
-  URL: str = "https://browserbench.org/Speedometer2.1/"
+  URL: str = "https://chromium-workloads.web.app/speedometer/v2.1/"
+  URL_OFFICIAL: str = "https://browserbench.org/Speedometer2.1/"
 
 
 class Speedometer21Benchmark(SpeedometerBenchmark):

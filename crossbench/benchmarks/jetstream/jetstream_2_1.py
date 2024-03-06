@@ -20,7 +20,8 @@ class JetStream21Probe(JetStream2Probe):
 class JetStream21Story(JetStream2Story):
   __doc__ = JetStream2Story.__doc__
   NAME: str = "jetstream_2.1"
-  URL: str = "https://browserbench.org/JetStream2.1/"
+  URL: str = "https://chromium-workloads.web.app/jetstream/v2.1/"
+  URL_OFFICIAL: str = "https://browserbench.org/JetStream2.1/"
 
 
 class JetStream21Benchmark(JetStream2Benchmark):
