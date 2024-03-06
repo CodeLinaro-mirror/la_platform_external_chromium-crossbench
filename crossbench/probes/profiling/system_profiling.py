@@ -22,6 +22,7 @@ from crossbench.compat import StrEnumWithHelp
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, ResultLocation
 from crossbench.probes.results import ProbeResult
 from crossbench.probes.v8.log import V8LogProbe
+from crossbench.plt.base import ListCmdArgsT
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -53,6 +54,7 @@ class ProfilingProbe(Probe):
   Implementation:
   - Uses linux-perf on linux platforms (per browser/renderer process)
   - Uses xctrace on MacOS (currently only system-wide)
+  - Uses simpleperf on Android (per app, or system-wide)
 
   For linux-based Chromium browsers it also injects JS stack samples with names
   from V8. For Googlers it additionally can auto-upload symbolized profiles to
@@ -72,13 +74,41 @@ class ProfilingProbe(Probe):
         "js",
         type=bool,
         default=True,
-        help="Chrome-only: expose JS function names to the native profiler")
+        help=("Chrome-on-Linux-only: expose JS function names to the native "
+              "profiler"))
     parser.add_argument(
         "browser_process",
         type=bool,
         default=False,
-        help=("Chrome-only: also profile the browser process, "
+        help=("Chrome-on-Linux-only: also profile the browser process, "
               "(as opposed to only renderer processes)"))
+    parser.add_argument(
+        "browser_app_only",
+        type=bool,
+        default=True,
+        help=(
+            "Chrome-on-Android-only: Profile the processes of the browser "
+            "app only. On non-rooted devices, the app must be set debuggable. "
+            "If `browser_app_only` is False, system-wide profiling is "
+            "implicitly enabled."))
+    parser.add_argument(
+        "frame_pointers",
+        type=bool,
+        default=True,
+        help=(
+            "Chrome-on-Android-only: Use frame pointer unwinding, as opposed to "
+            "DWARF. See "
+            "https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md "
+            "for more details and comparison between these two options. If "
+            "`frame_pointers` is False, DWARF-based unwinding is used."))
+    parser.add_argument(
+        "start_profiling_after_setup",
+        type=bool,
+        default=False,
+        help=(
+            "Chrome-on-Android-only: Start profiling only after browser has "
+            "been started and the benchmark story has been setup. Enable this "
+            "if browser startup does not need to be profiled."))
     parser.add_argument(
         "spare_renderer_process",
         type=bool,
@@ -116,7 +146,10 @@ class ProfilingProbe(Probe):
                pprof: bool = True,
                cleanup: CleanupMode = CleanupMode.AUTO,
                browser_process: bool = False,
-               spare_renderer_process: bool = False):
+               spare_renderer_process: bool = False,
+               browser_app_only: bool = True,
+               frame_pointers: bool = True,
+               start_profiling_after_setup: bool = False):
     super().__init__()
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
@@ -126,6 +159,9 @@ class ProfilingProbe(Probe):
     self._expose_v8_interpreted_frames: bool = v8_interpreted_frames
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
+    self._browser_app_only: bool = browser_app_only
+    self._frame_pointers: bool = frame_pointers
+    self._start_profiling_after_setup: bool = start_profiling_after_setup
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -136,10 +172,13 @@ class ProfilingProbe(Probe):
         ("cleanup", self._cleanup_mode),
         ("browser_process", self._sample_browser_process),
         ("spare_renderer_process", self._spare_renderer_process),
+        ("browser_app_only", self._browser_app_only),
+        ("frame_pointers", self._frame_pointers),
+        ("start_profiling_after_setup", self._start_profiling_after_setup),
     )
 
   def is_compatible(self, browser: Browser) -> bool:
-    if browser.platform.is_linux:
+    if browser.platform.is_linux or browser.platform.is_android:
       return browser.attributes.is_chromium_based
     if browser.platform.is_macos:
       return True
@@ -161,16 +200,27 @@ class ProfilingProbe(Probe):
   def cleanup_mode(self) -> CleanupMode:
     return self._cleanup_mode
 
+  @property
+  def browser_app_only(self) -> bool:
+    return self._browser_app_only
+
+  @property
+  def frame_pointers(self) -> bool:
+    return self._frame_pointers
+
+  @property
+  def start_profiling_after_setup(self) -> bool:
+    return self._start_profiling_after_setup
+
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
-    if browser.platform.is_linux:
-      assert browser.attributes.is_chromium_based, (
-          f"Expected Chromium-based browser, found {type(browser)}.")
+    if browser.platform.is_linux or browser.platform.is_android:
+      assert browser.attributes.is_chromium_based, f"Expected Chromium-based browser, found {type(browser)}."
     if browser.attributes.is_chromium_based:
       chromium = cast(Chromium, browser)
       if not self._spare_renderer_process:
         chromium.features.disable("SpareRendererForSitePerProcess")
-      self._attach_linux(chromium)
+      self._attach(chromium)
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
@@ -181,10 +231,13 @@ class ProfilingProbe(Probe):
             "Disabled automatic pprof uploading for non-googler machine.")
     if browser_platform.is_linux:
       env.check_installed(binaries=["pprof"])
+    if browser_platform.is_linux:
       assert browser_platform.which("perf"), "Please install linux-perf"
     elif browser_platform.is_macos:
-      assert browser_platform.which("xctrace"), (
-          "Please install Xcode to use xctrace")
+      assert browser_platform.which(
+          "xctrace"), "Please install Xcode to use xctrace"
+    elif browser_platform.is_android:
+      assert browser_platform.which("simpleperf"), "simpleperf is not available"
     if self.run_pprof:
       try:
         if gcertstatus := browser_platform.which("gcertstatus"):
@@ -193,22 +246,23 @@ class ProfilingProbe(Probe):
         env.handle_warning("Could not find gcertstatus")
       except plt.SubprocessError:
         env.handle_warning("Please run gcert for generating pprof results")
-    # Only Linux-perf results can be merged
+    # Only Linux-perf and Android-simpleperf results can be merged
     if browser_platform.is_macos and env.runner.repetitions > 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.runner.repetitions}.")
 
-  def _attach_linux(self, browser: Chromium) -> None:
+  def _attach(self, browser: Chromium) -> None:
     if self._sample_js:
       browser.js_flags.update(self.V8_PERF_PROF_FLAG)
       if self._expose_v8_interpreted_frames:
         browser.js_flags.set(self.V8_INTERPRETED_FRAMES_FLAG)
-    cmd = pathlib.Path(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
-    assert not browser.platform.is_remote, (
-        "Copying renderer command prefix to remote platform is "
-        "not implemented yet")
-    assert cmd.is_file(), f"Didn't find {cmd}"
-    browser.flags["--renderer-cmd-prefix"] = str(cmd)
+    if browser.platform.is_linux:
+      cmd = pathlib.Path(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
+      assert not browser.platform.is_remote, (
+          "Copying renderer command prefix to remote platform is "
+          "not implemented yet")
+      assert cmd.is_file(), f"Didn't find {cmd}"
+      browser.flags["--renderer-cmd-prefix"] = str(cmd)
     # Disable sandbox to write profiling data
     browser.flags.set("--no-sandbox")
 
@@ -253,6 +307,8 @@ class ProfilingProbe(Probe):
       return LinuxProfilingContext(self, run)
     if run.browser_platform.is_macos:
       return MacOSProfilingContext(self, run)
+    if run.browser_platform.is_android:
+      return AndroidProfilingContext(self, run)
     raise NotImplementedError("Invalid platform")
 
 
@@ -515,3 +571,95 @@ def linux_perf_probe_pprof(
   logging.info("  linux-perf:   %s %s", perf_data_file.name, size)
   logging.info("  pprof result: %s", url)
   return url
+
+
+class AndroidProfilingContext(ProfilingContext):
+
+  def __init__(self, probe: ProfilingProbe, run: Run) -> None:
+    super().__init__(probe, run)
+    self._simpleperf_process = None
+
+  def _generate_command_line(self) -> ListCmdArgsT:
+    return generate_simpleperf_command_line(
+        str(self.run.browser.path),
+        self.probe.browser_app_only,
+        self.probe.frame_pointers,
+        self.result_path,
+    )
+
+  def _start_simpleperf(self) -> None:
+    command_line = self._generate_command_line()
+    logging.info("Starting simpleperf with command line: %s.", command_line)
+    self._simpleperf_process = self.browser_platform.popen(
+        *command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    # Wait a bit for simpleperf to start and (potentially) terminate on error.
+    time.sleep(1)
+    if self._simpleperf_process.poll():
+      for output in self._simpleperf_process.stdout:
+        logging.error(output.decode("utf-8"))
+      raise ValueError("Unable to start simpleperf.")
+    atexit.register(self.stop_process)
+    self.browser.performance_mark(self.runner,
+                                  "crossbench-probe-profiling-start")
+
+  def _get_simpleperf_pids(self) -> List[int]:
+    simpleperf_pids = []
+    for process in self.browser_platform.processes():
+      if process["name"] == "simpleperf":
+        simpleperf_pids.append(process["pid"])
+    return simpleperf_pids
+
+  def _stop_existing_simpleperf(self) -> None:
+    for simpleperf_pid in self._get_simpleperf_pids():
+      logging.warning("Terminating existing simpleperf process: %d.",
+                      simpleperf_pid)
+      self.browser_platform.terminate(simpleperf_pid)
+
+  def get_default_result_path(self) -> pathlib.Path:
+    return super().get_default_result_path().parent / "simpleperf.perf.data"
+
+  def setup(self) -> None:
+    self._stop_existing_simpleperf()
+
+  def start(self) -> None:
+    if not self.probe.start_profiling_after_setup:
+      self._start_simpleperf()
+
+  def start_story_run(self) -> None:
+    if self.probe.start_profiling_after_setup:
+      self._start_simpleperf()
+
+  def stop(self) -> None:
+    self.stop_process()
+
+  def stop_process(self) -> None:
+    if self._simpleperf_process:
+      helper.wait_and_kill(
+          self._simpleperf_process, timeout=30, signal=signal.SIGINT)
+      self._simpleperf_process = None
+      self.browser.performance_mark(self.runner,
+                                    "crossbench-probe-profiling-stop")
+
+  def teardown(self) -> ProbeResult:
+    return self.browser_result(file=[self.result_path])
+
+
+def generate_simpleperf_command_line(
+    app_name: str,
+    browser_app_only: bool,
+    frame_pointers: bool,
+    output_path: pathlib.Path,
+) -> ListCmdArgsT:
+  command_line = ["simpleperf", "record"]
+  if browser_app_only:
+    command_line.extend(["--app", app_name])
+  else:
+    command_line.append("-a")
+  # Use "--post-unwind=yes" while unwinding with DWARF, to reduce
+  # unwinding overhead during profiling.
+  if frame_pointers:
+    command_line.extend(["--call-graph", "fp"])
+  else:
+    command_line.append("--post-unwind=yes")
+  command_line.extend(["-o", output_path])
+  return command_line
