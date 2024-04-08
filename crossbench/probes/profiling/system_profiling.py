@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import atexit
 import enum
+import io
 import json
 import logging
 import multiprocessing
@@ -595,9 +596,12 @@ class AndroidProfilingContext(ProfilingContext):
     # Wait a bit for simpleperf to start and (potentially) terminate on error.
     time.sleep(1)
     if self._simpleperf_process.poll():
-      for output in self._simpleperf_process.stdout:
-        logging.error(output.decode("utf-8"))
-      raise ValueError("Unable to start simpleperf.")
+      error_msg: str = ""
+      if stdout := self._simpleperf_process.stdout:
+        if isinstance(stdout, io.BufferedReader):
+          error_msg = stdout.read().decode("utf-8")
+          logging.error(error_msg)
+      raise ValueError(f"Unable to start simpleperf. {error_msg}")
     atexit.register(self.stop_process)
     self.browser.performance_mark(self.runner,
                                   "crossbench-probe-profiling-start")
