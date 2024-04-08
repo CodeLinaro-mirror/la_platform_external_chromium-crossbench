@@ -249,7 +249,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # TODO: handle session vs run probe.
     for run in self.runs:
       with self._exceptions.annotate(f"Setting up {run}"):
-        logging.info("Preparing SESSION %s, RUN %s", self.index, run.index)
+        label = "RUN"
+        if run.is_warmup:
+          label = "WARMUP RUN"
+        logging.info("Preparing SESSION %s, %s %s", self.index, label,
+                     run.index)
         run.setup(is_dry_run)
 
   def _setup_session_dir(self):

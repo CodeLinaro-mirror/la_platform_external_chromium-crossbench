@@ -47,6 +47,7 @@ class Run(ResultOrigin):
                browser_session: BrowserSessionRunGroup,
                story: Story,
                repetition: int,
+               is_warmup: bool,
                temperature: str,
                index: int,
                name: Optional[str] = None,
@@ -60,6 +61,7 @@ class Run(ResultOrigin):
     self._story = story
     assert repetition >= 0
     self._repetition = repetition
+    self._is_warmup = is_warmup
     assert temperature, "Missing cache-temperature value."
     self._temperature = temperature
     assert index >= 0
@@ -80,7 +82,7 @@ class Run(ResultOrigin):
 
   def _get_out_dir(self, root_dir: pathlib.Path) -> pathlib.Path:
     return (root_dir / plt.safe_filename(self.browser.unique_name) / "stories" /
-            plt.safe_filename(self.story.name) / str(self._repetition) /
+            plt.safe_filename(self.story.name) / str(self.repetition_name) /
             str(self._temperature))
 
   @property
@@ -100,7 +102,7 @@ class Run(ResultOrigin):
         (f"browser={self.browser.type_name} label={self.browser.label} "
          "binary={self.browser.path}"),
         f"story={self.story}",
-        f"repetition={self.repetition}",
+        f"repetition={self.repetition_name}",
     )
 
   def details_json(self) -> JsonDict:
@@ -108,6 +110,7 @@ class Run(ResultOrigin):
         "name": self.name,
         "index": self.index,
         "repetition": self.repetition,
+        "is_warmup": self.is_warmup,
         "browser_session": self.browser_session.index,
         "temperature": self.temperature,
         "story": str(self.story),
@@ -143,8 +146,18 @@ class Run(ResultOrigin):
     return self._timeout
 
   @property
+  def repetition_name(self) -> str:
+    if self.is_warmup:
+      return f"warmup_{self.repetition}"
+    return str(self.repetition)
+
+  @property
   def repetition(self) -> int:
     return self._repetition
+
+  @property
+  def is_warmup(self) -> bool:
+    return self._is_warmup
 
   @property
   def index(self) -> int:

@@ -79,7 +79,10 @@ class RunThreadGroup(threading.Thread):
 
   def _log_run(self, run: Run):
     logging.info("=" * 80)
-    logging.info("RUN %s/%s", run.index + 1, self._total_run_count)
+    label = ""
+    if run.is_warmup:
+      label = " WARMUP, ignoring results"
+    logging.info("RUN %s/%s%s", run.index + 1, self._total_run_count, label)
     logging.info("=" * 80)
 
   def run(self) -> None:

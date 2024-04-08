@@ -793,7 +793,7 @@ class CrossBenchCLI:
 
   def _create_runs_results_symlinks(self, runner: Runner) -> None:
     results_root = runner.out_dir.parent
-    runs: Tuple[Run, ...] = runner.runs
+    runs: Tuple[Run, ...] = runner.all_runs
     if not runs:
       logging.debug("Skip creating result symlinks in '%s': no runs produced.",
                     results_root)

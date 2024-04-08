@@ -10,6 +10,7 @@ Any breaking changes in the function definitions here need to be coordinated
 with corresponding changes in CBB in google3
 """
 
+import datetime as dt
 import pathlib
 from typing import List, Optional, Type, Union
 
@@ -19,10 +20,12 @@ import crossbench.benchmarks.all as benchmarks
 import crossbench.browsers.browser
 import crossbench.browsers.webdriver as cb_webdriver
 import crossbench.env
-import crossbench.runner.run
 import crossbench.runner.runner
 from crossbench.benchmarks.base import PressBenchmark
+from crossbench.runner.groups.session import BrowserSessionRunGroup
+from crossbench.runner.run import Run
 from crossbench.stories.press_benchmark import PressBenchmarkStory
+from crossbench.stories.story import Story
 
 press_benchmarks = [
     benchmarks.Speedometer20Benchmark,
@@ -110,13 +113,14 @@ def get_probe_result_file(benchmark_name: str,
 
 class CbbRunner(crossbench.runner.runner.Runner):
 
-  def create_run(self, browser_session, story, repetition, temperature, index,
-                 name, timeout, throw) -> crossbench.runner.run.Run:
-    return CbbRun(self, browser_session, story, repetition, temperature, index,
-                  name, timeout, throw)
+  def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
+                 repetition: int, is_warmup: bool, temperature: str, index: int,
+                 name: str, timeout: dt.timedelta, throw: bool) -> Run:
+    return CbbRun(self, browser_session, story, repetition, is_warmup,
+                  temperature, index, name, timeout, throw)
 
 
-class CbbRun(crossbench.runner.run.Run):
+class CbbRun(Run):
 
   def _create_session_dir(self) -> None:
     # Don't create symlink loops and skip this step

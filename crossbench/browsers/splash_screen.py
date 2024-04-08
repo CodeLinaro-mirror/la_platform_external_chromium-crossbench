@@ -69,24 +69,31 @@ class DetailedSplashScreen(BaseURLSplashScreen):
     browser = run.browser
     title = html.escape(browser.app_name.title())
     version = html.escape(browser.version)
-    page = ("<html><head>"
-            f"<title>Run Details</title>"
-            "<style>"
-            """
-            html { font-family: sans-serif; background-color: #000; color: #fff; }
-            dl {
-              display: grid;
-              grid-template-columns: max-content auto;
-            }
-            dt { grid-column-start: 1; }
-            dd { grid-column-start: 2;  font-family: monospace; }
-        """
-            "</style>"
-            "</head><body>"
-            f"<h1>{title} {version}</h1>")
-    page += self._render_browser_details(run)
-    page += self._render_run_details(run)
-    page += "</body></html>"
+    run_type = "Run"
+    bg_color = "#000"
+    if run.is_warmup:
+      title = f"Warmup: {title}"
+      run_type = "Warmup Run"
+      bg_color = "#444"
+    page = "".join((
+        "<html><head>"
+        f"<title>{run_type} Details</title>",
+        "<style>",
+        "html{"
+        "font-family:sans-serif;",
+        f"background-color:{bg_color};",
+        "color:#fff",
+        "}",
+        "dl{display:grid;grid-template-columns:max-content auto}",
+        "dt{grid-column-start:1}",
+        "dd{grid-column-start:2;font-family:monospace}",
+        "</style>",
+        "</head><body>",
+        f"<h1>{title} {version}</h1>",
+        self._render_browser_details(run),
+        self._render_run_details(run),
+        "</body></html>",
+    ))
     data_url = f"data:text/html;charset=utf-8,{urllib.parse.quote(page)}"
     return data_url
 

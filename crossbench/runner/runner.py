@@ -103,8 +103,17 @@ class Runner:
         "-r",
         default=1,
         type=cli_helper.parse_positive_int,
-        help=("Number of times each benchmark story is "
-              "repeated. Defaults to 1"))
+        help=("Number of times each benchmark story is repeated. "
+              "Defaults to 1. "
+              "Metrics are aggregated over multiple repetitions"))
+    parser.add_argument(
+        "--warmup-repetitions",
+        "--warmups",
+        default=0,
+        type=cli_helper.parse_positive_zero_int,
+        help=("Number of times each benchmark story is repeated for warmup. "
+              "Defaults to 0. "
+              "Metrics for warmup-repetitions are discarded."))
     parser.add_argument(
         "--cache-temperatures",
         default=["default"],
@@ -152,6 +161,7 @@ class Runner:
         "out_dir": out_dir,
         "browsers": args.browser,
         "repetitions": args.repetitions,
+        "warmup_repetitions": args.warmup_repetitions,
         "cache_temperatures": args.cache_temperatures,
         "thread_mode": args.thread_mode,
         "throw": args.throw,
@@ -167,6 +177,7 @@ class Runner:
       env_config: Optional[HostEnvironmentConfig] = None,
       env_validation_mode: ValidationMode = ValidationMode.THROW,  # pytype: disable=annotation-type-mismatch
       repetitions: int = 1,
+      warmup_repetitions: int = 0,
       cache_temperatures: Iterable[str] = ("default",),
       timing: Timing = Timing(),
       thread_mode: ThreadMode = ThreadMode.NONE,
@@ -180,12 +191,16 @@ class Runner:
     self._validate_browsers()
     self._benchmark = benchmark
     self._stories = tuple(benchmark.stories)
-    self._repetitions = repetitions
-    assert repetitions > 0, f"Invalid repetitions={repetitions}"
+    self._repetitions = cli_helper.parse_positive_int(repetitions,
+                                                      "repetitions")
+    self._warmup_repetitions = cli_helper.parse_positive_zero_int(
+        warmup_repetitions, "warmup repetitions")
     self._cache_temperatures: Tuple[str, ...] = tuple(cache_temperatures)
     self._probes: List[Probe] = []
     self._default_probes: List[Probe] = []
-    self._runs: List[Run] = []
+    # Contains both measure and warmup runs:
+    self._all_runs: List[Run] = []
+    self._measured_runs: List[Run] = []
     self._thread_mode = thread_mode
     self._exceptions = exception.Annotator(throw)
     self._platform = platform
@@ -291,12 +306,16 @@ class Runner:
     return self._repetitions
 
   @property
+  def warmup_repetitions(self) -> int:
+    return self._warmup_repetitions
+
+  @property
   def exceptions(self) -> exception.Annotator:
     return self._exceptions
 
   @property
   def is_success(self) -> bool:
-    return len(self._runs) > 0 and self._exceptions.is_success
+    return len(self._measured_runs) > 0 and self._exceptions.is_success
 
   @property
   def platform(self) -> plt.Platform:
@@ -311,8 +330,12 @@ class Runner:
     return set(browser.platform for browser in self.browsers)
 
   @property
+  def all_runs(self) -> Tuple[Run, ...]:
+    return tuple(self._all_runs)
+
+  @property
   def runs(self) -> Tuple[Run, ...]:
-    return tuple(self._runs)
+    return tuple(self._measured_runs)
 
   @property
   def cache_temperature_groups(self) -> Tuple[CacheTemperatureRunGroup, ...]:
@@ -383,9 +406,10 @@ class Runner:
         browser.setup_binary(self)  # pytype: disable=wrong-arg-types
     self._exceptions.assert_success()
     with self._exceptions.annotate("Preparing Runs"):
-      self._runs = list(self.get_runs())
-      assert self._runs, f"{type(self)}.get_runs() produced no runs"
-      logging.info("DISCOVERED %d RUN(S)", len(self._runs))
+      self._all_runs = list(self.get_runs())
+      assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
+      logging.info("DISCOVERED %d RUN(S)", len(self._all_runs))
+      self._measured_runs = [run for run in self._all_runs if not run.is_warmup]
     with self._exceptions.capture("Preparing Environment"):
       self._env.setup()
     with self._exceptions.annotate(
@@ -396,7 +420,8 @@ class Runner:
     index = 0
     session_index = 0
     throw = self._exceptions.throw
-    for repetition in range(self.repetitions):
+    for repetition in range(self.repetitions + self.warmup_repetitions):
+      is_warmup: bool = repetition < self.warmup_repetitions
       for story in self.stories:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
@@ -408,6 +433,7 @@ class Runner:
                 browser_session,
                 story,
                 repetition,
+                is_warmup,
                 f"{temp_index}_{temperature}",
                 index,
                 name=f"{story.name}[rep={repetition}, cache={temperature}]",
@@ -417,10 +443,10 @@ class Runner:
           browser_session.set_ready()
 
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
-                 repetition: int, temperature: str, index: int, name: str,
-                 timeout: dt.timedelta, throw: bool) -> Run:
-    return Run(self, browser_session, story, repetition, temperature, index,
-               name, timeout, throw)
+                 repetition: int, is_warmup: bool, temperature: str, index: int,
+                 name: str, timeout: dt.timedelta, throw: bool) -> Run:
+    return Run(self, browser_session, story, repetition, is_warmup, temperature,
+               index, name, timeout, throw)
 
   def assert_successful_sessions_and_runs(self) -> None:
     failed_runs = list(run for run in self.runs if not run.is_success)
@@ -429,7 +455,8 @@ class Runner:
         RunnerException)
 
   def _get_thread_groups(self) -> List[RunThreadGroup]:
-    return self._thread_mode.group(self._runs)
+    # Also include warmup runs here.
+    return self._thread_mode.group(self._all_runs)
 
   def _run(self, is_dry_run: bool = False) -> None:
     self._assert_state(RunnerState.SETUP, RunnerState.RUNNING)
@@ -467,7 +494,7 @@ class Runner:
 
     logging.debug("MERGING PROBE DATA: cache temperatures")
     self._cache_temperature_groups = CacheTemperatureRunGroup.groups(
-        self._runs, throw)
+        self._measured_runs, throw)
     for cache_temp_group in self._cache_temperature_groups:
       cache_temp_group.merge(self)
       self._exceptions.extend(cache_temp_group.exceptions, is_nested=True)

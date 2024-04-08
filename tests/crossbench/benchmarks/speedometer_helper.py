@@ -58,10 +58,10 @@ class SpeedometerBaseTestCase(
     args = self.Namespace()
     self.benchmark_cls.from_cli_args(args)
     with self.assertRaises(TypeError):
-      args.iterations = "-10"
+      args.iterations = "-10"  # pytype: disable=annotation-type-mismatch
       self.benchmark_cls.from_cli_args(args)
     with self.assertRaises(TypeError):
-      args.iterations = "1234"
+      args.iterations = "1234"  # pytype: disable=annotation-type-mismatch
       benchmark = self.benchmark_cls.from_cli_args(args)
     args.iterations = 1234
     benchmark = self.benchmark_cls.from_cli_args(args)
@@ -165,6 +165,7 @@ class SpeedometerBaseTestCase(
                 story_names: Optional[Sequence[str]] = None,
                 separate: bool = False,
                 iterations: int = 2,
+                warmup_repetitions: int = 0,
                 custom_url: Optional[str] = None,
                 throw: bool = True) -> Runner:
     repetitions = 3
@@ -176,7 +177,7 @@ class SpeedometerBaseTestCase(
         story_names, separate=separate, url=custom_url, iterations=iterations)
 
     # The order should match Runner.get_runs
-    for _ in range(repetitions):
+    for _ in range(warmup_repetitions + repetitions):
       for story in stories:
         speedometer_probe_results = self._generate_test_probe_results(
             iterations, story)
@@ -203,6 +204,7 @@ class SpeedometerBaseTestCase(
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
+        warmup_repetitions=warmup_repetitions,
         throw=throw)
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
@@ -268,6 +270,14 @@ class SpeedometerBaseTestCase(
 
   def test_run_default(self):
     runner = self._test_run(iterations=10)
+    self._verify_results(runner)
+    for browser in self.browsers:
+      urls = self.filter_splashscreen_urls(browser.url_list)
+      self.assertIn(self.story_cls.URL, urls)
+      self.assertNotIn(self.story_cls.URL_LOCAL, urls)
+
+  def test_run_warmups(self):
+    runner = self._test_run(iterations=10, warmup_repetitions=1)
     self._verify_results(runner)
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)

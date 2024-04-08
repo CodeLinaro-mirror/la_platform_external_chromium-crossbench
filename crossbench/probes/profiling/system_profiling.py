@@ -20,16 +20,17 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast
 from crossbench import helper, plt
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, ResultLocation
+from crossbench.plt.base import ListCmdArgsT
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
+                                     ResultLocation)
 from crossbench.probes.results import ProbeResult
 from crossbench.probes.v8.log import V8LogProbe
-from crossbench.plt.base import ListCmdArgsT
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner.run import Run
   from crossbench.runner.groups import BrowsersRunGroup
+  from crossbench.runner.run import Run
 
 
 @enum.unique
@@ -578,7 +579,7 @@ class AndroidProfilingContext(ProfilingContext):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._simpleperf_process = None
+    self._simpleperf_process: Optional[subprocess.Popen] = None
 
   def _generate_command_line(self) -> ListCmdArgsT:
     return generate_simpleperf_command_line(
