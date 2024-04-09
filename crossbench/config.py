@@ -397,7 +397,11 @@ class ConfigObject(abc.ABC):
       except OSError:
         pass
       return cls.loads(value)
-    raise ConfigError(f"Invalid config input type {value}")
+    return cls.parse_other(value)
+
+  @classmethod
+  def parse_other(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
+    raise ConfigError(f"Invalid config input type {type(value)}: {value}")
 
   @classmethod
   @abc.abstractmethod

@@ -117,7 +117,7 @@ class Actions(helper.TimeScope):
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     self._assert_is_active()
-    if target:
+    if target and target != "_self":
       # TODO: use target in the driver instead.
       self.js(f"window.open('{url}','{target}');")
     else:

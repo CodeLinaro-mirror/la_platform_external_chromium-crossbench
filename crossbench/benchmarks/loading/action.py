@@ -42,6 +42,7 @@ class ButtonClick(ConfigEnum):
 
 
 ACTION_TIMEOUT = dt.timedelta(seconds=20)
+DEFAULT_DURATION = dt.timedelta(seconds=15)
 
 
 class Action(abc.ABC):
@@ -92,6 +93,11 @@ class Action(abc.ABC):
 
   def to_json(self) -> JsonDict:
     return {"type": str(self.TYPE), "timeout": self.timeout.total_seconds()}
+
+  def __eq__(self, other: object) -> bool:
+    if isinstance(other, Action):
+      return self.to_json() == other.to_json()
+    return False
 
 
 @enum.unique
@@ -146,8 +152,17 @@ class GetAction(Action):
                timeout: dt.timedelta = ACTION_TIMEOUT,
                ready_state: ReadyState = ReadyState.ANY,
                target: WindowTarget = WindowTarget.SELF):
+    if not url:
+      raise ValueError(f"{self}.url is missing")
     self._url: str = url
-    self._duration = duration
+
+    self._duration = duration or DEFAULT_DURATION
+    if ready_state != ReadyState.ANY:
+      if duration != dt.timedelta():
+        raise ValueError(
+            f"Expected empty duration with ReadyState {ready_state} "
+            f"but got: {self.duration}")
+      self._duration = dt.timedelta()
     self._ready_state = ready_state
     self._target = target
     super().__init__(timeout)
@@ -171,22 +186,12 @@ class GetAction(Action):
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.get(run, self)
 
-  def validate(self) -> None:
-    super().validate()
-    if not self.url:
-      raise ValueError(f"{self}.url is missing")
-    if self._ready_state == ReadyState.ANY:
-      return
-    if self.duration != dt.timedelta():
-      raise ValueError(
-          f"Expected empty duration with ReadyState {self._ready_state} "
-          f"but got: {self.duration}")
-
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["url"] = self.url
     details["duration"] = self.duration.total_seconds()
     details["ready_state"] = str(self.ready_state)
+    details["target"] = str(self.target)
     return details
 
 

@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import abc
-from typing import List, Sequence, Type
+from typing import Sequence, Type
 
 from crossbench.benchmarks import base as benchmark
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase

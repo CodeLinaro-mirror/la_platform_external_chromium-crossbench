@@ -128,6 +128,15 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
     return self.iterations * dt.timedelta(seconds=0.4)
 
   @property
+  def slow_duration(self) -> dt.timedelta:
+    """Max duration that covers run-times on slow machines and/or
+    debug-mode browsers.
+    Making this number too large might cause needless wait times on broken
+    browsers/benchmarks.
+    """
+    return dt.timedelta(seconds=60 * 20) + self.duration * 10
+
+  @property
   def url_params(self) -> Dict[str, str]:
     if self.iterations == self.DEFAULT_ITERATIONS:
       return {}

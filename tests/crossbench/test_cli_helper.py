@@ -13,12 +13,12 @@ import unittest
 
 
 from crossbench.cli_helper import (
-    Duration, parse_bool, parse_dir_path, parse_existing_file_path, parse_float,
-    parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson, parse_int,
-    parse_json_file, parse_json_file_path, parse_non_empty_dir_path,
-    parse_non_empty_file_path, parse_non_empty_str, parse_path, parse_port,
-    parse_positive_int, parse_positive_zero_float, parse_positive_zero_int,
-    parse_sh_cmd)
+    Duration, parse_bool, parse_dict, parse_dir_path, parse_existing_file_path,
+    parse_float, parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson,
+    parse_int, parse_json_file, parse_json_file_path, parse_non_empty_dict,
+    parse_non_empty_dir_path, parse_non_empty_file_path, parse_non_empty_str,
+    parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
+    parse_positive_zero_int, parse_sh_cmd)
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -67,7 +67,7 @@ class DurationTestCase(unittest.TestCase):
   def test_invalid_suffix(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       Duration.parse("100XXX")
-    self.assertIn("not supported", str(cm.exception))
+    self.assertIn("Unknown duration format", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError):
       Duration.parse("X0XX")
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -362,3 +362,21 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     for invalid in (1, "", None, [], "ls -al \"."):
       with self.assertRaises(argparse.ArgumentTypeError):
         parse_sh_cmd(invalid)
+
+  def test_parse_dict_invalid(self):
+    for invalid in (1, 0, "1", "0", "", None, [], tuple()):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        parse_dict(invalid)
+
+  def test_parse_dict(self):
+    self.assertDictEqual(parse_dict({}), {})
+    self.assertDictEqual(parse_dict({"A": 2}), {"A": 2})
+
+  def test_parse_non_empty_dict_invalid(self):
+    for invalid in (1, 0, "1", "0", "", None, [], tuple(), dict()):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        parse_non_empty_dict(invalid)
+
+  def test_parse_non_empty_dict(self):
+    result = parse_non_empty_dict({"a": 1})
+    self.assertDictEqual(result, {"a": 1})

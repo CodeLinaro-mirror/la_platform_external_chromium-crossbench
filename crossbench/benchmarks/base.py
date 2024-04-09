@@ -148,6 +148,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     self._known_names: Dict[str,
                             None] = dict.fromkeys(story_cls.all_story_names())
     self.stories: Sequence[StoryT] = []
+    # TODO: only use one method.
     self.process_all(patterns)
     self.stories = self.create_stories(separate)
 

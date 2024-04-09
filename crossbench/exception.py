@@ -333,3 +333,14 @@ def annotate_argparsing(*stack_entries: str,
       *stack_entries,
       exceptions=exceptions,
       throw_cls=ArgumentTypeMultiException)
+
+
+class UnreachableError(RuntimeError):
+  """Used for making checker tools happy in places where it's not directly
+  obvious that we always return, for instance due to using one of the above
+  exception annotations that could in theory mute exceptions and create an
+  additional return path.
+  """
+
+  def __init__(self) -> None:
+    super().__init__("Unreachable Code")

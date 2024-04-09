@@ -4,11 +4,10 @@
 
 import argparse
 import datetime as dt
-import io
 import json
 import pathlib
 import unittest
-from typing import Dict, Final, List, Optional, Tuple, Type
+from typing import Dict, Final, List, Optional, Type
 from unittest import mock
 
 import hjson
@@ -23,98 +22,52 @@ from crossbench.probes import internal
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase, MockCLI
+from tests.crossbench.mock_helper import BaseCliTestCase, SysExitTestException
 from tests.crossbench.test_cli_config import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 
-class SysExitException(Exception):
-
-  def __init__(self, exit_code=0):
-    super().__init__("sys.exit")
-    self.exit_code = exit_code
-
-
-SPLASHSCREEN_URL_COUNT: Final[int] = 2
-
-
-class CliTestCase(BaseCrossbenchTestCase):
-
-  def run_cli(self,
-              *args,
-              raises=None,
-              enable_logging: bool = False) -> MockCLI:
-    cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
-    with mock.patch(
-        "sys.exit", side_effect=SysExitException), mock.patch.object(
-            plt, "PLATFORM", self.platform):
-      if raises:
-        with self.assertRaises(raises):
-          cli.run(args)
-      else:
-        cli.run(args)
-    return cli
-
-  def run_cli_output(self,
-                     *args,
-                     raises=None,
-                     enable_logging: bool = True) -> Tuple[MockCLI, str, str]:
-    with mock.patch(
-        "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
-            "sys.stderr", new_callable=io.StringIO) as mock_stderr:
-      cli = self.run_cli(*args, raises=raises, enable_logging=enable_logging)
-    stdout = mock_stdout.getvalue()
-    stderr = mock_stderr.getvalue()
-    # Make sure we don't accidentally reuse the buffers across run_cli calls.
-    mock_stdout.close()
-    mock_stderr.close()
-    return cli, stdout, stderr
-
-  def mock_chrome_stable(self):
-    return mock.patch.object(
-        BrowserVariantsConfig,
-        "_get_browser_cls",
-        return_value=mock_browser.MockChromeStable)
+class CliTestCase(BaseCliTestCase):
 
   def test_invalid(self):
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("unknown subcommand", "--invalid flag")
 
   def test_describe_invalid_empty(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "")
     self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "", "--json")
     self.assertEqual(cm.exception.exit_code, 0)
 
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "--unknown")
     self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "--unknown", "--json")
     self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_probe(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "probe", "unknown probe")
     self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "probe", "unknown probe", "--json")
     self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_benchmark(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "benchmark", "unknown benchmark")
     self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "benchmark", "unknown benchmark", "--json")
     self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_all(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "all", "unknown probe or benchmark")
     self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "--json", "all", "unknown probe or benchmark")
     self.assertEqual(cm.exception.exit_code, 0)
 
@@ -189,10 +142,11 @@ class CliTestCase(BaseCrossbenchTestCase):
     self.assertIn("v8.log", data["probes"])
 
   def test_help(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("--help")
     self.assertEqual(cm.exception.exit_code, 0)
-    _, stdout, stderr = self.run_cli_output("--help", raises=SysExitException)
+    _, stdout, stderr = self.run_cli_output(
+        "--help", raises=SysExitTestException)
     self.assertFalse(stderr)
     self.assertIn("usage:", stdout)
     self.assertIn("Subcommands:", stdout)
@@ -201,10 +155,10 @@ class CliTestCase(BaseCrossbenchTestCase):
     self.assertIn("Disable colored output", stdout)
 
   def test_help_subcommand(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("help")
     self.assertEqual(cm.exception.exit_code, 0)
-    _, stdout, stderr = self.run_cli_output("help", raises=SysExitException)
+    _, stdout, stderr = self.run_cli_output("help", raises=SysExitTestException)
     self.assertFalse(stderr)
     self.assertIn("usage:", stdout)
     self.assertIn("Subcommands:", stdout)
@@ -216,11 +170,11 @@ class CliTestCase(BaseCrossbenchTestCase):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS:
       subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
       for subcommand in subcommands:
-        with self.assertRaises(SysExitException) as cm:
+        with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "--help")
         self.assertEqual(cm.exception.exit_code, 0)
         _, stdout, stderr = self.run_cli_output(
-            subcommand, "--help", raises=SysExitException)
+            subcommand, "--help", raises=SysExitTestException)
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
 
@@ -228,11 +182,11 @@ class CliTestCase(BaseCrossbenchTestCase):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS:
       subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
       for subcommand in subcommands:
-        with self.assertRaises(SysExitException) as cm:
+        with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "help")
         self.assertEqual(cm.exception.exit_code, 0)
         _, stdout, stderr = self.run_cli_output(
-            subcommand, "help", raises=SysExitException)
+            subcommand, "help", raises=SysExitTestException)
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
 
@@ -240,62 +194,57 @@ class CliTestCase(BaseCrossbenchTestCase):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS:
       subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
       for subcommand in subcommands:
-        with self.assertRaises(SysExitException) as cm:
+        with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "describe")
         self.assertEqual(cm.exception.exit_code, 0)
         _, stdout, stderr = self.run_cli_output(
-            subcommand,
-            "describe",
-            raises=SysExitException)
+            subcommand, "describe", raises=SysExitTestException)
         output = stderr + stdout
         self.assertIn("See `describe benchmark ", output)
 
   def test_version(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("--version")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "--version", raises=SysExitException)
+        "--version", raises=SysExitTestException)
     self.assertFalse(stderr)
     self.assertIn(__version__, stdout)
 
   def test_version_subcommand(self):
-    with self.assertRaises(SysExitException) as cm:
+    with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("version")
     self.assertEqual(cm.exception.exit_code, 0)
-    _, stdout, stderr = self.run_cli_output("version", raises=SysExitException)
+    _, stdout, stderr = self.run_cli_output(
+        "version", raises=SysExitTestException)
     self.assertFalse(stderr)
     self.assertIn(__version__, stdout)
 
   def test_subcommand_run_subcommand(self):
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
                    "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_invalid_probe(self):
-    with self.assertRaises(argparse.ArgumentError), mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.assertRaises(argparse.ArgumentError), self.patch_get_browser():
       self.run_cli("loading", "--probe=invalid_probe_name", "--throw")
 
   def test_basic_probe_setting(self):
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "--probe=v8.log", f"--urls={url}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertIn("--log-all", browser.js_flags)
 
   def test_invalid_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
     config_file.touch()
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentError) as cm:
         self.run_cli("loading", f"--probe-config={config_file}",
@@ -304,7 +253,7 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.assertIn("--probe-config", message)
       self.assertIn("empty", message)
       for browser in self.browsers:
-        self.assertListEqual([], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_empty_probe_config_file(self):
@@ -312,13 +261,13 @@ class CliTestCase(BaseCrossbenchTestCase):
     config_data = {"probes": {}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_invalid_probe_config_file(self):
@@ -326,8 +275,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     config_data = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentTypeError):
         self.run_cli("loading", f"--probe-config={config_file}",
@@ -343,13 +291,12 @@ class CliTestCase(BaseCrossbenchTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -358,12 +305,10 @@ class CliTestCase(BaseCrossbenchTestCase):
     config_data = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      with mock.patch.object(
-          CrossBenchCLI, "_get_browsers", return_value=self.browsers):
-        self.run_cli("loading", f"--probe-config={config_file}",
-                     "--urls=http://test.com", "--env-validation=skip",
-                     "--throw")
+    with self.assertRaises(
+        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+      self.run_cli("loading", f"--probe-config={config_file}",
+                   "--urls=http://test.com", "--env-validation=skip", "--throw")
     self.assertIn("invalid probe name", str(cm.exception))
 
   def test_empty_config_file_properties(self):
@@ -371,12 +316,11 @@ class CliTestCase(BaseCrossbenchTestCase):
     config_data = {"probes": {}, "env": {}, "browsers": {}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      with mock.patch.object(
-          CrossBenchCLI, "_get_browsers", return_value=self.browsers):
-        url = "http://test.com"
-        self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                     "--env-validation=skip", "--throw")
+    with self.assertRaises(
+        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+      url = "http://test.com"
+      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
+                   "--env-validation=skip", "--throw")
     self.assertIn("no config properties", str(cm.exception))
 
   def test_empty_config_files(self):
@@ -384,12 +328,11 @@ class CliTestCase(BaseCrossbenchTestCase):
     config_data = {}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      with mock.patch.object(
-          CrossBenchCLI, "_get_browsers", return_value=self.browsers):
-        url = "http://test.com"
-        self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                     "--env-validation=skip", "--throw")
+    with self.assertRaises(
+        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+      url = "http://test.com"
+      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
+                   "--env-validation=skip", "--throw")
     self.assertIn("no config properties", str(cm.exception))
 
   def test_conflicting_config_flags(self):
@@ -421,13 +364,12 @@ class CliTestCase(BaseCrossbenchTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -444,13 +386,12 @@ class CliTestCase(BaseCrossbenchTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertFalse(browser.js_flags)
       config = cli.runner.env.config
       self.assertEqual(config.disk_min_free_space_gib,
@@ -795,59 +736,54 @@ class CliTestCase(BaseCrossbenchTestCase):
       self.assertIn(mock_browser.MockChromeDev.VERSION, versions)
 
   def test_probe_invalid_inline_json_config(self):
-    with self.assertRaises(argparse.ArgumentError) as cm:
-      with mock.patch.object(
-          CrossBenchCLI, "_get_browsers", return_value=self.browsers):
-        self.run_cli("loading", "--probe=v8.log{invalid json: d a t a}",
-                     "--urls=cnn", "--env-validation=skip", "--throw")
+    with self.assertRaises(
+        argparse.ArgumentError) as cm, self.patch_get_browser():
+      self.run_cli("loading", "--probe=v8.log{invalid json: d a t a}",
+                   "--urls=cnn", "--env-validation=skip", "--throw")
     message = str(cm.exception)
     self.assertIn("{invalid json: d a t a}", message)
 
   def test_probe_empty_inline_json_config(self):
     js_flags = ["--log-foo", "--log-bar"]
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "--probe=v8.log{}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertNotIn(flag, browser.js_flags)
 
   def test_probe_inline_json_config(self):
     js_flags = ["--log-foo", "--log-bar"]
     json_config = json.dumps({"js_flags": js_flags})
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe=v8.log{json_config}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[SPLASHSCREEN_URL_COUNT:])
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
   def test_env_config_name(self):
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       self.run_cli("loading", "--env=strict", "--urls=http://test.com",
                    "--env-validation=skip", "--throw")
 
   def test_env_config_inline_hjson(self):
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       self.run_cli("loading", "--env={\"power_use_battery\":false}",
                    "--urls=http://test.com", "--env-validation=skip")
 
   def test_env_config_inline_invalid(self):
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", "--env=not a valid name",
                    "--urls=http://test.com", "--env-validation=skip")
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", "--env={not valid hjson}",
                    "--urls=http://test.com", "--env-validation=skip")
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", "--env={unknown_property:1}",
                    "--urls=http://test.com", "--env-validation=skip")
 
@@ -881,18 +817,18 @@ class CliTestCase(BaseCrossbenchTestCase):
     # No "env" property
     with config.open("w", encoding="utf-8") as f:
       hjson.dump({}, f)
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
     # "env" not a dict
     with config.open("w", encoding="utf-8") as f:
       hjson.dump({"env": []}, f)
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
     with config.open("w", encoding="utf-8") as f:
       hjson.dump({"env": {"unknown_property_name": 1}}, f)
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
 
@@ -936,8 +872,7 @@ class CliTestCase(BaseCrossbenchTestCase):
                      "--env-validation=skip", "--throw", "--browser=chrome",
                      "--browser=firefox", "--", chrome_flag)
     # Flags for the same type are allowed.
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       self.run_cli("loading", "--urls=http://test.com", "--env-validation=skip",
                    "--throw", "--browser=chrome", "--browser=chrome-dev", "--",
                    "--js-flags=--no-opt")
@@ -946,8 +881,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     config = pathlib.Path("/test.config.hjson")
     with config.open("w", encoding="utf-8") as f:
       hjson.dump({"env": {}}, f)
-    with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=self.browsers):
+    with self.patch_get_browser():
       self.run_cli("loading", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
 
@@ -955,7 +889,7 @@ class CliTestCase(BaseCrossbenchTestCase):
     config = pathlib.Path("/test.config.hjson")
     with config.open("w", encoding="utf-8") as f:
       hjson.dump({"env": {}}, f)
-    with self.assertRaises(SysExitException):
+    with self.assertRaises(SysExitTestException):
       self.run_cli("loading", "--env=strict", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
 
@@ -1078,7 +1012,10 @@ class CliTestCase(BaseCrossbenchTestCase):
           self.run_cli("loading", "--urls=cnn", f"--{debugger}", "--throw")
         self.assertIn(debugger, str(cm.exception))
         _, _, stderr = self.run_cli_output(
-            "loading", "--urls=cnn", f"--{debugger}", raises=SysExitException)
+            "loading",
+            "--urls=cnn",
+            f"--{debugger}",
+            raises=SysExitTestException)
         self.assertIn(f"Unknown binary: {debugger}", stderr)
         self.assertIn(pathlib.Path(debugger), searched_binaries)
 

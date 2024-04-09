@@ -91,22 +91,22 @@ class FlagsGroupConfig(tuple_t):
     raise ConfigError(f"Invalid type {type(data)}: {repr(data)}")
 
   @classmethod
-  def load_dict(cls, data: Dict) -> FlagsGroupConfig:
-    if not data:
+  def load_dict(cls, config: Dict) -> FlagsGroupConfig:
+    if not config:
       return FlagsGroupConfig()
-    all_flag_keys = all(key.startswith("-") for key in data.keys())
-    all_str_values = all(isinstance(value, str) for value in data.values())
+    all_flag_keys = all(key.startswith("-") for key in config.keys())
+    all_str_values = all(isinstance(value, str) for value in config.values())
     variants: List[FlagsVariantConfig] = []
     if not all_flag_keys:
       logging.debug("Using custom flag group labels")
-      for label, value in data.items():
+      for label, value in config.items():
         with exception.annotate(f"Parsing flag variant ...[{repr(label)}]:"):
           variants.append(FlagsVariantConfig.parse(label, value))
     elif all_str_values:
       logging.debug("Using single flag group dict")
-      variants.append(FlagsVariantConfig.parse("default", data))
+      variants.append(FlagsVariantConfig.parse("default", config))
     else:
-      return cls._load_variants_dict(data)
+      return cls._load_variants_dict(config)
     return FlagsGroupConfig(tuple(variants))
 
   @classmethod

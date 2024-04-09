@@ -15,14 +15,18 @@ import pathlib
 import re
 import shlex
 import sys
-from typing import (Any, Iterable, Iterator, List, NoReturn, Optional, Type,
-                    TypeVar, Union)
+from typing import (Any, Dict, Final, Iterable, Iterator, List, NoReturn,
+                    Optional, Type, TypeVar, Union)
 from urllib.parse import urlparse
 
 import colorama
 import hjson
 
 from crossbench import helper, plt
+
+
+def type_str(value: Any) -> str:
+  return type(value).__name__
 
 
 def parse_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
@@ -235,8 +239,22 @@ def parse_dict_hjson_file(value: Union[str, pathlib.Path]) -> Any:
   if not isinstance(data, dict):
     raise argparse.ArgumentTypeError(
         f"Expected object in {hjson.__name__} config '{value}', "
-        f"but got {type(data).__name__}: {data}")
+        f"but got {type_str(data)}: {data}")
   return data
+
+
+def parse_dict(value: Any) -> Dict:
+  if isinstance(value, dict):
+    return value
+  raise argparse.ArgumentTypeError(
+      f"Expected dict, but got {type_str(value)}: {value}")
+
+
+def parse_non_empty_dict(value: Any, name: str = "dict") -> Dict:
+  dict_value = parse_dict(value)
+  if not dict_value:
+    raise argparse.ArgumentTypeError(f"Expected non-empty {name}.")
+  return dict_value
 
 
 def try_resolve_existing_path(value: str) -> Optional[pathlib.Path]:
@@ -300,9 +318,9 @@ def parse_non_empty_str(value: Any, name: str = "string") -> str:
   value = parse_not_none(value, f"non-empty {name}")
   if not isinstance(value, str):
     raise argparse.ArgumentTypeError(
-        f"Expected non-empty {name}, but got {type(value)}: {value}")
+        f"Expected non-empty {name}, but got {type_str(value)}: {value}")
   if not value:
-    raise argparse.ArgumentTypeError("Non-empty {name} expected.")
+    raise argparse.ArgumentTypeError(f"Non-empty {name} expected.")
   return value
 
 
@@ -336,7 +354,7 @@ def parse_bool(value: Any) -> bool:
   if value == "false":
     return False
   raise argparse.ArgumentTypeError(
-      f"Expected bool but got {type(value)}: {value}")
+      f"Expected bool but got {type_str(value)}: {value}")
 
 
 NotNoneT = TypeVar("NotNoneT")
@@ -360,7 +378,7 @@ def parse_sh_cmd(value: Any) -> List[str]:
     return list(value)
   if not isinstance(value, str):
     raise argparse.ArgumentTypeError(
-        f"Expected string or list, but got {type(value)}: {value}")
+        f"Expected string or list, but got {type_str(value)}: {value}")
   try:
     return shlex.split(value)
   except ValueError as e:
@@ -438,13 +456,18 @@ def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
     raise LateArgumentError(flag, str(e)) from e
 
 
+class DurationParseError(argparse.ArgumentTypeError):
+  pass
+
+
 class Duration:
 
   @classmethod
   def help(cls) -> str:
     return "'12.5' == '12.5s',  units=['ms', 's', 'm', 'h']"
 
-  _DURATION_RE = re.compile(r"(?P<value>(-?\d+(\.\d+)?)) ?(?P<unit>[^0-9\.]+)?")
+  _DURATION_RE: Final[re.Pattern] = re.compile(
+      r"(?P<value>(-?\d+(\.\d+)?)) ?(?P<unit>[a-z]+)?")
 
   @classmethod
   def _to_timedelta(cls, value: float, suffix: str) -> dt.timedelta:
@@ -456,9 +479,8 @@ class Duration:
       return dt.timedelta(minutes=value)
     if suffix in {"h", "hrs", "hour", "hours"}:
       return dt.timedelta(hours=value)
-    raise argparse.ArgumentTypeError(
-        f"Error: {suffix} is not supported for duration. "
-        "Make sure to use a supported time unit/suffix")
+    raise DurationParseError(f"Error: {suffix} is not supported for duration. "
+                             "Make sure to use a supported time unit/suffix")
 
   @classmethod
   def parse(cls, time_value: Any, name: str = "duration") -> dt.timedelta:
@@ -470,16 +492,14 @@ class Duration:
                      name: str = "duration") -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value)
     if duration.total_seconds() <= 0:
-      raise argparse.ArgumentTypeError(
-          f"Expected non-zero {name}, but got {duration}")
+      raise DurationParseError(f"Expected non-zero {name}, but got {duration}")
     return duration
 
   @classmethod
   def parse_zero(cls, time_value: Any, name: str = "duration") -> dt.timedelta:
     duration: dt.timedelta = cls.parse_any(time_value, name)
     if duration.total_seconds() < 0:
-      raise argparse.ArgumentTypeError(
-          f"Expected positive {name}, but got {duration}")
+      raise DurationParseError(f"Expected positive {name}, but got {duration}")
     return duration
 
   @classmethod
@@ -497,28 +517,27 @@ class Duration:
     if isinstance(time_value, (int, float)):
       return dt.timedelta(seconds=time_value)
     if not time_value:
-      raise argparse.ArgumentTypeError(f"Expected non-empty {name} value.")
+      raise DurationParseError(f"Expected non-empty {name} value.")
     if not isinstance(time_value, str):
-      raise argparse.ArgumentTypeError(
-          f"Unexpected {type(time_value)} for {name}: {time_value}")
+      raise DurationParseError(
+          f"Unexpected {type_str(time_value)} for {name}: {time_value}")
 
     match = cls._DURATION_RE.fullmatch(time_value)
     if match is None:
-      raise argparse.ArgumentTypeError(f"Unknown {name} format: '{time_value}'")
+      raise DurationParseError(f"Unknown {name} format: '{time_value}'")
 
     value = match.group("value")
     if not value:
-      raise argparse.ArgumentTypeError(
+      raise DurationParseError(
           f"Error: {name} value not found."
           f"Make sure to include a valid {name} value: '{time_value}'")
     time_unit = match.group("unit")
     try:
       time_value = float(value)
     except ValueError as e:
-      raise argparse.ArgumentTypeError(f"{name} must be a valid number, {e}")
+      raise DurationParseError(f"{name} must be a valid number, {e}") from e
     if not math.isfinite(time_value):
-      raise argparse.ArgumentTypeError(
-          f"{name} must be finite, but got: {time_value}")
+      raise DurationParseError(f"{name} must be finite, but got: {time_value}")
 
     if not time_unit:
       # If no time unit provided we assume it is in seconds.
