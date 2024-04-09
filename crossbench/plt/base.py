@@ -328,14 +328,14 @@ class Platform(abc.ABC):
       raise ValueError("Cannot forward a remote port on a local platform.")
     assert self.is_local, "Unsupported operation on remote platform"
 
-  def cat(self, file: Union[str, pathlib.Path], encoding: str = "utf-8") -> str:
+  def cat(self, file: pathlib.Path, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""
     assert self.is_local, "Unsupported operation on remote platform"
     with pathlib.Path(file).open(encoding=encoding) as f:
       return f.read()
 
   def set_file_contents(self,
-                        file: Union[str, pathlib.Path],
+                        file: pathlib.Path,
                         data: str,
                         encoding: str = "utf-8") -> None:
     assert not self.is_remote, "Unsupported operation on remote platform"
@@ -355,19 +355,23 @@ class Platform(abc.ABC):
       shutil.copy2(from_path, to_path)
     return to_path
 
-  def rm(self, path: Union[str, pathlib.Path], dir: bool = False) -> None:
+  def rm(self,
+         path: pathlib.Path,
+         dir: bool = False,
+         missing_ok: bool = False) -> None:
     """Remove a single file on this platform."""
     assert self.is_local, "Unsupported operation on remote platform"
     if dir:
+      if missing_ok and not path.exists():
+        return
       shutil.rmtree(path)
     else:
-      pathlib.Path(path).unlink()
+      path.unlink(missing_ok)
 
-  def rename(self, src_path: Union[str, pathlib.Path],
-             dst_path: Union[str, pathlib.Path]) -> None:
+  def rename(self, src_path: pathlib.Path, dst_path: pathlib.Path) -> None:
     """Remove a single file on this platform."""
     assert self.is_local, "Unsupported operation on remote platform"
-    pathlib.Path(src_path).rename(dst_path)
+    src_path.rename(dst_path)
 
   def symlink_or_copy(self, src: pathlib.Path,
                       dst: pathlib.Path) -> pathlib.Path:
@@ -378,23 +382,23 @@ class Platform(abc.ABC):
     dst.symlink_to(src)
     return dst
 
-  def touch(self, path: Union[str, pathlib.Path]) -> None:
+  def touch(self, path: pathlib.Path) -> None:
     assert self.is_local, "Unsupported operation on remote platform"
-    pathlib.Path(path).touch(exist_ok=True)
+    path.touch(exist_ok=True)
 
-  def mkdir(self, path: Union[str, pathlib.Path]) -> None:
+  def mkdir(self, path: pathlib.Path) -> None:
     assert self.is_local, "Unsupported operation on remote platform"
-    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    path.mkdir(parents=True, exist_ok=True)
 
   def mkdtemp(self,
               prefix: Optional[str] = None,
-              dir: Optional[Union[str, pathlib.Path]] = None) -> pathlib.Path:
+              dir: Optional[pathlib.Path] = None) -> pathlib.Path:
     assert self.is_local, "Unsupported operation on remote platform"
     return pathlib.Path(tempfile.mkdtemp(prefix=prefix, dir=dir))
 
   def mktemp(self,
              prefix: Optional[str] = None,
-             dir: Optional[Union[str, pathlib.Path]] = None) -> pathlib.Path:
+             dir: Optional[pathlib.Path] = None) -> pathlib.Path:
     assert self.is_local, "Unsupported operation on remote platform"
     fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
     os.close(fd)

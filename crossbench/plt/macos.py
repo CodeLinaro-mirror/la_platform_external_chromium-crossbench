@@ -54,9 +54,13 @@ class MacOSPlatform(PosixPlatform):
   def cpu(self) -> str:
     if not self._cpu:
       brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
-      cores = self.sh_stdout("sysctl", "-n", "machdep.cpu.core_count").strip()
-      self._cpu = f"{brand} {cores} cores"
+      cores_info = self._get_cpu_cores_info()
+      self._cpu = f"{brand} {cores_info}"
     return self._cpu
+
+  def _get_cpu_cores_info(self):
+    cores = self.sh_stdout("sysctl", "-n", "machdep.cpu.core_count").strip()
+    return f"{cores} cores"
 
   @property
   def is_battery_powered(self) -> bool:

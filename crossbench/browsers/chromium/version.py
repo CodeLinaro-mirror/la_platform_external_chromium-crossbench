@@ -11,8 +11,8 @@ from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel)
 
 
 class ChromiumVersion(BrowserVersion):
-  _VERSION_RE = re.compile(
-      r"[^\d]+ (?P<version>\d+\.\d+\.\d+\.\d+)( (?P<channel>[a-zA-Z]+))?")
+  _VERSION_RE = re.compile(r"[^\d]+ (?P<version>\d+\.\d+\.\d+\.\d+)"
+                           r"(?: (?P<channel>[a-zA-Z]+))?(?: .*)?")
   _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
       "stable": BrowserVersionChannel.STABLE,
       "beta": BrowserVersionChannel.BETA,

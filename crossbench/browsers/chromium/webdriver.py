@@ -28,6 +28,7 @@ from crossbench import exception, helper, plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
+from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, FlagsT
 
@@ -35,7 +36,6 @@ if TYPE_CHECKING:
   from selenium import webdriver
 
   from crossbench.runner.groups import BrowserSessionRunGroup
-
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
@@ -119,9 +119,11 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     pass
 
   def _check_driver_version(self) -> None:
-    # TODO
-    # version = self.platform.sh_stdout(self._driver_path, "--version")
-    pass
+    driver_version = ChromiumVersion(
+        self.platform.host_platform.sh_stdout(self._driver_path, "--version"))
+    if driver_version.major != self.major_version:
+      raise RuntimeError(f"Driver version {driver_version} "
+                         f"does not match browser {self.version} ({self})")
 
   def start_profiling(self) -> None:
     assert isinstance(self._driver, ChromiumDriver)
@@ -166,6 +168,14 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     self._chrome_command_line_path: pathlib.Path = FLAGS_CHROME
     self._previous_command_line_contents: Optional[str] = None
     super().__init__(*args, **kwargs)
+    self._android_package: str = self.platform.app_path_to_package(self.path)
+    if not self._android_package:
+      raise RuntimeError("Could not find matching adb package for "
+                         f"{self.path} on {self.platform}")
+
+  @property
+  def android_package(self) -> str:
+    return self._android_package
 
   @property
   def platform(self) -> plt.AndroidAdbPlatform:
@@ -198,6 +208,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pathlib.Path) -> webdriver.Remote:
+    self.adb_force_stop()
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
     return self._start_chromedriver(session, driver_path)
@@ -211,9 +222,15 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
       return ""
     return self.platform.cat(self._chrome_command_line_path)
 
+  def adb_force_stop(self) -> None:
+    self.platform.adb.force_stop(self.android_package)
+
   def force_quit(self) -> None:
     try:
-      super().force_quit()
+      try:
+        super().force_quit()
+      finally:
+        self.adb_force_stop()
     finally:
       self._restore_chrome_flags()
 
@@ -227,7 +244,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     if not self._previous_command_line_contents:
       logging.debug("%s: deleting chrome flags file: %s", self,
                     self._chrome_command_line_path)
-      self.platform.rm(self._chrome_command_line_path)
+      self.platform.rm(self._chrome_command_line_path, missing_ok=True)
     else:
       logging.debug("%s: restoring previous flags file contents in %s", self,
                     self._chrome_command_line_path)
@@ -239,8 +256,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                       args: Sequence[str]) -> ChromiumOptions:
     options: ChromiumOptions = super()._create_options(session, args)
     options.binary_location = ""
-    package = self.platform.app_path_to_package(self.path)
-    options.add_experimental_option("androidPackage", package)
+    options.add_experimental_option("androidPackage", self.android_package)
     options.add_experimental_option("androidDeviceSerial",
                                     self.platform.adb.serial_id)
     return options

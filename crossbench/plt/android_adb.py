@@ -273,6 +273,11 @@ class Adb:
     packages.sort()
     return packages
 
+  def force_stop(self, package_name: str) -> None:
+    if not package_name:
+      raise ValueError("Got empty package name")
+    self.shell("am", "force-stop", package_name)
+
 
 class AndroidAdbPlatform(PosixPlatform):
 
@@ -323,14 +328,9 @@ class AndroidAdbPlatform(PosixPlatform):
       return self._cpu
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
-    try:
-      _, max_core = self.cat("/sys/devices/system/cpu/possible").strip().split(
-          "-", maxsplit=1)
-      cores = int(max_core) + 1
-      self._cpu = f"{variant} {platform} {cores} cores"
-    except Exception as e:
-      logging.debug("Failed to get detailed CPU info: %s", e)
-      self._cpu = f"{variant} {platform}"
+    self._cpu = f"{variant} {platform}"
+    if cores_info := self._get_cpu_cores_info():
+      self._cpu = f"{self._cpu} {cores_info}"
     return self._cpu
 
   @property
@@ -568,6 +568,6 @@ class AndroidAdbPlatform(PosixPlatform):
             "bits": "n/a",
         },
         "CPU": self.cpu_details(),
-        "Adnroid": self._getprop_system_details(),
+        "Android": self._getprop_system_details(),
     }
     return self._system_details

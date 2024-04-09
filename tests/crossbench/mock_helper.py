@@ -124,8 +124,10 @@ class MockPlatform(ActivePlatformClass):
     del shell, quiet, encoding, env, check
     if self.expected_sh_cmds is not None:
       assert self.expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
-      expected = self.expected_sh_cmds.pop(0)
-      assert expected == args, f"Expected sh_cmd: {expected}, got: {args}"
+      # Convert all args to str first, sh accepts both str and Paths.
+      expected = tuple(map(str, self.expected_sh_cmds.pop(0)))
+      str_args = tuple(map(str, args))
+      assert expected == str_args, f"Expected sh_cmd: {expected}, got: {args}"
     self.sh_cmds.append(args)
     if not self.sh_results:
       cmd = shlex.join(map(str, args))

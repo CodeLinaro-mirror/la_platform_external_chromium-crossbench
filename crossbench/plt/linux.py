@@ -40,8 +40,9 @@ class LinuxPlatform(PosixPlatform):
   def device(self) -> str:
     if not self._device:
       try:
-        vendor = self.cat("/sys/devices/virtual/dmi/id/sys_vendor").strip()
-        product = self.cat("/sys/devices/virtual/dmi/id/product_name").strip()
+        id_dir = pathlib.Path("/sys/devices/virtual/dmi/id")
+        vendor = self.cat(id_dir / "sys_vendor").strip()
+        product = self.cat(id_dir / "product_name").strip()
         self._device = f"{vendor} {product}"
       except (FileNotFoundError, SubprocessError):
         self._device = "UNKNOWN"
@@ -51,18 +52,12 @@ class LinuxPlatform(PosixPlatform):
   def cpu(self) -> str:
     if self._cpu:
       return self._cpu
-
-    for line in self.cat("/proc/cpuinfo").splitlines():
+    for line in self.cat(pathlib.Path("/proc/cpuinfo")).splitlines():
       if line.startswith("model name"):
         _, self._cpu = line.split(":", maxsplit=2)
         break
-    try:
-      _, max_core = self.cat("/sys/devices/system/cpu/possible").strip().split(
-          "-", maxsplit=1)
-      cores = int(max_core) + 1
-      self._cpu = f"{self._cpu} {cores} cores"
-    except Exception as e:
-      logging.debug("Failed to get detailed CPU stats: %s", e)
+    if cores_info := self._get_cpu_cores_info():
+      self._cpu = f"{self._cpu} {cores_info}"
     return self._cpu
 
   @property

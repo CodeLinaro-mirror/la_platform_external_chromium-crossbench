@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import logging
 import pathlib
 import re
 from typing import Any, Dict, Iterator, Optional, Union
@@ -37,6 +38,16 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if not self.is_remote:
       return super()._raw_machine_arch()
     return self.sh_stdout("uname", "-m").strip()
+
+  def _get_cpu_cores_info(self) -> str:
+    try:
+      max_cores_file = pathlib.Path("/sys/devices/system/cpu/possible")
+      _, max_core = self.cat(max_cores_file).strip().split("-", maxsplit=1)
+      cores = int(max_core) + 1
+      return f"{cores} cores"
+    except Exception as e:
+      logging.debug("Failed to get detailed CPU stats: %s", e)
+      return ""
 
   _GET_CPONF_PROC_RE: re.Pattern = re.compile(
       r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
@@ -112,33 +123,38 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       pass
     return None
 
-  def cat(self, file: Union[str, pathlib.Path], encoding: str = "utf-8") -> str:
+  def cat(self, file: pathlib.Path, encoding: str = "utf-8") -> str:
     if not self.is_remote:
       return super().cat(file, encoding)
     return self.sh_stdout("cat", file, encoding=encoding)
 
-  def rm(self, path: Union[str, pathlib.Path], dir: bool = False) -> None:
+  def rm(self,
+         path: pathlib.Path,
+         dir: bool = False,
+         missing_ok: bool = False) -> None:
     if not self.is_remote:
-      super().rm(path, dir)
-    elif dir:
+      super().rm(path, dir, missing_ok)
+      return
+    if missing_ok and not self.exists(path):
+      return
+    if dir:
       self.sh("rm", "-rf", path)
     else:
       self.sh("rm", path)
 
-  def rename(self, src_path: Union[str, pathlib.Path],
-             dst_path: Union[str, pathlib.Path]) -> None:
+  def rename(self, src_path: pathlib.Path, dst_path: pathlib.Path) -> None:
     if not self.is_remote:
       super().rename(src_path, dst_path)
     else:
       self.sh("mv", src_path, dst_path)
 
-  def touch(self, path: Union[str, pathlib.Path]) -> None:
+  def touch(self, path: pathlib.Path) -> None:
     if not self.is_remote:
       super().touch(path)
     else:
       self.sh("touch", path)
 
-  def mkdir(self, path: Union[str, pathlib.Path]) -> None:
+  def mkdir(self, path: pathlib.Path) -> None:
     if not self.is_remote:
       super().mkdir(path)
     else:
@@ -146,20 +162,20 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def mkdtemp(self,
               prefix: Optional[str] = None,
-              dir: Optional[Union[str, pathlib.Path]] = None) -> pathlib.Path:
+              dir: Optional[pathlib.Path] = None) -> pathlib.Path:
     if not self.is_remote:
       return super().mkdtemp(prefix, dir)
     return self._mktemp_sh(is_dir=True, prefix=prefix, dir=dir)
 
   def mktemp(self,
              prefix: Optional[str] = None,
-             dir: Optional[Union[str, pathlib.Path]] = None) -> pathlib.Path:
+             dir: Optional[pathlib.Path] = None) -> pathlib.Path:
     if not self.is_remote:
       return super().mktemp(prefix, dir)
     return self._mktemp_sh(is_dir=False, prefix=prefix, dir=dir)
 
   def _mktemp_sh(self, is_dir: bool, prefix: Optional[str],
-                 dir: Optional[Union[str, pathlib.Path]]) -> pathlib.Path:
+                 dir: Optional[pathlib.Path]) -> pathlib.Path:
     if not dir:
       dir = self.default_tmp_dir
     template = pathlib.Path(dir) / f"{prefix}.XXXXXXXXXXX"
