@@ -346,8 +346,11 @@ class MacOSProfilingContext(ProfilingContext):
 
   def stop_process(self) -> None:
     if self._process:
-      helper.wait_and_kill(self._process, signal=signal.SIGINT)
+      logging.info("  Waiting for xctrace profiles (slow)...")
+      with helper.Spinner():
+        helper.wait_and_kill(self._process, signal=signal.SIGINT, timeout=60)
       self._process = None
+    atexit.unregister(self.stop_process)
 
 
 class LinuxProfilingContext(ProfilingContext):
