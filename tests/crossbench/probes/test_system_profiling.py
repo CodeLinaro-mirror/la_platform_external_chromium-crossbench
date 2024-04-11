@@ -5,7 +5,7 @@
 import pathlib
 import unittest
 
-from crossbench.probes.profiling.system_profiling import generate_simpleperf_command_line
+from crossbench.probes.profiling.system_profiling import generate_simpleperf_command_line, TargetMode
 from tests import test_helper
 
 
@@ -15,15 +15,19 @@ class TestProbe(unittest.TestCase):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
+            target=TargetMode.RENDERER_ONLY,
             app_name="com.android.chrome",
-            browser_app_only=False,
+            renderer_pid=1234,
             frame_pointers=False,
-            output_path=output_path),
-        ["simpleperf", "record", "-a", "--post-unwind=yes", "-o", output_path])
+            output_path=output_path), [
+                "simpleperf", "record", "-p", "1234", "--post-unwind=yes", "-o",
+                output_path
+            ])
     self.assertListEqual(
         generate_simpleperf_command_line(
+            target=TargetMode.BROWSER_APP_ONLY,
             app_name="com.chrome.beta",
-            browser_app_only=True,
+            renderer_pid=None,
             frame_pointers=False,
             output_path=output_path), [
                 "simpleperf", "record", "--app", "com.chrome.beta",
@@ -31,13 +35,12 @@ class TestProbe(unittest.TestCase):
             ])
     self.assertListEqual(
         generate_simpleperf_command_line(
+            target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
-            browser_app_only=True,
+            renderer_pid=None,
             frame_pointers=True,
-            output_path=output_path), [
-                "simpleperf", "record", "--app", "org.chromium.chrome",
-                "--call-graph", "fp", "-o", output_path
-            ])
+            output_path=output_path),
+        ["simpleperf", "record", "-a", "--call-graph", "fp", "-o", output_path])
 
 
 if __name__ == "__main__":

@@ -49,6 +49,19 @@ class CleanupMode(StrEnumWithHelp):
   NEVER = ("never", "Always clean up temp files")
 
 
+@enum.unique
+class TargetMode(StrEnumWithHelp):
+
+  @classmethod
+  def _missing_(cls, value) -> Optional[TargetMode]:
+    return super()._missing_(value.lower())
+
+  RENDERER_ONLY = ("renderers_only", "Profile Renderer processes only")
+  BROWSER_APP_ONLY = ("browser_app_only",
+                      "Profile all processes of the Browser App only")
+  SYSTEM_WIDE = ("system_wide", "Run system-wide profiling")
+
+
 class ProfilingProbe(Probe):
   """
   General-purpose sampling profiling probe.
@@ -56,7 +69,7 @@ class ProfilingProbe(Probe):
   Implementation:
   - Uses linux-perf on linux platforms (per browser/renderer process)
   - Uses xctrace on MacOS (currently only system-wide)
-  - Uses simpleperf on Android (per app, or system-wide)
+  - Uses simpleperf on Android (renderer-only, browser-only, or system-wide)
 
   For linux-based Chromium browsers it also injects JS stack samples with names
   from V8. For Googlers it additionally can auto-upload symbolized profiles to
@@ -85,14 +98,14 @@ class ProfilingProbe(Probe):
         help=("Chrome-on-Linux-only: also profile the browser process, "
               "(as opposed to only renderer processes)"))
     parser.add_argument(
-        "browser_app_only",
-        type=bool,
-        default=True,
-        help=(
-            "Chrome-on-Android-only: Profile the processes of the browser "
-            "app only. On non-rooted devices, the app must be set debuggable. "
-            "If `browser_app_only` is False, system-wide profiling is "
-            "implicitly enabled."))
+        "target",
+        type=TargetMode,
+        default=TargetMode.BROWSER_APP_ONLY,
+        help=("Chrome-on-Android-only: Profile either Renderer processes only, "
+              "or all processes of the Browser App, or system-wide. If "
+              "`Renderer processes only` is selected, profiling begins only "
+              "**after** browser has been started and the benchmark story has "
+              "been setup."))
     parser.add_argument(
         "frame_pointers",
         type=bool,
@@ -103,14 +116,6 @@ class ProfilingProbe(Probe):
             "https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md "
             "for more details and comparison between these two options. If "
             "`frame_pointers` is False, DWARF-based unwinding is used."))
-    parser.add_argument(
-        "start_profiling_after_setup",
-        type=bool,
-        default=False,
-        help=(
-            "Chrome-on-Android-only: Start profiling only after browser has "
-            "been started and the benchmark story has been setup. Enable this "
-            "if browser startup does not need to be profiled."))
     parser.add_argument(
         "spare_renderer_process",
         type=bool,
@@ -149,9 +154,8 @@ class ProfilingProbe(Probe):
                cleanup: CleanupMode = CleanupMode.AUTO,
                browser_process: bool = False,
                spare_renderer_process: bool = False,
-               browser_app_only: bool = True,
-               frame_pointers: bool = True,
-               start_profiling_after_setup: bool = False):
+               target: TargetMode = TargetMode.BROWSER_APP_ONLY,
+               frame_pointers: bool = True):
     super().__init__()
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
@@ -161,9 +165,9 @@ class ProfilingProbe(Probe):
     self._expose_v8_interpreted_frames: bool = v8_interpreted_frames
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
-    self._browser_app_only: bool = browser_app_only
+    self._target: bool = target
     self._frame_pointers: bool = frame_pointers
-    self._start_profiling_after_setup: bool = start_profiling_after_setup
+    self._start_profiling_after_setup: bool = target == TargetMode.RENDERER_ONLY
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -174,7 +178,7 @@ class ProfilingProbe(Probe):
         ("cleanup", self._cleanup_mode),
         ("browser_process", self._sample_browser_process),
         ("spare_renderer_process", self._spare_renderer_process),
-        ("browser_app_only", self._browser_app_only),
+        ("target", self._target),
         ("frame_pointers", self._frame_pointers),
         ("start_profiling_after_setup", self._start_profiling_after_setup),
     )
@@ -196,8 +200,8 @@ class ProfilingProbe(Probe):
     return self._cleanup_mode
 
   @property
-  def browser_app_only(self) -> bool:
-    return self._browser_app_only
+  def target(self) -> TargetMode:
+    return self._target
 
   @property
   def frame_pointers(self) -> bool:
@@ -219,6 +223,13 @@ class ProfilingProbe(Probe):
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
+    if browser_platform.is_android:
+      # RENDERER_ONLY requires:
+      # https://chromium-review.googlesource.com/c/chromium/src/+/5374765.
+      assert self._target != TargetMode.RENDERER_ONLY or browser.major_version >= 124, (
+          "For RENDERER_ONLY profiling, browser version >= M124 "
+          "(https://chromium-review.googlesource.com/c/chromium/src/+/5374765) is required."
+      )
     if self.run_pprof:
       self._run_pprof = browser_platform.which("gcert") is not None
       if not self.run_pprof:
@@ -577,10 +588,30 @@ class AndroidProfilingContext(ProfilingContext):
     super().__init__(probe, run)
     self._simpleperf_process: Optional[subprocess.Popen] = None
 
+  def _get_renderer_pid(self) -> int:
+    renderer_pid: Optional[int] = None
+    with self.run.actions("Get Renderer PID") as actions:
+      renderer_pid = actions.js(
+          "return chrome?.benchmarking?.getRendererPid?.();")
+    if renderer_pid is None:
+      error_message = (
+          "Unable to get Renderer PID from browser. "
+          "Is the browser binary a sufficiently new version? "
+          "For RENDERER_ONLY profiling, at least "
+          "https://chromium-review.googlesource.com/c/chromium/src/+/5374765 "
+          "is required.")
+      logging.error(error_message)
+      raise ValueError(error_message)
+    return renderer_pid
+
   def _generate_command_line(self) -> ListCmdArgsT:
+    renderer_pid: Optional[int] = None
+    if self.probe.target == TargetMode.RENDERER_ONLY:
+      renderer_pid = self._get_renderer_pid()
     return generate_simpleperf_command_line(
+        self.probe.target,
         str(self.run.browser.path),
-        self.probe.browser_app_only,
+        renderer_pid,
         self.probe.frame_pointers,
         self.result_path,
     )
@@ -616,6 +647,15 @@ class AndroidProfilingContext(ProfilingContext):
                       simpleperf_pid)
       self.browser_platform.terminate(simpleperf_pid)
 
+  def attach(self, browser: Browser) -> None:
+    super().attach(browser)
+    assert browser.platform.is_android, f"Expected Android platform, found {type(browser.platform)}."
+    assert browser.attributes.is_chromium_based, f"Expected Chromium-based browser, found {type(browser)}."
+    if browser.platform.is_android and browser.attributes.is_chromium_based:
+      chromium = cast(Chromium, browser)
+      # Set `--enable-benchmarking` explicitly for retrieving Renderer PID, if needed.
+      chromium.flags.set("--enable-benchmarking")
+
   def get_default_result_path(self) -> pathlib.Path:
     return super().get_default_result_path().parent / "simpleperf.perf.data"
 
@@ -646,15 +686,19 @@ class AndroidProfilingContext(ProfilingContext):
 
 
 def generate_simpleperf_command_line(
+    target: TargetMode,
     app_name: str,
-    browser_app_only: bool,
+    renderer_pid: Union[int, None],
     frame_pointers: bool,
     output_path: pathlib.Path,
 ) -> ListCmdArgsT:
   command_line = ["simpleperf", "record"]
-  if browser_app_only:
+  if target == TargetMode.RENDERER_ONLY:
+    assert renderer_pid is not None
+    command_line.extend(["-p", str(renderer_pid)])
+  elif target == TargetMode.BROWSER_APP_ONLY:
     command_line.extend(["--app", app_name])
-  else:
+  else:  # TargetMode.SYSTEM_WIDE
     command_line.append("-a")
   # Use "--post-unwind=yes" while unwinding with DWARF, to reduce
   # unwinding overhead during profiling.
