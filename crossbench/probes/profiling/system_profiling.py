@@ -56,7 +56,10 @@ class TargetMode(StrEnumWithHelp):
   def _missing_(cls, value) -> Optional[TargetMode]:
     return super()._missing_(value.lower())
 
-  RENDERER_ONLY = ("renderers_only", "Profile Renderer processes only")
+  RENDERER_MAIN_ONLY = ("renderer_main_only",
+                        "Profile Renderer Main thread only")
+  RENDERER_PROCESS_ONLY = ("renderer_process_only",
+                           "Profile Renderer process only")
   BROWSER_APP_ONLY = ("browser_app_only",
                       "Profile all processes of the Browser App only")
   SYSTEM_WIDE = ("system_wide", "Run system-wide profiling")
@@ -101,11 +104,12 @@ class ProfilingProbe(Probe):
         "target",
         type=TargetMode,
         default=TargetMode.BROWSER_APP_ONLY,
-        help=("Chrome-on-Android-only: Profile either Renderer processes only, "
-              "or all processes of the Browser App, or system-wide. If "
-              "`Renderer processes only` is selected, profiling begins only "
-              "**after** browser has been started and the benchmark story has "
-              "been setup."))
+        help=(
+            "Chrome-on-Android-only: Profile either Renderer main/process only, "
+            "or all processes of the Browser App, or system-wide. If "
+            "Renderer main/process profiling is selected, profiling begins "
+            "**after** browser has started and the benchmark story has been setup."
+        ))
     parser.add_argument(
         "frame_pointers",
         type=bool,
@@ -167,7 +171,8 @@ class ProfilingProbe(Probe):
       assert js, "Cannot expose V8 interpreted frames without js profiling."
     self._target: bool = target
     self._frame_pointers: bool = frame_pointers
-    self._start_profiling_after_setup: bool = target == TargetMode.RENDERER_ONLY
+    self._start_profiling_after_setup: bool = target in (
+        TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -224,10 +229,12 @@ class ProfilingProbe(Probe):
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
     if browser_platform.is_android:
-      # RENDERER_ONLY requires:
+      # RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY require:
       # https://chromium-review.googlesource.com/c/chromium/src/+/5374765.
-      assert self._target != TargetMode.RENDERER_ONLY or browser.major_version >= 124, (
-          "For RENDERER_ONLY profiling, browser version >= M124 "
+      assert self._target not in (
+          TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY
+      ) or browser.major_version >= 124, (
+          "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, browser version >= M124 "
           "(https://chromium-review.googlesource.com/c/chromium/src/+/5374765) is required."
       )
     if self.run_pprof:
@@ -588,30 +595,36 @@ class AndroidProfilingContext(ProfilingContext):
     super().__init__(probe, run)
     self._simpleperf_process: Optional[subprocess.Popen] = None
 
-  def _get_renderer_pid(self) -> int:
+  def _get_renderer_pid_tid(self) -> (int, int):
     renderer_pid: Optional[int] = None
-    with self.run.actions("Get Renderer PID") as actions:
+    renderer_main_tid: Optional[int] = None
+    with self.run.actions("Get Renderer PID/TID") as actions:
       renderer_pid = actions.js(
           "return chrome?.benchmarking?.getRendererPid?.();")
-    if renderer_pid is None:
+      renderer_main_tid = actions.js(
+          "return chrome?.benchmarking?.getRendererMainTid?.();")
+    if renderer_pid is None or renderer_main_tid is None:
       error_message = (
-          "Unable to get Renderer PID from browser. "
+          "Unable to get Renderer PID/TID from browser. "
           "Is the browser binary a sufficiently new version? "
-          "For RENDERER_ONLY profiling, at least "
+          "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, at least "
           "https://chromium-review.googlesource.com/c/chromium/src/+/5374765 "
           "is required.")
       logging.error(error_message)
       raise ValueError(error_message)
-    return renderer_pid
+    return renderer_pid, renderer_main_tid
 
   def _generate_command_line(self) -> ListCmdArgsT:
     renderer_pid: Optional[int] = None
-    if self.probe.target == TargetMode.RENDERER_ONLY:
-      renderer_pid = self._get_renderer_pid()
+    renderer_main_tid: Optional[int] = None
+    if self.probe.target in (TargetMode.RENDERER_MAIN_ONLY,
+                             TargetMode.RENDERER_PROCESS_ONLY):
+      renderer_pid, renderer_main_tid = self._get_renderer_pid_tid()
     return generate_simpleperf_command_line(
         self.probe.target,
         str(self.run.browser.path),
         renderer_pid,
+        renderer_main_tid,
         self.probe.frame_pointers,
         self.result_path,
     )
@@ -689,11 +702,15 @@ def generate_simpleperf_command_line(
     target: TargetMode,
     app_name: str,
     renderer_pid: Union[int, None],
+    renderer_main_tid: Union[int, None],
     frame_pointers: bool,
     output_path: pathlib.Path,
 ) -> ListCmdArgsT:
   command_line = ["simpleperf", "record"]
-  if target == TargetMode.RENDERER_ONLY:
+  if target == TargetMode.RENDERER_MAIN_ONLY:
+    assert renderer_main_tid is not None
+    command_line.extend(["-t", str(renderer_main_tid)])
+  elif target == TargetMode.RENDERER_PROCESS_ONLY:
     assert renderer_pid is not None
     command_line.extend(["-p", str(renderer_pid)])
   elif target == TargetMode.BROWSER_APP_ONLY:

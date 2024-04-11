@@ -15,9 +15,21 @@ class TestProbe(unittest.TestCase):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
-            target=TargetMode.RENDERER_ONLY,
+            target=TargetMode.RENDERER_MAIN_ONLY,
             app_name="com.android.chrome",
             renderer_pid=1234,
+            renderer_main_tid=5678,
+            frame_pointers=False,
+            output_path=output_path), [
+                "simpleperf", "record", "-t", "5678", "--post-unwind=yes", "-o",
+                output_path
+            ])
+    self.assertListEqual(
+        generate_simpleperf_command_line(
+            target=TargetMode.RENDERER_PROCESS_ONLY,
+            app_name="com.android.chrome",
+            renderer_pid=1234,
+            renderer_main_tid=5678,
             frame_pointers=False,
             output_path=output_path), [
                 "simpleperf", "record", "-p", "1234", "--post-unwind=yes", "-o",
@@ -28,6 +40,7 @@ class TestProbe(unittest.TestCase):
             target=TargetMode.BROWSER_APP_ONLY,
             app_name="com.chrome.beta",
             renderer_pid=None,
+            renderer_main_tid=None,
             frame_pointers=False,
             output_path=output_path), [
                 "simpleperf", "record", "--app", "com.chrome.beta",
@@ -38,6 +51,7 @@ class TestProbe(unittest.TestCase):
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
             renderer_pid=None,
+            renderer_main_tid=None,
             frame_pointers=True,
             output_path=output_path),
         ["simpleperf", "record", "-a", "--call-graph", "fp", "-o", output_path])
