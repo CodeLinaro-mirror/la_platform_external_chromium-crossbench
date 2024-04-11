@@ -179,13 +179,6 @@ class ProfilingProbe(Probe):
         ("start_profiling_after_setup", self._start_profiling_after_setup),
     )
 
-  def is_compatible(self, browser: Browser) -> bool:
-    if browser.platform.is_linux or browser.platform.is_android:
-      return browser.attributes.is_chromium_based
-    if browser.platform.is_macos:
-      return True
-    return False
-
   @property
   def sample_js(self) -> bool:
     return self._sample_js
