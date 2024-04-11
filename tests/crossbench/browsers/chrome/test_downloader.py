@@ -6,7 +6,10 @@ import abc
 import pathlib
 from unittest import mock
 
-from crossbench.browsers.chrome.downloader import ChromeDownloader
+from crossbench.browsers.chrome.downloader import (ChromeDownloader,
+                                                   ChromeDownloaderLinux,
+                                                   ChromeDownloaderMacOS,
+                                                   ChromeDownloaderWin)
 from tests import test_helper
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
@@ -48,14 +51,47 @@ class AbstractChromeDownloaderTestCase(
 
   def test_is_valid_strings(self) -> None:
     self.assertFalse(ChromeDownloader.is_valid("", self.platform))
-    self.assertFalse(ChromeDownloader.is_valid("MM100", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("mM45", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("M4", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("M1234", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("M123.4", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("M123 ", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("M12 ", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("145", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("45", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("i145", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("i45", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("chr-i145", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("chr-i45", self.platform))
+
+    self.assertTrue(ChromeDownloader.is_valid("M45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("m45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chrome-m45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chrome-45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chr-m45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chr-45", self.platform))
+
     self.assertTrue(ChromeDownloader.is_valid("M100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("m100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chrome-m100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chrome-100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chr-m100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chr-100", self.platform))
+
     self.assertFalse(
         ChromeDownloader.is_valid("M100.1.2.123.9999", self.platform))
-    self.assertFalse(
-        ChromeDownloader.is_valid("M111.0.5563.110", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M111.0.5563.110", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("111.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome-11.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome-M11.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chr-11.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome-111.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chr-111.0.5563.110", self.platform))
 
   def test_is_valid_path(self) -> None:
     self.assertFalse(
@@ -76,7 +112,9 @@ class BasicChromeDownloaderTestCaseLinux(AbstractChromeDownloaderTestCase):
     path = pathlib.Path("download/archive.rpm")
     self.fs.create_file(path)
     self.assertTrue(ChromeDownloader.is_valid(path, self.platform))
-
+    self.assertTrue(ChromeDownloaderLinux.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderMacOS.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderWin.is_valid(path, self.platform))
 
 class BasicChromeDownloaderTestCaseMacOS(AbstractChromeDownloaderTestCase):
   __test__ = True
@@ -89,6 +127,9 @@ class BasicChromeDownloaderTestCaseMacOS(AbstractChromeDownloaderTestCase):
     path = pathlib.Path("download/archive.dmg")
     self.fs.create_file(path)
     self.assertTrue(ChromeDownloader.is_valid(path, self.platform))
+    self.assertTrue(ChromeDownloaderMacOS.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderLinux.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderWin.is_valid(path, self.platform))
 
 
 if __name__ == "__main__":

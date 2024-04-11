@@ -17,12 +17,22 @@ from crossbench.browsers.downloader import (DMGArchiveHelper, Downloader,
 
 
 class ChromeDownloader(Downloader):
-  VERSION_RE: re.Pattern = re.compile(
-      r"(chrome-)?(?P<version>(m[0-9]{2,})|([0-9]+(\.[0-9]+){3}))", re.I)
+  MILESTONE_RE: re.Pattern = re.compile(
+      r"((chr(ome)?-m?)|m)(?P<milestone>[0-9]{2,3})", re.I)
+  FULL_VERSION_RE: re.Pattern = re.compile(
+      r"(?:(chr(ome)?-)?m?(?P<version>[0-9]{2,3}(\.[0-9]+){3}))", re.I)
   STORAGE_URL: str = "gs://chrome-signed/desktop-5c0tCh/"
   VERSION_URL = (
       "https://versionhistory.googleapis.com/v1/"
       "chrome/platforms/{platform}/channels/{channel}/versions?filter={filter}")
+
+  @classmethod
+  def is_valid_version(cls, path_or_identifier: str):
+    if cls.FULL_VERSION_RE.fullmatch(path_or_identifier):
+      return True
+    if cls.MILESTONE_RE.fullmatch(path_or_identifier):
+      return True
+    return False
 
   @classmethod
   def _get_loader_cls(cls, platform: plt.Platform) -> Type[ChromeDownloader]:
@@ -47,27 +57,30 @@ class ChromeDownloader(Downloader):
 
   def _version_check(self) -> None:
     major_version: int = self._requested_version[0]
-    if self._platform.is_macos and self._platform.is_arm64 and (major_version <
-                                                                87):
+    if (self._platform.is_macos and self._platform.is_arm64 and
+        (major_version < 87)):
       raise ValueError(
           "Native Mac arm64/m1 Chrome version is available with M87, "
           f"but requested M{major_version}.")
 
   def _parse_version(
       self, version_identifier: str) -> Tuple[str, Tuple[int, ...], str, bool]:
-    match = self.VERSION_RE.search(version_identifier)
-    assert match, f"Invalid chrome version identifier: {version_identifier}"
-    version_identifier = match["version"]
-    if version_identifier[0].upper() == "M":
-      requested_version = (int(version_identifier[1:]), self.ANY_MARKER,
-                           self.ANY_MARKER, self.ANY_MARKER)
-      requested_version_str = f"M{requested_version[0]}"
-      requested_exact_version = False
-    else:
-      requested_version = tuple(map(int, version_identifier.split(".")))[:4]
+    requested_version: Tuple[int, ...] = ()
+    requested_version_str = ""
+    requested_exact_version = False
+    if match := self.FULL_VERSION_RE.fullmatch(version_identifier):
+      full_version: str = match["version"]
+      requested_version = tuple(map(int, full_version.split(".")))[:4]
       requested_version_str = ".".join(map(str, requested_version))
       requested_exact_version = True
-    assert len(requested_version) == 4
+    elif match := self.MILESTONE_RE.fullmatch(version_identifier):
+      milestone: str = match["milestone"]
+      requested_version = (int(milestone), self.ANY_MARKER, self.ANY_MARKER,
+                           self.ANY_MARKER)
+      requested_version_str = f"M{requested_version[0]}"
+    if len(requested_version) != 4 or not requested_version_str:
+      raise ValueError(
+          f"Invalid chrome version identifier: {version_identifier}")
     return (version_identifier, requested_version, requested_version_str,
             requested_exact_version)
 
@@ -162,7 +175,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
                platform: plt.Platform) -> bool:
-    if cls.VERSION_RE.fullmatch(str(path_or_identifier)):
+    if cls.is_valid_version(str(path_or_identifier)):
       return True
     path = pathlib.Path(path_or_identifier)
     return path.exists() and path.suffix == cls.ARCHIVE_SUFFIX
@@ -205,7 +218,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
                platform: plt.Platform) -> bool:
-    if cls.VERSION_RE.fullmatch(str(path_or_identifier)):
+    if cls.is_valid_version(str(path_or_identifier)):
       return True
     path = pathlib.Path(path_or_identifier)
     return path.exists() and path.suffix == cls.ARCHIVE_SUFFIX
