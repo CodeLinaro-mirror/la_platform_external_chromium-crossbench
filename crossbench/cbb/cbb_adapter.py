@@ -12,7 +12,7 @@ with corresponding changes in CBB in google3
 
 import datetime as dt
 import pathlib
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Type, TypeVar, Union
 
 from selenium import webdriver
 
@@ -41,7 +41,7 @@ press_benchmarks_dict = {cls.NAME: cls for cls in press_benchmarks}
 
 
 def get_pressbenchmark_cls(
-    benchmark_name: str) -> Optional[Type[PressBenchmark]]:
+    benchmark_name: str) -> Optional[Type[TypeVar("T", bound=PressBenchmark)]]:
   """Returns the class of the specified pressbenchmark.
 
   Args:
@@ -54,7 +54,8 @@ def get_pressbenchmark_cls(
 
 
 def get_pressbenchmark_story_cls(
-    benchmark_name: str) -> Optional[Type[PressBenchmarkStory]]:
+    benchmark_name: str
+) -> Optional[Type[TypeVar("T", bound=PressBenchmarkStory)]]:
   """Returns the class of the specified pressbenchmark story.
 
   Args:
