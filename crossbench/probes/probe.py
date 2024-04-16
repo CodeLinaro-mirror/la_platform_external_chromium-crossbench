@@ -35,6 +35,7 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
     super().__init__("Probe", probe_cls)
     self._probe_cls: Type[ProbeT] = probe_cls
 
+
 class ProbeMissingDataError(ValueError):
   pass
 
@@ -98,7 +99,11 @@ class Probe(abc.ABC):
 
   @classmethod
   def help_text(cls) -> str:
-    return str(cls.config_parser())
+    return cls.config_parser().help
+
+  @classmethod
+  def summary_text(cls) -> str:
+    return cls.config_parser().summary
 
   # Set to False if the Probe cannot be used with arbitrary Stories or Pages
   IS_GENERAL_PURPOSE: bool = True

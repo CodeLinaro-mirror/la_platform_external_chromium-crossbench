@@ -153,6 +153,7 @@ class CliTestCase(BaseCliTestCase):
     # Check for top-level option:
     self.assertIn("--no-color", stdout)
     self.assertIn("Disable colored output", stdout)
+    self.assertIn("Available Probes for all Benchmarks:", stdout)
 
   def test_help_subcommand(self):
     with self.assertRaises(SysExitTestException) as cm:
@@ -165,6 +166,7 @@ class CliTestCase(BaseCliTestCase):
     # Check for top-level option:
     self.assertIn("--no-color", stdout)
     self.assertIn("Disable colored output", stdout)
+    self.assertIn("Available Probes for all Benchmarks:", stdout)
 
   def test_subcommand_help(self):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS:

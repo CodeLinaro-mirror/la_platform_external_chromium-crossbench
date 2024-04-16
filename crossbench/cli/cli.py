@@ -11,11 +11,12 @@ import logging
 import pathlib
 import sys
 import tempfile
+import textwrap
 import traceback
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type, Union)
 
-from tabulate import tabulate
+import tabulate as tbl
 
 import crossbench.benchmarks.all as benchmarks
 import crossbench.cli.config as cli_config
@@ -90,6 +91,34 @@ class AppendDebuggerProbeAction(argparse.Action):
       setattr(namespace, "timeout_unit", dt.timedelta.max)
 
 
+class MainCrossBenchArgumentParser(cli_helper.CrossBenchArgumentParser):
+
+  def print_help(self, file=None) -> None:
+    super().print_help(file=file)
+    self.print_probes(file=file)
+
+  def print_probes(self, file=None) -> None:
+    lines = [
+        "Probes can be added and configured for each benchmark.",
+        f"Use `{sys.argv[0]} describe probe $PROBE` for the full help.",
+        "",
+        "Usage: --probe=v8.log --probe=video ...",
+        "Usage: --probe=v8.log:{log_all:false} ...",
+        "Usage: --probe-config=configs/probe/dtrace.probe.config",
+        "",
+    ]
+    table = []
+    for probe_cls in GENERAL_PURPOSE_PROBES:
+      table.append((probe_cls.NAME, probe_cls.summary_text()))
+    lines.append(tbl.tabulate(table, tablefmt="plain"))
+    contents = "\n".join(lines)
+    file = file or sys.stdout
+    file.write("\n")
+    file.write("Available Probes for all Benchmarks:\n")
+    file.write(textwrap.indent(contents, "    "))
+    file.write("\n")
+
+
 class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
       benchmarks.Speedometer30Benchmark,
@@ -113,7 +142,7 @@ class CrossBenchCLI:
     self._console_handler: Optional[logging.StreamHandler] = None
     self._subparsers: Dict[BenchmarkClsT,
                            cli_helper.CrossBenchArgumentParser] = {}
-    self.parser = cli_helper.CrossBenchArgumentParser(
+    self.parser = MainCrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
                      "with configurable measurement probes."))
     self.describe_parser = cli_helper.CrossBenchArgumentParser()
@@ -287,14 +316,14 @@ class CrossBenchCLI:
               value = "[]"
             else:
               kwargs = {"maxcolwidths": 60}
-              value = tabulate(value.items(), tablefmt="plain", **kwargs)
+              value = tbl.tabulate(value.items(), tablefmt="plain", **kwargs)
           table.append([None, name, value])
       if len(table) <= 1:
         if args.category != "all":
           self.error(f"No matching benchmark found: '{args.filter}'")
       else:
         printed_any = True
-        print(tabulate(table, tablefmt="grid"))
+        print(tbl.tabulate(table, tablefmt="grid"))
 
     if args.category in ("all", "probe", "probes"):
       table = [["Probe", "Help"]]
@@ -305,7 +334,7 @@ class CrossBenchCLI:
           self.error(f"No matching probe found: '{args.filter}'")
       else:
         printed_any = True
-        print(tabulate(table, tablefmt="grid"))
+        print(tbl.tabulate(table, tablefmt="grid"))
 
     if not printed_any:
       self.error(f"No matching benchmarks or probes found: '{args.filter}'")
@@ -947,6 +976,8 @@ class CrossBenchCLI:
     if "-v" in argv or "-vv" in argv or "-vvv" in argv:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
+    if "--no-color" not in argv:
+      self._console_handler.setFormatter(helper.ColoredLogFormatter())
 
   def _setup_logging(self) -> None:
     if not self._enable_logging:
@@ -961,6 +992,8 @@ class CrossBenchCLI:
       logging.getLogger().setLevel(logging.DEBUG)
     if self.args.color:
       self._console_handler.setFormatter(helper.ColoredLogFormatter())
+    else:
+      self._console_handler.setFormatter(None)
 
   def _teardown_logging(self) -> None:
     if not self._enable_logging:

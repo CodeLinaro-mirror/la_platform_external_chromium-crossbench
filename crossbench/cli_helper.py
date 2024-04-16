@@ -410,6 +410,14 @@ class _BaseCrossBenchArgumentParser(argparse.ArgumentParser):
   def fail(self, message) -> None:
     super().error(message)
 
+  def exit(self, status=0, message=None):
+    if message:
+      if status == 0:
+        logging.info(message)
+      else:
+        logging.critical(message)
+    sys.exit(status)
+
 
 if sys.version_info < (3, 9, 0):
 

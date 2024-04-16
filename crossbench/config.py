@@ -566,6 +566,10 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def help(self) -> str:
     return str(self)
 
+  @property
+  def summary(self) -> str:
+    return self.doc.splitlines()[0]
+
   def __str__(self) -> str:
     parts: List[str] = []
     doc_string = self.doc
