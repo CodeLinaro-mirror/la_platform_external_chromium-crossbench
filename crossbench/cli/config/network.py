@@ -34,6 +34,7 @@ def _settings_str(name: str) -> str:
           f"in={settings['in_kbps']} kbps,"
           f"out={settings['out_kbps']} kbps")
 
+
 @enum.unique
 class NetworkSpeedPreset(ConfigEnum):
   """Presets that match ts_proxy settings."""
@@ -47,6 +48,7 @@ class NetworkSpeedPreset(ConfigEnum):
       "3G-fast", f"Slow 3G network settings: {_settings_str('3G-fast')}")
   MOBILE_4G: "NetworkSpeedPreset" = (
       "4G", f"Regular 4G network settings: {_settings_str('4G')}")
+
 
 @dataclasses.dataclass(frozen=True)
 class NetworkSpeedConfig(ConfigObject):
@@ -144,6 +146,7 @@ class NetworkConfig(ConfigObject):
     with exception.annotate_argparsing("Live network with speed config"):
       speed = NetworkSpeedConfig.parse(value)
       return cls(NetworkType.LIVE, speed)
+    raise exception.UnreachableError()
 
   @classmethod
   def is_valid_path(cls, path: pathlib.Path) -> bool:

@@ -82,4 +82,4 @@ class WprReplayNetwork(ReplayNetwork):
       self._server.stop()
 
   def __str__(self) -> str:
-    return f"WPR(archive={self.archive_path}, traffic={self.traffic_shaper})"
+    return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"

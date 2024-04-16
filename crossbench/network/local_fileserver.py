@@ -38,4 +38,4 @@ class LocalFileNetwork(Network):
     yield
 
   def __str__(self) -> str:
-    return f"LOCAL(path={self._path}, traffic={self.traffic_shaper})"
+    return f"LOCAL(path={self._path}, speed={self.traffic_shaper})"

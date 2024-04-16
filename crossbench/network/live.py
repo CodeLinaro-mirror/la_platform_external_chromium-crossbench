@@ -24,4 +24,4 @@ class LiveNetwork(Network):
         yield self
 
   def __str__(self) -> str:
-    return f"LIVE(traffic={self.traffic_shaper})"
+    return f"LIVE(speed={self.traffic_shaper})"

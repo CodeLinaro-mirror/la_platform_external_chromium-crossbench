@@ -34,7 +34,7 @@ class NoTrafficShaper(TrafficShaper):
     yield self
 
   def __str__(self) -> str:
-    return "live"
+    return "full"
 
 
 
