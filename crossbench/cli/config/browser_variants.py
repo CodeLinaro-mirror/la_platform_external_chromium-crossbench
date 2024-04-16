@@ -572,18 +572,16 @@ class BrowserVariantsConfig:
 
   def _maybe_downloaded_binary(self,
                                browser_config: BrowserConfig) -> BrowserConfig:
-    if browser_config.driver.type == BrowserDriverType.ANDROID:
-      return browser_config
     path_or_identifier = browser_config.browser
     if isinstance(path_or_identifier, pathlib.Path):
       return browser_config
-    platform = plt.PLATFORM
-    if ChromeDownloader.is_valid(path_or_identifier, platform):
+    browser_platform = self._get_browser_platform(browser_config)
+    if ChromeDownloader.is_valid(path_or_identifier, browser_platform):
       downloaded = ChromeDownloader.load(
-          path_or_identifier, platform, cache_dir=self._cache_dir)
-    elif FirefoxDownloader.is_valid(path_or_identifier, platform):
+          path_or_identifier, browser_platform, cache_dir=self._cache_dir)
+    elif FirefoxDownloader.is_valid(path_or_identifier, browser_platform):
       downloaded = FirefoxDownloader.load(
-          path_or_identifier, platform, cache_dir=self._cache_dir)
+          path_or_identifier, browser_platform, cache_dir=self._cache_dir)
     else:
       raise ValueError(
           f"No version-download support for browser: {path_or_identifier}")

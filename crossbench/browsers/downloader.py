@@ -11,98 +11,130 @@ import plistlib
 import re
 import shutil
 import tempfile
-from typing import Final, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Final, Optional, Tuple, Type, Union
 
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench import plt
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
+
+
+class IncompatibleVersionError(ValueError):
+  pass
 
 
 class Downloader(abc.ABC):
   ARCHIVE_SUFFIX: str = ""
   ANY_MARKER: Final = 9999
-  VERSION_RE: re.Pattern = re.compile(".*")
+  APP_VERSION_RE = re.compile(r"(?P<version>[\d\.ab]+)")
 
   @classmethod
   @abc.abstractmethod
-  def _get_loader_cls(cls, platform: plt.Platform) -> Type[Downloader]:
+  def _get_loader_cls(cls, browser_platform: plt.Platform) -> Type[Downloader]:
     pass
 
   @classmethod
   def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
-               platform: plt.Platform) -> bool:
-    return cls._get_loader_cls(platform).is_valid(path_or_identifier, platform)
+               browser_platform: plt.Platform) -> bool:
+    return cls._get_loader_cls(browser_platform).is_valid(
+        path_or_identifier, browser_platform)
+
+  @classmethod
+  @abc.abstractmethod
+  def is_valid_version(cls, path_or_identifier: str):
+    pass
 
   @classmethod
   def load(cls,
            archive_path_or_version_identifier: Union[str, pathlib.Path],
-           platform: plt.Platform,
+           browser_platform: plt.Platform,
            cache_dir: Optional[pathlib.Path] = None) -> pathlib.Path:
-    loader_cls: Type[Downloader] = cls._get_loader_cls(platform)
+    logging.debug("Downloading chrome %s binary for %s",
+                  archive_path_or_version_identifier, browser_platform)
+    loader_cls: Type[Downloader] = cls._get_loader_cls(browser_platform)
     loader: Downloader = loader_cls(archive_path_or_version_identifier, "", "",
-                                    platform, cache_dir)
+                                    browser_platform, cache_dir)
     return loader.app_path
 
   def __init__(self,
                archive_path_or_version_identifier: Union[str, pathlib.Path],
                browser_type: str,
                platform_name: str,
-               platform: plt.Platform,
+               browser_platform: plt.Platform,
                cache_dir: Optional[pathlib.Path] = None):
     assert browser_type, "Missing browser_type"
     self._browser_type = browser_type
-    self._platform = platform
+    self._browser_platform = browser_platform
     self._platform_name = platform_name
     assert platform_name, "Missing platform_name"
+    self._archive_url: str = ""
     self._archive_path: pathlib.Path = pathlib.Path()
     self._out_dir: pathlib.Path = cache_dir or BROWSERS_CACHE
     self._archive_dir: pathlib.Path = self._out_dir / "archive"
     self._archive_dir.mkdir(parents=True, exist_ok=True)
-    self._app_path: pathlib.Path = self._out_dir / self._browser_type
+    self._app_path: pathlib.Path = pathlib.Path()
     # TODO replace version* variable with version object
     self._version_identifier: str = ""
     self._requested_version: Tuple[int, ...] = (0, 0, 0, 0)
     self._requested_version_str: str = "0.0.0.0"
     self._requested_exact_version: bool = False
-    if self.VERSION_RE.fullmatch(str(archive_path_or_version_identifier)):
+    self._app_path = self.find(archive_path_or_version_identifier)
+    self._validate()
+
+  def find(
+      self,
+      archive_path_or_version_identifier: Union[str,
+                                                pathlib.Path]) -> pathlib.Path:
+    if self.is_valid_version(str(archive_path_or_version_identifier)):
       self._version_identifier = str(archive_path_or_version_identifier)
       self._pre_check()
-      self._load_from_version()
-    else:
-      self._archive_path = pathlib.Path(archive_path_or_version_identifier)
-      self._pre_check()
-      if not archive_path_or_version_identifier or (
-          not self._archive_path.exists()):
-        raise ValueError(
-            f"{self._browser_type} archive does not exist: {self._archive_path}"
-        )
-      self._load_from_archive()
-    assert self._app_path.exists(), (
+      return self._load_from_version()
+    self._archive_path = pathlib.Path(archive_path_or_version_identifier)
+    self._pre_check()
+    if not archive_path_or_version_identifier or (
+        not self._archive_path.exists()):
+      raise ValueError(
+          f"{self._browser_type} archive does not exist: {self._archive_path}")
+    return self._load_from_archive()
+
+  def _validate(self) -> None:
+    assert self._app_path != pathlib.Path(), "Did not set app_path"
+    assert self._is_app_installed(self._app_path), (
         f"Could not extract {self._browser_type}  binary: {self._app_path}")
     logging.debug("Extracted app: %s", self._app_path)
 
   @property
   def app_path(self) -> pathlib.Path:
-    assert self._app_path.exists(), "Could not download browser"
+    assert self._is_app_installed(self._app_path), "Could not download browser"
     return self._app_path
 
-  def _pre_check(self) -> None:
-    assert not self._platform.is_remote, (
-        "Browser download only supported on local machines")
+  @property
+  def host_platform(self) -> plt.Platform:
+    return self._browser_platform.host_platform
 
-  def _load_from_version(self) -> None:
+  def _pre_check(self) -> None:
+    pass
+
+  def _is_app_installed(self, app_path: pathlib.Path) -> bool:
+    return self._browser_platform.search_app(app_path) is not None
+
+  def _find_matching_installed_version(self) -> Optional[pathlib.Path]:
+    app_path: pathlib.Path = self._installed_app_path()
+    if self._is_app_installed(app_path):
+      return app_path
+    return None
+
+  def _load_from_version(self) -> pathlib.Path:
     (self._version_identifier, self._requested_version,
      self._requested_version_str,
      self._requested_exact_version) = self._parse_version(
          self._version_identifier)
-    self._app_path = self._default_app_path()
-    logging.info("-" * 80)
-    if self._app_path.exists():
-      cached_version = self._validate_cached()
-      logging.info("CACHED BROWSER: %s %s", cached_version, self._app_path)
-      return
-    self._version_check()
     self._archive_path = self._archive_dir / (
         f"{self._requested_version_str}{self.ARCHIVE_SUFFIX}")
+    logging.info("-" * 80)
+    if app_path := self._find_matching_installed_version():
+      if cached_version := self._validate_installed(app_path):
+        logging.info("CACHED BROWSER: %s %s", cached_version, self._app_path)
+        return app_path
+    self._version_check()
     if not self._archive_path.exists():
       logging.info("DOWNLOADING %s %s", self._browser_type,
                    self._version_identifier.upper())
@@ -110,53 +142,55 @@ class Downloader(abc.ABC):
       if not archive_url:
         raise ValueError(
             f"Could not find matching version for {self._requested_version}")
-      logging.info("DOWNLOADING %s", archive_url)
+      self._archive_url = archive_url
+      logging.info("DOWNLOADING %s", self._archive_url)
       with tempfile.TemporaryDirectory(suffix="cb_download") as tmp_dir_name:
         tmp_dir = pathlib.Path(tmp_dir_name)
-        self._download_archive(archive_url, tmp_dir)
+        self._download_archive(self._archive_url, tmp_dir)
     else:
       logging.info("CACHED DOWNLOAD: %s", self._archive_path)
-    self._extract_archive(self._archive_path)
+    self._install_archive(self._archive_path)
     if not self._requested_exact_version:
       self._archive_path.unlink()
+    return self._installed_app_path()
 
   @abc.abstractmethod
   def _version_check(self) -> None:
     pass
 
-  def _load_from_archive(self) -> None:
+  def _load_from_archive(self) -> pathlib.Path:
     assert not self._requested_exact_version
     assert not self._version_identifier
     assert self._archive_path.exists()
     logging.info("EXTRACTING ARCHIVE: %s", self._archive_path)
     self._requested_version_str = "temp"
-    self._app_path = self._default_app_path()
-    temp_extracted_path = self._default_extracted_path()
+    tmp_app_path: pathlib.Path = self._installed_app_path()
+    temp_extracted_path = self._extracted_path()
     if temp_extracted_path.exists():
-      assert not self._platform.is_remote, "Remote device support missing"
       logging.info("Deleting previously extracted browser: %s",
                    temp_extracted_path)
       shutil.rmtree(temp_extracted_path)
-    self._extract_archive(self._archive_path)
-    logging.info("Parsing browser version: %s", self._app_path)
-    assert self._app_path.exists(), (
-        f"Extraction failed, app does not exist: {self._app_path}")
-    full_version_string = self._platform.app_version(self._app_path)
+    self._install_archive(self._archive_path)
+    logging.info("Parsing browser version: %s", tmp_app_path)
+    assert self._is_app_installed(tmp_app_path), (
+        f"Extraction failed, app does not exist: {tmp_app_path}")
+    full_version_string = self._browser_platform.app_version(tmp_app_path)
     (self._version_identifier, self._requested_version,
      self._requested_version_str,
      self._requested_exact_version) = self._parse_version(full_version_string)
     assert self._requested_exact_version
     assert self._version_identifier
-    versioned_path = self._default_extracted_path()
-    self._app_path = self._default_app_path()
-    if self._app_path.exists():
-      cached_version = self._validate_cached()
-      logging.info("Deleting temporary browser: %s", self._app_path)
+    versioned_path = self._extracted_path()
+    app_path = self._installed_app_path()
+    if self._is_app_installed(app_path):
+      cached_version = self._validate_installed(app_path)
+      logging.info("Deleting temporary browser: %s", app_path)
       shutil.rmtree(temp_extracted_path)
-      logging.info("CACHED BROWSER: %s %s", cached_version, self._app_path)
+      logging.info("CACHED BROWSER: %s %s", cached_version, app_path)
     else:
       assert not versioned_path.exists()
       temp_extracted_path.rename(versioned_path)
+    return app_path
 
   @abc.abstractmethod
   def _parse_version(
@@ -164,30 +198,30 @@ class Downloader(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def _default_extracted_path(self) -> pathlib.Path:
+  def _extracted_path(self) -> pathlib.Path:
     pass
 
   @abc.abstractmethod
-  def _default_app_path(self) -> pathlib.Path:
+  def _installed_app_path(self) -> pathlib.Path:
     pass
 
-  def _validate_cached(self) -> str:
+  def _validate_installed(self, app_path: pathlib.Path) -> str:
     # "XXX YYY 107.0.5304.121" => "107.0.5304.121"
-    app_version = self._platform.app_version(self._app_path)
-    version_match = re.search(r"([^0-9]+)(?P<version>[\d\.ab]+)", app_version)
-    assert version_match, (
-        f"Got invalid version string from {self._browser_type} binary: {app_version}"
-    )
+    app_version = self._browser_platform.app_version(app_path)
+    version_match = self.APP_VERSION_RE.search(app_version)
+    assert version_match, ("Got invalid version string "
+                           f"from {self._browser_type} binary: {app_version}")
     cached_version_str = version_match["version"]
     # TODO: fix using dedicated Version object
     cached_version = tuple(map(int, re.split(r"[\.ab]", cached_version_str)))
     assert 3 <= len(cached_version) <= 4, f"Got invalid version: {app_version}"
     if not self._version_matches(cached_version):
-      raise ValueError(
-          f"Previously downloaded browser at {self._app_path} "
-          "might have been auto-updated.\n"
-          "Please delete the old version and re-install/-download it.\n"
-          f"Expected: {self._requested_version} Got: {cached_version}")
+      msg: str = (f"Previously downloaded browser at {app_path} "
+                  "might have been auto-updated.\n"
+                  "Please delete the old version and re-install/-download it.\n"
+                  f"Expected: {self._requested_version} Got: {cached_version}")
+      logging.debug(msg)
+      raise IncompatibleVersionError(msg)
     return cached_version_str
 
   @abc.abstractmethod
@@ -224,7 +258,7 @@ class Downloader(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def _extract_archive(self, archive_path: pathlib.Path) -> None:
+  def _install_archive(self, archive_path: pathlib.Path) -> None:
     pass
 
 

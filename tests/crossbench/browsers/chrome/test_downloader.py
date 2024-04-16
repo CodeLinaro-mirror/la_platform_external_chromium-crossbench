@@ -11,7 +11,8 @@ from crossbench.browsers.chrome.downloader import (ChromeDownloader,
                                                    ChromeDownloaderMacOS,
                                                    ChromeDownloaderWin)
 from tests import test_helper
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
+                                          GenericMockPlatform)
 
 
 class AbstractChromeDownloaderTestCase(
@@ -22,7 +23,9 @@ class AbstractChromeDownloaderTestCase(
     super().setUp()
     self.platform = mock.Mock(
         is_remote=False, is_linux=False, is_macos=False, sh_results=[])
-    self.platform.which = lambda x: True
+    self.platform.search_app = lambda x: x
+    self.platform.which = pathlib.Path
+    self.platform.host_platform = self.platform
     self.cache_dir = pathlib.Path("crossbench/binary_cache")
     self.fs.create_dir(self.cache_dir)
 
@@ -43,8 +46,8 @@ class AbstractChromeDownloaderTestCase(
       ChromeDownloader.load(
           pathlib.Path("custom"), self.platform, self.cache_dir)
 
-  def test_load_valid_no_googler(self) -> None:
-    self.platform.which = lambda x: False
+  def test_load_valid_non_googler(self) -> None:
+    self.platform.which = lambda x: None
     with self.assertRaises(ValueError):
       ChromeDownloader.load("chrome-111.0.5563.110", self.platform,
                             self.cache_dir)
@@ -77,11 +80,27 @@ class AbstractChromeDownloaderTestCase(
     self.assertTrue(ChromeDownloader.is_valid("chrome-100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-m100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-100", self.platform))
+    self.assertFalse(
+        ChromeDownloader.is_valid("Google Chrome m100", self.platform))
+    self.assertFalse(
+        ChromeDownloader.is_valid("Google Chrome 100", self.platform))
 
     self.assertFalse(
         ChromeDownloader.is_valid("M100.1.2.123.9999", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("M111.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("Google Chrome M111.0.5563.110",
+                                  self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("Google Chrome Canary M111.0.5563.110",
+                                  self.platform))
     self.assertTrue(ChromeDownloader.is_valid("111.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("Google Chrome 111.0.5563.110",
+                                  self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("Google Chrome Canary111.0.5563.110",
+                                  self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("chrome-11.0.5563.110", self.platform))
     self.assertTrue(

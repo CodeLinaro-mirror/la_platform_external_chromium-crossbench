@@ -47,7 +47,7 @@ class ChromeWebDriver(ChromePathMixin, ChromiumWebDriver):
       msg: List[str] = [f"Could not start WebDriver: {e.msg}"]
       if self.platform.is_android:
         msg += [
-            "Possibly missing chrome settings on {self.platform}.",
+            f"Possibly missing chrome settings on {self.platform}.",
             "Please make sure to allow chrome-flags on "
             "non-rooted android devices:",
             "chrome://flags#enable-command-line-on-non-rooted-devices",
