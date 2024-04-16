@@ -15,7 +15,8 @@ import pathlib
 import signal
 import subprocess
 import time
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast
+from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Union,
+                    cast)
 
 from crossbench import helper, plt
 from crossbench.browsers.chromium.chromium import Chromium
@@ -169,7 +170,7 @@ class ProfilingProbe(Probe):
     self._expose_v8_interpreted_frames: bool = v8_interpreted_frames
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
-    self._target: bool = target
+    self._target: TargetMode = target
     self._frame_pointers: bool = frame_pointers
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
@@ -595,7 +596,7 @@ class AndroidProfilingContext(ProfilingContext):
     super().__init__(probe, run)
     self._simpleperf_process: Optional[subprocess.Popen] = None
 
-  def _get_renderer_pid_tid(self) -> (int, int):
+  def _get_renderer_pid_tid(self) -> Tuple[int, int]:
     renderer_pid: Optional[int] = None
     renderer_main_tid: Optional[int] = None
     with self.run.actions("Get Renderer PID/TID") as actions:
@@ -660,19 +661,19 @@ class AndroidProfilingContext(ProfilingContext):
                       simpleperf_pid)
       self.browser_platform.terminate(simpleperf_pid)
 
-  def attach(self, browser: Browser) -> None:
-    super().attach(browser)
-    assert browser.platform.is_android, f"Expected Android platform, found {type(browser.platform)}."
-    assert browser.attributes.is_chromium_based, f"Expected Chromium-based browser, found {type(browser)}."
-    if browser.platform.is_android and browser.attributes.is_chromium_based:
-      chromium = cast(Chromium, browser)
-      # Set `--enable-benchmarking` explicitly for retrieving Renderer PID, if needed.
-      chromium.flags.set("--enable-benchmarking")
-
   def get_default_result_path(self) -> pathlib.Path:
     return super().get_default_result_path().parent / "simpleperf.perf.data"
 
   def setup(self) -> None:
+    assert self.browser.platform.is_android, (
+        f"Expected Android platform, found {type(self.browser.platform)}.")
+    assert self.browser.attributes.is_chromium_based, (
+        f"Expected Chromium-based browser, found {type(self.browser)}.")
+    if (self.browser.platform.is_android and
+        self.browser.attributes.is_chromium_based):
+      chromium = cast(Chromium, self.browser)
+      # Set `--enable-benchmarking` explicitly for retrieving Renderer PID, if needed.
+      chromium.flags.set("--enable-benchmarking")
     self._stop_existing_simpleperf()
 
   def start(self) -> None:

@@ -242,6 +242,7 @@ class Browser(abc.ABC):
                          args: Tuple[str, ...],
                          driver_path: Optional[pathlib.Path] = None) -> None:
     logging.info("STARTING BROWSER Binary:  %s", self.path)
+    logging.info("STARTING BROWSER Version: %s", self.version)
     if driver_path:
       logging.info("STARTING BROWSER Driver:  %s", driver_path)
     logging.info("STARTING BROWSER Network: %s", self.network)

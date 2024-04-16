@@ -278,6 +278,49 @@ class Adb:
       raise ValueError("Got empty package name")
     self.shell("am", "force-stop", package_name)
 
+  def install(self,
+              bundle: pathlib.Path,
+              allow_downgrade: bool = False) -> None:
+    if bundle.suffix == ".apks":
+      self.install_apks(bundle, allow_downgrade)
+    if bundle.suffix == ".apk":
+      self.install_apk(bundle, allow_downgrade)
+
+  def install_apk(self,
+                  apk: pathlib.Path,
+                  allow_downgrade: bool = False) -> None:
+    if not apk.exists():
+      raise ValueError(f"APK {apk} does not exist.")
+    args = ["install"]
+    if allow_downgrade:
+      args.append("-d")
+    args.append(str(apk))
+    self._adb(*args)
+
+  def install_apks(self,
+                   apks: pathlib.Path,
+                   allow_downgrade: bool = False) -> None:
+    if not apks.exists():
+      raise ValueError(f"APK {apks} does not exist.")
+    cmd = [
+        "bundletool", "install-apks", f"--device-id={self._serial_id}",
+        f"--apks={apks}"
+    ]
+    if allow_downgrade:
+      cmd.append("--allow-downgrade")
+    self._host_platform.sh(*cmd)
+
+  def uninstall(self, package_name: str, missing_ok: bool = False) -> None:
+    if not package_name:
+      raise ValueError("Got empty package name")
+    try:
+      self._adb("uninstall", package_name)
+    except Exception as e:
+      if missing_ok:
+        logging.debug("Could not uninstall %s: %s", package_name, e)
+      else:
+        raise
+
 
 class AndroidAdbPlatform(PosixPlatform):
 
@@ -365,10 +408,14 @@ class AndroidAdbPlatform(PosixPlatform):
     return package
 
   def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    raise NotImplementedError()
-
-  def search_app(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    raise NotImplementedError()
+    if not app_or_bin.parts:
+      raise ValueError("Got empty path")
+    if result_path := self.which(str(app_or_bin)):
+      assert self.exists(result_path), f"{result_path} does not exist."
+      return result_path
+    if str(app_or_bin) in self.adb.packages():
+      return app_or_bin
+    return None
 
   _VERSION_NAME_RE = re.compile(r"versionName=(?P<version>.+)")
 

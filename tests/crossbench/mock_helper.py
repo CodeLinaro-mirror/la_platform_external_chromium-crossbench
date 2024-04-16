@@ -9,10 +9,9 @@ import contextlib
 import io
 import logging
 import pathlib
-import platform
 import shlex
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Mapping, Optional,
-                    Sequence, Tuple, Type, Union)
+                    Sequence, Tuple, Union)
 from unittest import mock
 
 import psutil
@@ -20,12 +19,17 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench
 from crossbench import plt
-from crossbench.benchmarks.base import Benchmark, SubStoryBenchmark
+from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
-from crossbench.plt.base import MachineArch
+from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.base import MachineArch, Platform
+from crossbench.plt.linux import LinuxPlatform
+from crossbench.plt.linux_ssh import LinuxSshPlatform
+from crossbench.plt.macos import MacOSPlatform
+from crossbench.plt.win import WinPlatform
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 from tests.crossbench import mock_browser
@@ -36,19 +40,19 @@ if TYPE_CHECKING:
 
 GIB = 1014**3
 
-ActivePlatformClass: Type[plt.Platform] = type(plt.PLATFORM)
 
 ShellArgsT = Tuple[Union[str, pathlib.Path]]
 
 
-class MockPlatform(ActivePlatformClass):
+class MockPlatformMixin:
 
-  def __init__(self, is_battery_powered=False):
+  def __init__(self, *args, is_battery_powered=False, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
     self.sh_cmds: List[ShellArgsT] = []
     self.expected_sh_cmds: Optional[List[ShellArgsT]] = None
     self.sh_results: List[str] = []
+    super().__init__(*args, **kwargs)
 
   def expect_sh(self,
                 *args: Union[str, pathlib.Path],
@@ -148,6 +152,40 @@ class MockPlatform(ActivePlatformClass):
 
 
 
+class LinuxMockPlatform(MockPlatformMixin, LinuxPlatform):
+  pass
+
+
+class LinuxSshMockPlatform(MockPlatformMixin, LinuxSshPlatform):
+  pass
+
+
+class MacOsMockPlatform(MockPlatformMixin, MacOSPlatform):
+  pass
+
+
+class WinMockPlatform(MockPlatformMixin, WinPlatform):
+  pass
+
+
+class AndroidAdbMockPlatform(MockPlatformMixin, AndroidAdbPlatform):
+  pass
+
+
+class GenericMockPlatform(MockPlatformMixin, Platform):
+  pass
+
+
+if plt.PLATFORM.is_linux:
+  MockPlatform = LinuxMockPlatform
+elif plt.PLATFORM.is_macos:
+  MockPlatform = MacOsMockPlatform
+elif plt.PLATFORM.is_win:
+  MockPlatform = WinMockPlatform
+else:
+  raise RuntimeError(f"Unsupported platform: {plt.PLATFORM}")
+
+
 class MockStory(Story):
 
   @classmethod
@@ -165,7 +203,7 @@ class MockBenchmark(SubStoryBenchmark):
 
 class MockCLI(CrossBenchCLI):
   runner: Runner
-  platform: MockPlatform
+  platform: Platform
 
   def __init__(self, *args, **kwargs) -> None:
     self.platform = kwargs.pop("platform")
