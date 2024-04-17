@@ -26,6 +26,8 @@ class ActionType(ConfigEnum):
   WAIT: "ActionType" = ("wait", "Wait for a given time")
   SCROLL: "ActionType" = ("scroll", "Scroll on page")
   CLICK: "ActionType" = ("click", "Click on element")
+  TAP: "ActionType" = ("tap", "Tap on element")
+  SWIPE: "ActionType" = ("swipe", "Swipe on screen")
 
 
 @enum.unique
@@ -312,10 +314,117 @@ class ClickAction(Action):
     return details
 
 
+class TapAction(Action):
+  TYPE: ActionType = ActionType.TAP
+
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["selector"] = value.pop("selector", None)
+    kwargs["x"] = value.pop("x", None)
+    kwargs["y"] = value.pop("y", None)
+    return kwargs
+
+  def __init__(self,
+               selector: Optional[str] = None,
+               x: Optional[int] = None,
+               y: Optional[int] = None,
+               timeout: dt.timedelta = ACTION_TIMEOUT):
+    # TODO: convert to custom selector object.
+    self._selector = selector
+    self._x = x
+    self._y = y
+    super().__init__(timeout)
+
+  @property
+  def selector(self) -> Optional[str]:
+    return self._selector
+
+  @property
+  def x(self) -> Optional[int]:
+    return self._x
+
+  @property
+  def y(self) -> Optional[int]:
+    return self._y
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.tap(run, self)
+
+  def validate(self) -> None:
+    super().validate()
+    if self.selector:
+      if self.x is not None or self.y is not None:
+        raise ValueError("Only one is allowed: either selector or coordinates")
+    else:
+      if self.x is None or self.y is None:
+        raise ValueError("Both selector and coordinates are missing")
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["selector"] = self.selector
+    return details
+
+
+class SwipeAction(DurationAction):
+  TYPE: ActionType = ActionType.SWIPE
+
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["startx"] = cls.pop_required_input(value, "startx")
+    kwargs["starty"] = cls.pop_required_input(value, "starty")
+    kwargs["endx"] = cls.pop_required_input(value, "endx")
+    kwargs["endy"] = cls.pop_required_input(value, "endy")
+    return kwargs
+
+  def __init__(self,
+               startx: int,
+               starty: int,
+               endx: int,
+               endy: int,
+               duration: dt.timedelta = dt.timedelta(seconds=1),
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._startx: int = startx
+    self._starty: int = starty
+    self._endx: int = endx
+    self._endy: int = endy
+    super().__init__(duration, timeout)
+
+  @property
+  def startx(self) -> int:
+    return self._startx
+
+  @property
+  def starty(self) -> int:
+    return self._starty
+
+  @property
+  def endx(self) -> int:
+    return self._endx
+
+  @property
+  def endy(self) -> int:
+    return self._endy
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.swipe(run, self)
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["startx"] = self._startx
+    details["starty"] = self._starty
+    details["endx"] = self._endx
+    details["endy"] = self._endy
+    return details
+
+
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
+    TapAction,
     GetAction,
     ScrollAction,
+    SwipeAction,
     WaitAction,
 )
 

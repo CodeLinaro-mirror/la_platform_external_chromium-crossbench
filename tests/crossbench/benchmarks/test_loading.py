@@ -305,6 +305,19 @@ class TestExamplePageConfig(unittest.TestCase):
     for page in dict_config.pages:
       self.assertGreater(len(page.actions), 1)
 
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  def test_parse_android_page_config_file(self):
+    example_config_file = (
+        test_helper.config_dir() / "woa" / "android_input_page_config.hjson")
+    file_config = PagesConfig.parse(example_config_file)
+    with example_config_file.open(encoding="utf-8") as f:
+      data = hjson.load(f)
+    dict_config = PagesConfig.load_dict(data)
+    self.assertTrue(dict_config.pages)
+    self.assertTrue(file_config.pages)
+    for page in dict_config.pages:
+      self.assertGreater(len(page.actions), 1)
+
 
 class PageConfigTestsCase(unittest.TestCase):
 

@@ -69,3 +69,10 @@ class BasicActionRunner(ActionRunner):
         actions.js(f"window.scrollTo({start}, {end});")
         start = end
         end += 100 * direction
+
+  def tap(self, run: Run, action: i_action.TapAction) -> None:
+    raise NotImplementedError("Tap action not implemented in BasicActionRunner")
+
+  def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
+    raise NotImplementedError(
+        "Swipe action not implemented in BasicActionRunner")

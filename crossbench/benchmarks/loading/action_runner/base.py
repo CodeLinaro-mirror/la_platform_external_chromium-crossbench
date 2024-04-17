@@ -33,3 +33,11 @@ class ActionRunner(abc.ABC):
   @abc.abstractmethod
   def click(self, run: Run, action: i_action.ClickAction) -> None:
     pass
+
+  @abc.abstractmethod
+  def tap(self, run: Run, action: i_action.TapAction) -> None:
+    pass
+
+  @abc.abstractmethod
+  def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
+    pass
