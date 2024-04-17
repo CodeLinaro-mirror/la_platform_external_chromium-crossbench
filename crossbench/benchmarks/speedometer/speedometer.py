@@ -41,6 +41,7 @@ class SpeedometerProbe(
   Extracts all speedometer times and scores.
   """
   JS: str = "return window.suiteValues;"
+  SORT_KEYS: bool = False
 
   def to_json(self, actions: Actions) -> JSON:
     return actions.js(self.JS)
@@ -50,8 +51,8 @@ class SpeedometerProbe(
     assert isinstance(json_data, list), f"Expected list got {type(json_data)}"
     merged = cb_metric.MetricsMerger(
         json_data, key_fn=_probe_remove_tests_segments).to_json(
-            value_fn=lambda values: values.geomean)
-    return probes_helper.Flatten(merged).data
+            value_fn=lambda values: values.geomean, sort=self.SORT_KEYS)
+    return probes_helper.Flatten(merged, sort=self.SORT_KEYS).data
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = cb_metric.MetricsMerger.merge_json_list(
@@ -95,15 +96,10 @@ class SpeedometerProbe(
         continue
       table[metric_key].append(
           cb_metric.format_metric(metric["average"], metric["stddev"]))
-    # Separate runs don't produce a score
-    if total_metric := metrics.get("score") or metrics.get("Score"):
-      table["Score"].append(
-          cb_metric.format_metric(total_metric["average"],
-                                  total_metric["stddev"]))
 
+  @abc.abstractmethod
   def _valid_metric_key(self, metric_key: str) -> bool:
-    parts = metric_key.split("/")
-    return len(parts) == 2 or parts[-1] == "total"
+    pass
 
 
 

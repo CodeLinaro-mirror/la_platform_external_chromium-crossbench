@@ -32,7 +32,10 @@ class Flatten:
   _key_fn: KeyFnType
   _accumulator: Dict[str, Any]
 
-  def __init__(self, *args: Dict, key_fn: Optional[KeyFnType] = None) -> None:
+  def __init__(self,
+               *args: Dict,
+               key_fn: Optional[KeyFnType] = None,
+               sort: bool = True) -> None:
     """_summary_
 
     Args:
@@ -42,10 +45,13 @@ class Flatten:
     """
     self._accumulator = {}
     self._key_fn = key_fn or _default_flatten_key_fn
+    self._sort = sort
     self.append(*args)
 
   @property
   def data(self) -> Dict[str, Any]:
+    if not self._sort:
+      return dict(self._accumulator)
     items = sorted(self._accumulator.items(), key=lambda item: item[0])
     return dict(items)
 

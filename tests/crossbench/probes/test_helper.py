@@ -218,8 +218,8 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
 
 class TestFlatten(unittest.TestCase):
 
-  def flatten(self, *data, key_fn=None):
-    return helper.Flatten(*data, key_fn=key_fn).data
+  def flatten(self, *data, key_fn=None, sort: bool = True):
+    return helper.Flatten(*data, key_fn=key_fn, sort=sort).data
 
   def test_single(self):
     data = {
@@ -228,6 +228,16 @@ class TestFlatten(unittest.TestCase):
     }
     flattened = self.flatten(data)
     self.assertDictEqual(flattened, data)
+
+  def test_single_sort(self):
+    data = {
+        "b": 2,
+        "a": 1,
+    }
+    flattened_keys = tuple(self.flatten(data, sort=True).keys())
+    self.assertTupleEqual(flattened_keys, ("a", "b"))
+    flattened_keys = tuple(self.flatten(data, sort=False).keys())
+    self.assertTupleEqual(flattened_keys, ("b", "a"))
 
   def test_single_nested(self):
     data = {

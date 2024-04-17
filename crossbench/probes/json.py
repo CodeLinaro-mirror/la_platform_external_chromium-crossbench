@@ -40,6 +40,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
 
   FLATTEN = True
+  SORT_KEYS = True
 
   @property
   def result_path_name(self) -> str:
@@ -123,7 +124,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       if isinstance(merged_data, (dict, list)):
         json.dump(merged_data, f, indent=2)
       else:
-        json.dump(merged_data.to_json(), f, indent=2)
+        json.dump(merged_data.to_json(sort=self.SORT_KEYS), f, indent=2)
     if not write_csv:
       return LocalProbeResult(json=(merged_json_path,))
     if not isinstance(merged_data, metric.MetricsMerger):
@@ -151,7 +152,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     headers = []
     for label, info_value in group.info.items():
       headers.append((label, label, info_value))
-    csv_data = merged_data.to_csv(value_fn, headers=headers)
+    csv_data = merged_data.to_csv(
+        value_fn, headers=headers, sort=self.SORT_KEYS)
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       writer = csv.writer(f, delimiter="\t")
       writer.writerows(csv_data)
@@ -223,7 +225,7 @@ class JsonResultProbeContext(ProbeContext[JsonResultProbeT],
           f"Probe({self.probe.name}) produced no JSON data.")
       raw_file = self.result_path
       if self.probe.FLATTEN:
-        raw_file = raw_file.with_suffix(".json.raw")
+        raw_file = raw_file.with_suffix(".json.nested")
         flattened_file = self.result_path
         flat_json_data = self.flatten_json_data(json_data)
         with flattened_file.open("w", encoding="utf-8") as f:

@@ -40,6 +40,17 @@ class Speedometer30Probe(SpeedometerProbe):
   def to_json(self, actions: Actions) -> JSON:
     return actions.js(self.JS)
 
+  def process_json_data(self, json_data) -> Any:
+    # Move aggregate scores to the end
+    aggregate_keys = []
+    for metric_key in json_data.keys():
+      if metric_key.startswith("Iteration-"):
+        aggregate_keys.append(metric_key)
+    aggregate_keys.extend(["Geomean", "Score"])
+    for metric_key in aggregate_keys:
+      json_data[metric_key] = json_data.pop(metric_key)
+    return json_data
+
   def flatten_json_data(self, json_data: Any) -> JSON:
     result: Dict[str, float] = dict()
     assert isinstance(json_data, dict), f"Expected dict, got {type(json_data)}"

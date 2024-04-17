@@ -261,7 +261,8 @@ class MetricsMerger:
           values.append(value)
 
   def to_json(self,
-              value_fn: Optional[Callable[[Any], Any]] = None) -> JsonDict:
+              value_fn: Optional[Callable[[Any], Any]] = None,
+              sort: bool = True) -> JsonDict:
     items = []
     for key, value in self._data.items():
       assert isinstance(value, Metric)
@@ -270,9 +271,10 @@ class MetricsMerger:
       else:
         value = value_fn(value)
       items.append((key, value))
-    # Make sure the data is always in the same order, independent of the input
-    # order
-    items.sort()
+    if sort:
+      # Make sure the data is always in the same order, independent of the input
+      # order
+      items.sort()
     return dict(items)
 
   def to_csv(self,
@@ -296,7 +298,7 @@ class MetricsMerger:
       ["Total"                                   "Total", 3]
     ]
     """
-    converted = self.to_json(value_fn)
+    converted = self.to_json(value_fn, sort)
     lookup: Dict[str, Any] = {}
     toplevel: OrderedSet[str] = OrderedSet()
     items = converted.items()

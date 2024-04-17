@@ -7,12 +7,12 @@ from __future__ import annotations
 from typing import Tuple
 
 from crossbench.benchmarks.speedometer.speedometer import (ProbeClsTupleT,
-                                                           SpeedometerBenchmark,
-                                                           SpeedometerProbe)
-from crossbench.benchmarks.speedometer.speedometer_2 import Speedometer2Story
+                                                           SpeedometerBenchmark)
+from crossbench.benchmarks.speedometer.speedometer_2 import (Speedometer2Probe,
+                                                             Speedometer2Story)
 
 
-class Speedometer21Probe(SpeedometerProbe):
+class Speedometer21Probe(Speedometer2Probe):
   NAME: str = "speedometer_2.1"
 
 
