@@ -20,7 +20,7 @@ classifiers = [
 [tool.poetry_bumpversion.file."crossbench/__init__.py"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<=3.11"
+python = ">=3.8,<3.12"
 hjson = "^3.1.0"
 psutil = "^5.9.1"
 selenium = "^4.1.0"
@@ -46,7 +46,7 @@ pytest-subtests = "^0.11.0"
 mypy = "^1.8"
 
 [tool.poetry.group.dev-pytype.dependencies]
-python = ">=3.8,<=3.11"
+python = ">=3.8,<3.12"
 pytype = "^2024.1.24"
 
 [build-system]
