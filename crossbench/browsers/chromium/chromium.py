@@ -34,6 +34,8 @@ class Chromium(Browser):
       "--disable-sync",
       "--disable-extensions",
       "--no-first-run",
+      # This could be enabled via feature-flags as well.
+      "--disable-search-engine-choice-screen",
   )
   FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: Tuple[str, ...] = (
       "--disable-background-timer-throttling",
