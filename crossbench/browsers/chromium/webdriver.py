@@ -28,7 +28,7 @@ from crossbench import exception, helper, plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.browsers.chromium.version import ChromiumVersion
+from crossbench.browsers.chromium.version import ChromeDriverVersion
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, FlagsT
 
@@ -119,7 +119,8 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     pass
 
   def _check_driver_version(self) -> None:
-    driver_version = ChromiumVersion(
+    assert self._driver_path, "No driver available"
+    driver_version = ChromeDriverVersion(
         self.platform.host_platform.sh_stdout(self._driver_path, "--version"))
     if driver_version.major != self.major_version:
       raise RuntimeError(f"Driver version {driver_version} "

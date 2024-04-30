@@ -3,8 +3,11 @@
 # found in the LICENSE file.
 
 import argparse
+import unittest
 
+from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
+from crossbench.browsers.version import BrowserVersionParseError
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase

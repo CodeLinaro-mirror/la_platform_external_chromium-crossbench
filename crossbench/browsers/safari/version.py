@@ -19,17 +19,17 @@ class SafariVersion(BrowserVersion):
 
   def _parse(
       self,
-      version: str,
-  ) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    matches = self._VERSION_RE.fullmatch(version.strip())
+      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+    matches = self._VERSION_RE.fullmatch(full_version.strip())
     if not matches:
-      raise ValueError(f"Could not extract version number from '{version}'")
+      raise ValueError(
+          f"Could not extract version number from '{full_version}'")
     version_str = matches["version"]
     parts_str = matches["parts"]
     major_minor_str = matches["major_minor"]
     assert version_str and parts_str and major_minor_str
     channel: BrowserVersionChannel = BrowserVersionChannel.STABLE
-    if "Safari Technology Preview" in version:
+    if "Safari Technology Preview" in full_version:
       channel = BrowserVersionChannel.BETA
     major, minor = tuple(map(int, major_minor_str.split(".")))
     release = 0
@@ -40,9 +40,14 @@ class SafariVersion(BrowserVersion):
     except ValueError as e:
       raise ValueError("Could not parse version number parts.") from e
     if len(parts) < 4:
-      raise ValueError(f"Invalid number of version number parts in '{version}'")
+      raise ValueError(
+          f"Invalid number of version number parts in '{full_version}'")
     parts = (major, minor, release) + parts
     return parts, channel, f"{major_minor_str} ({version_str})"
+
+  @property
+  def is_complete(self) -> bool:
+    return len(self.parts) >= 4
 
   @property
   def is_tech_preview(self) -> bool:

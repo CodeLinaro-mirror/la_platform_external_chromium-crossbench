@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 import enum
 
 
@@ -18,6 +18,17 @@ class BrowserVersionChannel(enum.Enum):
   PRE_ALPHA = "pre-alpha"
 
 
+class BrowserVersionParseError(ValueError):
+
+  def __init__(self, name: str, msg: str, version: str):
+    self._version = version
+    super().__init__(f"Invalid {name} {repr(version)}: {msg}")
+
+
+class PartialBrowserVersionError(ValueError):
+  pass
+
+
 @functools.total_ordering
 class BrowserVersion(abc.ABC):
 
@@ -27,19 +38,29 @@ class BrowserVersion(abc.ABC):
 
   def __init__(self, version: str) -> None:
     (self._parts, self._channel, self._version_str) = self._parse(version)
-    if len(self._parts) < 2:
-      raise ValueError("Invalid version format")
+    if not self._parts:
+      raise self.parse_error("Invalid version format", version)
     for part in self._parts:
       if part < 0:
-        raise ValueError(
-            f"Version parts must be positive, but got {self._parts}")
+        raise self.parse_error("Version parts must be positive", version)
+
+  def parse_error(self, msg: str, version: str) -> BrowserVersionParseError:
+    return BrowserVersionParseError(type(self).__name__, msg, version)
 
   @abc.abstractmethod
   def _parse(
       self,
-      version: str,
-  ) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
     pass
+
+  @property
+  def parts(self) -> Tuple[int, ...]:
+    return self._parts
+
+  @property
+  @abc.abstractmethod
+  def is_complete(self) -> bool:
+    return True
 
   @property
   def major(self) -> int:
@@ -47,6 +68,8 @@ class BrowserVersion(abc.ABC):
 
   @property
   def minor(self) -> int:
+    if len(self._parts) <= 1:
+      raise PartialBrowserVersionError()
     return self._parts[1]
 
   @property
@@ -85,7 +108,7 @@ class BrowserVersion(abc.ABC):
     return f"{self._version_str} {self.channel_name}"
 
   def __eq__(self, other: Any) -> bool:
-    if not isinstance(other, BrowserVersion):
+    if not isinstance(other, type(self)):
       return False
     return str(self) == str(other)
 

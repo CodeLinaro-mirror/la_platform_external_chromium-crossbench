@@ -26,22 +26,23 @@ class FirefoxVersion(BrowserVersion):
 
   def _parse(
       self,
-      version: str,
-  ) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    matches = self._VERSION_RE.fullmatch(version.strip())
+      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+    matches = self._VERSION_RE.fullmatch(full_version.strip())
     if not matches:
-      raise ValueError(f"Could not extract version number from '{version}'")
+      raise ValueError(
+          f"Could not extract version number from '{full_version}'")
     version_str = matches["version"]
     version_parts = matches["parts"]
     assert version_parts and version_str
     if matches["channel_esr"] and matches["channel"] != ".":
-      raise ValueError(f"Invalid ESR version: {version}")
+      raise ValueError(f"Invalid ESR version: {full_version}")
     channel: str = (matches["channel_esr"] or matches["channel"] or
                     "stable").lower()
     browser_channel, channel_id = self._CHANNEL_LOOKUP[channel]
     parts = tuple(map(int, self._SPLIT_RE.split(version_parts)))
     if len(parts) != 3:
-      raise ValueError(f"Invalid number of version number parts in '{version}'")
+      raise ValueError(
+          f"Invalid number of version number parts in '{full_version}'")
     # Inject browser_channel into the version parts to make it unique
     parts = parts[:-1] + (channel_id, parts[-1])
     return parts, browser_channel, version_str
@@ -56,3 +57,7 @@ class FirefoxVersion(BrowserVersion):
     if channel == BrowserVersionChannel.ALPHA:
       return "nightly"
     raise ValueError(f"Unsupported channel: {channel}")
+
+  @property
+  def is_complete(self) -> bool:
+    return len(self.parts) == 4

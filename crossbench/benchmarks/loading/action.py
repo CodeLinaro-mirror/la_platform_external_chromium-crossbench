@@ -9,7 +9,7 @@ import argparse
 import datetime as dt
 import enum
 import json
-from typing import TYPE_CHECKING, Any, Dict, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
 
 from crossbench import cli_helper
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
