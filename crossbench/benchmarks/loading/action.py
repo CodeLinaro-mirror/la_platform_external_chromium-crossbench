@@ -28,6 +28,8 @@ class ActionType(ConfigEnum):
   CLICK: "ActionType" = ("click", "Click on element")
   TAP: "ActionType" = ("tap", "Tap on element")
   SWIPE: "ActionType" = ("swipe", "Swipe on screen")
+  WAIT_FOR_ELEMENT: "ActionType" = ("wait_for_element",
+                                    "Wait until element appears on the page")
 
 
 @enum.unique
@@ -38,7 +40,6 @@ class ButtonClick(ConfigEnum):
 
 
 ACTION_TIMEOUT = dt.timedelta(seconds=20)
-DEFAULT_DURATION = dt.timedelta(seconds=15)
 
 
 class Action(abc.ABC):
@@ -152,7 +153,7 @@ class GetAction(Action):
       raise ValueError(f"{self}.url is missing")
     self._url: str = url
 
-    self._duration = duration or DEFAULT_DURATION
+    self._duration = duration
     if ready_state != ReadyState.ANY:
       if duration != dt.timedelta():
         raise ValueError(
@@ -365,7 +366,11 @@ class TapAction(Action):
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["selector"] = self.selector
+    if self.selector:
+      details["selector"] = self.selector
+    else:
+      details["x"] = self.x
+      details["y"] = self.y
     return details
 
 
@@ -422,6 +427,37 @@ class SwipeAction(DurationAction):
     return details
 
 
+class WaitForElementAction(Action):
+  TYPE: ActionType = ActionType.WAIT_FOR_ELEMENT
+
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["selector"] = cls.pop_required_input(value, "selector")
+    return kwargs
+
+  def __init__(self, selector: str, timeout: dt.timedelta = ACTION_TIMEOUT):
+    self._selector = selector
+    super().__init__(timeout)
+
+  @property
+  def selector(self) -> str:
+    return self._selector
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.wait_for_element(run, self)
+
+  def validate(self) -> None:
+    super().validate()
+    if not self.selector:
+      raise ValueError(f"{self}.selector is missing.")
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["selector"] = self.selector
+    return details
+
+
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
     TapAction,
@@ -429,6 +465,7 @@ ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ScrollAction,
     SwipeAction,
     WaitAction,
+    WaitForElementAction,
 )
 
 ACTIONS: Dict[ActionType, Type] = {

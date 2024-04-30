@@ -41,3 +41,8 @@ class ActionRunner(abc.ABC):
   @abc.abstractmethod
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     pass
+
+  @abc.abstractmethod
+  def wait_for_element(self, run: Run,
+                       action: i_action.WaitForElementAction) -> None:
+    pass

@@ -22,7 +22,7 @@ class BasicActionRunner(ActionRunner):
       return true;
     """
   CSS_SELECT = """
-      let element = document.evaluate(arguments[0], document).iterateNext();
+      let element = document.querySelector(arguments[0]);
       if (!element) return false;
       if (arguments[1]) element.scrollIntoView();
       element.click();
@@ -88,6 +88,40 @@ class BasicActionRunner(ActionRunner):
         actions.wait(0.2)
       scrollY = initial_scrollY + distance
       actions.js(f"window.scrollTo({{top:{scrollY}, behavior:'smooth'}});")
+
+  def wait_for_element(self, run: Run,
+                       action: i_action.WaitForElementAction) -> None:
+    with run.actions("WaitForElementAction", measure=False) as actions:
+      timeout_ms = action.timeout // dt.timedelta(milliseconds=1)
+      result = actions.js(
+          """
+            const [selector, timeout_ms] = arguments;
+            if (document.querySelector(selector)) {
+              return true;
+            }
+            return await new Promise(resolve => {
+              const timer = setTimeout(() => {
+                resolve(false);
+              }, timeout_ms);
+
+              const observer = new MutationObserver(mutations => {
+                if (document.querySelector(selector)) {
+                  observer.disconnect();
+                  clearTimeout(timer);
+                  resolve(true);
+                }
+              });
+
+              observer.observe(document.body, {
+                  childList: true,
+                  subtree: true
+              });
+            });
+          """,
+          arguments=[action.selector, timeout_ms])
+
+      if not result:
+        logging.warning("Timed out waiting for '%s'", action.selector)
 
   def tap(self, run: Run, action: i_action.TapAction) -> None:
     raise NotImplementedError("Tap action not implemented in BasicActionRunner")
