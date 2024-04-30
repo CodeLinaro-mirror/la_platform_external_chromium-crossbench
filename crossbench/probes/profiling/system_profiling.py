@@ -22,7 +22,7 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
 from crossbench.plt.base import ListCmdArgsT
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ResultLocation)
+                                     ProbeIncompatibleBrowser, ResultLocation)
 from crossbench.probes.results import ProbeResult
 from crossbench.probes.v8.log import V8LogProbe
 
@@ -228,41 +228,57 @@ class ProfilingProbe(Probe):
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
-    if browser_platform.is_android:
-      # RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY require:
-      # https://chromium-review.googlesource.com/c/chromium/src/+/5374765.
-      assert self._target not in (
-          TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY
-      ) or browser.major_version >= 124, (
-          "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, browser version >= M124 "
-          "(https://chromium-review.googlesource.com/c/chromium/src/+/5374765) is required."
-      )
-    if self.run_pprof:
-      self._run_pprof = browser_platform.which("gcert") is not None
-      if not self.run_pprof:
-        logging.warning(
-            "Disabled automatic pprof uploading for non-googler machine.")
     if browser_platform.is_linux:
-      env.check_installed(binaries=["pprof"])
-    if browser_platform.is_linux:
-      assert browser_platform.which("perf"), "Please install linux-perf"
+      self._validate_linux(env, browser)
     elif browser_platform.is_macos:
-      assert browser_platform.which(
-          "xctrace"), "Please install Xcode to use xctrace"
+      self._validate_macos(env, browser)
     elif browser_platform.is_android:
-      assert browser_platform.which("simpleperf"), "simpleperf is not available"
+      self._validate_android(env, browser)
+    else:
+      raise ProbeIncompatibleBrowser(self, browser)
     if self.run_pprof:
-      try:
-        if gcertstatus := browser_platform.which("gcertstatus"):
-          browser_platform.sh(gcertstatus)
-          return
-        env.handle_warning("Could not find gcertstatus")
-      except plt.SubprocessError:
-        env.handle_warning("Please run gcert for generating pprof results")
+      self._validate_pprof(env, browser)
+
+  def _validate_linux(self, env: HostEnvironment, browser: Browser) -> None:
+    env.check_installed(binaries=["pprof"])
+    assert browser.platform.which("perf"), "Please install linux-perf"
+
+  def _validate_macos(self, env: HostEnvironment, browser: Browser) -> None:
+    assert browser.platform.which(
+        "xctrace"), "Please install Xcode to use xctrace"
     # Only Linux-perf and Android-simpleperf results can be merged
-    if browser_platform.is_macos and env.runner.repetitions > 1:
+    if env.runner.repetitions > 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.runner.repetitions}.")
+
+  def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
+    del env
+    assert (
+        self._target not in (TargetMode.RENDERER_MAIN_ONLY,
+                             TargetMode.RENDERER_PROCESS_ONLY) or
+        browser.major_version >= 124), (
+            "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
+            "browser version >= M124 https://crrev.com/c/5374765 is required.")
+    assert browser.platform.which("simpleperf"), "simpleperf is not available"
+
+  def _validate_pprof(self, env: HostEnvironment, browser: Browser) -> None:
+    assert self._run_pprof
+    host_platform = browser.platform.host_platform
+    self._run_pprof = host_platform.which("gcert") is not None
+    if not self.run_pprof:
+      logging.warning(
+          "Disabled automatic pprof uploading for non-googler machine.")
+      return
+    if browser.platform.is_macos:
+      # Converting xctrace to pprof is not supported on macos
+      return
+    try:
+      if gcertstatus := browser.platform.which("gcertstatus"):
+        browser.platform.sh(gcertstatus)
+        return
+      env.handle_warning("Could not find gcertstatus")
+    except plt.SubprocessError:
+      env.handle_warning("Please run gcert for generating pprof results")
 
   def _attach(self, browser: Chromium) -> None:
     if self._sample_js:
@@ -291,10 +307,19 @@ class ProfilingProbe(Probe):
       return
     logging.info("-" * 80)
     logging.critical("Profiling results:")
-    logging.info("  *.perf.data: 'perf report -i $FILE'")
+    self._log_results_overview(filtered_runs)
     logging.info("- " * 40)
     for i, run in enumerate(filtered_runs):
       self._log_run_result_summary(run, i)
+
+  def _log_results_overview(self, filtered_runs):
+    if len(filtered_runs) <= 1:
+      return
+    if any(run.browser.platform.is_macos for run in filtered_runs):
+      logging.info("  *.trace:     'open $FILE'")
+    if any(run.browser.platform.is_linux or run.browser.platform.is_android
+           for run in filtered_runs):
+      logging.info("  *.perf.data: 'perf report -i $FILE'")
 
   def _log_run_result_summary(self, run: Run, i: int) -> None:
     if self not in run.results:
@@ -307,13 +332,18 @@ class ProfilingProbe(Probe):
     if urls:
       largest_perf_file = perf_files[0]
       logging.critical("    %s", urls[0])
-    if perf_files:
-      largest_perf_file = perf_files[0]
-      logging.critical("    %s : %s", largest_perf_file,
-                       helper.get_file_size(largest_perf_file))
-      if len(perf_files) > 1:
-        logging.info("    %s/*.perf.data*: %d more files",
-                     largest_perf_file.parent, len(perf_files))
+    if not perf_files:
+      return
+    largest_perf_file = perf_files[0]
+    logging.critical("    %s : %s", largest_perf_file,
+                     helper.get_file_size(largest_perf_file))
+    if len(perf_files) <= 1:
+      return
+    glob = "*.perf.data"
+    if run.browser.platform.is_macos:
+      glob = "*.trace"
+    logging.info("    %s/%s: %d more files", largest_perf_file.parent, glob,
+                 len(perf_files))
 
   def get_context(self, run: Run) -> ProfilingContext:
     if run.browser_platform.is_linux:
