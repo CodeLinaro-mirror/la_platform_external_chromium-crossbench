@@ -7,16 +7,18 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import itertools
+import json
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+import pathlib
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import crossbench.probes.helper as probes_helper
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.helper import update_url_query
-from crossbench.probes import metric
+from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
-from crossbench.probes.results import ProbeResult
+from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
@@ -26,10 +28,12 @@ if TYPE_CHECKING:
   from crossbench.types import JSON
 
 
-def _probe_skip_data_segments(path: Tuple[str, ...]) -> Optional[str]:
+def _clean_up_path_segments(path: Tuple[str, ...]) -> Optional[str]:
   name = path[-1]
   if name.startswith("segment") or name == "data":
     return None
+  if path[:2] == ("testsResults", "MotionMark"):
+    path = path[2:]
   return "/".join(path)
 
 
@@ -49,16 +53,59 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
     assert isinstance(json_data, list) and len(json_data) == 1, (
         "Motion12MarkProbe requires a results list.")
     return probes_helper.Flatten(
-        json_data[0], key_fn=_probe_skip_data_segments).data
+        json_data[0], key_fn=_clean_up_path_segments).data
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = metric.MetricsMerger.merge_json_list(
+    merged = cb_metric.MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
     return self.write_group_result(group, merged, write_csv=True)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    return self.merge_browsers_csv_list(group)
+    return self.merge_browsers_json_list(group).merge(
+        self.merge_browsers_csv_list(group))
+
+  def log_run_result(self, run: Run) -> None:
+    self._log_result(run.results, single_result=True)
+
+  def log_browsers_result(self, group: BrowsersRunGroup) -> None:
+    self._log_result(group.results, single_result=False)
+
+  def _log_result(self, result_dict: ProbeResultDict,
+                  single_result: bool) -> None:
+    if self not in result_dict:
+      return
+    results_json: pathlib.Path = result_dict[self].json
+    logging.info("-" * 80)
+    logging.critical("Motionmark results:")
+    if not single_result:
+      logging.critical("  %s", result_dict[self].csv)
+    logging.info("- " * 40)
+
+    with results_json.open(encoding="utf-8") as f:
+      data = json.load(f)
+      if single_result:
+        score = data.get("score") or data["Score"]
+        logging.critical("Score %s", score)
+      else:
+        self._log_result_metrics(data)
+
+  def _extract_result_metrics_table(self, metrics: Dict[str, Any],
+                                    table: Dict[str, List[str]]) -> None:
+    for metric_key, metric in metrics.items():
+      if not self._valid_metric_key(metric_key):
+        continue
+      table[metric_key].append(
+          cb_metric.format_metric(metric["average"], metric["stddev"]))
+    # Separate runs don't produce a score
+    if total_metric := metrics.get("score") or metrics.get("Score"):
+      table["Score"].append(
+          cb_metric.format_metric(total_metric["average"],
+                                  total_metric["stddev"]))
+
+  def _valid_metric_key(self, metric_key: str) -> bool:
+    parts = metric_key.split("/")
+    return len(parts) == 2 or parts[-1] == "score"
 
 
 class MotionMark1Story(PressBenchmarkStory):
