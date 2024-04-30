@@ -24,7 +24,7 @@ from crossbench.browsers.browser import Browser
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
-from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -166,6 +166,18 @@ class MacOsMockPlatform(MockPlatformMixin, MacOSPlatform):
 
 class WinMockPlatform(MockPlatformMixin, WinPlatform):
   pass
+
+
+class MockAdb(Adb):
+
+  def start_server(self) -> None:
+    pass
+
+  def stop_server(self) -> None:
+    pass
+
+  def kill_server(self) -> None:
+    pass
 
 
 class AndroidAdbMockPlatform(MockPlatformMixin, AndroidAdbPlatform):

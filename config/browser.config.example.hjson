@@ -102,7 +102,8 @@
       browser: "chrome-canary",
       driver: {
         type: "adb",
-        device_id: "Pixel_7_Pro" // Use name or serial number
+        // Use unique name or serial number from `adb devices -l`
+        device_id: "Pixel_7_Pro"
       }
       flags: [ /* ... add your flag groups here */  ]
     },

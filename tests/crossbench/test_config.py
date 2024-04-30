@@ -96,17 +96,22 @@ class CustomConfigObject(ConfigObject):
     return cls(name=value)
 
   @classmethod
-  def parse_depending_nested(cls, value: str,
-                             nested: CustomNestedConfigObject) -> Dict:
-
+  def parse_depending_nested(
+      cls, value: Optional[str],
+      nested: CustomNestedConfigObject) -> Optional[Dict]:
+    if not value:
+      return None
     return {
         "value": cli_helper.parse_non_empty_str(value),
         "nested": cli_helper.parse_not_none(nested, "nested")
     }
 
   @classmethod
-  def parse_depending_many(cls, value: str, array: List[Any], integer: int,
-                           nested: CustomNestedConfigObject) -> Dict:
+  def parse_depending_many(cls, value: Optional[str], array: List[Any],
+                           integer: int,
+                           nested: CustomNestedConfigObject) -> Optional[Dict]:
+    if not value:
+      return None
     return {
         "value": cli_helper.parse_non_empty_str(value),
         "nested": cli_helper.parse_not_none(nested, "nested"),

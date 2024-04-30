@@ -103,8 +103,11 @@ class BrowserConfig(ConfigObject):
     else:
       if ":" in maybe_path_or_identifier:
         raise argparse.ArgumentTypeError(
-            f"Got unexpected short-form string '{maybe_path_or_identifier}'. \n"
-            "  Use it directly on the parent config attribute: \n"
+            "Got unexpected short-form string "
+            f"{repr(maybe_path_or_identifier)}. \n"
+            "  - Use a complex browser config with separate "
+            "'browser' and 'driver' attributes, or\n"
+            "  - Use the short-form directly on the parent config attribute: \n"
             f"   {{my-browser: '{maybe_path_or_identifier}'}}")
       if maybe_path := cls._try_parse_short_name(identifier, driver_type):
         return maybe_path

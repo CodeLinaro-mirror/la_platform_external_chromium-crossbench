@@ -45,6 +45,17 @@ Profile a website for 17 seconds on Chrome M100 (auto-downloading on macOS and l
 ./cb.py loading --browser=chrome-m100 --probe='profiling' --url=www.cnn.com,17s
 ```
 
+Collect perfetto data from loading separate websites on multiple attached
+android devices using the device ID or unique device names
+(see `adb devices -l`):
+
+```bash
+./cb.py loading --probe-config=./config/probe/perfetto.probe.config.example.hjson \
+    --browser='Pixel_4:chrome-stable' --browser='AA00BB11:chrome-stable' \
+    --parallel=platform \
+    --url=https://theverge.com,15s,https://cnn.com,15s  --separate
+```
+
 
 ## Main Components
 
@@ -52,7 +63,7 @@ Profile a website for 17 seconds on Chrome M100 (auto-downloading on macOS and l
 Crossbench supports running benchmarks on one or multiple browser configurations.
 The main implementation uses selenium for maximum system independence.
 
-You can specify a browser with `--browser=<name>`. You can repeat the 
+You can specify a browser with `--browser=<name>`. You can repeat the
 `--browser` argument to run multiple browser. If you need custom flags for
 multiple browsers use `--browser-config` (or pass simple flags after `--` to
 the browser).

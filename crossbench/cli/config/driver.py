@@ -67,6 +67,7 @@ IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
   path: Optional[pathlib.Path] = None
+  device_id: Optional[str] = None
   settings: Optional[immutabledict] = None
 
   def __post_init__(self):
@@ -90,36 +91,34 @@ class DriverConfig(ConfigObject):
     names = list(devices.keys())
     if not devices:
       raise argparse.ArgumentTypeError("No ADB devices attached.")
-    if not self.settings:
+    if not self.device_id:
       if len(devices) == 1:
         # Default device "adb" (no settings) with exactly one device is ok.
         return
       raise AmbiguousDriverIdentifier(
           f"{len(devices)} ADB devices connected: {names}. "
           "Please explicitly specify a device ID.")
-    if device_id := self.settings.get("device_id"):
-      if device_id not in devices:
-        raise argparse.ArgumentTypeError(
-            f"Could not find ADB device with device_id={repr(device_id)}. "
-            f"Choices are {names}.")
+    if self.device_id not in devices:
+      raise argparse.ArgumentTypeError(
+          f"Could not find ADB device with device_id={repr(self.device_id)}. "
+          f"Choices are {names}.")
 
   def validate_ios(self) -> None:
     devices: Dict[str, Any] = plt.ios_devices(plt.PLATFORM)
     if not devices:
       raise argparse.ArgumentTypeError("No iOS devices attached.")
     names = list(map(str, devices))
-    if not self.settings:
+    if not self.device_id:
       if len(devices) == 1:
         # Default device "ios" (no settings) with exactly one device is ok.
         return
       raise AmbiguousDriverIdentifier(
           f"{len(devices)} ios devices connected: {names}. "
           "Please explicitly specify a device UUID.")
-    if device_id := self.settings.get("device_id"):
-      if device_id not in devices:
-        raise argparse.ArgumentTypeError(
-            f"Could not find ios device with device_id={repr(device_id)}. "
-            f"Choices are {names}.")
+    if self.device_id not in devices:
+      raise argparse.ArgumentTypeError(
+          f"Could not find ios device with device_id={repr(self.device_id)}. "
+          f"Choices are {names}.")
 
   @classmethod
   def default(cls) -> DriverConfig:
@@ -193,8 +192,7 @@ class DriverConfig(ConfigObject):
       return None
     assert len(candidate_serials) == 1
     return DriverConfig(
-        BrowserDriverType.ANDROID,
-        settings=immutabledict(device_id=candidate_serials[0]))
+        BrowserDriverType.ANDROID, device_id=candidate_serials[0])
 
   @classmethod
   def try_load_ios_settings(cls, value: str,
@@ -216,9 +214,7 @@ class DriverConfig(ConfigObject):
       logging.debug("No matching ios devices found.")
       return None
     assert len(candidate_serials) == 1
-    return DriverConfig(
-        BrowserDriverType.IOS,
-        settings=immutabledict(device_id=candidate_serials[0]))
+    return DriverConfig(BrowserDriverType.IOS, device_id=candidate_serials[0])
 
   @classmethod
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
@@ -244,7 +240,12 @@ class DriverConfig(ConfigObject):
     parser.add_argument(
         "settings",
         type=immutabledict,
-        help="Additional driver settings (Driver dependent).")
+        help="Additional driver-dependent settings.")
+    parser.add_argument(
+        "device_id",
+        type=driver_device_id,
+        depends_on=("settings",),
+        help="Device ID / Serial ID / Unique device name")
     return parser
 
   def get_platform(self) -> plt.Platform:
@@ -273,3 +274,17 @@ class DriverConfig(ConfigObject):
           ssh_port=ssh_port,
           ssh_user=ssh_user)
     return plt.PLATFORM
+
+
+def driver_device_id(device_id: Optional[str],
+                     settings: Optional[immutabledict]) -> Optional[str]:
+  if not settings:
+    return device_id
+  settings_device_id = settings.get("device_id")
+  if not device_id:
+    return settings_device_id
+  if settings_device_id != device_id:
+    raise TypeError("Conflicting both driver['settings']['device_id'] "
+                    "and driver['device_id']: "
+                    f"{repr(settings_device_id)} vs {repr(device_id)}")
+  return device_id

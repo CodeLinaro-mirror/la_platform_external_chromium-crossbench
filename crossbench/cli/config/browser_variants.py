@@ -10,7 +10,7 @@ import functools
 import logging
 import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set,
-                    TextIO, Tuple, Type, cast)
+                    TextIO, Tuple, Type, Union, cast)
 
 import hjson
 from immutabledict import immutabledict
@@ -329,9 +329,22 @@ class BrowserVariantsConfig:
         self._parse_browser(name, browser_config, args)
     self._ensure_unique_browser_names()
 
-  def _parse_browser(self, name: str, raw_browser_data: Dict[str, Any],
+  def _parse_browser(self, name: str, raw_browser_data: Any,
                      args: argparse.Namespace) -> None:
-    path_or_identifier: Optional[str] = raw_browser_data.get("path")
+    if isinstance(raw_browser_data, (dict, str)):
+      return self._parse_browser_dict(name, raw_browser_data, args)
+    raise argparse.ArgumentTypeError(
+        f"Expected str or dict, got {type(raw_browser_data).__name__}: "
+        f"{repr(raw_browser_data)}")
+
+  def _parse_browser_dict(self, name: str,
+                          raw_browser_data: Union[str, Dict[str, Any]],
+                          args: argparse.Namespace) -> None:
+    path_or_identifier: Optional[str] = None
+    if isinstance(raw_browser_data, dict):
+      path_or_identifier = raw_browser_data.get("path")
+    else:
+      path_or_identifier = raw_browser_data
     browser_cls: Type[Browser]
     if path_or_identifier and (path_or_identifier
                                in self._browser_lookup_override):
@@ -356,6 +369,8 @@ class BrowserVariantsConfig:
       label = labels_lookup[variant]
       browser_flags = browser_cls.default_flags(variant.flags)
       network = self._get_browser_network(browser_config.network)
+      # TODO: move the browser instantiation to a separate step and only
+      # create BrowserConfig objects first.
       # pytype: disable=not-instantiable
       browser_instance = browser_cls(
           label=label,
@@ -373,11 +388,15 @@ class BrowserVariantsConfig:
   def _flags_to_label(self, name: str, flags: Flags) -> str:
     return f"{name}_{_flags_to_label(flags)}"
 
-  def _create_unique_variant_labels(self, name: str, raw_browser_data,
+  def _create_unique_variant_labels(self, name: str,
+                                    raw_browser_data: Union[str, Dict[str,
+                                                                      Any]],
                                     flag_variants: FlagsGroupConfig) -> Dict:
     labels_lookup: Dict[FlagsVariantConfig, str] = {}
     for variant in flag_variants:
-      label = raw_browser_data.get("label", name)
+      label = name
+      if isinstance(raw_browser_data, dict):
+        label = raw_browser_data.get("label", name)
       if len(flag_variants) > 1:
         # TODO: use variant.label
         label = self._flags_to_label(name, variant.flags)
@@ -393,13 +412,16 @@ class BrowserVariantsConfig:
     self._unique_names.add(label)
     return True
 
-  def _get_browser_variants(self, browser_name: str,
-                            raw_browser_data) -> FlagsGroupConfig:
+  def _get_browser_variants(
+      self, browser_name: str,
+      raw_browser_data: Union[str, Dict[str, Any]]) -> FlagsGroupConfig:
+    default_variant = FlagsVariantConfig("default")
+    flag_variants = FlagsGroupConfig((default_variant,))
+    if not isinstance(raw_browser_data, dict):
+      return flag_variants
     flag_groups: List[FlagsGroupConfig] = []
     with exception.annotate(f"Parsing browsers[{repr(browser_name)}].flags"):
       flag_groups = self._parse_browser_flags(browser_name, raw_browser_data)
-    default_variant = FlagsVariantConfig("default")
-    flag_variants = FlagsGroupConfig((default_variant,))
     with exception.annotate(
         f"Expand browsers[{repr(browser_name)}].flags into full variants"):
       flag_variants = flag_variants.product(*flag_groups)

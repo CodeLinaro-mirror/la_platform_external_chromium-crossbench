@@ -13,6 +13,7 @@ import logging
 import pathlib
 import re
 import textwrap
+import collections.abc
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
                     Optional, Set, Tuple, Type, TypeVar, Union, cast)
 
@@ -164,16 +165,26 @@ class _ConfigArgParser:
 
   def _validate_depends_on(self,
                            original_value: Optional[Iterable[str]]) -> None:
-    if isinstance(original_value, str):
-      raise TypeError(f"Expected depends_on to be a collection, "
-                      f"but got: '{original_value}'")
     if not self.depends_on:
       return
+    if not self._is_iterable_non_str(original_value):
+      raise TypeError(f"Expected depends_on to be a collection of str, "
+                      f"but got {type(original_value).__name__}: "
+                      f"{repr(original_value)}")
+    for i, value in enumerate(original_value):
+      if not isinstance(value, str):
+        raise TypeError(f"Expected depends_on[{i}] to be a str, but got "
+                        f"{type(value).__name__}: {repr(value)}")
     if not self.type:
       raise ValueError(f"Argument '{self.name}' without a type "
                        "cannot have argument dependencies.")
     if self.is_enum:
       raise ValueError(f"Enum '{self.name}' cannot have argument dependencies")
+
+  def _is_iterable_non_str(self, value: Any) -> bool:
+    if isinstance(value, str):
+      return False
+    return isinstance(value, collections.abc.Iterable)
 
   @property
   def cls(self) -> Type:
@@ -239,10 +250,12 @@ class _ConfigArgParser:
             f"{self.cls_name}: "
             f"No value provided for required config option '{self.name}'")
       data = self.default
+      if depending_kwargs:
+        self._validate_depending_kwargs(depending_kwargs)
     else:
       self._validate_depending_kwargs(depending_kwargs)
       self._validate_no_aliases(config_data)
-    if data is None:
+    if data is None and not depending_kwargs:
       return None
     if self.is_list:
       return self.parse_list_data(data, depending_kwargs)
