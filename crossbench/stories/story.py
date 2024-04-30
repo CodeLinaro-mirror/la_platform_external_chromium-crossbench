@@ -29,8 +29,9 @@ class Story(abc.ABC):
     assert name, "Invalid page name"
     self._name = plt.safe_filename(name)
     self._duration = duration
-    assert self._duration.total_seconds() > 0, (
-        f"Duration must be non-empty, but got: {duration}")
+    if self._duration:
+      assert self._duration.total_seconds() > 0, (
+          f"Duration must be non-empty, but got: {duration}")
 
   @property
   def name(self) -> str:
