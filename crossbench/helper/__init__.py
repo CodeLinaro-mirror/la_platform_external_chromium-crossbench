@@ -23,47 +23,13 @@ from subprocess import Popen, TimeoutExpired
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
                     Iterator, List, Optional, Tuple, Type, TypeVar, Union)
 
-from colorama import init, Fore, Style
-
 from crossbench import compat, plt
 
 if TYPE_CHECKING:
   import signal
 
-init()
-
 assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
-
-
-class ColoredLogFormatter(logging.Formatter):
-
-  FORMAT = "%(message)s"
-
-  FORMATS = {
-      logging.DEBUG:
-          FORMAT,
-      logging.INFO:
-          str(Fore.GREEN) + FORMAT + str(Fore.RESET),
-      logging.WARNING:
-          str(Fore.YELLOW) + FORMAT + str(Fore.RESET),
-      logging.ERROR:
-          str(Fore.RED) + FORMAT + str(Fore.RESET),
-      logging.CRITICAL:
-          str(Fore.RED) + str(Style.BRIGHT) + FORMAT + str(Style.RESET_ALL),
-  }
-
-  def format(self, record: logging.LogRecord) -> str:
-    log_fmt = self.FORMATS.get(record.levelno)
-    formatter = logging.Formatter(log_fmt)
-    return formatter.format(record)
-
-  def formatException(self, ei):
-    return ""
-
-  def formatStack(self, stack_info):
-    return ""
-
 
 InputT = TypeVar("InputT")
 KeyT = TypeVar("KeyT")

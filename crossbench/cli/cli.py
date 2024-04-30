@@ -19,13 +19,15 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 import tabulate as tbl
 
 import crossbench.benchmarks.all as benchmarks
+from crossbench.cli import ui
 import crossbench.cli.config as cli_config
-from crossbench import __version__, cli_helper, helper, plt
+from crossbench import __version__, cli_helper, plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.cli.devtools_recorder_proxy import \
     CrossbenchDevToolsRecorderProxy
+from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
@@ -40,7 +42,27 @@ if TYPE_CHECKING:
   BenchmarkClsT = Type[Benchmark]
   BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pathlib.Path]]
 
-argparse.ArgumentError = cli_helper.CrossBenchArgumentError
+
+class CrossBenchArgumentError(argparse.ArgumentError):
+  """Custom class that also prints the argument.help if available.
+  """
+
+  def __init__(self, argument: Any, message: str) -> None:
+    self.help: str = ""
+    super().__init__(argument, message)
+    if self.argument_name:
+      self.help = getattr(argument, "help", "")
+
+  def __str__(self) -> str:
+    formatted = super().__str__()
+    if not self.help:
+      return formatted
+    return (f"argument error {self.argument_name}:\n\n"
+            f"Help {self.argument_name}:\n{self.help}\n\n"
+            f"{formatted}")
+
+
+argparse.ArgumentError = CrossBenchArgumentError
 
 
 class EnableDebuggingAction(argparse.Action):
@@ -91,7 +113,7 @@ class AppendDebuggerProbeAction(argparse.Action):
       setattr(namespace, "timeout_unit", dt.timedelta.max)
 
 
-class MainCrossBenchArgumentParser(cli_helper.CrossBenchArgumentParser):
+class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
   def print_help(self, file=None) -> None:
     super().print_help(file=file)
@@ -140,13 +162,12 @@ class CrossBenchCLI:
   def __init__(self, enable_logging: bool = True) -> None:
     self._enable_logging = enable_logging
     self._console_handler: Optional[logging.StreamHandler] = None
-    self._subparsers: Dict[BenchmarkClsT,
-                           cli_helper.CrossBenchArgumentParser] = {}
+    self._subparsers: Dict[BenchmarkClsT, CrossBenchArgumentParser] = {}
     self.parser = MainCrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
                      "with configurable measurement probes."))
-    self.describe_parser = cli_helper.CrossBenchArgumentParser()
-    self.recorder_parser = cli_helper.CrossBenchArgumentParser()
+    self.describe_parser = CrossBenchArgumentParser()
+    self.recorder_parser = CrossBenchArgumentParser()
     self.args = argparse.Namespace()
     self._setup_parser()
     self._setup_subparser()
@@ -217,7 +238,7 @@ class CrossBenchCLI:
         title="Subcommands",
         dest="subcommand",
         required=True,
-        parser_class=cli_helper.CrossBenchArgumentParser)
+        parser_class=CrossBenchArgumentParser)
     for benchmark_cls in self.BENCHMARKS:
       self._setup_benchmark_subparser(benchmark_cls)
     self._setup_help_subparser()
@@ -227,13 +248,13 @@ class CrossBenchCLI:
   def _setup_recorder_subparser(self) -> None:
     self.recorder_parser = CrossbenchDevToolsRecorderProxy.add_subcommand(
         self.subparsers)
-    assert isinstance(self.recorder_parser, cli_helper.CrossBenchArgumentParser)
+    assert isinstance(self.recorder_parser, CrossBenchArgumentParser)
     self._add_verbosity_argument(self.recorder_parser)
 
   def _setup_describe_subparser(self) -> None:
     self.describe_parser = self.subparsers.add_parser(
         "describe", aliases=["desc"], help="Print all benchmarks and stories")
-    assert isinstance(self.describe_parser, cli_helper.CrossBenchArgumentParser)
+    assert isinstance(self.describe_parser, CrossBenchArgumentParser)
     self.describe_parser.add_argument(
         "category",
         nargs="?",
@@ -263,7 +284,7 @@ class CrossBenchCLI:
         "version",
         help="Show program's version number and exit, same as --version")
     version_parser.set_defaults(subcommand_fn=self.version_subcommand)
-    assert isinstance(self.describe_parser, cli_helper.CrossBenchArgumentParser)
+    assert isinstance(self.describe_parser, CrossBenchArgumentParser)
     self._add_verbosity_argument(self.describe_parser)
 
   def describe_subcommand(self, args: argparse.Namespace) -> None:
@@ -945,7 +966,7 @@ class CrossBenchCLI:
     self.error(f"error argument {e.flag}: {e.message}")
 
   def error(self, message: str) -> None:
-    parser: cli_helper.CrossBenchArgumentParser = self.parser
+    parser: CrossBenchArgumentParser = self.parser
     # Try to use the subparser to print nicer usage help on errors.
     # ArgumentParser tends to default to the toplevel parser instead of the
     # current subcommand, which in turn prints the wrong usage text.
@@ -976,8 +997,10 @@ class CrossBenchCLI:
     if "-v" in argv or "-vv" in argv or "-vvv" in argv:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
-    if "--no-color" not in argv:
-      self._console_handler.setFormatter(helper.ColoredLogFormatter())
+    # TODO: move to ui helpers
+    ui.COLOR_LOGGING = "--no-color" not in argv
+    if ui.COLOR_LOGGING:
+      self._console_handler.setFormatter(ui.ColoredLogFormatter())
 
   def _setup_logging(self) -> None:
     if not self._enable_logging:
@@ -990,8 +1013,9 @@ class CrossBenchCLI:
     elif self.args.verbosity >= 1:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
-    if self.args.color:
-      self._console_handler.setFormatter(helper.ColoredLogFormatter())
+    ui.COLOR_LOGGING = self.args.color
+    if ui.COLOR_LOGGING:
+      self._console_handler.setFormatter(ui.ColoredLogFormatter())
     else:
       self._console_handler.setFormatter(None)
 

@@ -19,6 +19,7 @@ from crossbench.browsers import viewport as vp
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.runner.run import Run
   ShuffleSeedT = Optional[Union[str, int]]
   from crossbench.runner.actions import Actions
@@ -424,7 +425,7 @@ class Speedometer30Benchmark(SpeedometerBenchmark):
   @classmethod
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> cli_helper.CrossBenchArgumentParser:
+  ) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     parser.add_argument(
         "--detailed-metrics",

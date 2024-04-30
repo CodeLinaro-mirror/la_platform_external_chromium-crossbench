@@ -14,6 +14,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
 from ordered_set import OrderedSet
 
 from crossbench import cli_helper, helper
+from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from crossbench.stories.story import Story
 
@@ -62,8 +63,7 @@ class Benchmark(abc.ABC):
 
   @classmethod
   def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()
-  ) -> cli_helper.CrossBenchArgumentParser:
+      cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
     parser = subparsers.add_parser(
         cls.NAME,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -71,7 +71,7 @@ class Benchmark(abc.ABC):
         description=cls.cli_description(),
         epilog=cls.cli_epilog(),
         aliases=aliases)
-    assert isinstance(parser, cli_helper.CrossBenchArgumentParser)
+    assert isinstance(parser, CrossBenchArgumentParser)
     return parser
 
   @classmethod
@@ -166,8 +166,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()
-  ) -> cli_helper.CrossBenchArgumentParser:
+      cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     # TODO: move these args to a dedicated SubStoryFilter class.
     parser.add_argument(
@@ -393,8 +392,7 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()
-  ) -> cli_helper.CrossBenchArgumentParser:
+      cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     benchmark_url_group = parser.add_mutually_exclusive_group()

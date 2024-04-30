@@ -23,6 +23,7 @@ from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 
 if TYPE_CHECKING:
+  from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.stories.story import Story
 
 
@@ -205,7 +206,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
   @classmethod
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> cli_helper.CrossBenchArgumentParser:
+  ) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
     return parser

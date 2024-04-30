@@ -385,59 +385,6 @@ def parse_sh_cmd(value: Any) -> List[str]:
     raise argparse.ArgumentTypeError(f"Invalid shell cmd: {value} ") from e
 
 
-class CrossBenchArgumentError(argparse.ArgumentError):
-  """Custom class that also prints the argument.help if available.
-  """
-
-  def __init__(self, argument: Any, message: str) -> None:
-    self.help: str = ""
-    super().__init__(argument, message)
-    if self.argument_name:
-      self.help = getattr(argument, "help", "")
-
-  def __str__(self) -> str:
-    formatted = super().__str__()
-    if not self.help:
-      return formatted
-    return (f"argument error {self.argument_name}:\n\n"
-            f"Help {self.argument_name}:\n{self.help}\n\n"
-            f"{formatted}")
-
-# Needed to gap the diff between 3.8 and 3.9 default args that change throwing
-# behavior.
-class _BaseCrossBenchArgumentParser(argparse.ArgumentParser):
-
-  def fail(self, message) -> None:
-    super().error(message)
-
-  def exit(self, status=0, message=None):
-    if message:
-      if status == 0:
-        logging.info(message)
-      else:
-        logging.critical(message)
-    sys.exit(status)
-
-
-if sys.version_info < (3, 9, 0):
-
-  class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
-
-    def error(self, message) -> NoReturn:
-      # Let the CrossBenchCLI handle all errors and simplify testing.
-      exception = sys.exc_info()[1]
-      if isinstance(exception, BaseException):
-        raise exception
-      raise argparse.ArgumentError(None, message)
-
-else:
-
-  class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
-
-    def __init__(self, *args, **kwargs) -> None:
-      kwargs["exit_on_error"] = False
-      super().__init__(*args, **kwargs)
-
 
 class LateArgumentError(argparse.ArgumentTypeError):
   """Signals argument parse errors after parser.parse_args().
