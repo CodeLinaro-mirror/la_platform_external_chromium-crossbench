@@ -14,25 +14,39 @@ from crossbench.runner.run import Run
 
 
 class BasicActionRunner(ActionRunner):
+  XPATH_SELECT = """
+      let element = document.evaluate(arguments[0], document).iterateNext();
+      if (!element) return false;
+      if (arguments[1]) element.scrollIntoView();
+      element.click();
+      return true;
+    """
+  CSS_SELECT = """
+      let element = document.evaluate(arguments[0], document).iterateNext();
+      if (!element) return false;
+      if (arguments[1]) element.scrollIntoView();
+      element.click();
+      return true;
+    """
 
   def click(self, run: Run, action: i_action.ClickAction) -> None:
     with run.actions("ClickAction", measure=False) as actions:
-      # TODO: support more selector types.
+      # TODO: support more selector types
       prefix = "xpath/"
-      if action.selector.startswith(prefix):
-        xpath: str = action.selector[len(prefix):]
-        actions.js(
-            """
-              let element = document.evaluate(arguments[0], document).iterateNext();
-              if (arguments[1]) element.scrollIntoView();
-              element.click();
-            """,
-            arguments=[xpath, action.scroll_into_view])
+      selector: str = action.selector
+      if selector.startswith(prefix):
+        selector = selector[len(prefix):]
+        script = self.XPATH_SELECT
       else:
-        raise NotImplementedError(f"Unsupported selector: {action.selector}")
+        script = self.CSS_SELECT
+      found_element = actions.js(
+          script, arguments=[selector, action.scroll_into_view])
+      if not found_element and action.required:
+        raise RuntimeError(
+            f"Could not find matching DMO element: {repr(selector)}")
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
-    # TODO: potentially refactor the timing and loggin out to the base class.
+    # TODO: potentially refactor the timing and logging out to the base class.
     start_time = time.time()
     expected_end_time = start_time + action.duration.total_seconds()
 
@@ -58,17 +72,22 @@ class BasicActionRunner(ActionRunner):
                      action, run_duration, action.duration)
 
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
-    time_end = time.time() + action.duration.total_seconds()
-    direction = 1 if action.direction == i_action.ScrollDirection.UP else -1
-    # TODO: properly support scrolling UP by setting a start position.
-    start = 0
-    end = direction
-
     with run.actions("ScrollAction", measure=False) as actions:
-      while time.time() < time_end:
-        actions.js(f"window.scrollTo({start}, {end});")
-        start = end
-        end += 100 * direction
+      duration_s = action.duration.total_seconds()
+      distance = action.distance
+      initial_scrollY = actions.js("return window.scrollY")
+      start_time = time.time()
+      # TODO: use the chrome.gpuBenchmarking.smoothScrollBy extension
+      # if available.
+      while True:
+        time_delta = time.time() - start_time
+        if time_delta >= duration_s:
+          break
+        scrollY = initial_scrollY + time_delta / duration_s * distance
+        actions.js(f"window.scrollTo({{top:{scrollY}, behavior:'smooth'}});")
+        actions.wait(0.2)
+      scrollY = initial_scrollY + distance
+      actions.js(f"window.scrollTo({{top:{scrollY}, behavior:'smooth'}});")
 
   def tap(self, run: Run, action: i_action.TapAction) -> None:
     raise NotImplementedError("Tap action not implemented in BasicActionRunner")

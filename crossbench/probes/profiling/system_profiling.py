@@ -15,8 +15,7 @@ import pathlib
 import signal
 import subprocess
 import time
-from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Union,
-                    cast)
+from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast)
 
 from crossbench import helper, plt
 from crossbench.browsers.chromium.chromium import Chromium
@@ -699,15 +698,12 @@ class AndroidProfilingContext(ProfilingContext):
     return self.browser_result(file=[self.result_path])
 
 
-def generate_simpleperf_command_line(
-    target: TargetMode,
-    app_name: str,
-    renderer_pid: Union[int, None],
-    renderer_main_tid: Union[int, None],
-    frame_pointers: bool,
-    output_path: pathlib.Path,
-) -> ListCmdArgsT:
-  command_line = ["simpleperf", "record"]
+def generate_simpleperf_command_line(target: TargetMode, app_name: str,
+                                     renderer_pid: Optional[int],
+                                     renderer_main_tid: Optional[int],
+                                     frame_pointers: bool,
+                                     output_path: pathlib.Path) -> ListCmdArgsT:
+  command_line: ListCmdArgsT = ["simpleperf", "record"]
   if target == TargetMode.RENDERER_MAIN_ONLY:
     assert renderer_main_tid is not None
     command_line.extend(["-t", str(renderer_main_tid)])

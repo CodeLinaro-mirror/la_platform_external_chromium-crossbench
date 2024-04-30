@@ -31,12 +31,6 @@ class ActionType(ConfigEnum):
 
 
 @enum.unique
-class ScrollDirection(ConfigEnum):
-  UP: "ScrollDirection" = ("up", "Scroll Up")
-  DOWN: "ScrollDirection" = ("down", "Scroll down")
-
-
-@enum.unique
 class ButtonClick(ConfigEnum):
   LEFT: "ButtonClick" = ("left", "Press left mouse button")
   RIGHT: "ButtonClick" = ("right", "Press right mouse button")
@@ -242,32 +236,32 @@ class ScrollAction(DurationAction):
   @classmethod
   def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
     kwargs = super().kwargs_from_dict(value)
-    if direction := value.pop("direction", None):
-      kwargs["direction"] = ScrollDirection.parse(direction)
+    if distance := value.pop("distance", None):
+      kwargs["distance"] = cli_helper.parse_float(distance)
     return kwargs
 
   def __init__(self,
-               direction: ScrollDirection = ScrollDirection.DOWN,
+               distance: float = 500.0,
                duration: dt.timedelta = dt.timedelta(seconds=1),
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
-    self._direction: ScrollDirection = direction
+    self._distance = distance
     super().__init__(duration, timeout)
 
   @property
-  def direction(self) -> ScrollDirection:
-    return self._direction
+  def distance(self) -> float:
+    return self._distance
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.scroll(run, self)
 
   def validate(self) -> None:
     super().validate()
-    if not self.direction:
-      raise ValueError(f"{self}.direction is not provided")
+    if not self.distance:
+      raise ValueError(f"{self}.distance is not provided")
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["direction"] = str(self.direction)
+    details["distance"] = str(self.distance)
     return details
 
 
@@ -278,17 +272,21 @@ class ClickAction(Action):
   def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
     kwargs = super().kwargs_from_dict(value)
     kwargs["selector"] = cls.pop_required_input(value, "selector")
+    if required := value.pop("required", None):
+      kwargs["required"] = cli_helper.parse_bool(required)
     if scroll_into_view := value.pop("scroll_into_view", None):
       kwargs["scroll_into_view"] = cli_helper.parse_bool(scroll_into_view)
     return kwargs
 
   def __init__(self,
                selector: str,
+               required: bool = False,
                scroll_into_view: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT):
     # TODO: convert to custom selector object.
     self._selector = selector
     self._scroll_into_view: bool = scroll_into_view
+    self._required: bool = required
     super().__init__(timeout)
 
   @property
@@ -298,6 +296,10 @@ class ClickAction(Action):
   @property
   def selector(self) -> str:
     return self._selector
+
+  @property
+  def required(self) -> bool:
+    return self._required
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.click(run, self)
@@ -310,6 +312,7 @@ class ClickAction(Action):
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["selector"] = self.selector
+    details["required"] = self.required
     details["scroll_into_view"] = self.scroll_into_view
     return details
 
