@@ -15,7 +15,8 @@ from crossbench import cli_helper, helper, plt
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
+                                       ProbeResult)
 from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
                                       RunGroup, StoriesRunGroup)
 
@@ -162,10 +163,12 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
         "archive_path": self.result_path,
     })
     self._recorder = WprRecorder(**kwargs)
+    self._browser_platform = run.browser_platform
 
   def setup(self) -> None:
     self._recorder.start()
     self._setup_extra_flags()
+    self._setup_port_forwarding()
 
   def _setup_extra_flags(self) -> None:
     if not self.probe.use_test_root_certificate:
@@ -187,6 +190,13 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     # TODO: add replay support, see:
     # third_party/catapult/telemetry/telemetry/internal/backends/chrome/chrome_startup_args.py
 
+  def _setup_port_forwarding(self) -> None:
+    if self._browser_platform.is_remote:
+      self._browser_platform.reverse_port_forward(self._recorder.http_port,
+                                                  self._recorder.http_port)
+      self._browser_platform.reverse_port_forward(self._recorder.https_port,
+                                                  self._recorder.https_port)
+
   def start(self) -> None:
     pass
 
@@ -195,4 +205,4 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def teardown(self) -> ProbeResult:
     self._recorder.stop()
-    return self.browser_result(file=(self.result_path,))
+    return LocalProbeResult(file=(self.result_path,))
