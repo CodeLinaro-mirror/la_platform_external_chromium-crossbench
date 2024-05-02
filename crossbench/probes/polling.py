@@ -3,23 +3,23 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import abc
-
 import datetime as dt
-import time
 import logging
-import pathlib
 import threading
+import time
 from typing import TYPE_CHECKING, Iterable, Tuple
-from crossbench import cli_helper
 
+from crossbench import cli_helper
 from crossbench.probes import probe as cb_probe
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
-  from crossbench.env import HostEnvironment
   from crossbench import plt
+  from crossbench.env import HostEnvironment
   from crossbench.runner.run import Run
+  from crossbench.path import LocalPath
 
 
 class PollingProbe(cb_probe.Probe, abc.ABC):
@@ -59,7 +59,7 @@ class PollingProbe(cb_probe.Probe, abc.ABC):
     return self._interval
 
   @property
-  def cmd(self) -> Tuple[str]:
+  def cmd(self) -> Tuple[str, ...]:
     return self._cmd
 
   def validate_env(self, env: HostEnvironment) -> None:
@@ -97,10 +97,10 @@ class PollingProbeContext(cb_probe.ProbeContext[PollingProbe]):
   def __init__(self, probe: PollingProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._poller = CMDPoller(self.browser_platform, self.probe.cmd,
-                             self.probe.interval, self.result_path)
+                             self.probe.interval, self.local_result_path)
 
   def setup(self) -> None:
-    self.result_path.mkdir()
+    self.local_result_path.mkdir()
 
   def start(self) -> None:
     self._poller.start()
@@ -109,17 +109,17 @@ class PollingProbeContext(cb_probe.ProbeContext[PollingProbe]):
     self._poller.stop()
 
   def teardown(self) -> ProbeResult:
-    return LocalProbeResult(file=(self.result_path,))
+    return LocalProbeResult(file=(self.local_result_path,))
 
 
 class CMDPoller(threading.Thread):
 
   def __init__(self, platform: plt.Platform, cmd: Tuple[str],
-               interval: dt.timedelta, path: pathlib.Path):
+               interval: dt.timedelta, path: LocalPath):
     super().__init__()
     self._platform = platform
     self._cmd = cmd
-    self._path = path
+    self._path: LocalPath = path
     if interval < dt.timedelta(seconds=0.1):
       raise ValueError("Poller interval should be >= 0.1s for accuracy, "
                        f"but got {interval}s")

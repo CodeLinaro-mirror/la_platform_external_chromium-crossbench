@@ -22,7 +22,11 @@ class AbstractChromeDownloaderTestCase(
   def setUp(self) -> None:
     super().setUp()
     self.platform = mock.Mock(
-        is_remote=False, is_linux=False, is_macos=False, sh_results=[])
+        is_remote=False,
+        is_linux=False,
+        is_macos=False,
+        sh_results=[],
+        path=pathlib.Path)
     self.platform.search_app = lambda x: x
     self.platform.which = pathlib.Path
     self.platform.host_platform = self.platform

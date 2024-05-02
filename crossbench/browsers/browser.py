@@ -6,29 +6,27 @@ from __future__ import annotations
 
 import abc
 import logging
-import pathlib
 import shlex
-import shutil
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
 
+from crossbench import path as pth
 from crossbench import plt
-from crossbench.flags import ChromeFeatures, Flags, FlagsT, JSFlags
-from crossbench.network.base import Network
-from crossbench.network.live import LiveNetwork
-
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
+from crossbench.flags import ChromeFeatures, Flags, FlagsT, JSFlags
+from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
   import datetime as dt
 
+  from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
+  from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict
-  from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class Browser(abc.ABC):
@@ -37,18 +35,17 @@ class Browser(abc.ABC):
   def default_flags(cls, initial_data: Flags.InitialDataType = None) -> Flags:
     return Flags(initial_data)
 
-  def __init__(
-      self,
-      label: str,
-      path: Optional[pathlib.Path] = None,
-      flags: Optional[Flags.InitialDataType] = None,
-      js_flags: Optional[Flags.InitialDataType] = None,
-      cache_dir: Optional[pathlib.Path] = None,
-      network: Optional[Network] = None,
-      driver_path: Optional[pathlib.Path] = None,
-      viewport: Optional[Viewport] = None,
-      splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[plt.Platform] = None):
+  def __init__(self,
+               label: str,
+               path: Optional[pth.RemotePath] = None,
+               flags: Optional[Flags.InitialDataType] = None,
+               js_flags: Optional[Flags.InitialDataType] = None,
+               cache_dir: Optional[pth.RemotePath] = None,
+               network: Optional[Network] = None,
+               driver_path: Optional[pth.RemotePath] = None,
+               viewport: Optional[Viewport] = None,
+               splash_screen: Optional[SplashScreen] = None,
+               platform: Optional[plt.Platform] = None):
     self._platform = platform or plt.PLATFORM
     assert not driver_path, "driver_path not supported by base Browser"
     self.label: str = label
@@ -56,7 +53,7 @@ class Browser(abc.ABC):
     self.app_name: str = self.type_name
     self.version: str = "custom"
     self.major_version: int = 0
-    self.app_path: pathlib.Path = pathlib.Path()
+    self.app_path: pth.RemotePath = pth.RemotePath()
     if path:
       self.path = self._resolve_binary(path)
       # TODO clean up
@@ -68,19 +65,19 @@ class Browser(abc.ABC):
     else:
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
-      self.path = pathlib.Path()
+      self.path = pth.RemotePath()
       self.unique_name = f"{self.type_name}_{self.label}".lower()
     self._network: Network = network or LiveNetwork()
     self._viewport: Viewport = viewport or Viewport.DEFAULT
     self._splash_screen: SplashScreen = splash_screen or SplashScreen.DEFAULT
     self._is_running: bool = False
-    self.cache_dir: Optional[pathlib.Path] = cache_dir
+    self.cache_dir: Optional[pth.RemotePath] = cache_dir
     self.clear_cache_dir: bool = True
     self._pid: Optional[int] = None
     self._probes: OrderedSet[Probe] = OrderedSet()
     self._flags: Flags = self.default_flags(flags)
     assert not js_flags, "Base Browser doesn't support js_flags directly"
-    self.log_file: Optional[pathlib.Path] = None
+    self.log_file: Optional[pth.RemotePath] = None
 
   @property
   @abc.abstractmethod
@@ -167,16 +164,16 @@ class Browser(abc.ABC):
   def is_local(self) -> bool:
     return True
 
-  def set_log_file(self, path: pathlib.Path) -> None:
+  def set_log_file(self, path: pth.RemotePath) -> None:
     self.log_file = path
 
   @property
-  def stdout_log_file(self) -> pathlib.Path:
+  def stdout_log_file(self) -> pth.RemotePath:
     assert self.log_file
     return self.log_file.with_suffix(".stdout.log")
 
-  def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
-    path = path.absolute()
+  def _resolve_binary(self, path: pth.RemotePath) -> pth.RemotePath:
+    path = self.platform.absolute(path)
     assert self.platform.exists(path), f"Binary at path={path} does not exist."
     self.app_path = path
     self.app_name = self.app_path.stem
@@ -186,10 +183,10 @@ class Browser(abc.ABC):
         f"Binary at path={path} is not a file.")
     return path
 
-  def _resolve_macos_binary(self, path: pathlib.Path) -> pathlib.Path:
+  def _resolve_macos_binary(self, path: pth.RemotePath) -> pth.RemotePath:
     assert self.platform.is_macos
     candidate = self.platform.search_binary(path)
-    if not candidate or not candidate.is_file():
+    if not candidate or not self.platform.is_file(candidate):
       raise ValueError(f"Could not find browser executable in {path}")
     return candidate
 
@@ -231,8 +228,8 @@ class Browser(abc.ABC):
 
   def clear_cache(self, runner: Runner) -> None:
     del runner
-    if self.clear_cache_dir and self.cache_dir and self.cache_dir.exists():
-      shutil.rmtree(self.cache_dir)
+    if self.clear_cache_dir and self.cache_dir:
+      self.platform.rm(self.cache_dir, missing_ok=True, dir=True)
 
   @abc.abstractmethod
   def start(self, session: BrowserSessionRunGroup) -> None:
@@ -240,7 +237,7 @@ class Browser(abc.ABC):
 
   def _log_browser_start(self,
                          args: Tuple[str, ...],
-                         driver_path: Optional[pathlib.Path] = None) -> None:
+                         driver_path: Optional[pth.RemotePath] = None) -> None:
     logging.info("STARTING BROWSER Binary:  %s", self.path)
     logging.info("STARTING BROWSER Version: %s", self.version)
     if driver_path:

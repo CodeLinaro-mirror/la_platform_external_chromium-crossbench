@@ -8,7 +8,6 @@ import argparse
 import dataclasses
 import functools
 import logging
-import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set,
                     TextIO, Tuple, Type, Union, cast)
 
@@ -17,7 +16,9 @@ from immutabledict import immutabledict
 from ordered_set import OrderedSet
 
 import crossbench.browsers.all as browsers
-from crossbench import cli_helper, exception, plt
+from crossbench import cli_helper, exception
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)
 from crossbench.browsers.chrome.downloader import ChromeDownloader
@@ -276,7 +277,7 @@ class BrowserVariantsConfig:
     self._variants: List[Browser] = []
     self._unique_names: Set[str] = set()
     self._browser_lookup_override = browser_lookup_override or {}
-    self._cache_dir: pathlib.Path = BROWSERS_CACHE
+    self._cache_dir: pth.LocalPath = BROWSERS_CACHE
     if raw_config_data:
       assert args, "args object needed when loading from dict."
       self.load_dict(raw_config_data, args)
@@ -354,8 +355,8 @@ class BrowserVariantsConfig:
       browser_config = self._maybe_downloaded_binary(
           cast(BrowserConfig, BrowserConfig.parse(raw_browser_data)))
       browser_cls = self._get_browser_cls(browser_config)
-    if not browser_config.driver.type.is_remote and (
-        not browser_config.path.exists()):
+    if not browser_config.driver.type.is_remote and (not pth.LocalPath(
+        browser_config.path).exists()):
       raise ConfigError(
           f"browsers[{repr(name)}].path='{browser_config.path}' does not exist."
       )
@@ -472,7 +473,7 @@ class BrowserVariantsConfig:
 
   def _get_browser_cls(self, browser_config: BrowserConfig) -> Type[Browser]:
     driver = browser_config.driver.type
-    path: pathlib.Path = browser_config.path
+    path: pth.RemotePath = browser_config.path
     assert not isinstance(path, str), "Invalid path"
     if not BrowserConfig.is_supported_browser_path(path):
       raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
@@ -595,7 +596,7 @@ class BrowserVariantsConfig:
   def _maybe_downloaded_binary(self,
                                browser_config: BrowserConfig) -> BrowserConfig:
     path_or_identifier = browser_config.browser
-    if isinstance(path_or_identifier, pathlib.Path):
+    if isinstance(path_or_identifier, pth.RemotePath):
       return browser_config
     browser_platform = self._get_browser_platform(browser_config)
     if ChromeDownloader.is_valid(path_or_identifier, browser_platform):
@@ -614,11 +615,10 @@ class BrowserVariantsConfig:
     assert browser_config, "Expected non-empty BrowserConfig."
     browser_config = self._maybe_downloaded_binary(browser_config)
     browser_cls: Type[Browser] = self._get_browser_cls(browser_config)
-    path: pathlib.Path = browser_config.path
+    path: pth.RemotePath = browser_config.path
     flags_sets = [browser_cls.default_flags()]
 
-    if browser_config.driver.type != BrowserDriverType.ANDROID and (
-        not path.exists()):
+    if browser_config.driver.is_local and not pth.LocalPath(path).exists():
       raise argparse.ArgumentTypeError(f"Browser binary does not exist: {path}")
 
     if issubclass(browser_cls, browsers.Chromium):

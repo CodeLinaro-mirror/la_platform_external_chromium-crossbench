@@ -11,13 +11,14 @@ import io
 import json
 import logging
 import multiprocessing
-import pathlib
 import signal
 import subprocess
 import time
-from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast)
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast
 
-from crossbench import helper, plt
+from crossbench import helper
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
 from crossbench.plt.base import ListCmdArgsT
@@ -285,8 +286,8 @@ class ProfilingProbe(Probe):
       browser.js_flags.update(self.V8_PERF_PROF_FLAG)
       if self._expose_v8_interpreted_frames:
         browser.js_flags.set(self.V8_INTERPRETED_FRAMES_FLAG)
-    if browser.platform.is_linux:
-      cmd = pathlib.Path(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
+    if browser.platform.is_linux and browser.platform.is_local:
+      cmd = pth.LocalPath(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
       assert not browser.platform.is_remote, (
           "Copying renderer command prefix to remote platform is "
           "not implemented yet")
@@ -362,7 +363,7 @@ class ProfilingContext(ProbeContext[ProfilingProbe], metaclass=abc.ABCMeta):
 class MacOSProfilingContext(ProfilingContext):
   _process: Optional[subprocess.Popen]
 
-  def get_default_result_path(self) -> pathlib.Path:
+  def get_default_result_path(self) -> pth.RemotePath:
     return super().get_default_result_path().parent / "profile.trace"
 
   def start(self) -> None:
@@ -406,13 +407,18 @@ class LinuxProfilingContext(ProfilingContext):
     super().__init__(probe, run)
     self._perf_process: Optional[subprocess.Popen] = None
 
+  def get_default_result_path(self) -> pth.RemotePath:
+    result_dir = super().get_default_result_path()
+    self.browser_platform.mkdir(result_dir)
+    return result_dir
+
   def start(self) -> None:
     if not self.probe.sample_browser_process:
       return
     if self.run.browser.pid is None:
       logging.warning("Cannot sample browser process")
       return
-    perf_data_file = self.run.out_dir / "browser.perf.data"
+    perf_data_file: pth.RemotePath = self.result_path / "browser.perf.data"
     # TODO: not fully working yet
     self._perf_process = self.browser_platform.popen(
         "perf", "record", "--call-graph=fp", "--freq=max", "--clockid=mono",
@@ -444,8 +450,11 @@ class LinuxProfilingContext(ProfilingContext):
                    "You might get partial profiles")
     time.sleep(2)
 
-    perf_files: List[pathlib.Path] = helper.sort_by_file_size(
-        self.run.out_dir.glob(self.PERF_DATA_PATTERN))
+    perf_files: List[pth.RemotePath] = helper.sort_by_file_size(
+        list(
+            self.browser_platform.glob(self.result_path,
+                                       self.PERF_DATA_PATTERN)),
+        self.browser_platform)
     raw_perf_files = perf_files
     urls: List[str] = []
     try:
@@ -465,14 +474,17 @@ class LinuxProfilingContext(ProfilingContext):
                    " ".join(map(str, perf_files)))
     return self.browser_result(file=perf_files)
 
-  def _inject_v8_symbols(self, run: Run,
-                         perf_files: List[pathlib.Path]) -> List[pathlib.Path]:
+  def _inject_v8_symbols(
+      self, run: Run, perf_files: List[pth.RemotePath]) -> List[pth.RemotePath]:
     with run.actions(
         f"Probe {self.probe.name}: "
         f"Injecting V8 symbols into {len(perf_files)} profiles",
         verbose=True), helper.Spinner():
       # Filter out empty files
-      perf_files = [file for file in perf_files if file.stat().st_size > 0]
+      perf_files = [
+          file for file in perf_files
+          if self.browser_platform.file_size(file) > 0
+      ]
       if self.browser_platform.is_remote:
         # Use loop, as we cannot easily serialize the remote platform.
         perf_jitted_files = [
@@ -487,7 +499,7 @@ class LinuxProfilingContext(ProfilingContext):
       return [file for file in perf_jitted_files if file is not None]
 
   def _export_to_pprof(self, run: Run,
-                       perf_files: List[pathlib.Path]) -> List[str]:
+                       perf_files: List[pth.RemotePath]) -> List[str]:
     assert self.probe.run_pprof
     run_details_json = json.dumps(run.get_browser_details_json())
     with run.actions(
@@ -537,19 +549,19 @@ class LinuxProfilingContext(ProfilingContext):
 
 
 def prepare_linux_perf_env(platform: plt.Platform,
-                           cwd: pathlib.Path) -> Dict[str, str]:
+                           cwd: pth.RemotePath) -> Dict[str, str]:
   env: Dict[str, str] = dict(platform.environ)
-  env["JITDUMPDIR"] = str(cwd.absolute())
+  env["JITDUMPDIR"] = str(platform.absolute(cwd))
   return env
 
 
 def linux_perf_probe_inject_v8_symbols(
-    perf_data_file: pathlib.Path,
-    platform: Optional[plt.Platform] = None) -> Optional[pathlib.Path]:
-  assert perf_data_file.is_file()
-  output_file = perf_data_file.with_suffix(".data.jitted")
-  assert not output_file.exists()
+    perf_data_file: pth.RemotePath,
+    platform: Optional[plt.Platform] = None) -> Optional[pth.RemotePath]:
   platform = platform or plt.PLATFORM
+  assert platform.is_file(perf_data_file)
+  output_file = perf_data_file.with_suffix(".data.jitted")
+  assert not platform.exists(output_file)
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
   try:
     platform.sh(
@@ -561,19 +573,19 @@ def linux_perf_probe_inject_v8_symbols(
         env=env)
   except plt.SubprocessError as e:
     KB = 1024
-    if perf_data_file.stat().st_size > 200 * KB:
+    if platform.file_size(perf_data_file) > 200 * KB:
       logging.warning("Failed processing: %s\n%s", perf_data_file, e)
     else:
       # TODO: investigate why almost all small perf.data files fail
       logging.debug("Failed processing small profile (likely empty): %s\n%s",
                     perf_data_file, e)
-  if not output_file.exists():
+  if not platform.exists(output_file):
     return None
   return output_file
 
 
 def linux_perf_probe_pprof(
-    perf_data_file: pathlib.Path,
+    perf_data_file: pth.RemotePath,
     run_details: str,
     platform: Optional[plt.Platform] = None) -> Optional[str]:
   size = helper.get_file_size(perf_data_file)
@@ -592,7 +604,8 @@ def linux_perf_probe_pprof(
     # Occasionally small .jitted files fail, likely due perf inject silently
     # failing?
     raw_perf_data_file = perf_data_file.with_suffix("")
-    if perf_data_file.suffix == ".jitted" and raw_perf_data_file.exists():
+    if (perf_data_file.suffix == ".jitted" and
+        platform.exists(raw_perf_data_file)):
       logging.debug(
           "pprof best-effort: falling back to standard perf data "
           "without js symbols: %s \n"
@@ -690,7 +703,7 @@ class AndroidProfilingContext(ProfilingContext):
                       simpleperf_pid)
       self.browser_platform.terminate(simpleperf_pid)
 
-  def get_default_result_path(self) -> pathlib.Path:
+  def get_default_result_path(self) -> pth.RemotePath:
     return super().get_default_result_path().parent / "simpleperf.perf.data"
 
   def setup(self) -> None:
@@ -728,11 +741,10 @@ class AndroidProfilingContext(ProfilingContext):
     return self.browser_result(file=[self.result_path])
 
 
-def generate_simpleperf_command_line(target: TargetMode, app_name: str,
-                                     renderer_pid: Optional[int],
-                                     renderer_main_tid: Optional[int],
-                                     frame_pointers: bool,
-                                     output_path: pathlib.Path) -> ListCmdArgsT:
+def generate_simpleperf_command_line(
+    target: TargetMode, app_name: str, renderer_pid: Optional[int],
+    renderer_main_tid: Optional[int], frame_pointers: bool,
+    output_path: pth.RemotePath) -> ListCmdArgsT:
   command_line: ListCmdArgsT = ["simpleperf", "record"]
   if target == TargetMode.RENDERER_MAIN_ONLY:
     assert renderer_main_tid is not None

@@ -4,11 +4,9 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import logging
 import math
-import pathlib
 from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
                     Optional, Sequence, Set, Tuple, Union)
@@ -18,6 +16,7 @@ from ordered_set import OrderedSet
 from crossbench.probes import helper
 
 if TYPE_CHECKING:
+  from crossbench.path import LocalPath
   from crossbench.types import JsonDict
 
 
@@ -173,7 +172,7 @@ class MetricsMerger:
 
   @classmethod
   def merge_json_list(cls,
-                      files: Iterable[pathlib.Path],
+                      files: Iterable[LocalPath],
                       key_fn: Optional[helper.KeyFnType] = None,
                       merge_duplicate_paths: bool = False) -> MetricsMerger:
     merger = cls(key_fn=key_fn)

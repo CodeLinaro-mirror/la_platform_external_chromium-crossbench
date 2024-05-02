@@ -19,12 +19,11 @@ from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
 
 if TYPE_CHECKING:
-  import pathlib
-
   from selenium.webdriver.common.options import ArgOptions
 
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
+  from crossbench.path import LocalPath, RemotePath
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -51,7 +50,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   """
 
   def __init__(self, runner: Runner, browser: Browser, index: int,
-               root_dir: pathlib.Path, throw: bool) -> None:
+               root_dir: LocalPath, throw: bool) -> None:
     super().__init__(throw)
     self._state: _State = _State.BUILDING
     self._runner = runner
@@ -60,8 +59,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._network: Network = browser.network
     self._index: int = index
     self._runs: List[Run] = []
-    self._root_dir: pathlib.Path = root_dir
-    self._browser_tmp_dir: Optional[pathlib.Path] = None
+    self._root_dir: LocalPath = root_dir
+    self._browser_tmp_dir: Optional[RemotePath] = None
     self._extra_js_flags = JSFlags()
     self._extra_flags = Flags()
     # Temporary objects, reset after all runs are ready (see set_ready).
@@ -105,7 +104,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         raise ValueError("Got conflicting Probes within a browser session.")
 
   @property
-  def raw_sessions_dir(self) -> pathlib.Path:
+  def raw_sessions_dir(self) -> LocalPath:
     return (self.root_dir / self.browser.unique_name / "sessions" /
             str(self.index))
 
@@ -117,7 +116,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def first_run(self) -> Run:
     return self._runs[0]
 
-  def _get_session_dir(self) -> pathlib.Path:
+  def _get_session_dir(self) -> LocalPath:
     if self.is_single_run:
       return self.first_run.out_dir
     if not self._runs:
@@ -125,7 +124,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self.raw_sessions_dir
 
   @property
-  def out_dir(self) -> pathlib.Path:
+  def out_dir(self) -> LocalPath:
     return self._get_session_dir()
 
   @property
@@ -153,7 +152,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._state == _State.RUNNING
 
   @property
-  def root_dir(self) -> pathlib.Path:
+  def root_dir(self) -> LocalPath:
     return self._root_dir
 
   @property
@@ -199,7 +198,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return f"Session({self.browser}, {self.index})"
 
   @property
-  def browser_tmp_dir(self) -> pathlib.Path:
+  def browser_tmp_dir(self) -> RemotePath:
     if not self._browser_tmp_dir:
       prefix = f"cb_browser_session_{self.index}"
       self._browser_tmp_dir = self.browser_platform.mkdtemp(prefix)

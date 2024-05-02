@@ -4,7 +4,6 @@
 
 import argparse
 import copy
-import pathlib
 import unittest
 from typing import Dict, Tuple, Type
 from unittest import mock
@@ -12,17 +11,16 @@ from unittest import mock
 import hjson
 from immutabledict import immutabledict
 
+from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import (
-    BrowserVariantsConfig,
-    FlagsConfig,
-    FlagsGroupConfig,
-    FlagsVariantConfig,
-)
+from crossbench.cli.config.browser_variants import (BrowserVariantsConfig,
+                                                    FlagsConfig,
+                                                    FlagsGroupConfig,
+                                                    FlagsVariantConfig)
 from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
                                           BrowserDriverType, DriverConfig)
 from crossbench.cli.config.network import (NetworkConfig, NetworkSpeedConfig,
@@ -81,7 +79,7 @@ class BaseConfigTestCase(BaseCrossbenchTestCase):
     super().setUp()
     adb_patcher = mock.patch(
         "crossbench.plt.android_adb._find_adb_bin",
-        return_value=pathlib.Path("adb"))
+        return_value=pth.LocalPath("adb"))
     adb_patcher.start()
     self.addCleanup(adb_patcher.stop)
 
@@ -90,6 +88,12 @@ class BaseConfigTestCase(BaseCrossbenchTestCase):
         BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls)
 
 class DriverConfigTestCase(BaseConfigTestCase):
+
+  def test_default(self):
+    default = DriverConfig.default()
+    self.assertEqual(default.type, BrowserDriverType.WEB_DRIVER)
+    self.assertTrue(default.is_local)
+    self.assertFalse(default.is_remote)
 
   def test_parse_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -103,7 +107,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = DriverConfig.parse("{")
 
-  def test_parse_path(self):
+  def test_parse_path_invalid(self):
     driver_path = self.out_dir / "driver"
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(str(driver_path))
@@ -130,7 +134,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertIn("1234", str(cm.exception))
     self.assertIn("ABCD", str(cm.exception))
 
-  def test_parse_inline_json(self):
+  def test_parse_inline_json_adb(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {"type": 'adb', "settings": {"device_id": "0a388e93"}}
     config_1 = DriverConfig.parse(hjson.dumps(config_dict))
@@ -138,6 +142,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_1.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1.device_id, "0a388e93")
     self.assertEqual(config_1.settings["device_id"], "0a388e93")
+    self.assertTrue(config_1.is_remote)
+    self.assertFalse(config_1.is_local)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_2 = DriverConfig.load_dict(config_dict)
@@ -145,6 +151,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_2.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_2.device_id, "0a388e93")
     self.assertEqual(config_2.settings["device_id"], "0a388e93")
+    self.assertTrue(config_2.is_remote)
+    self.assertFalse(config_2.is_local)
     self.assertEqual(config_1, config_2)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -153,6 +161,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config_3, DriverConfig)
     self.assertEqual(config_3.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_3.device_id, "0a388e93")
+    self.assertTrue(config_3.is_remote)
+    self.assertFalse(config_3.is_local)
     self.assertIsNone(config_3.settings)
     self.assertNotEqual(config_1, config_3)
     self.assertNotEqual(config_2, config_3)
@@ -186,6 +196,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
+    self.assertTrue(config.is_remote)
+    self.assertFalse(config.is_local)
 
   def test_parse_adb_phone_serial(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
@@ -215,7 +227,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
 class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_equal(self):
-    path = Chrome.stable_path()
+    path = Chrome.stable_path(self.platform)
     self.assertEqual(
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())),
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())))
@@ -228,18 +240,18 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertNotEqual(
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())),
         BrowserConfig(
-            pathlib.Path("foo"), DriverConfig(BrowserDriverType.default())))
+            pth.RemotePath("foo"), DriverConfig(BrowserDriverType.default())))
 
   def test_hashable(self):
     _ = hash(BrowserConfig.default())
     _ = hash(
         BrowserConfig(
-            pathlib.Path("foo"),
+            pth.RemotePath("foo"),
             DriverConfig(
                 BrowserDriverType.default(), settings=immutabledict(custom=1))))
 
   def test_parse_name_or_path(self):
-    path = Chrome.stable_path()
+    path = Chrome.stable_path(self.platform)
     self.assertEqual(
         BrowserConfig.parse("chrome"),
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())))
@@ -255,7 +267,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("a-random-name", str(cm.exception))
 
   def test_parse_invalid_path(self):
-    path = pathlib.Path("foo/bar")
+    path = pth.RemotePath("foo/bar")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse(str(path))
     self.assertIn(str(path), str(cm.exception))
@@ -286,33 +298,39 @@ class BrowserConfigTestCase(BaseConfigTestCase):
   def test_parse_simple_with_driver(self):
     self.assertEqual(
         BrowserConfig.parse("selenium:chrome"),
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.WEB_DRIVER)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER)))
     self.assertEqual(
         BrowserConfig.parse("webdriver:chrome"),
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.WEB_DRIVER),
-                      NetworkConfig.default()))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            NetworkConfig.default()))
     self.assertEqual(
         BrowserConfig.parse("applescript:chrome"),
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.APPLE_SCRIPT)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.APPLE_SCRIPT)))
     self.assertEqual(
         BrowserConfig.parse("osa:chrome"),
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.APPLE_SCRIPT)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.APPLE_SCRIPT)))
 
   def test_parse_simple_with_driver_with_network(self):
     self.assertEqual(
         BrowserConfig.parse("chrome:4G"),
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.WEB_DRIVER),
-                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
     self.assertEqual(
         BrowserConfig.parse("selenium:chrome:4G"),
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.WEB_DRIVER),
-                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
 
   def test_parse_simple_ambiguous_with_driver_ios(self):
     self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]
@@ -327,8 +345,9 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     config = BrowserConfig.parse("ios:chrome")
     self.assertEqual(
         config,
-        BrowserConfig(Chrome.stable_path(),
-                      DriverConfig(BrowserDriverType.IOS)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.IOS)))
     self.assertEqual(config.network, NetworkConfig.default())
 
   def test_parse_simple_with_driver_ios_with_network(self):
@@ -338,8 +357,10 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     config = BrowserConfig.parse("ios:chrome:4G")
     self.assertEqual(
         config,
-        BrowserConfig(Chrome.stable_path(), DriverConfig(BrowserDriverType.IOS),
-                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.IOS),
+            NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
     self.assertEqual(config.network,
                      NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G))
 
@@ -356,7 +377,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("adb:chrome"),
         BrowserConfig(
-            pathlib.Path("com.android.chrome"),
+            pth.RemotePath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -366,7 +387,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:com.chrome.beta"),
         BrowserConfig(
-            pathlib.Path("com.chrome.beta"),
+            pth.RemotePath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -376,7 +397,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chrome-beta"),
         BrowserConfig(
-            pathlib.Path("com.chrome.beta"),
+            pth.RemotePath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -386,7 +407,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("adb:chrome-dev"),
         BrowserConfig(
-            pathlib.Path("com.chrome.dev"),
+            pth.RemotePath("com.chrome.dev"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -396,7 +417,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chrome-canary"),
         BrowserConfig(
-            pathlib.Path("com.chrome.canary"),
+            pth.RemotePath("com.chrome.canary"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -406,7 +427,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chromium"),
         BrowserConfig(
-            pathlib.Path("org.chromium.chrome"),
+            pth.RemotePath("org.chromium.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -423,7 +444,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse(config_dict),
         BrowserConfig(
-            pathlib.Path("com.android.chrome"),
+            pth.RemotePath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -475,7 +496,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 3)
     self.assertEqual(
         config,
-        BrowserConfig(pathlib.Path("com.android.chrome"), expected_driver))
+        BrowserConfig(pth.RemotePath("com.android.chrome"), expected_driver))
 
   @unittest.skipIf(plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_adb_phone_serial_invalid_macos(self):
@@ -554,7 +575,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.load_dict(config_dict)
 
   def test_parse_inline_driver_browser(self):
-    driver_path = pathlib.Path("custom/chromedriver")
+    driver_path = pth.LocalPath("custom/chromedriver")
     config_dict: JsonDict = {
         "browser": "chrome",
         "driver": str(driver_path),
@@ -573,7 +594,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
   # pylint: disable=expression-not-assigned
 
   def parse_config(self, config_data) -> ProbeListConfig:
-    probe_config_file = pathlib.Path("/probe.config.hjson")
+    probe_config_file = pth.LocalPath("/probe.config.hjson")
     with probe_config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with probe_config_file.open(encoding="utf-8") as f:
@@ -609,7 +630,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
       self.assertIn(flag, probe.js_flags)
 
   def test_from_cli_args(self):
-    file = pathlib.Path("probe.config.hjson")
+    file = pth.LocalPath("probe.config.hjson")
     js_flags = ["--log-maps", "--log-function-events"]
     config_data: JsonDict = {
         "probes": {
@@ -630,7 +651,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
       self.assertIn(flag, probe.js_flags)
 
   def test_inline_config(self):
-    mock_d8_file = pathlib.Path("out/d8")
+    mock_d8_file = pth.LocalPath("out/d8")
     self.fs.create_file(mock_d8_file, st_size=8 * 1024)
     config_data = {"d8_binary": str(mock_d8_file)}
     args = mock.Mock(probe_config=None, throw=True, wraps=False)
@@ -652,7 +673,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     self.assertTrue(isinstance(probe, V8LogProbe))
 
   def test_inline_config_invalid(self):
-    mock_d8_file = pathlib.Path("out/d8")
+    mock_d8_file = pth.LocalPath("out/d8")
     self.fs.create_file(mock_d8_file)
     config_data = {"d8_binary": str(mock_d8_file)}
     trailing_brace = "}"
@@ -664,7 +685,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
       ProbeConfig.parse("v8.log::")
 
   def test_inline_config_dir_instead_of_file(self):
-    mock_dir = pathlib.Path("some/dir")
+    mock_dir = pth.LocalPath("some/dir")
     mock_dir.mkdir(parents=True)
     config_data = {"d8_binary": str(mock_dir)}
     args = mock.Mock(
@@ -685,11 +706,11 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
         wraps=False)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       ProbeListConfig.from_cli_args(args)
-    expected_path = pathlib.Path("does/not/exist/d8")
+    expected_path = pth.LocalPath("does/not/exist/d8")
     self.assertIn(str(expected_path), str(cm.exception))
 
   def test_multiple_probes(self):
-    powersampler_bin = pathlib.Path("/powersampler.bin")
+    powersampler_bin = pth.LocalPath("/powersampler.bin")
     powersampler_bin.touch()
     config = self.parse_config({
         "probes": {
@@ -1258,7 +1279,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(browser_1.app_path, mock_browser.MockChromeDev.APP_PATH)
 
   def test_custom_driver(self):
-    chromedriver = pathlib.Path("path/to/chromedriver")
+    chromedriver = pth.LocalPath("path/to/chromedriver")
     variants_config = {
         "browsers": {
             "chrome-stable": {
@@ -1386,7 +1407,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin),}}}
-    config_file = pathlib.Path("config.hjson")
+    config_file = pth.LocalPath("config.hjson")
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
@@ -1822,7 +1843,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.speed, NetworkSpeedConfig.default())
 
   def test_parse_replay_archive_invalid(self):
-    path = pathlib.Path("/foo/bar/wprgo.archive")
+    path = pth.LocalPath("/foo/bar/wprgo.archive")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse(str(path))
     message = str(cm.exception)
@@ -1837,7 +1858,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertIn("empty", message)
 
   def test_parse_wprgo_archive(self):
-    path = pathlib.Path("/foo/bar/wprgo.archive")
+    path = pth.LocalPath("/foo/bar/wprgo.archive")
     self.fs.create_file(path, st_size=1024)
     config = NetworkConfig.parse(str(path))
     assert isinstance(config, NetworkConfig)
@@ -1847,7 +1868,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
 
   def test_invalid_constructor_params(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = NetworkConfig(path=pathlib.Path("foo/bar"))
+      _ = NetworkConfig(path=pth.LocalPath("foo/bar"))
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = NetworkConfig(type=NetworkType.LOCAL, path=None)
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -1869,14 +1890,14 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(live_a, live_d)
 
   def test_parse_wpr_invalid(self):
-    dir_path = pathlib.Path("test/dir")
+    dir_path = pth.LocalPath("test/dir")
     dir_path.mkdir(parents=True)
     for invalid in ("", "default", "4G", dir_path, str(dir_path)):
       with self.assertRaises(argparse.ArgumentTypeError):
         NetworkConfig.parse_wpr(invalid)
 
   def test_parse_wpr(self):
-    archive_path = pathlib.Path("test/archive.wprgo")
+    archive_path = pth.LocalPath("test/archive.wprgo")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse_wpr(archive_path)
     self.assertIn(str(archive_path), str(cm.exception))
@@ -1901,7 +1922,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertIsNone(config.path)
 
   def test_parse_dict_wpr(self):
-    archive_path = pathlib.Path("test/archive.wprgo")
+    archive_path = pth.LocalPath("test/archive.wprgo")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse({"type": "wpr", "path": archive_path})
     self.assertIn(str(archive_path), str(cm.exception))

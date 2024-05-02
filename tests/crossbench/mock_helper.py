@@ -19,6 +19,8 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench
 from crossbench import plt
+from crossbench import path as pth
+from crossbench import cli_helper
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.cli.cli import CrossBenchCLI
@@ -244,7 +246,8 @@ class CrossbenchFakeFsTestCase(
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser])
+    self.setUpPyfakefs(
+        modules_to_reload=[crossbench, mock_browser, cli_helper, pth])
     # gettext is used extensively in argparse
     gettext_patcher = mock.patch(
         "gettext.dgettext", side_effect=lambda domain, message: message)

@@ -18,6 +18,7 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.path import RemotePath
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -1002,7 +1003,7 @@ class CliTestCase(BaseCliTestCase):
       searched_binaries = []
       original_search_binary = plt.PLATFORM.search_binary
 
-      def mock_search_binary(binary) -> Optional[pathlib.Path]:
+      def mock_search_binary(binary) -> Optional[RemotePath]:
         searched_binaries.append(binary)
         if "gdb" in str(binary) or "lldb" in str(binary):
           return None

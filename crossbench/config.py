@@ -10,7 +10,6 @@ import collections
 import enum
 import inspect
 import logging
-import pathlib
 import re
 import textwrap
 import collections.abc
@@ -20,6 +19,8 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
 import tabulate
 
 from crossbench import cli_helper, compat, exception, helper
+# Use indirection to support pyfakefs
+from crossbench import path as pth
 
 if TYPE_CHECKING:
   ArgParserType = Union[Callable[..., Any], Type]
@@ -400,11 +401,11 @@ class ConfigObject(abc.ABC):
       return cls.load_dict(value)
     if not value:
       raise ConfigError(f"{cls.__name__}: Empty config value")
-    if isinstance(value, pathlib.Path):
+    if isinstance(value, pth.LocalPath):
       return cls.load_path(value)
     if isinstance(value, str):
       try:
-        maybe_path = pathlib.Path(value)
+        maybe_path = pth.LocalPath(value)
         if cls.is_valid_path(maybe_path):
           return cls.load_path(maybe_path)
       except OSError:
@@ -424,18 +425,18 @@ class ConfigObject(abc.ABC):
     raise NotImplementedError()
 
   @classmethod
-  def is_valid_path(cls, path: pathlib.Path) -> bool:
+  def is_valid_path(cls, path: pth.LocalPath) -> bool:
     if not path.is_file():
       return False
     return path.suffix in cls.VALID_EXTENSIONS
 
   @classmethod
-  def load_path(cls: Type[ConfigObjectT], path: pathlib.Path) -> ConfigObjectT:
+  def load_path(cls: Type[ConfigObjectT], path: pth.LocalPath) -> ConfigObjectT:
     return cls.load_config_path(path)
 
   @classmethod
   def load_config_path(cls: Type[ConfigObjectT],
-                       path: pathlib.Path) -> ConfigObjectT:
+                       path: pth.LocalPath) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       data = cli_helper.parse_dict_hjson_file(path)
       return cls.load_dict(data)

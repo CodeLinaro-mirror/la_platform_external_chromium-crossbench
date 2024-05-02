@@ -12,8 +12,9 @@ from typing import Optional
 
 import pytest
 
-from crossbench import cli_helper
+from crossbench import cli_helper, plt
 from crossbench.browsers import all as browsers
+from crossbench.path import LocalPath
 from tests import test_helper
 
 # pytest.fixtures rely on params having the same name as the fixture function
@@ -42,7 +43,7 @@ def pytest_xdist_auto_num_workers(config):
 
 @pytest.fixture(scope="session", autouse=True)
 def driver_path(request) -> Optional[pathlib.Path]:
-  maybe_driver_path: Optional[pathlib.Path] = request.config.getoption(
+  maybe_driver_path: Optional[LocalPath] = request.config.getoption(
       "--test-driver-path")
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
@@ -59,7 +60,7 @@ def browser_path(request) -> pathlib.Path:
     assert maybe_browser_path.exists()
     return maybe_browser_path
   logging.info("Trying default browser path for local runs.")
-  return browsers.Chrome.stable_path()
+  return pathlib.Path(browsers.Chrome.stable_path(plt.PLATFORM))
 
 
 @pytest.fixture

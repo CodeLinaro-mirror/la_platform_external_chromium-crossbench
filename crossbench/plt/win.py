@@ -5,20 +5,21 @@
 from __future__ import annotations
 
 import os
-import pathlib
 import shutil
 from typing import Optional
 
+from crossbench import path as pth
 from crossbench.plt.base import Platform
 
 
 class WinPlatform(Platform):
+  # TODO: support remote platforms
   SEARCH_PATHS = (
-      pathlib.Path("."),
-      pathlib.Path(os.path.expandvars("%ProgramFiles%")),
-      pathlib.Path(os.path.expandvars("%ProgramFiles(x86)%")),
-      pathlib.Path(os.path.expandvars("%APPDATA%")),
-      pathlib.Path(os.path.expandvars("%LOCALAPPDATA%")),
+      pth.LocalPath("."),
+      pth.LocalPath(os.path.expandvars("%ProgramFiles%")),
+      pth.LocalPath(os.path.expandvars("%ProgramFiles(x86)%")),
+      pth.LocalPath(os.path.expandvars("%APPDATA%")),
+      pth.LocalPath(os.path.expandvars("%LOCALAPPDATA%")),
   )
 
   def __init__(self) -> None:
@@ -51,33 +52,37 @@ class WinPlatform(Platform):
                                  "name").strip().splitlines()[2].strip()
     return self._cpu
 
-  def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
-    assert not self.is_remote, "Unsupported operation on remote platform"
-    if not app_or_bin.parts:
+  def search_binary(self,
+                    app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:
+    assert self.is_local, "Unsupported operation on remote platform"
+    app_or_bin_path: pth.RemotePath = self.path(app_or_bin)
+    if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
-    if app_or_bin.suffix != ".exe":
+    if app_or_bin_path.suffix != ".exe":
       raise ValueError("Expected executable path with '.exe' suffix, "
-                       f"but got: '{app_or_bin.name}'")
+                       f"but got: '{app_or_bin_path.name}'")
     if result_path := self.which(str(app_or_bin)):
-      assert result_path.exists(), f"{result_path} does not exist."
+      assert self.exists(result_path), f"{result_path} does not exist."
       return result_path
     for path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
-      result_path = pathlib.Path(path) / app_or_bin
-      if result_path.exists():
+      result_path = self.path(path) / app_or_bin
+      if self.exists(result_path):
         return result_path
     return None
 
-  def app_version(self, app_or_bin: pathlib.Path) -> str:
-    assert app_or_bin.exists(), f"Binary {app_or_bin} does not exist."
+  def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
+    app_or_bin = self.path(app_or_bin)
+    assert self.exists(app_or_bin), f"Binary {app_or_bin} does not exist."
     return self.sh_stdout(
         "powershell", "-command",
         f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion")
 
-  def symlink_or_copy(self, src: pathlib.Path,
-                      dst: pathlib.Path) -> pathlib.Path:
+  def symlink_or_copy(self, src: pth.RemotePathLike,
+                      dst: pth.RemotePathLike) -> pth.RemotePath:
     """Windows does not support symlinking without admin support.
-    Copy files on windows but symlink everywhere else."""
+    Copy files on windows but symlink everywhere else (see base Platform)."""
     assert self.is_local, "Unsupported operation on remote platform"
-    shutil.copy(src, dst)
-    return dst
+    dst_path = self.path(dst)
+    shutil.copy(self.path(src), dst_path)
+    return dst_path

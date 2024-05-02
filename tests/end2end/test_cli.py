@@ -153,8 +153,9 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
   # This fails on the CQ bot, so make sure we skip it there:
   if driver_path:
     pytest.skip("Skipping test on CQ.")
-  if not plt.PLATFORM.is_macos and (
-      not browsers.Safari.default_path().exists()):
+  platform = plt.PLATFORM
+  if not platform.is_macos and (not platform.exists(
+      browsers.Safari.default_path(platform))):
     pytest.skip("Test requires Safari, skipping on non macOS devices.")
   results_dir = output_dir / "results"
   assert not results_dir.exists()
@@ -313,8 +314,9 @@ def test_loading_playback_firefox(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - --playback controller
   # - Firefox
+  platform = plt.PLATFORM
   try:
-    if not browsers.Firefox.default_path().exists():
+    if not platform.exists(browsers.Firefox.default_path(platform)):
       pytest.skip("Test requires Firefox.")
   except Exception:
     pytest.skip("Test requires Firefox.")

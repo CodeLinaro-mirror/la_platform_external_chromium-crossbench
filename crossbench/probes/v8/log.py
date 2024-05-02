@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 import multiprocessing
 import os
-import pathlib
 import re
 import subprocess
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, cast
@@ -24,6 +23,7 @@ from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
+  from crossbench.path import RemotePath, LocalPath
   from crossbench.runner.groups import BrowsersRunGroup
   from crossbench.runner.run import Run
 
@@ -84,18 +84,20 @@ class V8LogProbe(ChromiumProbe):
         "d8_binary or standard installation locations.")
     return parser
 
-  def __init__(self,
-               log_all: bool = True,
-               prof: bool = True,
-               profview: bool = True,
-               js_flags: Optional[Iterable[str]] = None,
-               d8_binary: Optional[pathlib.Path] = None,
-               v8_checkout: Optional[pathlib.Path] = None) -> None:
+  def __init__(
+      self,
+      log_all: bool = True,
+      prof: bool = True,
+      profview: bool = True,
+      js_flags: Optional[Iterable[str]] = None,
+      # TODO: support remote platform
+      d8_binary: Optional[LocalPath] = None,
+      v8_checkout: Optional[LocalPath] = None) -> None:
     super().__init__()
     self._profview: bool = profview
     self._js_flags = JSFlags()
-    self._d8_binary: Optional[pathlib.Path] = d8_binary
-    self._v8_checkout: Optional[pathlib.Path] = v8_checkout
+    self._d8_binary: Optional[LocalPath] = d8_binary
+    self._v8_checkout: Optional[LocalPath] = v8_checkout
     assert isinstance(log_all,
                       bool), (f"Expected bool value, got log_all={log_all}")
     assert isinstance(prof, bool), f"Expected bool value, got log_all={prof}"
@@ -153,8 +155,7 @@ class V8LogProbe(ChromiumProbe):
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
 
-  def process_log_files(self,
-                        log_files: List[pathlib.Path]) -> List[pathlib.Path]:
+  def process_log_files(self, log_files: List[RemotePath]) -> List[RemotePath]:
     if not self._profview:
       return []
     platform = self.runner_platform
@@ -165,6 +166,7 @@ class V8LogProbe(ChromiumProbe):
     logging.info(
         "PROBE v8.log: generating profview json data "
         "for %d v8.log files. (slow)", len(log_files))
+    logging.debug("v8.log files: %s", log_files)
     if platform.is_remote:
       # TODO: fix, currently unused
       # Use loop, as we cannot easily serialize the remote platform.
@@ -218,7 +220,7 @@ class V8LogProbe(ChromiumProbe):
 
 class V8LogProbeContext(ProbeContext[V8LogProbe]):
 
-  def get_default_result_path(self) -> pathlib.Path:
+  def get_default_result_path(self) -> RemotePath:
     log_dir = super().get_default_result_path()
     self.browser_platform.mkdir(log_dir)
     return log_dir / self.probe.result_path_name
@@ -234,9 +236,10 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
 
   def teardown(self) -> ProbeResult:
     log_dir = self.result_path.parent
-    log_files = helper.sort_by_file_size(log_dir.glob("*-v8.log"))
+    log_files = helper.sort_by_file_size(
+        self.browser_platform.glob(log_dir, "*-v8.log"), self.browser_platform)
     # Only convert a v8.log file with profile ticks.
-    json_list: List[pathlib.Path] = []
+    json_list: List[RemotePath] = []
     maybe_js_flags = getattr(self.browser, "js_flags", {})
     if _PROF_FLAG in maybe_js_flags or _LOG_ALL_FLAG in maybe_js_flags:
       with helper.Spinner():
@@ -244,15 +247,16 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     return self.browser_result(file=tuple(log_files), json=json_list)
 
 
-def _process_profview_json(d8_binary: pathlib.Path,
-                           tick_processor: pathlib.Path,
-                           log_file: pathlib.Path) -> pathlib.Path:
+def _process_profview_json(d8_binary: RemotePath, tick_processor: RemotePath,
+                           log_file: RemotePath) -> RemotePath:
   env = os.environ.copy()
+  # TODO: support remote platforms
+  platform = plt.PLATFORM
   # The tick-processor scripts expect D8_PATH to point to the parent dir.
-  env["D8_PATH"] = str(d8_binary.parent.resolve())
+  env["D8_PATH"] = str(platform.local_path(d8_binary).parent.resolve())
   result_json = log_file.with_suffix(".profview.json")
-  with result_json.open("w", encoding="utf-8") as f:
-    plt.PLATFORM.sh(
+  with platform.local_path(result_json).open("w", encoding="utf-8") as f:
+    platform.sh(
         tick_processor,
         "--preprocess",
         log_file,
@@ -267,42 +271,46 @@ class V8ToolsFinder:
   If no explicit d8 and checkout path are given, $D8_PATH and common v8 and
   chromium installation directories are checked."""
 
-  def __init__(self, platform: plt.Platform, d8_binary: Optional[pathlib.Path],
-               v8_checkout: Optional[pathlib.Path]) -> None:
+  def __init__(self, platform: plt.Platform, d8_binary: Optional[RemotePath],
+               v8_checkout: Optional[RemotePath]) -> None:
     self.platform = platform
-    self.d8_binary: Optional[pathlib.Path] = d8_binary
-    self.v8_checkout: Optional[pathlib.Path] = None
+    self.d8_binary: Optional[RemotePath] = d8_binary
+    self.v8_checkout: Optional[RemotePath] = None
     if v8_checkout:
       self.v8_checkout = v8_checkout
     else:
       self.v8_checkout = V8CheckoutFinder(self.platform).path
-    self.tick_processor: Optional[pathlib.Path] = None
+    self.tick_processor: Optional[RemotePath] = None
     self.d8_binary = self._find_d8()
     if self.d8_binary:
       self.tick_processor = self._find_v8_tick_processor()
     logging.debug("V8ToolsFinder found d8_binary='%s' tick_processor='%s'",
                   self.d8_binary, self.tick_processor)
 
-  def _find_d8(self) -> Optional[pathlib.Path]:
-    if self.d8_binary and self.d8_binary.is_file():
+  def _find_d8(self) -> Optional[RemotePath]:
+    if self.d8_binary and self.platform.is_file(self.d8_binary):
       return self.d8_binary
     environ = self.platform.environ
     if "D8_PATH" in environ:
-      candidate = pathlib.Path(environ["D8_PATH"]) / "d8"
-      if candidate.is_file():
+      candidate = self.platform.path(environ["D8_PATH"]) / "d8"
+      if self.platform.is_file(candidate):
         return candidate
-      candidate = pathlib.Path(environ["D8_PATH"])
-      if candidate.is_file():
+      candidate = self.platform.path(environ["D8_PATH"])
+      if self.platform.is_file(candidate):
         return candidate
     # Try potential build location
     for candidate_dir in V8CheckoutFinder(self.platform).candidates:
       for build_type in ("release", "optdebug", "Default", "Release"):
-        candidates = list(candidate_dir.glob(f"out/*{build_type}/d8"))
-        if candidates and candidates[0].is_file():
-          return candidates[0]
+        candidates = list(
+            self.platform.glob(candidate_dir, f"out/*{build_type}/d8"))
+        if not candidates:
+          continue
+        d8_candidate = candidates[0]
+        if self.platform.is_file(d8_candidate):
+          return d8_candidate
     return None
 
-  def _find_v8_tick_processor(self) -> Optional[pathlib.Path]:
+  def _find_v8_tick_processor(self) -> Optional[RemotePath]:
     if self.platform.is_linux:
       tick_processor = "tools/linux-tick-processor"
     elif self.platform.is_macos:
@@ -314,18 +322,18 @@ class V8ToolsFinder:
           "Not looking for the v8 tick-processor on unsupported platform: %s",
           self.platform)
       return None
-    if self.v8_checkout and self.v8_checkout.is_dir():
+    if self.v8_checkout and self.platform.is_dir(self.v8_checkout):
       candidate = self.v8_checkout / tick_processor
-      assert candidate.is_file(), (
+      assert self.platform.is_file(candidate), (
           f"Provided v8_checkout has no '{tick_processor}' at {candidate}")
     assert self.d8_binary
     # Try inferring the V8 checkout from a built d8:
     # .../foo/v8/v8/out/x64.release/d8
     candidate = self.d8_binary.parents[2] / tick_processor
-    if candidate.is_file():
+    if self.platform.is_file(candidate):
       return candidate
     if self.v8_checkout:
       candidate = self.v8_checkout / tick_processor
-      if candidate.is_file():
+      if self.platform.is_file(candidate):
         return candidate
     return None
