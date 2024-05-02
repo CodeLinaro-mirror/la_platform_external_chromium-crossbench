@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import os
 import pathlib
 from typing import TYPE_CHECKING, Iterator, Optional, Tuple
 
@@ -48,21 +49,28 @@ class BaseDirFinder(abc.ABC):
 
 def default_chromium_candidates() -> Tuple[pathlib.Path, ...]:
   # Returns a generous list of potential locations of a chromium checkout.
+  candidates = []
+
+  # Check the environment variable first
+  if "CHROMIUM_SRC" in os.environ:
+    candidates += [ pathlib.Path(os.environ["CHROMIUM_SRC"]) ]
 
   # Assume that crossbench is in chrome's third_party dir:
   # Input:   chromium/src/third_party/crossbench/crossbench/probes/helper.py
   # Output:  chromium/src
-  chromium_checkout_candidate = pathlib.Path(__file__).parents[4]
-  return (
-      chromium_checkout_candidate,
-      # Guessing default locations
+  candidates += [ pathlib.Path(__file__).parents[4] ]
+
+  # Guessing default locations
+  candidates += [
       pathlib.Path.home() / "Documents/chromium/src",
       pathlib.Path.home() / "chromium/src",
       pathlib.Path("C:") / "src/chromium/src",
       pathlib.Path.home() / "Documents/chrome/src",
       pathlib.Path.home() / "chrome/src",
       pathlib.Path("C:") / "src/chrome/src",
-  )
+  ]
+
+  return tuple(candidates)
 
 
 def is_chromium_checkout_dir(platform: Platform,
