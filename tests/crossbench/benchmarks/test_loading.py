@@ -318,6 +318,34 @@ class TestExamplePageConfig(unittest.TestCase):
     for page in dict_config.pages:
       self.assertGreater(len(page.actions), 1)
 
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  def test_parse_loading_page_config_phone(self):
+    config_file = (
+        test_helper.config_dir() / "woa" / "loading" /
+        "page_config_phone.hjson")
+    file_config = PagesConfig.parse(config_file)
+    with config_file.open(encoding="utf-8") as f:
+      data = hjson.load(f)
+    dict_config = PagesConfig.load_dict(data)
+    self.assertTrue(dict_config.pages)
+    self.assertTrue(file_config.pages)
+    for page in dict_config.pages:
+      self.assertGreater(len(page.actions), 1)
+
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  def test_parse_loading_page_config_tablet(self):
+    config_file = (
+        test_helper.config_dir() / "woa" / "loading" /
+        "page_config_tablet.hjson")
+    file_config = PagesConfig.parse(config_file)
+    with config_file.open(encoding="utf-8") as f:
+      data = hjson.load(f)
+    dict_config = PagesConfig.load_dict(data)
+    self.assertTrue(dict_config.pages)
+    self.assertTrue(file_config.pages)
+    for page in dict_config.pages:
+      self.assertGreater(len(page.actions), 1)
+
 
 class PageConfigTestsCase(unittest.TestCase):
 
