@@ -196,6 +196,16 @@ class ProfilingProbe(Probe):
         help=("Android-only: Events to record. Please refer to simpleperf "
               "documentation for `-e` for more details."))
     parser.add_argument(
+        "grouped_events",
+        type=str,
+        is_list=True,
+        default=None,
+        help=(
+            "Android-only: Events to record as a single group. These events are "
+            "monitored as a group, and and scheduled in and out together. Please "
+            "refer to simpleperf documentation for `--group` for more details."
+        ))
+    parser.add_argument(
         "add_counters",
         type=str,
         is_list=True,
@@ -220,6 +230,7 @@ class ProfilingProbe(Probe):
                count: Optional[int] = None,
                cpu: Optional[Tuple[int]] = None,
                events: Optional[Tuple[str]] = None,
+               grouped_events: Optional[Tuple[str]] = None,
                add_counters: Optional[Tuple[str]] = None):
     super().__init__()
     self._sample_js: bool = js
@@ -238,6 +249,7 @@ class ProfilingProbe(Probe):
     self._count: Optional[int] = count
     self._cpu: Optional[Tuple[int]] = cpu
     self._events: Optional[Tuple[str]] = events
+    self._grouped_events: Optional[Tuple[str]] = grouped_events
     self._add_counters: Optional[Tuple[str]] = add_counters
 
   @property
@@ -256,6 +268,7 @@ class ProfilingProbe(Probe):
         ("count", self._count),
         ("cpu", self._cpu),
         ("events", self._events),
+        ("grouped_events", self._grouped_events),
         ("add_counters", self._add_counters),
     )
 
@@ -304,6 +317,10 @@ class ProfilingProbe(Probe):
     return self._events
 
   @property
+  def grouped_events(self) -> Optional[Tuple[str]]:
+    return self._grouped_events
+
+  @property
   def add_counters(self) -> Optional[Tuple[str]]:
     return self._add_counters
 
@@ -338,6 +355,8 @@ class ProfilingProbe(Probe):
       assert not self._cpu, ("`cpu` is currently only supported on Android")
       assert not self._events, (
           "`events` is currently only supported on Android")
+      assert not self._grouped_events, (
+          "`grouped_events` is currently only supported on Android")
       assert not self._add_counters, (
           "`add_counters` is currently only supported on Android")
 
@@ -762,6 +781,7 @@ class AndroidProfilingContext(ProfilingContext):
         self.probe.count,
         self.probe.cpu,
         self.probe.events,
+        self.probe.grouped_events,
         self.probe.add_counters,
         self.result_path,
     )
@@ -845,6 +865,7 @@ def generate_simpleperf_command_line(
     count: Optional[int],
     cpus: Optional[Tuple[int]],
     events: Optional[Tuple[str]],
+    grouped_events: Optional[Tuple[str]],
     add_counters: Optional[Tuple[str]],
     output_path: pathlib.Path,
 ) -> ListCmdArgsT:
@@ -877,6 +898,8 @@ def generate_simpleperf_command_line(
   # Events and counters need to be provided after `-f` and `-c`.
   if events:
     command_line.extend(["-e", ",".join(events)])
+  if grouped_events:
+    command_line.extend(["--group", ",".join(grouped_events)])
   if add_counters:
     command_line.extend(["--add-counter", ",".join(add_counters)])
     # `--no-inherit` is required by simpleperf when `--add-counter` is used.
