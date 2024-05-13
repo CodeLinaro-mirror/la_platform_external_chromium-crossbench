@@ -20,6 +20,9 @@ class TestProbe(unittest.TestCase):
             renderer_pid=1234,
             renderer_main_tid=5678,
             frame_pointers=False,
+            frequency=None,
+            count=None,
+            cpus=None,
             output_path=output_path), [
                 "simpleperf", "record", "-t", "5678", "--post-unwind=yes", "-o",
                 output_path
@@ -31,6 +34,9 @@ class TestProbe(unittest.TestCase):
             renderer_pid=1234,
             renderer_main_tid=5678,
             frame_pointers=False,
+            frequency=None,
+            count=None,
+            cpus=None,
             output_path=output_path), [
                 "simpleperf", "record", "-p", "1234", "--post-unwind=yes", "-o",
                 output_path
@@ -42,6 +48,9 @@ class TestProbe(unittest.TestCase):
             renderer_pid=None,
             renderer_main_tid=None,
             frame_pointers=False,
+            frequency=None,
+            count=None,
+            cpus=None,
             output_path=output_path), [
                 "simpleperf", "record", "--app", "com.chrome.beta",
                 "--post-unwind=yes", "-o", output_path
@@ -53,8 +62,25 @@ class TestProbe(unittest.TestCase):
             renderer_pid=None,
             renderer_main_tid=None,
             frame_pointers=True,
+            frequency=None,
+            count=None,
+            cpus=None,
             output_path=output_path),
         ["simpleperf", "record", "-a", "--call-graph", "fp", "-o", output_path])
+    self.assertListEqual(
+        generate_simpleperf_command_line(
+            target=TargetMode.SYSTEM_WIDE,
+            app_name="org.chromium.chrome",
+            renderer_pid=None,
+            renderer_main_tid=None,
+            frame_pointers=True,
+            frequency=1234,
+            count=5,
+            cpus=[0, 1, 2],
+            output_path=output_path), [
+                "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
+                "1234", "-c", "5", "--cpu", "0,1,2", "-o", output_path
+            ])
 
 
 if __name__ == "__main__":

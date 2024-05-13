@@ -101,26 +101,6 @@ class ProfilingProbe(Probe):
         help=("Chrome-on-Linux-only: also profile the browser process, "
               "(as opposed to only renderer processes)"))
     parser.add_argument(
-        "target",
-        type=TargetMode,
-        default=TargetMode.BROWSER_APP_ONLY,
-        help=(
-            "Chrome-on-Android-only: Profile either Renderer main/process only, "
-            "or all processes of the Browser App, or system-wide. If "
-            "Renderer main/process profiling is selected, profiling begins "
-            "**after** browser has started and the benchmark story has been setup."
-        ))
-    parser.add_argument(
-        "frame_pointers",
-        type=bool,
-        default=True,
-        help=(
-            "Chrome-on-Android-only: Use frame pointer unwinding, as opposed to "
-            "DWARF. See "
-            "https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md "
-            "for more details and comparison between these two options. If "
-            "`frame_pointers` is False, DWARF-based unwinding is used."))
-    parser.add_argument(
         "spare_renderer_process",
         type=bool,
         default=False,
@@ -149,6 +129,52 @@ class ProfilingProbe(Probe):
         help="Automatically clean up any temp files "
         "(perf.data.jitted and temporary .so files on linux "
         "cleaned up automatically if pprof is set to True)")
+    # Android/simpleperf-specific arguments.
+    parser.add_argument(
+        "target",
+        type=TargetMode,
+        default=TargetMode.BROWSER_APP_ONLY,
+        help=(
+            "Chrome-on-Android-only: Profile either Renderer main/process only, "
+            "or all processes of the Browser App, or system-wide. If "
+            "Renderer main/process profiling is selected, profiling begins "
+            "**after** browser has started and the benchmark story has been setup."
+        ))
+    parser.add_argument(
+        "frame_pointers",
+        type=bool,
+        default=True,
+        help=(
+            "Android-only: Use frame pointer unwinding, as opposed to DWARF. See "
+            "https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md "
+            "for more details and comparison between these two options. If "
+            "`frame_pointers` is False, DWARF-based unwinding is used."))
+    # Advanced Android/simpleperf-specific arguments. Generally, the defaults should suffice.
+    parser.add_argument(
+        "frequency",
+        type=int,
+        default=None,
+        help=(
+            "Android-only: Event sampling frequency (record at most `frequency` "
+            "samples every second). Please refer to the simpleperf documentation "
+            "for `freq` for more details."))
+    parser.add_argument(
+        "count",
+        type=int,
+        default=None,
+        help=(
+            "Android-only: Event sampling period (record one sample every `count` "
+            "events). Please refer to simpleperf documentation for more details."
+        ))
+    parser.add_argument(
+        "cpu",
+        type=int,
+        is_list=True,
+        default=None,
+        help=(
+            "Android-only: Sample only on the selected cpus, specified as a list "
+            "of 0-indexed cpu indices. Please refer to simpleperf documentation "
+            "for more details."))
     return parser
 
   def __init__(self,
@@ -159,7 +185,10 @@ class ProfilingProbe(Probe):
                browser_process: bool = False,
                spare_renderer_process: bool = False,
                target: TargetMode = TargetMode.BROWSER_APP_ONLY,
-               frame_pointers: bool = True):
+               frame_pointers: bool = True,
+               frequency: Optional[int] = None,
+               count: Optional[int] = None,
+               cpu: Optional[Tuple[int]] = None):
     super().__init__()
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
@@ -173,6 +202,9 @@ class ProfilingProbe(Probe):
     self._frame_pointers: bool = frame_pointers
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
+    self._frequency: Optional[int] = frequency
+    self._count: Optional[int] = count
+    self._cpu: Optional[Tuple[int]] = cpu
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -186,6 +218,9 @@ class ProfilingProbe(Probe):
         ("target", self._target),
         ("frame_pointers", self._frame_pointers),
         ("start_profiling_after_setup", self._start_profiling_after_setup),
+        ("frequency", self._frequency),
+        ("count", self._count),
+        ("cpu", self._cpu),
     )
 
   @property
@@ -216,6 +251,18 @@ class ProfilingProbe(Probe):
   def start_profiling_after_setup(self) -> bool:
     return self._start_profiling_after_setup
 
+  @property
+  def frequency(self) -> Optional[int]:
+    return self._frequency
+
+  @property
+  def count(self) -> Optional[int]:
+    return self._count
+
+  @property
+  def cpu(self) -> Optional[Tuple[int]]:
+    return self._cpu
+
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     if browser.platform.is_linux or browser.platform.is_android:
@@ -238,6 +285,13 @@ class ProfilingProbe(Probe):
       raise ProbeIncompatibleBrowser(self, browser)
     if self.run_pprof:
       self._validate_pprof(env, browser)
+    # Check that certain Android-only options are not provided by on other platforms.
+    if not browser_platform.is_android:
+      assert self._frequency is None, (
+          "`frequency` is currently only supported on Android")
+      assert self._count is None, (
+          "`count` is currently only supported on Android")
+      assert not self._cpu, ("`cpu` is currently only supported on Android")
 
   def _validate_linux(self, env: HostEnvironment, browser: Browser) -> None:
     env.check_installed(binaries=["pprof"])
@@ -656,6 +710,9 @@ class AndroidProfilingContext(ProfilingContext):
         renderer_pid,
         renderer_main_tid,
         self.probe.frame_pointers,
+        self.probe.frequency,
+        self.probe.count,
+        self.probe.cpu,
         self.result_path,
     )
 
@@ -728,11 +785,17 @@ class AndroidProfilingContext(ProfilingContext):
     return self.browser_result(file=[self.result_path])
 
 
-def generate_simpleperf_command_line(target: TargetMode, app_name: str,
-                                     renderer_pid: Optional[int],
-                                     renderer_main_tid: Optional[int],
-                                     frame_pointers: bool,
-                                     output_path: pathlib.Path) -> ListCmdArgsT:
+def generate_simpleperf_command_line(
+    target: TargetMode,
+    app_name: str,
+    renderer_pid: Optional[int],
+    renderer_main_tid: Optional[int],
+    frame_pointers: bool,
+    frequency: Optional[int],
+    count: Optional[int],
+    cpus: Optional[Tuple[int]],
+    output_path: pathlib.Path,
+) -> ListCmdArgsT:
   command_line: ListCmdArgsT = ["simpleperf", "record"]
   if target == TargetMode.RENDERER_MAIN_ONLY:
     assert renderer_main_tid is not None
@@ -750,5 +813,11 @@ def generate_simpleperf_command_line(target: TargetMode, app_name: str,
     command_line.extend(["--call-graph", "fp"])
   else:
     command_line.append("--post-unwind=yes")
+  if frequency is not None:
+    command_line.extend(["-f", str(frequency)])
+  if count is not None:
+    command_line.extend(["-c", str(count)])
+  if cpus:
+    command_line.extend(["--cpu", ",".join([str(cpu) for cpu in cpus])])
   command_line.extend(["-o", output_path])
   return command_line
