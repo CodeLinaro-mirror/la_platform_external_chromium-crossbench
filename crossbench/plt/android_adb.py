@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import pathlib
 import re
 import shlex
 import subprocess
@@ -15,12 +16,11 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import PosixPlatform
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArgT, ListCmdArgsT, Platform
-  from crossbench.path import LocalPath, RemotePath, RemotePathLike
+  from crossbench.plt.base import ListCmdArgsT, Platform
   from crossbench.types import JsonDict
 
 
-def _find_adb_bin(platform: Platform) -> RemotePath:
+def _find_adb_bin(platform: Platform) -> pathlib.Path:
   adb_bin = platform.search_platform_binary(
       name="adb",
       macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
@@ -35,7 +35,7 @@ def _find_adb_bin(platform: Platform) -> RemotePath:
 
 def adb_devices(
     platform: Platform,
-    adb_bin: Optional[RemotePath] = None) -> Dict[str, Dict[str, str]]:
+    adb_bin: Optional[pathlib.Path] = None) -> Dict[str, Dict[str, str]]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
@@ -83,7 +83,7 @@ class Adb:
     assert device_identifier, f"Invalid device identifier: {device_identifier}"
     if device_identifier in devices:
       return device_identifier, devices[device_identifier]
-    matches: List[str] = []
+    matches = []
     under_name = device_identifier.replace(" ", "_")
     for key, value in devices.items():
       if device_identifier in value or under_name in value:
@@ -106,9 +106,6 @@ class Adb:
   def has_root(self) -> bool:
     return self.shell_stdout("id").startswith("uid=0(root)")
 
-  def path(self, path: RemotePathLike) -> RemotePath:
-    return self._host_platform.path(path)
-
   @property
   def serial_id(self) -> str:
     return self._serial_id
@@ -118,7 +115,7 @@ class Adb:
     return self._device_info
 
   def popen(self,
-            *args: CmdArgT,
+            *args: Union[str, pathlib.Path],
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -135,7 +132,7 @@ class Adb:
         *adb_cmd, stdout=stdout, stderr=stderr, stdin=stdin)
 
   def _adb(self,
-           *args: CmdArgT,
+           *args: Union[str, pathlib.Path],
            shell: bool = False,
            capture_output: bool = False,
            stdout=None,
@@ -163,7 +160,7 @@ class Adb:
         check=check)
 
   def _adb_stdout(self,
-                  *args: CmdArgT,
+                  *args: Union[str, pathlib.Path],
                   quiet: bool = False,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
@@ -178,7 +175,7 @@ class Adb:
         *adb_cmd, quiet=quiet, encoding=encoding, check=check)
 
   def shell_stdout(self,
-                   *args: CmdArgT,
+                   *args: Union[str, pathlib.Path],
                    quiet: bool = False,
                    encoding: str = "utf-8",
                    env: Optional[Mapping[str, str]] = None,
@@ -194,7 +191,7 @@ class Adb:
         "shell", *args, quiet=quiet, encoding=encoding, check=check)
 
   def shell(self,
-            *args: CmdArgT,
+            *args: Union[str, pathlib.Path],
             shell: bool = False,
             capture_output: bool = False,
             stdout=None,
@@ -231,13 +228,13 @@ class Adb:
   def reverse(self, remote: int, local: int, protocol: str = "tcp") -> None:
     self._adb("reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
 
-  def pull(self, device_src_path: RemotePath,
-           local_dest_path: LocalPath) -> None:
-    self._adb("pull", self.path(device_src_path), local_dest_path)
+  def pull(self, device_src_path: pathlib.Path,
+           local_dest_path: pathlib.Path) -> None:
+    self._adb("pull", device_src_path, local_dest_path)
 
-  def push(self, local_src_path: LocalPath,
-           device_dest_path: RemotePath) -> None:
-    self._adb("push", local_src_path, self.path(device_dest_path))
+  def push(self, local_src_path: pathlib.Path,
+           device_dest_path: pathlib.Path) -> None:
+    self._adb("push", local_src_path, device_dest_path)
 
   def cmd(self,
           *args: str,
@@ -281,13 +278,17 @@ class Adb:
       raise ValueError("Got empty package name")
     self.shell("am", "force-stop", package_name)
 
-  def install(self, bundle: LocalPath, allow_downgrade: bool = False) -> None:
+  def install(self,
+              bundle: pathlib.Path,
+              allow_downgrade: bool = False) -> None:
     if bundle.suffix == ".apks":
       self.install_apks(bundle, allow_downgrade)
     if bundle.suffix == ".apk":
       self.install_apk(bundle, allow_downgrade)
 
-  def install_apk(self, apk: LocalPath, allow_downgrade: bool = False) -> None:
+  def install_apk(self,
+                  apk: pathlib.Path,
+                  allow_downgrade: bool = False) -> None:
     if not apk.exists():
       raise ValueError(f"APK {apk} does not exist.")
     args = ["install"]
@@ -297,7 +298,7 @@ class Adb:
     self._adb(*args)
 
   def install_apks(self,
-                   apks: LocalPath,
+                   apks: pathlib.Path,
                    allow_downgrade: bool = False) -> None:
     if not apks.exists():
       raise ValueError(f"APK {apks} does not exist.")
@@ -397,33 +398,28 @@ class AndroidAdbPlatform(PosixPlatform):
     self._machine = arch
     return self._machine
 
-  def app_path_to_package(self, app_path: RemotePathLike) -> str:
-    path = self.path(app_path)
-    if len(path.parts) > 1:
-      raise ValueError(f"Invalid android package name: '{path}'")
-    package: str = path.parts[0]
+  def app_path_to_package(self, app_path: pathlib.Path) -> str:
+    if len(app_path.parts) > 1:
+      raise ValueError(f"Invalid android package name: '{app_path}'")
+    package: str = app_path.parts[0]
     packages = self.adb.packages()
     if package not in packages:
       raise ValueError(f"Package '{package}' is not installed on {self._adb}")
     return package
 
-  def search_binary(self, app_or_bin: RemotePathLike) -> Optional[RemotePath]:
-    app_or_bin_path = self.path(app_or_bin)
-    if not app_or_bin_path.parts:
+  def search_binary(self, app_or_bin: pathlib.Path) -> Optional[pathlib.Path]:
+    if not app_or_bin.parts:
       raise ValueError("Got empty path")
-    if result_path := self.which(str(self.path(app_or_bin))):
+    if result_path := self.which(str(app_or_bin)):
       assert self.exists(result_path), f"{result_path} does not exist."
       return result_path
     if str(app_or_bin) in self.adb.packages():
-      return app_or_bin_path
+      return app_or_bin
     return None
-
-  def home(self) -> RemotePath:
-    raise RuntimeError("Cannot access home dir on (non-rooted) android device")
 
   _VERSION_NAME_RE = re.compile(r"versionName=(?P<version>.+)")
 
-  def app_version(self, app_or_bin: RemotePathLike) -> str:
+  def app_version(self, app_or_bin: pathlib.Path) -> str:
     # adb shell dumpsys package com.chrome.canary | grep versionName -C2
     package = self.app_path_to_package(app_or_bin)
     package_info = self.adb.dumpsys("package", str(package))
@@ -472,11 +468,11 @@ class AndroidAdbPlatform(PosixPlatform):
     return int(float(match_result.group("brightness")) * 100)
 
   @property
-  def default_tmp_dir(self) -> RemotePath:
-    return self.path("/data/local/tmp/")
+  def default_tmp_dir(self) -> pathlib.Path:
+    return pathlib.Path("/data/local/tmp/")
 
   def sh(self,
-         *args: CmdArgT,
+         *args: Union[str, pathlib.Path],
          shell: bool = False,
          capture_output: bool = False,
          stdout=None,
@@ -497,7 +493,7 @@ class AndroidAdbPlatform(PosixPlatform):
         check=check)
 
   def sh_stdout(self,
-                *args: CmdArgT,
+                *args: Union[str, pathlib.Path],
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
@@ -509,7 +505,7 @@ class AndroidAdbPlatform(PosixPlatform):
         *args, env=env, quiet=quiet, encoding=encoding, check=check)
 
   def popen(self,
-            *args: CmdArgT,
+            *args: Union[str, pathlib.Path],
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -528,34 +524,36 @@ class AndroidAdbPlatform(PosixPlatform):
   def reverse_port_forward(self, remote_port: int, local_port: int) -> None:
     self.adb.reverse(remote_port, local_port, protocol="tcp")
 
-  def rsync(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
+  def rsync(self, from_path: pathlib.Path,
+            to_path: pathlib.Path) -> pathlib.Path:
     return self.pull(from_path, to_path)
 
-  def pull(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
+  def pull(self, from_path: pathlib.Path,
+           to_path: pathlib.Path) -> pathlib.Path:
     assert self.exists(from_path), (
         f"Source file '{from_path}' does not exist on {self}")
     to_path.parent.mkdir(parents=True, exist_ok=True)
     self.adb.pull(from_path, to_path)
     return to_path
 
-  def push(self, from_path: LocalPath, to_path: RemotePath) -> RemotePath:
+  def push(self, from_path: pathlib.Path,
+              to_path: pathlib.Path) -> pathlib.Path:
     self.adb.push(from_path, to_path)
     return to_path
 
   def set_file_contents(self,
-                        file: RemotePathLike,
+                        file: Union[str, pathlib.Path],
                         data: str,
                         encoding: str = "utf-8") -> None:
     # self.push a tmp file with the given contents
-    tmp_dir: LocalPath = self.host_platform.local_path(
-        self.host_platform.mkdtemp())
-    try:
+    with self.host_platform.mkdtemp() as tmp_dir:
       tmp_file = tmp_dir / "push.data"
-      with tmp_file.open("w", encoding=encoding) as f:
-        f.write(data)
-      self.push(tmp_file, self.path(file))
-    finally:
-      self.host_platform.rm(tmp_dir, dir=True, missing_ok=True)
+      try:
+        with tmp_file.open("w", encoding=encoding) as f:
+          f.write(data)
+        self.push(tmp_file, pathlib.Path(file))
+      finally:
+        self.host_platform.rm(tmp_file)
 
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
@@ -563,7 +561,7 @@ class AndroidAdbPlatform(PosixPlatform):
     if len(lines) == 1:
       return []
 
-    res: List[Dict[str, Any]] = []
+    res = []
     for line in lines[1:]:
       tokens = line.strip().split(maxsplit=1)
       assert len(tokens) == 2, f"Got invalid process tokens: {tokens}"

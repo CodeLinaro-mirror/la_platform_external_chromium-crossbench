@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import atexit
 import logging
+import pathlib
 import time
 import traceback
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
   from crossbench.network.base import Network
-  from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
@@ -51,22 +51,23 @@ class DriverException(RuntimeError):
 
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   _driver: webdriver.Remote
-  _driver_path: Optional[RemotePath]
+  _driver_path: Optional[pathlib.Path]
   _driver_pid: int
   _pid: int
-  log_file: Optional[LocalPath]
+  log_file: Optional[pathlib.Path]
 
-  def __init__(self,
-               label: str,
-               path: Optional[RemotePath] = None,
-               flags: Optional[Flags.InitialDataType] = None,
-               js_flags: Optional[Flags.InitialDataType] = None,
-               cache_dir: Optional[RemotePath] = None,
-               network: Optional[Network] = None,
-               driver_path: Optional[RemotePath] = None,
-               viewport: Optional[Viewport] = None,
-               splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[plt.Platform] = None):
+  def __init__(
+      self,
+      label: str,
+      path: Optional[pathlib.Path] = None,
+      flags: Optional[Flags.InitialDataType] = None,
+      js_flags: Optional[Flags.InitialDataType] = None,
+      cache_dir: Optional[pathlib.Path] = None,
+      network: Optional[Network] = None,
+      driver_path: Optional[pathlib.Path] = None,
+      viewport: Optional[Viewport] = None,
+      splash_screen: Optional[SplashScreen] = None,
+      platform: Optional[plt.Platform] = None):
     super().__init__(label, path, flags, js_flags, cache_dir, network, None,
                      viewport, splash_screen, platform)
     self._driver_path = driver_path
@@ -84,18 +85,18 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return self._driver
 
   @property
-  def driver_log_file(self) -> LocalPath:
+  def driver_log_file(self) -> pathlib.Path:
     log_file = self.log_file
     assert log_file
     return log_file.with_suffix(".driver.log")
 
   def setup_binary(self, runner: Runner) -> None:
-    self._driver_path = self.platform.absolute(self._find_driver())
-    assert self.platform.exists(self._driver_path), (
+    self._driver_path = self._find_driver().absolute()
+    assert self._driver_path.exists(), (
         f"Webdriver path '{self._driver_path}' does not exist")
 
   @abc.abstractmethod
-  def _find_driver(self) -> RemotePath:
+  def _find_driver(self) -> pathlib.Path:
     pass
 
   @abc.abstractmethod
@@ -171,7 +172,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
     pass
 
   def details_json(self) -> JsonDict:
@@ -274,11 +275,11 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   def _extract_version(self) -> str:
     raise NotImplementedError()
 
-  def _find_driver(self) -> LocalPath:
+  def _find_driver(self) -> pathlib.Path:
     raise NotImplementedError()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
     raise NotImplementedError()
 
   def setup_binary(self, runner: Runner) -> None:

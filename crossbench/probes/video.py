@@ -7,6 +7,7 @@ from __future__ import annotations
 import atexit
 import logging
 import os
+import pathlib
 import shutil
 import signal
 import subprocess
@@ -22,7 +23,6 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath
   from crossbench.runner.groups import BrowsersRunGroup, RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
@@ -110,7 +110,7 @@ class VideoProbe(Probe):
 
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
-    video_file_inputs: List[Union[str, LocalPath]] = []
+    video_file_inputs: List[Union[str, pathlib.Path]] = []
     for run in runs:
       video_file_inputs += ["-i", run.results[self].file_list[0]]
     draw_text = ("fontfile='/Library/Fonts/Arial.ttf':"
@@ -143,9 +143,9 @@ class VideoProbe(Probe):
                                               repetitions_groups)
               for story, repetitions_groups in grouped.items()))
 
-  def _merge_stories_for_browser(
-      self, result_dir: LocalPath, story: Story,
-      repetitions_groups: List[RepetitionsRunGroup]) -> LocalPath:
+  def _merge_stories_for_browser(self, result_dir: pathlib.Path, story: Story,
+                                 repetitions_groups: List[RepetitionsRunGroup]
+                                ) -> pathlib.Path:
     story = repetitions_groups[0].story
     result_file = result_dir / f"{story.name}_combined.mp4"
 
@@ -195,7 +195,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     if self.browser_platform.is_remote:
       self._recorder_log_file = None
     else:
-      self._recorder_log_file = self.local_result_path.with_suffix(
+      self._recorder_log_file = self.result_path.with_suffix(
           ".recorder.log").open(
               "w", encoding="utf-8")
     self._record_process = self.browser_platform.popen(
@@ -249,13 +249,12 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     # Copy files
     browser_result = self.browser_result(file=(self.result_path,))
     self._default_result_path = browser_result.file
-    assert self.browser_platform.exists(self.result_path)
+    assert self.result_path.exists()
     # Convert
     with tempfile.TemporaryDirectory() as tmp_dir:
       self._convert_to_constant_framerate()
-      timestrip_file = self._create_time_strip(
-          self.runner_platform.local_path(tmp_dir))
-    return LocalProbeResult(file=(self.local_result_path, timestrip_file))
+      timestrip_file = self._create_time_strip(pathlib.Path(tmp_dir))
+    return LocalProbeResult(file=(self.result_path, timestrip_file))
 
   def stop_process(self) -> None:
     if self._record_process:
@@ -265,8 +264,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
   def _convert_to_constant_framerate(self):
     # On some platforms (android for certain) we get VFR videos which confuse
     # the next video extraction / conversion steps.
-    vrf_video_result = self.local_result_path.parent / f"vfr_{self.result_path.name}"
-    self.local_result_path.rename(vrf_video_result)
+    vrf_video_result = self.result_path.parent / f"vfr_{self.result_path.name}"
+    self.result_path.rename(vrf_video_result)
     self.runner_platform.sh(
         "ffmpeg", "-hide_banner", \
         "-fflags", "+igndts", \
@@ -278,15 +277,14 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
         *self.probe.VIDEO_QUALITY,
         self.result_path
     )
-    if not self.local_result_path.exists() or self.local_result_path.stat(
-    ).st_size == 0:
+    if not self.result_path.exists() or self.result_path.stat().st_size == 0:
       vrf_video_result.rename(self.result_path)
       logging.error("Could not generate constant FPS video: %s",
                     self.result_path)
     else:
       vrf_video_result.unlink()
 
-  def _create_time_strip(self, tmpdir: LocalPath) -> LocalPath:
+  def _create_time_strip(self, tmpdir: pathlib.Path) -> pathlib.Path:
     logging.info("TIMESTRIP")
     progress_dir = tmpdir / "progress"
     progress_dir.mkdir(parents=True, exist_ok=True)
@@ -313,7 +311,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
         f"select=not(mod(n\\,{every_nth_frame}))," + self.FFMPEG_TIMELINE_TEXT,
         f"{timeline_dir}/%02d.{self.IMAGE_FORMAT}")
 
-    timeline_strip_file = self.local_result_path.with_suffix(
+    timeline_strip_file = self.result_path.with_suffix(
         self.probe.TIMESTRIP_FILE_SUFFIX)
     self.runner.platform.sh("montage", f"{timeline_dir}/*.{self.IMAGE_FORMAT}",
                             "-tile", "x1", "-gravity", "NorthWest", "-geometry",

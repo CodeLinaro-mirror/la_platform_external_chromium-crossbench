@@ -8,6 +8,7 @@ import argparse
 import datetime as dt
 import json
 import logging
+import pathlib
 import sys
 import tempfile
 import textwrap
@@ -18,14 +19,12 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 import tabulate as tbl
 
 import crossbench.benchmarks.all as benchmarks
+from crossbench.cli import ui
 import crossbench.cli.config as cli_config
-from crossbench import __version__, cli_helper
-from crossbench import path as pth
-from crossbench import plt
+from crossbench import __version__, cli_helper, plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
-from crossbench.cli import ui
 from crossbench.cli.devtools_recorder_proxy import \
     CrossbenchDevToolsRecorderProxy
 from crossbench.cli.parser import CrossBenchArgumentParser
@@ -41,7 +40,7 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
   from crossbench.runner.run import Run
   BenchmarkClsT = Type[Benchmark]
-  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pth.LocalPath]]
+  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pathlib.Path]]
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
@@ -383,7 +382,7 @@ class CrossBenchCLI:
     runner_group = subparser.add_argument_group("Runner Options", "")
     runner_group.add_argument(
         "--cache-dir",
-        type=pth.LocalPath,
+        type=pathlib.Path,
         default=BROWSERS_CACHE,
         help="Used for caching browser binaries and archives. "
         "Defaults to binary_cache")
@@ -643,7 +642,7 @@ class CrossBenchCLI:
       benchmark = self._get_benchmark(args)
       with tempfile.TemporaryDirectory(prefix="crossbench") as tmp_dirname:
         if args.dry_run:
-          args.out_dir = pth.LocalPath(tmp_dirname) / "results"
+          args.out_dir = pathlib.Path(tmp_dirname) / "results"
         args.browser = self._get_browsers(args)
         probes = self._get_probes(args)
         env_config = self._get_env_config(args)
@@ -791,7 +790,7 @@ class CrossBenchCLI:
     failed_runs = [run for run in runner.runs if not run.is_success]
     if not failed_runs:
       return
-    candidates: List[pth.LocalPath] = [
+    candidates: List[pathlib.Path] = [
         *runner.out_dir.glob(f"{ErrorsProbe.NAME}*"),
     ]
     for failed_run in failed_runs:
@@ -804,7 +803,7 @@ class CrossBenchCLI:
     limit = 3
     for log_file in candidates[:limit]:
       try:
-        log_file = log_file.relative_to(pth.LocalPath.cwd())
+        log_file = log_file.relative_to(pathlib.Path.cwd())
       except Exception as e:
         logging.debug("Could not create relative log_file: %s", e)
       logging.error("  - %s", log_file)
@@ -866,13 +865,13 @@ class CrossBenchCLI:
     for run in runs:
       if not run.out_dir.exists():
         continue
-      relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
+      relative = pathlib.Path("..") / run.out_dir.relative_to(out_dir)
       (runs_dir / str(run.index)).symlink_to(relative)
 
     sessions_dir = out_dir / "sessions"
     sessions_dir.mkdir()
     for session in set(run.browser_session for run in runs):
-      relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
+      relative = pathlib.Path("..") / session.path.relative_to(out_dir)
       (sessions_dir / str(session.index)).symlink_to(relative)
 
   def _log_results(self, args: argparse.Namespace, runner: Runner,

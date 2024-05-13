@@ -8,6 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
+import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
   from crossbench.runner.run import Run
-  from crossbench.path import LocalPath
   from crossbench.types import JSON
 
 
@@ -74,7 +74,7 @@ class SpeedometerProbe(
                   single_result: bool) -> None:
     if self not in result_dict:
       return
-    results_json: LocalPath = result_dict[self].json
+    results_json: pathlib.Path = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("Speedometer results:")
     if not single_result:

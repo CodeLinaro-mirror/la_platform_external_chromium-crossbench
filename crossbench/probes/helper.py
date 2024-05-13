@@ -5,11 +5,9 @@
 from __future__ import annotations
 
 import csv
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, List, Optional,
-                    Sequence, Set, Tuple)
-
-if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+import pathlib
+from typing import (Any, Callable, Dict, Final, List, Optional, Sequence, Set,
+                    Tuple)
 
 INTERNAL_NAME_PREFIX: Final[str] = "cb."
 
@@ -95,7 +93,7 @@ def _ljust_row(sequence: List, n: int, fill_value: Any = None) -> List:
   return sequence + ([fill_value] * (n - len(sequence)))
 
 
-def merge_csv(csv_list: Sequence[LocalPath],
+def merge_csv(csv_list: Sequence[pathlib.Path],
               headers: Optional[List[str]] = None,
               row_header_len: int = 1,
               delimiter: str = "\t") -> List[List[Any]]:
@@ -152,7 +150,7 @@ def merge_csv(csv_list: Sequence[LocalPath],
 
 def _merge_csv_prepare_row_headers(table: List[List[Any]],
                                    known_row_headers: Set[Tuple[str, ...]],
-                                   csv_file: LocalPath, row_header_len: int,
+                                   csv_file: pathlib.Path, row_header_len: int,
                                    delimiter: str):
   with csv_file.open(encoding="utf-8") as first_file:
     for csv_row in csv.reader(first_file, delimiter=delimiter):

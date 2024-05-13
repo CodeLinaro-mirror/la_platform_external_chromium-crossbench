@@ -4,18 +4,17 @@
 
 from __future__ import annotations
 
+import pathlib
 from typing import TYPE_CHECKING, cast
 
 from crossbench import helper
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeContext, ResultLocation
-from crossbench.probes.results import (BrowserProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import BrowserProbeResult, LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.path import RemotePath
   from crossbench.runner.run import Run
 
 
@@ -42,11 +41,11 @@ class V8TurbolizerProbe(ChromiumProbe):
 class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
 
   @property
-  def results_dir(self) -> RemotePath:
+  def results_dir(self) -> pathlib.Path:
     # Put v8.turbolizer files into separate dirs in case we have
     # multiple isolates
     turbolizer_log_dir = super().result_path
-    self.browser_platform.mkdir(turbolizer_log_dir, exist_ok=True)
+    turbolizer_log_dir.mkdir(exist_ok=True)
     return turbolizer_log_dir
 
   def setup(self) -> None:
@@ -61,7 +60,7 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
     pass
 
   def teardown(self) -> ProbeResult:
-    log_dir = self.local_result_path.parent
+    log_dir = self.result_path.parent
     # Copy the files from a potentially remote browser to a the local result
     # dir.
     result: BrowserProbeResult = self.browser_result(file=(log_dir,))

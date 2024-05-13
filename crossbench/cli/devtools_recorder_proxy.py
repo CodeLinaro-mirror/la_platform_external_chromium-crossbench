@@ -10,20 +10,20 @@ import enum
 import json
 import logging
 import os
+import pathlib
 import secrets
 import shlex
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, Optional, Tuple
+from typing import (TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, Tuple,
+                    Union)
 
 import websockets
 from websockets.server import WebSocketServerProtocol
 
 from crossbench import compat, helper
-from crossbench import path as pth
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import ListCmdArgsT
   from crossbench.types import JsonDict
 
 
@@ -79,7 +79,7 @@ class CrossbenchDevToolsRecorderProxy:
     self._state: State = State.CONNECTED
     self._crossbench_task: Optional[asyncio.Task] = None
     self._crossbench_process = None
-    self._tmp_json = pth.LocalPath(
+    self._tmp_json = pathlib.Path(
         tempfile.mkdtemp("crossbench_proxy")) / "devtools_recorder.json"
 
   def run(self) -> None:
@@ -174,9 +174,9 @@ class CrossbenchDevToolsRecorderProxy:
     assert self._state == State.CONNECTED
     assert self._crossbench_process is None
     self._state = State.RUNNING
-    cb_path = pth.LocalPath(__file__).parents[2] / "cb.py"
+    cb_path = pathlib.Path(__file__).parents[2] / "cb.py"
     os.environ["PYTHONUNBUFFERED"] = "1"
-    cmd: ListCmdArgsT = []
+    cmd: List[Union[str, pathlib.Path]] = []
     if args.get("cmd") == "--help":
       cmd = ["load", "--help"]
       self._print_cmd_output = False

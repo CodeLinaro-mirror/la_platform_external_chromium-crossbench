@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import pathlib
 import shlex
 from typing import TYPE_CHECKING, Dict, Iterable, Tuple
 from crossbench import cli_helper, plt
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath
 
 _DEBUGGER_LOOKUP: Dict[str, str] = {
     "macos": "lldb",
@@ -73,7 +73,7 @@ class DebuggerProbe(Probe):
 
   def __init__(
       self,
-      debugger: LocalPath,
+      debugger: pathlib.Path,
       auto_run: bool = True,
       spare_renderer_process: bool = False,
       geometry: str = DEFAULT_GEOMETRY,

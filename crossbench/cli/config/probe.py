@@ -5,6 +5,7 @@
 from __future__ import annotations
 import argparse
 import dataclasses
+import pathlib
 import re
 
 from typing import TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional, TextIO, Type
@@ -17,7 +18,6 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
-  from crossbench.path import LocalPath
 
 
 class ProbeConfigError(ConfigError):
@@ -92,7 +92,7 @@ class ProbeListConfig:
       return cls(args.probe)
 
   @classmethod
-  def load_path(cls, path: LocalPath) -> ProbeListConfig:
+  def load_path(cls, path: pathlib.Path) -> ProbeListConfig:
     with path.open(encoding="utf-8") as f:
       return cls.load(f)
 

@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import abc
 import logging
+import pathlib
 import subprocess
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
 
 from crossbench import helper
-from crossbench import path as pth
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ResultLocation)
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-_PERFETTO_CONFIG_REMOTE_DIR = pth.RemotePath("/data/misc/perfetto-configs/")
-_PERFETTO_TRACE_REMOTE_DIR = pth.RemotePath("/data/misc/perfetto-traces/")
+_PERFETTO_CONFIG_REMOTE_DIR = pathlib.Path("/data/misc/perfetto-configs/")
+_PERFETTO_TRACE_REMOTE_DIR = pathlib.Path("/data/misc/perfetto-traces/")
 
 
 class PerfettoProbe(Probe):
@@ -128,12 +128,12 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._host_config_file: pth.LocalPath = run.out_dir / "perfetto_config.textproto"
-    self._browser_config_file: pth.RemotePath = (
+    self._host_config_file: pathlib.Path = run.out_dir / "perfetto_config.textproto"
+    self._browser_config_file: pathlib.Path = (
         _PERFETTO_CONFIG_REMOTE_DIR / "perfetto_config.textproto")
     self._pid: Optional[int] = None
 
-  def get_default_result_path(self) -> pth.RemotePath:
+  def get_default_result_path(self) -> pathlib.Path:
     return _PERFETTO_TRACE_REMOTE_DIR / "perfetto.trace.pb"
 
   @property

@@ -8,16 +8,14 @@ import argparse
 import dataclasses
 import enum
 import logging
+import pathlib
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from immutabledict import immutabledict
 
 from crossbench import cli_helper, compat, plt
 from crossbench.config import ConfigObject, ConfigParser
-
-if TYPE_CHECKING:
-  from crossbench.path import RemotePath, LocalPath
 
 
 @enum.unique
@@ -57,10 +55,6 @@ class BrowserDriverType(compat.StrEnumWithHelp):
       return True
     return False
 
-  @property
-  def is_local(self):
-    return not self.is_remote
-
 
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
   pass
@@ -72,7 +66,7 @@ IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
-  path: Optional[RemotePath] = None
+  path: Optional[pathlib.Path] = None
   device_id: Optional[str] = None
   settings: Optional[immutabledict] = None
 
@@ -85,14 +79,6 @@ class DriverConfig(ConfigObject):
       raise ValueError(
           f"settings must be hashable but got: {self.settings}") from e
     self.validate()
-
-  @property
-  def is_remote(self) -> bool:
-    return self.type.is_remote
-
-  @property
-  def is_local(self) -> bool:
-    return self.type.is_local
 
   def validate(self) -> None:
     if self.type == BrowserDriverType.ANDROID:
@@ -143,7 +129,7 @@ class DriverConfig(ConfigObject):
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     # Variant 1: $PATH
-    path: Optional[LocalPath] = cli_helper.try_resolve_existing_path(value)
+    path: Optional[pathlib.Path] = cli_helper.try_resolve_existing_path(value)
     driver_type: BrowserDriverType = BrowserDriverType.default()
     if not path:
       if cls.value_has_path_prefix(value):

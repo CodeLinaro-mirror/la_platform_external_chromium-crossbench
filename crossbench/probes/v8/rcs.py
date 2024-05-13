@@ -99,7 +99,7 @@ class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
           "Chrome didn't produce any RCS data. "
           "Use Chrome Canary or make sure to enable the "
           "v8_enable_runtime_call_stats compile-time flag.")
-    rcs_file = self.local_result_path
+    rcs_file = self.result_path
     with rcs_file.open("a") as f:
       f.write(self._rcs_table)
     return LocalProbeResult(file=(rcs_file,))

@@ -9,6 +9,7 @@ import datetime as dt
 import enum
 import logging
 import os
+import pathlib
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
                     Optional, Union)
@@ -20,7 +21,6 @@ from crossbench import compat, helper, plt
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.plt.base import CmdArgT
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
@@ -244,7 +244,7 @@ class HostEnvironment:
       return True
     result = urlparse(url)
     if result.scheme == "file":
-      return platform.exists(result.path)
+      return platform.exists(pathlib.Path(result.path))
     if platform.is_remote and result.hostname in ("localhost", "127.0.0.1"):
       # TODO: support remote URL verification, for now we just assume that
       # checking a live site is ok.
@@ -528,7 +528,7 @@ class HostEnvironment:
       self.handle_validation_warning(message.format(missing_binaries))
 
   def check_sh_success(self,
-                       *args: CmdArgT,
+                       *args: Union[str, pathlib.Path],
                        message: str = "Could not execute: {}") -> None:
     assert args, "Missing sh arguments"
     try:

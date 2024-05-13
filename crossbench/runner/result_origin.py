@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
+import pathlib
 from typing import TYPE_CHECKING, Iterable, Iterator, Tuple
 
 from crossbench import plt
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.exception import (Annotator, ExceptionAnnotationScope,
                                     TExceptionTypes)
-  from crossbench.path import LocalPath, RemotePath
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
@@ -36,12 +36,12 @@ class ResultOrigin(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def browser_tmp_dir(self) -> RemotePath:
+  def browser_tmp_dir(self) -> pathlib.Path:
     pass
 
   @property
   @abc.abstractmethod
-  def out_dir(self) -> LocalPath:
+  def out_dir(self) -> pathlib.Path:
     pass
 
   @property
@@ -94,7 +94,7 @@ class ResultOrigin(abc.ABC):
   ) -> ExceptionAnnotationScope:
     return self.exceptions.capture(*stack_entries, exceptions=exceptions)
 
-  def get_default_probe_result_path(self, probe: Probe) -> RemotePath:
+  def get_default_probe_result_path(self, probe: Probe) -> pathlib.Path:
     """Return a local or remote/browser-based result path depending on the
     Probe default RESULT_LOCATION."""
     if probe.RESULT_LOCATION == ResultLocation.BROWSER:
@@ -105,12 +105,12 @@ class ResultOrigin(abc.ABC):
                      f"for probe {probe}")
 
   @abc.abstractmethod
-  def get_local_probe_result_path(self, probe: Probe) -> LocalPath:
+  def get_local_probe_result_path(self, probe: Probe) -> pathlib.Path:
     pass
 
-  def get_browser_probe_result_path(self, probe: Probe) -> RemotePath:
+  def get_browser_probe_result_path(self, probe: Probe) -> pathlib.Path:
     local_path = self.get_local_probe_result_path(probe)
-    if self.is_local:
+    if not self.is_remote:
       return local_path
     # Create a temp file relative to the remote browser tmp dir.
     relative_path = local_path.relative_to(self.out_dir)

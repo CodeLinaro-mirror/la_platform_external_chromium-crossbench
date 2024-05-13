@@ -7,17 +7,16 @@ from __future__ import annotations
 import abc
 import atexit
 import logging
+import pathlib
 import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, Optional, TextIO, Tuple
+from typing import Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper
+from crossbench import plt
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgsT
-
-if TYPE_CHECKING:
-  from crossbench.path import LocalPath
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"
@@ -30,23 +29,23 @@ class WprStartupError(RuntimeError):
 
 class WprBase(abc.ABC):
 
-  _key_file: LocalPath
-  _cert_file: LocalPath
+  _key_file: pathlib.Path
+  _cert_file: pathlib.Path
 
   def __init__(self,
-               archive_path: LocalPath,
-               bin_path: LocalPath,
+               archive_path: pathlib.Path,
+               bin_path: pathlib.Path,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[LocalPath]] = None,
-               key_file: Optional[LocalPath] = None,
-               cert_file: Optional[LocalPath] = None,
-               log_path: Optional[LocalPath] = None,
+               inject_scripts: Optional[Iterable[pathlib.Path]] = None,
+               key_file: Optional[pathlib.Path] = None,
+               cert_file: Optional[pathlib.Path] = None,
+               log_path: Optional[pathlib.Path] = None,
                platform: Platform = PLATFORM):
     self._platform: Platform = platform
     self._process: Optional[subprocess.Popen] = None
-    self._log_path: Optional[LocalPath] = None
+    self._log_path: Optional[pathlib.Path] = None
     if log_path:
       self._log_path = cli_helper.parse_not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
@@ -63,7 +62,7 @@ class WprBase(abc.ABC):
 
     self._host: str = host
 
-    wpr_root: LocalPath = self._bin_path.parents[1]
+    wpr_root: pathlib.Path = self._bin_path.parents[1]
 
     if key_file:
       self._key_file = key_file
@@ -86,10 +85,10 @@ class WprBase(abc.ABC):
         raise ValueError(f"Injected script path cannot contain ',': {script}")
       if not script.is_file():
         raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts: Tuple[LocalPath, ...] = tuple(inject_scripts)
+    self._inject_scripts: Tuple[pathlib.Path, ...] = tuple(inject_scripts)
 
   @abc.abstractmethod
-  def _validate_archive_path(self, path: LocalPath) -> LocalPath:
+  def _validate_archive_path(self, path: pathlib.Path) -> pathlib.Path:
     pass
 
   @property
@@ -101,7 +100,7 @@ class WprBase(abc.ABC):
     return self._https_port
 
   @property
-  def cert_file(self) -> LocalPath:
+  def cert_file(self) -> pathlib.Path:
     return self._cert_file
 
   @property
@@ -249,35 +248,35 @@ class WprRecorder(WprBase):
   def cmd(self) -> TupleCmdArgsT:
     return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
 
-  def _validate_archive_path(self, path: LocalPath) -> LocalPath:
+  def _validate_archive_path(self, path: pathlib.Path) -> pathlib.Path:
     return cli_helper.parse_not_existing_path(path, "Wpr.go result archive")
 
 
 class WprReplayServer(WprBase):
 
   def __init__(self,
-               archive_path: LocalPath,
-               bin_path: LocalPath,
+               archive_path: pathlib.Path,
+               bin_path: pathlib.Path,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[LocalPath]] = None,
-               key_file: Optional[LocalPath] = None,
-               cert_file: Optional[LocalPath] = None,
-               rules_file: Optional[LocalPath] = None,
-               log_path: Optional[LocalPath] = None,
+               inject_scripts: Optional[Iterable[pathlib.Path]] = None,
+               key_file: Optional[pathlib.Path] = None,
+               cert_file: Optional[pathlib.Path] = None,
+               rules_file: Optional[pathlib.Path] = None,
+               log_path: Optional[pathlib.Path] = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
                platform: Platform = PLATFORM):
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
-    self._rules_file: Optional[LocalPath] = None
+    self._rules_file: Optional[pathlib.Path] = None
     if rules_file:
       self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 
-  def _validate_archive_path(self, path: LocalPath) -> LocalPath:
+  def _validate_archive_path(self, path: pathlib.Path) -> pathlib.Path:
     return cli_helper.parse_non_empty_file_path(path, "WPR.go replay archive")
 
   @property

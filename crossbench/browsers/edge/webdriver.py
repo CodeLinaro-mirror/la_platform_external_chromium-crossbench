@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+import pathlib
 import shutil
 import stat
 import tempfile
@@ -17,7 +18,6 @@ from selenium.webdriver.edge.service import Service as EdgeService
 
 import crossbench
 import crossbench.exception
-from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
@@ -38,7 +38,7 @@ class EdgeWebDriver(EdgePathMixin, ChromiumWebDriver):
   def type_name(self) -> str:
     return "edge"
 
-  def _find_driver(self) -> pth.RemotePath:
+  def _find_driver(self) -> pathlib.Path:
     finder = EdgeWebDriverDownloader(self)
     return finder.download()
 
@@ -63,11 +63,11 @@ class EdgeWebDriverDownloader:
     self.extension: str = ""
     if self.platform.is_win:
       self.extension = ".exe"
-    self.driver_path: pth.LocalPath = (
+    self.driver_path: pathlib.Path = (
         BROWSERS_CACHE /
         f"edgedriver-{self.browser.major_version}{self.extension}")
 
-  def download(self) -> pth.LocalPath:
+  def download(self) -> pathlib.Path:
     if not self.driver_path.exists():
       with crossbench.exception.annotate(
           f"Downloading edgedriver for {self.browser.version}"):
@@ -80,9 +80,9 @@ class EdgeWebDriverDownloader:
     url = self.BASE_URL + f"/{self.browser.version}/{archive_name}"
     logging.info("EDGEDRIVER downloading %s: %s", self.browser.version, url)
     with tempfile.TemporaryDirectory() as tmp_dir:
-      archive_file = pth.LocalPath(tmp_dir) / archive_name
+      archive_file = pathlib.Path(tmp_dir) / archive_name
       self.platform.download_to(url, archive_file)
-      unpack_dir = pth.LocalPath(tmp_dir) / "extracted"
+      unpack_dir = pathlib.Path(tmp_dir) / "extracted"
       shutil.unpack_archive(archive_file, unpack_dir)
       driver = unpack_dir / f"msedgedriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")

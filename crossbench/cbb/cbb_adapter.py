@@ -11,7 +11,8 @@ with corresponding changes in CBB in google3
 """
 
 import datetime as dt
-from typing import List, Optional, Type, TypeVar
+import pathlib
+from typing import List, Optional, Type, TypeVar, Union
 
 from selenium import webdriver
 
@@ -20,7 +21,6 @@ import crossbench.browsers.browser
 import crossbench.browsers.webdriver as cb_webdriver
 import crossbench.env
 import crossbench.runner.runner
-from crossbench import path as pth
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.run import Run
@@ -87,7 +87,7 @@ def create_remote_webdriver(driver: webdriver.Remote
 
 def get_probe_result_file(benchmark_name: str,
                           browser: crossbench.browsers.browser.Browser,
-                          output_dir: pth.LocalPathLike,
+                          output_dir: Union[str, pathlib.Path],
                           probe_name: Optional[str] = None) -> Optional[str]:
   """Returns the path to the probe result file.
 
@@ -99,7 +99,7 @@ def get_probe_result_file(benchmark_name: str,
     probe_name: Optional name of the probe for the result file. If not
                 specified, the first probe from the default benchmark story
                 will be used."""
-  output_dir_path = pth.LocalPath(output_dir)
+  output_dir_path = pathlib.Path(output_dir)
   if probe_name is None:
     if benchmark_name not in press_benchmarks_dict:
       return None
@@ -107,7 +107,7 @@ def get_probe_result_file(benchmark_name: str,
     probe_cls = benchmark_cls.PROBES[0]
     probe_name = probe_cls.NAME
 
-  result_file: pth.LocalPath = (
+  result_file = (
       output_dir_path / browser.unique_name / "stories" / f"{probe_name}.json")
   return str(result_file)
 
@@ -128,7 +128,7 @@ class CbbRun(Run):
     pass
 
 
-def run_benchmark(output_folder: pth.LocalPathLike,
+def run_benchmark(output_folder: Union[str, pathlib.Path],
                   browser_list: List[crossbench.browsers.browser.Browser],
                   benchmark: PressBenchmark) -> None:
   """Runs the benchmark using crossbench runner.
@@ -140,7 +140,7 @@ def run_benchmark(output_folder: pth.LocalPathLike,
     benchmark: The Benchmark instance to run.
   """
   runner = CbbRunner(
-      out_dir=pth.LocalPath(output_folder),
+      out_dir=pathlib.Path(output_folder),
       browsers=browser_list,
       benchmark=benchmark,
       env_validation_mode=crossbench.env.ValidationMode.SKIP)

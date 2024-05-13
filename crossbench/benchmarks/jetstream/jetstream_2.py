@@ -8,6 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
+import pathlib
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type
 
@@ -20,7 +21,6 @@ from crossbench.stories.press_benchmark import PressBenchmarkStory
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
-  from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 
 
@@ -91,7 +91,7 @@ class JetStream2Probe(
                   single_result: bool) -> None:
     if self not in result_dict:
       return
-    results_json: LocalPath = result_dict[self].json
+    results_json: pathlib.Path = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("JetStream results:")
     if not single_result:

@@ -86,7 +86,7 @@ class LogProbeContext(probe.ProbeContext[LogProbe]):
     assert self._log_handler
     logging.getLogger().removeHandler(self._log_handler)
     self._log_handler = None
-    return ProbeResult(file=(self.local_result_path,))
+    return ProbeResult(file=(self.result_path,))
 
 
 class SystemDetailsProbe(InternalJsonResultProbe):

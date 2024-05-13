@@ -11,98 +11,95 @@ import enum
 import json
 import logging
 import math
+import pathlib
 import re
 import shlex
 import sys
-from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional, Type,
-                    TypeVar)
+from typing import (Any, Dict, Final, Iterable, Iterator, List, NoReturn,
+                    Optional, Type, TypeVar, Union)
 from urllib.parse import urlparse
 
 import colorama
 import hjson
 
-from crossbench import helper
-from crossbench import path as pth
-from crossbench import plt
+from crossbench import helper, plt
 
 
 def type_str(value: Any) -> str:
   return type(value).__name__
 
 
-def parse_path(value: pth.RemotePathLike) -> pth.LocalPath:
+def parse_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   value = parse_not_none(value, "path")
   if not value:
     raise argparse.ArgumentTypeError("Invalid empty path.")
   try:
-    path = pth.LocalPath(value).expanduser()
+    path = pathlib.Path(value).expanduser()
   except RuntimeError as e:
     raise argparse.ArgumentTypeError(f"Invalid Path '{value}': {e}") from e
   return path
 
 
-def parse_existing_file_path(value: pth.RemotePathLike,
-                             name: str = "File") -> pth.LocalPath:
+def parse_existing_file_path(value: Union[str, pathlib.Path],
+                             name: str = "File") -> pathlib.Path:
   path = parse_existing_path(value, name)
   if not path.is_file():
     raise argparse.ArgumentTypeError(f"{name} '{path}' is not a file.")
   return path
 
 
-def parse_non_empty_file_path(value: pth.RemotePathLike,
-                              name: str = "File") -> pth.LocalPath:
-  path: pth.LocalPath = parse_existing_file_path(value, name)
+def parse_non_empty_file_path(value: Union[str, pathlib.Path],
+                              name: str = "File") -> pathlib.Path:
+  path: pathlib.Path = parse_existing_file_path(value, name)
   if path.stat().st_size == 0:
     raise argparse.ArgumentTypeError(f"{name} '{path}' is an empty file.")
   return path
 
 
-def parse_file_path(value: pth.RemotePathLike,
-                    name: str = "Path") -> pth.LocalPath:
+def parse_file_path(value: Union[str, pathlib.Path],
+                    name: str = "Path") -> pathlib.Path:
   return parse_non_empty_file_path(value, name)
 
 
-def parse_dir_path(value: pth.RemotePathLike,
-                   name: str = "Path") -> pth.LocalPath:
+def parse_dir_path(value: Union[str, pathlib.Path],
+                   name: str = "Path") -> pathlib.Path:
   path = parse_existing_path(value, name)
   if not path.is_dir():
     raise argparse.ArgumentTypeError(f"{name} '{path}', is not a folder.")
   return path
 
 
-def parse_non_empty_dir_path(value: pth.RemotePathLike,
-                             name: str = "Path") -> pth.LocalPath:
+def parse_non_empty_dir_path(value: Union[str, pathlib.Path],
+                             name: str = "Path") -> pathlib.Path:
   dir_path = parse_dir_path(value, name)
   for _ in dir_path.iterdir():
     return dir_path
   raise argparse.ArgumentTypeError(f"{name} '{dir_path}', must be non empty.")
 
 
-def parse_existing_path(value: pth.RemotePathLike,
-                        name: str = "Path") -> pth.LocalPath:
+def parse_existing_path(value: Union[str, pathlib.Path],
+                        name: str = "Path") -> pathlib.Path:
   path = parse_path(value)
   if not path.exists():
     raise argparse.ArgumentTypeError(f"{name} '{path}' does not exist.")
   return path
 
 
-def parse_not_existing_path(value: pth.RemotePathLike,
-                            name: str = "Path") -> pth.LocalPath:
+def parse_not_existing_path(value: Union[str, pathlib.Path],
+                            name: str = "Path") -> pathlib.Path:
   path = parse_path(value)
   if path.exists():
     raise argparse.ArgumentTypeError(f"{name} '{path}' already exist.")
   return path
 
 
-def parse_binary_path(
-    value: Optional[pth.RemotePathLike],
-    name: str = "binary",
-    platform: Optional[plt.Platform] = None) -> pth.RemotePath:
-  platform = platform or plt.PLATFORM
-  maybe_path = platform.path(parse_not_none(value, name))
-  if platform.is_file(maybe_path):
+def parse_binary_path(value: Optional[Union[str, pathlib.Path]],
+                      name: str = "binary",
+                      platform: Optional[plt.Platform] = None) -> pathlib.Path:
+  maybe_path = pathlib.Path(parse_not_none(value, name))
+  if maybe_path.is_file():
     return maybe_path
-  maybe_bin = platform.search_binary(maybe_path)
+  maybe_bin = (platform or plt.PLATFORM).search_binary(maybe_path)
   if not maybe_bin:
     raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
   return maybe_bin
@@ -147,18 +144,16 @@ def parse_inline_hjson(value: Any) -> Any:
 
 
 _MAX_LEN = 70
-
-
-def _extract_decoding_error(message: str, value: pth.RemotePathLike,
+def _extract_decoding_error(message: str, value: Union[str, pathlib.Path],
                             e: ValueError) -> str:
   lineno = getattr(e, "lineno", -1) - 1
   colno = getattr(e, "colno", -1) - 1
   if lineno < 0 or colno < 0:
-    if isinstance(value, pth.LocalPath):
+    if isinstance(value, pathlib.Path):
       return f"{message}\n    {str(e)}"
     return f"{message}: {value}\n    {str(e)}"
-  if isinstance(value, pth.RemotePath):
-    line = pth.LocalPath(value).open().readlines()[lineno]
+  if isinstance(value, pathlib.Path):
+    line = value.open().readlines()[lineno]
   else:
     line = value.splitlines()[lineno]
   if len(line) > _MAX_LEN:
@@ -186,7 +181,7 @@ def _extract_decoding_error(message: str, value: pth.RemotePathLike,
   return f"{message}\n    {line}\n    {marker_space}{marker}\n({str(e)})"
 
 
-def parse_json_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
+def parse_json_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -197,7 +192,7 @@ def parse_json_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
   return path
 
 
-def parse_hjson_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
+def parse_hjson_file_path(value: Union[str, pathlib.Path]) -> pathlib.Path:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -209,7 +204,7 @@ def parse_hjson_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
   return path
 
 
-def parse_json_file(value: pth.RemotePathLike) -> Any:
+def parse_json_file(value: Union[str, pathlib.Path]) -> Any:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -219,7 +214,7 @@ def parse_json_file(value: pth.RemotePathLike) -> Any:
       raise argparse.ArgumentTypeError(message) from e
 
 
-def parse_hjson_file(value: pth.RemotePathLike) -> Any:
+def parse_hjson_file(value: Union[str, pathlib.Path]) -> Any:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -230,7 +225,7 @@ def parse_hjson_file(value: pth.RemotePathLike) -> Any:
       raise argparse.ArgumentTypeError(message) from e
 
 
-def parse_non_empty_hjson_file(value: pth.RemotePathLike) -> Any:
+def parse_non_empty_hjson_file(value: Union[str, pathlib.Path]) -> Any:
   data = parse_hjson_file(value)
   if not data:
     raise argparse.ArgumentTypeError(
@@ -239,7 +234,7 @@ def parse_non_empty_hjson_file(value: pth.RemotePathLike) -> Any:
   return data
 
 
-def parse_dict_hjson_file(value: pth.RemotePathLike) -> Any:
+def parse_dict_hjson_file(value: Union[str, pathlib.Path]) -> Any:
   data = parse_non_empty_hjson_file(value)
   if not isinstance(data, dict):
     raise argparse.ArgumentTypeError(
@@ -262,10 +257,10 @@ def parse_non_empty_dict(value: Any, name: str = "dict") -> Dict:
   return dict_value
 
 
-def try_resolve_existing_path(value: str) -> Optional[pth.LocalPath]:
+def try_resolve_existing_path(value: str) -> Optional[pathlib.Path]:
   if not value:
     return None
-  maybe_path = pth.LocalPath(value)
+  maybe_path = pathlib.Path(value)
   if maybe_path.exists():
     return maybe_path
   maybe_path = maybe_path.expanduser()

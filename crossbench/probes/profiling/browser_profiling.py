@@ -18,11 +18,12 @@ from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeValidationError, ResultLocation)
 
 if TYPE_CHECKING:
+  import pathlib
+
   from selenium.webdriver.common.options import BaseOptions
 
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.path import RemotePath
   from crossbench.runner.run import Run
 
 
@@ -158,7 +159,7 @@ class BrowserProfilingProbeContext(
 class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
                                                   ):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> pathlib.Path:
     return (super().get_default_result_path().parent /
             f"{self.browser.type_name}.profile.json")
 
@@ -172,8 +173,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
   def stop(self) -> None:
     with self.run.actions(f"Probe({self.probe}): extract DevTools profile."):
       profile = self.chromium.stop_profiling()
-      local_result_path = self.local_result_path
-      with local_result_path.open("w", encoding="utf-8") as f:
+      with self.result_path.open("w", encoding="utf-8") as f:
         json.dump(profile, f)
 
   def teardown(self) -> ProbeResult:
@@ -182,7 +182,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
 
 class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> pathlib.Path:
     return super().get_default_result_path().parent / "firefox.profile.json"
 
   def setup(self) -> None:
@@ -203,7 +203,7 @@ class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
 class SafariWebdriverBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> pathlib.Path:
     return super().get_default_result_path().parent / "safari.timeline.json"
 
   def setup_selenium_options(self, options: BaseOptions) -> None:

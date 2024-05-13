@@ -8,6 +8,7 @@ import abc
 import csv
 import json
 import logging
+import pathlib
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
                     TypeVar, Union)
@@ -20,7 +21,6 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
                                         RunGroup)
@@ -99,7 +99,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return LocalProbeResult(json=(merged_json_path,))
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_file_list: List[LocalPath] = []
+    csv_file_list: List[pathlib.Path] = []
     headers: List[str] = []
     for story_group in group.story_groups:
       csv_file_list.append(story_group.results[self].csv)
@@ -137,7 +137,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 
   def write_group_csv_result(self, group: RunGroup,
                              merged_data: metric.MetricsMerger,
-                             merged_json_path: LocalPath,
+                             merged_json_path: pathlib.Path,
                              value_fn: Callable[[Any], Any]) -> ProbeResult:
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (

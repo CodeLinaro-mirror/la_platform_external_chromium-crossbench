@@ -19,7 +19,6 @@ from pyfakefs import fake_filesystem_unittest
 import crossbench
 import crossbench.env
 import crossbench.runner
-import crossbench.path
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
@@ -741,14 +740,12 @@ DEVTOOLS_RECORDER_EXAMPLE = {
 }
 
 
-class _ConfigBaseTestCase(fake_filesystem_unittest.TestCase):
+class DevToolsRecorderPageConfigTestCase(
+    fake_filesystem_unittest.TestCase,):
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpPyfakefs(modules_to_reload=[crossbench.path])
-
-
-class DevToolsRecorderPageConfigTestCase(_ConfigBaseTestCase):
+    self.setUpPyfakefs()
 
   def test_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -777,7 +774,12 @@ class DevToolsRecorderPageConfigTestCase(_ConfigBaseTestCase):
     self.assertEqual(config_file, config_dict)
 
 
-class ListPageConfigTestCase(_ConfigBaseTestCase):
+class ListPageConfigTestCase(
+    fake_filesystem_unittest.TestCase,):
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.setUpPyfakefs()
 
   def test_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

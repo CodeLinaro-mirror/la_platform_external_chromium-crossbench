@@ -7,13 +7,12 @@ from __future__ import annotations
 import abc
 import collections
 import logging
+import pathlib
 import re
 from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
                     TypeVar, Union)
 
 from ordered_set import OrderedSet
-
-from crossbench import path as pth
 
 
 class FrozenFlagsError(RuntimeError):
@@ -407,8 +406,7 @@ class ChromeFlags(Flags):
     if name == "--user-data-dir":
       if not value or not value.strip():
         raise ValueError("--user-data-dir cannot be the empty string.")
-      # TODO: support remote platforms
-      expanded_dir = str(pth.LocalPath(value).expanduser())
+      expanded_dir = str(pathlib.Path(value).expanduser())
       if expanded_dir != value:
         logging.warning(
             "Chrome Flags: auto-expanding --user-data-dir from '%s' to '%s'",

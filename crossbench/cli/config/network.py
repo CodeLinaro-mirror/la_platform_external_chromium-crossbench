@@ -7,7 +7,8 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, Dict, Optional
+import pathlib
+from typing import Any, Dict, Optional
 
 from crossbench import cli_helper, exception
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
@@ -17,9 +18,6 @@ from crossbench.network.local_fileserver import LocalFileNetwork
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.plt.base import Platform
-
-if TYPE_CHECKING:
-  from crossbench.path import LocalPath
 
 
 @enum.unique
@@ -96,8 +94,8 @@ class NetworkSpeedConfig(ConfigObject):
 class NetworkConfig(ConfigObject):
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
-  path: Optional[LocalPath] = None
-  wpr_go_bin: Optional[LocalPath] = None
+  path: Optional[pathlib.Path] = None
+  wpr_go_bin: Optional[pathlib.Path] = None
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
@@ -151,7 +149,7 @@ class NetworkConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
-  def is_valid_path(cls, path: LocalPath) -> bool:
+  def is_valid_path(cls, path: pathlib.Path) -> bool:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return True
     # for local file server
@@ -160,7 +158,7 @@ class NetworkConfig(ConfigObject):
     return super().is_valid_path(path)
 
   @classmethod
-  def load_path(cls, path: LocalPath) -> NetworkConfig:
+  def load_path(cls, path: pathlib.Path) -> NetworkConfig:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return cls.load_wpr_archive_path(path)
     if path.is_dir():
@@ -168,7 +166,7 @@ class NetworkConfig(ConfigObject):
     return super().load_path(path)
 
   @classmethod
-  def load_wpr_archive_path(cls, path: LocalPath) -> NetworkConfig:
+  def load_wpr_archive_path(cls, path: pathlib.Path) -> NetworkConfig:
     path = cli_helper.parse_non_empty_file_path(path, "wpr.go archive")
     return NetworkConfig(type=NetworkType.WPR, path=path)
 

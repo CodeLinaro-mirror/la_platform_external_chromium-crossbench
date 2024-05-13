@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import pathlib
 from typing import TYPE_CHECKING, Optional
 
 from selenium import webdriver
@@ -19,7 +20,6 @@ from crossbench.browsers.safari.safari import Safari, find_safaridriver
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.path import LocalPath, RemotePath
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
@@ -30,17 +30,18 @@ if TYPE_CHECKING:
 
 class SafariWebDriver(WebDriverBrowser, Safari):
 
-  def __init__(self,
-               label: str,
-               path: RemotePath,
-               flags: Optional[Flags.InitialDataType] = None,
-               js_flags: Optional[Flags.InitialDataType] = None,
-               cache_dir: Optional[RemotePath] = None,
-               network: Optional[Network] = None,
-               driver_path: Optional[RemotePath] = None,
-               viewport: Optional[Viewport] = None,
-               splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[plt.MacOSPlatform] = None):
+  def __init__(
+      self,
+      label: str,
+      path: pathlib.Path,
+      flags: Optional[Flags.InitialDataType] = None,
+      js_flags: Optional[Flags.InitialDataType] = None,
+      cache_dir: Optional[pathlib.Path] = None,
+      network: Optional[Network] = None,
+      driver_path: Optional[pathlib.Path] = None,
+      viewport: Optional[Viewport] = None,
+      splash_screen: Optional[SplashScreen] = None,
+      platform: Optional[plt.MacOSPlatform] = None):
     super().__init__(label, path, flags, js_flags, cache_dir, network,
                      driver_path, viewport, splash_screen, platform)
     assert self.platform.is_macos
@@ -54,18 +55,15 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     # via selenium.
     pass
 
-  def _find_driver(self) -> RemotePath:
-    # TODO: support remote platform
-    assert self.platform.is_local, "Remote platform is not supported yet"
-    return self.platform.host_platform.local_path(
-        find_safaridriver(self.path, self.platform))
+  def _find_driver(self) -> pathlib.Path:
+    return find_safaridriver(self.path)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
     return self._start_safari_driver(session, driver_path)
 
   def _start_safari_driver(self, session: BrowserSessionRunGroup,
-                           driver_path: RemotePath) -> webdriver.Safari:
+                           driver_path: pathlib.Path) -> webdriver.Safari:
     assert not self._is_running
     logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
                  driver_path)
@@ -85,13 +83,13 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     driver = webdriver.Safari(**driver_kwargs)
 
     assert driver.session_id, "Could not start webdriver"
-    logs: RemotePath = (
-        self.platform.home() / "Library/Logs/com.apple.WebDriver" /
+    logs = (
+        pathlib.Path("~/Library/Logs/com.apple.WebDriver/").expanduser() /
         driver.session_id)
-    all_logs = list(self.platform.glob(logs, "safaridriver*"))
+    all_logs = list(logs.glob("safaridriver*"))
     if all_logs:
       self.log_file = all_logs[0]
-      assert self.platform.is_file(self.log_file)
+      assert self.log_file.is_file()
     return driver
 
   def _legacy_settings(self, options, driver_kwargs) -> None:
@@ -153,7 +151,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 class SafariWebdriverIOS(SafariWebDriver):
   # TODO(cbruni): implement iOS platform
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: pathlib.Path) -> webdriver.Remote:
     # safaridriver for iOS seems to be brittle for starting up, we give it
     # several chances to start up.
     for timeout in helper.wait_with_backoff(

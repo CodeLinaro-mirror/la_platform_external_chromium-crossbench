@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import atexit
+import pathlib
 import subprocess
 from typing import TYPE_CHECKING, Optional, TextIO, Tuple
 
@@ -16,7 +17,6 @@ from crossbench.probes.results import ProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.run import Run
 
 
@@ -35,7 +35,7 @@ class DTraceProbe(Probe):
         "script_path", type=cli_helper.parse_non_empty_file_path)
     return parser
 
-  def __init__(self, script_path: LocalPath):
+  def __init__(self, script_path: pathlib.Path):
     super().__init__()
     self._script_path = script_path.resolve()
 
@@ -44,7 +44,7 @@ class DTraceProbe(Probe):
     return super().key + (("script_path", str(self.script_path)),)
 
   @property
-  def script_path(self) -> LocalPath:
+  def script_path(self) -> pathlib.Path:
     return self._script_path
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
@@ -87,17 +87,16 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
 
   def __init__(self, probe: DTraceProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._script_path: LocalPath = probe.script_path
-    self._output_path: RemotePath = self.result_path.with_suffix(".output.txt")
-    self._log_path: RemotePath = self.result_path.with_suffix(".log")
+    self._script_path: pathlib.Path = probe.script_path
+    self._output_path: pathlib.Path = self.result_path.with_suffix(
+        ".output.txt")
+    self._log_path: pathlib.Path = self.result_path.with_suffix(".log")
     self._dtrace_process: Optional[subprocess.Popen] = None
     self._log_file: Optional[TextIO] = None
     atexit.register(self.stop_dtrace_process)
 
   def start(self) -> None:
     self._log_file = open(self._log_path, "w")
-    # TODO: copy over script to remote machine
-    assert self.browser_platform.is_local, "Remote dtrace not supported yet"
     self._dtrace_process = self.browser_platform.popen(
         "sudo",
         "-n",

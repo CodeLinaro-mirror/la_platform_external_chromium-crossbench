@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import abc
 import html
+import pathlib
 import urllib.parse
 from argparse import ArgumentTypeError
 from typing import TYPE_CHECKING, Dict
-
-from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
@@ -34,7 +33,7 @@ class SplashScreen:
       return cls.DETAILED
     if value.startswith("http:") or value.startswith("https:"):
       return URLSplashScreen(value)
-    maybe_path = pth.LocalPath(value)
+    maybe_path = pathlib.Path(value)
     if maybe_path.exists():
       return URLSplashScreen(maybe_path.absolute().as_uri())
     raise ArgumentTypeError(f"Unknown splashscreen: {value}")

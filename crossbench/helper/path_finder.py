@@ -9,24 +9,22 @@ import os
 import pathlib
 from typing import TYPE_CHECKING, Iterator, Optional, Tuple
 
-from crossbench import path as pth
-
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
 class BaseDirFinder(abc.ABC):
 
-  def __init__(self, platform: Platform, candidates: Tuple[pth.RemotePath,
+  def __init__(self, platform: Platform, candidates: Tuple[pathlib.Path,
                                                            ...]) -> None:
     self._platform = platform
     self._candidates = candidates
-    self._path: Optional[pth.RemotePath] = self._find_path()
+    self._path: Optional[pathlib.Path] = self._find_path()
     if self._path:
       assert self._is_valid_path(self._path)
 
   @property
-  def candidates(self) -> Tuple[pth.RemotePath, ...]:
+  def candidates(self) -> Tuple[pathlib.Path, ...]:
     return self._candidates
 
   @property
@@ -34,10 +32,10 @@ class BaseDirFinder(abc.ABC):
     return self._platform
 
   @property
-  def path(self) -> Optional[pth.RemotePath]:
+  def path(self) -> Optional[pathlib.Path]:
     return self._path
 
-  def _find_path(self) -> Optional[pth.RemotePath]:
+  def _find_path(self) -> Optional[pathlib.Path]:
     # Try potential build location
     for candidate_dir in self._candidates:
       if self._is_valid_path(candidate_dir):
@@ -45,36 +43,38 @@ class BaseDirFinder(abc.ABC):
     return None
 
   @abc.abstractmethod
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def _is_valid_path(self, candidate: pathlib.Path) -> bool:
     pass
 
 
-def default_chromium_candidates(
-    platform: Platform) -> Tuple[pth.RemotePath, ...]:
-  """Returns a generous list of potential locations of a chromium checkout."""
+def default_chromium_candidates() -> Tuple[pathlib.Path, ...]:
+  # Returns a generous list of potential locations of a chromium checkout.
   candidates = []
-  if chromium_src := platform.environ.get("CHROMIUM_SRC"):
-    candidates.append(platform.path(chromium_src))
-  if platform.is_local:
-    # Assume that crossbench is in chrome's third_party dir:
-    # Input:   chromium/src/third_party/crossbench/crossbench/probes/helper.py
-    # Output:  chromium/src
-    candidates.append(pth.LocalPath(__file__).parents[4])
-  home_dir = platform.home()
+
+  # Check the environment variable first
+  if "CHROMIUM_SRC" in os.environ:
+    candidates += [ pathlib.Path(os.environ["CHROMIUM_SRC"]) ]
+
+  # Assume that crossbench is in chrome's third_party dir:
+  # Input:   chromium/src/third_party/crossbench/crossbench/probes/helper.py
+  # Output:  chromium/src
+  candidates += [ pathlib.Path(__file__).parents[4] ]
+
+  # Guessing default locations
   candidates += [
-      # Guessing default locations
-      home_dir / "Documents/chromium/src",
-      home_dir / "chromium/src",
-      platform.path("C:/src/chromium/src"),
-      home_dir / "Documents/chrome/src",
-      home_dir / "chrome/src",
-      platform.path("C:/src/chrome/src"),
+      pathlib.Path.home() / "Documents/chromium/src",
+      pathlib.Path.home() / "chromium/src",
+      pathlib.Path("C:") / "src/chromium/src",
+      pathlib.Path.home() / "Documents/chrome/src",
+      pathlib.Path.home() / "chrome/src",
+      pathlib.Path("C:") / "src/chrome/src",
   ]
+
   return tuple(candidates)
 
 
 def is_chromium_checkout_dir(platform: Platform,
-                             dir_path: pth.RemotePath) -> bool:
+                             dir_path: pathlib.Path) -> bool:
   return (platform.is_dir(dir_path / "v8") and
           platform.is_dir(dir_path / "chrome") and
           platform.is_dir(dir_path / ".git"))
@@ -85,13 +85,12 @@ class ChromiumCheckoutFinder(BaseDirFinder):
   some preset known checkout locations."""
 
   def __init__(
-      self,
-      platform: Platform,
-      candidates: Tuple[pth.RemotePath, ...] = tuple()) -> None:
-    candidates += default_chromium_candidates(platform)
+      self, platform: Platform, candidates: Tuple[pathlib.Path,
+                                                  ...] = tuple()) -> None:
+    candidates += default_chromium_candidates()
     super().__init__(platform, candidates)
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def _is_valid_path(self, candidate: pathlib.Path) -> bool:
     return is_chromium_checkout_dir(self.platform, candidate)
 
 
@@ -103,7 +102,7 @@ class ChromiumBuildBinaryFinder(BaseDirFinder):
       self,
       platform: Platform,
       binary_name: str,
-      candidates: Tuple[pth.RemotePath, ...] = tuple()) -> None:
+      candidates: Tuple[pathlib.Path, ...] = tuple()) -> None:
     self._binary_name = binary_name
     super().__init__(platform, candidates)
 
@@ -111,11 +110,11 @@ class ChromiumBuildBinaryFinder(BaseDirFinder):
   def binary_name(self) -> str:
     return self._binary_name
 
-  def _iterate_candidate_bin_paths(self) -> Iterator[pth.RemotePath]:
+  def _iterate_candidate_bin_paths(self) -> Iterator[pathlib.Path]:
     for candidate_dir in self._candidates:
       yield candidate_dir / self._binary_name
 
-    for candidate in default_chromium_candidates(self.platform):
+    for candidate in default_chromium_candidates():
       candidate_out = candidate / "out"
       if not self.platform.is_dir(candidate_out):
         continue
@@ -123,13 +122,13 @@ class ChromiumBuildBinaryFinder(BaseDirFinder):
       for build in ("Release", "release", "rel", "Optdebug", "optdebug", "opt"):
         yield candidate_out / build / self._binary_name
 
-  def _find_path(self) -> Optional[pth.RemotePath]:
+  def _find_path(self) -> Optional[pathlib.Path]:
     for candidate in self._iterate_candidate_bin_paths():
       if self._is_valid_path(candidate):
         return candidate
     return None
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def _is_valid_path(self, candidate: pathlib.Path) -> bool:
     assert candidate.name == self._binary_name
     if not self.platform.is_file(candidate):
       return False
@@ -144,23 +143,21 @@ class ChromiumBuildBinaryFinder(BaseDirFinder):
 class V8CheckoutFinder(BaseDirFinder):
 
   def __init__(
-      self,
-      platform: Platform,
-      candidates: Tuple[pth.RemotePath, ...] = tuple()) -> None:
-    home_dir = platform.home()
+      self, platform: Platform, candidates: Tuple[pathlib.Path,
+                                                  ...] = tuple()) -> None:
     candidates += (
         # V8 Checkouts
-        home_dir / "Documents/v8/v8",
-        home_dir / "v8/v8",
-        platform.path("C:/src/v8/v8"),
+        pathlib.Path.home() / "Documents/v8/v8",
+        pathlib.Path.home() / "v8/v8",
+        pathlib.Path("C:") / "src/v8/v8",
         # Raw V8 checkouts
-        home_dir / "Documents/v8",
-        home_dir / "v8",
-        platform.path("C:/src/v8/"),
+        pathlib.Path.home() / "Documents/v8",
+        pathlib.Path.home() / "v8",
+        pathlib.Path("C:") / "src/v8/",
     )
     super().__init__(platform, candidates)
 
-  def _find_path(self) -> Optional[pth.RemotePath]:
+  def _find_path(self) -> Optional[pathlib.Path]:
     if v8_checkout := super()._find_path():
       return v8_checkout
     if chromium_checkout := ChromiumCheckoutFinder(self.platform).path:
@@ -168,12 +165,12 @@ class V8CheckoutFinder(BaseDirFinder):
     maybe_d8_path = self.platform.environ.get("D8_PATH")
     if not maybe_d8_path:
       return None
-    for candidate_dir in self.platform.path(maybe_d8_path).parents:
+    for candidate_dir in pathlib.Path(maybe_d8_path).parents:
       if self._is_valid_path(candidate_dir):
         return candidate_dir
     return None
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def _is_valid_path(self, candidate: pathlib.Path) -> bool:
     v8_header_file = candidate / "include" / "v8.h"
     return (self.platform.is_file(v8_header_file) and
             (self.platform.is_dir(candidate / ".git")))
@@ -182,20 +179,20 @@ class V8CheckoutFinder(BaseDirFinder):
 class TraceconvFinder:
 
   def __init__(self, platform: Platform) -> None:
-    self.traceconv: Optional[pth.RemotePath] = None
+    self.traceconv: Optional[pathlib.Path] = None
     if chrome_checkout := ChromiumCheckoutFinder(platform).path:
       candidate = (
           chrome_checkout / "third_party" / "perfetto" / "tools" / "traceconv")
-      if platform.is_file(candidate):
+      if candidate.is_file():
         self.traceconv = candidate
 
 
 class WprGoToolFinder:
-  _WPR_GO = pth.RemotePath("third_party/catapult/web_page_replay_go/src/wpr.go")
+  _WPR_GO = pathlib.Path("third_party/catapult/web_page_replay_go/src/wpr.go")
 
   def __init__(self, platform: Platform) -> None:
     self.platform = platform
-    self.path: Optional[pth.RemotePath] = None
+    self.path: Optional[pathlib.Path] = None
     if maybe_chrome := ChromiumCheckoutFinder(platform).path:
       candidate = maybe_chrome / self._WPR_GO
       if self.platform.is_file(candidate):

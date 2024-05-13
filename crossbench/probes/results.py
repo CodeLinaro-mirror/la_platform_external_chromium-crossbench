@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, cast
+import pathlib
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional
 
-from crossbench import path as pth
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 
 if TYPE_CHECKING:
@@ -21,9 +21,9 @@ class ProbeResult(abc.ABC):
 
   def __init__(self,
                url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.LocalPath]] = None,
-               json: Optional[Iterable[pth.LocalPath]] = None,
-               csv: Optional[Iterable[pth.LocalPath]] = None):
+               file: Optional[Iterable[pathlib.Path]] = None,
+               json: Optional[Iterable[pathlib.Path]] = None,
+               csv: Optional[Iterable[pathlib.Path]] = None):
     self._url_list = tuple(url) if url else ()
     self._file_list = tuple(file) if file else ()
     self._json_list = tuple(json) if json else ()
@@ -102,7 +102,7 @@ class ProbeResult(abc.ABC):
     return (bool(self._file_list) or bool(self._json_list) or
             bool(self._csv_list))
 
-  def all_files(self) -> Iterable[pth.LocalPath]:
+  def all_files(self) -> Iterable[pathlib.Path]:
     yield from self._file_list
     yield from self._json_list
     yield from self._csv_list
@@ -117,30 +117,30 @@ class ProbeResult(abc.ABC):
     return list(self._url_list)
 
   @property
-  def file(self) -> pth.LocalPath:
+  def file(self) -> pathlib.Path:
     assert len(self._file_list) == 1
     return self._file_list[0]
 
   @property
-  def file_list(self) -> List[pth.LocalPath]:
+  def file_list(self) -> List[pathlib.Path]:
     return list(self._file_list)
 
   @property
-  def json(self) -> pth.LocalPath:
+  def json(self) -> pathlib.Path:
     assert len(self._json_list) == 1
     return self._json_list[0]
 
   @property
-  def json_list(self) -> List[pth.LocalPath]:
+  def json_list(self) -> List[pathlib.Path]:
     return list(self._json_list)
 
   @property
-  def csv(self) -> pth.LocalPath:
+  def csv(self) -> pathlib.Path:
     assert len(self._csv_list) == 1
     return self._csv_list[0]
 
   @property
-  def csv_list(self) -> List[pth.LocalPath]:
+  def csv_list(self) -> List[pathlib.Path]:
     return list(self._csv_list)
 
 
@@ -157,13 +157,6 @@ class LocalProbeResult(ProbeResult):
   """LocalProbeResult can be used for files that are always available on the
   runner/local machine."""
 
-  def __init__(self,
-               url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.LocalPath]] = None,
-               json: Optional[Iterable[pth.LocalPath]] = None,
-               csv: Optional[Iterable[pth.LocalPath]] = None):
-    super().__init__(url, file, json, csv)
-
 
 class BrowserProbeResult(ProbeResult):
   """BrowserProbeResult are stored on the device where the browser runs.
@@ -174,40 +167,34 @@ class BrowserProbeResult(ProbeResult):
   def __init__(self,
                result_origin: ResultOrigin,
                url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.RemotePath]] = None,
-               json: Optional[Iterable[pth.RemotePath]] = None,
-               csv: Optional[Iterable[pth.RemotePath]] = None):
+               file: Optional[Iterable[pathlib.Path]] = None,
+               json: Optional[Iterable[pathlib.Path]] = None,
+               csv: Optional[Iterable[pathlib.Path]] = None):
     self._browser_file = file
     self._browser_json = json
     self._browser_csv = csv
     self._is_remote = result_origin.is_remote
     if self._is_remote:
-      local_file = self._copy_files(result_origin, file)
-      local_json = self._copy_files(result_origin, json)
-      local_csv = self._copy_files(result_origin, csv)
-    else:
-      # Keep local files as is.
-      local_file = cast(Iterable[pth.LocalPath], file)
-      local_json = cast(Iterable[pth.LocalPath], json)
-      local_csv = cast(Iterable[pth.LocalPath], csv)
+      file = self._copy_files(result_origin, file)
+      json = self._copy_files(result_origin, json)
+      csv = self._copy_files(result_origin, csv)
 
-    super().__init__(url, local_file, local_json, local_csv)
+    super().__init__(url, file, json, csv)
 
   @property
   def is_remote(self) -> bool:
     return self._is_remote
 
   def _copy_files(
-      self, result_origin: ResultOrigin,
-      paths: Optional[Iterable[pth.RemotePath]]
-  ) -> Optional[Iterable[pth.LocalPath]]:
+      self, result_origin: ResultOrigin, paths: Optional[Iterable[pathlib.Path]]
+  ) -> Optional[Iterable[pathlib.Path]]:
     if not paths:
-      return []
+      return paths
     # Copy result files from remote tmp dir to local results dir
     browser_platform = result_origin.browser_platform
     remote_tmp_dir = result_origin.browser_tmp_dir
     out_dir = result_origin.out_dir
-    local_result_paths: List[pth.LocalPath] = []
+    local_result_paths: List[pathlib.Path] = []
     for remote_path in paths:
       try:
         relative_path = remote_path.relative_to(remote_tmp_dir)
@@ -215,8 +202,7 @@ class BrowserProbeResult(ProbeResult):
         logging.debug(
             "Browser result is not in browser tmp dir: "
             "only using the name of '%s'", remote_path)
-        relative_path = result_origin.runner_platform.local_path(
-            remote_path.name)
+        relative_path = pathlib.Path(remote_path.name)
       local_result_path = out_dir / relative_path
       browser_platform.rsync(remote_path, local_result_path)
       assert local_result_path.exists(), "Failed to copy result file."
@@ -229,7 +215,7 @@ class ProbeResultDict:
   Maps Probes to their result files Paths.
   """
 
-  def __init__(self, path: pth.RemotePath) -> None:
+  def __init__(self, path: pathlib.Path) -> None:
     self._path = path
     self._dict: Dict[str, ProbeResult] = {}
 
@@ -263,7 +249,7 @@ class ProbeResultDict:
   def to_json(self) -> JsonDict:
     data: JsonDict = {}
     for probe_name, results in self._dict.items():
-      if isinstance(results, (pth.RemotePath, str)):
+      if isinstance(results, (pathlib.Path, str)):
         data[probe_name] = str(results)
       else:
         if results.is_empty:

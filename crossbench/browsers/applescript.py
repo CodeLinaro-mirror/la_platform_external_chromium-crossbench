@@ -14,13 +14,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 import psutil
 
 from crossbench import helper, plt
-from crossbench.browsers.browser import Browser
 from crossbench.env import ValidationError
+
+from crossbench.browsers.browser import Browser
 
 if TYPE_CHECKING:
   import datetime as dt
+  import pathlib
 
-  from crossbench.path import RemotePath
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
@@ -29,7 +30,7 @@ if TYPE_CHECKING:
 class AppleScript:
 
   @classmethod
-  def with_args(cls, app_path: RemotePath, apple_script: str,
+  def with_args(cls, app_path: pathlib.Path, apple_script: str,
                 **kwargs) -> Tuple[str, List[str]]:
     variables = []
     replacements = {}

@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import argparse
 import logging
+import pathlib
 import re
+import tempfile
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from crossbench import plt
@@ -16,7 +18,6 @@ from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
 from crossbench.types import JsonDict
-from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
@@ -56,8 +57,8 @@ class Chromium(Browser):
   )
 
   @classmethod
-  def default_path(cls, platform: plt.Platform) -> pth.RemotePath:
-    return platform.search_app_or_executable(
+  def default_path(cls) -> pathlib.Path:
+    return plt.PLATFORM.search_app_or_executable(
         "Chromium",
         macos=["Chromium.app"],
         linux=["google-chromium", "chromium"],
@@ -68,17 +69,18 @@ class Chromium(Browser):
                     initial_data: Flags.InitialDataType = None) -> ChromeFlags:
     return ChromeFlags(initial_data)
 
-  def __init__(self,
-               label: str,
-               path: pth.RemotePath,
-               flags: Optional[Flags.InitialDataType] = None,
-               js_flags: Optional[Flags.InitialDataType] = None,
-               cache_dir: Optional[pth.RemotePath] = None,
-               network: Optional[Network] = None,
-               driver_path: Optional[pth.RemotePath] = None,
-               viewport: Optional[Viewport] = None,
-               splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[plt.Platform] = None):
+  def __init__(
+      self,
+      label: str,
+      path: pathlib.Path,
+      flags: Optional[Flags.InitialDataType] = None,
+      js_flags: Optional[Flags.InitialDataType] = None,
+      cache_dir: Optional[pathlib.Path] = None,
+      network: Optional[Network] = None,
+      driver_path: Optional[pathlib.Path] = None,
+      viewport: Optional[Viewport] = None,
+      splash_screen: Optional[SplashScreen] = None,
+      platform: Optional[plt.Platform] = None):
     super().__init__(
         label,
         path,
@@ -92,9 +94,11 @@ class Chromium(Browser):
     if cache_dir is None:
       maybe_cache_dir = self._flags.get("--user-data-dir", None)
       if maybe_cache_dir:
-        cache_dir = pth.RemotePath(maybe_cache_dir)
+        cache_dir = pathlib.Path(maybe_cache_dir)
     if cache_dir is None:
-      self.cache_dir = self.platform.mkdtemp(prefix=self.type_name)
+      # pylint: disable=bad-option-value, consider-using-with
+      self.cache_dir = pathlib.Path(
+          tempfile.TemporaryDirectory(prefix=self.type_name).name)
       self.clear_cache_dir = True
     else:
       self.cache_dir = cache_dir
@@ -175,7 +179,7 @@ class Chromium(Browser):
     return "--headless" in self._flags
 
   @property
-  def chrome_log_file(self) -> pth.RemotePath:
+  def chrome_log_file(self) -> pathlib.Path:
     assert self.log_file
     return self.log_file.with_suffix(f".{self.type_name}.log")
 

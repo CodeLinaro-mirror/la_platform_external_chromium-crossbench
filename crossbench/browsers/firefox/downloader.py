@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import pathlib
 import re
 import urllib.parse
 from typing import TYPE_CHECKING, Dict, Final, Optional, Tuple, Type, Union
@@ -13,8 +14,6 @@ from crossbench.browsers.downloader import DMGArchiveHelper, Downloader
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.path import LocalPath, RemotePathLike
-
 
 _PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
     ("win", "ia32"): "win32",
@@ -49,20 +48,12 @@ class FirefoxDownloader(Downloader):
   def is_valid_version(cls, path_or_identifier: str) -> bool:
     return bool(cls.VERSION_RE.fullmatch(path_or_identifier))
 
-  @classmethod
-  def _is_valid(cls, path_or_identifier: RemotePathLike,
-                browser_platform: plt.Platform) -> bool:
-    if cls.is_valid_version(str(path_or_identifier)):
-      return True
-    path = browser_platform.path(path_or_identifier)
-    return browser_platform.exists(path) and path.suffix == cls.ARCHIVE_SUFFIX
-
   def __init__(self,
-               version_identifier: Union[str, LocalPath],
+               version_identifier: Union[str, pathlib.Path],
                browser_type: str,
                platform_name: str,
                browser_platform: plt.Platform,
-               cache_dir: Optional[LocalPath] = None):
+               cache_dir: Optional[pathlib.Path] = None):
     assert not browser_type
     assert not platform_name
     firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(browser_platform.key)
@@ -110,7 +101,7 @@ class FirefoxDownloader(Downloader):
   def _archive_urls(self, folder_url: str, version_str: str) -> Tuple[str, ...]:
     pass
 
-  def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
+  def _download_archive(self, archive_url: str, tmp_dir: pathlib.Path) -> None:
     self._browser_platform.download_to(
         archive_url, tmp_dir / f"archive.{self.ARCHIVE_SUFFIX}")
     archive_candidates = list(tmp_dir.glob("*"))
@@ -123,7 +114,7 @@ class FirefoxDownloader(Downloader):
     candidate.replace(self._archive_path)
 
   @abc.abstractmethod
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pathlib.Path) -> None:
     pass
 
 
@@ -131,33 +122,39 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
   ARCHIVE_SUFFIX: str = ".tar.bz2"
 
   @classmethod
-  def is_valid(cls, path_or_identifier: RemotePathLike,
+  def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
                browser_platform: plt.Platform) -> bool:
-    return cls._is_valid(path_or_identifier, browser_platform)
+    if cls.is_valid_version(str(path_or_identifier)):
+      return True
+    path = pathlib.Path(path_or_identifier)
+    return path.exists() and path.suffix == cls.ARCHIVE_SUFFIX
 
-  def _extracted_path(self) -> LocalPath:
+  def _extracted_path(self) -> pathlib.Path:
     return self._out_dir / self._requested_version_str
 
-  def _installed_app_path(self) -> LocalPath:
+  def _installed_app_path(self) -> pathlib.Path:
     # TODO: support local vs remote
     return self._extracted_path() / "firefox-bin"
 
   def _archive_urls(self, folder_url: str, version_str: str) -> Tuple[str, ...]:
     return (f"{folder_url}/firefox-{version_str}.tar.bz2",)
 
-  def _install_archive(self, archive_path: LocalPath) -> None:
-    raise NotImplementedError("Missing linux support")
+  def _install_archive(self, archive_path: pathlib.Path) -> None:
+    raise NotImplementedError("Missing linux supoprt")
 
 
 class FirefoxDownloaderMacOS(FirefoxDownloader):
   ARCHIVE_SUFFIX: str = ".dmg"
 
   @classmethod
-  def is_valid(cls, path_or_identifier: RemotePathLike,
+  def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
                browser_platform: plt.Platform) -> bool:
-    return cls._is_valid(path_or_identifier, browser_platform)
+    if cls.is_valid_version(str(path_or_identifier)):
+      return True
+    path = pathlib.Path(path_or_identifier)
+    return path.exists() and path.suffix == cls.ARCHIVE_SUFFIX
 
-  def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
+  def _download_archive(self, archive_url: str, tmp_dir: pathlib.Path) -> None:
     assert self._browser_platform.is_macos
     if self._browser_platform.is_arm64 and (self._requested_version
                                             < self.MIN_MAC_ARM64_VERSION):
@@ -171,14 +168,14 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
     return (f"{folder_url}/" +
             urllib.parse.quote(f"Firefox {version_str}.dmg"),)
 
-  def _extracted_path(self) -> LocalPath:
+  def _extracted_path(self) -> pathlib.Path:
     # TODO: support local vs remote
     return self._installed_app_path()
 
-  def _installed_app_path(self) -> LocalPath:
+  def _installed_app_path(self) -> pathlib.Path:
     return self._out_dir / f"Firefox {self._requested_version_str}.app"
 
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pathlib.Path) -> None:
     extracted_path = self._extracted_path()
     DMGArchiveHelper.extract(self.host_platform, archive_path, extracted_path)
     assert extracted_path.exists()
@@ -187,9 +184,9 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 class FirefoxDownloaderWin(FirefoxDownloader):
 
   @classmethod
-  def is_valid(cls, path_or_identifier: RemotePathLike,
+  def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
                browser_platform: plt.Platform) -> bool:
     return False
 
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pathlib.Path) -> None:
     raise NotImplementedError("Missing windows support")

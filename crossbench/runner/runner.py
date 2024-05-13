@@ -9,12 +9,11 @@ import datetime as dt
 import enum
 import inspect
 import logging
+import pathlib
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type, Union)
 
-from crossbench import cli_helper, compat, exception, helper
-from crossbench import path as pth
-from crossbench import plt
+from crossbench import cli_helper, compat, exception, helper, plt
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
@@ -83,9 +82,9 @@ class Runner:
 
   @classmethod
   def get_out_dir(cls,
-                  cwd: pth.LocalPath,
+                  cwd: pathlib.Path,
                   suffix: str = "",
-                  test: bool = False) -> pth.LocalPath:
+                  test: bool = False) -> pathlib.Path:
     if test:
       return cwd / "results" / "test"
     if suffix:
@@ -137,7 +136,7 @@ class Runner:
         "--out-dir",
         "--output-directory",
         "-o",
-        type=pth.LocalPath,
+        type=pathlib.Path,
         help=("Results will be stored in this directory. "
               "Defaults to results/${DATE}_${LABEL}"))
     out_dir_xor_group.add_argument(
@@ -156,7 +155,7 @@ class Runner:
     else:
       label = args.label
       assert label
-      root_dir = pth.LocalPath(__file__).parents[2]
+      root_dir = pathlib.Path(__file__).parents[2]
       out_dir = cls.get_out_dir(root_dir, label)
     return {
         "out_dir": out_dir,
@@ -170,7 +169,7 @@ class Runner:
 
   def __init__(
       self,
-      out_dir: pth.LocalPath,
+      out_dir: pathlib.Path,
       browsers: Sequence[Browser],
       benchmark: Benchmark,
       additional_probes: Iterable[Probe] = (),
