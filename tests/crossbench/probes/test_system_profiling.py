@@ -23,6 +23,8 @@ class TestProbe(unittest.TestCase):
             frequency=None,
             count=None,
             cpus=None,
+            events=None,
+            add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "-t", "5678", "--post-unwind=yes", "-o",
                 output_path
@@ -40,6 +42,8 @@ class TestProbe(unittest.TestCase):
             frequency=None,
             count=None,
             cpus=None,
+            events=None,
+            add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "-p", "1234", "--post-unwind=yes", "-o",
                 output_path
@@ -57,6 +61,8 @@ class TestProbe(unittest.TestCase):
             frequency=None,
             count=None,
             cpus=None,
+            events=None,
+            add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "--app", "com.chrome.beta",
                 "--post-unwind=yes", "-o", output_path
@@ -74,6 +80,8 @@ class TestProbe(unittest.TestCase):
             frequency=None,
             count=None,
             cpus=None,
+            events=None,
+            add_counters=None,
             output_path=output_path),
         ["simpleperf", "record", "-a", "--call-graph", "fp", "-o", output_path])
 
@@ -89,6 +97,8 @@ class TestProbe(unittest.TestCase):
             frequency=1234,
             count=None,
             cpus=None,
+            events=None,
+            add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
                 "1234", "-o", output_path
@@ -106,6 +116,8 @@ class TestProbe(unittest.TestCase):
             frequency=None,
             count=5,
             cpus=None,
+            events=None,
+            add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "-c", "5",
                 "-o", output_path
@@ -123,9 +135,51 @@ class TestProbe(unittest.TestCase):
             frequency=None,
             count=None,
             cpus=[0, 1, 2],
+            events=None,
+            add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "--cpu",
                 "0,1,2", "-o", output_path
+            ])
+
+  def test_simpleperf_command_line_with_events(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
+    self.assertListEqual(
+        generate_simpleperf_command_line(
+            target=TargetMode.SYSTEM_WIDE,
+            app_name="org.chromium.chrome",
+            renderer_pid=None,
+            renderer_main_tid=None,
+            frame_pointers=True,
+            frequency=1234,
+            count=5,
+            cpus=None,
+            events=["cpu-cycles", "instructions"],
+            add_counters=None,
+            output_path=output_path),
+        [
+            "simpleperf", "record", "-a", "--call-graph", "fp", "-f", "1234",
+            "-c", "5", "-e", "cpu-cycles,instructions", "-o", output_path
+        ])
+
+  def test_simpleperf_command_line_with_add_counters(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
+    self.assertListEqual(
+        generate_simpleperf_command_line(
+            target=TargetMode.SYSTEM_WIDE,
+            app_name="org.chromium.chrome",
+            renderer_pid=None,
+            renderer_main_tid=None,
+            frame_pointers=True,
+            frequency=1234,
+            count=5,
+            cpus=None,
+            events=["sched:sched_switch"],
+            add_counters=["cpu-cycles", "instructions"],
+            output_path=output_path), [
+                "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
+                "1234", "-c", "5", "-e", "sched:sched_switch", "--add-counter",
+                "cpu-cycles,instructions", "--no-inherit", "-o", output_path
             ])
 
 

@@ -175,6 +175,23 @@ class ProfilingProbe(Probe):
             "Android-only: Sample only on the selected cpus, specified as a list "
             "of 0-indexed cpu indices. Please refer to simpleperf documentation "
             "for more details."))
+    parser.add_argument(
+        "events",
+        type=str,
+        is_list=True,
+        default=None,
+        help=("Android-only: Events to record. Please refer to simpleperf "
+              "documentation for `-e` for more details."))
+    parser.add_argument(
+        "add_counters",
+        type=str,
+        is_list=True,
+        default=None,
+        help=("Android-only: Add additional event counts in samples. NOTE: If "
+              "`add_counter` is used, `--no-inherit` is implicitly set, since "
+              "this is required by simpleperf. Please refer to simpleperf "
+              "documentation for `--add-counter` and `--no-inherit` for more "
+              "details."))
     return parser
 
   def __init__(self,
@@ -188,7 +205,9 @@ class ProfilingProbe(Probe):
                frame_pointers: bool = True,
                frequency: Optional[int] = None,
                count: Optional[int] = None,
-               cpu: Optional[Tuple[int]] = None):
+               cpu: Optional[Tuple[int]] = None,
+               events: Optional[Tuple[str]] = None,
+               add_counters: Optional[Tuple[str]] = None):
     super().__init__()
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
@@ -205,6 +224,8 @@ class ProfilingProbe(Probe):
     self._frequency: Optional[int] = frequency
     self._count: Optional[int] = count
     self._cpu: Optional[Tuple[int]] = cpu
+    self._events: Optional[Tuple[str]] = events
+    self._add_counters: Optional[Tuple[str]] = add_counters
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -221,6 +242,8 @@ class ProfilingProbe(Probe):
         ("frequency", self._frequency),
         ("count", self._count),
         ("cpu", self._cpu),
+        ("events", self._events),
+        ("add_counters", self._add_counters),
     )
 
   @property
@@ -263,6 +286,14 @@ class ProfilingProbe(Probe):
   def cpu(self) -> Optional[Tuple[int]]:
     return self._cpu
 
+  @property
+  def events(self) -> Optional[Tuple[str]]:
+    return self._events
+
+  @property
+  def add_counters(self) -> Optional[Tuple[str]]:
+    return self._add_counters
+
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     if browser.platform.is_linux or browser.platform.is_android:
@@ -292,6 +323,10 @@ class ProfilingProbe(Probe):
       assert self._count is None, (
           "`count` is currently only supported on Android")
       assert not self._cpu, ("`cpu` is currently only supported on Android")
+      assert not self._events, (
+          "`events` is currently only supported on Android")
+      assert not self._add_counters, (
+          "`add_counters` is currently only supported on Android")
 
   def _validate_linux(self, env: HostEnvironment, browser: Browser) -> None:
     env.check_installed(binaries=["pprof"])
@@ -713,6 +748,8 @@ class AndroidProfilingContext(ProfilingContext):
         self.probe.frequency,
         self.probe.count,
         self.probe.cpu,
+        self.probe.events,
+        self.probe.add_counters,
         self.result_path,
     )
 
@@ -794,6 +831,8 @@ def generate_simpleperf_command_line(
     frequency: Optional[int],
     count: Optional[int],
     cpus: Optional[Tuple[int]],
+    events: Optional[Tuple[str]],
+    add_counters: Optional[Tuple[str]],
     output_path: pathlib.Path,
 ) -> ListCmdArgsT:
   command_line: ListCmdArgsT = ["simpleperf", "record"]
@@ -819,5 +858,12 @@ def generate_simpleperf_command_line(
     command_line.extend(["-c", str(count)])
   if cpus:
     command_line.extend(["--cpu", ",".join([str(cpu) for cpu in cpus])])
+  # Events and counters need to be provided after `-f` and `-c`.
+  if events:
+    command_line.extend(["-e", ",".join(events)])
+  if add_counters:
+    command_line.extend(["--add-counter", ",".join(add_counters)])
+    # `--no-inherit` is required by simpleperf when `--add-counter` is used.
+    command_line.append("--no-inherit")
   command_line.extend(["-o", output_path])
   return command_line
