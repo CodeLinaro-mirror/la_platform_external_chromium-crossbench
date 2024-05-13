@@ -250,10 +250,7 @@ class DriverConfig(ConfigObject):
 
   def get_platform(self) -> plt.Platform:
     if self.type == BrowserDriverType.ANDROID:
-      device_identifier = None
-      if self.settings:
-        device_identifier = self.settings.get("device_id", None)
-      return plt.AndroidAdbPlatform(plt.PLATFORM, device_identifier)
+      return plt.AndroidAdbPlatform(plt.PLATFORM, self.device_id)
     if self.type == BrowserDriverType.IOS:
       # TODO(cbruni): use `xcrun xctrace list devices` to find the UDID
       # for attached simulators or devices. Currently only a single device
