@@ -7,10 +7,10 @@ from __future__ import annotations
 import argparse
 import enum
 import logging
-import pathlib
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple, cast
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Tuple
 
 from crossbench import cli_helper
+from crossbench import path as pth
 from crossbench.config import ConfigEnum
 from crossbench.helper.path_finder import TraceconvFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
@@ -116,7 +116,7 @@ class RecordFormat(ConfigEnum):
                            "New https://ui.perfetto.dev/ compatible format")
 
 
-def parse_trace_config_file_path(value: str) -> pathlib.Path:
+def parse_trace_config_file_path(value: str) -> pth.LocalPath:
   data = cli_helper.parse_json_file(value)
   if "trace_config" not in data:
     raise argparse.ArgumentTypeError("Missing 'trace_config' property.")
@@ -133,10 +133,11 @@ def parse_trace_config_file_path(value: str) -> pathlib.Path:
     raise argparse.ArgumentTypeError(
         "Empty trace config: no trace categories or memory dumps configured.")
   RecordMode.parse(config.get("record_mode", RecordMode.CONTINUOUSLY))
-  return pathlib.Path(value)
+  return pth.LocalPath(value)
 
 
-ANDROID_TRACE_CONFIG_PATH = pathlib.Path("/data/local/chrome-trace-config.json")
+ANDROID_TRACE_CONFIG_PATH = pth.RemotePath(
+    "/data/local/chrome-trace-config.json")
 
 
 class TracingProbe(ChromiumProbe):
@@ -204,13 +205,13 @@ class TracingProbe(ChromiumProbe):
   def __init__(self,
                preset: Optional[str] = None,
                categories: Optional[Sequence[str]] = None,
-               trace_config: Optional[pathlib.Path] = None,
+               trace_config: Optional[pth.LocalPath] = None,
                startup_duration: int = 0,
                record_mode: RecordMode = RecordMode.CONTINUOUSLY,
                record_format: RecordFormat = RecordFormat.PROTO,
-               traceconv: Optional[pathlib.Path] = None) -> None:
+               traceconv: Optional[pth.RemotePath] = None) -> None:
     super().__init__()
-    self._trace_config: Optional[pathlib.Path] = trace_config
+    self._trace_config: Optional[pth.LocalPath] = trace_config
     self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
     self._preset: Optional[str] = preset
     if preset:
@@ -225,7 +226,7 @@ class TracingProbe(ChromiumProbe):
     self._startup_duration: int = startup_duration
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
-    self._traceconv: Optional[pathlib.Path] = traceconv
+    self._traceconv: Optional[pth.RemotePath] = traceconv
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -241,7 +242,7 @@ class TracingProbe(ChromiumProbe):
     return f"trace.{self._record_format.value}"  # pylint: disable=no-member
 
   @property
-  def traceconv(self) -> Optional[pathlib.Path]:
+  def traceconv(self) -> Optional[pth.RemotePath]:
     return self._traceconv
 
   @property
@@ -272,7 +273,7 @@ class TracingProbe(ChromiumProbe):
 
 
 class TracingProbeContext(ProbeContext[TracingProbe]):
-  _traceconv: Optional[pathlib.Path]
+  _traceconv: Optional[pth.RemotePath]
   _record_format: RecordFormat
 
   def setup(self) -> None:

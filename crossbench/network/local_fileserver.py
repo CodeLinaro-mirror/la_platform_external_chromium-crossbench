@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import contextlib
-import pathlib
 from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import plt
@@ -13,12 +12,13 @@ from crossbench.network.base import Network, TrafficShaper
 
 if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  from crossbench.path import LocalPath
 
 
 class LocalFileNetwork(Network):
 
   def __init__(self,
-               path: pathlib.Path,
+               path: LocalPath,
                traffic_shaper: Optional[TrafficShaper] = None,
                platform: plt.Platform = plt.PLATFORM):
     super().__init__(traffic_shaper, platform)

@@ -3,15 +3,16 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import abc
+
 import contextlib
-import pathlib
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import cli_helper, plt
-from crossbench.browsers.browser import Browser
 from crossbench.network.base import Network, TrafficShaper
 from crossbench.runner.groups.session import BrowserSessionRunGroup
+
+if TYPE_CHECKING:
+  from crossbench.path import LocalPath
 
 
 class ReplayNetwork(Network):
@@ -19,7 +20,7 @@ class ReplayNetwork(Network):
   from a an archive."""
 
   def __init__(self,
-               archive_path: pathlib.Path,
+               archive_path: LocalPath,
                traffic_shaper: Optional[TrafficShaper] = None,
                runner_platform: plt.Platform = plt.PLATFORM):
     super().__init__(traffic_shaper, runner_platform)
@@ -27,7 +28,7 @@ class ReplayNetwork(Network):
         archive_path).resolve()
 
   @property
-  def archive_path(self) -> pathlib.Path:
+  def archive_path(self) -> LocalPath:
     return self._archive_path
 
   @contextlib.contextmanager

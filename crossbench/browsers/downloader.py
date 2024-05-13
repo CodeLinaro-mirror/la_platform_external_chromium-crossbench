@@ -6,15 +6,17 @@ from __future__ import annotations
 
 import abc
 import logging
-import pathlib
 import plistlib
 import re
 import shutil
 import tempfile
 from typing import TYPE_CHECKING, Final, Optional, Tuple, Type, Union
 
-from crossbench import plt
+from crossbench import path as pth
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
+
+if TYPE_CHECKING:
+  from crossbench import plt
 
 
 class IncompatibleVersionError(ValueError):
@@ -32,7 +34,7 @@ class Downloader(abc.ABC):
     pass
 
   @classmethod
-  def is_valid(cls, path_or_identifier: Union[str, pathlib.Path],
+  def is_valid(cls, path_or_identifier: pth.RemotePathLike,
                browser_platform: plt.Platform) -> bool:
     return cls._get_loader_cls(browser_platform).is_valid(
         path_or_identifier, browser_platform)
@@ -44,9 +46,9 @@ class Downloader(abc.ABC):
 
   @classmethod
   def load(cls,
-           archive_path_or_version_identifier: Union[str, pathlib.Path],
+           archive_path_or_version_identifier: Union[str, pth.LocalPath],
            browser_platform: plt.Platform,
-           cache_dir: Optional[pathlib.Path] = None) -> pathlib.Path:
+           cache_dir: Optional[pth.LocalPath] = None) -> pth.LocalPath:
     logging.debug("Downloading chrome %s binary for %s",
                   archive_path_or_version_identifier, browser_platform)
     loader_cls: Type[Downloader] = cls._get_loader_cls(browser_platform)
@@ -55,22 +57,22 @@ class Downloader(abc.ABC):
     return loader.app_path
 
   def __init__(self,
-               archive_path_or_version_identifier: Union[str, pathlib.Path],
+               archive_path_or_version_identifier: Union[str, pth.LocalPath],
                browser_type: str,
                platform_name: str,
                browser_platform: plt.Platform,
-               cache_dir: Optional[pathlib.Path] = None):
+               cache_dir: Optional[pth.LocalPath] = None):
     assert browser_type, "Missing browser_type"
     self._browser_type = browser_type
     self._browser_platform = browser_platform
     self._platform_name = platform_name
     assert platform_name, "Missing platform_name"
     self._archive_url: str = ""
-    self._archive_path: pathlib.Path = pathlib.Path()
-    self._out_dir: pathlib.Path = cache_dir or BROWSERS_CACHE
-    self._archive_dir: pathlib.Path = self._out_dir / "archive"
+    self._archive_path: pth.LocalPath = pth.LocalPath()
+    self._out_dir: pth.LocalPath = cache_dir or BROWSERS_CACHE
+    self._archive_dir: pth.LocalPath = self._out_dir / "archive"
     self._archive_dir.mkdir(parents=True, exist_ok=True)
-    self._app_path: pathlib.Path = pathlib.Path()
+    self._app_path: pth.LocalPath = pth.LocalPath()
     # TODO replace version* variable with version object
     self._version_identifier: str = ""
     self._requested_version: Tuple[int, ...] = (0, 0, 0, 0)
@@ -80,14 +82,13 @@ class Downloader(abc.ABC):
     self._validate()
 
   def find(
-      self,
-      archive_path_or_version_identifier: Union[str,
-                                                pathlib.Path]) -> pathlib.Path:
+      self, archive_path_or_version_identifier: Union[str, pth.LocalPath]
+  ) -> pth.LocalPath:
     if self.is_valid_version(str(archive_path_or_version_identifier)):
       self._version_identifier = str(archive_path_or_version_identifier)
       self._pre_check()
       return self._load_from_version()
-    self._archive_path = pathlib.Path(archive_path_or_version_identifier)
+    self._archive_path = pth.LocalPath(archive_path_or_version_identifier)
     self._pre_check()
     if not archive_path_or_version_identifier or (
         not self._archive_path.exists()):
@@ -96,13 +97,13 @@ class Downloader(abc.ABC):
     return self._load_from_archive()
 
   def _validate(self) -> None:
-    assert self._app_path != pathlib.Path(), "Did not set app_path"
+    assert self._app_path != pth.LocalPath(), "Did not set app_path"
     assert self._is_app_installed(self._app_path), (
         f"Could not extract {self._browser_type}  binary: {self._app_path}")
     logging.debug("Extracted app: %s", self._app_path)
 
   @property
-  def app_path(self) -> pathlib.Path:
+  def app_path(self) -> pth.LocalPath:
     assert self._is_app_installed(self._app_path), "Could not download browser"
     return self._app_path
 
@@ -113,16 +114,16 @@ class Downloader(abc.ABC):
   def _pre_check(self) -> None:
     pass
 
-  def _is_app_installed(self, app_path: pathlib.Path) -> bool:
+  def _is_app_installed(self, app_path: pth.LocalPath) -> bool:
     return self._browser_platform.search_app(app_path) is not None
 
-  def _find_matching_installed_version(self) -> Optional[pathlib.Path]:
-    app_path: pathlib.Path = self._installed_app_path()
+  def _find_matching_installed_version(self) -> Optional[pth.LocalPath]:
+    app_path: pth.LocalPath = self._installed_app_path()
     if self._is_app_installed(app_path):
       return app_path
     return None
 
-  def _load_from_version(self) -> pathlib.Path:
+  def _load_from_version(self) -> pth.LocalPath:
     (self._version_identifier, self._requested_version,
      self._requested_version_str,
      self._requested_exact_version) = self._parse_version(
@@ -145,7 +146,7 @@ class Downloader(abc.ABC):
       self._archive_url = archive_url
       logging.info("DOWNLOADING %s", self._archive_url)
       with tempfile.TemporaryDirectory(suffix="cb_download") as tmp_dir_name:
-        tmp_dir = pathlib.Path(tmp_dir_name)
+        tmp_dir = pth.LocalPath(tmp_dir_name)
         self._download_archive(self._archive_url, tmp_dir)
     else:
       logging.info("CACHED DOWNLOAD: %s", self._archive_path)
@@ -158,13 +159,13 @@ class Downloader(abc.ABC):
   def _version_check(self) -> None:
     pass
 
-  def _load_from_archive(self) -> pathlib.Path:
+  def _load_from_archive(self) -> pth.LocalPath:
     assert not self._requested_exact_version
     assert not self._version_identifier
     assert self._archive_path.exists()
     logging.info("EXTRACTING ARCHIVE: %s", self._archive_path)
     self._requested_version_str = "temp"
-    tmp_app_path: pathlib.Path = self._installed_app_path()
+    tmp_app_path: pth.LocalPath = self._installed_app_path()
     temp_extracted_path = self._extracted_path()
     if temp_extracted_path.exists():
       logging.info("Deleting previously extracted browser: %s",
@@ -198,14 +199,14 @@ class Downloader(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def _extracted_path(self) -> pathlib.Path:
+  def _extracted_path(self) -> pth.LocalPath:
     pass
 
   @abc.abstractmethod
-  def _installed_app_path(self) -> pathlib.Path:
+  def _installed_app_path(self) -> pth.LocalPath:
     pass
 
-  def _validate_installed(self, app_path: pathlib.Path) -> str:
+  def _validate_installed(self, app_path: pth.LocalPath) -> str:
     # "XXX YYY 107.0.5304.121" => "107.0.5304.121"
     app_version = self._browser_platform.app_version(app_path)
     version_match = self.APP_VERSION_RE.search(app_version)
@@ -254,11 +255,11 @@ class Downloader(abc.ABC):
     return True
 
   @abc.abstractmethod
-  def _download_archive(self, archive_url: str, tmp_dir: pathlib.Path) -> None:
+  def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     pass
 
   @abc.abstractmethod
-  def _install_archive(self, archive_path: pathlib.Path) -> None:
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
     pass
 
 
@@ -266,16 +267,16 @@ class ArchiveHelper(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
-              dest_path: pathlib.Path) -> pathlib.Path:
+  def extract(cls, platform: plt.Platform, archive_path: pth.LocalPath,
+              dest_path: pth.LocalPath) -> pth.LocalPath:
     pass
 
 
 class RPMArchiveHelper(ArchiveHelper):
 
   @classmethod
-  def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
-              dest_path: pathlib.Path) -> pathlib.Path:
+  def extract(cls, platform: plt.Platform, archive_path: pth.LocalPath,
+              dest_path: pth.LocalPath) -> pth.LocalPath:
     assert platform.which("rpm2cpio"), (
         "Need rpm2cpio to extract downloaded .rpm archive")
     assert platform.which("cpio"), (
@@ -303,18 +304,18 @@ class RPMArchiveHelper(ArchiveHelper):
 class DMGArchiveHelper:
 
   @classmethod
-  def extract(cls, platform: plt.Platform, archive_path: pathlib.Path,
-              dest_path: pathlib.Path) -> pathlib.Path:
+  def extract(cls, platform: plt.Platform, archive_path: pth.LocalPath,
+              dest_path: pth.LocalPath) -> pth.LocalPath:
     assert platform.is_macos, "DMG are only supported on macOS."
     assert not platform.is_remote, "Remote platform not supported yet"
     result = platform.sh_stdout("hdiutil", "attach", "-plist",
                                 archive_path).strip()
     data = plistlib.loads(str.encode(result))
-    dmg_path: Optional[pathlib.Path] = None
+    dmg_path: Optional[pth.LocalPath] = None
     for item in data["system-entities"]:
       mount_point = item.get("mount-point", None)
       if mount_point:
-        dmg_path = pathlib.Path(mount_point)
+        dmg_path = pth.LocalPath(mount_point)
         if dmg_path.exists():
           break
     if not dmg_path:

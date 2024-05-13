@@ -11,8 +11,7 @@ from crossbench import exception
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
-  import pathlib
-
+  from crossbench.path import LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
@@ -23,10 +22,10 @@ class RunGroup(abc.ABC):
 
   def __init__(self, throw: bool = False) -> None:
     self._exceptions = exception.Annotator(throw)
-    self._path: Optional[pathlib.Path] = None
+    self._path: Optional[LocalPath] = None
     self._merged_probe_results: Optional[ProbeResultDict] = None
 
-  def _set_path(self, path: pathlib.Path) -> None:
+  def _set_path(self, path: LocalPath) -> None:
     assert self._path is None
     self._path = path
     self._merged_probe_results = ProbeResultDict(path)
@@ -37,7 +36,7 @@ class RunGroup(abc.ABC):
     return self._merged_probe_results
 
   @property
-  def path(self) -> pathlib.Path:
+  def path(self) -> LocalPath:
     assert self._path
     return self._path
 
@@ -74,7 +73,7 @@ class RunGroup(abc.ABC):
 
   def get_local_probe_result_path(self,
                                   probe: Probe,
-                                  exists_ok: bool = False) -> pathlib.Path:
+                                  exists_ok: bool = False) -> LocalPath:
     new_file = self.path / probe.result_path_name
     if not exists_ok:
       assert not new_file.exists(), (

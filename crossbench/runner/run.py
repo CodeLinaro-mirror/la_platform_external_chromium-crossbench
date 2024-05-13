@@ -7,10 +7,11 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import logging
-import pathlib
 from typing import TYPE_CHECKING, Optional
 
-from crossbench import compat, plt
+from crossbench import compat
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper import (ChangeCWD, Durations, Spinner, State,
                                StateMachine)
@@ -73,20 +74,20 @@ class Run(ResultOrigin):
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
     self._timeout = timeout
     self._exceptions = Annotator(throw)
-    self._browser_tmp_dir: Optional[pathlib.Path] = None
+    self._browser_tmp_dir: Optional[pth.RemotePath] = None
     self._probe_context_manager = ProbeRunContextManager(
         self, self._probe_results)
 
   def __str__(self) -> str:
     return f"Run({self.name}, {self._state}, {self.browser})"
 
-  def _get_out_dir(self, root_dir: pathlib.Path) -> pathlib.Path:
+  def _get_out_dir(self, root_dir: pth.LocalPath) -> pth.LocalPath:
     return (root_dir / plt.safe_filename(self.browser.unique_name) / "stories" /
             plt.safe_filename(self.story.name) / str(self.repetition_name) /
             str(self._temperature))
 
   @property
-  def group_dir(self) -> pathlib.Path:
+  def group_dir(self) -> pth.LocalPath:
     return self.out_dir.parent
 
   def actions(self,
@@ -181,14 +182,14 @@ class Run(ResultOrigin):
     return self.runner.env
 
   @property
-  def out_dir(self) -> pathlib.Path:
+  def out_dir(self) -> pth.LocalPath:
     """A local directory where all result files are gathered.
     Results from browsers on remote platforms are transferred to this dir
     as well."""
     return self._out_dir
 
   @property
-  def browser_tmp_dir(self) -> pathlib.Path:
+  def browser_tmp_dir(self) -> pth.RemotePath:
     """Returns a path to a tmp dir on the browser platform."""
     if not self._browser_tmp_dir:
       prefix = "cb_run_results"
@@ -224,7 +225,7 @@ class Run(ResultOrigin):
     self.session.add_flag_details(details_json)
     return details_json
 
-  def get_local_probe_result_path(self, probe: Probe) -> pathlib.Path:
+  def get_local_probe_result_path(self, probe: Probe) -> pth.LocalPath:
     file = self._out_dir / probe.result_path_name
     assert not file.exists(), f"Probe results file exists already. file={file}"
     return file
@@ -257,7 +258,7 @@ class Run(ResultOrigin):
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
     # Target: BROWSER / "sessions" / SESSION
     relative_session_dir = (
-        pathlib.Path("../../../..") /
+        pth.LocalPath("../../../..") /
         self.browser_session.path.relative_to(self.out_dir.parents[3]))
     session_run_dir.symlink_to(relative_session_dir)
 

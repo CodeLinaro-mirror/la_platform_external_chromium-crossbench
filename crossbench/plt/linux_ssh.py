@@ -4,18 +4,16 @@
 
 from __future__ import annotations
 
-import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
-                    Union)
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 
 from crossbench.plt.arch import MachineArch
-from crossbench.plt.base import CmdArgsT, ListCmdArgsT
+from crossbench.plt.base import CmdArgsT, CmdArgT, ListCmdArgsT
 from crossbench.plt.linux import LinuxPlatform
 
 if TYPE_CHECKING:
-  from crossbench.types import JsonDict
+  from crossbench.path import LocalPath, RemotePath
   from crossbench.plt.base import Platform
 
 
@@ -61,9 +59,7 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
   def port(self) -> int:
     return self._port
 
-  def _build_ssh_cmd(self,
-                     *args: Union[str, pathlib.Path],
-                     shell=False) -> ListCmdArgsT:
+  def _build_ssh_cmd(self, *args: CmdArgT, shell=False) -> ListCmdArgsT:
     ssh_cmd: ListCmdArgsT = [
         "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"
     ]
@@ -74,7 +70,7 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
     return ssh_cmd
 
   def sh_stdout(self,
-                *args: Union[str, pathlib.Path],
+                *args: CmdArgT,
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
@@ -85,7 +81,7 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
         *ssh_cmd, env=env, quiet=quiet, encoding=encoding, check=check)
 
   def sh(self,
-         *args: Union[str, pathlib.Path],
+         *args: CmdArgT,
          shell: bool = False,
          capture_output: bool = False,
          stdout=None,
@@ -119,8 +115,7 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
       res.append({"pid": int(pid), "name": name})
     return res
 
-  def push(self, from_path: pathlib.Path,
-           to_path: pathlib.Path) -> pathlib.Path:
+  def push(self, from_path: LocalPath, to_path: RemotePath) -> RemotePath:
     scp_cmd: CmdArgsT = [
         "scp", "-P", f"{self._ssh_port}", f"{from_path}",
         f"{self._ssh_user}@{self._host}:{to_path}"
@@ -128,8 +123,7 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
 
-  def pull(self, from_path: pathlib.Path,
-           to_path: pathlib.Path) -> pathlib.Path:
+  def pull(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
     scp_cmd: CmdArgsT = [
         "scp", "-P", f"{self._ssh_port}",
         f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"
@@ -137,8 +131,7 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
 
-  def rsync(self, from_path: pathlib.Path,
-            to_path: pathlib.Path) -> pathlib.Path:
+  def rsync(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
     to_path.parent.mkdir(parents=True, exist_ok=True)
     scp_cmd: CmdArgsT = [
         "scp", "-P", f"{self._ssh_port}", "-r",

@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
-import pathlib
 import shutil
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
 
@@ -22,6 +20,7 @@ from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 
 
@@ -60,15 +59,20 @@ class WebPageReplayProbe(Probe):
   def __init__(self,
                http_port: int = 0,
                https_port: int = 0,
-               wpr_go_bin: Optional[pathlib.Path] = None,
-               inject_scripts: Optional[Iterable[pathlib.Path]] = None,
-               key_file: Optional[pathlib.Path] = None,
-               cert_file: Optional[pathlib.Path] = None,
+               wpr_go_bin: Optional[LocalPath] = None,
+               inject_scripts: Optional[Iterable[LocalPath]] = None,
+               key_file: Optional[LocalPath] = None,
+               cert_file: Optional[LocalPath] = None,
                use_test_root_certificate: bool = False):
     super().__init__()
+    runner_platform = plt.PLATFORM
     if not wpr_go_bin:
-      wpr_go_bin = WprGoToolFinder(plt.PLATFORM).path
-    self._wpr_go_bin = cli_helper.parse_binary_path(wpr_go_bin, "wpr.go")
+      if local_wpr_path := WprGoToolFinder(runner_platform).path:
+        wpr_go_bin = runner_platform.local_path(local_wpr_path)
+    if not wpr_go_bin:
+      raise RuntimeError(f"Could not find wpr.go on {runner_platform}")
+    self._wpr_go_bin: LocalPath = runner_platform.local_path(
+        cli_helper.parse_binary_path(wpr_go_bin, "wpr.go"))
 
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
         bin_path=wpr_go_bin,
@@ -123,7 +127,7 @@ class WebPageReplayProbe(Probe):
     results = [subgroup.results[self].file for subgroup in group.story_groups]
     return self.merge_group(results, group)
 
-  def merge_group(self, results: List[pathlib.Path],
+  def merge_group(self, results: List[LocalPath],
                   group: RunGroup) -> ProbeResult:
     result_file = group.get_local_probe_result_path(self)
     if not results:
@@ -135,9 +139,9 @@ class WebPageReplayProbe(Probe):
       self.httparchive_merge(repetition_file, result_file)
     return ProbeResult(file=[result_file])
 
-  def httparchive_merge(self, input_archive: pathlib.Path,
-                        output_archive: pathlib.Path) -> None:
-    cmd: List[Union[str, pathlib.Path]] = [
+  def httparchive_merge(self, input_archive: LocalPath,
+                        output_archive: LocalPath) -> None:
+    cmd: List[Union[str, LocalPath]] = [
         "go",
         "run",
         self._wpr_go_bin.parent / "httparchive.go",
@@ -154,7 +158,8 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def __init__(self, probe: WebPageReplayProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._wprgo_log: pathlib.Path = self.result_path.with_name("wpr_record.log")
+    self._wprgo_log: LocalPath = self.local_result_path.with_name(
+        "wpr_record.log")
     self._host: str = "127.0.0.1"
     kwargs = dict(self.probe.recorder_kwargs)
     kwargs.update({
@@ -205,4 +210,4 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def teardown(self) -> ProbeResult:
     self._recorder.stop()
-    return LocalProbeResult(file=(self.result_path,))
+    return LocalProbeResult(file=(self.local_result_path,))

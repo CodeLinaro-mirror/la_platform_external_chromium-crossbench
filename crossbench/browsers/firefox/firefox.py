@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-import pathlib
 import re
-import tempfile
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from crossbench import plt
@@ -19,54 +17,53 @@ if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.flags import Flags
   from crossbench.network.base import Network
+  from crossbench.path import RemotePath, LocalPath
   from crossbench.runner.groups import BrowserSessionRunGroup
 
 
 class Firefox(Browser):
 
   @classmethod
-  def default_path(cls) -> pathlib.Path:
-    return plt.PLATFORM.search_app_or_executable(
+  def default_path(cls, platform: plt.Platform) -> RemotePath:
+    return platform.search_app_or_executable(
         "Firefox",
         macos=["Firefox.app"],
         linux=["firefox"],
         win=["Mozilla Firefox/firefox.exe"])
 
   @classmethod
-  def developer_edition_path(cls) -> pathlib.Path:
-    return plt.PLATFORM.search_app_or_executable(
+  def developer_edition_path(cls, platform: plt.Platform) -> RemotePath:
+    return platform.search_app_or_executable(
         "Firefox Developer Edition",
         macos=["Firefox Developer Edition.app"],
         linux=["firefox-developer-edition"],
         win=["Firefox Developer Edition/firefox.exe"])
 
   @classmethod
-  def nightly_path(cls) -> pathlib.Path:
-    return plt.PLATFORM.search_app_or_executable(
+  def nightly_path(cls, platform: plt.Platform) -> RemotePath:
+    return platform.search_app_or_executable(
         "Firefox Nightly",
         macos=["Firefox Nightly.app"],
         linux=["firefox-nightly", "firefox-trunk"],
         win=["Firefox Nightly/firefox.exe"])
 
-  def __init__(
-      self,
-      label: str,
-      path: pathlib.Path,
-      flags: Optional[Flags.InitialDataType] = None,
-      js_flags: Optional[Flags.InitialDataType] = None,
-      cache_dir: Optional[pathlib.Path] = None,
-      network: Optional[Network] = None,
-      driver_path: Optional[pathlib.Path] = None,
-      viewport: Optional[Viewport] = None,
-      splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[plt.Platform] = None):
-    if cache_dir is None:
-      # pylint: disable=bad-option-value, consider-using-with
-      self.cache_dir = pathlib.Path(
-          tempfile.TemporaryDirectory(prefix="firefox").name)
-      self.clear_cache_dir = True
+  def __init__(self,
+               label: str,
+               path: RemotePath,
+               flags: Optional[Flags.InitialDataType] = None,
+               js_flags: Optional[Flags.InitialDataType] = None,
+               cache_dir: Optional[RemotePath] = None,
+               network: Optional[Network] = None,
+               driver_path: Optional[RemotePath] = None,
+               viewport: Optional[Viewport] = None,
+               splash_screen: Optional[SplashScreen] = None,
+               platform: Optional[plt.Platform] = None):
+    if cache_dir:
       self.cache_dir = cache_dir
       self.clear_cache_dir = False
+    else:
+      self.cache_dir: RemotePath = self.platform.mkdtemp(prefix="firefox")
+      self.clear_cache_dir = True
     super().__init__(
         label,
         path,

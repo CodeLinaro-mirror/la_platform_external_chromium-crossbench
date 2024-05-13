@@ -67,7 +67,7 @@ class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
         "Chrome didn't produce any V8 builtins PGO data. "
         "Please make sure to set the v8_enable_builtins_profiling=true "
         "gn args.")
-    pgo_file = self.result_path
+    pgo_file = self.local_result_path
     with pgo_file.open("a") as f:
       f.write(self._pgo_counters)
     return LocalProbeResult(file=[pgo_file])

@@ -86,7 +86,7 @@ class PlatformTestCase(unittest.TestCase):
   def test_mkdir(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       path = pathlib.Path(tmp_dirname) / "foo" / "bar"
-      self.assertFalse(path.exists())
+      self.assertFalse(self.platform.exists(path))
       self.platform.mkdir(path)
       self.assertTrue(path.is_dir())
 
@@ -96,7 +96,7 @@ class PlatformTestCase(unittest.TestCase):
       path.touch()
       self.assertTrue(path.is_file())
       self.platform.rm(path)
-      self.assertFalse(path.exists())
+      self.assertFalse(self.platform.exists(path))
 
   def test_rm_dir(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
@@ -106,44 +106,94 @@ class PlatformTestCase(unittest.TestCase):
       with self.assertRaises(Exception):
         self.platform.rm(path.parent)
       self.platform.rm(path.parent, dir=True)
-      self.assertFalse(path.exists())
+      self.assertFalse(self.platform.exists(path))
       self.assertFalse(path.parent.exists())
 
   def test_mkdtemp(self):
     result = self.platform.mkdtemp(prefix="a_custom_prefix")
-    self.assertTrue(result.is_dir())
+    self.assertTrue(self.platform.is_dir(result))
     self.assertIn("a_custom_prefix", result.name)
     self.platform.rm(result, dir=True)
-    self.assertFalse(result.exists())
+    self.assertFalse(self.platform.exists(result))
 
   def test_mkdtemp_dir(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       tmp_dir = pathlib.Path(tmp_dirname)
       result = self.platform.mkdtemp(dir=tmp_dir)
-      self.assertTrue(result.is_dir())
+      self.assertTrue(self.platform.is_dir(result))
       self.assertTrue(compat.is_relative_to(result, tmp_dir))
-    self.assertFalse(result.exists())
+    self.assertFalse(self.platform.exists(result))
 
   def test_mktemp(self):
     result = self.platform.mktemp(prefix="a_custom_prefix")
-    self.assertTrue(result.is_file())
+    self.assertTrue(self.platform.is_file(result))
     self.assertIn("a_custom_prefix", result.name)
     self.platform.rm(result)
-    self.assertFalse(result.exists())
+    self.assertFalse(self.platform.exists(result))
 
   def test_mktemp_dir(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       tmp_dir = pathlib.Path(tmp_dirname)
       result = self.platform.mktemp(dir=tmp_dir)
-      self.assertTrue(result.is_file())
+      self.assertTrue(self.platform.is_file(result))
       self.assertTrue(compat.is_relative_to(result, tmp_dir))
-    self.assertFalse(result.exists())
+    self.assertFalse(self.platform.exists(result))
 
   def test_exists(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       tmp_dir = pathlib.Path(tmp_dirname)
       self.assertTrue(self.platform.exists(tmp_dir))
       self.assertFalse(self.platform.exists(tmp_dir / "foo"))
+
+  def test_touch(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+      self.assertFalse(tmp_file.exists())
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.touch(tmp_file)
+      self.assertTrue(tmp_file.exists())
+      self.assertTrue(self.platform.exists(tmp_file))
+      self.assertEqual(tmp_file.stat().st_size, 0)
+
+  def test_rename(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+      tmp_file_renamed = tmp_file.with_name("test_renamed.txt")
+      self.platform.touch(tmp_file)
+      self.assertTrue(tmp_file.exists())
+      self.assertFalse(tmp_file_renamed.exists())
+      result = self.platform.rename(tmp_file, tmp_file_renamed)
+      self.assertEqual(result, tmp_file_renamed)
+      self.assertFalse(tmp_file.exists())
+      self.assertTrue(tmp_file_renamed.exists())
+
+  def test_home(self):
+    self.assertEqual(self.platform.home(), pathlib.Path.home())
+
+  def test_absolute_absolut(self):
+    absolute_path = pathlib.Path("/foo")
+    self.assertTrue(absolute_path.is_absolute())
+    self.assertEqual(self.platform.absolute(absolute_path), absolute_path)
+
+  def test_absolute_relative(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    relative_path = pathlib.Path("../../foo")
+    self.assertFalse(relative_path.is_absolute())
+    self.assertEqual(
+        self.platform.absolute(relative_path), relative_path.absolute())
+
+  def test_glob(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_dir = pathlib.Path(tmp_dirname)
+      self.assertFalse(list(self.platform.glob(tmp_dir, "*")))
+      a = tmp_dir / "a"
+      b = tmp_dir / "b"
+      self.platform.touch(a)
+      self.platform.touch(b)
+      self.assertListEqual(list(self.platform.glob(tmp_dir, "*")), [a, b])
 
   def test_set_file_contents(self):
     if self.platform.is_remote:

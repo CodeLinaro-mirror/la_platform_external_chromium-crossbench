@@ -9,7 +9,6 @@ import datetime as dt
 import enum
 import logging
 import os
-import pathlib
 import shlex
 import sys
 import textwrap
@@ -28,12 +27,16 @@ from crossbench import compat, plt
 if TYPE_CHECKING:
   import signal
 
+  from crossbench.path import LocalPath, RemotePath
+
+  InputT = TypeVar("InputT")
+  KeyT = TypeVar("KeyT")
+  GroupT = TypeVar("GroupT")
+  PathT = TypeVar("PathT", bound=RemotePath)
+
 assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
 
-InputT = TypeVar("InputT")
-KeyT = TypeVar("KeyT")
-GroupT = TypeVar("GroupT")
 
 
 def group_by(collection: Iterable[InputT],
@@ -70,15 +73,18 @@ def group_by(collection: Iterable[InputT],
   return dict(groups.items())
 
 
-def sort_by_file_size(files: Iterable[pathlib.Path]) -> List[pathlib.Path]:
-  return sorted(files, key=lambda f: (-f.stat().st_size, f.name))
+def sort_by_file_size(files: Iterable[PathT],
+                      platform: plt.Platform = plt.PLATFORM) -> List[PathT]:
+  return sorted(files, key=lambda f: (platform.file_size(f), f.name))
 
 
 SIZE_UNITS: Final[Tuple[str, ...]] = ("B", "KiB", "MiB", "GiB", "TiB")
 
 
-def get_file_size(file: pathlib.Path, digits: int = 2) -> str:
-  size: float = float(file.stat().st_size)
+def get_file_size(file: RemotePath,
+                  digits: int = 2,
+                  platform: plt.Platform = plt.PLATFORM) -> str:
+  size: float = float(platform.file_size(file))
   unit_index = 0
   divisor = 1024.0
   while (unit_index < len(SIZE_UNITS)) and size >= divisor:
@@ -103,7 +109,7 @@ def urlopen(url: str, timeout: Union[int, float] = 10):
 
 class ChangeCWD:
 
-  def __init__(self, destination: pathlib.Path) -> None:
+  def __init__(self, destination: LocalPath) -> None:
     self.new_dir = destination
     self.prev_dir: Optional[str] = None
 

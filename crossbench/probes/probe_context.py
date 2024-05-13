@@ -7,8 +7,8 @@ from __future__ import annotations
 import abc
 import contextlib
 import datetime as dt
-import pathlib
-from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Optional, TypeVar
+from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
+                    TypeVar)
 
 from crossbench import plt
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
@@ -18,11 +18,12 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
   from crossbench.browsers.browser import Browser
+  from crossbench.path import LocalPath, RemotePath
+  from crossbench.probes.probe import Probe
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.result_origin import ResultOrigin
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-  from crossbench.probes.probe import Probe
 
 # Redefine here to avoid circular imports
 ProbeT = TypeVar("ProbeT", bound="Probe")
@@ -123,7 +124,12 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   @abc.abstractmethod
-  def result_path(self) -> pathlib.Path:
+  def result_path(self) -> RemotePath:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def local_result_path(self) -> LocalPath:
     pass
 
   @property
@@ -139,9 +145,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   def browser_result(
       self,
       url: Optional[Iterable[str]] = None,
-      file: Optional[Iterable[pathlib.Path]] = None,
-      json: Optional[Iterable[pathlib.Path]] = None,
-      csv: Optional[Iterable[pathlib.Path]] = None) -> BrowserProbeResult:
+      file: Optional[Iterable[RemotePath]] = None,
+      json: Optional[Iterable[RemotePath]] = None,
+      csv: Optional[Iterable[RemotePath]] = None) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
     return BrowserProbeResult(self.result_origin, url, file, json, csv)
@@ -174,9 +180,9 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._run: Run = run
-    self._default_result_path: pathlib.Path = self.get_default_result_path()
+    self._default_result_path: RemotePath = self.get_default_result_path()
 
-  def get_default_result_path(self) -> pathlib.Path:
+  def get_default_result_path(self) -> RemotePath:
     return self._run.get_default_probe_result_path(self._probe)
 
   @property
@@ -200,8 +206,12 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self._run.runner
 
   @property
-  def result_path(self) -> pathlib.Path:
+  def result_path(self) -> RemotePath:
     return self._default_result_path
+
+  @property
+  def local_result_path(self) -> LocalPath:
+    return self.runner_platform.local_path(self.result_path)
 
   def setup_selenium_options(self, options: BaseOptions) -> None:
     """
@@ -263,9 +273,9 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, session: BrowserSessionRunGroup) -> None:
     super().__init__(probe, session)
     self._session: BrowserSessionRunGroup = session
-    self._default_result_path: pathlib.Path = self.get_default_result_path()
+    self._default_result_path: RemotePath = self.get_default_result_path()
 
-  def get_default_result_path(self) -> pathlib.Path:
+  def get_default_result_path(self) -> RemotePath:
     return self._session.get_default_probe_result_path(self._probe)
 
   @property
@@ -286,5 +296,5 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self._session.runner
 
   @property
-  def result_path(self) -> pathlib.Path:
+  def result_path(self) -> RemotePath:
     return self._default_result_path

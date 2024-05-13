@@ -10,7 +10,6 @@ import atexit
 import locale
 import logging
 import os
-import pathlib
 import re
 import shlex
 import signal
@@ -19,10 +18,10 @@ import sys
 from typing import IO, TYPE_CHECKING, List, Optional, Union
 
 from crossbench import cli_helper, helper
-from crossbench.plt.base import ListCmdArgsT
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArgsT
+  from crossbench.plt.base import ListCmdArgsT
+  from crossbench.path import LocalPath
 
 fnctl = None
 try:
@@ -83,7 +82,7 @@ class TsProxyServer:
   """
 
   def __init__(self,
-               ts_proxy_path: pathlib.Path,
+               ts_proxy_path: LocalPath,
                host_ip: Optional[str] = None,
                socks_proxy_port: Optional[int] = None,
                http_port: Optional[int] = None,
@@ -169,7 +168,7 @@ class TsProxyProcess:
   """Separate wrapper around the ts_proxy to simplify pytype testing."""
 
   def __init__(self,
-               ts_proxy_path: pathlib.Path,
+               ts_proxy_path: LocalPath,
                host_ip: Optional[str] = None,
                socks_proxy_port: Optional[int] = None,
                http_port: Optional[int] = None,

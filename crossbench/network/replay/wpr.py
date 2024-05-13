@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import pathlib
 from typing import TYPE_CHECKING, Optional
 
 from crossbench import cli_helper
@@ -19,20 +18,25 @@ from crossbench.plt import PLATFORM, Platform
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import TrafficShaper
+  from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
-               archive_path: pathlib.Path,
+               archive_path: LocalPath,
                traffic_shaper: Optional[TrafficShaper] = None,
-               wpr_go_bin: Optional[pathlib.Path] = None,
+               wpr_go_bin: Optional[LocalPath] = None,
                runner_platform: Platform = PLATFORM):
     super().__init__(archive_path, traffic_shaper, runner_platform)
     if not wpr_go_bin:
-      wpr_go_bin = WprGoToolFinder(runner_platform).path
-    self._wpr_go_bin = cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source")
+      if local_wpr_go := WprGoToolFinder(runner_platform).path:
+        wpr_go_bin = runner_platform.local_path(local_wpr_go)
+    if not wpr_go_bin:
+      raise RuntimeError(f"Could not find wpr.go binary on {runner_platform}")
+    self._wpr_go_bin: LocalPath = runner_platform.local_path(
+        cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
     self._server: Optional[WprReplayServer] = None
 
   def extra_flags(self, browser: Browser) -> Flags:

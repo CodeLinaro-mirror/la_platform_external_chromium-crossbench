@@ -9,7 +9,6 @@ import atexit
 import json
 import logging
 import os
-import pathlib
 import re
 import shutil
 import stat
@@ -24,7 +23,9 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
-from crossbench import exception, helper, plt
+from crossbench import exception, helper
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
   from selenium import webdriver
 
   from crossbench.runner.groups import BrowserSessionRunGroup
+
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
@@ -51,9 +53,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     return self.major_version == 0 or self.is_locally_compiled()
 
   def is_locally_compiled(self) -> bool:
-    return (self.app_path.parent / "args.gn").exists()
+    return pth.LocalPath(self.app_path.parent / "args.gn").exists()
 
-  def _find_driver(self) -> pathlib.Path:
+  def _find_driver(self) -> pth.RemotePath:
     if self._driver_path:
       return self._driver_path
     finder = ChromeDriverFinder(self)
@@ -72,14 +74,14 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
         logging.debug("Could not find fallback chromedriver: %s", e)
         raise original_download_error from e
       # to make an old pytype version happy
-      return pathlib.Path()
+      return pth.LocalPath()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> webdriver.Remote:
+                    driver_path: pth.RemotePath) -> webdriver.Remote:
     return self._start_chromedriver(session, driver_path)
 
   def _start_chromedriver(self, session: BrowserSessionRunGroup,
-                          driver_path: pathlib.Path) -> ChromiumDriver:
+                          driver_path: pth.RemotePath) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file
     args = self._get_browser_flags_for_session(session)
@@ -93,7 +95,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
         log_path=str(self.driver_log_file),
         # TODO: support clean logging of chrome stdout / stderr
         service_args=["--verbose"])
-    service.log_file = self.stdout_log_file.open("w", encoding="utf-8")
+    # TODO: support remote platforms
+    service.log_file = pth.LocalPath(self.stdout_log_file).open(
+        "w", encoding="utf-8")
     driver: ChromiumDriver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.
@@ -157,16 +161,16 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
 # Android is high-tech and reads chrome flags from an app-specific file.
 # TODO: extend support to more than just chrome.
-_FLAG_ROOT: pathlib.Path = pathlib.Path("/data/local/tmp/")
-FLAGS_WEBLAYER: pathlib.Path = _FLAG_ROOT / "weblayer-command-line"
-FLAGS_WEBVIEW: pathlib.Path = _FLAG_ROOT / "webview-command-line"
-FLAGS_CONTENT_SHELL: pathlib.Path = _FLAG_ROOT / "content-shell-command-line"
-FLAGS_CHROME: pathlib.Path = _FLAG_ROOT / "chrome-command-line"
+_FLAG_ROOT: pth.RemotePath = pth.RemotePath("/data/local/tmp/")
+FLAGS_WEBLAYER: pth.RemotePath = _FLAG_ROOT / "weblayer-command-line"
+FLAGS_WEBVIEW: pth.RemotePath = _FLAG_ROOT / "webview-command-line"
+FLAGS_CONTENT_SHELL: pth.RemotePath = _FLAG_ROOT / "content-shell-command-line"
+FLAGS_CHROME: pth.RemotePath = _FLAG_ROOT / "chrome-command-line"
 
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def __init__(self, *args, **kwargs):
-    self._chrome_command_line_path: pathlib.Path = FLAGS_CHROME
+    self._chrome_command_line_path: pth.RemotePath = FLAGS_CHROME
     self._previous_command_line_contents: Optional[str] = None
     super().__init__(*args, **kwargs)
     self._android_package: str = self.platform.app_path_to_package(self.path)
@@ -185,7 +189,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
         plt.AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
     return cast(plt.AndroidAdbPlatform, self._platform)
 
-  def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
+  def _resolve_binary(self, path: pth.RemotePath) -> pth.RemotePath:
     return path
 
   # TODO: implement setting a clean profile on android
@@ -208,7 +212,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     return chrome_flags
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> webdriver.Remote:
+                    driver_path: pth.RemotePath) -> webdriver.Remote:
     self.adb_force_stop()
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
@@ -273,7 +277,7 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
     return cast(plt.LinuxSshPlatform, self._platform)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pathlib.Path) -> RemoteWebDriver:
+                    driver_path: pth.RemotePath) -> RemoteWebDriver:
     del driver_path
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
@@ -288,17 +292,17 @@ class DriverNotFoundError(ValueError):
   pass
 
 
-def build_chromedriver_instructions(build_dir: pathlib.Path) -> str:
+def build_chromedriver_instructions(build_dir: pth.RemotePath) -> str:
   return ("Please build 'chromedriver' manually for local builds.\n"
           f"autoninja -C {build_dir} chromedriver")
 
 
 class ChromeDriverFinder:
-  driver_path: pathlib.Path
+  driver_path: pth.LocalPath
 
   def __init__(self,
                browser: ChromiumWebDriver,
-               cache_dir: pathlib.Path = BROWSERS_CACHE):
+               cache_dir: pth.LocalPath = BROWSERS_CACHE):
     self.browser = browser
     self.platform: plt.Platform = browser.platform
     self.host_platform: plt.Platform = browser.platform.host_platform
@@ -307,13 +311,13 @@ class ChromeDriverFinder:
     extension: str = ""
     if self.host_platform.is_win:
       extension = ".exe"
-    self.driver_path: pathlib.Path = (
+    self.driver_path: pth.LocalPath = (
         cache_dir / f"chromedriver-{self.browser.major_version}{extension}")
 
-  def find_local_build(self) -> pathlib.Path:
+  def find_local_build(self) -> pth.LocalPath:
     assert self.browser.app_path
     # assume it's a local build
-    lookup_dir = self.browser.app_path.parent
+    lookup_dir = pth.LocalPath(self.browser.app_path.parent)
     driver_path = lookup_dir / "chromedriver"
     is_build_dir = (lookup_dir / "args.gn").exists()
     if driver_path.is_file():
@@ -325,7 +329,7 @@ class ChromeDriverFinder:
       error_message += ["Please manually provide a chromedriver binary."]
     raise DriverNotFoundError("\n".join(error_message))
 
-  def download(self) -> pathlib.Path:
+  def download(self) -> pth.LocalPath:
     if not self.driver_path.is_file():
       with exception.annotate(
           f"Downloading chromedriver for {self.browser.version}"):
@@ -354,21 +358,21 @@ class ChromeDriverFinder:
                  url)
     with tempfile.TemporaryDirectory() as tmp_dir:
       if ".zip" not in url:
-        maybe_driver = pathlib.Path(tmp_dir) / "chromedriver"
+        maybe_driver = pth.LocalPath(tmp_dir) / "chromedriver"
         self.host_platform.download_to(url, maybe_driver)
       else:
-        zip_file = pathlib.Path(tmp_dir) / "download.zip"
+        zip_file = pth.LocalPath(tmp_dir) / "download.zip"
         self.host_platform.download_to(url, zip_file)
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
           zip_ref.extractall(zip_file.parent)
         zip_file.unlink()
         maybe_driver = None
-        candidates: List[pathlib.Path] = [
+        candidates: List[pth.LocalPath] = [
             path for path in zip_file.parent.glob("**/*")
             if path.is_file() and "chromedriver" in path.name
         ]
         # Find exact match first:
-        maybe_drivers: List[pathlib.Path] = [
+        maybe_drivers: List[pth.LocalPath] = [
             path for path in candidates if path.stem == "chromedriver"
         ]
         # Backup less strict matching:

@@ -10,11 +10,12 @@ import dataclasses
 import datetime as dt
 import json
 import logging
-import pathlib
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
+                    Type)
 from urllib.parse import urlparse
 
 from crossbench import cli_helper, exception
+from crossbench import path as pth
 from crossbench.benchmarks.loading.action import (ACTIONS, Action, ActionType,
                                                   ClickAction, GetAction,
                                                   ReadyState, WaitAction)
@@ -22,7 +23,9 @@ from crossbench.benchmarks.loading.page import PAGES
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.config import ConfigObject
-from crossbench.types import JsonDict
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 @dataclasses.dataclass(frozen=True)
@@ -71,7 +74,7 @@ class PageConfig(ConfigObject):
     if url.scheme == "about":
       return url.path
     if url.scheme == "file":
-      return pathlib.Path(url.path).name
+      return pth.LocalPath(url.path).name
     if hostname := url.hostname:
       if hostname.startswith("www."):
         return hostname[len("www."):]
@@ -264,7 +267,7 @@ class ListPagesConfig(PagesConfig):
         f"URL list file {repr(value)} does not exist.")
 
   @classmethod
-  def load_path(cls, path: pathlib.Path) -> PagesConfig:
+  def load_path(cls, path: pth.LocalPath) -> PagesConfig:
     pages: List[PageConfig] = []
     with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
       line: int = 0
@@ -293,4 +296,4 @@ class ListPagesConfig(PagesConfig):
         raise argparse.ArgumentTypeError(
             f"Expected list/tuple for pages, but got {type(pages)}")
       return cls.load_sequence(pages)
-    raise UnreachableError()
+    raise exception.UnreachableError()
