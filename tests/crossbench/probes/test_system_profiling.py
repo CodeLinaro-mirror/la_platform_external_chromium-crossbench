@@ -11,7 +11,7 @@ from tests import test_helper
 
 class TestProbe(unittest.TestCase):
 
-  def test_simpleperf_command_line(self):
+  def test_simpleperf_command_line_with_tid(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
@@ -27,6 +27,9 @@ class TestProbe(unittest.TestCase):
                 "simpleperf", "record", "-t", "5678", "--post-unwind=yes", "-o",
                 output_path
             ])
+
+  def test_simpleperf_command_line_with_pid(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
             target=TargetMode.RENDERER_PROCESS_ONLY,
@@ -41,6 +44,9 @@ class TestProbe(unittest.TestCase):
                 "simpleperf", "record", "-p", "1234", "--post-unwind=yes", "-o",
                 output_path
             ])
+
+  def test_simpleperf_command_line_with_app(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
             target=TargetMode.BROWSER_APP_ONLY,
@@ -55,6 +61,9 @@ class TestProbe(unittest.TestCase):
                 "simpleperf", "record", "--app", "com.chrome.beta",
                 "--post-unwind=yes", "-o", output_path
             ])
+
+  def test_simpleperf_command_line_systemwide(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
@@ -67,6 +76,9 @@ class TestProbe(unittest.TestCase):
             cpus=None,
             output_path=output_path),
         ["simpleperf", "record", "-a", "--call-graph", "fp", "-o", output_path])
+
+  def test_simpleperf_command_line_with_frequency(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
     self.assertListEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
@@ -75,11 +87,45 @@ class TestProbe(unittest.TestCase):
             renderer_main_tid=None,
             frame_pointers=True,
             frequency=1234,
-            count=5,
-            cpus=[0, 1, 2],
+            count=None,
+            cpus=None,
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
-                "1234", "-c", "5", "--cpu", "0,1,2", "-o", output_path
+                "1234", "-o", output_path
+            ])
+
+  def test_simpleperf_command_line_with_count(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
+    self.assertListEqual(
+        generate_simpleperf_command_line(
+            target=TargetMode.SYSTEM_WIDE,
+            app_name="org.chromium.chrome",
+            renderer_pid=None,
+            renderer_main_tid=None,
+            frame_pointers=True,
+            frequency=None,
+            count=5,
+            cpus=None,
+            output_path=output_path), [
+                "simpleperf", "record", "-a", "--call-graph", "fp", "-c", "5",
+                "-o", output_path
+            ])
+
+  def test_simpleperf_command_line_with_cpu(self):
+    output_path = pathlib.Path("simpleperf.perf.data")
+    self.assertListEqual(
+        generate_simpleperf_command_line(
+            target=TargetMode.SYSTEM_WIDE,
+            app_name="org.chromium.chrome",
+            renderer_pid=None,
+            renderer_main_tid=None,
+            frame_pointers=True,
+            frequency=None,
+            count=None,
+            cpus=[0, 1, 2],
+            output_path=output_path), [
+                "simpleperf", "record", "-a", "--call-graph", "fp", "--cpu",
+                "0,1,2", "-o", output_path
             ])
 
 
