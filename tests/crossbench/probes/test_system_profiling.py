@@ -5,7 +5,7 @@
 import pathlib
 import unittest
 
-from crossbench.probes.profiling.system_profiling import generate_simpleperf_command_line, TargetMode
+from crossbench.probes.profiling.system_profiling import generate_simpleperf_command_line, CallGraphMode, TargetMode
 from tests import test_helper
 
 
@@ -19,7 +19,7 @@ class TestProbe(unittest.TestCase):
             app_name="com.android.chrome",
             renderer_pid=1234,
             renderer_main_tid=5678,
-            frame_pointers=False,
+            call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
             cpus=None,
@@ -38,7 +38,7 @@ class TestProbe(unittest.TestCase):
             app_name="com.android.chrome",
             renderer_pid=1234,
             renderer_main_tid=5678,
-            frame_pointers=False,
+            call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
             cpus=None,
@@ -57,7 +57,7 @@ class TestProbe(unittest.TestCase):
             app_name="com.chrome.beta",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=False,
+            call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
             cpus=None,
@@ -76,14 +76,14 @@ class TestProbe(unittest.TestCase):
             app_name="org.chromium.chrome",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=True,
+            call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
             cpus=None,
             events=None,
             add_counters=None,
             output_path=output_path),
-        ["simpleperf", "record", "-a", "--call-graph", "fp", "-o", output_path])
+        ["simpleperf", "record", "-a", "--post-unwind=yes", "-o", output_path])
 
   def test_simpleperf_command_line_with_frequency(self):
     output_path = pathlib.Path("simpleperf.perf.data")
@@ -93,7 +93,7 @@ class TestProbe(unittest.TestCase):
             app_name="org.chromium.chrome",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=True,
+            call_graph_mode=CallGraphMode.FRAME_POINTER,
             frequency=1234,
             count=None,
             cpus=None,
@@ -112,7 +112,7 @@ class TestProbe(unittest.TestCase):
             app_name="org.chromium.chrome",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=True,
+            call_graph_mode=CallGraphMode.FRAME_POINTER,
             frequency=None,
             count=5,
             cpus=None,
@@ -131,7 +131,7 @@ class TestProbe(unittest.TestCase):
             app_name="org.chromium.chrome",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=True,
+            call_graph_mode=CallGraphMode.FRAME_POINTER,
             frequency=None,
             count=None,
             cpus=[0, 1, 2],
@@ -150,17 +150,16 @@ class TestProbe(unittest.TestCase):
             app_name="org.chromium.chrome",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=True,
+            call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
             frequency=1234,
             count=5,
             cpus=None,
             events=["cpu-cycles", "instructions"],
             add_counters=None,
-            output_path=output_path),
-        [
-            "simpleperf", "record", "-a", "--call-graph", "fp", "-f", "1234",
-            "-c", "5", "-e", "cpu-cycles,instructions", "-o", output_path
-        ])
+            output_path=output_path), [
+                "simpleperf", "record", "-a", "-f", "1234", "-c", "5", "-e",
+                "cpu-cycles,instructions", "-o", output_path
+            ])
 
   def test_simpleperf_command_line_with_add_counters(self):
     output_path = pathlib.Path("simpleperf.perf.data")
@@ -170,15 +169,15 @@ class TestProbe(unittest.TestCase):
             app_name="org.chromium.chrome",
             renderer_pid=None,
             renderer_main_tid=None,
-            frame_pointers=True,
+            call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
             frequency=1234,
             count=5,
             cpus=None,
             events=["sched:sched_switch"],
             add_counters=["cpu-cycles", "instructions"],
             output_path=output_path), [
-                "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
-                "1234", "-c", "5", "-e", "sched:sched_switch", "--add-counter",
+                "simpleperf", "record", "-a", "-f", "1234", "-c", "5", "-e",
+                "sched:sched_switch", "--add-counter",
                 "cpu-cycles,instructions", "--no-inherit", "-o", output_path
             ])
 

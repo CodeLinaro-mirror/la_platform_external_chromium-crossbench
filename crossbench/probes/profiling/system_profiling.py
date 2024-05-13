@@ -65,6 +65,21 @@ class TargetMode(StrEnumWithHelp):
   SYSTEM_WIDE = ("system_wide", "Run system-wide profiling")
 
 
+@enum.unique
+class CallGraphMode(StrEnumWithHelp):
+
+  @classmethod
+  def _missing_(cls, value) -> Optional[TargetMode]:
+    return super()._missing_(value.lower())
+
+  # Refer to the documentation below for more details and comparison
+  # between these options:
+  # https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md.
+  NO_CALL_GRAPH = ("no_call_graph", "Do not record a call graph")
+  DWARF = ("dwarf", "Run DWARF-based unwinding unwinding")
+  FRAME_POINTER = ("frame_pointer", "Run frame pointer unwinding")
+
+
 class ProfilingProbe(Probe):
   """
   General-purpose sampling profiling probe.
@@ -141,14 +156,12 @@ class ProfilingProbe(Probe):
             "**after** browser has started and the benchmark story has been setup."
         ))
     parser.add_argument(
-        "frame_pointers",
-        type=bool,
-        default=True,
+        "call_graph_mode",
+        type=CallGraphMode,
+        default=CallGraphMode.FRAME_POINTER,
         help=(
-            "Android-only: Use frame pointer unwinding, as opposed to DWARF. See "
-            "https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md "
-            "for more details and comparison between these two options. If "
-            "`frame_pointers` is False, DWARF-based unwinding is used."))
+            "Android-only: Specify whether to record a call graph, and, if yes, "
+            "which kind of stack unwinding to run."))
     # Advanced Android/simpleperf-specific arguments. Generally, the defaults should suffice.
     parser.add_argument(
         "frequency",
@@ -202,7 +215,7 @@ class ProfilingProbe(Probe):
                browser_process: bool = False,
                spare_renderer_process: bool = False,
                target: TargetMode = TargetMode.BROWSER_APP_ONLY,
-               frame_pointers: bool = True,
+               call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
                frequency: Optional[int] = None,
                count: Optional[int] = None,
                cpu: Optional[Tuple[int]] = None,
@@ -218,7 +231,7 @@ class ProfilingProbe(Probe):
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
     self._target: TargetMode = target
-    self._frame_pointers: bool = frame_pointers
+    self._call_graph_mode: CallGraphMode = call_graph_mode
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
     self._frequency: Optional[int] = frequency
@@ -237,7 +250,7 @@ class ProfilingProbe(Probe):
         ("browser_process", self._sample_browser_process),
         ("spare_renderer_process", self._spare_renderer_process),
         ("target", self._target),
-        ("frame_pointers", self._frame_pointers),
+        ("call_graph_mode", self._call_graph_mode),
         ("start_profiling_after_setup", self._start_profiling_after_setup),
         ("frequency", self._frequency),
         ("count", self._count),
@@ -267,8 +280,8 @@ class ProfilingProbe(Probe):
     return self._target
 
   @property
-  def frame_pointers(self) -> bool:
-    return self._frame_pointers
+  def call_graph_mode(self) -> CallGraphMode:
+    return self._call_graph_mode
 
   @property
   def start_profiling_after_setup(self) -> bool:
@@ -744,7 +757,7 @@ class AndroidProfilingContext(ProfilingContext):
         str(self.run.browser.path),
         renderer_pid,
         renderer_main_tid,
-        self.probe.frame_pointers,
+        self.probe.call_graph_mode,
         self.probe.frequency,
         self.probe.count,
         self.probe.cpu,
@@ -827,7 +840,7 @@ def generate_simpleperf_command_line(
     app_name: str,
     renderer_pid: Optional[int],
     renderer_main_tid: Optional[int],
-    frame_pointers: bool,
+    call_graph_mode: CallGraphMode,
     frequency: Optional[int],
     count: Optional[int],
     cpus: Optional[Tuple[int]],
@@ -846,12 +859,15 @@ def generate_simpleperf_command_line(
     command_line.extend(["--app", app_name])
   else:  # TargetMode.SYSTEM_WIDE
     command_line.append("-a")
-  # Use "--post-unwind=yes" while unwinding with DWARF, to reduce
-  # unwinding overhead during profiling.
-  if frame_pointers:
+  if call_graph_mode == CallGraphMode.FRAME_POINTER:
     command_line.extend(["--call-graph", "fp"])
-  else:
+  elif call_graph_mode == CallGraphMode.DWARF:
+    # Use "--post-unwind=yes" while unwinding with DWARF, to reduce
+    # unwinding overhead during profiling.
     command_line.append("--post-unwind=yes")
+  else:
+    assert call_graph_mode == CallGraphMode.NO_CALL_GRAPH, (
+        f"Invalid call_graph_mode: {call_graph_mode}")
   if frequency is not None:
     command_line.extend(["-f", str(frequency)])
   if count is not None:
