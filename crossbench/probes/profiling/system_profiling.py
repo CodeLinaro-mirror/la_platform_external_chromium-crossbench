@@ -14,7 +14,8 @@ import multiprocessing
 import signal
 import subprocess
 import time
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, cast
+from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence,
+                    Tuple, cast)
 
 from crossbench import helper
 from crossbench import path as pth
@@ -70,7 +71,7 @@ class TargetMode(StrEnumWithHelp):
 class CallGraphMode(StrEnumWithHelp):
 
   @classmethod
-  def _missing_(cls, value) -> Optional[TargetMode]:
+  def _missing_(cls, value) -> Optional[CallGraphMode]:
     return super()._missing_(value.lower())
 
   # Refer to the documentation below for more details and comparison
@@ -184,7 +185,7 @@ class ProfilingProbe(Probe):
         "cpu",
         type=int,
         is_list=True,
-        default=None,
+        default=tuple(),
         help=(
             "Android-only: Sample only on the selected cpus, specified as a list "
             "of 0-indexed cpu indices. Please refer to simpleperf documentation "
@@ -193,14 +194,14 @@ class ProfilingProbe(Probe):
         "events",
         type=str,
         is_list=True,
-        default=None,
+        default=tuple(),
         help=("Android-only: Events to record. Please refer to simpleperf "
               "documentation for `-e` for more details."))
     parser.add_argument(
         "grouped_events",
         type=str,
         is_list=True,
-        default=None,
+        default=tuple(),
         help=(
             "Android-only: Events to record as a single group. These events are "
             "monitored as a group, and and scheduled in and out together. Please "
@@ -210,7 +211,7 @@ class ProfilingProbe(Probe):
         "add_counters",
         type=str,
         is_list=True,
-        default=None,
+        default=tuple(),
         help=("Android-only: Add additional event counts in samples. NOTE: If "
               "`add_counter` is used, `--no-inherit` is implicitly set, since "
               "this is required by simpleperf. Please refer to simpleperf "
@@ -229,10 +230,10 @@ class ProfilingProbe(Probe):
                call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
                frequency: Optional[int] = None,
                count: Optional[int] = None,
-               cpu: Optional[Tuple[int]] = None,
-               events: Optional[Tuple[str]] = None,
-               grouped_events: Optional[Tuple[str]] = None,
-               add_counters: Optional[Tuple[str]] = None):
+               cpu: Sequence[int] = (),
+               events: Sequence[str] = (),
+               grouped_events: Sequence[str] = (),
+               add_counters: Sequence[str] = ()):
     super().__init__()
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
@@ -248,10 +249,10 @@ class ProfilingProbe(Probe):
         TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
     self._frequency: Optional[int] = frequency
     self._count: Optional[int] = count
-    self._cpu: Optional[Tuple[int]] = cpu
-    self._events: Optional[Tuple[str]] = events
-    self._grouped_events: Optional[Tuple[str]] = grouped_events
-    self._add_counters: Optional[Tuple[str]] = add_counters
+    self._cpu: Tuple[int, ...] = tuple(cpu)
+    self._events: Tuple[str, ...] = tuple(events)
+    self._grouped_events: Tuple[str, ...] = tuple(grouped_events)
+    self._add_counters: Tuple[str, ...] = tuple(add_counters)
 
   @property
   def key(self) -> Tuple[Tuple, ...]:
@@ -310,19 +311,19 @@ class ProfilingProbe(Probe):
     return self._count
 
   @property
-  def cpu(self) -> Optional[Tuple[int]]:
+  def cpu(self) -> Tuple[int, ...]:
     return self._cpu
 
   @property
-  def events(self) -> Optional[Tuple[str]]:
+  def events(self) -> Tuple[str, ...]:
     return self._events
 
   @property
-  def grouped_events(self) -> Optional[Tuple[str]]:
+  def grouped_events(self) -> Tuple[str, ...]:
     return self._grouped_events
 
   @property
-  def add_counters(self) -> Optional[Tuple[str]]:
+  def add_counters(self) -> Tuple[str, ...]:
     return self._add_counters
 
   def attach(self, browser: Browser) -> None:
@@ -876,10 +877,10 @@ def generate_simpleperf_command_line(
     call_graph_mode: CallGraphMode,
     frequency: Optional[int],
     count: Optional[int],
-    cpus: Optional[Tuple[int]],
-    events: Optional[Tuple[str]],
-    grouped_events: Optional[Tuple[str]],
-    add_counters: Optional[Tuple[str]],
+    cpus: Tuple[int, ...],
+    events: Tuple[str, ...],
+    grouped_events: Tuple[str, ...],
+    add_counters: Tuple[str, ...],
     output_path: pth.RemotePath,
 ) -> ListCmdArgsT:
   command_line: ListCmdArgsT = ["simpleperf", "record"]
@@ -907,7 +908,7 @@ def generate_simpleperf_command_line(
   if count is not None:
     command_line.extend(["-c", str(count)])
   if cpus:
-    command_line.extend(["--cpu", ",".join([str(cpu) for cpu in cpus])])
+    command_line.extend(["--cpu", ",".join(map(str, cpus))])
   # Events and counters need to be provided after `-f` and `-c`.
   if events:
     command_line.extend(["-e", ",".join(events)])
