@@ -3,9 +3,11 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import argparse
 import logging
 import sys
+from typing import NoReturn
 
 import colorama
 
@@ -48,6 +50,6 @@ else:
 
   class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> NoReturn:
       kwargs["exit_on_error"] = False
       super().__init__(*args, **kwargs)
