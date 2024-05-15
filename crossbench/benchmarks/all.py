@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from crossbench.benchmarks.experimental.power import PowerBenchmark
 from crossbench.benchmarks.jetstream import (JetStream20Benchmark,
-                                             JetStream21Benchmark)
+                                             JetStream21Benchmark,
+                                             JetStream22Benchmark)
 from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
 from crossbench.benchmarks.manual import ManualBenchmark
 from crossbench.benchmarks.motionmark import (MotionMark10Benchmark,

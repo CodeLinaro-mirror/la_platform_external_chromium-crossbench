@@ -234,6 +234,37 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 @pytest.mark.xdist_group("end2end-benchmark")
+def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
+  # - jetstream 2.2
+  # - custom --time-unit
+  # - explicit single story
+  # - custom splashscreen
+  # - custom viewport
+  # - --probe-config
+  with pytest.raises(SysExitException):
+    _run_cli("jetstream_2.2", "--help")
+  _run_cli("describe", "benchmark", "jetstream_2.2")
+  probe_config = root_dir / "config" / "probe.config.example.hjson"
+  assert probe_config.is_file()
+  results_dir = output_dir / "results"
+  assert not results_dir.exists()
+  chrome_version = "--browser=chrome"
+  _run_cli("jetstream_2.2", chrome_version, "--env-validation=skip",
+           "--splashscreen=http://google.com", f"--out-dir={results_dir}",
+           f"--cache-dir={cache_dir}", "--viewport=900x800", "--stories=Box2D",
+           "--time-unit=0.9", f"--probe-config={probe_config}", "--throw")
+
+  browser_dirs = _get_browser_dirs(results_dir)
+  assert len(browser_dirs) == 1
+  v8_log_files = _get_v8_log_files(results_dir)
+  assert len(v8_log_files) > 1
+
+
+@pytest.mark.skipif(
+    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
+@pytest.mark.xdist_group("end2end-benchmark")
 def test_loading(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
   # - custom cooldown time

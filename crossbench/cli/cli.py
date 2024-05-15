@@ -147,6 +147,7 @@ class CrossBenchCLI:
       benchmarks.Speedometer30Benchmark,
       benchmarks.Speedometer21Benchmark,
       benchmarks.Speedometer20Benchmark,
+      benchmarks.JetStream22Benchmark,
       benchmarks.JetStream21Benchmark,
       benchmarks.JetStream20Benchmark,
       benchmarks.MotionMark13Benchmark,

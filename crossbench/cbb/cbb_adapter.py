@@ -35,6 +35,7 @@ press_benchmarks = [
     benchmarks.MotionMark13Benchmark,
     benchmarks.JetStream20Benchmark,
     benchmarks.JetStream21Benchmark,
+    benchmarks.JetStream22Benchmark,
 ]
 
 press_benchmarks_dict = {cls.NAME: cls for cls in press_benchmarks}
