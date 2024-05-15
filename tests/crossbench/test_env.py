@@ -210,7 +210,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         self.mock_runner,
         HostEnvironmentConfig(browser_is_headless=HostEnvironmentConfig.IGNORE),
         ValidationMode.THROW)
-    mock_browser = mock.Mock()
+    mock_browser = mock.Mock(platform=self.mock_platform)
     self.mock_runner.browsers = [mock_browser]
 
     mock_browser.viewport.is_headless = False
@@ -223,7 +223,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     env = HostEnvironment(self.mock_runner,
                           HostEnvironmentConfig(browser_is_headless=True),
                           ValidationMode.THROW)
-    mock_browser = mock.Mock()
+    mock_browser = mock.Mock(platform=self.mock_platform)
     self.mock_runner.browsers = [mock_browser]
 
     self.mock_platform.has_display = True
@@ -247,7 +247,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     env = HostEnvironment(self.mock_runner,
                           HostEnvironmentConfig(browser_is_headless=False),
                           ValidationMode.THROW)
-    mock_browser = mock.Mock()
+    mock_browser = mock.Mock(platform=self.mock_platform)
     self.mock_runner.browsers = [mock_browser]
 
     self.mock_platform.has_display = True

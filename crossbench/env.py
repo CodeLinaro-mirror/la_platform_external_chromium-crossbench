@@ -372,31 +372,39 @@ class HostEnvironment:
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:
       return
+    grouped_browsers: Dict[plt.Platform, List[Browser]] = helper.group_by(
+        self._runner.browsers, key=lambda browser: browser.platform)
+    for platform, browsers in grouped_browsers.items():
+      self._check_running_binaries_on_platform(platform, browsers)
+
+  def _check_running_binaries_on_platform(
+      self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
     browser_binaries: Dict[str, List[Browser]] = helper.group_by(
-        self._runner.browsers, key=lambda browser: str(browser.path.resolve()))
+        platform_browsers, key=lambda browser: str(browser.path))
     own_pid = os.getpid()
-    for proc_info in self._platform.processes(["cmdline", "exe", "pid",
-                                               "name"]):
+    for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):
       if not browser_binaries:
         return
       # Skip over this python script which might have the binary path as
       # part of the command line invocation.
       if proc_info["pid"] == own_pid:
         continue
-      cmdline = " ".join(proc_info["cmdline"] or "")
-      exe = proc_info["exe"]
+      cmdline = " ".join(proc_info.get("cmdline") or "")
+      exe = proc_info.get("exe") or proc_info.get("name")
+      if not exe:
+        continue
       for binary, browsers in list(browser_binaries.items()):
         # Add a white-space to get less false-positives
         if f"{binary} " not in cmdline and binary != exe:
           continue
         # Use the first in the group
         browser: Browser = browsers[0]
-        logging.debug("Binary=%s", binary)
+        logging.debug("Binary=%s Platform=%s", binary, platform)
         logging.debug("PS status output:")
         logging.debug("proc(pid=%s, name=%s, cmd=%s)", proc_info["pid"],
                       proc_info["name"], cmdline)
         self.handle_validation_warning(
-            f"{browser.app_name} {browser.version} seems to be already running."
+            f"{browser.app_name} {browser.version} seems to be already running on {platform}."
         )
         # Avoid re-checking the same binary once we've allowed it to be running.
         del browser_binaries[binary]
