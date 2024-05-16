@@ -193,7 +193,7 @@ class PlatformTestCase(unittest.TestCase):
       b = tmp_dir / "b"
       self.platform.touch(a)
       self.platform.touch(b)
-      self.assertListEqual(list(self.platform.glob(tmp_dir, "*")), [a, b])
+      self.assertListEqual(sorted(self.platform.glob(tmp_dir, "*")), [a, b])
 
   def test_set_file_contents(self):
     if self.platform.is_remote:
