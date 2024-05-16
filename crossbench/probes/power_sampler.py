@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 from crossbench import cli_helper, compat, helper
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeValidationError, ResultLocation)
+                                     ProbeKeyT, ProbeValidationError,
+                                     ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
@@ -91,7 +92,7 @@ class PowerSamplerProbe(Probe):
     self._wait_for_battery = wait_for_battery
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (
         ("bin_path", str(self.bin_path)),
         ("sampling_interval", self.sampling_interval.total_seconds()),

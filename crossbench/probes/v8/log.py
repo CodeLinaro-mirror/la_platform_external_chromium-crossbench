@@ -17,7 +17,7 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags import JSFlags
 from crossbench.helper.path_finder import V8CheckoutFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
+from crossbench.probes.probe import (ProbeConfigParser, ProbeContext, ProbeKeyT,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
@@ -117,7 +117,7 @@ class V8LogProbe(ChromiumProbe):
       raise ValueError(f"{self}: V8LogProbe has no effect")
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (
         ("profview", self._profview),
         ("js_flags", str(self.js_flags)),

@@ -117,7 +117,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().path(path)
     return pth.RemotePath(path)
 
-  def which(self, binary_name: str) -> Optional[pth.RemotePath]:
+  def which(self, binary_name: pth.RemotePathLike) -> Optional[pth.RemotePath]:
     if self.is_local:
       return super().which(binary_name)
     if not binary_name:

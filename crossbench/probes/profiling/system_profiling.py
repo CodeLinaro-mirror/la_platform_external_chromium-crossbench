@@ -24,7 +24,8 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
 from crossbench.plt.base import ListCmdArgsT
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ResultLocation)
+                                     ProbeIncompatibleBrowser, ProbeKeyT,
+                                     ResultLocation)
 from crossbench.probes.results import ProbeResult
 from crossbench.probes.v8.log import V8LogProbe
 
@@ -255,7 +256,7 @@ class ProfilingProbe(Probe):
     self._add_counters: Tuple[str, ...] = tuple(add_counters)
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (
         ("js", self._sample_js),
         ("v8_interpreted_frames", self._expose_v8_interpreted_frames),
@@ -263,8 +264,8 @@ class ProfilingProbe(Probe):
         ("cleanup", self._cleanup_mode),
         ("browser_process", self._sample_browser_process),
         ("spare_renderer_process", self._spare_renderer_process),
-        ("target", self._target),
-        ("call_graph_mode", self._call_graph_mode),
+        ("target", str(self._target)),
+        ("call_graph_mode", str(self._call_graph_mode)),
         ("start_profiling_after_setup", self._start_profiling_after_setup),
         ("frequency", self._frequency),
         ("count", self._count),

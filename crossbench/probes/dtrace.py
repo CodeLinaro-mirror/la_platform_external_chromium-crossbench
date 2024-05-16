@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import atexit
 import subprocess
-from typing import TYPE_CHECKING, Optional, TextIO, Tuple
+from typing import TYPE_CHECKING, Optional, TextIO
 
 from crossbench import cli_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeValidationError, ResultLocation)
+                                     ProbeKeyT, ProbeValidationError,
+                                     ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
@@ -40,7 +41,7 @@ class DTraceProbe(Probe):
     self._script_path = script_path.resolve()
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (("script_path", str(self.script_path)),)
 
   @property

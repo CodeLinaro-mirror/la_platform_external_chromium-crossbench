@@ -108,6 +108,14 @@ def parse_binary_path(
   return maybe_bin
 
 
+def parse_remote_path(value: Optional[pth.RemotePathLike],
+                      name: str = "path") -> pth.RemotePath:
+  some_value = parse_not_none(value, name)
+  if not some_value:
+    raise argparse.ArgumentTypeError(f"Expected non empty {name}.")
+  return pth.RemotePath(some_value)
+
+
 EnumT = TypeVar("EnumT", bound=enum.Enum)
 
 

@@ -5,19 +5,20 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Dict, Iterable, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable
+
 from crossbench import cli_helper, plt
 from crossbench.browsers.attributes import BrowserAttributes
-
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeValidationError, ResultLocation)
+                                     ProbeKeyT, ProbeValidationError,
+                                     ResultLocation)
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.runner.run import Run
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath
+  from crossbench.runner.run import Run
 
 _DEBUGGER_LOOKUP: Dict[str, str] = {
     "macos": "lldb",
@@ -86,7 +87,7 @@ class DebuggerProbe(Probe):
     self._spare_renderer_process = spare_renderer_process
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (
         ("debugger", str(self._debugger_bin)),
         ("debugger_args", tuple(self._debugger_args)),

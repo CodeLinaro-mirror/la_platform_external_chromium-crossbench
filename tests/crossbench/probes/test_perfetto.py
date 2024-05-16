@@ -2,10 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import hjson
 import unittest
-from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 
+import hjson
+
+import crossbench.path as pth
+from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import PerfettoProbe
 from tests import test_helper
 
@@ -20,7 +22,7 @@ class TestProbe(unittest.TestCase):
   def test_parse_config(self):
     probe: PerfettoProbe = PerfettoProbe.from_config({"textproto": "TEXTPROTO"})
     self.assertEqual("TEXTPROTO", probe.textproto)
-    self.assertEqual("perfetto", probe.perfetto_bin)
+    self.assertEqual(pth.RemotePath("perfetto"), probe.perfetto_bin)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_config(self):

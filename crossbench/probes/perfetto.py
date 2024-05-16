@@ -11,9 +11,11 @@ from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
 
 from crossbench import helper
 from crossbench import path as pth
+from crossbench.cli_helper import parse_remote_path
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ResultLocation)
+                                     ProbeIncompatibleBrowser, ProbeKeyT,
+                                     ResultLocation)
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
@@ -58,12 +60,12 @@ class PerfettoProbe(Probe):
               "See probe instructions for more details"))
     parser.add_argument(
         "perfetto_bin",
-        type=str,
+        type=parse_remote_path,
         default="perfetto",
         help="Perfetto binary on the browser device")
     return parser
 
-  def __init__(self, textproto: str, perfetto_bin: str):
+  def __init__(self, textproto: str, perfetto_bin: pth.RemotePath):
     super().__init__()
     if not textproto:
       raise ValueError("Please specify a tracing config")
@@ -73,7 +75,7 @@ class PerfettoProbe(Probe):
     self._perfetto_bin = perfetto_bin
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (
         ("textproto", self.textproto),
         ("perfetto_bin", str(self.perfetto_bin)),
@@ -84,7 +86,7 @@ class PerfettoProbe(Probe):
     return self._textproto
 
   @property
-  def perfetto_bin(self) -> str:
+  def perfetto_bin(self) -> pth.RemotePath:
     return self._perfetto_bin
 
   @property

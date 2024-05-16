@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import (TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type,
-                    TypeVar)
+from typing import (TYPE_CHECKING, Any, Dict, Hashable, Optional, Set, Tuple,
+                    Type, TypeVar, Union)
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
@@ -35,6 +35,10 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
     super().__init__("Probe", probe_cls)
     self._probe_cls: Type[ProbeT] = probe_cls
 
+  @property
+  def probe_cls(self) -> Type[ProbeT]:
+    return self._probe_cls
+
 
 class ProbeMissingDataError(ValueError):
   pass
@@ -54,6 +58,9 @@ class ProbeIncompatibleBrowser(ProbeValidationError):
                browser: Browser,
                message: str = "Incompatible browser") -> None:
     super().__init__(probe, f"{message}, got {browser.attributes}")
+
+
+ProbeKeyT = Tuple[Tuple[str, Hashable], ...]
 
 
 class Probe(abc.ABC):
@@ -135,7 +142,7 @@ class Probe(abc.ABC):
     return False
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     """Return a sort key."""
     return (("name", self.name),)
 

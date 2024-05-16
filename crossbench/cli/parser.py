@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import NoReturn
 
 import colorama
 
@@ -39,7 +38,7 @@ if sys.version_info < (3, 9, 0):
 
   class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
 
-    def error(self, message) -> NoReturn:
+    def error(self, message) -> None:
       # Let the CrossBenchCLI handle all errors and simplify testing.
       exception = sys.exc_info()[1]
       if isinstance(exception, BaseException):
@@ -50,6 +49,6 @@ else:
 
   class CrossBenchArgumentParser(_BaseCrossBenchArgumentParser):
 
-    def __init__(self, *args, **kwargs) -> NoReturn:
+    def __init__(self, *args, **kwargs) -> None:
       kwargs["exit_on_error"] = False
       super().__init__(*args, **kwargs)

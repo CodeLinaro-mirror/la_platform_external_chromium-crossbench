@@ -12,7 +12,8 @@ import time
 from typing import TYPE_CHECKING, Iterable, Tuple
 
 from crossbench import cli_helper
-from crossbench.probes import probe as cb_probe
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
+from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
   from crossbench.path import LocalPath
 
 
-class PollingProbe(cb_probe.Probe, abc.ABC):
+class PollingProbe(Probe, metaclass=abc.ABCMeta):
   """
   Abstract probe to periodically collect the results of any bash cmd.
   """
@@ -30,7 +31,7 @@ class PollingProbe(cb_probe.Probe, abc.ABC):
   IS_GENERAL_PURPOSE = False
 
   @classmethod
-  def config_parser(cls) -> cb_probe.ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
         "interval",
@@ -50,7 +51,7 @@ class PollingProbe(cb_probe.Probe, abc.ABC):
       raise ValueError(f"Polling interval must be >= 0.1s, but got: {interval}")
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (("cmd", tuple(self.cmd)),
                           ("interval", self.interval.total_seconds()))
 
@@ -81,7 +82,7 @@ class ShellPollingProbe(PollingProbe):
   NAME = "poll"
 
   @classmethod
-  def config_parser(cls) -> cb_probe.ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
         "cmd",
@@ -91,7 +92,7 @@ class ShellPollingProbe(PollingProbe):
     return parser
 
 
-class PollingProbeContext(cb_probe.ProbeContext[PollingProbe]):
+class PollingProbeContext(ProbeContext[PollingProbe]):
   _poller: CMDPoller
 
   def __init__(self, probe: PollingProbe, run: Run) -> None:

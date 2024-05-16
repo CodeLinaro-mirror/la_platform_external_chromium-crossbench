@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from crossbench import cli_helper, compat, helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ResultLocation)
+                                     ProbeKeyT, ResultLocation)
 from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
@@ -70,7 +70,7 @@ class PowerMetricsProbe(Probe):
     self._samplers = tuple(samplers)
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (
         ("sampling_interval", self.sampling_interval.total_seconds()),
         ("samplers", tuple(map(str, self.samplers))),

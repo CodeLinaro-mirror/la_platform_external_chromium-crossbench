@@ -14,8 +14,9 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 from crossbench import compat
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ProbeResult,
-                                     ProbeValidationError, ResultLocation)
+                                     ProbeIncompatibleBrowser, ProbeKeyT,
+                                     ProbeResult, ProbeValidationError,
+                                     ResultLocation)
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
@@ -105,9 +106,10 @@ class BrowserProfilingProbe(Probe):
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
-    return super().key + (("moz_profiler_startup_features",
-                           tuple(self.moz_profiler_startup_features)),)
+  def key(self) -> ProbeKeyT:
+    return super().key + (
+        ("moz_profiler_startup_features",
+         tuple(map(str, self.moz_profiler_startup_features))),)
 
   @property
   def moz_profiler_startup_features(self) -> List[MozProfilerStartupFeatures]:

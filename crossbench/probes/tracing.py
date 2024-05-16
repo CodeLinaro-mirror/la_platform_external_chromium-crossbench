@@ -14,7 +14,7 @@ from crossbench import path as pth
 from crossbench.config import ConfigEnum
 from crossbench.helper.path_finder import TraceconvFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import (ProbeConfigParser, ProbeContext,
+from crossbench.probes.probe import (ProbeConfigParser, ProbeContext, ProbeKeyT,
                                      ResultLocation)
 from crossbench.probes.results import ProbeResult
 
@@ -229,7 +229,7 @@ class TracingProbe(ChromiumProbe):
     self._traceconv: Optional[pth.RemotePath] = traceconv
 
   @property
-  def key(self) -> Tuple[Tuple, ...]:
+  def key(self) -> ProbeKeyT:
     return super().key + (("preset", self._preset),
                           ("categories", tuple(self._categories)),
                           ("startup_duration", self._startup_duration),

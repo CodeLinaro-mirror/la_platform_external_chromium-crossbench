@@ -262,7 +262,7 @@ class Platform(abc.ABC):
     logging.debug("WAIT %ss", seconds)
     time.sleep(seconds)
 
-  def which(self, binary_name: str) -> Optional[pth.RemotePath]:
+  def which(self, binary_name: pth.RemotePathLike) -> Optional[pth.RemotePath]:
     if not binary_name:
       raise ValueError("Got empty path")
     assert self.is_local, "Unsupported operation on remote platform"
