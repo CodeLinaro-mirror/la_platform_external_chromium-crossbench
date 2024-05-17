@@ -26,7 +26,7 @@ from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.cli import ui
-from crossbench.cli.devtools_recorder_proxy import \
+from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
     CrossbenchDevToolsRecorderProxy
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
