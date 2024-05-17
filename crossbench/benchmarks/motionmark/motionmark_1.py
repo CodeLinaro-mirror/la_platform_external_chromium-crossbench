@@ -9,7 +9,6 @@ import datetime as dt
 import itertools
 import json
 import logging
-import pathlib
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import crossbench.probes.helper as probes_helper
@@ -22,6 +21,7 @@ from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
+  from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
   from crossbench.runner.run import Run
@@ -75,7 +75,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
                   single_result: bool) -> None:
     if self not in result_dict:
       return
-    results_json: pathlib.Path = result_dict[self].json
+    results_json: LocalPath = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("Motionmark results:")
     if not single_result:

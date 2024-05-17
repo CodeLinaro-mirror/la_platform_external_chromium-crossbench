@@ -5,8 +5,6 @@
 from __future__ import annotations
 
 import abc
-import os
-import pathlib
 from typing import TYPE_CHECKING, Iterator, Optional, Tuple
 
 from crossbench import path as pth
