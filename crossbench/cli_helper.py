@@ -15,7 +15,7 @@ import re
 import shlex
 import sys
 from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional, Type,
-                    TypeVar)
+                    TypeVar, cast)
 from urllib.parse import urlparse
 
 import colorama
@@ -114,6 +114,12 @@ def parse_remote_path(value: Optional[pth.RemotePathLike],
   if not some_value:
     raise argparse.ArgumentTypeError(f"Expected non empty {name}.")
   return pth.RemotePath(some_value)
+
+
+def parse_local_binary_path(
+    value: Optional[pth.RemotePathLike],
+    name: str = "binary") -> pth.LocalPath:
+  return cast(pth.LocalPath, parse_binary_path(value, name))
 
 
 EnumT = TypeVar("EnumT", bound=enum.Enum)

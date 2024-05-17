@@ -190,6 +190,16 @@ class TraceconvFinder:
         self.traceconv = candidate
 
 
+class TraceProcessorFinder:
+
+  def __init__(self, platform: Platform) -> None:
+    if chrome_checkout := ChromiumCheckoutFinder(platform).path:
+      candidate = (
+          chrome_checkout / "third_party" / "perfetto" / "tools" / "trace_processor")
+      if platform.is_file(candidate):
+        self.path = candidate
+
+
 class WprGoToolFinder:
   _WPR_GO = pth.RemotePath("third_party/catapult/web_page_replay_go/src/wpr.go")
 
