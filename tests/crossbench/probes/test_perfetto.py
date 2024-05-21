@@ -12,7 +12,7 @@ from crossbench.probes.all import PerfettoProbe
 from tests import test_helper
 
 
-class TestProbe(unittest.TestCase):
+class TestPerfettoProbe(unittest.TestCase):
 
   def test_missing_config(self):
     with self.assertRaises(ValueError) as cm:

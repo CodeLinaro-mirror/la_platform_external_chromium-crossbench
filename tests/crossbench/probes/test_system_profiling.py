@@ -5,11 +5,12 @@
 import pathlib
 import unittest
 
-from crossbench.probes.profiling.system_profiling import generate_simpleperf_command_line, CallGraphMode, TargetMode
+from crossbench.probes.profiling.system_profiling import (
+    CallGraphMode, TargetMode, generate_simpleperf_command_line)
 from tests import test_helper
 
 
-class TestProbe(unittest.TestCase):
+class TestSystemProfilingProbe(unittest.TestCase):
 
   def test_simpleperf_command_line_with_tid(self):
     output_path = pathlib.Path("simpleperf.perf.data")

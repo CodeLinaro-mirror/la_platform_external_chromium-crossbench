@@ -12,6 +12,7 @@ from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 from crossbench.probes.internal import (DurationsProbe, ErrorsProbe,
                                         InternalProbe, LogProbe,
                                         ResultsSummaryProbe, SystemDetailsProbe)
+from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.perfetto import PerfettoProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
@@ -54,8 +55,9 @@ assert INTERNAL_PROBES[1] == DurationsProbe
 # Probes that can be used on arbitrary stories and may be user configurable.
 GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     BrowserProfilingProbe,
-    DebuggerProbe,
     DTraceProbe,
+    DebuggerProbe,
+    JSProbe,
     PerfettoProbe,
     PerformanceEntriesProbe,
     PowerMetricsProbe,

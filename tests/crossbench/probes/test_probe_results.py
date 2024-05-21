@@ -4,9 +4,7 @@
 
 import pathlib
 import unittest
-from unittest import mock
 
-from crossbench import plt
 from crossbench.probes.probe import Probe
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        LocalProbeResult, ProbeResultDict)

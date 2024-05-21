@@ -207,7 +207,9 @@ class _ConfigArgParser:
       else:
         items.append(("type", str(self.type.__qualname__)))
 
-    if self.default is None:
+    if self.required:
+      items.append(("required", ""))
+    elif self.default is None:
       items.append(("default", "not set"))
     else:
       if self.is_list:
