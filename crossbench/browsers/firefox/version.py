@@ -5,12 +5,13 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Tuple
+from typing import Dict, Final, Tuple
 
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 
 class FirefoxVersion(BrowserVersion):
+  _PARTS_LEN: Final[int] = 4
   _VERSION_RE = re.compile(r"[^\d]+ (?P<version>"
                            r"(?P<parts>\d+\.\d+(?P<channel>[ab.])\d+)"
                            r")(?P<channel_esr>esr)?")
@@ -61,3 +62,7 @@ class FirefoxVersion(BrowserVersion):
   @property
   def is_complete(self) -> bool:
     return len(self.parts) == 4
+
+  @property
+  def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
+    return (self.comparable_parts(self._PARTS_LEN), self._channel)

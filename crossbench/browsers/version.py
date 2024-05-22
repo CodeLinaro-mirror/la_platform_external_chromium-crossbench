@@ -5,17 +5,33 @@
 from __future__ import annotations
 
 import abc
-import functools
-from typing import Any, Tuple, Union
+import dataclasses
 import enum
+import functools
+from typing import Any, Final, Tuple
 
 
-class BrowserVersionChannel(enum.Enum):
-  LTS = "lts"
-  STABLE = "stable"
-  BETA = "beta"
-  ALPHA = "alpha"
-  PRE_ALPHA = "pre-alpha"
+@dataclasses.dataclass
+class _BrowserVersionChannelMixin:
+  label: str
+  index: int
+
+
+@functools.total_ordering
+class BrowserVersionChannel(_BrowserVersionChannelMixin, enum.Enum):
+  LTS = ("lts", 0)
+  STABLE = ("stable", 1)
+  BETA = ("beta", 2)
+  ALPHA = ("alpha", 3)
+  PRE_ALPHA = ("pre-alpha", 4)
+
+  def __str__(self) -> str:
+    return self.label
+
+  def __lt__(self, other: Any) -> bool:
+    if not isinstance(other, BrowserVersionChannel):
+      raise TypeError("BrowserVersionChannel can not be compared to {other}")
+    return self.index < other.index
 
 
 class BrowserVersionParseError(ValueError):
@@ -32,13 +48,15 @@ class PartialBrowserVersionError(ValueError):
 @functools.total_ordering
 class BrowserVersion(abc.ABC):
 
+  _MAX_PART_VALUE: Final[int] = 0xFFFF
+
   _parts: Tuple[int, ...]
   _channel: BrowserVersionChannel
   _version_str: str
 
   def __init__(self, version: str) -> None:
     (self._parts, self._channel, self._version_str) = self._parse(version)
-    if not self._parts:
+    if self._parts is None:
       raise self.parse_error("Invalid version format", version)
     for part in self._parts:
       if part < 0:
@@ -57,13 +75,25 @@ class BrowserVersion(abc.ABC):
   def parts(self) -> Tuple[int, ...]:
     return self._parts
 
+  def comparable_parts(self, padded_len) -> Tuple[int, ...]:
+    if self.is_complete:
+      return self._parts
+    padding = (self._MAX_PART_VALUE,) * (padded_len - len(self._parts))
+    return self._parts + padding
+
   @property
   @abc.abstractmethod
   def is_complete(self) -> bool:
-    return True
+    pass
+
+  @property
+  def is_channel_version(self) -> bool:
+    return not self._parts
 
   @property
   def major(self) -> int:
+    if not self._parts:
+      raise PartialBrowserVersionError()
     return self._parts[0]
 
   @property
@@ -104,15 +134,53 @@ class BrowserVersion(abc.ABC):
   def _channel_name(self, channel: BrowserVersionChannel) -> str:
     pass
 
+  @property
+  def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
+    return (self._parts, self._channel)
+
   def __str__(self) -> str:
+    if not self._version_str:
+      return self.channel_name
     return f"{self._version_str} {self.channel_name}"
 
   def __eq__(self, other: Any) -> bool:
     if not isinstance(other, type(self)):
       return False
-    return str(self) == str(other)
+    return self.key == other.key
 
-  def __lt__(self, other: Any) -> bool:
-    assert isinstance(
-        other, BrowserVersion), (f"Expected BrowserVersion, but got {other}.")
-    return self._parts < other._parts
+  def __le__(self, other: Any) -> bool:
+    if not isinstance(other, type(self)):
+      raise TypeError("Cannot compare versions from different browsers: "
+                      f"{self} vs. {other}.")
+    if self.is_channel_version and other.is_channel_version:
+      return self._channel <= other._channel
+    if self.is_channel_version:
+      raise ValueError(f"Cannot compare channel {self} against {other}")
+    if other.is_channel_version:
+      raise ValueError(f"Cannot compare {self} against channel {other}")
+    return self.key <= other.key
+
+
+class UnknownBrowserVersion(BrowserVersion):
+  """Sentinel helper object for initializing version variables before
+  knowing which exact browser/version is used."""
+
+  def __init__(self) -> None:
+    super().__init__("unknown")
+
+  def _parse(
+      self,
+      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+    del full_version
+    return (tuple(), BrowserVersionChannel.STABLE, "unknown")
+
+  def _channel_name(self, channel: BrowserVersionChannel) -> str:
+    return "unknown"
+
+  @property
+  def is_stable(self) -> bool:
+    return False
+
+  @property
+  def is_complete(self) -> bool:
+    return False

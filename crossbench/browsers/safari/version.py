@@ -5,12 +5,13 @@
 from __future__ import annotations
 
 import re
-from typing import Tuple
+from typing import Final, Tuple
 
-from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel)
+from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 
 class SafariVersion(BrowserVersion):
+  _MIN_PARTS_LEN: Final[int] = 4
   _VERSION_RE = re.compile(r"(?P<major_minor>\d+\.\d+)"
                            r"[^(]+ \((?P<version>"
                            r"(Release (?P<release>\d+), )?"
@@ -39,7 +40,7 @@ class SafariVersion(BrowserVersion):
       parts = tuple(map(int, parts_str.split(".")))
     except ValueError as e:
       raise ValueError("Could not parse version number parts.") from e
-    if len(parts) < 4:
+    if len(parts) < self._MIN_PARTS_LEN:
       raise ValueError(
           f"Invalid number of version number parts in '{full_version}'")
     parts = (major, minor, release) + parts
@@ -47,7 +48,7 @@ class SafariVersion(BrowserVersion):
 
   @property
   def is_complete(self) -> bool:
-    return len(self.parts) >= 4
+    return len(self.parts) >= self._MIN_PARTS_LEN
 
   @property
   def is_tech_preview(self) -> bool:
@@ -67,3 +68,7 @@ class SafariVersion(BrowserVersion):
     if channel == BrowserVersionChannel.BETA:
       return "technology preview"
     raise ValueError(f"Unsupported channel: {channel}")
+
+  @property
+  def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
+    return (self.comparable_parts(self._MIN_PARTS_LEN), self._channel)

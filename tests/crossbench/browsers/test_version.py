@@ -14,7 +14,41 @@ from crossbench.browsers.chromium.version import (ChromeDriverVersion,
 from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.safari.version import SafariVersion
 from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
-                                         PartialBrowserVersionError)
+                                         PartialBrowserVersionError,
+                                         UnknownBrowserVersion)
+
+
+class BrowserVersionChannelTestCase(unittest.TestCase):
+
+  def test_name(self):
+    self.assertEqual(BrowserVersionChannel.STABLE.label, "stable")
+    self.assertEqual(str(BrowserVersionChannel.STABLE), "stable")
+
+  def test_compare(self):
+    self.assertLess(BrowserVersionChannel.LTS, BrowserVersionChannel.STABLE)
+    self.assertLess(BrowserVersionChannel.STABLE, BrowserVersionChannel.BETA)
+    self.assertLess(BrowserVersionChannel.BETA, BrowserVersionChannel.ALPHA)
+    self.assertLess(BrowserVersionChannel.ALPHA,
+                    BrowserVersionChannel.PRE_ALPHA)
+    self.assertLessEqual(BrowserVersionChannel.PRE_ALPHA,
+                         BrowserVersionChannel.PRE_ALPHA)
+
+  def test_equal(self):
+    self.assertEqual(BrowserVersionChannel.PRE_ALPHA,
+                     BrowserVersionChannel.PRE_ALPHA)
+
+  def test_sorting(self):
+    unsorted = [
+        BrowserVersionChannel.ALPHA, BrowserVersionChannel.PRE_ALPHA,
+        BrowserVersionChannel.STABLE, BrowserVersionChannel.BETA,
+        BrowserVersionChannel.LTS
+    ]
+    self.assertListEqual(
+        sorted(unsorted), [
+            BrowserVersionChannel.LTS, BrowserVersionChannel.STABLE,
+            BrowserVersionChannel.BETA, BrowserVersionChannel.ALPHA,
+            BrowserVersionChannel.PRE_ALPHA
+        ])
 
 
 class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
@@ -116,6 +150,8 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     # pylint: disable=comparison-with-itself
     self.assertFalse(version_stable > version_stable)
     self.assertFalse(version_stable < version_stable)
+    self.assertTrue(version_stable >= version_stable)
+    self.assertTrue(version_stable <= version_stable)
     self.assertLess(version_stable, version_beta)
     self.assertGreater(version_beta, version_stable)
 
@@ -249,8 +285,6 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
       self.parse("Google Chrome 115.a.5790.114")
     with self.assertRaises(ValueError):
       self.parse("Chrome ")
-    with self.assertRaises(ValueError):
-      self.parse("Chrome Stable")
     with self.assertRaises(ValueError):
       self.parse("Chrome 121 121")
     with self.assertRaises(ValueError):
@@ -388,6 +422,82 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     with self.assertRaises(PartialBrowserVersionError):
       _ = version.patch
 
+  def test_parse_partial_channel(self):
+    version = self.parse("Chrome Stable")
+    self.assertTrue(version.is_stable)
+    self.assertFalse(version.is_complete)
+    self.assertEqual(str(version), "stable")
+    with self.assertRaises(PartialBrowserVersionError):
+      _ = version.major
+    with self.assertRaises(PartialBrowserVersionError):
+      _ = version.minor
+    with self.assertRaises(PartialBrowserVersionError):
+      _ = version.build
+    with self.assertRaises(PartialBrowserVersionError):
+      _ = version.patch
+
+  def test_parse_partial_channels(self):
+    version = self.parse("Chrome Extended")
+    self.assertTrue(version.is_lts)
+    version = self.parse("Chrome Stable")
+    self.assertTrue(version.is_stable)
+    version = self.parse("Chrome Beta")
+    self.assertTrue(version.is_beta)
+    version = self.parse("Chrome Dev")
+    self.assertTrue(version.is_alpha)
+    version = self.parse("Chrome Canary")
+    self.assertTrue(version.is_pre_alpha)
+
+  def test_compare_channel(self):
+    canary_version = self.parse(self.PRE_ALPHA_VERSION_STR)
+    dev_channel = self.parse("Chrome Dev")
+    stable_channel = self.parse("Chrome Stable")
+    dev_version = self.parse(self.ALPHA_VERSION_STR)
+    with self.assertRaises(ValueError):
+      _ = canary_version <= dev_channel
+    with self.assertRaises(ValueError):
+      _ = stable_channel <= dev_version
+    self.assertLess(stable_channel, dev_channel)
+    self.assertEqual(stable_channel, stable_channel)
+    self.assertEqual(dev_channel, dev_channel)
+
+  def test_compare_version_different_channels(self):
+    beta_125_version = self.parse("Chrome 125.3.1234.60 beta")
+    stable_125_version = self.parse("Chrome 125.3.1234.60 stable")
+    beta_120_version = self.parse("Chrome 120.3.1234.60 beta")
+    stable_120_version = self.parse("Chrome 120.3.1234.60 stable")
+    self.assertTrue(stable_125_version.is_stable)
+    self.assertTrue(beta_125_version.is_beta)
+    self.assertTrue(stable_120_version.is_stable)
+    self.assertTrue(beta_120_version.is_beta)
+
+    self.assertLess(stable_125_version, beta_125_version)
+    self.assertLess(beta_120_version, beta_125_version)
+    self.assertLess(beta_120_version, stable_125_version)
+    self.assertLess(stable_120_version, beta_125_version)
+    self.assertLess(stable_120_version, stable_125_version)
+    self.assertLess(stable_120_version, beta_120_version)
+
+    self.assertNotEqual(stable_125_version, beta_125_version)
+    self.assertNotEqual(stable_125_version, stable_120_version)
+
+  def test_parse_full_version_macos(self):
+    version = self.parse("125.0.6422.60 (Official Build) (arm64) ")
+    self.assertTrue(version.is_stable)
+    self.assertTrue(version.parts, (125, 0, 6422, 60))
+    version = self.parse("127.0.6490.1 (Official Build) canary (arm64) ")
+    self.assertTrue(version.is_pre_alpha)
+    self.assertTrue(version.parts, (127, 0, 6490, 1))
+
+  def test_parse_full_version_linux(self):
+    version = self.parse("125.0.6422.60 (Official Build) (64-bit) ")
+    self.assertTrue(version.is_stable)
+    self.assertTrue(version.parts, (125, 0, 6422, 60))
+    version = self.parse("126.0.6478.7 (Official Build) beta (64-bit) ")
+    self.assertTrue(version.is_beta)
+    self.assertTrue(version.parts, (126, 0, 6478, 7))
+
+
 
 class ChromeDriverBrowserVersionTestCase(_BrowserVersionTestCase):
   LTS_VERSION_STR = ""
@@ -424,6 +534,8 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
       self.parse("Mozilla Firefox 116.0a4b5")
     with self.assertRaises(ValueError):
       self.parse("Mozilla Firefox 116.10.0a")
+    with self.assertRaises(ValueError):
+      self.parse("Mozilla Firefox 116.10.1.0a")
     with self.assertRaises(ValueError):
       self.parse("Mozilla Firefox 116..0a")
 
@@ -507,6 +619,44 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(
         str(self.parse(self.BETA_VERSION_STR)),
         "17.0 (Release 175, 18617.1.1.2) technology preview")
+
+
+class BrowserVersionTestCase(unittest.TestCase):
+
+  def test_cross_browser_compare(self):
+    sf_version = SafariVersion(
+        "16.6 Included with Safari 16.6 (18615.3.12.11.2)")
+    chr_version = ChromeVersion("Google Chrome 117.0.5911.2 dev")
+    self.assertFalse(sf_version == chr_version)
+    with self.assertRaises(TypeError):
+      _ = sf_version <= chr_version
+    with self.assertRaises(TypeError):
+      _ = chr_version <= sf_version
+
+
+class UnknownBrowserVersionTestCase(unittest.TestCase):
+
+  def test_init(self):
+    with self.assertRaises(TypeError):
+      UnknownBrowserVersion("")
+
+  def test_attributes(self):
+    version = UnknownBrowserVersion()
+    self.assertFalse(version.is_complete)
+    self.assertFalse(version.is_stable)
+    self.assertFalse(version.is_beta)
+    self.assertFalse(version.is_alpha)
+    self.assertFalse(version.is_pre_alpha)
+    self.assertEqual(version.parts, ())
+
+  def test_compare(self):
+    version = UnknownBrowserVersion()
+    chr_version = ChromeVersion("Google Chrome 117.0.5911.2 dev")
+    self.assertFalse(version == chr_version)
+    with self.assertRaises(TypeError):
+      _ = version <= chr_version
+    with self.assertRaises(TypeError):
+      _ = chr_version <= version
 
 
 # Hide the abstract base test class from all test runner
