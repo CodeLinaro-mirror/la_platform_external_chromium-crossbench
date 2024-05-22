@@ -4,18 +4,19 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
-import collections
-from contextlib import ExitStack
+import gzip
 import logging
 import shutil
-import gzip
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
+from contextlib import ExitStack
+from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
-
-from crossbench import cli_helper, exception, helper, path as pth, plt
-from crossbench.plt.base import Platform, ListCmdArgsT
+from crossbench import cli_helper, exception
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.helper.path_finder import TraceProcessorFinder
+from crossbench.plt.base import ListCmdArgsT, Platform
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
@@ -71,16 +72,15 @@ class TraceProcessor:
 
   def run_metrics(self, metrics: Iterable[str], trace_file: pth.LocalPath,
                   out_dir: pth.LocalPath) -> List[pth.LocalPath]:
-    json_files: List[pth.LocalPath] = []
     if not metrics:
-      return json_files
-
+      return []
+    json_files: List[pth.LocalPath] = []
     self._platform.mkdir(out_dir)
     for metric in metrics:
       with self._exceptions.capture(f"Running metric: {metric}"):
         out_file = out_dir / f"{metric}.json"
         cmd = self._build_trace_processor_cmd(trace_file, metric=metric)
-        with open(out_file, "x") as f:
+        with out_file.open("x") as f:
           self._platform.sh(*cmd, stdout=f)
         json_files.append(out_file)
 
@@ -90,15 +90,15 @@ class TraceProcessor:
 
   def run_queries(self, queries: Iterable[str], trace_file: pth.LocalPath,
                   out_dir: pth.LocalPath) -> List[pth.LocalPath]:
-    csv_files: List[pth.LocalPath] = []
     if not queries:
-      return csv_files
+      return []
+    csv_files: List[pth.LocalPath] = []
     self._platform.mkdir(out_dir)
     for query in queries:
       with self._exceptions.capture(f"Running query: {query}"):
         out_file = out_dir / f"{query}.csv"
         cmd = self._build_trace_processor_cmd(trace_file, query=query)
-        with open(out_file, "x") as f:
+        with out_file.open("x") as f:
           self._platform.sh(*cmd, stdout=f)
         csv_files.append(out_file)
 
@@ -137,6 +137,17 @@ class TraceProcessor:
         raise RuntimeError(f"Query check failed: {query}")
 
 
+_SOURCE_PROBES: frozenset[str] = frozenset(
+    ("perfetto", "tracing", "simpleperf"))
+
+
+def parse_probe_name(value: Any) -> str:
+  if value in _SOURCE_PROBES:
+    return value
+  raise argparse.ArgumentTypeError("Unknown trace processor source probe, "
+                                   f"choices are: {_SOURCE_PROBES}")
+
+
 class TraceProcessorProbe(Probe):
   """
   Trace processor probe.
@@ -162,7 +173,7 @@ class TraceProcessorProbe(Probe):
         help="Name of query to be run (under probes/trace_processor/queries)")
     parser.add_argument(
         "probes",
-        type=str,
+        type=parse_probe_name,
         is_list=True,
         default=tuple(),
         help="Names of probes whose traces need to be processed")
@@ -183,20 +194,21 @@ class TraceProcessorProbe(Probe):
       raise ValueError("Please specify probes to process")
     self._probes = tuple(probes)
     if not trace_processor_bin:
-      trace_processor_bin = TraceProcessorFinder(plt.PLATFORM).path
+      trace_processor_bin = pth.LocalPath(
+          TraceProcessorFinder(plt.PLATFORM).path)
     self._trace_processor_bin = cli_helper.parse_local_binary_path(
         trace_processor_bin, "trace_processor")
 
   @property
-  def metrics(self) -> Tuple[str]:
+  def metrics(self) -> Tuple[str, ...]:
     return self._metrics
 
   @property
-  def queries(self) -> Tuple[str]:
+  def queries(self) -> Tuple[str, ...]:
     return self._queries
 
   @property
-  def probes(self) -> Tuple[str]:
+  def probes(self) -> Tuple[str, ...]:
     return self._probes
 
   @property
@@ -208,6 +220,8 @@ class TraceProcessorProbe(Probe):
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     writers: dict[str, csv.DictWriter] = {}
+    group_dir = group.get_local_probe_result_path(self)
+    group_dir.mkdir()
     with ExitStack() as stack:
       extra_columns: dict[str, Any] = {}
       for story in group.story_groups:
@@ -217,22 +231,22 @@ class TraceProcessorProbe(Probe):
           for run in rep.runs:
             extra_columns["repetition"] = run.repetition
             for file in run.results[self].csv_list:
-              with open(file, newline='') as csvfile:
+              with file.open(newline='') as csv_file:
 
-                def SkipEmptyLines(line):
+                def skip_empty_lines(line):
                   return line != '\n'
 
                 reader = csv.DictReader(
-                    filter(SkipEmptyLines, csvfile), dialect=csv.unix_dialect)
+                    filter(skip_empty_lines, csv_file),
+                    dialect=csv.unix_dialect)
                 if not file.name in writers:
-                  f = open(group.path / file.name, "x", newline='')
+                  f = (group_dir / file.name).open("x", newline='')
                   stack.enter_context(f)
-                  fieldnames = sorted(extra_columns.keys()) + reader.fieldnames
-                  duplicates = [
-                      i for i, count in collections.Counter(fieldnames).items()
-                      if count > 1
-                  ]
-                  assert len(duplicates) == 0, duplicates
+                  fieldnames = sorted(extra_columns.keys()) + list(
+                      reader.fieldnames)
+                  unique_fieldnames = set(fieldnames)
+                  if len(unique_fieldnames) != len(fieldnames):
+                    raise ValueError(f"Got duplicate field names: {fieldnames}")
                   w = csv.DictWriter(f, fieldnames=fieldnames)
                   w.writeheader()
                   writers[file.name] = w
@@ -243,13 +257,17 @@ class TraceProcessorProbe(Probe):
 
     return EmptyProbeResult()
 
-
 class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
   def __init__(self, probe: TraceProcessorProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._trace_processor = TraceProcessor(run.runner_platform,
                                            probe.trace_processor_bin)
+
+  def get_default_result_path(self) -> pth.RemotePath:
+    result_dir = super().get_default_result_path()
+    self.runner_platform.mkdir(result_dir)
+    return result_dir
 
   def setup(self) -> None:
     # Before actually running the benchmark, make sure all the metrics and
@@ -264,27 +282,40 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
     pass
 
   def teardown(self) -> ProbeResult:
-    merged_trace = self._merge_trace_files()
-    if not merged_trace:
-      return LocalProbeResult()
-    logging.info("TRACE_PROCESSOR: Running queries")
-    csv_files = self._trace_processor.run_queries(
-        queries=self.probe.queries,
-        trace_file=merged_trace,
-        out_dir=self._run.out_dir)
+    with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
+      merged_trace = self._merge_trace_files()
 
-    logging.info("TRACE_PROCESSOR: Running metrics")
-    json_files = self._trace_processor.run_metrics(
-        metrics=self.probe.metrics,
-        trace_file=merged_trace,
-        out_dir=self._run.out_dir)
+    with self.run.actions("TRACE_PROCESSOR: Running queries", verbose=True):
+      csv_files = self._trace_processor.run_queries(
+          queries=self.probe.queries,
+          trace_file=merged_trace,
+          out_dir=self.local_result_path)
+
+    with self.run.actions("TRACE_PROCESSOR: Running metrics", verbose=True):
+      json_files = self._trace_processor.run_metrics(
+          metrics=self.probe.metrics,
+          trace_file=merged_trace,
+          out_dir=self.local_result_path)
 
     return LocalProbeResult(file=[merged_trace], csv=csv_files, json=json_files)
 
-  def _write_probe_result_traces(self, probe_name: str, output):
-    probe_results = self.run.results.get_by_name(probe_name, None)
+  def _merge_trace_files(self) -> pth.LocalPath:
+    merged_trace = self.local_result_path / "merged.trace.pb"
+    with merged_trace.open("wb") as output_f:
+      for probe_name in self.probe.probes:
+        self._write_probe_result_traces(probe_name, output_f)
+
+    self.runner_platform.sh("gzip", merged_trace)
+    merged_trace_gzipped = merged_trace.with_suffix(".pb.gz")
+    assert self.runner_platform.exists(merged_trace_gzipped)
+
+    return merged_trace_gzipped
+
+  def _write_probe_result_traces(self, probe_name: str, output_f: IO) -> None:
+    # TODO: implement probe dependencies
+    probe_results = self.run.results.get_by_name(probe_name)
     assert probe_results, f"Did not find results for required probe {probe_name}"
-    if len(probe_results.file_list) == 0:
+    if probe_results.is_empty:
       logging.warn("TRACE_PROCESSOR: No trace files found for %s", probe_name)
       return
     for f in probe_results.file_list:
@@ -292,18 +323,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
         continue
       if f.suffix == ".gz":
         with gzip.open(f) as input_f:
-          shutil.copyfileobj(input_f, output)
+          shutil.copyfileobj(input_f, output_f)
       else:
         with f.open("rb") as input_f:
-          shutil.copyfileobj(input_f, output)
-
-  def _merge_trace_files(self) -> Optional[pth.LocalPath]:
-    merged_trace = self.local_result_path.with_suffix(".trace.pb")
-    with open(merged_trace, "wb") as output_f:
-      for probe_name in self.probe.probes:
-        self._write_probe_result_traces(probe_name, output_f)
-
-    self.runner_platform.sh("gzip", merged_trace)
-    merged_trace_gzipped = self.local_result_path.with_suffix(".trace.pb.gz")
-
-    return merged_trace_gzipped
+          shutil.copyfileobj(input_f, output_f)
