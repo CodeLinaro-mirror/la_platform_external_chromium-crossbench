@@ -2,7 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from crossbench.benchmarks.jetstream import jetstream_2_0, jetstream_2_1, jetstream_2_2
+from crossbench.benchmarks.jetstream import (jetstream_2_0, jetstream_2_1,
+                                             jetstream_2_2)
 from tests import test_helper
 from tests.crossbench.benchmarks import jetstream_helper
 

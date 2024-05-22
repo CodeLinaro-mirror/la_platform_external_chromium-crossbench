@@ -3,12 +3,11 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import pathlib
 from unittest import mock
 
 from crossbench import plt
-from crossbench.plt import android_adb
-
 from crossbench.plt.android_adb import Adb
 from crossbench.plt.arch import MachineArch
 from tests import test_helper

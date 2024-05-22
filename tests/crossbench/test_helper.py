@@ -7,8 +7,7 @@ import enum
 import pathlib
 import unittest
 
-from crossbench import compat, helper
-from crossbench import plt
+from crossbench import compat, helper, plt
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 

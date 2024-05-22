@@ -11,8 +11,7 @@ from crossbench.browsers.chrome.downloader import (ChromeDownloader,
                                                    ChromeDownloaderMacOS,
                                                    ChromeDownloaderWin)
 from tests import test_helper
-from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
-                                          GenericMockPlatform)
+from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
 class AbstractChromeDownloaderTestCase(

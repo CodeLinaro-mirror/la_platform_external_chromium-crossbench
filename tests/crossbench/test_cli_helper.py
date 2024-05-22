@@ -8,9 +8,8 @@ import argparse
 import datetime as dt
 import json
 import pathlib
-from typing import Any
 import unittest
-
+from typing import Any
 
 from crossbench.cli_helper import (
     Duration, parse_bool, parse_dict, parse_dir_path, parse_existing_file_path,

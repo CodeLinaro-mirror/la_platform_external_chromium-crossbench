@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import unittest
 import datetime as dt
+import unittest
 
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter
 from crossbench.runner.run import Run

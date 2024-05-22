@@ -6,8 +6,8 @@ import json
 import pathlib
 
 import pytest
-from crossbench import plt
 
+from crossbench import plt
 from crossbench.benchmarks import all as benchmarks
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.browsers.chrome import webdriver as chrome_webdriver

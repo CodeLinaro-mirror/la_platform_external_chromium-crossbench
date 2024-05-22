@@ -6,8 +6,8 @@ import abc
 import argparse
 import copy
 import csv
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Type
 from unittest import mock
 

@@ -8,8 +8,6 @@ import datetime as dt
 from typing import Optional
 from unittest import mock
 
-import hjson
-
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner

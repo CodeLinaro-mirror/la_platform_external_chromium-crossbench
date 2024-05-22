@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-import abc
 import unittest
-from typing import Optional, cast
 
 from crossbench.browsers.attributes import BrowserAttributes
 

@@ -9,8 +9,9 @@ import dataclasses
 import enum
 import json
 import pathlib
-from typing import Any, Dict, List, Optional
 import unittest
+from typing import Any, Dict, List, Optional
+
 from immutabledict import immutabledict
 
 from crossbench import cli_helper, compat

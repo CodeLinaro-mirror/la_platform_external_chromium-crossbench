@@ -2,12 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import abc
 import argparse
-import copy
 import datetime as dt
 import json
-import types
 from dataclasses import dataclass
 
 from crossbench.benchmarks.speedometer.speedometer_2_0 import (

@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import argparse
-from contextlib import contextmanager
 import unittest
+from contextlib import contextmanager
 from unittest import mock
 
 from crossbench.exception import (ArgumentTypeMultiException, Entry,

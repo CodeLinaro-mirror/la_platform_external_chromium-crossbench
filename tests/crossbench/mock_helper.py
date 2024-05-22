@@ -18,9 +18,9 @@ import psutil
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench
-from crossbench import plt
-from crossbench import path as pth
 from crossbench import cli_helper
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.cli.cli import CrossBenchCLI

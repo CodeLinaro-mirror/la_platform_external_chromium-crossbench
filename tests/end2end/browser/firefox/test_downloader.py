@@ -9,11 +9,10 @@ import shutil
 import unittest
 from typing import Union
 
-from crossbench import compat
+from crossbench import compat, plt
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
-from crossbench.browsers.firefox.webdriver import (FirefoxWebDriver,
-                                                   FirefoxDriverFinder)
-from crossbench import plt
+from crossbench.browsers.firefox.webdriver import (FirefoxDriverFinder,
+                                                   FirefoxWebDriver)
 from tests import test_helper
 
 

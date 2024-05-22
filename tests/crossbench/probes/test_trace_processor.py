@@ -2,10 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import hjson
 import unittest
-from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 
+import hjson
+
+from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import TraceProcessorProbe
 from tests import test_helper
 

@@ -18,8 +18,8 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench
 import crossbench.env
-import crossbench.runner
 import crossbench.path
+import crossbench.runner
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,

@@ -7,7 +7,7 @@ import datetime as dt
 import json
 import pathlib
 import unittest
-from typing import Dict, Final, List, Optional, Type
+from typing import Dict, List, Optional, Type
 from unittest import mock
 
 import hjson

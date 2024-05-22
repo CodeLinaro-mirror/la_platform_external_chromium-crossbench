@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import logging
 
+import logging
 import pathlib
 import shutil
 from typing import Union
@@ -17,7 +17,6 @@ from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
 from tests import test_helper
-
 
 if plt.PLATFORM.which("gsutil") is None and plt.PLATFORM.is_macos:
   pytest.skip(
