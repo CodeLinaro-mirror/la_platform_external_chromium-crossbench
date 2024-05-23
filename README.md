@@ -85,6 +85,24 @@ a single file and produce performance numbers with a single invocation.
 The [example file](config/browser.config.example.hjson) lists and explains all
 configuration details.
 
+#### Remote WebDriver Interface
+Crossbench also supports benchmarking browsers on remote machines
+running Linux or ChromeOS, via SSH.
+The remote machine is expected to have at least two ports open to the host:
+(a) the SSH port (typically `22`), and
+(b) the WebDriver port (typically `9515`).
+The [remote browser example](config/remote.browser.config.example.hjson)
+describes the configuration details for both Linux and ChromeOS.
+
+On ChromeOS, Crossbench requires
+[ChromeDriver](https://developer.chrome.com/docs/chromedriver/get-started/chromeos/)
+to interact with Chrome,
+and [Autotest](https://chromium.googlesource.com/chromiumos/third_party/autotest/+/HEAD/docs/user-doc.md)
+for creating ephemeral sessions for testing.
+Both ChromeDriver and Autotest are pre-installed on ChromeOS test images.
+Detailed instructions for flashing Chromebooks with test images are provided at:
+go/arc-setup-dev-mode-dut#usb-cros-test-image.
+
 ### Probes
 Probes define a way to extract arbitrary (performance) numbers from a
 host or running browser. This can reach from running simple JS-snippets to

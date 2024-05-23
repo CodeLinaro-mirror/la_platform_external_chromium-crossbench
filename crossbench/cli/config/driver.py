@@ -9,12 +9,13 @@ import dataclasses
 import enum
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from immutabledict import immutabledict
 
 from crossbench import cli_helper, compat, plt
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.plt import ChromeOsSshPlatform
 
 if TYPE_CHECKING:
   from crossbench.path import RemotePath, LocalPath
@@ -29,6 +30,8 @@ class BrowserDriverType(compat.StrEnumWithHelp):
   IOS = ("iOS", "Placeholder, unsupported at the moment")
   LINUX_SSH = ("Remote Linux",
                "Use remote webdriver and execute commands via SSH")
+  CHROMEOS_SSH = ("Remote ChromeOS",
+                  "Use remote ChromeDriver and execute commands via SSH")
 
   @classmethod
   def default(cls) -> BrowserDriverType:
@@ -49,11 +52,13 @@ class BrowserDriverType(compat.StrEnumWithHelp):
       return BrowserDriverType.IOS
     if identifier == "ssh":
       return BrowserDriverType.LINUX_SSH
+    if identifier == "chromeos-ssh":
+      return BrowserDriverType.CHROMEOS_SSH
     raise argparse.ArgumentTypeError(f"Unknown driver type: {value}")
 
   @property
   def is_remote(self):
-    if self.name in ("ANDROID", "LINUX_SSH"):
+    if self.name in ("ANDROID", "CHROMEOS_SSH", "LINUX_SSH"):
       return True
     return False
 
@@ -99,6 +104,12 @@ class DriverConfig(ConfigObject):
       self.validate_android()
     if self.type == BrowserDriverType.IOS:
       self.validate_ios()
+    if self.type == BrowserDriverType.CHROMEOS_SSH:
+      # Unlike the validation functions above for iOS and Android,
+      # which validate the "host" to which the device is connected,
+      # the ChromeOS validation function validates the "client".
+      # Consider moving this logic elsewhere in the future.
+      self.validate_chromeos()
 
   def validate_android(self) -> None:
     devices = plt.adb_devices(plt.PLATFORM)
@@ -116,6 +127,16 @@ class DriverConfig(ConfigObject):
       raise argparse.ArgumentTypeError(
           f"Could not find ADB device with device_id={repr(self.device_id)}. "
           f"Choices are {names}.")
+
+  def validate_chromeos(self) -> None:
+    platform = self.get_platform()
+    assert isinstance(platform, plt.ChromeOsSshPlatform), \
+           f"Invalid platform: {platform}"
+    platform = cast(plt.ChromeOsSshPlatform, platform)
+    if not platform.exists(platform.AUTOLOGIN_PATH):
+      raise ValueError(f"Could not find `autotest` on {platform.host}."
+                       "Please ensure that it is running a test image:"
+                       "go/arc-setup-dev-mode-dut#usb-cros-test-image")
 
   def validate_ios(self) -> None:
     devices: Dict[str, Any] = plt.ios_devices(plt.PLATFORM)
@@ -262,6 +283,27 @@ class DriverConfig(ConfigObject):
         help="Device ID / Serial ID / Unique device name")
     return parser
 
+  def get_ssh_platform(self) -> plt.Platform:
+    assert self.settings
+    host = cli_helper.parse_non_empty_str(self.settings.get("host"), "host")
+    port = cli_helper.parse_port(self.settings.get("port"), "port")
+    ssh_port = cli_helper.parse_port(self.settings.get("ssh_port"), "ssh port")
+    ssh_user = cli_helper.parse_non_empty_str(
+        self.settings.get("ssh_user"), "ssh user")
+    if self.type == BrowserDriverType.CHROMEOS_SSH:
+      return plt.ChromeOsSshPlatform(
+          plt.PLATFORM,
+          host=host,
+          port=port,
+          ssh_port=ssh_port,
+          ssh_user=ssh_user)
+    return plt.LinuxSshPlatform(
+        plt.PLATFORM,
+        host=host,
+        port=port,
+        ssh_port=ssh_port,
+        ssh_user=ssh_user)
+
   def get_platform(self) -> plt.Platform:
     if self.type == BrowserDriverType.ANDROID:
       return plt.AndroidAdbPlatform(plt.PLATFORM, self.device_id)
@@ -270,20 +312,9 @@ class DriverConfig(ConfigObject):
       # for attached simulators or devices. Currently only a single device
       # is supported
       pass
-    if self.type == BrowserDriverType.LINUX_SSH:
-      assert self.settings
-      host = cli_helper.parse_non_empty_str(self.settings.get("host"), "host")
-      port = cli_helper.parse_port(self.settings.get("port"), "port")
-      ssh_port = cli_helper.parse_port(
-          self.settings.get("ssh_port"), "ssh port")
-      ssh_user = cli_helper.parse_non_empty_str(
-          self.settings.get("ssh_user"), "ssh user")
-      return plt.LinuxSshPlatform(
-          plt.PLATFORM,
-          host=host,
-          port=port,
-          ssh_port=ssh_port,
-          ssh_user=ssh_user)
+    if (self.type == BrowserDriverType.LINUX_SSH or
+        self.type == BrowserDriverType.CHROMEOS_SSH):
+      return self.get_ssh_platform()
     return plt.PLATFORM
 
 

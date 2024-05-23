@@ -40,10 +40,6 @@ class LinuxSshPlatform(SshPlatform, LinuxPlatform):
     return True
 
   @property
-  def is_linux(self) -> bool:
-    return True
-
-  @property
   def name(self) -> str:
     return "linux_ssh"
 

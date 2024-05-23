@@ -134,6 +134,32 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertIn("1234", str(cm.exception))
     self.assertIn("ABCD", str(cm.exception))
 
+  def test_parse_dict_chromeos_ssh(self):
+    config_dict = {
+        "type": "chromeos-ssh",
+        "settings": {
+            "host": "chromeos6-row17-rack14-host7",
+            "port": "9515",
+            "ssh_port": "22",
+            "ssh_user": "root"
+        }
+    }
+    self.platform.expect_sh(
+        "ssh", "-p", config_dict["settings"]["ssh_port"],
+        f"{config_dict['settings']['ssh_user']}@{config_dict['settings']['host']}",
+        f"'[' -e {plt.ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
+    config = DriverConfig.parse(config_dict)
+    assert isinstance(config, DriverConfig)
+    self.assertEqual(config.type, BrowserDriverType.CHROMEOS_SSH)
+    self.assertTrue(config.is_remote)
+    self.assertFalse(config.is_local)
+    platform = config.get_platform()
+    assert isinstance(platform, plt.ChromeOsSshPlatform)
+    self.assertEqual(platform.host, "chromeos6-row17-rack14-host7")
+    self.assertEqual(platform.port, 9515)
+    self.assertEqual(platform._ssh_port, 22)
+    self.assertEqual(platform._ssh_user, "root")
+
   def test_parse_inline_json_adb(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {"type": 'adb', "settings": {"device_id": "0a388e93"}}
@@ -782,6 +808,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   EXAMPLE_CONFIG_PATH = (
       test_helper.config_dir() / "browser.config.example.hjson")
 
+  EXAMPLE_REMOTE_CONFIG_PATH = (
+      test_helper.config_dir() / "remote.browser.config.example.hjson")
+
   def setUp(self):
     super().setUp()
     self.browser_lookup: Dict[str, Tuple[
@@ -800,6 +829,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     for _, (_, browser_config) in self.browser_lookup.items():
       self.assertTrue(browser_config.path.exists())
 
+  def _expect_linux_ssh(self, cmd, **kwargs):
+    return self.platform.expect_sh("ssh", "-p", "22", "user@my-linux-machine",
+                                   cmd, **kwargs)
+
+  def _expect_chromeos_ssh(self, cmd, **kwargs):
+    return self.platform.expect_sh("ssh", "-p", "22",
+                                   "root@my-chromeos-machine", cmd, **kwargs)
+
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_load_browser_config_template(self):
     if not self.EXAMPLE_CONFIG_PATH.exists():
@@ -813,6 +850,44 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("flag-group-1", config.flags_config)
     self.assertGreaterEqual(len(config.flags_config), 1)
     self.assertGreaterEqual(len(config.variants), 1)
+
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  def test_load_remote_browser_config_template(self):
+    if not self.EXAMPLE_REMOTE_CONFIG_PATH.exists():
+      raise unittest.SkipTest(
+          f"Test file {self.EXAMPLE_REMOTE_CONFIG_PATH} does not exist")
+    self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
+
+    self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
+    self._expect_linux_ssh("'[' -f /path/to/google/chrome ']'")
+    self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
+    self._expect_linux_ssh(
+        "/path/to/google/chrome --version", result='102.22.33.44')
+    self._expect_linux_ssh("env")
+    self._expect_linux_ssh("'[' -d /tmp ']'")
+    self._expect_linux_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
+
+    self._expect_chromeos_ssh("'[' -e /usr/local/autotest/bin/autologin.py ']'")
+    self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
+    self._expect_chromeos_ssh("'[' -f /opt/google/chrome/chrome ']'")
+    self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
+    self._expect_chromeos_ssh(
+        "/opt/google/chrome/chrome --version", result='125.0.6422.60')
+    self._expect_chromeos_ssh("env")
+    self._expect_chromeos_ssh("'[' -d /tmp ']'")
+    self._expect_chromeos_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
+
+    with self.EXAMPLE_REMOTE_CONFIG_PATH.open(encoding="utf-8") as f:
+      config = BrowserVariantsConfig()
+      config.load(f, args=self.mock_args)
+      self.assertEqual(len(config.variants), 2)
+      for variant in config.variants:
+        self.assertTrue(variant.platform.is_remote)
+        self.assertTrue(variant.platform.is_linux)
+      self.assertEqual(config.variants[0].platform.name, 'linux_ssh')
+      self.assertEqual(config.variants[1].platform.name, 'chromeos_ssh')
+      self.assertEqual(config.variants[0].version, '102.22.33.44')
+      self.assertEqual(config.variants[1].version, '125.0.6422.60')
 
   def test_browser_labels_attributes(self):
     browsers = BrowserVariantsConfig(

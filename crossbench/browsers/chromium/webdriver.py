@@ -288,6 +288,34 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
     return driver
 
 
+class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
+
+  @property
+  def platform(self) -> plt.ChromeOsSshPlatform:
+    assert isinstance(
+        self._platform,
+        plt.ChromeOsSshPlatform), (f"Invalid platform: {self._platform}")
+    return cast(plt.ChromeOsSshPlatform, self._platform)
+
+  def _start_driver(self, session: BrowserSessionRunGroup,
+                    driver_path: pth.RemotePath) -> RemoteWebDriver:
+    del driver_path
+    platform = self.platform
+    host = platform.host
+    port = platform.port
+    args = self._get_browser_flags_for_session(session)
+    # TODO(spadhi): correctly handle flags:
+    #   1. decide which flags to pass to chrome vs chromedriver
+    #   2. investigate irrelevant / unsupported flags on ChromeOS
+    #   3. filter out and pass the chrome flags to the debugging session below
+    #   4. pass the remaining flags to RemoteWebDriver options
+    dbg_port = platform.create_debugging_session()
+    options = self._create_options(session, args)
+    options.add_experimental_option("debuggerAddress", f"127.0.0.1:{dbg_port}")
+    driver = RemoteWebDriver(f"http://{host}:{port}", options=options)
+    return driver
+
+
 class DriverNotFoundError(ValueError):
   pass
 

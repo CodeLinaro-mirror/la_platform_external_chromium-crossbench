@@ -15,6 +15,7 @@ from crossbench.plt.base import Platform, SubprocessError, TupleCmdArgsT
 from crossbench.plt.ios import ios_devices
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.posix import PosixPlatform
 from crossbench.plt.win import WinPlatform

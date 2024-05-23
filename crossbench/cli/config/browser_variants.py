@@ -523,6 +523,8 @@ class BrowserVariantsConfig:
         return browsers.ChromeWebDriverAndroid
       if driver == BrowserDriverType.LINUX_SSH:
         return browsers.ChromeWebDriverSsh
+      if driver == BrowserDriverType.CHROMEOS_SSH:
+        return browsers.ChromeWebDriverChromeOsSsh
     if "chromium" in path_str:
       # TODO: technically this should be ChromiumWebDriver
       if driver == BrowserDriverType.WEB_DRIVER:
@@ -531,6 +533,10 @@ class BrowserVariantsConfig:
         return browsers.ChromeAppleScript
       if driver == BrowserDriverType.ANDROID:
         return browsers.ChromiumWebDriverAndroid
+      if driver == BrowserDriverType.LINUX_SSH:
+        return browsers.ChromiumWebDriverSsh
+      if driver == BrowserDriverType.CHROMEOS_SSH:
+        return browsers.ChromiumWebDriverChromeOsSsh
     if "firefox" in path_str:
       if driver == BrowserDriverType.WEB_DRIVER:
         return browsers.FirefoxWebDriver

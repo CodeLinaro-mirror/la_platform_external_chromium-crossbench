@@ -10,6 +10,8 @@ import io
 import logging
 import pathlib
 import shlex
+
+from subprocess import CompletedProcess
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Mapping, Optional,
                     Sequence, Tuple, Union)
 from unittest import mock
@@ -30,6 +32,7 @@ from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.win import WinPlatform
 from crossbench.runner.run import Run
@@ -150,7 +153,10 @@ class MockPlatformMixin:
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = False):
-    raise NotImplementedError("MockPlatform does not support generic sh().")
+    del capture_output, stderr, stdin, stdout
+    self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, check=check)
+    # TODO: Generalize this in the future, to mimic failing `sh` calls.
+    return CompletedProcess(args, 0)
 
 
 
@@ -159,6 +165,10 @@ class LinuxMockPlatform(MockPlatformMixin, LinuxPlatform):
 
 
 class LinuxSshMockPlatform(MockPlatformMixin, LinuxSshPlatform):
+  pass
+
+
+class ChromeOsSshMockPlatform(MockPlatformMixin, ChromeOsSshPlatform):
   pass
 
 
