@@ -208,3 +208,16 @@ class WprGoToolFinder:
       candidate = maybe_chrome / self._WPR_GO
       if self.platform.is_file(candidate):
         self.path = candidate
+
+
+class TsProxyFinder:
+  _TS_PROXY = pth.RemotePath(
+      "third_party/catapult/third_party/tsproxy/tsproxy.py")
+
+  def __init__(self, platform: Platform) -> None:
+    self.platform = platform
+    self.path: Optional[pth.RemotePath] = None
+    if maybe_chrome := ChromiumCheckoutFinder(platform).path:
+      candidate = maybe_chrome / self._TS_PROXY
+      if self.platform.is_file(candidate):
+        self.path = candidate

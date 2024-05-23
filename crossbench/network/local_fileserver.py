@@ -11,8 +11,8 @@ from crossbench import plt
 from crossbench.network.base import Network, TrafficShaper
 
 if TYPE_CHECKING:
-  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.path import LocalPath
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class LocalFileNetwork(Network):
@@ -20,8 +20,8 @@ class LocalFileNetwork(Network):
   def __init__(self,
                path: LocalPath,
                traffic_shaper: Optional[TrafficShaper] = None,
-               platform: plt.Platform = plt.PLATFORM):
-    super().__init__(traffic_shaper, platform)
+               browser_platform: plt.Platform = plt.PLATFORM):
+    super().__init__(traffic_shaper, browser_platform)
     self._path = path
 
 

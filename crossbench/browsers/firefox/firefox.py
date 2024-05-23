@@ -62,7 +62,8 @@ class Firefox(Browser):
       self.cache_dir = cache_dir
       self.clear_cache_dir = False
     else:
-      self.cache_dir: RemotePath = self.platform.mkdtemp(prefix="firefox")
+      platform = platform or plt.PLATFORM
+      self.cache_dir: RemotePath = platform.mkdtemp(prefix="firefox")
       self.clear_cache_dir = True
     super().__init__(
         label,

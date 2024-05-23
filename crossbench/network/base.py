@@ -10,46 +10,31 @@ from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import plt
 from crossbench.flags import Flags
+from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
+                                                     TrafficShaper)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
-class TrafficShaper(abc.ABC):
-
-  @contextlib.contextmanager
-  @abc.abstractmethod
-  def open(self, network: Network,
-           session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
-    pass
-
-
-class NoTrafficShaper(TrafficShaper):
-
-  @contextlib.contextmanager
-  def open(self, network: Network,
-           session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
-    del network, session
-    yield self
-
-  def __str__(self) -> str:
-    return "full"
-
-
-
 class Network(abc.ABC):
 
   def __init__(self,
                traffic_shaper: Optional[TrafficShaper] = None,
-               runner_platform: plt.Platform = plt.PLATFORM) -> None:
-    self._traffic_shaper = traffic_shaper or NoTrafficShaper()
-    self._runner_platform = runner_platform
+               browser_platform: plt.Platform = plt.PLATFORM) -> None:
+    self._traffic_shaper = traffic_shaper or NoTrafficShaper(browser_platform)
+    self._browser_platform = browser_platform
+    self._runner_platform = browser_platform.host_platform
     self._is_running: bool = False
 
   @property
   def traffic_shaper(self) -> TrafficShaper:
     return self._traffic_shaper
+
+  @property
+  def browser_platform(self) -> plt.Platform:
+    return self._browser_platform
 
   @property
   def runner_platform(self) -> plt.Platform:
@@ -59,10 +44,13 @@ class Network(abc.ABC):
   def is_running(self) -> bool:
     return self._is_running
 
+  @property
+  def is_live(self) -> bool:
+    return False
+
   def extra_flags(self, browser: Browser) -> Flags:
-    del browser
     assert self.is_running, "Network is not running."
-    return Flags()
+    return self.traffic_shaper.extra_flags(browser)
 
   @contextlib.contextmanager
   def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:

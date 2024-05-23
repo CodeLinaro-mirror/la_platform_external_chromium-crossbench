@@ -11,15 +11,17 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from crossbench import cli_helper, exception
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
-from crossbench.network.base import Network, NoTrafficShaper, TrafficShaper
+from crossbench.network.base import Network
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_fileserver import LocalFileNetwork
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
+from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
+                                                     TrafficShaper)
 from crossbench.plt.base import Platform
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench.path import LocalPath, RemotePath
 
 
 @enum.unique
@@ -54,6 +56,7 @@ class NetworkSpeedPreset(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class NetworkSpeedConfig(ConfigObject):
+  ts_proxy: Optional[RemotePath] = None
   rtt_ms: Optional[int] = None
   in_kbps: Optional[int] = None
   out_kbps: Optional[int] = None
@@ -87,9 +90,41 @@ class NetworkSpeedConfig(ConfigObject):
 
   @classmethod
   def load_dict(cls, config: Dict[str, Any]) -> NetworkSpeedConfig:
-    # TODO: implement
-    # return cls.config_parser().parse(config)
-    return cls.default()
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[NetworkSpeedConfig]:
+    parser = ConfigParser(
+        "NetworkSpeedConfig parser", cls, default=NetworkSpeedConfig.default())
+    parser.add_argument(
+        "ts_proxy", type=cli_helper.parse_existing_file_path, required=False)
+    # See tsproxy.py --help
+    parser.add_argument(
+        "rtt_ms",
+        type=cli_helper.parse_positive_int,
+        help="Round Trip Time Latency (in ms).")
+    parser.add_argument(
+        "in_kbps",
+        type=cli_helper.parse_positive_int,
+        help="Download Bandwidth (in 1000 bits/s - Kbps).")
+    parser.add_argument(
+        "out_kbps",
+        type=cli_helper.parse_positive_int,
+        help="Upload Bandwidth (in 1000 bits/s - Kbps).")
+    parser.add_argument(
+        "window",
+        default=10,
+        type=cli_helper.parse_positive_int,
+        help="Emulated TCP initial congestion window (defaults to 10).")
+    return parser
+
+  @classmethod
+  def help(cls) -> str:
+    return cls.config_parser().help
+
+  @property
+  def is_live(self):
+    return self == self.default()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -201,8 +236,9 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError(
           "wpr_go_bin can only be used for the WPR replay network")
 
-  def create(self, runner_platform: Platform) -> Network:
-    traffic_shaper = self._create_traffic_shaper()
+  def create(self, browser_platform: Platform) -> Network:
+    runner_platform: Platform = browser_platform.host_platform
+    traffic_shaper = self._create_traffic_shaper(browser_platform)
     if self.type is NetworkType.LIVE:
       return LiveNetwork(traffic_shaper, runner_platform)
     if self.type is NetworkType.LOCAL:
@@ -214,6 +250,9 @@ class NetworkConfig(ConfigObject):
                               runner_platform)
     raise ValueError(f"Unknown network type {self.type}")
 
-  def _create_traffic_shaper(self) -> TrafficShaper:
-    # TODO: implement
-    return NoTrafficShaper()
+  def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:
+    if self.speed.is_live:
+      return NoTrafficShaper(browser_platform)
+    return ts_proxy.TsProxyTrafficShaper(browser_platform, self.speed.ts_proxy,
+                                         self.speed.rtt_ms, self.speed.in_kbps,
+                                         self.speed.out_kbps, self.speed.window)

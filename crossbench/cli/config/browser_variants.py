@@ -367,7 +367,8 @@ class BrowserVariantsConfig:
     for variant in flag_variants:
       label = labels_lookup[variant]
       browser_flags = browser_cls.default_flags(variant.flags)
-      network = self._get_browser_network(browser_config.network)
+      network = self._get_browser_network(browser_config.network,
+                                          browser_platform)
       # TODO: move the browser instantiation to a separate step and only
       # create BrowserConfig objects first.
       # pytype: disable=not-instantiable
@@ -635,7 +636,7 @@ class BrowserVariantsConfig:
         flags.set(flag_name, flag_value)
 
     browser_platform = self._get_browser_platform(browser_config)
-    network = self._get_browser_network(args.network)
+    network = self._get_browser_network(args.network, browser_platform)
 
     name = f"{browser_platform}_{len(self._unique_names)}"
     for flags in flags_sets:
@@ -656,6 +657,6 @@ class BrowserVariantsConfig:
                    browser_instance.unique_name, path)
       self._variants.append(browser_instance)
 
-  def _get_browser_network(self, network_config: NetworkConfig) -> Network:
-    # TODO: pass in custom platform
-    return network_config.create(plt.PLATFORM)
+  def _get_browser_network(self, network_config: NetworkConfig,
+                           browser_platform: plt.Platform) -> Network:
+    return network_config.create(browser_platform)

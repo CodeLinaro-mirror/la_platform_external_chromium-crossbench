@@ -1850,10 +1850,10 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
 
   def test_default(self):
     config = NetworkSpeedConfig.default()
-    self.assertEqual(config.rtt_ms, None)
-    self.assertEqual(config.in_kbps, None)
-    self.assertEqual(config.out_kbps, None)
-    self.assertEqual(config.window, None)
+    self.assertIsNone(config.rtt_ms)
+    self.assertIsNone(config.in_kbps)
+    self.assertIsNone(config.out_kbps)
+    self.assertIsNone(config.window)
 
   def test_parse_speed_preset(self):
     config = NetworkSpeedConfig.parse("4G")
@@ -1869,6 +1869,34 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
     self.assertIn("1xx4", str(cm.exception))
     self.assertIn("Choices are", str(cm.exception))
 
+  def test_parse_dict(self):
+    config = NetworkSpeedConfig.parse({
+        "rtt_ms": 100,
+        "in_kbps": 200,
+        "out_kbps": 300,
+        "window": 400
+    })
+    self.assertIsNone(config.ts_proxy)
+    self.assertEqual(config.rtt_ms, 100)
+    self.assertEqual(config.in_kbps, 200)
+    self.assertEqual(config.out_kbps, 300)
+    self.assertEqual(config.window, 400)
+
+  def test_parse_invalid_dict(self):
+    for int_property in ("rtt_ms", "in_kbps", "out_kbps", "window"):
+      with self.subTest(config_property=int_property):
+        with self.assertRaises(argparse.ArgumentTypeError) as cm:
+          _ = NetworkSpeedConfig.parse({int_property: -100})
+        self.assertIn(int_property, str(cm.exception))
+
+  def test_parse_ts_proxy_path(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = NetworkSpeedConfig.parse({"ts_proxy": "/some/random/path"})
+    self.assertIn("ts_proxy", str(cm.exception))
+    ts_proxy = pth.LocalPath("/python/ts_proxy.py")
+    self.fs.create_file(ts_proxy, st_size=100)
+    config = NetworkSpeedConfig.parse({"ts_proxy": str(ts_proxy)})
+    self.assertEqual(config.ts_proxy, ts_proxy)
 
 class NetworkConfigTestCase(BaseConfigTestCase):
 

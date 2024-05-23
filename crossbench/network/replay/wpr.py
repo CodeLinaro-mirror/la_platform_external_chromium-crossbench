@@ -28,14 +28,15 @@ class WprReplayNetwork(ReplayNetwork):
                archive_path: LocalPath,
                traffic_shaper: Optional[TrafficShaper] = None,
                wpr_go_bin: Optional[LocalPath] = None,
-               runner_platform: Platform = PLATFORM):
-    super().__init__(archive_path, traffic_shaper, runner_platform)
+               browser_platform: Platform = PLATFORM):
+    super().__init__(archive_path, traffic_shaper, browser_platform)
     if not wpr_go_bin:
-      if local_wpr_go := WprGoToolFinder(runner_platform).path:
-        wpr_go_bin = runner_platform.local_path(local_wpr_go)
+      if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
+        wpr_go_bin = self.runner_platform.local_path(local_wpr_go)
     if not wpr_go_bin:
-      raise RuntimeError(f"Could not find wpr.go binary on {runner_platform}")
-    self._wpr_go_bin: LocalPath = runner_platform.local_path(
+      raise RuntimeError(
+          f"Could not find wpr.go binary on {self.runner_platform}")
+    self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
         cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
     self._server: Optional[WprReplayServer] = None
 
@@ -54,7 +55,7 @@ class WprReplayNetwork(ReplayNetwork):
             (f"MAP *:80 127.0.0.1:{self._server.http_port},"
              f"MAP *:443 127.0.0.1:{self._server.https_port},"
              "EXCLUDE localhost"),
-        # TODO: read this from wpr_public_hash.txt like in the recoder probe
+        # TODO: read this from wpr_public_hash.txt like in the recorder probe
         "--ignore-certificate-errors-spki-list":
             ("PhrPvGIaAMmd29hj8BCZOq096yj7uMpRNHpn5PDxI6I=,"
              "2HcXCSKKJS0lEXLQEWhpHUfGuojiU0tiT5gOF9LP6IQ=")

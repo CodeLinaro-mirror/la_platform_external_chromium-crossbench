@@ -16,6 +16,10 @@ if TYPE_CHECKING:
 
 class LiveNetwork(Network):
 
+  @property
+  def is_live(self) -> bool:
+    return True
+
   @contextlib.contextmanager
   def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
     with super().open(session):

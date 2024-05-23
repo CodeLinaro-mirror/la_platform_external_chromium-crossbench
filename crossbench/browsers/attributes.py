@@ -43,3 +43,11 @@ class BrowserAttributes(enum.IntFlag):
   @property
   def is_firefox(self) -> bool:
     return bool(self & self.FIREFOX)
+
+  @property
+  def is_remote(self) -> bool:
+    return bool(self & self.REMOTE)
+
+  @property
+  def is_local(self) -> bool:
+    return not self.is_remote

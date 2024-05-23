@@ -22,8 +22,8 @@ class ReplayNetwork(Network):
   def __init__(self,
                archive_path: LocalPath,
                traffic_shaper: Optional[TrafficShaper] = None,
-               runner_platform: plt.Platform = plt.PLATFORM):
-    super().__init__(traffic_shaper, runner_platform)
+               browser_platform: plt.Platform = plt.PLATFORM):
+    super().__init__(traffic_shaper, browser_platform)
     self._archive_path = cli_helper.parse_existing_file_path(
         archive_path).resolve()
 
