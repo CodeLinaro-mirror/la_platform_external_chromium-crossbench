@@ -589,6 +589,52 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.driver.type, BrowserDriverType.WEB_DRIVER)
     self.assertEqual(config.driver.path, driver_path)
 
+  def test_parse_with_range_simple(self):
+    versions = BrowserConfig.parse_with_range("chrome-m100")
+    self.assertTupleEqual(versions, (BrowserConfig.parse("chrome-m100"),))
+
+  def test_parse_with_range(self):
+    result = (BrowserConfig.parse("chrome-m99"),
+              BrowserConfig.parse("chrome-m100"),
+              BrowserConfig.parse("chrome-m101"),
+              BrowserConfig.parse("chrome-m102"))
+    versions = BrowserConfig.parse_with_range("chrome-m99...chrome-m102")
+    self.assertTupleEqual(versions, result)
+    versions = BrowserConfig.parse_with_range("chrome-m99...m102")
+    self.assertTupleEqual(versions, result)
+    versions = BrowserConfig.parse_with_range("chrome-m99...102")
+    self.assertTupleEqual(versions, result)
+
+  def test_parse_with_range_invalid_empty(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse_with_range("")
+    self.assertIn("empty", str(cm.exception))
+
+  def test_parse_with_range_invalid_prefix(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse_with_range("chr-m100...chrome-m200")
+    msg = str(cm.exception)
+    self.assertIn("'chr-m'", msg)
+    self.assertIn("'chrome-m'", msg)
+
+  def test_parse_with_range_invalid_limit(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse_with_range("chr-m100...chr-m90")
+    msg = str(cm.exception).lower()
+    self.assertIn("larger", msg)
+    self.assertIn("chr-m100...chr-m90", msg)
+
+  def test_parse_with_range_missing_digits(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse_with_range("chr-m...chrome-m90")
+    msg = str(cm.exception).lower()
+    self.assertIn("start", msg)
+    self.assertIn("'chr-m'", msg)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      BrowserConfig.parse_with_range("chr-m100...chr")
+    msg = str(cm.exception).lower()
+    self.assertIn("limit", msg)
+    self.assertIn("'chr'", msg)
 
 class TestProbeConfig(CrossbenchFakeFsTestCase):
   # pylint: disable=expression-not-assigned

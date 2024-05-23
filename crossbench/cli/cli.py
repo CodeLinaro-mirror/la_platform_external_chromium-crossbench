@@ -489,8 +489,8 @@ class CrossBenchCLI:
     browser_config_group.add_argument(
         "--browser",
         "-b",
-        type=cli_config.BrowserConfig.parse,
-        action="append",
+        type=cli_config.BrowserConfig.parse_with_range,
+        action="extend",
         default=[],
         help="Browser binary, defaults to 'chrome-stable'."
         "Use this to test a simple browser variant. "
@@ -501,6 +501,7 @@ class CrossBenchCLI:
         "for system default browsers or a full path. \n"
         "* Use --browser=chrome-M107 to download the latest version for a "
         "specific milestone\n"
+        "* Use ... to test milestone ranges --browser=chr-M100...M125"
         "* Use --browser=chrome-100.0.4896.168 to download a specific chrome version "
         "(macOS and linux for googlers and chrome only). \n"
         "* Use --browser=path/to/archive.dmg on macOS or "

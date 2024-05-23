@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import logging
 import re
 from typing import Any, Dict, Optional, TextIO, Tuple, Union, cast
 
@@ -38,6 +39,7 @@ SHORT_FORM_RE = re.compile(r"((?P<driver>\w{3,}):)??"
                            r"(?P<path>([A-Z]:[/\\])?[^:]+)"
                            f"(:(?P<network>{NETWORK_PRESETS}))?")
 ANDROID_PACKAGE_RE = re.compile(r"[a-z]+(\.[a-z]+){2,}")
+VERSION_FOR_RANGE_RE = re.compile(r"(?P<prefix>[^\d]*)(?P<milestone>\d+)")
 
 @dataclasses.dataclass(frozen=True)
 class BrowserConfig(ConfigObject):
@@ -80,6 +82,56 @@ class BrowserConfig(ConfigObject):
     assert network, "Invalid network"
     return cls(path, driver, network)
 
+  @classmethod
+  def parse_with_range(cls, value: Any) -> Tuple[BrowserConfig, ...]:
+    if isinstance(value, str):
+      return cls._parse_with_range(value)
+    return (cls.parse(value),)
+
+  @classmethod
+  def _parse_with_range(cls, value: str) -> Tuple[BrowserConfig, ...]:
+    if not value:
+      raise argparse.ArgumentTypeError("Cannot parse empty string")
+    parts = value.split("...", maxsplit=1)
+    start_version: str = parts.pop(0)
+    if not parts:
+      return (cls.parse(start_version),)
+    limit_version = parts[0]
+
+    start_match = VERSION_FOR_RANGE_RE.fullmatch(start_version)
+    if not start_match:
+      raise argparse.ArgumentTypeError(
+          f"Start of a browser range {repr(value)} must end in digits, "
+          f"but got {repr(start_version)}")
+    limit_match = VERSION_FOR_RANGE_RE.fullmatch(limit_version)
+    if not limit_match:
+      raise argparse.ArgumentTypeError(
+          f"Upper limit of a browser range {repr(value)} must end in digits, "
+          f"but got {repr(limit_version)}")
+
+    start_prefix = start_match["prefix"]
+    limit_prefix = limit_match["prefix"]
+    if limit_prefix and not start_prefix.endswith(limit_prefix):
+      raise argparse.ArgumentTypeError(
+          f"Browser version range start prefix {repr(start_prefix)} must match "
+          f"limit prefix {repr(limit_prefix)}: {repr(value)}")
+
+    start_milestone: int = cli_helper.parse_positive_int(
+        start_match["milestone"], "browser version range start milestone")
+    limit_milestone: int = cli_helper.parse_positive_int(
+        limit_match["milestone"], "browser version range limit milestone")
+    if start_milestone > limit_milestone:
+      raise argparse.ArgumentTypeError(
+          f"Browser version limit must be larger than start: {repr(value)}")
+
+    count = limit_milestone - start_milestone
+    logging.info("Creating %d intermediate browser versions from %s", count,
+                 value)
+    versions = []
+    for milestone in range(start_milestone, limit_milestone + 1):
+      version_str = f"{start_prefix}{milestone}"
+      versions.append(cls.parse(version_str))
+    return tuple(versions)
 
   @classmethod
   def _parse_path_or_identifier(
