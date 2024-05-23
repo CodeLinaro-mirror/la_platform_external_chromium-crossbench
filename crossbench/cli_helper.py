@@ -14,8 +14,8 @@ import math
 import re
 import shlex
 import sys
-from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional, Type,
-                    TypeVar, cast)
+from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional,
+                    Sequence, Type, TypeVar, cast)
 from urllib.parse import urlparse
 
 import colorama
@@ -403,6 +403,24 @@ def parse_sh_cmd(value: Any) -> List[str]:
   except ValueError as e:
     raise argparse.ArgumentTypeError(f"Invalid shell cmd: {value} ") from e
 
+
+SequenceT = TypeVar("SequenceT", bound=Sequence)
+
+
+def parse_unique_sequence(
+    value: SequenceT,
+    name: str = "sequence",
+    error_cls: Type[Exception] = argparse.ArgumentTypeError) -> SequenceT:
+  unique = set()
+  duplicates = set()
+  for item in value:
+    if item in unique:
+      duplicates.add(item)
+    else:
+      unique.add(item)
+  if not duplicates:
+    return value
+  raise error_cls(f"Unexpected duplicates in {name}: {repr(duplicates)}")
 
 
 class LateArgumentError(argparse.ArgumentTypeError):

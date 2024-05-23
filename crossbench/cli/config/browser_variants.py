@@ -140,9 +140,8 @@ class FlagsGroupConfig(tuple_t):
               f"Invalid flag variant value (None, str or sequence): "
               f"{flag_name}={repr(flag_value)}")
         if isinstance(flag_value, (list, tuple)):
-          if len(set(flag_value)) != len(flag_value):
-            raise ConfigError("Got duplicate flag variant values: "
-                              f"{flag_name}={repr(flag_value)}")
+          cli_helper.parse_unique_sequence(
+              flag_value, f"flag {repr(flag_name)} variant values", ConfigError)
 
   @classmethod
   def _dict_variant_to_group(cls, flag_name: str,
@@ -314,9 +313,8 @@ class BrowserVariantsConfig:
         BrowserConfig.default()
     ]
     assert isinstance(browser_list, list)
-    if len(browser_list) != len(set(browser_list)):
-      raise argparse.ArgumentTypeError(
-          f"Got duplicate --browser arguments: {browser_list}")
+    browser_list = cli_helper.parse_unique_sequence(browser_list,
+                                                    "--browser arguments")
     for i, browser in enumerate(browser_list):
       with exception.annotate(f"Append browser {i}"):
         self._append_browser(args, browser)

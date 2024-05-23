@@ -240,8 +240,7 @@ class Runner:
   def _validate_browsers(self) -> None:
     assert self.browsers, "No browsers provided"
     browser_unique_names = [browser.unique_name for browser in self.browsers]
-    assert len(browser_unique_names) == len(set(browser_unique_names)), (
-        f"Duplicated browser names in {browser_unique_names}")
+    cli_helper.parse_unique_sequence(browser_unique_names, "browser names")
 
   def _attach_default_probes(self, probe_list: Iterable[Probe]) -> None:
     assert len(self._probes) == 0

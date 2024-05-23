@@ -244,9 +244,8 @@ class TraceProcessorProbe(Probe):
                   stack.enter_context(f)
                   fieldnames = sorted(extra_columns.keys()) + list(
                       reader.fieldnames)
-                  unique_fieldnames = set(fieldnames)
-                  if len(unique_fieldnames) != len(fieldnames):
-                    raise ValueError(f"Got duplicate field names: {fieldnames}")
+                  cli_helper.parse_unique_sequence(fieldnames, "field names",
+                                                   ValueError)
                   w = csv.DictWriter(f, fieldnames=fieldnames)
                   w.writeheader()
                   writers[file.name] = w

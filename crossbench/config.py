@@ -103,8 +103,7 @@ class _ConfigArgParser:
     if self.name in unique:
       raise ValueError(f"Config name '{self.name}' cannot be part "
                        f"of the aliases='{self.aliases}'")
-    if len(unique) != len(self.aliases):
-      raise ValueError(f"aliases={self.aliases} contain duplicates")
+    cli_helper.parse_unique_sequence(self.aliases, "aliases", ValueError)
 
   def _validate_choices(
       self, choices: Optional[frozenset[Any]]) -> Optional[frozenset]:

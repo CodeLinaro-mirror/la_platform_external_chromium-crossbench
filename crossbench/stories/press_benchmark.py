@@ -9,6 +9,7 @@ import datetime as dt
 import logging
 from typing import List, Optional, Sequence, Tuple, Type, TypeVar
 
+from crossbench import cli_helper
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
@@ -156,14 +157,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     assert url is not None, f"{cls}.{property_name} is not set."
 
   def _verify_substories(self) -> None:
-    if len(self._substories) != len(set(self._substories)):
-      # Beware of the O(n**2):
-      duplicates = set(
-          substory for substory in self._substories
-          if self._substories.count(substory) > 1)
-      assert duplicates, (
-          f"substories='{self._substories}' contains duplicate entries: "
-          f"{duplicates}")
+    cli_helper.parse_unique_sequence(self._substories, "substories", ValueError)
     if self._substories == self.SUBSTORIES:
       return
     for substory in self._substories:
