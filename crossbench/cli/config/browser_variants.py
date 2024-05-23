@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 
 def _flags_to_label(flags: Flags) -> str:
-  return convert_flags_to_label(*flags.get_list())
+  return convert_flags_to_label(*flags)
 
 
 FlagItemT = Tuple[str, Optional[str]]

@@ -101,7 +101,7 @@ class Firefox(Browser):
       flags_copy["--profile"] = str(self.cache_dir)
     if self.log_file:
       flags_copy["--MOZ_LOG_FILE"] = str(self.log_file)
-    return tuple(flags_copy.get_list())
+    return tuple(flags_copy)
 
   def _handle_viewport_flags(self, flags: Flags) -> None:
     new_width, new_height = 0, 0

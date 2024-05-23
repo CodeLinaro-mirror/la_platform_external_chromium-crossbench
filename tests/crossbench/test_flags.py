@@ -85,12 +85,12 @@ class TestFlags(unittest.TestCase):
 
   def test_get_list(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
-    self.assertEqual(list(flags.get_list()), ["--foo=v1", "--bar"])
+    self.assertEqual(list(flags), ["--foo=v1", "--bar"])
 
   def test_copy(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
     copy = flags.copy()
-    self.assertEqual(list(flags.get_list()), list(copy.get_list()))
+    self.assertEqual(list(flags), list(copy))
     self.assertEqual(str(flags), str(copy))
 
   def test_copy_frozen(self):
@@ -189,6 +189,11 @@ class TestFlags(unittest.TestCase):
     with self.assertRaises(FrozenFlagsError) as cm:
       flags["--bar"] = "0"
     self.assertIn("frozen", str(cm.exception))
+
+  def test_iter(self):
+    flags = self.CLASS.parse("--foo --bar=1")
+    self.assertListEqual(list(flags), ["--foo", "--bar=1"])
+    self.assertListEqual([*flags], ["--foo", "--bar=1"])
 
 
 class TestChromeFlags(TestFlags):
@@ -311,7 +316,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-features"] = "F3,F4"
     flags["--enable-blink-features"] = "BLINK_F1,BLINK_F2"
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
-    flags_list = list(flags.get_list())
+    flags_list = list(flags)
     self.assertListEqual(flags_list, [
         "--js-flags=--js-foo=v3,--no-js-bar",
         "--enable-features=F1,F2",
@@ -323,48 +328,48 @@ class TestChromeFlags(TestFlags):
   def test_initial_data_empty(self):
     flags = self.CLASS()
     flags_copy = self.CLASS(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
     flags_copy = self.CLASS()
     flags_copy.update(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
 
   def test_initial_data_simple(self):
     flags = self.CLASS()
     flags["--no-sandbox"] = None
     flags_copy = self.CLASS(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
     flags_copy = self.CLASS()
     flags_copy.update(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
 
   def test_initial_data_js_flags(self):
     flags = self.CLASS()
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags_copy = self.CLASS(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
     flags_copy = self.CLASS()
     flags_copy.update(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
 
   def test_initial_data_features(self):
     flags = self.CLASS()
     flags["--enable-features"] = "F1,F2"
     flags["--disable-features"] = "F3,F4"
     flags_copy = self.CLASS(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
     flags_copy = self.CLASS()
     flags_copy.update(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
 
   def test_initial_data_blink_features(self):
     flags = self.CLASS()
     flags["--enable-blink-features"] = "BLINK_F1,BLINK_F2"
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_copy = self.CLASS(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
     flags_copy = self.CLASS()
     flags_copy.update(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
 
   def test_initial_data_all(self):
     flags = self.CLASS()
@@ -375,10 +380,10 @@ class TestChromeFlags(TestFlags):
     flags["--enable-blink-features"] = "BLINK_F1,BLINK_F2"
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_copy = self.CLASS(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
     flags_copy = self.CLASS()
     flags_copy.update(flags)
-    self.assertListEqual(list(flags.get_list()), list(flags_copy.get_list()))
+    self.assertListEqual(list(flags), list(flags_copy))
 
   def test_set_js_flags(self):
     flags = self.CLASS()
@@ -397,12 +402,12 @@ class TestChromeFlags(TestFlags):
     flags_4 = self.CLASS()
     flags_4["--js-flags"] = "--f-one='1' --no-f-two, --f-three=\"3\""
 
-    list_1 = list(flags_1.js_flags.get_list())
-    list_2 = list(flags_2.js_flags.get_list())
+    list_1 = list(flags_1.js_flags)
+    list_2 = list(flags_2.js_flags)
     self.assertListEqual(list_1, list_2)
-    list_3 = list(flags_3.js_flags.get_list())
+    list_3 = list(flags_3.js_flags)
     self.assertListEqual(list_1, list_3)
-    list_4 = list(flags_4.js_flags.get_list())
+    list_4 = list(flags_4.js_flags)
     self.assertListEqual(list_1, list_4)
 
     for flags in (flags_1, flags_2, flags_3):
@@ -448,15 +453,14 @@ class TestChromeFlags(TestFlags):
         "--disable-blink-features": "blink_feature_y,blink_feature_z"
     })
     self.assertListEqual(
-        list(flags.js_flags.get_list()),
-        ["--log-maps", "--log-ic", "--log-all"])
+        list(flags.js_flags), ["--log-maps", "--log-ic", "--log-all"])
     self.assertListEqual(
-        list(flags.features.get_list()), [
+        list(flags.features), [
             "--enable-features=feature_1,feature_2,feature_x",
             "--disable-features=feature_3,feature_y,feature_z"
         ])
     self.assertListEqual(
-        list(flags.blink_features.get_list()), [
+        list(flags.blink_features), [
             "--enable-blink-features=blink_feature_1,blink_feature_2,blink_feature_x",
             "--disable-blink-features=blink_feature_3,blink_feature_y,blink_feature_z"
         ])
@@ -598,7 +602,7 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
   def test_empty(self):
     features = self.instance()
     self.assertEqual(str(features), "")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 0)
     self.assertDictEqual(features.enabled, {})
     self.assertSetEqual(features.disabled, set())
@@ -607,7 +611,7 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     features = self.instance()
     features.enable("feature1")
     features.enable("feature2")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 1)
     features_str = str(features)
     self.assertIn("=feature1,feature2", features_str)
@@ -616,7 +620,7 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     features = self.instance()
     features.disable("feature1")
     features.disable("feature2")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 1)
     features_str = str(features)
     self.assertIn("=feature1,feature2", features_str)
@@ -625,7 +629,7 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     features = self.instance()
     features.enable("feature1")
     features.disable("feature2")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 2)
     features_str = str(features)
     self.assertIn("feature1", features_str)
@@ -682,7 +686,7 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     features.enable("feature3:k1/v1/k2/v2")
     features.enable("feature4<Trial1:k1/v1/k2/v2")
     features.enable("feature5<Trial1.Group1:k1/v1/k2/v2")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 1)
 
   def test_disable_complex_features(self):
@@ -692,7 +696,7 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     features.disable("feature3:k1/v1/k2/v2")
     features.disable("feature4<Trial1:k1/v1/k2/v2")
     features.disable("feature5<Trial1.Group1:k1/v1/k2/v2")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 1)
     features_str = str(features)
     self.assertIn("feature1", features_str)
@@ -762,7 +766,7 @@ class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
   def test_empty(self):
     features = self.instance()
     self.assertEqual(str(features), "")
-    features_list = list(features.get_list())
+    features_list = list(features)
     self.assertEqual(len(features_list), 0)
     self.assertDictEqual(features.enabled, {})
     self.assertSetEqual(features.disabled, set())

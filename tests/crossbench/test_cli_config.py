@@ -1159,10 +1159,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(browsers), 3)
     for browser in browsers:
       assert isinstance(browser, mock_browser.MockChromeStable)
-      self.assertDictEqual(dict(browser.js_flags), {})
-    self.assertDictEqual(dict(browsers[0].flags), {})
-    self.assertDictEqual(dict(browsers[1].flags), {"--foo": None})
-    self.assertDictEqual(dict(browsers[2].flags), {"--foo": "v1"})
+      self.assertDictEqual(browser.js_flags.to_dict(), {})
+    self.assertDictEqual(browsers[0].flags.to_dict(), {})
+    self.assertDictEqual(browsers[1].flags.to_dict(), {"--foo": None})
+    self.assertDictEqual(browsers[2].flags.to_dict(), {"--foo": "v1"})
 
   def test_flag_list(self):
     config = BrowserVariantsConfig(
@@ -1187,10 +1187,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(browsers), 3)
     for browser in browsers:
       assert isinstance(browser, mock_browser.MockChromeStable)
-      self.assertDictEqual(dict(browser.js_flags), {})
-    self.assertDictEqual(dict(browsers[0].flags), {})
-    self.assertDictEqual(dict(browsers[1].flags), {"--foo": None})
-    self.assertDictEqual(dict(browsers[2].flags), {"-foo": "v1"})
+      self.assertDictEqual(browser.js_flags.to_dict(), {})
+    self.assertDictEqual(browsers[0].flags.to_dict(), {})
+    self.assertDictEqual(browsers[1].flags.to_dict(), {"--foo": None})
+    self.assertDictEqual(browsers[2].flags.to_dict(), {"-foo": "v1"})
 
   def test_flag_combination(self):
     config = BrowserVariantsConfig(
@@ -1231,10 +1231,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args)
     browsers = config.variants
     self.assertEqual(len(browsers), 2)
-    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags.get_list()))
+    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
     self.assertListEqual(
         ["--no-sandbox", "--enable-features=ConsumeCompileHints"],
-        list(browsers[1].flags.get_list()))
+        list(browsers[1].flags))
 
   def test_flag_single_inline(self):
     config = BrowserVariantsConfig(
@@ -1250,7 +1250,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args)
     browsers = config.variants
     self.assertEqual(len(browsers), 1)
-    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags.get_list()))
+    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
 
   def test_flag_combination_mixed_fixed(self):
     config = BrowserVariantsConfig(
@@ -1272,10 +1272,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args)
     browsers = config.variants
     self.assertEqual(len(browsers), 2)
-    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags.get_list()))
+    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
     self.assertListEqual(
         ["--no-sandbox", "--enable-features=ConsumeCompileHints"],
-        list(browsers[1].flags.get_list()))
+        list(browsers[1].flags))
 
   def test_conflicting_chrome_features(self):
     with self.assertRaises(ConfigError) as cm:

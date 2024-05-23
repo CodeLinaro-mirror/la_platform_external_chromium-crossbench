@@ -197,7 +197,7 @@ class Chromium(Browser):
       log = cast(JsonDict, details["log"])
       log[self.type_name] = str(self.chrome_log_file)
       log["stdout"] = str(self.stdout_log_file)
-    details["js_flags"] = tuple(self.js_flags.get_list())
+    details["js_flags"] = tuple(self.js_flags)
     return details
 
   def _get_browser_flags_for_session(
@@ -224,7 +224,7 @@ class Chromium(Browser):
 
     flags_copy = self._filter_flags_for_run(flags_copy)
 
-    return tuple(flags_copy.get_list())
+    return tuple(flags_copy)
 
   def _handle_viewport_flags(self, flags: Flags) -> None:
     self._sync_viewport_flag(flags, "--start-fullscreen",

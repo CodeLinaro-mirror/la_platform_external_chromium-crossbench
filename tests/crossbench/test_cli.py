@@ -508,7 +508,7 @@ class CliTestCase(BaseCliTestCase):
     self.assertEqual(len(runner.browsers), 1)
     browser = runner.browsers[0]
     self.assertListEqual(["--chrome-flag1=value1", "--chrome-flag2"],
-                         list(browser.flags.get_list()))
+                         list(browser.flags))
 
   def test_browser_identifiers(self):
     browsers: Dict[str, Type[mock_browser.MockBrowser]] = {

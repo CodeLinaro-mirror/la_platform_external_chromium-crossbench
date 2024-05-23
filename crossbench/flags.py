@@ -222,11 +222,21 @@ class BasicFlags(Freezable, collections.UserDict):
       return flag_name
     return f"{flag_name}={value}"
 
-  def get_list(self) -> Iterator[str]:
-    return (k if v is None else f"{k}={v}" for k, v in self.items())
+  def items(self) -> Iterable[Tuple[str, Optional[str]]]:
+    return self.data.items()
+
+  def to_dict(self) -> Dict[str, Optional[str]]:
+    return dict(self.items())
+
+  def __iter__(self) -> Iterator[str]:
+    for k, v in self.items():
+      if v is None:
+        yield k
+      else:
+        yield f"{k}={v}"
 
   def __str__(self) -> str:
-    return " ".join(self.get_list())
+    return " ".join(self)
 
 
 class Flags(BasicFlags):
@@ -334,7 +344,7 @@ class JSFlags(Flags):
                          f"{repr(self._describe(flag_name))}")
 
   def __str__(self) -> str:
-    return ",".join(self.get_list())
+    return ",".join(self)
 
 
 class ChromeFlags(Flags):
@@ -541,13 +551,12 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
       joined = ",".join(self._disabled)
       yield (self.DISABLE_FLAG, joined)
 
-  def get_list(self) -> Iterable[str]:
+  def __iter__(self) -> Iterator[str]:
     for flag_name, features_str in self.items():
       yield f"{flag_name}={features_str}"
 
   def __str__(self) -> str:
-    result = " ".join(self.get_list())
-    return result
+    return " ".join(self)
 
 
 class ChromeFeatures(ChromeBaseFeatures):

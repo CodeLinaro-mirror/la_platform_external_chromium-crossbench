@@ -203,7 +203,7 @@ class Browser(abc.ABC):
         "unique_name": self.unique_name,
         "app_name": self.app_name,
         "version": self.version,
-        "flags": tuple(self.flags.get_list()),
+        "flags": tuple(self.flags),
         "js_flags": [],
         "path": str(self.path),
         "clear_cache_dir": self.clear_cache_dir,
@@ -253,7 +253,7 @@ class Browser(abc.ABC):
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self))
     flags_copy = self._filter_flags_for_run(flags_copy)
-    return tuple(flags_copy.get_list())
+    return tuple(flags_copy)
 
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     return flags
