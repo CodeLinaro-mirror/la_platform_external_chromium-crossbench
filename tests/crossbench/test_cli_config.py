@@ -1651,15 +1651,35 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
     empty = FlagsVariantConfig("default")
     self.assertEqual(empty.label, "default")
     self.assertFalse(empty.flags)
+    self.assertEqual(empty.index, 0)
 
   def test_merge_copy(self):
     flags_a = Flags.parse("--foo-a")
     flags_b = Flags.parse("--bar-b=1")
-    variant_a = FlagsVariantConfig("label_a", flags_a)
-    variant_b = FlagsVariantConfig("label_b", flags_b)
+    variant_a = FlagsVariantConfig("label_a", 0, flags_a)
+    variant_b = FlagsVariantConfig("label_b", 1, flags_b)
     variant = variant_a.merge_copy(variant_b)
     self.assertEqual(variant.label, "label_a_label_b")
     self.assertEqual(str(variant.flags), "--foo-a --bar-b=1")
+    self.assertEqual(variant.index, 0)
+
+    variant = variant_a.merge_copy(variant_b, index=11, label="custom_label")
+    self.assertEqual(variant.label, "custom_label")
+    self.assertEqual(str(variant.flags), "--foo-a --bar-b=1")
+    self.assertEqual(variant.index, 11)
+
+  def test_equal(self):
+    variant_a = FlagsVariantConfig.parse("label_a", 0, "--foo=a")
+    variant_b = FlagsVariantConfig.parse("label_b", 1, "--foo=a")
+    variant_c = FlagsVariantConfig.parse("label_b", 1, "--foo=b")
+    self.assertEqual(variant_a, variant_b)
+    self.assertEqual(variant_b, variant_a)
+    self.assertNotEqual(variant_a, variant_c)
+    self.assertNotEqual(variant_b, variant_c)
+    variants = set((variant_a,))
+    self.assertIn(variant_a, variants)
+    self.assertIn(variant_b, variants)
+    self.assertNotIn(variant_c, variants)
 
 
 class FlagsGroupConfigTestCase(unittest.TestCase):
@@ -1679,6 +1699,7 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     group = FlagsGroupConfig.parse("--foo-a=1")
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo-a=1")
+    self.assertEqual(group[0].label, "default")
 
   def test_parse_str_multiple(self):
     group = FlagsGroupConfig.parse(("--foo-a=1 --bar", "--foo-a=2"))
@@ -1726,6 +1747,28 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
           ["--foo --duplicate='foo'", "--foo --duplicate='foo'"])
     self.assertIn("duplicate", str(cm.exception))
 
+  def test_parse_dict_single_with_labels(self):
+    group = FlagsGroupConfig.parse({
+        "config_1": "--foo=1 --bar",
+        "config_2": "",
+    })
+    self.assertEqual(len(group), 2)
+    self.assertEqual(str(group[0].flags), "--foo=1 --bar")
+    self.assertEqual(str(group[1].flags), "")
+    self.assertEqual(group[0].label, "config_1")
+    self.assertEqual(group[1].label, "config_2")
+    for index, group in enumerate(group):
+      self.assertEqual(group.index, index)
+
+  def test_parse_dict_with_labels_duplicate_flags(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = FlagsGroupConfig.parse({
+          "config_1": "--foo=1 --bar",
+          "config_2": "--foo=1 --bar",
+      })
+    self.assertIn("duplicate", str(cm.exception).lower())
+    self.assertIn("--foo=1 --bar", str(cm.exception).lower())
+
   def test_parse_dict_single(self):
     group = FlagsGroupConfig.parse({
         "--foo": "1",
@@ -1743,6 +1786,8 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     self.assertEqual(str(group[0].flags), "--bar")
     self.assertEqual(str(group[1].flags), "--foo=1 --bar")
     self.assertEqual(str(group[2].flags), "--foo=2 --bar")
+    for index, group in enumerate(group):
+      self.assertEqual(group.index, index)
 
   def test_parse_dict_multiple_2_x_2(self):
     group = FlagsGroupConfig.parse({
@@ -1754,13 +1799,22 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     self.assertEqual(str(group[1].flags), "--bar=b")
     self.assertEqual(str(group[2].flags), "--foo=a")
     self.assertEqual(str(group[3].flags), "--foo=a --bar=b")
+    self.assertEqual(group[0].label, "default")
+    self.assertEqual(group[1].label, "bar=b")
+    self.assertEqual(group[2].label, "foo=a")
+    self.assertEqual(group[3].label, "foo=a_bar=b")
+    for index, group in enumerate(group):
+      self.assertEqual(group.index, index)
 
   def test_product_single(self):
     group_a = FlagsGroupConfig.parse("--foo-a=1")
     group_b = FlagsGroupConfig.parse("--foo-b=1")
+    self.assertEqual(group_a[0].label, "default")
+    self.assertEqual(group_b[0].label, "default")
     group = group_a.product(group_b)
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo-a=1 --foo-b=1")
+    self.assertEqual(group[0].label, "default")
 
   def test_product_empty_empty(self):
     group_a = FlagsGroupConfig()
@@ -1772,12 +1826,15 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
 
   def test_product_same(self):
     group_a = FlagsGroupConfig.parse("--foo-b=1")
+    self.assertEqual(group_a[0].label, "default")
     group = group_a.product(group_a)
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo-b=1")
+    self.assertEqual(group[0].label, "default")
     group = group_a.product(group_a, group_a, group_a)
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo-b=1")
+    self.assertEqual(group[0].label, "default")
 
   def test_product_same_values(self):
     group_a = FlagsGroupConfig.parse("--foo-b=1")
@@ -1809,6 +1866,8 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     self.assertEqual(len(group), 2)
     self.assertEqual(str(group[0].flags), "--foo-b=1")
     self.assertEqual(str(group[1].flags), "--foo-a=1 --foo-b=1")
+    self.assertEqual(group[0].label, "default")
+    self.assertEqual(group[1].label, "foo_a=1")
 
   def test_product_2_x_2(self):
     group_a = FlagsGroupConfig.parse((
@@ -1822,6 +1881,12 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     self.assertEqual(str(group[1].flags), "--foo-b=1")
     self.assertEqual(str(group[2].flags), "--foo-a=1")
     self.assertEqual(str(group[3].flags), "--foo-a=1 --foo-b=1")
+    self.assertEqual(group[0].label, "default")
+    self.assertEqual(group[1].label, "foo_b=1")
+    self.assertEqual(group[2].label, "foo_a=1")
+    self.assertEqual(group[3].label, "foo_a=1_foo_b=1")
+    for index, group in enumerate(group):
+      self.assertEqual(group.index, index)
 
   def test_product_conflicting(self):
     group_a = FlagsGroupConfig.parse(("--foo=1"))

@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import functools
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set,
-                    TextIO, Tuple, Type, Union, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
+                    Set, TextIO, Tuple, Type, Union, cast)
 
 import hjson
 from immutabledict import immutabledict
@@ -43,22 +43,34 @@ def _flags_to_label(flags: Flags) -> str:
 FlagItemT = Tuple[str, Optional[str]]
 FlagVariantsDictT = Dict[str, List[str]]
 
+DEFAULT_LABEL: Final[str] = "default"
 
 @dataclasses.dataclass(frozen=True)
 class FlagsVariantConfig:
   label: str
+  index: int = 0
   flags: Flags = dataclasses.field(default_factory=lambda: Flags().freeze())
 
   @classmethod
-  def parse(cls, name: str, data: Any):
-    return cls(name, Flags.parse(data).freeze())
+  def parse(cls, name: str, index: int, data: Any):
+    return cls(name, index, Flags.parse(data).freeze())
 
   def merge_copy(self,
                  other: FlagsVariantConfig,
-                 label: Optional[str] = None) -> FlagsVariantConfig:
+                 label: Optional[str] = None,
+                 index: int = -1) -> FlagsVariantConfig:
+    index = self.index if index < 0 else index
     new_label = label or f"{self.label}_{other.label}"
-    return FlagsVariantConfig(new_label,
+    return FlagsVariantConfig(new_label, index,
                               self.flags.merge_copy(other.flags).freeze())
+
+  def __hash__(self) -> int:
+    return hash(self.flags)
+
+  def __eq__(self, other: Any) -> bool:
+    if not isinstance(other, FlagsVariantConfig):
+      return False
+    return self.flags == other.flags
 
 
 try:
@@ -97,18 +109,30 @@ class FlagsGroupConfig(tuple_t):
       return FlagsGroupConfig()
     all_flag_keys = all(key.startswith("-") for key in config.keys())
     all_str_values = all(isinstance(value, str) for value in config.values())
-    variants: List[FlagsVariantConfig] = []
     if not all_flag_keys:
-      logging.debug("Using custom flag group labels")
-      for label, value in config.items():
-        with exception.annotate(f"Parsing flag variant ...[{repr(label)}]:"):
-          variants.append(FlagsVariantConfig.parse(label, value))
-    elif all_str_values:
-      logging.debug("Using single flag group dict")
-      variants.append(FlagsVariantConfig.parse("default", config))
-    else:
-      return cls._load_variants_dict(config)
+      return cls.load_dict_with_labels(config)
+    if all_str_values:
+      return cls.load_dict_simple(config)
+    return cls._load_variants_dict(config)
+
+  @classmethod
+  def load_dict_with_labels(cls, config: Dict) -> FlagsGroupConfig:
+    variants: OrderedSet[FlagsVariantConfig] = OrderedSet()
+    logging.debug("Using custom flag group labels")
+    for label, value in config.items():
+      with exception.annotate_argparsing(
+          f"Parsing flag variant ...[{repr(label)}]:"):
+        variant = FlagsVariantConfig.parse(label, len(variants), value)
+        if variant in variants:
+          raise ConfigError(f"Duplicate flag variant: {value}")
+        variants.add(variant)
     return FlagsGroupConfig(tuple(variants))
+
+  @classmethod
+  def load_dict_simple(cls, config: Dict) -> FlagsGroupConfig:
+    logging.debug("Using single flag group dict")
+    variants = (FlagsVariantConfig.parse(DEFAULT_LABEL, 0, config),)
+    return FlagsGroupConfig(variants)
 
   @classmethod
   def _load_variants_dict(cls, data: Dict[str, Any]) -> FlagsGroupConfig:
@@ -131,7 +155,8 @@ class FlagsGroupConfig(tuple_t):
   def _validate_variants_dict(cls, data: Dict[str, Any]) -> None:
     flags = Flags()
     for flag_name, flag_value in data.items():
-      with exception.annotate(f"Parsing flag variant ...[{flag_name}]:"):
+      with exception.annotate_argparsing(
+          f"Parsing flag variant ...[{flag_name}]:"):
         flags.set(flag_name)
         if flag_value is None:
           continue
@@ -187,14 +212,15 @@ class FlagsGroupConfig(tuple_t):
       if flag_data in duplicates:
         raise ConfigError(f"Duplicate variant: {flags}")
       duplicates.add(flag_data)
-      variants.append(FlagsVariantConfig(_flags_to_label(flags), flags))
+      variants.append(
+          FlagsVariantConfig(_flags_to_label(flags), len(variants), flags))
     return FlagsGroupConfig(tuple(variants))
 
   @classmethod
   def loads(cls, value: str) -> FlagsGroupConfig:
     if not value.strip():
       return FlagsGroupConfig()
-    variants = (FlagsVariantConfig.parse("default", value),)
+    variants = (FlagsVariantConfig.parse(DEFAULT_LABEL, 0, value),)
     return FlagsGroupConfig(variants)
 
   def product(self, *args: FlagsGroupConfig) -> FlagsGroupConfig:
@@ -215,7 +241,7 @@ class FlagsGroupConfig(tuple_t):
                                                variant_other)
         new_labels.add(new_label)
         new_variant: FlagsVariantConfig = variant.merge_copy(
-            variant_other, label=new_label)
+            variant_other, index=len(new_variants), label=new_label)
         new_variants.append(new_variant)
 
     return FlagsGroupConfig(tuple(new_variants))
@@ -224,6 +250,10 @@ class FlagsGroupConfig(tuple_t):
                             variant_a: FlagsVariantConfig,
                             variant_b: FlagsVariantConfig) -> str:
     default = f"{variant_a.label}_{variant_b.label}"
+    if variant_a.label == DEFAULT_LABEL:
+      default = variant_b.label
+    if variant_b.label == DEFAULT_LABEL:
+      default = variant_a.label
     label = default
     if not variant_a.flags:
       label = variant_b.label
@@ -415,7 +445,7 @@ class BrowserVariantsConfig:
   def _get_browser_variants(
       self, browser_name: str,
       raw_browser_data: Union[str, Dict[str, Any]]) -> FlagsGroupConfig:
-    default_variant = FlagsVariantConfig("default")
+    default_variant = FlagsVariantConfig(DEFAULT_LABEL)
     flag_variants = FlagsGroupConfig((default_variant,))
     if not isinstance(raw_browser_data, dict):
       return flag_variants
