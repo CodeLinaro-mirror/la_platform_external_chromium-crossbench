@@ -2,35 +2,22 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import abc
 import pathlib
-from unittest import mock
 
 from crossbench.browsers.chrome.downloader import (ChromeDownloader,
                                                    ChromeDownloaderLinux,
                                                    ChromeDownloaderMacOS,
                                                    ChromeDownloaderWin)
 from tests import test_helper
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.browsers.test_downloader_helper import AbstractDownloaderTestCase
 
 
 class AbstractChromeDownloaderTestCase(
-    BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
+    AbstractDownloaderTestCase, metaclass=abc.ABCMeta):
   __test__ = False
-
-  def setUp(self) -> None:
-    super().setUp()
-    self.platform = mock.Mock(
-        is_remote=False,
-        is_linux=False,
-        is_macos=False,
-        sh_results=[],
-        path=pathlib.Path)
-    self.platform.search_app = lambda x: x
-    self.platform.which = pathlib.Path
-    self.platform.host_platform = self.platform
-    self.cache_dir = pathlib.Path("crossbench/binary_cache")
-    self.fs.create_dir(self.cache_dir)
 
   def test_wrong_versions(self) -> None:
     with self.assertRaises(ValueError):
@@ -61,8 +48,8 @@ class AbstractChromeDownloaderTestCase(
     self.assertFalse(ChromeDownloader.is_valid("M4", self.platform))
     self.assertFalse(ChromeDownloader.is_valid("M1234", self.platform))
     self.assertFalse(ChromeDownloader.is_valid("M123.4", self.platform))
-    self.assertFalse(ChromeDownloader.is_valid("M123 ", self.platform))
-    self.assertFalse(ChromeDownloader.is_valid("M12 ", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M123 ", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M12 ", self.platform))
     self.assertFalse(ChromeDownloader.is_valid("145", self.platform))
     self.assertFalse(ChromeDownloader.is_valid("45", self.platform))
     self.assertFalse(ChromeDownloader.is_valid("i145", self.platform))
@@ -83,9 +70,9 @@ class AbstractChromeDownloaderTestCase(
     self.assertTrue(ChromeDownloader.is_valid("chrome-100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-m100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-100", self.platform))
-    self.assertFalse(
+    self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome m100", self.platform))
-    self.assertFalse(
+    self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome 100", self.platform))
 
     self.assertFalse(
@@ -97,7 +84,7 @@ class AbstractChromeDownloaderTestCase(
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome Canary M111.0.5563.110",
                                   self.platform))
-    self.assertTrue(ChromeDownloader.is_valid("111.0.5563.110", self.platform))
+    self.assertFalse(ChromeDownloader.is_valid("111.0.5563.110", self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome 111.0.5563.110",
                                   self.platform))
@@ -137,6 +124,7 @@ class BasicChromeDownloaderTestCaseLinux(AbstractChromeDownloaderTestCase):
     self.assertTrue(ChromeDownloaderLinux.is_valid(path, self.platform))
     self.assertFalse(ChromeDownloaderMacOS.is_valid(path, self.platform))
     self.assertFalse(ChromeDownloaderWin.is_valid(path, self.platform))
+
 
 class BasicChromeDownloaderTestCaseMacOS(AbstractChromeDownloaderTestCase):
   __test__ = True

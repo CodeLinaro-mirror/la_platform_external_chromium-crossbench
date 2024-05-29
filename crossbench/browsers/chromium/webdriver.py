@@ -124,8 +124,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
   def _check_driver_version(self) -> None:
     assert self._driver_path, "No driver available"
-    driver_version = ChromeDriverVersion(
-        self.platform.host_platform.sh_stdout(self._driver_path, "--version"))
+    raw_version_str = self.platform.host_platform.sh_stdout(
+        self._driver_path, "--version")
+    driver_version = ChromeDriverVersion.parse(raw_version_str)
     if driver_version.major != self.major_version:
       raise RuntimeError(f"Driver version {driver_version} "
                          f"does not match browser {self.version} ({self})")

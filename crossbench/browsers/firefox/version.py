@@ -5,16 +5,18 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Final, Tuple
+from typing import Dict, Final, Optional, Tuple
 
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 
 class FirefoxVersion(BrowserVersion):
   _PARTS_LEN: Final[int] = 4
-  _VERSION_RE = re.compile(r"[^\d]+ (?P<version>"
+  _PREFIX_RE = re.compile(r"(mozilla )?(ff|firefox)[ -]?", re.I)
+  _VERSION_RE = re.compile(r"(?P<prefix>[^\d]*)"
+                           r"(?P<version>"
                            r"(?P<parts>\d+\.\d+(?P<channel>[ab.])\d+)"
-                           r")(?P<channel_esr>esr)?")
+                           r") ?(?P<channel_long>esr|any)?")
   _SPLIT_RE = re.compile(r"[ab.]")
   _CHANNEL_LOOKUP: Dict[str, Tuple[BrowserVersionChannel, int]] = {
       "esr": (BrowserVersionChannel.LTS, 3),
@@ -23,30 +25,41 @@ class FirefoxVersion(BrowserVersion):
       # remap Firefox Dev => beta.
       "b": (BrowserVersionChannel.BETA, 1),
       "a": (BrowserVersionChannel.ALPHA, 0),
+      "any": (BrowserVersionChannel.ANY, -1),
   }
 
+  @classmethod
   def _parse(
-      self,
+      cls,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    matches = self._VERSION_RE.fullmatch(full_version.strip())
+    matches = cls._VERSION_RE.fullmatch(full_version.strip())
     if not matches:
-      raise ValueError(
-          f"Could not extract version number from '{full_version}'")
+      raise cls.parse_error("Could not extract version number", full_version)
+    prefix = matches["prefix"]
+    if not cls._validate_prefix(prefix):
+      raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
     version_str = matches["version"]
     version_parts = matches["parts"]
     assert version_parts and version_str
-    if matches["channel_esr"] and matches["channel"] != ".":
-      raise ValueError(f"Invalid ESR version: {full_version}")
-    channel: str = (matches["channel_esr"] or matches["channel"] or
-                    "stable").lower()
-    browser_channel, channel_id = self._CHANNEL_LOOKUP[channel]
-    parts = tuple(map(int, self._SPLIT_RE.split(version_parts)))
+    if matches["channel_long"] and matches["channel"] != ".":
+      raise cls.parse_error("Invalid ESR/Any channel version", full_version)
+    channel_str: str = (matches["channel_long"] or matches["channel"] or
+                        "stable").lower()
+    browser_channel, channel_id = cls._CHANNEL_LOOKUP[channel_str]
+    parts = tuple(map(int, cls._SPLIT_RE.split(version_parts)))
     if len(parts) != 3:
-      raise ValueError(
-          f"Invalid number of version number parts in '{full_version}'")
+      raise cls.parse_error("Invalid number of version number parts",
+                            full_version)
     # Inject browser_channel into the version parts to make it unique
-    parts = parts[:-1] + (channel_id, parts[-1])
+    if channel_id >= 0:
+      parts = parts[:-1] + (channel_id, parts[-1])
     return parts, browser_channel, version_str
+
+  @classmethod
+  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
+    if not prefix:
+      return True
+    return bool(cls._PREFIX_RE.match(prefix))
 
   def _channel_name(self, channel: BrowserVersionChannel) -> str:
     if channel == BrowserVersionChannel.LTS:
@@ -61,7 +74,7 @@ class FirefoxVersion(BrowserVersion):
 
   @property
   def is_complete(self) -> bool:
-    return len(self.parts) == 4
+    return len(self.parts) == 4 and self.has_channel
 
   @property
   def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:

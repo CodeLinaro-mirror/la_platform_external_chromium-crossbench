@@ -505,8 +505,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       _ = BrowserConfig.parse("applescript:chrome-m1")
     self.assertIn("m1", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      _ = BrowserConfig.parse("selenium:chrome-116.845.4")
-    self.assertIn("116.845.4", str(cm.exception))
+      _ = BrowserConfig.parse("selenium:chrome-116.845.4.3.2.1.0")
+    self.assertIn("116.845.4.3.2.1.0", str(cm.exception))
 
   def test_parse_adb_phone_serial(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]

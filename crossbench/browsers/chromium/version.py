@@ -15,65 +15,83 @@ class ChromiumVersion(BrowserVersion):
   _PARTS_LEN: Final[int] = 4
   _VERSION_RE = re.compile(
       r"(?P<prefix>[^\d]*)"
-      r"((?P<version>\d+(\.[^. ]+){0,3})|"
-      r"(?P<channel>extended|stable|beta|dev|canary))"
+      r"((?P<version>\d{2,3}(\.[^. ]+){0,3})|"
+      r"(?P<channel>any|extended|stable|beta|dev|canary))"
       r"(?P<suffix>.*)", re.I)
   _VALID_SUFFIX_MATCH = re.compile(r"[^.\d]+", re.I)
   _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
+      "any": BrowserVersionChannel.ANY,
+      "extended": BrowserVersionChannel.LTS,
       "stable": BrowserVersionChannel.STABLE,
       "beta": BrowserVersionChannel.BETA,
       "dev": BrowserVersionChannel.ALPHA,
       "canary": BrowserVersionChannel.PRE_ALPHA,
-      "extended": BrowserVersionChannel.LTS
   }
 
+  @classmethod
   def _parse(
-      self,
+      cls,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    matches = self._VERSION_RE.search(full_version.strip())
+    matches = cls._VERSION_RE.search(full_version.strip())
     if not matches:
-      raise self.parse_error("Could not extract version number.", full_version)
+      raise cls.parse_error("Could not extract version number.", full_version)
     channel_str = matches["channel"] or ""
     version_str = matches["version"]
     if not version_str and not channel_str:
-      raise self.parse_error("Got empty version match.", full_version)
+      raise cls.parse_error("Got empty version match.", full_version)
     prefix = matches["prefix"]
-    if not self._validate_prefix(prefix):
-      raise self.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
+    if not cls._validate_prefix(prefix):
+      raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
     suffix = matches["suffix"]
-    if not self._validate_suffix(suffix):
-      raise self.parse_error(f"Wrong suffix {repr(suffix)}", full_version)
+    if not cls._validate_suffix(suffix):
+      raise cls.parse_error(f"Wrong suffix {repr(suffix)}", full_version)
 
     if not version_str:
-      return self._channel_version(channel_str, full_version)
-    return self._numbered_version(version_str, full_version)
+      return cls._channel_version(channel_str, full_version)
+    return cls._numbered_version(version_str, full_version)
 
+  @classmethod
   def _channel_version(
-      self, channel_str: str,
+      cls, channel_str: str,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    channel = self._parse_exact_channel(channel_str, full_version)
+    channel = cls._parse_exact_channel(channel_str, full_version)
     version_str = ""
     return tuple(), channel, version_str
 
+  @classmethod
   def _numbered_version(
-      self, version_str: str,
+      cls, version_str: str,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    channel: BrowserVersionChannel = self._parse_default_channel(full_version)
+    channel: BrowserVersionChannel = cls._parse_default_channel(full_version)
+
+    parts_str = version_str.split(".")
+    if len(parts_str) > cls._PARTS_LEN:
+      raise cls.parse_error(f"Too many version parts {parts_str}", full_version)
+    if len(parts_str) != 1 and len(parts_str) != cls._PARTS_LEN:
+      raise cls.parse_error(
+          f"Incomplete chrome version number, need {cls._PARTS_LEN} parts",
+          full_version)
+    # Remove .X from the input version.
+    while parts_str[-1] == "X":
+      parts_str.pop()
     try:
-      parts = tuple(map(int, version_str.split(".")))
+      parts = tuple(map(int, parts_str))
     except ValueError as e:
-      raise self.parse_error(
+      raise cls.parse_error(
           f"Could not parse version parts {repr(version_str)}",
           full_version) from e
-
-    if len(parts) < self._PARTS_LEN:
-      padding = ("X",) * (self._PARTS_LEN - len(parts))
+    if not parts_str:
+      raise cls.parse_error("Need at least one version number part.",
+                            full_version)
+    if len(parts_str) == 1:
+      version_str = f"M{parts_str[0]}"
+    else:
+      padding = ("X",) * (cls._PARTS_LEN - len(parts))
       version_str = ".".join(map(str, parts + padding))
-    if len(parts) > self._PARTS_LEN:
-      raise self.parse_error(f"Too many version parts {parts}", full_version)
     return parts, channel, version_str
 
-  def _validate_prefix(self, prefix: Optional[str]) -> bool:
+  @classmethod
+  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
     if not prefix:
       return True
     prefix = prefix.lower()
@@ -81,23 +99,26 @@ class ChromiumVersion(BrowserVersion):
       return True
     return "chromium " in prefix or "chromium-" in prefix
 
-  def _parse_exact_channel(self, channel_str: str,
+  @classmethod
+  def _parse_exact_channel(cls, channel_str: str,
                            full_version: str) -> BrowserVersionChannel:
-    if channel := self._CHANNEL_LOOKUP.get(channel_str.lower()):
+    if channel := cls._CHANNEL_LOOKUP.get(channel_str.lower()):
       return channel
-    raise self.parse_error(f"Unknown channel {repr(channel_str)}", full_version)
+    raise cls.parse_error(f"Unknown channel {repr(channel_str)}", full_version)
 
-  def _parse_default_channel(self, full_version: str) -> BrowserVersionChannel:
+  @classmethod
+  def _parse_default_channel(cls, full_version: str) -> BrowserVersionChannel:
     version_lower: str = full_version.lower()
-    for channel_name, channel_obj in self._CHANNEL_LOOKUP.items():
+    for channel_name, channel_obj in cls._CHANNEL_LOOKUP.items():
       if channel_name in version_lower:
         return channel_obj
     return BrowserVersionChannel.STABLE
 
-  def _validate_suffix(self, suffix: Optional[str]) -> bool:
+  @classmethod
+  def _validate_suffix(cls, suffix: Optional[str]) -> bool:
     if not suffix:
       return True
-    return bool(self._VALID_SUFFIX_MATCH.fullmatch(suffix))
+    return bool(cls._VALID_SUFFIX_MATCH.fullmatch(suffix))
 
   @property
   def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
@@ -105,7 +126,7 @@ class ChromiumVersion(BrowserVersion):
 
   @property
   def is_complete(self) -> bool:
-    return len(self.parts) == 4
+    return len(self.parts) == 4 and self.has_channel
 
   @property
   def build(self) -> int:
@@ -137,16 +158,19 @@ class ChromiumVersion(BrowserVersion):
 class ChromeDriverVersion(ChromiumVersion):
   _EMPTY_COMMIT_HASH: Final = "0000000000000000000000000000000000000000"
 
-  def _validate_prefix(self, prefix: Optional[str]) -> bool:
+  @classmethod
+  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
     if not prefix:
       return False
     return prefix.lower() in ("chromedriver ", "chromedriver-")
 
-  def _parse_default_channel(self, full_version: str) -> BrowserVersionChannel:
-    if self._EMPTY_COMMIT_HASH in full_version:
+  @classmethod
+  def _parse_default_channel(cls, full_version: str) -> BrowserVersionChannel:
+    if cls._EMPTY_COMMIT_HASH in full_version:
       return BrowserVersionChannel.PRE_ALPHA
     return BrowserVersionChannel.STABLE
 
-  def _validate_suffix(self, suffix: Optional[str]) -> bool:
+  @classmethod
+  def _validate_suffix(cls, suffix: Optional[str]) -> bool:
     # TODO: extract commit hash / branch info from newer versions
     return True

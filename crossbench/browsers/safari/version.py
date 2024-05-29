@@ -18,13 +18,13 @@ class SafariVersion(BrowserVersion):
                            r"(?P<parts>([\d.]+)+)"
                            r")\)")
 
+  @classmethod
   def _parse(
-      self,
+      cls,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    matches = self._VERSION_RE.fullmatch(full_version.strip())
+    matches = cls._VERSION_RE.fullmatch(full_version.strip())
     if not matches:
-      raise ValueError(
-          f"Could not extract version number from '{full_version}'")
+      raise cls.parse_error("Could not extract version number", full_version)
     version_str = matches["version"]
     parts_str = matches["parts"]
     major_minor_str = matches["major_minor"]
@@ -39,16 +39,17 @@ class SafariVersion(BrowserVersion):
     try:
       parts = tuple(map(int, parts_str.split(".")))
     except ValueError as e:
-      raise ValueError("Could not parse version number parts.") from e
-    if len(parts) < self._MIN_PARTS_LEN:
-      raise ValueError(
-          f"Invalid number of version number parts in '{full_version}'")
+      raise cls.parse_error("Could not parse version number parts.",
+                            full_version) from e
+    if len(parts) < cls._MIN_PARTS_LEN:
+      raise cls.parse_error("Invalid number of version number parts",
+                            full_version)
     parts = (major, minor, release) + parts
     return parts, channel, f"{major_minor_str} ({version_str})"
 
   @property
   def is_complete(self) -> bool:
-    return len(self.parts) >= self._MIN_PARTS_LEN
+    return len(self.parts) >= self._MIN_PARTS_LEN and self.has_channel
 
   @property
   def is_tech_preview(self) -> bool:

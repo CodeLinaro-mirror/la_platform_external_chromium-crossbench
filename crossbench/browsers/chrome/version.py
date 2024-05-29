@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Optional
+from typing import Optional
 
 from crossbench.browsers.chromium.version import ChromiumVersion
 
@@ -16,15 +16,17 @@ class ChromeVersion(ChromiumVersion):
       r"(?:google )?chr(?:ome)?[- ]?"
       r"(?:extended|stable|beta|dev|canary)?[- ]?m?", re.I)
 
-  def _validate_prefix(self, prefix: Optional[str]) -> bool:
+  @classmethod
+  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
     if not prefix:
       return True
     prefix = prefix.lower()
     if prefix.strip() == "m":
       return True
-    return bool(self._PREFIX_RE.fullmatch(prefix))
+    return bool(cls._PREFIX_RE.fullmatch(prefix))
 
-  def _validate_suffix(self, suffix: Optional[str]) -> bool:
+  @classmethod
+  def _validate_suffix(cls, suffix: Optional[str]) -> bool:
     if suffix and "(Official Build)" in suffix:
       return True
     return super()._validate_suffix(suffix)

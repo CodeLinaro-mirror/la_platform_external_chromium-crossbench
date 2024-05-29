@@ -10,6 +10,8 @@ import urllib.parse
 from typing import TYPE_CHECKING, Dict, Final, Optional, Tuple, Type, Union
 
 from crossbench.browsers.downloader import DMGArchiveHelper, Downloader
+from crossbench.browsers.firefox.version import FirefoxVersion
+from crossbench.browsers.version import BrowserVersion
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -29,8 +31,6 @@ _PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
 
 class FirefoxDownloader(Downloader):
   # TODO: support nightly versions as well
-  VERSION_RE: re.Pattern = re.compile(
-      r"(firefox-)?(?P<version>([0-9]+(([.ab])[0-9]+){1,3}))", re.I)
   STORAGE_URL: str = "https://ftp.mozilla.org/pub/firefox/releases/"
 
   @classmethod
@@ -47,7 +47,7 @@ class FirefoxDownloader(Downloader):
 
   @classmethod
   def is_valid_version(cls, path_or_identifier: str) -> bool:
-    return bool(cls.VERSION_RE.fullmatch(path_or_identifier))
+    return FirefoxVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
   def _is_valid(cls, path_or_identifier: RemotePathLike,
@@ -55,7 +55,8 @@ class FirefoxDownloader(Downloader):
     if cls.is_valid_version(str(path_or_identifier)):
       return True
     path = browser_platform.path(path_or_identifier)
-    return browser_platform.exists(path) and path.suffix == cls.ARCHIVE_SUFFIX
+    return (browser_platform.exists(path) and
+            path.name.endswith(cls.ARCHIVE_SUFFIX))
 
   def __init__(self,
                version_identifier: Union[str, LocalPath],
@@ -73,23 +74,13 @@ class FirefoxDownloader(Downloader):
     super().__init__(version_identifier, "firefox", firefox_platform_name,
                      browser_platform, cache_dir)
 
-  def _parse_version(
-      self, version_identifier: str) -> Tuple[str, Tuple[int, ...], str, bool]:
-    match = self.VERSION_RE.search(version_identifier)
-    assert match, f"Invalid Firefox version identifier: {version_identifier}"
-    version_identifier = version_identifier = match["version"]
-    requested_version = tuple(map(int, re.split(r"[.ab]",
-                                                version_identifier)))[:4]
-    requested_version_str = ".".join(map(str, requested_version))
-    requested_exact_version = True
-    assert len(requested_version) == 3
-    return (version_identifier, requested_version, requested_version_str,
-            requested_exact_version)
+  def _parse_version(self, version_identifier: str) -> BrowserVersion:
+    return FirefoxVersion.parse(version_identifier)
 
   MIN_MAC_ARM64_VERSION = (84, 0, 0, 0)
 
   def _version_check(self) -> None:
-    major_version: int = self._requested_version[0]
+    major_version: int = self._requested_version.major
     if (self._browser_platform.is_macos and self._browser_platform.is_arm64 and
         major_version < self.MIN_MAC_ARM64_VERSION[0]):
       raise ValueError(
@@ -98,16 +89,17 @@ class FirefoxDownloader(Downloader):
 
   def _find_archive_url(self) -> Optional[str]:
     # Quick probe for complete versions
-    if self._requested_exact_version:
-      return self._find_exact_archive_url(self._version_identifier)
+    if self._requested_version.is_complete:
+      return self._find_exact_archive_url()
     raise NotImplementedError("Only full-release versions supported.")
 
-  def _find_exact_archive_url(self, version: str) -> Optional[str]:
-    folder_url = f"{self.STORAGE_URL}{version}/mac/en-GB"
-    return self._archive_urls(folder_url, version)[0]
+  def _find_exact_archive_url(self) -> Optional[str]:
+    folder_url = f"{self.STORAGE_URL}{self._requested_version.parts_str}/mac/en-GB"
+    return self._archive_urls(folder_url, self._requested_version)[0]
 
   @abc.abstractmethod
-  def _archive_urls(self, folder_url: str, version_str: str) -> Tuple[str, ...]:
+  def _archive_urls(self, folder_url: str,
+                    version: BrowserVersion) -> Tuple[str, ...]:
     pass
 
   def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
@@ -142,8 +134,9 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
     # TODO: support local vs remote
     return self._extracted_path() / "firefox-bin"
 
-  def _archive_urls(self, folder_url: str, version_str: str) -> Tuple[str, ...]:
-    return (f"{folder_url}/firefox-{version_str}.tar.bz2",)
+  def _archive_urls(self, folder_url: str,
+                    version: BrowserVersion) -> Tuple[str, ...]:
+    return (f"{folder_url}/firefox-{version.parts_str}.tar.bz2",)
 
   def _install_archive(self, archive_path: LocalPath) -> None:
     raise NotImplementedError("Missing linux support")
@@ -167,9 +160,10 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
           f"but requested {self._requested_version_str} is too old.")
     super()._download_archive(archive_url, tmp_dir)
 
-  def _archive_urls(self, folder_url: str, version_str: str) -> Tuple[str, ...]:
+  def _archive_urls(self, folder_url: str,
+                    version: BrowserVersion) -> Tuple[str, ...]:
     return (f"{folder_url}/" +
-            urllib.parse.quote(f"Firefox {version_str}.dmg"),)
+            urllib.parse.quote(f"Firefox {version.parts_str}.dmg"),)
 
   def _extracted_path(self) -> LocalPath:
     # TODO: support local vs remote
