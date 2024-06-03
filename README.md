@@ -9,7 +9,7 @@ Issues/Bugs: [Tests > CrossBench](https://bugs.chromium.org/p/chromium/issues/li
 
 Supported Browsers: Chrome/Chromium, Firefox, Safari and Edge.
 
-Supported OS: macOS, Android, linux and windows.
+Supported OS: MacOS, Android, Linux and Windows.
 
 ## Basic usage:
 ### Chromium Devs (with a full chromium checkout)
@@ -20,11 +20,12 @@ Use the `./cb.py` script directly to run benchmarks (requires chrome's
 - Use `pip install crossbench`,
 - or use the "poetry" package manager, see the [development section](#development).
 
+### Running Workloads Examples
 Run the latest [speedometer benchmark](https://browserbench.org/Speedometer/)
 20 times with the system default browser (chrome-stable):
 ```bash
 # Run chrome-stable by default:
-./cb.py speedometer --repeat=20
+./cb.py speedometer --repeat=3
 
 # Compare chrome browser versions and a local chrome build on jetstream:
 ./cb.py jetstream --browser=chrome-stable --browser=chrome-m90 --browser=$PATH
@@ -71,6 +72,28 @@ the browser).
 ```bash
 ./cb.py speedometer --browser=$BROWSER -- --enable-field-trial-config
 ```
+#### `--browser` flag on desktop:
+
+| Flag | Description |
+|------|-------------|
+|`--browser=chrome-stable`| Use the installed Chrome stable on the host. Also works with `beta`, `dev` and `canary` versions. |
+|`--browser=edge-stable`| Use the installed Edge stable on the host. Also works with `beta`, `dev` and `canary` versions. |
+|`--browser=safari-stable`| Use the installed Safari stable version on the host. Also works with `technology-preview` |
+|`--browser=firefox-stable`| Use the installed Firefox stable version on the host. Also works with `dev` and `nightly` versions. |
+|`--browser=./out/Release/chrome`| Use a locally compiled chrome version. Any path to a chrome binary will work. |
+|`--browser=chrome-m123`| Download the latest M123 chrome release and install it locally |
+|`--browser=chrome-125.0.6422.112`| Download and install a specific chrome version. |
+|`--browser=chrome-M100...M123`| Download and install a range of 24 different chrome milestones. |
+
+#### `--browser` flag on mobile:
+You can directly run on attached android devices using the device ID or unique device names.
+They need to have [developer mode and usb-debugging enabled](https://developer.android.com/studio/debug/dev-options#Enable-debugging).
+
+| Flag | Description |
+|------|-------------|
+| `--browser=adb:chrome-stable` | Use Chrome stable on a single attached adb device. Note this will fail if there is more than one attached device. |
+|  `--browser=Pixel_7_pro:chrome-canary` | Use Chrome canary on an attached Pixel 7 Pro device. Note this will fail if there is more than one Pixel 7 pro attached.|
+| `--browser=2900FF00BB:chrome-dev` | Use Chrome dev on an attached adb device with the serial id `2900FF00BB`. Use `adb devices -l` to find the serial id.|
 
 #### Browser Config File
 For more complex scenarios you can use a
@@ -120,15 +143,16 @@ You can use the `describe probes` subcommand to list all probes:
 ```
 
 #### Inline Probe Config
-Some probes can be configured, either with inline json when using `--probe` or
-in a separate `--probe-config` hjson file. Use the `describe` command to list
-all options.
+Some probes can be configured, either with inline JSON when using `--probe` or
+in a separate `--probe-config` HJSON file. Use the `describe` command to list
+all options. The inline JSON or HJSON is the same format as used in the separate
+probe config files (see below).
 
 ```bash
 # Get probe config details:
 ./cb.py describe probe v8.log
 
-# Use inline hjson to configure a probe:
+# Use inline HJSON to configure a probe:
 ./cb.py speedometer --probe='v8.log:{prof:true}'
 ```
 

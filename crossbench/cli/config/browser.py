@@ -219,7 +219,7 @@ class BrowserConfig(ConfigObject):
       return browsers.Edge.dev_path(platform)
     if identifier == "edge-canary":
       return browsers.Edge.canary_path(platform)
-    if identifier in ("safari", "sf"):
+    if identifier in ("safari", "sf", "safari-stable", "sf-stable"):
       return browsers.Safari.default_path(platform)
     if identifier in ("safari-technology-preview", "safari-tp", "sf-tp", "tp"):
       return browsers.Safari.technology_preview_path(platform)
