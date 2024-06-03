@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import atexit
 import enum
+from functools import cached_property
 import io
 import json
 import logging
@@ -20,6 +21,7 @@ from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence,
 from crossbench import helper
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
 from crossbench.plt.base import ListCmdArgsT
@@ -159,6 +161,12 @@ class ProfilingProbe(Probe):
             "**after** browser has started and the benchmark story has been setup."
         ))
     parser.add_argument(
+        "pin_renderer_main_core",
+        type=int,
+        default=None,
+        help="Chrome-on-Android-only: Whether to pin the renderer main thread to a given core"
+    )
+    parser.add_argument(
         "call_graph_mode",
         type=CallGraphMode,
         default=CallGraphMode.FRAME_POINTER,
@@ -228,6 +236,7 @@ class ProfilingProbe(Probe):
                browser_process: bool = False,
                spare_renderer_process: bool = False,
                target: TargetMode = TargetMode.BROWSER_APP_ONLY,
+               pin_renderer_main_core: Optional[int] = None,
                call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
                frequency: Optional[int] = None,
                count: Optional[int] = None,
@@ -245,6 +254,7 @@ class ProfilingProbe(Probe):
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
     self._target: TargetMode = target
+    self._pin_renderer_main_core: Optional[int] = pin_renderer_main_core
     self._call_graph_mode: CallGraphMode = call_graph_mode
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
@@ -265,6 +275,7 @@ class ProfilingProbe(Probe):
         ("browser_process", self._sample_browser_process),
         ("spare_renderer_process", self._spare_renderer_process),
         ("target", str(self._target)),
+        ("pin_renderer_main_core", self._pin_renderer_main_core),
         ("call_graph_mode", str(self._call_graph_mode)),
         ("start_profiling_after_setup", self._start_profiling_after_setup),
         ("frequency", self._frequency),
@@ -294,6 +305,10 @@ class ProfilingProbe(Probe):
   @property
   def target(self) -> TargetMode:
     return self._target
+
+  @property
+  def pin_renderer_main_core(self) -> Optional[int]:
+    return self._pin_renderer_main_core
 
   @property
   def call_graph_mode(self) -> CallGraphMode:
@@ -375,14 +390,24 @@ class ProfilingProbe(Probe):
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.runner.repetitions}.")
 
-  def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
-    del env
+  def _assert_is_chrome_with_extension(self, browser: Browser) -> None:
     assert (
-        self._target not in (TargetMode.RENDERER_MAIN_ONLY,
-                             TargetMode.RENDERER_PROCESS_ONLY) or
+        BrowserAttributes.CHROME in browser.attributes and
         browser.major_version >= 124), (
             "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
             "browser version >= M124 https://crrev.com/c/5374765 is required.")
+
+  def _requires_chrome_with_extension(self) -> bool:
+    return self._target in (TargetMode.RENDERER_MAIN_ONLY,
+                            TargetMode.RENDERER_PROCESS_ONLY
+                           ) or self._pin_renderer_main_core is not None
+
+  def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
+    del env
+
+    if self._requires_chrome_with_extension():
+      self._assert_is_chrome_with_extension(browser)
+
     assert browser.platform.which("simpleperf"), "simpleperf is not available"
 
   def _validate_pprof(self, env: HostEnvironment, browser: Browser) -> None:
@@ -761,7 +786,8 @@ class AndroidProfilingContext(ProfilingContext):
     super().__init__(probe, run)
     self._simpleperf_process: Optional[subprocess.Popen] = None
 
-  def _get_renderer_pid_tid(self) -> Tuple[int, int]:
+  @cached_property
+  def _renderer_pid_tid(self) -> Tuple[int, int]:
     renderer_pid: Optional[int] = None
     renderer_main_tid: Optional[int] = None
     with self.run.actions("Get Renderer PID/TID") as actions:
@@ -785,7 +811,7 @@ class AndroidProfilingContext(ProfilingContext):
     renderer_main_tid: Optional[int] = None
     if self.probe.target in (TargetMode.RENDERER_MAIN_ONLY,
                              TargetMode.RENDERER_PROCESS_ONLY):
-      renderer_pid, renderer_main_tid = self._get_renderer_pid_tid()
+      renderer_pid, renderer_main_tid = self._renderer_pid_tid
     return generate_simpleperf_command_line(
         self.probe.target,
         str(self.run.browser.path),
@@ -832,6 +858,18 @@ class AndroidProfilingContext(ProfilingContext):
                       simpleperf_pid)
       self.browser_platform.terminate(simpleperf_pid)
 
+  def _cpu_mask(self, cpus: Iterable) -> str:
+    assert max(cpus) < 32, "Cpu index too high"
+    mask = 0
+    for cpu in cpus:
+      mask |= (1 << cpu)
+    return f"{mask:x}"
+
+  def _pin_renderer_main_core(self, cpu: int):
+    _, renderer_main_tid = self._renderer_pid_tid
+    self.browser_platform.sh('taskset', '-p', self._cpu_mask([cpu]),
+                             str(renderer_main_tid))
+
   def get_default_result_path(self) -> pth.RemotePath:
     return super().get_default_result_path().parent / "simpleperf.perf.data"
 
@@ -852,6 +890,9 @@ class AndroidProfilingContext(ProfilingContext):
       self._start_simpleperf()
 
   def start_story_run(self) -> None:
+    if self.probe.pin_renderer_main_core is not None:
+      self._pin_renderer_main_core(self.probe.pin_renderer_main_core)
+
     if self.probe.start_profiling_after_setup:
       self._start_simpleperf()
 

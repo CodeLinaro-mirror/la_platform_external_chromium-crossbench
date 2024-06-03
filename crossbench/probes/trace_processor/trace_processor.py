@@ -9,6 +9,7 @@ import csv
 import gzip
 import logging
 import shutil
+import zipfile
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
@@ -31,7 +32,8 @@ _MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
 _METRICS_DIR = pth.LocalPath(__file__).parent / "metrics"
 
 def _is_trace_file(path: pth.LocalPath):
-  return path.name.endswith(".trace.pb") or path.name.endswith(".trace.pb.gz")
+  return path.name.endswith(".trace.pb") or path.name.endswith(
+      ".trace.pb.gz") or path.name.endswith(".perf.data")
 
 
 # TODO(carlscab): We should use the python API to start a TraceProcessor
@@ -137,8 +139,7 @@ class TraceProcessor:
         raise RuntimeError(f"Query check failed: {query}")
 
 
-_SOURCE_PROBES: frozenset[str] = frozenset(
-    ("perfetto", "tracing", "simpleperf"))
+_SOURCE_PROBES: frozenset[str] = frozenset(("perfetto", "tracing", "profiling"))
 
 
 def parse_probe_name(value: Any) -> str:
@@ -299,18 +300,16 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
     return LocalProbeResult(file=[merged_trace], csv=csv_files, json=json_files)
 
   def _merge_trace_files(self) -> pth.LocalPath:
-    merged_trace = self.local_result_path / "merged.trace.pb"
-    with merged_trace.open("wb") as output_f:
+    merged_trace = self.local_result_path / "merged.zip"
+    with zipfile.ZipFile(
+        merged_trace, 'x', compression=zipfile.ZIP_DEFLATED) as output_f:
       for probe_name in self.probe.probes:
         self._write_probe_result_traces(probe_name, output_f)
 
-    self.runner_platform.sh("gzip", merged_trace)
-    merged_trace_gzipped = merged_trace.with_suffix(".pb.gz")
-    assert self.runner_platform.exists(merged_trace_gzipped)
+    return merged_trace
 
-    return merged_trace_gzipped
-
-  def _write_probe_result_traces(self, probe_name: str, output_f: IO) -> None:
+  def _write_probe_result_traces(self, probe_name: str,
+                                 output_f: zipfile.ZipFile) -> None:
     # TODO: implement probe dependencies
     probe_results = self.run.results.get_by_name(probe_name)
     assert probe_results, f"Did not find results for required probe {probe_name}"
@@ -318,11 +317,5 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       logging.warn("TRACE_PROCESSOR: No trace files found for %s", probe_name)
       return
     for f in probe_results.file_list:
-      if not _is_trace_file(f):
-        continue
-      if f.suffix == ".gz":
-        with gzip.open(f) as input_f:
-          shutil.copyfileobj(input_f, output_f)
-      else:
-        with f.open("rb") as input_f:
-          shutil.copyfileobj(input_f, output_f)
+      if _is_trace_file(f):
+        output_f.write(f)
