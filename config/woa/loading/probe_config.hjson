@@ -3,6 +3,10 @@
   probes: {
     // Uncomment the following line to record a WPR archive.
     // wpr: {},
+    trace_processor: {
+      probes: ["perfetto"],
+      metrics: ["lcp_metric"],
+    },
     perfetto: {
       textproto: '''
         buffers {

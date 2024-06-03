@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package perfetto.protos;
+
+import "protos/perfetto/metrics/metrics.proto";
+
+message LCPMetric {
+  optional double lcp_ms = 1;
+}
+
+extend TraceMetrics {
+  optional LCPMetric lcp_metric = 1201;
+}
