@@ -6,9 +6,13 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, cast
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set,
+                    Tuple, cast)
 
-from crossbench import path as pth
+from immutabledict import immutabledict
+from ordered_set import OrderedSet
+
+from crossbench import cli_helper, path as pth
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 
 if TYPE_CHECKING:
@@ -17,26 +21,76 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+class DuplicateProbeResult(ValueError):
+  pass
+
+
 class ProbeResult(abc.ABC):
 
   def __init__(self,
                url: Optional[Iterable[str]] = None,
                file: Optional[Iterable[pth.LocalPath]] = None,
-               json: Optional[Iterable[pth.LocalPath]] = None,
-               csv: Optional[Iterable[pth.LocalPath]] = None):
-    self._url_list = tuple(url) if url else ()
-    self._file_list = tuple(file) if file else ()
-    self._json_list = tuple(json) if json else ()
-    self._csv_list = tuple(csv) if csv else ()
+               **kwargs: Iterable[pth.LocalPath]):
+    self._url_list: Tuple[str, ...] = ()
+    if url:
+      self._url_list = cli_helper.parse_unique_sequence(
+          tuple(url), "urls", DuplicateProbeResult)
+    tmp_files: Dict[str, OrderedSet[pth.LocalPath]] = {}
+    if file:
+      self._extend(tmp_files, file)
+    for suffix, files in kwargs.items():
+      self._extend(tmp_files, files, suffix)
+    self._files: immutabledict[str, Tuple[pth.LocalPath, ...]] = immutabledict({
+        suffix: tuple(files) for suffix, files in tmp_files.items()
+    })
     # TODO: Add Metric object for keeping metrics in-memory instead of reloading
     # them from serialized JSON files for merging.
     self._values = None
     self._validate()
 
+  def _append(self,
+              tmp_files,
+              file: pth.LocalPath,
+              suffix: Optional[str] = None) -> None:
+    file_suffix_name = file.suffix[1:]
+    if not suffix:
+      suffix = file_suffix_name
+    elif file_suffix_name != suffix:
+      raise ValueError(
+          f"Expected '.{suffix}' suffix, but got {repr(file.suffix)} "
+          f"for {file}")
+    if files_with_suffix := tmp_files.get(suffix):
+      if file in files_with_suffix:
+        raise DuplicateProbeResult(
+            f"Cannot append file twice to ProbeResult: {file}")
+      files_with_suffix.add(file)
+    else:
+      tmp_files[suffix] = OrderedSet((file,))
+
+  def _extend(self,
+              tmp_files,
+              files: Iterable[pth.LocalPath],
+              suffix: Optional[str] = None) -> None:
+    for file in files:
+      self._append(tmp_files, file, suffix)
+
+  def get(self, suffix: str) -> pth.LocalPath:
+    if files_with_suffix := self._files.get(suffix):
+      if len(files_with_suffix) != 1:
+        raise ValueError(f"Expected exactly one file with suffix {suffix}, "
+                         f"but got {files_with_suffix}")
+      return files_with_suffix[0]
+    raise ValueError(f"No files with suffix '.{suffix}'. "
+                     f"Options are {tuple(self._files.keys())}")
+
+  def get_all(self, suffix: str) -> List[pth.LocalPath]:
+    if files_with_suffix := self._files.get(suffix):
+      return list(files_with_suffix)
+    return []
+
   @property
   def is_empty(self) -> bool:
-    return not any(
-        (self._url_list, self._file_list, self._json_list, self._csv_list))
+    return not self._url_list and not self._files
 
   @property
   def is_remote(self) -> bool:
@@ -50,13 +104,7 @@ class ProbeResult(abc.ABC):
       return False
     if self is other:
       return True
-    if self.is_empty and other.is_empty:
-      return True
-    if self._file_list != other._file_list:
-      return False
-    if self._json_list != other._json_list:
-      return False
-    if self._csv_list != other._csv_list:
+    if self._files != other._files:
       return False
     return self._url_list == other._url_list
 
@@ -67,20 +115,9 @@ class ProbeResult(abc.ABC):
       return self
     return LocalProbeResult(
         url=self.url_list + other.url_list,
-        file=self.file_list + other.file_list,
-        json=self.json_list + other.json_list,
-        csv=self.csv_list + other.csv_list)
+        file=self.file_list + other.file_list)
 
   def _validate(self) -> None:
-    for path in self._file_list:
-      if path.suffix in (".csv", ".json"):
-        raise ValueError(f"Use specific parameter for result: {path}")
-    for path in self._json_list:
-      if path.suffix != ".json":
-        raise ValueError(f"Expected .json file but got: {path}")
-    for path in self._csv_list:
-      if path.suffix != ".csv":
-        raise ValueError(f"Expected .csv file but got: {path}")
     for path in self.all_files():
       if not path.exists():
         raise ValueError(f"ProbeResult path does not exist: {path}")
@@ -89,27 +126,22 @@ class ProbeResult(abc.ABC):
     result: JsonDict = {}
     if self._url_list:
       result["url"] = self._url_list
-    if self._file_list:
-      result["file"] = list(map(str, self._file_list))
-    if self._json_list:
-      result["json"] = list(map(str, self._json_list))
-    if self._csv_list:
-      result["csv"] = list(map(str, self._csv_list))
+    for suffix, files in self._files.items():
+      result[suffix] = list(map(str, files))
     return result
 
   @property
   def has_files(self) -> bool:
-    return (bool(self._file_list) or bool(self._json_list) or
-            bool(self._csv_list))
+    return bool(self._files)
 
   def all_files(self) -> Iterable[pth.LocalPath]:
-    yield from self._file_list
-    yield from self._json_list
-    yield from self._csv_list
+    for files in self._files.values():
+      yield from files
 
   @property
   def url(self) -> str:
-    assert len(self._url_list) == 1
+    if len(self._url_list) != 1:
+      raise ValueError("ProbeResult has multiple URLs.")
     return self._url_list[0]
 
   @property
@@ -118,30 +150,31 @@ class ProbeResult(abc.ABC):
 
   @property
   def file(self) -> pth.LocalPath:
-    assert len(self._file_list) == 1
-    return self._file_list[0]
+    if len(self._files) > 1:
+      raise ValueError("ProbeResult has more than one file.")
+    for suffix in self._files:
+      return self.get(suffix)
+    raise ValueError("ProbeResult has no files.")
 
   @property
   def file_list(self) -> List[pth.LocalPath]:
-    return list(self._file_list)
+    return list(self.all_files())
 
   @property
   def json(self) -> pth.LocalPath:
-    assert len(self._json_list) == 1
-    return self._json_list[0]
+    return self.get("json")
 
   @property
   def json_list(self) -> List[pth.LocalPath]:
-    return list(self._json_list)
+    return self.get_all("json")
 
   @property
   def csv(self) -> pth.LocalPath:
-    assert len(self._csv_list) == 1
-    return self._csv_list[0]
+    return self.get("csv")
 
   @property
   def csv_list(self) -> List[pth.LocalPath]:
-    return list(self._csv_list)
+    return self.get_all("csv")
 
 
 class EmptyProbeResult(ProbeResult):
@@ -160,9 +193,8 @@ class LocalProbeResult(ProbeResult):
   def __init__(self,
                url: Optional[Iterable[str]] = None,
                file: Optional[Iterable[pth.LocalPath]] = None,
-               json: Optional[Iterable[pth.LocalPath]] = None,
-               csv: Optional[Iterable[pth.LocalPath]] = None):
-    super().__init__(url, file, json, csv)
+               **kwargs: Iterable[pth.LocalPath]):
+    super().__init__(url, file, **kwargs)
 
 
 class BrowserProbeResult(ProbeResult):
@@ -175,34 +207,30 @@ class BrowserProbeResult(ProbeResult):
                result_origin: ResultOrigin,
                url: Optional[Iterable[str]] = None,
                file: Optional[Iterable[pth.RemotePath]] = None,
-               json: Optional[Iterable[pth.RemotePath]] = None,
-               csv: Optional[Iterable[pth.RemotePath]] = None):
+               **kwargs: Iterable[pth.RemotePath]):
     self._browser_file = file
-    self._browser_json = json
-    self._browser_csv = csv
+    local_file: Optional[Iterable[pth.LocalPath]] = None
+    local_kwargs: Dict[str, Iterable[pth.LocalPath]] = {}
     self._is_remote = result_origin.is_remote
     if self._is_remote:
-      local_file = self._copy_files(result_origin, file)
-      local_json = self._copy_files(result_origin, json)
-      local_csv = self._copy_files(result_origin, csv)
+      if file:
+        local_file = self._copy_files(result_origin, file)
+      for suffix_name, files in kwargs.items():
+        local_kwargs[suffix_name] = self._copy_files(result_origin, files)
     else:
       # Keep local files as is.
       local_file = cast(Iterable[pth.LocalPath], file)
-      local_json = cast(Iterable[pth.LocalPath], json)
-      local_csv = cast(Iterable[pth.LocalPath], csv)
+      local_kwargs = cast(Dict[str, Iterable[pth.LocalPath]], kwargs)
 
-    super().__init__(url, local_file, local_json, local_csv)
+    super().__init__(url, local_file, **local_kwargs)
 
   @property
   def is_remote(self) -> bool:
     return self._is_remote
 
-  def _copy_files(
-      self, result_origin: ResultOrigin,
-      paths: Optional[Iterable[pth.RemotePath]]
-  ) -> Optional[Iterable[pth.LocalPath]]:
-    if not paths:
-      return []
+  def _copy_files(self, result_origin: ResultOrigin,
+                  paths: Iterable[pth.RemotePath]) -> Iterable[pth.LocalPath]:
+    assert paths, "Got no remote paths to copy."
     # Copy result files from remote tmp dir to local results dir
     browser_platform = result_origin.browser_platform
     remote_tmp_dir = result_origin.browser_tmp_dir

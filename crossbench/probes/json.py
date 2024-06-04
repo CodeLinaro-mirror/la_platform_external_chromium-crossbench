@@ -223,10 +223,10 @@ class JsonResultProbeContext(ProbeContext[JsonResultProbeT],
     with run.actions(f"Writing Probe({self.probe.name})"):
       assert json_data is not None, (
           f"Probe({self.probe.name}) produced no JSON data.")
-      raw_file = self.result_path
+      raw_file = self.local_result_path
       if self.probe.FLATTEN:
         raw_file = raw_file.with_suffix(".json.nested")
-        flattened_file = self.result_path
+        flattened_file = self.local_result_path
         flat_json_data = self.flatten_json_data(json_data)
         with flattened_file.open("w", encoding="utf-8") as f:
           json.dump(flat_json_data, f, indent=2)

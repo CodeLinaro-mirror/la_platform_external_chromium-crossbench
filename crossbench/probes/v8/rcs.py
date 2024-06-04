@@ -45,7 +45,7 @@ class V8RCSProbe(ChromiumProbe):
     result_files = (run.results[self].file for run in group.runs)
     result_file = self.runner_platform.concat_files(
         inputs=result_files, output=merged_result_path)
-    return LocalProbeResult(file=[result_file])
+    return LocalProbeResult(file=(result_file,))
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
@@ -59,7 +59,7 @@ class V8RCSProbe(ChromiumProbe):
         merged_file.write(f"\n== Page: {repetition_group.story.name}\n")
         with merged_repetitions_file.open(encoding="utf-8") as f:
           merged_file.write(f.read())
-    return LocalProbeResult(file=[merged_result_path])
+    return LocalProbeResult(file=(merged_result_path,))
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     # We put all the fils by in a toplevel v8.rcs folder

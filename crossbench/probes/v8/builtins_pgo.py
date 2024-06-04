@@ -38,14 +38,14 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
     result_files = (run.results[self].file for run in group.runs)
     result_file = self.runner_platform.concat_files(
         inputs=result_files, output=merged_result_path)
-    return LocalProbeResult(file=[result_file])
+    return LocalProbeResult(file=(result_file,))
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (g.results[self].file for g in group.repetitions_groups)
     result_file = self.runner_platform.concat_files(
         inputs=result_files, output=merged_result_path)
-    return LocalProbeResult(file=[result_file])
+    return LocalProbeResult(file=(result_file,))
 
 
 class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
@@ -70,4 +70,4 @@ class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
     pgo_file = self.local_result_path
     with pgo_file.open("a") as f:
       f.write(self._pgo_counters)
-    return LocalProbeResult(file=[pgo_file])
+    return LocalProbeResult(file=(pgo_file,))

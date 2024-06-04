@@ -142,15 +142,13 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     assert maybe_pid, "Browser is not runner or does not provide a pid."
     return maybe_pid
 
-  def browser_result(
-      self,
-      url: Optional[Iterable[str]] = None,
-      file: Optional[Iterable[RemotePath]] = None,
-      json: Optional[Iterable[RemotePath]] = None,
-      csv: Optional[Iterable[RemotePath]] = None) -> BrowserProbeResult:
+  def browser_result(self,
+                     url: Optional[Iterable[str]] = None,
+                     file: Optional[Iterable[RemotePath]] = None,
+                     **kwargs: Iterable[RemotePath]) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
-    return BrowserProbeResult(self.result_origin, url, file, json, csv)
+    return BrowserProbeResult(self.result_origin, url, file, **kwargs)
 
   def setup(self) -> None:
     """
