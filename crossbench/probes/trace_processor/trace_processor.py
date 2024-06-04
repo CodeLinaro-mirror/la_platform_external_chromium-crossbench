@@ -80,7 +80,8 @@ class TraceProcessor:
     self._platform.mkdir(out_dir)
     for metric in metrics:
       with self._exceptions.capture(f"Running metric: {metric}"):
-        out_file = out_dir / f"{metric}.json"
+        file_safe_name = metric.translate(str.maketrans("\\/", "__"))
+        out_file = out_dir / f"{file_safe_name}.json"
         cmd = self._build_trace_processor_cmd(trace_file, metric=metric)
         with out_file.open("x") as f:
           self._platform.sh(*cmd, stdout=f)
@@ -98,7 +99,8 @@ class TraceProcessor:
     self._platform.mkdir(out_dir)
     for query in queries:
       with self._exceptions.capture(f"Running query: {query}"):
-        out_file = out_dir / f"{query}.csv"
+        file_safe_name = query.translate(str.maketrans("\\/", "__"))
+        out_file = out_dir / f"{file_safe_name}.csv"
         cmd = self._build_trace_processor_cmd(trace_file, query=query)
         with out_file.open("x") as f:
           self._platform.sh(*cmd, stdout=f)

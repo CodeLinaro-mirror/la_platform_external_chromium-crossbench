@@ -1,4 +1,5 @@
-// TODO: clean up unused categories after the experimenting stage is over.
+// TODO: clean up unused categories and queries after the experimenting stage
+// is over.
 {
   probes: {
     // Uncomment the following line to record a WPR archive.
@@ -6,6 +7,19 @@
     trace_processor: {
       probes: ["perfetto"],
       metrics: ["lcp_metric"],
+      queries: [
+        "loading/cpu",
+        "loading/dom",
+        "loading/interaction_latency",
+        "loading/mojo",
+        "loading/resources",
+        "loading/sequence_manager",
+        "loading/tlp",
+        "loading/v8",
+        "loading/v8_rcs",
+        "loading/web_features",
+        "loading/worker",
+      ],
     },
     perfetto: {
       textproto: '''
