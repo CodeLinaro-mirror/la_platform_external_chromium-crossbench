@@ -12,7 +12,8 @@ from crossbench.browsers.firefox.downloader import (FirefoxDownloader,
                                                     FirefoxDownloaderMacOS,
                                                     FirefoxDownloaderWin)
 from tests import test_helper
-from tests.crossbench.browsers.test_downloader_helper import AbstractDownloaderTestCase
+from tests.crossbench.browsers.downloader_helper import \
+    AbstractDownloaderTestCase
 
 
 class AbstractFirefoxDownloaderTestCase(
@@ -69,7 +70,7 @@ class AbstractFirefoxDownloaderTestCase(
           pathlib.Path("custom"), self.platform, self.cache_dir)
 
 
-class BasicFirefoxDownloaderTestCaseLinux(AbstractFirefoxDownloaderTestCase):
+class BasicFirefoxDownloaderLinuxTestCase(AbstractFirefoxDownloaderTestCase):
   __test__ = True
 
   def setUp(self) -> None:
@@ -85,7 +86,7 @@ class BasicFirefoxDownloaderTestCaseLinux(AbstractFirefoxDownloaderTestCase):
     self.assertFalse(FirefoxDownloaderWin.is_valid(path, self.platform))
 
 
-class BasicFirefoxDownloaderTestCaseMacOS(AbstractFirefoxDownloaderTestCase):
+class BasicFirefoxDownloaderMacOSTestCase(AbstractFirefoxDownloaderTestCase):
   __test__ = True
 
   def setUp(self) -> None:

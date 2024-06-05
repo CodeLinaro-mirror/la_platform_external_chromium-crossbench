@@ -12,7 +12,8 @@ from crossbench.browsers.chrome.downloader import (ChromeDownloader,
                                                    ChromeDownloaderMacOS,
                                                    ChromeDownloaderWin)
 from tests import test_helper
-from tests.crossbench.browsers.test_downloader_helper import AbstractDownloaderTestCase
+from tests.crossbench.browsers.downloader_helper import \
+    AbstractDownloaderTestCase
 
 
 class AbstractChromeDownloaderTestCase(

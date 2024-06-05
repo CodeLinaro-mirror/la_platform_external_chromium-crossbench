@@ -175,6 +175,7 @@ class Downloader(abc.ABC):
     full_version_string = self._browser_platform.app_version(tmp_app_path)
     self._requested_version = self._parse_version(full_version_string)
     assert self._requested_version.is_complete
+    self._requested_version_str = str(self._requested_version)
     versioned_path = self._extracted_path()
     app_path = self._installed_app_path()
     if self._is_app_installed(app_path):

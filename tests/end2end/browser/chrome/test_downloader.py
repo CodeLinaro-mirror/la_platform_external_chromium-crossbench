@@ -79,15 +79,11 @@ def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
 
 
 @pytest.mark.skipif(
-    not plt.PLATFORM.is_linux, reason="No canary versions on linux.")
+    plt.PLATFORM.is_linux, reason="No canary versions on linux.")
 def test_download_pre_115_canary(output_dir, archive_dir) -> None:
   assert not list(output_dir.iterdir())
-  _load_and_check_version(
-      output_dir,
-      archive_dir,
-      "chrome-114.0.5735.2",
-      "114.0.5735.2",
-      expect_archive=False)
+  _load_and_check_version(output_dir, archive_dir, "chrome-114.0.5735.2",
+                          "114.0.5735.2")
 
 
 def test_download_major_version_milestone(output_dir, archive_dir) -> None:
