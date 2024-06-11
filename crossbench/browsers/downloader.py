@@ -10,14 +10,14 @@ import plistlib
 import re
 import shutil
 import tempfile
-from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Final, Optional, Tuple, Type, Union
 
 from crossbench import path as pth
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 
 if TYPE_CHECKING:
-  from crossbench import plt
+  from crossbench.plt.base import Platform
 
 
 class IncompatibleVersionError(ValueError):
@@ -31,12 +31,12 @@ class Downloader(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def _get_loader_cls(cls, browser_platform: plt.Platform) -> Type[Downloader]:
+  def _get_loader_cls(cls, browser_platform: Platform) -> Type[Downloader]:
     pass
 
   @classmethod
   def is_valid(cls, path_or_identifier: pth.RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return cls._get_loader_cls(browser_platform).is_valid(
         path_or_identifier, browser_platform)
 
@@ -48,7 +48,7 @@ class Downloader(abc.ABC):
   @classmethod
   def load(cls,
            archive_path_or_version_identifier: Union[str, pth.LocalPath],
-           browser_platform: plt.Platform,
+           browser_platform: Platform,
            cache_dir: Optional[pth.LocalPath] = None) -> pth.LocalPath:
     logging.debug("Downloading chrome %s binary for %s",
                   archive_path_or_version_identifier, browser_platform)
@@ -61,7 +61,7 @@ class Downloader(abc.ABC):
                archive_path_or_version_identifier: Union[str, pth.LocalPath],
                browser_type: str,
                platform_name: str,
-               browser_platform: plt.Platform,
+               browser_platform: Platform,
                cache_dir: Optional[pth.LocalPath] = None):
     assert browser_type, "Missing browser_type"
     self._browser_type = browser_type
@@ -109,7 +109,7 @@ class Downloader(abc.ABC):
     return self._app_path
 
   @property
-  def host_platform(self) -> plt.Platform:
+  def host_platform(self) -> Platform:
     return self._browser_platform.host_platform
 
   def _pre_check(self) -> None:
@@ -235,7 +235,7 @@ class ArchiveHelper(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def extract(cls, platform: plt.Platform, archive_path: pth.LocalPath,
+  def extract(cls, platform: Platform, archive_path: pth.LocalPath,
               dest_path: pth.LocalPath) -> pth.LocalPath:
     pass
 
@@ -243,7 +243,7 @@ class ArchiveHelper(abc.ABC):
 class RPMArchiveHelper(ArchiveHelper):
 
   @classmethod
-  def extract(cls, platform: plt.Platform, archive_path: pth.LocalPath,
+  def extract(cls, platform: Platform, archive_path: pth.LocalPath,
               dest_path: pth.LocalPath) -> pth.LocalPath:
     assert platform.which("rpm2cpio"), (
         "Need rpm2cpio to extract downloaded .rpm archive")
@@ -272,7 +272,7 @@ class RPMArchiveHelper(ArchiveHelper):
 class DMGArchiveHelper:
 
   @classmethod
-  def extract(cls, platform: plt.Platform, archive_path: pth.LocalPath,
+  def extract(cls, platform: Platform, archive_path: pth.LocalPath,
               dest_path: pth.LocalPath) -> pth.LocalPath:
     assert platform.is_macos, "DMG are only supported on macOS."
     assert not platform.is_remote, "Remote platform not supported yet"

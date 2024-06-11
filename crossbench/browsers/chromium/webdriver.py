@@ -25,17 +25,20 @@ from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
 from crossbench import exception, helper
 from crossbench import path as pth
-from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.browsers.chromium.version import ChromeDriverVersion
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags import ChromeFlags, FlagsT
+from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
+from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
   from selenium import webdriver
 
+  from crossbench.plt.base import Platform
   from crossbench.runner.groups import BrowserSessionRunGroup
 
 
@@ -184,11 +187,11 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     return self._android_package
 
   @property
-  def platform(self) -> plt.AndroidAdbPlatform:
+  def platform(self) -> AndroidAdbPlatform:
     assert isinstance(
         self._platform,
-        plt.AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
-    return cast(plt.AndroidAdbPlatform, self._platform)
+        AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
+    return cast(AndroidAdbPlatform, self._platform)
 
   def _resolve_binary(self, path: pth.RemotePath) -> pth.RemotePath:
     return path
@@ -271,11 +274,10 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
 class ChromiumWebDriverSsh(ChromiumWebDriver):
 
   @property
-  def platform(self) -> plt.LinuxSshPlatform:
-    assert isinstance(
-        self._platform,
-        plt.LinuxSshPlatform), (f"Invalid platform: {self._platform}")
-    return cast(plt.LinuxSshPlatform, self._platform)
+  def platform(self) -> LinuxSshPlatform:
+    assert isinstance(self._platform,
+                      LinuxSshPlatform), (f"Invalid platform: {self._platform}")
+    return cast(LinuxSshPlatform, self._platform)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.RemotePath) -> RemoteWebDriver:
@@ -292,11 +294,11 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
 class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
 
   @property
-  def platform(self) -> plt.ChromeOsSshPlatform:
+  def platform(self) -> ChromeOsSshPlatform:
     assert isinstance(
         self._platform,
-        plt.ChromeOsSshPlatform), (f"Invalid platform: {self._platform}")
-    return cast(plt.ChromeOsSshPlatform, self._platform)
+        ChromeOsSshPlatform), (f"Invalid platform: {self._platform}")
+    return cast(ChromeOsSshPlatform, self._platform)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.RemotePath) -> RemoteWebDriver:
@@ -333,8 +335,8 @@ class ChromeDriverFinder:
                browser: ChromiumWebDriver,
                cache_dir: pth.LocalPath = BROWSERS_CACHE):
     self.browser = browser
-    self.platform: plt.Platform = browser.platform
-    self.host_platform: plt.Platform = browser.platform.host_platform
+    self.platform: Platform = browser.platform
+    self.host_platform: Platform = browser.platform.host_platform
     assert self.browser.is_local, (
         "Cannot download chromedriver for remote browser yet")
     extension: str = ""

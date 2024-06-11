@@ -4,19 +4,18 @@
 
 from __future__ import annotations
 
-from crossbench import plt
-
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
 from tests.crossbench.plt.test_linux_ssh import LinuxSshPlatformTest
 
 
 class ChromeOsSshPlatformTest(LinuxSshPlatformTest):
   SSH_USER = "chronos"
-  platform: plt.ChromeOsSshPlatform
+  platform: ChromeOsSshPlatform
 
   def setUp(self) -> None:
     super().setUp()
-    self.platform = plt.ChromeOsSshPlatform(
+    self.platform = ChromeOsSshPlatform(
         self.mock_platform,
         host=self.HOST,
         port=self.PORT,

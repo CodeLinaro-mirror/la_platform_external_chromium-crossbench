@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import abc
-import re
 import urllib.parse
 from typing import TYPE_CHECKING, Dict, Final, Optional, Tuple, Type, Union
 
@@ -14,8 +13,8 @@ from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.version import BrowserVersion
 
 if TYPE_CHECKING:
-  from crossbench import plt
   from crossbench.path import LocalPath, RemotePathLike
+  from crossbench.plt.base import Platform
 
 
 _PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
@@ -34,8 +33,8 @@ class FirefoxDownloader(Downloader):
   STORAGE_URL: str = "https://ftp.mozilla.org/pub/firefox/releases/"
 
   @classmethod
-  def _get_loader_cls(
-      cls, browser_platform: plt.Platform) -> Type[FirefoxDownloader]:
+  def _get_loader_cls(cls,
+                      browser_platform: Platform) -> Type[FirefoxDownloader]:
     if browser_platform.is_macos:
       return FirefoxDownloaderMacOS
     if browser_platform.is_linux:
@@ -51,7 +50,7 @@ class FirefoxDownloader(Downloader):
 
   @classmethod
   def _is_valid(cls, path_or_identifier: RemotePathLike,
-                browser_platform: plt.Platform) -> bool:
+                browser_platform: Platform) -> bool:
     if cls.is_valid_version(str(path_or_identifier)):
       return True
     path = browser_platform.path(path_or_identifier)
@@ -62,7 +61,7 @@ class FirefoxDownloader(Downloader):
                version_identifier: Union[str, LocalPath],
                browser_type: str,
                platform_name: str,
-               browser_platform: plt.Platform,
+               browser_platform: Platform,
                cache_dir: Optional[LocalPath] = None):
     assert not browser_type
     assert not platform_name
@@ -124,7 +123,7 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def _extracted_path(self) -> LocalPath:
@@ -147,7 +146,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
@@ -182,7 +181,7 @@ class FirefoxDownloaderWin(FirefoxDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return False
 
   def _install_archive(self, archive_path: LocalPath) -> None:

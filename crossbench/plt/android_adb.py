@@ -8,15 +8,15 @@ import logging
 import re
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
-                    Union)
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
+from crossbench import cli_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import PosixPlatform
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArgT, ListCmdArgsT, Platform
   from crossbench.path import LocalPath, RemotePath, RemotePathLike
+  from crossbench.plt.base import CmdArgT, ListCmdArgsT, Platform
   from crossbench.types import JsonDict
 
 
@@ -56,12 +56,18 @@ class Adb:
 
   _serial_id: str
   _device_info: Dict[str, str]
+  _adb_bin: RemotePath
 
   def __init__(self,
                host_platform: Platform,
-               device_identifier: Optional[str] = None) -> None:
+               device_identifier: Optional[str] = None,
+               adb_bin: Optional[RemotePath] = None) -> None:
     self._host_platform = host_platform
-    self._adb_bin = _find_adb_bin(host_platform)
+    if adb_bin:
+      self._adb_bin = cli_helper.parse_binary_path(
+          adb_bin, platform=host_platform)
+    else:
+      self._adb_bin = _find_adb_bin(host_platform)
     self.start_server()
     self._serial_id, self._device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", self._serial_id,

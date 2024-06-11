@@ -9,15 +9,11 @@ import sys
 import unicodedata
 from typing import Final
 
-from crossbench.plt.android_adb import AndroidAdbPlatform, adb_devices
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import Platform, SubprocessError, TupleCmdArgsT
-from crossbench.plt.ios import ios_devices
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
-from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.macos import MacOSPlatform
-from crossbench.plt.posix import PosixPlatform
 from crossbench.plt.win import WinPlatform
 
 

@@ -7,8 +7,7 @@ from __future__ import annotations
 import pathlib
 from unittest import mock
 
-from crossbench import plt
-from crossbench.plt.android_adb import Adb
+from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.arch import MachineArch
 from tests import test_helper
 from tests.crossbench.plt.helper import PosixPlatformTestCase
@@ -22,7 +21,7 @@ emulator-5554 device product:sdk_google_phone_x86 model:Android_SDK_built_for_x8
 class AndroidAdbPlatformTest(PosixPlatformTestCase):
   __test__ = True
   DEVICE_ID = "emulator-5554"
-  platform: plt.AndroidAdbPlatform
+  platform: AndroidAdbPlatform
 
   def setUp(self) -> None:
     super().setUp()
@@ -35,7 +34,7 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
     self.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=ADB_DEVICES_SAMPLE_OUTPUT)
     self.adb = Adb(self.mock_platform, self.DEVICE_ID)
-    self.platform = plt.AndroidAdbPlatform(
+    self.platform = AndroidAdbPlatform(
         self.mock_platform, self.DEVICE_ID, adb=self.adb)
 
   def expect_adb(self, *args, result=""):

@@ -13,15 +13,17 @@ from typing import (TYPE_CHECKING, Dict, Final, List, Optional, Tuple, Type,
 
 from crossbench import helper
 from crossbench import path as pth
-from crossbench import plt
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.downloader import (DMGArchiveHelper, Downloader,
                                             IncompatibleVersionError,
                                             RPMArchiveHelper)
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
+from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.base import SubprocessError
 
 if TYPE_CHECKING:
   from crossbench.plt.android_adb import Adb
+  from crossbench.plt.base import Platform
 
 
 class ChromeDownloader(Downloader):
@@ -44,7 +46,7 @@ class ChromeDownloader(Downloader):
 
   @classmethod
   def _is_valid(cls, path_or_identifier: pth.RemotePathLike,
-                browser_platform: plt.Platform) -> bool:
+                browser_platform: Platform) -> bool:
     if cls.is_valid_version(str(path_or_identifier)):
       return True
     path = browser_platform.path(path_or_identifier)
@@ -53,7 +55,7 @@ class ChromeDownloader(Downloader):
 
   @classmethod
   def _get_loader_cls(cls,
-                      browser_platform: plt.Platform) -> Type[ChromeDownloader]:
+                      browser_platform: Platform) -> Type[ChromeDownloader]:
     if browser_platform.is_macos:
       return ChromeDownloaderMacOS
     if browser_platform.is_linux:
@@ -146,7 +148,7 @@ class ChromeDownloader(Downloader):
       for archive_url in self._archive_urls(url, version):
         try:
           result = self.host_platform.sh_stdout("gsutil", "ls", archive_url)
-        except plt.SubprocessError as e:
+        except SubprocessError as e:
           logging.debug("gsutil failed: %s", e)
           continue
         if result:
@@ -175,14 +177,14 @@ class ChromeDownloaderLinux(ChromeDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: pth.RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self,
                version_identifier: Union[str, pth.LocalPath],
                browser_type: str,
                platform_name: str,
-               browser_platform: plt.Platform,
+               browser_platform: Platform,
                cache_dir: Optional[pth.LocalPath] = None):
     assert not browser_type
     if browser_platform.is_linux and browser_platform.is_x64:
@@ -217,14 +219,14 @@ class ChromeDownloaderMacOS(ChromeDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: pth.RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self,
                version_identifier: Union[str, pth.LocalPath],
                browser_type: str,
                platform_name: str,
-               browser_platform: plt.Platform,
+               browser_platform: Platform,
                cache_dir: Optional[pth.LocalPath] = None):
     assert not browser_type
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
@@ -273,14 +275,14 @@ class ChromeDownloaderAndroid(ChromeDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: pth.RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self,
                version_identifier: Union[str, pth.LocalPath],
                browser_type: str,
                platform_name: str,
-               browser_platform: plt.Platform,
+               browser_platform: Platform,
                cache_dir: Optional[pth.LocalPath] = None):
     assert not browser_type
     assert browser_platform.is_android, (
@@ -293,7 +295,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
 
   @property
   def adb(self) -> Adb:
-    return cast(plt.AndroidAdbPlatform, self._browser_platform).adb
+    return cast(AndroidAdbPlatform, self._browser_platform).adb
 
   def _pre_check(self) -> None:
     super()._pre_check()
@@ -359,7 +361,7 @@ class ChromeDownloaderWin(ChromeDownloader):
 
   @classmethod
   def is_valid(cls, path_or_identifier: pth.RemotePathLike,
-               browser_platform: plt.Platform) -> bool:
+               browser_platform: Platform) -> bool:
     return False
 
   def _archive_urls(self, folder_url: str,

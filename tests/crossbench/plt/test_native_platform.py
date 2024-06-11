@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 from crossbench import compat, plt
+from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 
 
@@ -237,12 +238,12 @@ class PlatformTestCase(unittest.TestCase):
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class PosixPlatformTestCase(PlatformTestCase):
-  platform: plt.PosixPlatform
+  platform: PosixPlatform
 
   def setUp(self):
     super().setUp()
-    assert isinstance(plt.PLATFORM, plt.PosixPlatform)
-    self.platform: plt.PosixPlatform = plt.PLATFORM
+    assert isinstance(plt.PLATFORM, PosixPlatform)
+    self.platform: PosixPlatform = plt.PLATFORM
 
   def test_sh(self):
     ls = self.platform.sh_stdout("ls")

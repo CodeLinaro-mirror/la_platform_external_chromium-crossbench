@@ -17,6 +17,7 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.flags import ChromeFlags, Flags, JSFlags
 from crossbench.network.base import Network
+from crossbench.plt.android_adb import AndroidAdbPlatform
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -178,11 +179,11 @@ if not TYPE_CHECKING:
 class MockChromeAndroidStable(MockChromeStable):
 
   @property
-  def platform(self) -> plt.AndroidAdbPlatform:
+  def platform(self) -> AndroidAdbPlatform:
     assert isinstance(
         self._platform,
-        plt.AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
-    return cast(plt.AndroidAdbPlatform, self._platform)
+        AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
+    return cast(AndroidAdbPlatform, self._platform)
 
   def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
     return path

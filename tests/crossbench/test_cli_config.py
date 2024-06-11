@@ -29,6 +29,7 @@ from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 from crossbench.config import ConfigError
 from crossbench.exception import ArgumentTypeMultiException, MultiException
 from crossbench.flags import Flags
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.types import JsonDict
@@ -87,6 +88,39 @@ class BaseConfigTestCase(BaseCrossbenchTestCase):
     return mock.patch.object(
         BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls)
 
+
+class BrowserDriverTypeTestCase(unittest.TestCase):
+
+  def test_default(self):
+    self.assertEqual(BrowserDriverType.default(), BrowserDriverType.WEB_DRIVER)
+
+  def test_parse_invalid(self):
+    for invalid in ["invalid", None, [], (), {}]:
+      with self.assertRaises(argparse.ArgumentTypeError):
+        BrowserDriverType.parse(invalid)
+
+  def test_parse_str(self):
+    test_data = {
+        "": BrowserDriverType.default(),
+        "selenium": BrowserDriverType.WEB_DRIVER,
+        "webdriver": BrowserDriverType.WEB_DRIVER,
+        "applescript": BrowserDriverType.APPLE_SCRIPT,
+        "osa": BrowserDriverType.APPLE_SCRIPT,
+        "android": BrowserDriverType.ANDROID,
+        "adb": BrowserDriverType.ANDROID,
+        "iphone": BrowserDriverType.IOS,
+        "ios": BrowserDriverType.IOS,
+        "ssh": BrowserDriverType.LINUX_SSH,
+        "chromeos-ssh": BrowserDriverType.CHROMEOS_SSH,
+    }
+    for value, result in test_data.items():
+      self.assertEqual(BrowserDriverType.parse(value), result)
+
+  def test_parse_enum(self):
+    for driver_type in BrowserDriverType:
+      self.assertEqual(BrowserDriverType.parse(driver_type), driver_type)
+
+
 class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_default(self):
@@ -107,7 +141,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = DriverConfig.parse("{")
 
-  def test_parse_path_invalid(self):
+  def test_parse_driver_path_invalid(self):
     driver_path = self.out_dir / "driver"
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(str(driver_path))
@@ -119,6 +153,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
     message = str(cm.exception)
     self.assertIn(str(driver_path), message)
     self.assertIn("empty", message)
+
+  def test_parse_driver_path(self):
+    chromedriver_path = self.out_dir / "chromedriver"
+    self.fs.create_file(chromedriver_path, st_size=100)
+    driver = DriverConfig.parse(str(chromedriver_path))
+    self.assertEqual(driver.path, chromedriver_path)
+
+    config = {"path": str(chromedriver_path)}
+    driver_2 = DriverConfig.parse(config)
+    self.assertEqual(driver_2.path, chromedriver_path)
+    self.assertEqual(driver, driver_2)
 
   def test_parse_dict_device_id_conflict(self):
     self.platform.sh_results = []
@@ -147,14 +192,14 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.platform.expect_sh(
         "ssh", "-p", config_dict["settings"]["ssh_port"],
         f"{config_dict['settings']['ssh_user']}@{config_dict['settings']['host']}",
-        f"'[' -e {plt.ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
+        f"'[' -e {ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
     config = DriverConfig.parse(config_dict)
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.CHROMEOS_SSH)
     self.assertTrue(config.is_remote)
     self.assertFalse(config.is_local)
     platform = config.get_platform()
-    assert isinstance(platform, plt.ChromeOsSshPlatform)
+    assert isinstance(platform, ChromeOsSshPlatform)
     self.assertEqual(platform.host, "chromeos6-row17-rack14-host7")
     self.assertEqual(platform.port, 9515)
     self.assertEqual(platform._ssh_port, 22)
@@ -170,6 +215,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_1.settings["device_id"], "0a388e93")
     self.assertTrue(config_1.is_remote)
     self.assertFalse(config_1.is_local)
+    self.assertIsNone(config_1.adb_bin)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_2 = DriverConfig.load_dict(config_dict)
@@ -179,6 +225,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_2.settings["device_id"], "0a388e93")
     self.assertTrue(config_2.is_remote)
     self.assertFalse(config_2.is_local)
+    self.assertIsNone(config_2.adb_bin)
     self.assertEqual(config_1, config_2)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -190,8 +237,26 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertTrue(config_3.is_remote)
     self.assertFalse(config_3.is_local)
     self.assertIsNone(config_3.settings)
+    self.assertIsNone(config_2.adb_bin)
     self.assertNotEqual(config_1, config_3)
     self.assertNotEqual(config_2, config_3)
+
+  def test_parse_custom_adb_bin(self):
+    adb_bin = self.out_dir / "adb"
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
+    config_dict = {
+        "type": "adb",
+        "device_id": "0a388e93",
+        "adb_bin": str(adb_bin)
+    }
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = DriverConfig.parse(hjson.dumps(config_dict))
+    self.assertIn(str(adb_bin), str(cm.exception))
+    self.fs.create_file(adb_bin, st_size=100)
+    config = DriverConfig.parse(hjson.dumps(config_dict))
+    assert isinstance(config, DriverConfig)
+    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.adb_bin, adb_bin)
 
   def test_parse_adb_phone_identifier_unknown(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -939,7 +1004,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         BrowserVariantsConfig,
         "_get_browser_cls",
         side_effect=mock_get_browser_cls), mock.patch(
-            "crossbench.plt.AndroidAdbPlatform.machine",
+            "crossbench.plt.android_adb.AndroidAdbPlatform.machine",
             new_callable=mock.PropertyMock,
             return_value=plt.MachineArch.ARM_64):
       browsers = BrowserVariantsConfig.from_cli_args(args).variants
