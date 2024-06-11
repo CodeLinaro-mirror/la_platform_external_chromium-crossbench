@@ -6,30 +6,33 @@ import unittest
 
 import hjson
 
+from crossbench import plt
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import TraceProcessorProbe
 from tests import test_helper
 
 
-class TestProbe(unittest.TestCase):
+class TraceProcessorProbeTestCase(unittest.TestCase):
 
   def test_missing_probes(self):
     with self.assertRaises(ValueError) as cm:
       TraceProcessorProbe.from_config({})
     self.assertIn("probes", str(cm.exception))
 
-  @unittest.skip("TODO: work around missing trace processor on bots")
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
+                   "trace_processor not available")
   def test_parse_config(self):
     probe: TraceProcessorProbe = TraceProcessorProbe.from_config(
         {"probes": ["probe1", "probe2"]})
     self.assertEqual(["probe1", "probe2"], probe.probes)
 
-  @unittest.skip("TODO: work around missing trace processor on bots")
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
+                   "trace_processor not available")
   def test_parse_example_config(self):
     config_file = (
-        test_helper.config_dir() / "probe" /
-        "trace_processor.probe.config.example.hjson")
+        test_helper.config_dir() / "doc/probe/trace_processor.config.hjson")
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.load_path(config_file).probes
     self.assertEqual(len(probes), 2)

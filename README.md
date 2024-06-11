@@ -51,7 +51,7 @@ android devices using the device ID or unique device names
 (see `adb devices -l`):
 
 ```bash
-./cb.py loading --probe-config=./config/probe/perfetto.probe.config.example.hjson \
+./cb.py loading --probe-config=./config/probe/perfetto/default.config.hjson \
     --browser='Pixel_4:chrome-stable' --browser='AA00BB11:chrome-stable' \
     --parallel=platform \
     --url=https://theverge.com,15s,https://cnn.com,15s  --separate
@@ -97,7 +97,7 @@ They need to have [developer mode and usb-debugging enabled](https://developer.a
 
 #### Browser Config File
 For more complex scenarios you can use a
-[browser.config.hjson](config/browser.config.example.hjson) file.
+[browser.config.hjson](config/doc/browser.config.hjson) file.
 It allows you to specify multiple browser and multiple flag configurations in
 a single file and produce performance numbers with a single invocation.
 
@@ -105,7 +105,7 @@ a single file and produce performance numbers with a single invocation.
 ./cb.py speedometer --browser-config=config.hjson
 ```
 
-The [example file](config/browser.config.example.hjson) lists and explains all
+The [example file](config/doc/browser.config.hjson) lists and explains all
 configuration details.
 
 #### Remote WebDriver Interface
@@ -114,7 +114,7 @@ running Linux or ChromeOS, via SSH.
 The remote machine is expected to have at least two ports open to the host:
 (a) the SSH port (typically `22`), and
 (b) the WebDriver port (typically `9515`).
-The [remote browser example](config/remote.browser.config.example.hjson)
+The [remote browser example](config/doc/remote_browser.config.hjson)
 describes the configuration details for both Linux and ChromeOS.
 
 On ChromeOS, Crossbench requires
@@ -158,7 +158,7 @@ probe config files (see below).
 
 #### Probe Config File
 For complex probe setups you can use `--probe-config=<file>`.
-The [example file](config/probe.config.example.hjson) lists and explains all
+The [example file](config/doc/probe.config.hjson) lists and explains all
 configuration details. For the specific probe configuration properties consult
 the `describe` command.
 

@@ -72,7 +72,7 @@ def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("speedometer_2.0", "--help")
   _run_cli("describe", "benchmark", "speedometer_2.0")
-  browser_config = root_dir / "config" / "browser.config.example.hjson"
+  browser_config = root_dir / "config/doc/browser.config.hjson"
   assert browser_config.is_file()
   results_dir = output_dir / "results"
   assert not results_dir.exists()
@@ -213,7 +213,7 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("jetstream_2.1", "--help")
   _run_cli("describe", "benchmark", "jetstream_2.1")
-  probe_config = root_dir / "config" / "probe.config.example.hjson"
+  probe_config = root_dir / "config/doc/probe.config.hjson"
   assert probe_config.is_file()
   results_dir = output_dir / "results"
   assert not results_dir.exists()
@@ -244,7 +244,7 @@ def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("jetstream_2.2", "--help")
   _run_cli("describe", "benchmark", "jetstream_2.2")
-  probe_config = root_dir / "config" / "probe.config.example.hjson"
+  probe_config = root_dir / "config/doc/probe.config.hjson"
   assert probe_config.is_file()
   results_dir = output_dir / "results"
   assert not results_dir.exists()
@@ -290,7 +290,7 @@ def test_loading(output_dir, cache_dir) -> None:
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
   # - loading with config file
-  page_config = root_dir / "config" / "page.config.example.hjson"
+  page_config = root_dir / "config/doc/page.config.hjson"
   assert page_config.is_file()
   results_dir = output_dir / "results"
   assert not results_dir.exists()

@@ -39,7 +39,7 @@ class PerfettoProbe(Probe):
   2. Click "Recording command" and copy the textproto config part of the
      command.
   3. Paste it into the textproto field of the probe config. An example probe
-     config can be found at config/perfetto-probe.config.example.hjson.
+     config can be found at config/doc/probe/perfetto.config.hjson.
   4. Specify the config via the --probe-config command-line flag.
 
   After the run, the trace will be found among the results as

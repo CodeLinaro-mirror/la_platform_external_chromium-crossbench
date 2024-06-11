@@ -127,7 +127,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
         "",
         "Usage: --probe=v8.log --probe=video ...",
         "Usage: --probe=v8.log:{log_all:false} ...",
-        "Usage: --probe-config=configs/probe/dtrace.probe.config",
+        "Usage: --probe-config=configs/probe/perfetto/default.config.hjson",
         "",
     ]
     table = []
@@ -520,7 +520,7 @@ class CrossBenchCLI:
         type=cli_helper.parse_hjson_file_path,
         help="Browser configuration.json file. "
         "Use this to run multiple browsers and/or multiple flag configurations."
-        "See config/browser.config.example.hjson on how to set up a complex "
+        "See config/doc/browser.config.hjson on how to set up a complex "
         "configuration file. "
         "Cannot be used together with --browser.")
     browser_group.add_argument(
@@ -628,7 +628,7 @@ class CrossBenchCLI:
         type=cli_helper.parse_hjson_file_path,
         help="Browser configuration.json file. "
         "Use this config file to specify more complex Probe settings."
-        "See config/probe.config.example.hjson on how to set up a complex "
+        "See config/doc/probe.config.hjson on how to set up a complex "
         "configuration file. "
         "Cannot be used together with --probe.")
     subparser.set_defaults(

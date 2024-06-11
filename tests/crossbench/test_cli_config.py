@@ -805,11 +805,10 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
 class TestBrowserVariantsConfig(BaseConfigTestCase):
   # pylint: disable=expression-not-assigned
 
-  EXAMPLE_CONFIG_PATH = (
-      test_helper.config_dir() / "browser.config.example.hjson")
+  EXAMPLE_CONFIG_PATH = (test_helper.config_dir() / "doc/browser.config.hjson")
 
   EXAMPLE_REMOTE_CONFIG_PATH = (
-      test_helper.config_dir() / "remote.browser.config.example.hjson")
+      test_helper.config_dir() / "doc/remote_browser.config.hjson")
 
   def setUp(self):
     super().setUp()

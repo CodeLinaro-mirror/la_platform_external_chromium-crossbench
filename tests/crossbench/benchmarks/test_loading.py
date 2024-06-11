@@ -296,7 +296,7 @@ class TestExamplePageConfig(unittest.TestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):
-    example_config_file = test_helper.config_dir() / "page.config.example.hjson"
+    example_config_file = test_helper.config_dir() / "doc/page.config.hjson"
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
@@ -309,7 +309,7 @@ class TestExamplePageConfig(unittest.TestCase):
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_android_page_config_file(self):
     example_config_file = (
-        test_helper.config_dir() / "woa" / "android_input_page_config.hjson")
+        test_helper.config_dir() / "team/woa/android_input_page_config.hjson")
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
@@ -322,8 +322,7 @@ class TestExamplePageConfig(unittest.TestCase):
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_phone(self):
     config_file = (
-        test_helper.config_dir() / "woa" / "loading" /
-        "page_config_phone.hjson")
+        test_helper.config_dir() / "benchmark/loading/page_config_phone.hjson")
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
@@ -336,8 +335,7 @@ class TestExamplePageConfig(unittest.TestCase):
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_tablet(self):
     config_file = (
-        test_helper.config_dir() / "woa" / "loading" /
-        "page_config_tablet.hjson")
+        test_helper.config_dir() / "benchmark/loading/page_config_tablet.hjson")
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)

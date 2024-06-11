@@ -60,7 +60,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         type=PagesConfig.parse,
         help="Stories we want to perform in the benchmark run following a"
         "specified scenario. For a reference on how to build scenarios and"
-        "possible actions check  pages.config.example.hjson")
+        "possible actions check config/doc/pages.config.hjson")
     page_config_group.add_argument(
         "--url-file",
         "--urls-file",

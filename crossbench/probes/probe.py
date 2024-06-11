@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 from typing import (TYPE_CHECKING, Any, Dict, Hashable, Optional, Set, Tuple,
-                    Type, TypeVar, Union)
+                    Type, TypeVar)
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes

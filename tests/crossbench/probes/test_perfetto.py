@@ -12,7 +12,7 @@ from crossbench.probes.all import PerfettoProbe
 from tests import test_helper
 
 
-class TestPerfettoProbe(unittest.TestCase):
+class PerfettoProbeTestCase(unittest.TestCase):
 
   def test_missing_config(self):
     with self.assertRaises(ValueError) as cm:
@@ -26,9 +26,7 @@ class TestPerfettoProbe(unittest.TestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_config(self):
-    config_file = (
-        test_helper.config_dir() / "probe" /
-        "perfetto.probe.config.example.hjson")
+    config_file = (test_helper.config_dir() / "doc/probe/perfetto.config.hjson")
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.load_path(config_file).probes
     self.assertEqual(len(probes), 1)

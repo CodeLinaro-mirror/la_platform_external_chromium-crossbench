@@ -16,8 +16,7 @@ class TestJSProbe(CrossbenchFakeFsTestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_config(self):
-    config_file = (
-        test_helper.config_dir() / "probe" / "js.probe.config.example.hjson")
+    config_file = (test_helper.config_dir() / "doc/probe/js.config.hjson")
     self.fs.add_real_file(config_file)
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.load_path(config_file).probes

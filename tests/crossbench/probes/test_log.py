@@ -9,7 +9,7 @@ from crossbench.probes.all import V8LogProbe
 from tests import test_helper
 
 
-class TestV8LogProbe(unittest.TestCase):
+class V8LogProbeTestCase(unittest.TestCase):
 
   def test_invalid_flags(self):
     with self.assertRaises(ValueError):

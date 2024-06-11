@@ -153,7 +153,7 @@ class PagesConfig(ConfigObject):
     least include: {action: "GET", value/url: google.com} in the specific
     scenario.
 
-    As an example look at: page.config.example.hjson
+    As an example look at: config/doc/page.config.hjson
     """
     pages = []
     for scenario_name, actions in data.items():

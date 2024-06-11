@@ -10,7 +10,7 @@ from crossbench.probes.profiling.system_profiling import (
 from tests import test_helper
 
 
-class TestSystemProfilingProbe(unittest.TestCase):
+class SystemProfilingProbeTestCase(unittest.TestCase):
 
   def test_simpleperf_command_line_with_tid(self):
     output_path = pathlib.Path("simpleperf.perf.data")

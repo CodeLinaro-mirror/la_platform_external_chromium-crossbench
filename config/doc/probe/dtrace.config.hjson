@@ -4,7 +4,7 @@
 {
   probes: {
     "dtrace": {
-      script_path : "~/dtrace_script.d",
+      script_path : "./dtrace.config.example.d",
     },
   }
 }
