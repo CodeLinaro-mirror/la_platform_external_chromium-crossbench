@@ -101,7 +101,7 @@ class Run(ResultOrigin):
     return (
         f"Run({self.name})",
         (f"browser={self.browser.type_name} label={self.browser.label} "
-         "binary={self.browser.path}"),
+         f"binary={self.browser.path}"),
         f"story={self.story}",
         f"repetition={self.repetition_name}",
     )
@@ -296,14 +296,16 @@ class Run(ResultOrigin):
       logging.info("RUNNING STORY")
       assert self._state == State.RUN, "Invalid state"
       try:
-        with self.measure("run"), Spinner():
+        with self.measure("run"), Spinner(), self.exceptions.capture():
           if not is_dry_run:
             self._run_story()
       except TimeoutError as e:
         # Handle TimeoutError earlier since they might be caused by
         # throttled down non-foreground browser.
         self._exceptions.append(e)
-      self.environment.check_browser_focused(self.browser)
+      if self.is_success:
+        with self.exceptions.capture():
+          self.environment.check_browser_focused(self.browser)
 
   def _run_story(self) -> None:
     self._run_story_setup()

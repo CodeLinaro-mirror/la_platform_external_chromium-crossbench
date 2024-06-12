@@ -193,18 +193,29 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     try:
       self._driver.get(url)
     except selenium.common.exceptions.WebDriverException as e:
-      if e.msg and "net::ERR_CONNECTION_REFUSED" in e.msg:
-        # pylint: disable=raise-missing-from
-        raise DriverException(
-            f"Browser failed to load URL={url}. The URL is likely unreachable.",
-            self)
+      if msg := e.msg:
+        self._wrap_webdriver_exception(e, msg, url)
       raise
 
-  def js(self,
-         runner: Runner,
-         script: str,
-         timeout: Optional[dt.timedelta] = None,
-         arguments: Sequence[object] = ()) -> Any:
+  def _wrap_webdriver_exception(
+      self, e: selenium.common.exceptions.WebDriverException, msg: str,
+      url: str) -> None:
+    if "net::ERR_CONNECTION_REFUSED" in msg:
+      raise DriverException(
+          f"Browser failed to load URL={url}. The URL is likely unreachable.",
+          self) from e
+    if "net::ERR_INTERNET_DISCONNECTED" in msg:
+      raise DriverException(
+          f"Browser failed to load URL={url}. "
+          f"The device is not connected to the internet.", self) from e
+
+  def js(
+      self,
+      runner: Runner,
+      script: str,
+      timeout: Optional[dt.timedelta] = None,
+      arguments: Sequence[object] = ()
+  ) -> Any:
     logging.debug("WebDriverBrowser.js() timeout=%s, script: %s", timeout,
                   script)
     assert self._is_running
