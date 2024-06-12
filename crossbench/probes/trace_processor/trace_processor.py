@@ -9,7 +9,6 @@ import csv
 import gzip
 import logging
 import shutil
-import zipfile
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
@@ -302,16 +301,17 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
     return LocalProbeResult(file=[merged_trace], csv=csv_files, json=json_files)
 
   def _merge_trace_files(self) -> pth.LocalPath:
-    merged_trace = self.local_result_path / "merged.zip"
-    with zipfile.ZipFile(
-        merged_trace, 'x', compression=zipfile.ZIP_DEFLATED) as output_f:
+    merged_trace = self.local_result_path / "merged_trace.pb"
+    with open(merged_trace, "wb") as output_f:
       for probe_name in self.probe.probes:
         self._write_probe_result_traces(probe_name, output_f)
 
-    return merged_trace
+    self.runner_platform.sh("gzip", merged_trace)
+    merged_trace_gzipped = self.local_result_path / "merged_trace.pb.gz"
 
-  def _write_probe_result_traces(self, probe_name: str,
-                                 output_f: zipfile.ZipFile) -> None:
+    return merged_trace_gzipped
+
+  def _write_probe_result_traces(self, probe_name: str, output_f: IO) -> None:
     # TODO: implement probe dependencies
     probe_results = self.run.results.get_by_name(probe_name)
     assert probe_results, f"Did not find results for required probe {probe_name}"
@@ -319,5 +319,11 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       logging.warn("TRACE_PROCESSOR: No trace files found for %s", probe_name)
       return
     for f in probe_results.file_list:
-      if _is_trace_file(f):
-        output_f.write(f)
+      if not _is_trace_file(f):
+        continue
+      if f.suffix == ".gz":
+        with gzip.open(f) as input_f:
+          shutil.copyfileobj(input_f, output_f)
+      else:
+        with f.open("rb") as input_f:
+          shutil.copyfileobj(input_f, output_f)

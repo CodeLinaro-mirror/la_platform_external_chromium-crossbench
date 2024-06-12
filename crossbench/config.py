@@ -17,6 +17,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
                     Optional, Set, Tuple, Type, TypeVar, Union, cast)
 
 import tabulate
+from urllib.parse import urlparse
 
 from crossbench import cli_helper, compat, exception, helper
 # Use indirection to support pyfakefs
@@ -405,6 +406,9 @@ class ConfigObject(abc.ABC):
     if isinstance(value, pth.LocalPath):
       return cls.load_path(value)
     if isinstance(value, str):
+      if urlparse(value).scheme:
+        # TODO(346197734): use load_url here
+        return cls.loads(value)
       try:
         maybe_path = pth.LocalPath(value)
         if cls.is_valid_path(maybe_path):

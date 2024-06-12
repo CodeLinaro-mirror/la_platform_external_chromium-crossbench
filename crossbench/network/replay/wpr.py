@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Optional
 from crossbench import cli_helper
 from crossbench.flags import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
-from crossbench.network.replay.base import ReplayNetwork
+from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.plt import PLATFORM, Platform
 
@@ -25,11 +25,11 @@ if TYPE_CHECKING:
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
-               archive_path: LocalPath,
+               archive_path_or_url: str,
                traffic_shaper: Optional[TrafficShaper] = None,
                wpr_go_bin: Optional[LocalPath] = None,
                browser_platform: Platform = PLATFORM):
-    super().__init__(archive_path, traffic_shaper, browser_platform)
+    super().__init__(archive_path_or_url, traffic_shaper, browser_platform)
     if not wpr_go_bin:
       if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
         wpr_go_bin = self.runner_platform.local_path(local_wpr_go)
@@ -72,7 +72,7 @@ class WprReplayNetwork(ReplayNetwork):
 
 
   @contextlib.contextmanager
-  def _open_replay_sever(self, session: BrowserSessionRunGroup):
+  def _open_replay_server(self, session: BrowserSessionRunGroup):
     self._server = WprReplayServer(
         self.archive_path,
         self._wpr_go_bin,

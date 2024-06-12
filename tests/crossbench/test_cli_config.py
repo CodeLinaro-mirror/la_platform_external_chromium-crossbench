@@ -2144,6 +2144,14 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.path, path)
     self.assertEqual(config.speed, NetworkSpeedConfig.default())
 
+  def test_parse_wprgo_archive_url(self):
+    url = "gs://bucket/wprgo.archive"
+    config = NetworkConfig.parse(url)
+    assert isinstance(config, NetworkConfig)
+    self.assertEqual(config.type, NetworkType.WPR)
+    self.assertEqual(config.url, url)
+    self.assertEqual(config.speed, NetworkSpeedConfig.default())
+
   def test_invalid_constructor_params(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = NetworkConfig(path=pth.LocalPath("foo/bar"))

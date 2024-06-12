@@ -14,7 +14,7 @@ from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.base import Network
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_fileserver import LocalFileNetwork
-from crossbench.network.replay.wpr import WprReplayNetwork
+from crossbench.network.replay.wpr import GS_PREFIX, WprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
                                                      TrafficShaper)
@@ -132,6 +132,7 @@ class NetworkConfig(ConfigObject):
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
   path: Optional[LocalPath] = None
+  url: Optional[str] = None
   wpr_go_bin: Optional[LocalPath] = None
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
@@ -150,6 +151,7 @@ class NetworkConfig(ConfigObject):
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
     parser.add_argument(
         "path", type=cli_helper.parse_existing_file_path, required=False)
+    parser.add_argument("url", type=str, required=False)
     parser.add_argument(
         "wpr_go_bin",
         type=cli_helper.parse_existing_file_path,
@@ -176,6 +178,9 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
       return cls.default()
+    # TODO(346197734): Move to load_url once available.
+    if value.startswith(GS_PREFIX):
+      return cls.load_wpr_archive_url(value)
     return cls.load_live(value)
 
   @classmethod
@@ -208,6 +213,10 @@ class NetworkConfig(ConfigObject):
     return NetworkConfig(type=NetworkType.WPR, path=path)
 
   @classmethod
+  def load_wpr_archive_url(cls, url: str) -> NetworkConfig:
+    return NetworkConfig(type=NetworkType.WPR, url=url)
+
+  @classmethod
   def load_dict(cls, config: Dict[str, Any]) -> NetworkConfig:
     return cls.config_parser().parse(config)
 
@@ -221,11 +230,14 @@ class NetworkConfig(ConfigObject):
         raise argparse.ArgumentTypeError(
             "NetworkConfig path cannot be used with type=live")
     elif self.type is NetworkType.WPR:
-      if not self.path:
+      if not self.path and not self.url:
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=replay requires "
-            "a valid wpr.go archive path.")
-      cli_helper.parse_non_empty_file_path(self.path, "wpr.go-archive")
+            "a valid wpr.go archive path or download url.")
+      if self.path and self.url:
+        raise argparse.ArgumentTypeError(
+            "NetworkConfig with type=replay requires "
+            "either archive path or download url but not both.")
     elif self.type is NetworkType.LOCAL:
       if not self.path:
         raise argparse.ArgumentTypeError(
@@ -245,9 +257,9 @@ class NetworkConfig(ConfigObject):
       assert self.path
       return LocalFileNetwork(self.path, traffic_shaper, runner_platform)
     if self.type is NetworkType.WPR:
-      assert self.path
-      return WprReplayNetwork(self.path, traffic_shaper, self.wpr_go_bin,
-                              runner_platform)
+      return WprReplayNetwork(
+          self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
+          runner_platform)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:
