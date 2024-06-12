@@ -8,13 +8,17 @@ import argparse
 import csv
 import gzip
 import logging
+import os
 import shutil
+import stat
+from urllib.request import urlretrieve
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
 
 from crossbench import cli_helper, exception
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.helper.path_finder import TraceProcessorFinder
 from crossbench.plt.base import ListCmdArgsT, Platform
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -33,6 +37,15 @@ _METRICS_DIR = pth.LocalPath(__file__).parent / "metrics"
 def _is_trace_file(path: pth.LocalPath):
   return path.name.endswith(".trace.pb") or path.name.endswith(
       ".trace.pb.gz") or path.name.endswith(".perf.data")
+
+
+def _download_trace_processor() -> pth.LocalPath:
+  TRACE_PROCESSOR_DOWNLOAD_URL = "https://get.perfetto.dev/trace_processor"
+  destination = BROWSERS_CACHE / "trace_processor"
+  urlretrieve(TRACE_PROCESSOR_DOWNLOAD_URL, destination)
+  st = os.stat(destination)
+  os.chmod(destination, st.st_mode | stat.S_IEXEC)
+  return destination
 
 
 # TODO(carlscab): We should use the python API to start a TraceProcessor
@@ -196,8 +209,10 @@ class TraceProcessorProbe(Probe):
       raise ValueError("Please specify probes to process")
     self._probes = tuple(probes)
     if not trace_processor_bin:
-      trace_processor_bin = pth.LocalPath(
-          TraceProcessorFinder(plt.PLATFORM).path)
+      if tp_chromium_path := TraceProcessorFinder(plt.PLATFORM).path:
+        trace_processor_bin = pth.LocalPath(tp_chromium_path)
+      else:
+        trace_processor_bin = _download_trace_processor()
     self._trace_processor_bin = cli_helper.parse_local_binary_path(
         trace_processor_bin, "trace_processor")
 
