@@ -281,7 +281,7 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
     self._record_format = self.probe.record_format
     if self._record_format == RecordFormat.PROTO:
       self._traceconv = self.probe.traceconv or TraceconvFinder(
-          self.browser_platform).traceconv
+          self.browser_platform).path
     else:
       self._traceconv = None
 

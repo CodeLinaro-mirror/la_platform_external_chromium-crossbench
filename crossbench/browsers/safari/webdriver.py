@@ -13,17 +13,16 @@ from selenium.webdriver.safari.service import Service as SafariService
 
 from crossbench import exception, helper
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.webdriver import WebDriverBrowser
-
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
+from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.path import LocalPath, RemotePath
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.flags import Flags
   from crossbench.network.base import Network
+  from crossbench.path import RemotePath
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
