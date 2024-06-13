@@ -178,6 +178,8 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
       return cls.default()
+    if value[0] == "{":
+      return cls.load_inline_hjson(value)
     # TODO(346197734): Move to load_url once available.
     if value.startswith(GS_PREFIX):
       return cls.load_wpr_archive_url(value)

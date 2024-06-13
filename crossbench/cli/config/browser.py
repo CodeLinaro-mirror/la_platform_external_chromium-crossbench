@@ -75,9 +75,7 @@ class BrowserConfig(ConfigObject):
       driver, path, network = cls._parse_inline_short_form(value)
     else:
       # Variant 3: Full inline hjson
-      config = cli_helper.parse_inline_hjson(value)
-      with exception.annotate(f"Parsing inline {cls.__name__}"):
-        return cls.load_dict(config)
+      return cls.load_inline_hjson(value)
     assert path, "Invalid path"
     assert network, "Invalid network"
     return cls(path, driver, network)

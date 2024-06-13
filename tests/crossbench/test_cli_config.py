@@ -4,6 +4,7 @@
 
 import argparse
 import copy
+import json
 import unittest
 from typing import Dict, Tuple, Type
 from unittest import mock
@@ -2102,6 +2103,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
     config = NetworkSpeedConfig.parse({"ts_proxy": str(ts_proxy)})
     self.assertEqual(config.ts_proxy, ts_proxy)
 
+
 class NetworkConfigTestCase(BaseConfigTestCase):
 
   def test_parse_invalid(self):
@@ -2119,6 +2121,10 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     config = NetworkConfig.default()
     self.assertEqual(config.type, NetworkType.LIVE)
     self.assertEqual(config.speed, NetworkSpeedConfig.default())
+    config_1 = NetworkConfig.parse({})
+    self.assertEqual(config, config_1)
+    config_2 = NetworkConfig.parse("{}")
+    self.assertEqual(config, config_2)
 
   def test_parse_replay_archive_invalid(self):
     path = pth.LocalPath("/foo/bar/wprgo.archive")
@@ -2199,13 +2205,17 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config, NetworkConfig.default())
 
   def test_parse_dict_speed(self):
-    config: NetworkConfig = NetworkConfig.parse({"speed": "4G"})
+    config_dict = {"speed": "4G"}
+    config: NetworkConfig = NetworkConfig.parse(dict(config_dict))
     self.assertNotEqual(config, NetworkConfig.default())
     self.assertEqual(config.type, NetworkType.LIVE)
     self.assertEqual(
         config.speed,
         NetworkSpeedConfig.load_preset(NetworkSpeedPreset.MOBILE_4G))
     self.assertIsNone(config.path)
+    self.assertTrue(config_dict)
+    config_1 = NetworkConfig.parse(json.dumps(config_dict))
+    self.assertEqual(config, config_1)
 
   def test_parse_dict_wpr(self):
     archive_path = pth.LocalPath("test/archive.wprgo")
@@ -2213,9 +2223,12 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       NetworkConfig.parse({"type": "wpr", "path": archive_path})
     self.assertIn(str(archive_path), str(cm.exception))
     self.fs.create_file(archive_path, st_size=100)
-    config = NetworkConfig.parse({"type": "wpr", "path": archive_path})
+    config_dict = {"type": "wpr", "path": str(archive_path)}
+    config = NetworkConfig.parse(dict(config_dict))
     self.assertEqual(config, NetworkConfig.parse_wpr(archive_path))
-
+    self.assertTrue(config_dict)
+    config_1 = NetworkConfig.parse(json.dumps(config_dict))
+    self.assertEqual(config, config_1)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

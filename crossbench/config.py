@@ -440,6 +440,12 @@ class ConfigObject(abc.ABC):
     return cls.load_config_path(path)
 
   @classmethod
+  def load_inline_hjson(cls: Type[ConfigObjectT], value: str) -> ConfigObjectT:
+    with exception.annotate(f"Parsing inline {cls.__name__}"):
+      data = cli_helper.parse_inline_hjson(value)
+      return cls.load_dict(data)
+
+  @classmethod
   def load_config_path(cls: Type[ConfigObjectT],
                        path: pth.LocalPath) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):

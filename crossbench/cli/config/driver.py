@@ -107,8 +107,7 @@ class DriverConfig(ConfigObject):
             f"Driver path does not exist: {repr(value)}")
       if value[0] == "{":
         # Variant 1: full hjson config
-        data = cli_helper.parse_inline_hjson(value)
-        return cls.load_dict(data)
+        return cls.load_inline_hjson(value)
       # Variant 2: $DRIVER_TYPE
       try:
         driver_type = BrowserDriverType.parse(value)
