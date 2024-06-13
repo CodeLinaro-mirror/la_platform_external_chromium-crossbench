@@ -1855,19 +1855,13 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     self.assertEqual(str(group[2].flags), "-foo=v1")
 
   def test_parse_dict_simple(self):
-    group = FlagsGroupConfig.parse({
-        "--foo": "1",
-        "--bar": "2",
-    })
+    group = FlagsGroupConfig.parse({"--foo": "1", "--bar": "2"})
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo=1 --bar=2")
     self.assertEqual(group[0].label, "default")
 
   def test_parse_dict_invalid_variant(self):
-    for invalid in (
-        -1,
-        0,
-    ):
+    for invalid in (-1, 0):
       with self.subTest(invalid=invalid):
         with self.assertRaises(ValueError):
           FlagsGroupConfig.parse({
