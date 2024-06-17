@@ -102,7 +102,6 @@ class ProfilingProbe(Probe):
   RESULT_LOCATION = ResultLocation.BROWSER
   IS_GENERAL_PURPOSE = True
 
-  V8_PERF_PROF_FLAG = ("--perf-prof",)
   V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 
   @classmethod
@@ -432,7 +431,8 @@ class ProfilingProbe(Probe):
 
   def _attach(self, browser: Chromium) -> None:
     if self._sample_js:
-      browser.js_flags.update(self.V8_PERF_PROF_FLAG)
+      if browser.platform.is_linux:
+        browser.js_flags.set("--perf-prof")
       if self._expose_v8_interpreted_frames:
         browser.js_flags.set(self.V8_INTERPRETED_FRAMES_FLAG)
     if browser.platform.is_linux and browser.platform.is_local:
@@ -506,7 +506,15 @@ class ProfilingProbe(Probe):
 
 
 class ProfilingContext(ProbeContext[ProfilingProbe], metaclass=abc.ABCMeta):
-  pass
+
+  def setup_v8_log_path(self) -> None:
+    if any(isinstance(probe, V8LogProbe) for probe in self.run.probes):
+      return
+    # Try to get a bit a cleaner output folder by redirecting v8 logging output
+    # to v8.log.
+    v8_log_dir = self.result_path.parent / V8LogProbe.NAME / "v8.log"
+    self.browser_platform.mkdir(v8_log_dir)
+    self.session.extra_js_flags["--logfile"] = str(v8_log_dir)
 
 
 class MacOSProfilingContext(ProfilingContext):
@@ -561,6 +569,10 @@ class LinuxProfilingContext(ProfilingContext):
     self.browser_platform.mkdir(result_dir)
     return result_dir
 
+  def setup(self) -> None:
+    self.setup_v8_log_path()
+    self.session.extra_js_flags["--perf-prof-path"] = str(self.result_path)
+
   def start(self) -> None:
     if not self.probe.sample_browser_process:
       return
@@ -575,11 +587,6 @@ class LinuxProfilingContext(ProfilingContext):
     if self._perf_process.poll():
       raise ValueError("Could not start linux profiler")
     atexit.register(self.stop_process)
-
-  def setup(self) -> None:
-    for probe in self.run.probes:
-      assert not isinstance(probe, V8LogProbe), (
-          "Cannot use profiler and v8.log probe in parallel yet")
 
   def stop(self) -> None:
     self.stop_process()
