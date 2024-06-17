@@ -257,7 +257,8 @@ class ProfilingProbe(Probe):
     self._pin_renderer_main_core: Optional[int] = pin_renderer_main_core
     self._call_graph_mode: CallGraphMode = call_graph_mode
     self._start_profiling_after_setup: bool = target in (
-        TargetMode.RENDERER_MAIN_ONLY, TargetMode.RENDERER_PROCESS_ONLY)
+        TargetMode.RENDERER_MAIN_ONLY,
+        TargetMode.RENDERER_PROCESS_ONLY) or pin_renderer_main_core is not None
     self._frequency: Optional[int] = frequency
     self._count: Optional[int] = count
     self._cpu: Tuple[int, ...] = tuple(cpu)
@@ -785,9 +786,13 @@ class AndroidProfilingContext(ProfilingContext):
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._simpleperf_process: Optional[subprocess.Popen] = None
+    self._story_ready = False
 
   @cached_property
   def _renderer_pid_tid(self) -> Tuple[int, int]:
+    assert self._story_ready, (
+        "Fetching renderer PID/TID before the story is loaded could lead to "
+        "the wrong PID/TID being used. This should never happen TM!")
     renderer_pid: Optional[int] = None
     renderer_main_tid: Optional[int] = None
     with self.run.actions("Get Renderer PID/TID") as actions:
@@ -890,6 +895,7 @@ class AndroidProfilingContext(ProfilingContext):
       self._start_simpleperf()
 
   def start_story_run(self) -> None:
+    self._story_ready = True
     if self.probe.pin_renderer_main_core is not None:
       self._pin_renderer_main_core(self.probe.pin_renderer_main_core)
 
