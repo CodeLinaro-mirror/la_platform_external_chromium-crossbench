@@ -22,6 +22,7 @@ from crossbench import helper
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
 from crossbench.plt.base import ListCmdArgsT
@@ -85,6 +86,9 @@ class CallGraphMode(StrEnumWithHelp):
   FRAME_POINTER = ("frame_pointer", "Run frame pointer unwinding")
 
 
+V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
+
+
 class ProfilingProbe(Probe):
   """
   General-purpose sampling profiling probe.
@@ -101,8 +105,6 @@ class ProfilingProbe(Probe):
   NAME = "profiling"
   RESULT_LOCATION = ResultLocation.BROWSER
   IS_GENERAL_PURPOSE = True
-
-  V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -132,7 +134,7 @@ class ProfilingProbe(Probe):
         type=bool,
         default=True,
         help=(
-            f"Chrome-only: Sets the {cls.V8_INTERPRETED_FRAMES_FLAG} flag for "
+            f"Chrome-only: Sets the {V8_INTERPRETED_FRAMES_FLAG} flag for "
             "V8, which exposes interpreted frames as native frames. "
             "Note that this comes at an additional performance and memory cost."
         ))
@@ -434,7 +436,7 @@ class ProfilingProbe(Probe):
       if browser.platform.is_linux:
         browser.js_flags.set("--perf-prof")
       if self._expose_v8_interpreted_frames:
-        browser.js_flags.set(self.V8_INTERPRETED_FRAMES_FLAG)
+        browser.js_flags.set(V8_INTERPRETED_FRAMES_FLAG)
     if browser.platform.is_linux and browser.platform.is_local:
       cmd = pth.LocalPath(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
       assert not browser.platform.is_remote, (
@@ -552,12 +554,16 @@ class MacOSProfilingContext(ProfilingContext):
     atexit.unregister(self.stop_process)
 
 
+V8_PERF_RPOF_PATH_FLAG_MIN_VERSION = ChromeVersion((118, 0, 5993, 48))
+PERF_DATA_PATTERN = "*.perf.data"
+JIT_DUMP_PATTERN = "jit-*.dump"
+
+
 class LinuxProfilingContext(ProfilingContext):
-  PERF_DATA_PATTERN = "*.perf.data"
   TEMP_FILE_PATTERNS = (
       "*.perf.data.jitted",
       "jitted-*.so",
-      "jit-*.dump",
+      JIT_DUMP_PATTERN,
   )
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
@@ -569,9 +575,15 @@ class LinuxProfilingContext(ProfilingContext):
     self.browser_platform.mkdir(result_dir)
     return result_dir
 
+  @property
+  def has_perf_prof_path(self) -> bool:
+    # TODO: replace with full version comparison
+    return self.browser.major_version > V8_PERF_RPOF_PATH_FLAG_MIN_VERSION.major
+
   def setup(self) -> None:
     self.setup_v8_log_path()
-    self.session.extra_js_flags["--perf-prof-path"] = str(self.result_path)
+    if self.has_perf_prof_path:
+      self.session.extra_js_flags["--perf-prof-path"] = str(self.result_path)
 
   def start(self) -> None:
     if not self.probe.sample_browser_process:
@@ -607,9 +619,7 @@ class LinuxProfilingContext(ProfilingContext):
     time.sleep(2)
 
     perf_files: List[pth.RemotePath] = helper.sort_by_file_size(
-        list(
-            self.browser_platform.glob(self.result_path,
-                                       self.PERF_DATA_PATTERN)),
+        list(self.browser_platform.glob(self.result_path, PERF_DATA_PATTERN)),
         self.browser_platform)
     raw_perf_files = perf_files
     urls: List[str] = []
@@ -720,6 +730,7 @@ def linux_perf_probe_inject_v8_symbols(
   assert not platform.exists(output_file)
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
   try:
+    # TODO: use remote chdir
     platform.sh(
         "perf",
         "inject",
