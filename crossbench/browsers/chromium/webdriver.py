@@ -226,9 +226,9 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     assert self._previous_command_line_contents is None
     self._previous_command_line_contents = self._read_device_flags()
 
-  def _read_device_flags(self) -> str:
+  def _read_device_flags(self) -> Optional[str]:
     if not self.platform.exists(self._chrome_command_line_path):
-      return ""
+      return None
     return self.platform.cat(self._chrome_command_line_path)
 
   def adb_force_stop(self) -> None:
@@ -250,7 +250,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     current_flags = self._read_device_flags()
     if current_flags != self._previous_command_line_contents:
       logging.warning("%s: flags file changed during run", self)
-    if not self._previous_command_line_contents:
+    if self._previous_command_line_contents is None:
       logging.debug("%s: deleting chrome flags file: %s", self,
                     self._chrome_command_line_path)
       self.platform.rm(self._chrome_command_line_path, missing_ok=True)
