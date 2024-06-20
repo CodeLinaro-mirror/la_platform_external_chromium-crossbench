@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Type
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -14,7 +15,7 @@ from selenium.webdriver.safari.service import Service as SafariService
 from crossbench import exception, helper
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
-from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -28,6 +29,8 @@ if TYPE_CHECKING:
 
 
 class SafariWebDriver(WebDriverBrowser, Safari):
+
+  MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=10)
 
   def __init__(self,
                label: str,
@@ -81,7 +84,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       # (currently fixed version from vpython3).
       self._legacy_settings(options, driver_kwargs)
 
-    driver = webdriver.Safari(**driver_kwargs)
+    with helper.Spinner():
+      driver = self._start_driver_with_retries(driver_kwargs)
 
     assert driver.session_id, "Could not start webdriver"
     logs: RemotePath = (
@@ -92,6 +96,31 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       self.log_file = all_logs[0]
       assert self.platform.is_file(self.log_file)
     return driver
+
+  # TODO(cbruni): implement iOS platform
+  def _start_driver_with_retries(
+      self, driver_kwargs: Dict[str, Any]) -> webdriver.Safari:
+    # safaridriver for iOS / technology preview seems to be brittle.
+    # Let's give it several chances to start up.
+    seen_exceptions: Set[Type[Exception]] = set()
+    retries = 0
+    for _ in helper.wait_with_backoff(
+        helper.WaitRange(min=2, timeout=self.MAX_STARTUP_TIMEOUT)):
+      try:
+        return webdriver.Safari(**driver_kwargs)
+      except KeyboardInterrupt:  # pylint: disable=try-except-raise
+        raise
+      except Exception as e:
+        retries += 1
+        exception_type = type(e)
+        logging.warning("SafariWebDriver: startup failed (%s), retrying...",
+                        exception_type)
+        logging.debug("SafariWebDriver: startup error %s", e)
+        # After 2 retries we don't accept the same error twice.
+        if retries >= 2 and exception_type in seen_exceptions:
+          raise DriverException("Could not start SafariWebDriver") from e
+        seen_exceptions.add(type(e))
+    raise DriverException("Could not start SafariWebDriver")
 
   def _legacy_settings(self, options, driver_kwargs) -> None:
     logging.debug("SafariDriver: using legacy capabilities")
@@ -150,20 +179,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
 
 class SafariWebdriverIOS(SafariWebDriver):
-  # TODO(cbruni): implement iOS platform
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
-    # safaridriver for iOS seems to be brittle for starting up, we give it
-    # several chances to start up.
-    for timeout in helper.wait_with_backoff(
-        helper.WaitRange(min=2, timeout=15)):
-      try:
-        return self._start_safari_driver(session, driver_path)
-      except Exception as e:  # pylint: disable=disable=broad-except
-        logging.warning("SafariWebDriver: startup failed, retrying (%s)",
-                        timeout)
-        logging.debug("SafariWebDriver: startup error %s", e)
-    return self._start_safari_driver(session, driver_path)
+  MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=15)
 
   def _get_driver_options(self,
                           session: BrowserSessionRunGroup) -> SafariOptions:
