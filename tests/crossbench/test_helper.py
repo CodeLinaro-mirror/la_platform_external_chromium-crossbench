@@ -54,8 +54,8 @@ class WaitTestCase(unittest.TestCase):
   def test_wait_with_backoff(self):
     data = []
     delta = 0.0005
-    for time_spent, time_left in helper.wait_with_backoff(
-        helper.WaitRange(min=0.01, max=0.05)):
+    for time_spent, time_left in helper.WaitRange(
+        min=0.01, max=0.05).wait_with_backoff():
       data.append((time_spent, time_left))
       if len(data) == 2:
         break

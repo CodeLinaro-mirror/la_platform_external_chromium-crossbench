@@ -104,8 +104,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     # Let's give it several chances to start up.
     seen_exceptions: Set[Type[Exception]] = set()
     retries = 0
-    for _ in helper.wait_with_backoff(
-        helper.WaitRange(min=2, timeout=self.MAX_STARTUP_TIMEOUT)):
+    for _ in helper.WaitRange(
+        min=2, timeout=self.MAX_STARTUP_TIMEOUT).wait_with_backoff():
       try:
         return webdriver.Safari(**driver_kwargs)
       except KeyboardInterrupt:  # pylint: disable=try-except-raise

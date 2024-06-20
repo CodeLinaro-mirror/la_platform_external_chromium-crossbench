@@ -106,7 +106,7 @@ class Actions(helper.TimeScope):
         self.timing.timedelta(min_wait), self.timing.timeout_timedelta(timeout))
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
-    for _, time_left in helper.wait_with_backoff(wait_range):
+    for _, time_left in wait_range.wait_with_backoff():
       time_units = self.timing.units(time_left)
       result = self.js(js_code, timeout=time_units, absolute_time=True)
       if result:

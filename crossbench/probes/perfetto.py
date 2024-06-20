@@ -189,7 +189,7 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
     # TODO(cbruni): replace with wait_and_terminate
     self.browser_platform.terminate(self._pid)
     try:
-      for _ in helper.wait_with_backoff(helper.WaitRange(1, 30)):
+      for _ in helper.WaitRange(1, 30).wait_with_backoff():
         if not self.browser_platform.process_info(self._pid):
           break
     except TimeoutError:

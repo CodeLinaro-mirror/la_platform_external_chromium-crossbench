@@ -522,7 +522,7 @@ class Runner:
     if not self._platform.is_thermal_throttled():
       return
     logging.info("COOLDOWN")
-    for _ in helper.wait_with_backoff(helper.WaitRange(1, 100), self._platform):
+    for _ in helper.WaitRange(1, 100).wait_with_backoff(self._platform):
       if not self._platform.is_thermal_throttled():
         break
       logging.info("COOLDOWN: still hot, waiting some more")
