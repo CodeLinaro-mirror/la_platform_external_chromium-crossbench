@@ -9,7 +9,7 @@ import dataclasses
 import enum
 import functools
 import re
-from typing import Any, Final, Tuple, Type, TypeVar
+from typing import Any, Final, Iterable, Optional, Tuple, Type, TypeVar
 
 
 @dataclasses.dataclass
@@ -39,6 +39,11 @@ class BrowserVersionChannel(_BrowserVersionChannelMixin, enum.Enum):
 
   def __hash__(self) -> int:
     return hash(self.name)
+
+  def matches(self, other: BrowserVersionChannel) -> bool:
+    if self == BrowserVersionChannel.ANY or other == BrowserVersionChannel.ANY:
+      return True
+    return self == other
 
 
 class BrowserVersionParseError(ValueError):
@@ -81,18 +86,22 @@ class BrowserVersion(abc.ABC):
     return cls.parse(value)
 
   @classmethod
-  def parse(cls: Type[BrowserVersionT], value: str) -> BrowserVersionT:
-    (parts, channel, version_str) = cls._parse(value)
-    cls._validate_parts(parts, value)
-    return cls(parts, channel, version_str)
+  def parse(cls: Type[BrowserVersionT],
+            value: str,
+            channel: Optional[BrowserVersionChannel] = None) -> BrowserVersionT:
+    (parts, parsed_channel, version_str) = cls._parse(value)
+    parts = cls._validate_parts(parts, value)
+    return cls(parts, channel or parsed_channel, version_str)
 
   @classmethod
-  def _validate_parts(cls, parts: Tuple[int, ...], value: str) -> None:
+  def _validate_parts(cls, parts: Iterable[int], value: str) -> Tuple[int, ...]:
     if parts is None:
       raise cls.parse_error("Invalid version format", value)
-    for part in parts:
+    parts_tpl = tuple(parts)
+    for part in parts_tpl:
       if part < 0:
         raise cls.parse_error("Version parts must be positive", value)
+    return parts_tpl
 
   @classmethod
   def is_valid_unique(cls, value: str) -> bool:
@@ -113,18 +122,57 @@ class BrowserVersion(abc.ABC):
   def parse_error(cls, msg: str, version: str) -> BrowserVersionParseError:
     return BrowserVersionParseError(cls.__name__, msg, version)
 
+  @classmethod
+  def any(cls: Type[BrowserVersionT],
+          parts: Iterable[int],
+          version_str: str = "") -> BrowserVersionT:
+    return cls(parts, BrowserVersionChannel.ANY, version_str)
+
+  @classmethod
+  def lts(cls: Type[BrowserVersionT],
+          parts: Iterable[int],
+          version_str: str = "") -> BrowserVersionT:
+    return cls(parts, BrowserVersionChannel.LTS, version_str)
+
+  @classmethod
+  def stable(cls: Type[BrowserVersionT],
+             parts: Iterable[int],
+             version_str: str = "") -> BrowserVersionT:
+    return cls(parts, BrowserVersionChannel.STABLE, version_str)
+
+  @classmethod
+  def beta(cls: Type[BrowserVersionT],
+           parts: Iterable[int],
+           version_str: str = "") -> BrowserVersionT:
+    return cls(parts, BrowserVersionChannel.BETA, version_str)
+
+  @classmethod
+  def alpha(cls: Type[BrowserVersionT],
+            parts: Iterable[int],
+            version_str: str = "") -> BrowserVersionT:
+    return cls(parts, BrowserVersionChannel.ALPHA, version_str)
+
+  @classmethod
+  def pre_alpha(cls: Type[BrowserVersionT],
+                parts: Iterable[int],
+                version_str: str = "") -> BrowserVersionT:
+    return cls(parts, BrowserVersionChannel.PRE_ALPHA, version_str)
+
   def __init__(self,
-               parts: Tuple[int, ...],
+               parts: Iterable[int],
                channel: BrowserVersionChannel = BrowserVersionChannel.STABLE,
                version_str: str = "") -> None:
-    self._validate_parts(parts, version_str or repr(parts))
-    self._parts = parts
+    self._parts = self._validate_parts(parts, version_str or repr(parts))
     self._channel = channel
     self._version_str = version_str
 
   @property
   def parts(self) -> Tuple[int, ...]:
     return self._parts
+
+  @property
+  def version_str(self) -> str:
+    return self._version_str
 
   @property
   def parts_str(self) -> str:
@@ -137,9 +185,18 @@ class BrowserVersion(abc.ABC):
     return self._parts + padding
 
   @property
-  @abc.abstractmethod
   def is_complete(self) -> bool:
+    return self.has_complete_parts and self.has_channel
+
+  @property
+  @abc.abstractmethod
+  def has_complete_parts(self) -> bool:
     pass
+
+  @property
+  def is_unknown(self) -> bool:
+    # Only True for UnknownBrowserVersion
+    return False
 
   @property
   def is_channel_version(self) -> bool:
@@ -163,6 +220,9 @@ class BrowserVersion(abc.ABC):
       raise BrowserVersionNoChannelError(
           f"BrowserVersion {self} has no channel")
     return self._channel
+
+  def matches_channel(self, channel: BrowserVersionChannel) -> bool:
+    return self._channel.matches(channel)
 
   @property
   def has_channel(self) -> bool:
@@ -190,6 +250,8 @@ class BrowserVersion(abc.ABC):
 
   @property
   def channel_name(self) -> str:
+    if not self.has_channel:
+      return "any"
     return self._channel_name(self._channel)
 
   @abc.abstractmethod
@@ -202,8 +264,15 @@ class BrowserVersion(abc.ABC):
 
   def __str__(self) -> str:
     if not self._version_str:
-      return self.channel_name
+      if not self._parts:
+        return self.channel_name
+      return f"{self.parts_str} {self.channel_name}"
     return f"{self._version_str} {self.channel_name}"
+
+  def __repr__(self) -> str:
+    return (
+        f"{self.__class__.__name__}"
+        f"({self.parts_str}, {self.channel_name}, {repr(self._version_str)})")
 
   def __eq__(self, other: Any) -> bool:
     if not isinstance(other, type(self)):
@@ -248,8 +317,7 @@ class UnknownBrowserVersion(BrowserVersion):
                parts: Tuple[int, ...] = (),
                channel: BrowserVersionChannel = BrowserVersionChannel.ANY,
                version_str: str = "unknown") -> None:
-    del version_str
-    super().__init__(parts, BrowserVersionChannel.ANY, "unknown")
+    super().__init__(parts, BrowserVersionChannel.ANY, version_str)
 
   @classmethod
   def _parse(
@@ -261,5 +329,9 @@ class UnknownBrowserVersion(BrowserVersion):
     return "unknown"
 
   @property
-  def is_complete(self) -> bool:
+  def has_complete_parts(self) -> bool:
     return False
+
+  @property
+  def is_unknown(self) -> bool:
+    return True

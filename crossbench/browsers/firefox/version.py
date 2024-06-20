@@ -18,14 +18,14 @@ class FirefoxVersion(BrowserVersion):
                            r"(?P<parts>\d+\.\d+(?P<channel>[ab.])\d+)"
                            r") ?(?P<channel_long>esr|any)?")
   _SPLIT_RE = re.compile(r"[ab.]")
-  _CHANNEL_LOOKUP: Dict[str, Tuple[BrowserVersionChannel, int]] = {
-      "esr": (BrowserVersionChannel.LTS, 3),
-      ".": (BrowserVersionChannel.STABLE, 2),
+  _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
+      "esr": BrowserVersionChannel.LTS,
+      ".": BrowserVersionChannel.STABLE,
       # IRL Firefox version numbers do not distinct beta from stable, so we
       # remap Firefox Dev => beta.
-      "b": (BrowserVersionChannel.BETA, 1),
-      "a": (BrowserVersionChannel.ALPHA, 0),
-      "any": (BrowserVersionChannel.ANY, -1),
+      "b": BrowserVersionChannel.BETA,
+      "a": BrowserVersionChannel.ALPHA,
+      "any": BrowserVersionChannel.ANY,
   }
 
   @classmethod
@@ -43,17 +43,18 @@ class FirefoxVersion(BrowserVersion):
     assert version_parts and version_str
     if matches["channel_long"] and matches["channel"] != ".":
       raise cls.parse_error("Invalid ESR/Any channel version", full_version)
-    channel_str: str = (matches["channel_long"] or matches["channel"] or
-                        "stable").lower()
-    browser_channel, channel_id = cls._CHANNEL_LOOKUP[channel_str]
+    browser_channel = cls._parse_channel(matches)
     parts = tuple(map(int, cls._SPLIT_RE.split(version_parts)))
     if len(parts) != 3:
       raise cls.parse_error("Invalid number of version number parts",
                             full_version)
-    # Inject browser_channel into the version parts to make it unique
-    if channel_id >= 0:
-      parts = parts[:-1] + (channel_id, parts[-1])
     return parts, browser_channel, version_str
+
+  @classmethod
+  def _parse_channel(cls, matches) -> BrowserVersionChannel:
+    channel_str: str = (matches["channel_long"] or matches["channel"] or
+                        "stable").lower()
+    return cls._CHANNEL_LOOKUP[channel_str]
 
   @classmethod
   def _validate_prefix(cls, prefix: Optional[str]) -> bool:
@@ -73,8 +74,8 @@ class FirefoxVersion(BrowserVersion):
     raise ValueError(f"Unsupported channel: {channel}")
 
   @property
-  def is_complete(self) -> bool:
-    return len(self.parts) == 4 and self.has_channel
+  def has_complete_parts(self) -> bool:
+    return len(self.parts) == 3
 
   @property
   def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:

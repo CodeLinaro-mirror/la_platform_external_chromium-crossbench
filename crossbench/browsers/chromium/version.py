@@ -15,8 +15,7 @@ class ChromiumVersion(BrowserVersion):
   _PARTS_LEN: Final[int] = 4
   _VERSION_RE = re.compile(
       r"(?P<prefix>[^\d]*)"
-      r"((?P<version>\d{2,3}(\.[^. ]+){0,3})|"
-      r"(?P<channel>any|extended|stable|beta|dev|canary))"
+      r"(?P<version>\d{2,3}(\.(\d{1,4}|X)){0,3})? ?"
       r"(?P<suffix>.*)", re.I)
   _VALID_SUFFIX_MATCH = re.compile(r"[^.\d]+", re.I)
   _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
@@ -27,15 +26,16 @@ class ChromiumVersion(BrowserVersion):
       "dev": BrowserVersionChannel.ALPHA,
       "canary": BrowserVersionChannel.PRE_ALPHA,
   }
+  _CHANNEL_RE = re.compile("|".join(_CHANNEL_LOOKUP.keys()), re.I)
 
   @classmethod
   def _parse(
       cls,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
-    matches = cls._VERSION_RE.search(full_version.strip())
+    matches = cls._VERSION_RE.fullmatch(full_version.strip(),)
     if not matches:
       raise cls.parse_error("Could not extract version number.", full_version)
-    channel_str = matches["channel"] or ""
+    channel_str = cls._parse_channel(full_version)
     version_str = matches["version"]
     if not version_str and not channel_str:
       raise cls.parse_error("Got empty version match.", full_version)
@@ -49,6 +49,12 @@ class ChromiumVersion(BrowserVersion):
     if not version_str:
       return cls._channel_version(channel_str, full_version)
     return cls._numbered_version(version_str, full_version)
+
+  @classmethod
+  def _parse_channel(cls, full_version: str) -> str:
+    if matches := cls._CHANNEL_RE.search(full_version):
+      return matches[0]
+    return ""
 
   @classmethod
   def _channel_version(
@@ -125,8 +131,8 @@ class ChromiumVersion(BrowserVersion):
     return (self.comparable_parts(self._PARTS_LEN), self._channel)
 
   @property
-  def is_complete(self) -> bool:
-    return len(self.parts) == 4 and self.has_channel
+  def has_complete_parts(self) -> bool:
+    return len(self.parts) == 4
 
   @property
   def build(self) -> int:

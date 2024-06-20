@@ -14,7 +14,7 @@ class ChromeVersion(ChromiumVersion):
 
   _PREFIX_RE = re.compile(
       r"(?:google )?chr(?:ome)?[- ]?"
-      r"(?:extended|stable|beta|dev|canary)?[- ]?m?", re.I)
+      rf"(?:{ChromiumVersion._CHANNEL_RE.pattern})?[- ]?m?", re.I)
 
   @classmethod
   def _validate_prefix(cls, prefix: Optional[str]) -> bool:
