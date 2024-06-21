@@ -20,8 +20,7 @@ from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
                                                      TrafficShaper)
 from crossbench.plt.base import Platform
 
-if TYPE_CHECKING:
-  from crossbench.path import LocalPath, RemotePath
+from crossbench import path as pth
 
 
 @enum.unique
@@ -56,7 +55,7 @@ class NetworkSpeedPreset(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class NetworkSpeedConfig(ConfigObject):
-  ts_proxy: Optional[RemotePath] = None
+  ts_proxy: Optional[pth.RemotePath] = None
   rtt_ms: Optional[int] = None
   in_kbps: Optional[int] = None
   out_kbps: Optional[int] = None
@@ -131,9 +130,9 @@ class NetworkSpeedConfig(ConfigObject):
 class NetworkConfig(ConfigObject):
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
-  path: Optional[LocalPath] = None
+  path: Optional[pth.LocalPath] = None
   url: Optional[str] = None
-  wpr_go_bin: Optional[LocalPath] = None
+  wpr_go_bin: Optional[pth.LocalPath] = None
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
@@ -173,6 +172,15 @@ class NetworkConfig(ConfigObject):
     return config
 
   @classmethod
+  def parse_local(cls, value: Any) -> NetworkConfig:
+    local_server_dir: pth.LocalPath = cli_helper.parse_dir_path(value)
+    config: NetworkConfig = cls.load_path(local_server_dir)
+    if config.type != NetworkType.LOCAL:
+      raise argparse.ArgumentTypeError(
+          f"Expected local file server, but got {config.type}. ")
+    return config
+
+  @classmethod
   def loads(cls, value: str) -> NetworkConfig:
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
@@ -193,7 +201,7 @@ class NetworkConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
-  def is_valid_path(cls, path: LocalPath) -> bool:
+  def is_valid_path(cls, path: pth.LocalPath) -> bool:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return True
     # for local file server
@@ -202,7 +210,7 @@ class NetworkConfig(ConfigObject):
     return super().is_valid_path(path)
 
   @classmethod
-  def load_path(cls, path: LocalPath) -> NetworkConfig:
+  def load_path(cls, path: pth.LocalPath) -> NetworkConfig:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return cls.load_wpr_archive_path(path)
     if path.is_dir():
@@ -210,7 +218,7 @@ class NetworkConfig(ConfigObject):
     return super().load_path(path)
 
   @classmethod
-  def load_wpr_archive_path(cls, path: LocalPath) -> NetworkConfig:
+  def load_wpr_archive_path(cls, path: pth.LocalPath) -> NetworkConfig:
     path = cli_helper.parse_non_empty_file_path(path, "wpr.go archive")
     return NetworkConfig(type=NetworkType.WPR, path=path)
 

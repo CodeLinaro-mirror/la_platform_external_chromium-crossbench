@@ -410,7 +410,7 @@ class ConfigObject(abc.ABC):
         # TODO(346197734): use load_url here
         return cls.loads(value)
       try:
-        maybe_path = pth.LocalPath(value)
+        maybe_path = pth.LocalPath(value).expanduser()
         if cls.is_valid_path(maybe_path):
           return cls.load_path(maybe_path)
       except OSError:

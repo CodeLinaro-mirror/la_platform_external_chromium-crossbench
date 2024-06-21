@@ -461,7 +461,8 @@ class PressBenchmark(SubStoryBenchmark):
 
   def validate_url(self, runner: Runner) -> None:
     if self.custom_url:
-      self._validate_custom_url(runner, self.custom_url)
+      if runner.has_any_live_network():
+        self._validate_custom_url(runner, self.custom_url)
       return
     first_story = cast(PressBenchmarkStory, self.stories[0])
     url = first_story.url

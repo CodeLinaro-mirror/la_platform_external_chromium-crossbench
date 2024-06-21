@@ -416,6 +416,12 @@ class Runner:
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)  # pytype:  disable=wrong-arg-types
 
+  def has_any_live_network(self) -> bool:
+    for browser in self.browsers:
+      if browser.network.is_live:
+        return True
+    return False
+
   def get_runs(self) -> Iterable[Run]:
     index = 0
     session_index = 0

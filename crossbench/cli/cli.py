@@ -386,8 +386,8 @@ class CrossBenchCLI:
         "--cache-dir",
         type=pth.LocalPath,
         default=BROWSERS_CACHE,
-        help="Used for caching browser binaries and archives. "
-        "Defaults to binary_cache")
+        help=("Used for caching browser binaries and archives. "
+              "Defaults to binary_cache"))
 
     cooldown_group = runner_group.add_mutually_exclusive_group()
     cooldown_group.add_argument(
@@ -395,46 +395,46 @@ class CrossBenchCLI:
         "--cool-down",
         type=cli_helper.Duration.parse_zero,
         default=dt.timedelta(seconds=2),
-        help="Time the runner waits between different runs or repetitions. "
-        "Increase this to let the CPU cool down between runs. "
-        f"Format: {cli_helper.Duration.help()}")
+        help=("Time the runner waits between different runs or repetitions. "
+              "Increase this to let the CPU cool down between runs. "
+              f"Format: {cli_helper.Duration.help()}"))
     cooldown_group.add_argument(
         "--no-cool-down",
         action="store_const",
         dest="cool_down_time",
         const=dt.timedelta(seconds=0),
-        help="Disable cool-down between runs (might cause CPU throttling), "
-        "equivalent to --cool-down=0.")
+        help=("Disable cool-down between runs (might cause CPU throttling), "
+              "equivalent to --cool-down=0."))
     cooldown_group.add_argument(
         "--fast",
         action=EnableFastAction,
         nargs=0,
-        help="Switch to a fast run mode "
-        "which might yield unstable performance results. "
-        "Equivalent to --cool-down=0 --no-splash --env-validation=skip.")
+        help=("Switch to a fast run mode "
+              "which might yield unstable performance results. "
+              "Equivalent to --cool-down=0 --no-splash --env-validation=skip."))
 
     runner_group.add_argument(
         "--time-unit",
         type=cli_helper.Duration.parse,
         default=dt.timedelta(seconds=1),
-        help="Absolute duration of 1 time unit in the runner. "
-        "Increase this for slow builds or machines. "
-        f"Format: {cli_helper.Duration.help()}")
+        help=("Absolute duration of 1 time unit in the runner. "
+              "Increase this for slow builds or machines. "
+              f"Format: {cli_helper.Duration.help()}"))
     runner_group.add_argument(
         "--timeout-unit",
         type=cli_helper.Duration.parse,
         default=dt.timedelta(),
-        help="Absolute duration of 1 time unit for timeouts in the runner. "
-        "Unlike --time-unit, this does only apply for timeouts, "
-        "as opposed to say initial wait times or sleeps."
-        f"Format: {cli_helper.Duration.help()}")
+        help=("Absolute duration of 1 time unit for timeouts in the runner. "
+              "Unlike --time-unit, this does only apply for timeouts, "
+              "as opposed to say initial wait times or sleeps."
+              f"Format: {cli_helper.Duration.help()}"))
     runner_group.add_argument(
         "--run-timeout",
         type=cli_helper.Duration.parse_zero,
         default=dt.timedelta(),
-        help="Sets the same timeout per run on all browsers. "
-        "Runs will be aborted after the given timeout. "
-        f"Format: {cli_helper.Duration.help()}")
+        help=("Sets the same timeout per run on all browsers. "
+              "Runs will be aborted after the given timeout. "
+              f"Format: {cli_helper.Duration.help()}"))
 
     network_group = subparser.add_argument_group("Network Options", "")
     network_settings_group = network_group.add_mutually_exclusive_group()
@@ -445,29 +445,41 @@ class CrossBenchCLI:
         default=cli_config.NetworkConfig.default(),
         help=cli_config.NetworkConfig.help())
     network_settings_group.add_argument(
+        "--local-file-server",
+        "--local-fileserver",
+        "--file-server",
+        "--fileserver",
+        default=cli_config.NetworkConfig.parse_local,
+        metavar="DIR",
+        dest="network",
+        help="Start a local http file server at the given directory.")
+    network_settings_group.add_argument(
         "--wpr",
         "--web-page-replay",
         type=cli_config.NetworkConfig.parse_wpr,
+        metavar="WPR_ARCHIVE",
         dest="network",
         help=("Use wpr.archive to replay network requests "
-              "via a local proxy server."))
+              "via a local proxy server. "
+              "Archives can be recorded with --probe=wpr. "
+              "WPR_ARCHIVE can be a local file or a gs:// google storage url."))
 
     env_group = subparser.add_argument_group("Environment Options", "")
     env_settings_group = env_group.add_mutually_exclusive_group()
     env_settings_group.add_argument(
         "--env",
         type=cli_config.parse_inline_env_config,
-        help="Set default runner environment settings. "
-        f"Possible values: {', '.join(HostEnvironment.CONFIGS)}"
-        "or an inline hjson configuration (see --env-config). "
-        "Mutually exclusive with --env-config")
+        help=("Set default runner environment settings. "
+              f"Possible values: {', '.join(HostEnvironment.CONFIGS)}"
+              "or an inline hjson configuration (see --env-config). "
+              "Mutually exclusive with --env-config"))
     env_settings_group.add_argument(
         "--env-config",
         type=cli_config.parse_env_config_file,
-        help="Path to an env.config.hjson file that specifies detailed "
-        "runner environment settings and requirements. "
-        "See config/env.config.hjson for more details."
-        "Mutually exclusive with --env")
+        help=("Path to an env.config.hjson file that specifies detailed "
+              "runner environment settings and requirements. "
+              "See config/env.config.hjson for more details."
+              "Mutually exclusive with --env"))
 
     env_group.add_argument(
         "--env-validation",
@@ -492,47 +504,49 @@ class CrossBenchCLI:
         type=cli_config.BrowserConfig.parse_with_range,
         action="extend",
         default=[],
-        help="Browser binary, defaults to 'chrome-stable'."
-        "Use this to test a simple browser variant. "
-        "Use [chrome, chrome-stable, chrome-dev, chrome-canary, "
-        "safari, safari-tp, "
-        "firefox, firefox-stable, firefox-dev, firefox-nightly, "
-        "edge, edge-stable, edge-beta, edge-dev, edge-canary] "
-        "for system default browsers or a full path. \n"
-        "* Use --browser=chrome-M107 to download the latest version for a "
-        "specific milestone\n"
-        "* Use ... to test milestone ranges --browser=chr-M100...M125"
-        "* Use --browser=chrome-100.0.4896.168 to download a specific chrome version "
-        "(macOS and linux for googlers and chrome only). \n"
-        "* Use --browser=path/to/archive.dmg on macOS or "
-        "--browser=path/to/archive.rpm on linux "
-        "for locally cached versions (chrome only).\n"
-        "* Use --browser=\"${ADB_SERIAL}:chrome\" "
-        "(e.g. --browser='0a388e93:chrome') for specific "
-        "android devices or --browser='adb:chrome' if only once device is "
-        "attached.\n"
-        "Repeat for adding multiple browsers. "
-        "The browser result dir's name is '${BROWSER}_${PLATFORM}_${INDEX}' "
-        "$INDEX corresponds to the order on the command line."
-        "Cannot be used together with --browser-config")
+        help=(
+            "Browser binary, defaults to 'chrome-stable'."
+            "Use this to test a simple browser variant. "
+            "Use [chrome, chrome-stable, chrome-dev, chrome-canary, "
+            "safari, safari-tp, "
+            "firefox, firefox-stable, firefox-dev, firefox-nightly, "
+            "edge, edge-stable, edge-beta, edge-dev, edge-canary] "
+            "for system default browsers or a full path. \n"
+            "* Use --browser=chrome-M107 to download the latest version for a "
+            "specific milestone\n"
+            "* Use ... to test milestone ranges --browser=chr-M100...M125"
+            "* Use --browser=chrome-100.0.4896.168 to download a specific "
+            "chrome version (macOS and linux for googlers and chrome only). \n"
+            "* Use --browser=path/to/archive.dmg on macOS or "
+            "--browser=path/to/archive.rpm on linux "
+            "for locally cached versions (chrome only).\n"
+            "* Use --browser=\"${ADB_SERIAL}:chrome\" "
+            "(e.g. --browser='0a388e93:chrome') for specific "
+            "android devices or --browser='adb:chrome' if only once device is "
+            "attached.\n"
+            "Repeat for adding multiple browsers. "
+            "The browser result dir's name is '${BROWSER}_${PLATFORM}_${INDEX}' "
+            "$INDEX corresponds to the order on the command line."
+            "Cannot be used together with --browser-config"))
     browser_config_group.add_argument(
         "--browser-config",
         type=cli_helper.parse_hjson_file_path,
-        help="Browser configuration.json file. "
-        "Use this to run multiple browsers and/or multiple flag configurations."
-        "See config/doc/browser.config.hjson on how to set up a complex "
-        "configuration file. "
-        "Cannot be used together with --browser.")
+        help=("Browser configuration.json file. "
+              "Use this to run multiple browsers and/or multiple "
+              "flag configurations. "
+              "See config/doc/browser.config.hjson on how to set up a complex "
+              "configuration file. "
+              "Cannot be used together with --browser."))
     browser_group.add_argument(
         "--driver-path",
         type=cli_helper.parse_file_path,
-        help="Use the same custom driver path for all specified browsers. "
-        "Version mismatches might cause crashes.")
+        help=("Use the same custom driver path for all specified browsers. "
+              "Version mismatches might cause crashes."))
     browser_group.add_argument(
         "--config",
         type=cli_helper.parse_hjson_file_path,
-        help="Specify a common config for "
-        "--probe-config, --browser-config, --network-config and --env-config.")
+        help=("Specify a common config for --probe-config, --browser-config, "
+              "--network-config and --env-config."))
 
     splashscreen_group = browser_group.add_mutually_exclusive_group()
     splashscreen_group.add_argument(
@@ -569,8 +583,8 @@ class CrossBenchCLI:
         dest="viewport",
         const=viewport.Viewport.HEADLESS,
         action="store_const",
-        help="Start the browser in headless if supported. "
-        "Equivalent to --viewport=headless.")
+        help=("Start the browser in headless if supported. "
+              "Equivalent to --viewport=headless."))
 
     chrome_args = subparser.add_argument_group(
         "Browsers Options: Chrome/Chromium",
@@ -613,24 +627,25 @@ class CrossBenchCLI:
         action="append",
         type=cli_config.ProbeConfig.parse,
         default=[],
-        help="Enable general purpose probes to measure data on all cb.stories. "
-        "This argument can be specified multiple times to add more probes. "
-        "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
-        "to configure probes. "
-        "Individual probe configs can be specified in files as well: "
-        "--probe='path/to/config.hjson'."
-        "Use 'describe probes' or 'describe probe $NAME' for probe "
-        "configuration details."
-        "Cannot be used together with --probe-config."
-        f"\n\nChoices: {', '.join(cli_config.PROBE_LOOKUP.keys())}")
+        help=(
+            "Enable general purpose probes to measure data on all cb.stories. "
+            "This argument can be specified multiple times to add more probes. "
+            "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
+            "to configure probes. "
+            "Individual probe configs can be specified in files as well: "
+            "--probe='path/to/config.hjson'."
+            "Use 'describe probes' or 'describe probe $NAME' for probe "
+            "configuration details."
+            "Cannot be used together with --probe-config."
+            f"\n\nChoices: {', '.join(cli_config.PROBE_LOOKUP.keys())}"))
     probe_config_group.add_argument(
         "--probe-config",
         type=cli_helper.parse_hjson_file_path,
-        help="Browser configuration.json file. "
-        "Use this config file to specify more complex Probe settings."
-        "See config/doc/probe.config.hjson on how to set up a complex "
-        "configuration file. "
-        "Cannot be used together with --probe.")
+        help=("Browser configuration.json file. "
+              "Use this config file to specify more complex Probe settings."
+              "See config/doc/probe.config.hjson on how to set up a complex "
+              "configuration file. "
+              "Cannot be used together with --probe."))
     subparser.set_defaults(
         subcommand_fn=self.benchmark_subcommand, benchmark_cls=benchmark_cls)
     self._add_verbosity_argument(subparser)
