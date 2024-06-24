@@ -29,7 +29,7 @@ from crossbench.cli.config.network import (NetworkConfig, NetworkSpeedConfig,
 from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
 from crossbench.config import ConfigError
 from crossbench.exception import ArgumentTypeMultiException, MultiException
-from crossbench.flags import Flags
+from crossbench.flags.base import Flags
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe

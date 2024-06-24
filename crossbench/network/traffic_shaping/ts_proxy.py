@@ -19,7 +19,7 @@ import sys
 from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
 
 from crossbench import cli_helper, helper
-from crossbench.flags import Flags
+from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import TsProxyFinder
 from crossbench.network.traffic_shaping.base import TrafficShaper
 

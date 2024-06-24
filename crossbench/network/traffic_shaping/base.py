@@ -8,7 +8,7 @@ import abc
 import contextlib
 from typing import TYPE_CHECKING, Iterator
 
-from crossbench.flags import Flags
+from crossbench.flags.base import Flags
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

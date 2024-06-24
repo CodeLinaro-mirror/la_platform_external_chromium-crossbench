@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, cast
 from crossbench import cli_helper, compat, helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.flags import JSFlags
+from crossbench.flags.js_flags import JSFlags
 from crossbench.helper.path_finder import V8CheckoutFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import (ProbeConfigParser, ProbeContext, ProbeKeyT,
@@ -23,7 +23,7 @@ from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
-  from crossbench.path import RemotePath, LocalPath
+  from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.groups import BrowsersRunGroup
   from crossbench.runner.run import Run
 

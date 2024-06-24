@@ -15,7 +15,7 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
-  from crossbench.flags import Flags
+  from crossbench.flags.base import Flags
   from crossbench.network.base import Network
   from crossbench.path import RemotePath, LocalPath
   from crossbench.runner.groups import BrowserSessionRunGroup

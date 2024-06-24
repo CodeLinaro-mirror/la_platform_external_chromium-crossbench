@@ -59,7 +59,7 @@ class BrowserDriverType(compat.StrEnumWithHelp):
       return BrowserDriverType.LINUX_SSH
     if identifier == "chromeos-ssh":
       return BrowserDriverType.CHROMEOS_SSH
-    raise argparse.ArgumentTypeError(f"Unknown driver type: {value}")
+    raise argparse.ArgumentTypeError(f"Unknown driver type: {repr(value)}")
 
   @property
   def is_remote(self):
@@ -144,6 +144,7 @@ class DriverConfig(ConfigObject):
       if pattern.fullmatch(serial):
         candidate_serials.append(serial)
         continue
+      print(info)
       for key, info_value in info.items():
         if (pattern.fullmatch(f"{key}:{info_value}") or
             pattern.fullmatch(info_value)):

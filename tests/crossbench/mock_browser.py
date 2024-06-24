@@ -15,7 +15,8 @@ from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
-from crossbench.flags import ChromeFlags, Flags, JSFlags
+from crossbench.flags.chrome import ChromeFlags
+from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
 from crossbench.plt.android_adb import AndroidAdbPlatform
 
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
+  from crossbench.flags.base import Flags
 
 
 class MockNetwork(Network):

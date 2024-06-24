@@ -30,7 +30,7 @@ from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.browsers.chromium.version import ChromeDriverVersion
 from crossbench.browsers.webdriver import WebDriverBrowser
-from crossbench.flags import ChromeFlags, FlagsT
+from crossbench.flags.chrome import ChromeFlags
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -38,6 +38,7 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 if TYPE_CHECKING:
   from selenium import webdriver
 
+  from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
   from crossbench.runner.groups import BrowserSessionRunGroup
 

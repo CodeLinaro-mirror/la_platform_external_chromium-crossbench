@@ -15,7 +15,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
-from crossbench.flags import ChromeFeatures, Flags, FlagsT, JSFlags
+from crossbench.flags.base import Flags, FlagsT
 from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
@@ -24,6 +24,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
+  from crossbench.flags.chrome import ChromeFeatures
+  from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict

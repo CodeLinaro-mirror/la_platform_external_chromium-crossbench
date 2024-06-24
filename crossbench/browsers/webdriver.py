@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
-  from crossbench.flags import Flags
+  from crossbench.flags.base import Flags
   from crossbench.network.base import Network
   from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.groups import BrowserSessionRunGroup

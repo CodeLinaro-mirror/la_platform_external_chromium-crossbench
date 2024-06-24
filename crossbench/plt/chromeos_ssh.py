@@ -14,7 +14,7 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
   from typing import Optional
-  from crossbench.flags import ChromeFlags
+  from crossbench.flags.chrome import ChromeFlags
 
 
 class ChromeOsSshPlatform(LinuxSshPlatform):

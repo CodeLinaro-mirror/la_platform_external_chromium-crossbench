@@ -9,17 +9,19 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
+from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.viewport import Viewport
-from crossbench.flags import ChromeFeatures, ChromeFlags, Flags, JSFlags
+from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.types import JsonDict
-from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench.browsers.splash_screen import SplashScreen
+  from crossbench.flags.base import Flags
+  from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner

@@ -27,7 +27,8 @@ from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError, ConfigObject
-from crossbench.flags import ChromeFlags, Flags
+from crossbench.flags.base import Flags
+from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.base import Network
 
 if TYPE_CHECKING:

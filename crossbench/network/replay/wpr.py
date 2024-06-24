@@ -9,7 +9,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from crossbench import cli_helper
-from crossbench.flags import Flags
+from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer

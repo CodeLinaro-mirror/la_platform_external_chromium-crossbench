@@ -9,7 +9,7 @@ import contextlib
 from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import plt
-from crossbench.flags import Flags
+from crossbench.flags.base import Flags
 from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
                                                      TrafficShaper)
 

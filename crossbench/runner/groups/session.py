@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
 
 from crossbench import helper
 from crossbench.exception import TInfoStack
-from crossbench.flags import Flags, JSFlags
+from crossbench.flags.base import Flags
+from crossbench.flags.js_flags import JSFlags
 from crossbench.probes.probe_context import ProbeSessionContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResultDict
 from crossbench.runner.groups.base import RunGroup

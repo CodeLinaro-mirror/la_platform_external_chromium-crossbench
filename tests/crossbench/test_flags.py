@@ -5,9 +5,12 @@
 import abc
 import unittest
 
-from crossbench.flags import (ChromeBaseFeatures, ChromeBlinkFeatures,
-                              ChromeFeatures, ChromeFlags, Flags,
-                              FrozenFlagsError, JSFlags)
+from crossbench.flags.base import Flags, FrozenFlagsError
+from crossbench.flags.chrome import (ChromeBaseFeatures, ChromeBlinkFeatures,
+                                     ChromeFeatures, ChromeFlags)
+from crossbench.flags.js_flags import JSFlags
+from crossbench.flags.known_js_flags import KNOWN_JS_FLAGS
+from crossbench.flags.konwn_chrome_flags import KNOWN_CHROME_FLAGS
 from tests import test_helper
 
 
@@ -499,6 +502,21 @@ class TestChromeFlags(TestFlags):
       self.assertIn(invalid_flag, output)
       self.assertIn("--disable-blink-features", output)
 
+  def test_flag_js_flags_as_chrome_flags(self):
+    for invalid_flag in ("--no-maglev", "--maglev"):
+      flags = self.CLASS()
+      with self.assertLogs(level="ERROR") as cm:
+        flags.set(invalid_flag)
+      self.assertIn(invalid_flag, str(cm.output))
+      self.assertIn(invalid_flag, flags)
+
+  def test_known_flags(self):
+    for chrome_flag in KNOWN_CHROME_FLAGS:
+      self.assertNotIn("=", chrome_flag, "Only allow names, no values")
+
+  def test_known_flags_chrome_overlap(self):
+    for chrome_flag in KNOWN_CHROME_FLAGS:
+      self.assertNotIn(chrome_flag, KNOWN_JS_FLAGS)
 
 class TestJSFlags(TestFlags):
 
@@ -592,6 +610,20 @@ class TestJSFlags(TestFlags):
 
   def test_parse_nested(self):
     self.skipTest("Not supported for JSFlags")
+
+  def test_known_flags(self):
+    self.assertNotIn(
+        "--help", KNOWN_JS_FLAGS,
+        "--help is also present in chrome, this should be filtered out")
+    for flag in KNOWN_JS_FLAGS:
+      self.assertFalse(
+          flag.startswith("--no"), "Strip --no prefix from all flags.")
+      self.assertNotIn("=", flag, "Only allow names, no values")
+
+  def test_known_flags_chrome_overlap(self):
+    for js_flag in KNOWN_JS_FLAGS:
+      self.assertNotIn(js_flag, KNOWN_CHROME_FLAGS)
+
 
 class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
