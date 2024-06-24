@@ -18,6 +18,8 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.network.base import Network
+from crossbench.network.local_fileserver import LocalFileNetwork
 from crossbench.path import RemotePath
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
@@ -316,7 +318,7 @@ class CliTestCase(BaseCliTestCase):
 
   def test_empty_config_file_properties(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}}
+    config_data = {"probes": {}, "env": {}, "browsers": {}, "network": {}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -340,8 +342,9 @@ class CliTestCase(BaseCliTestCase):
 
   def test_conflicting_config_flags(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}}
-    for config_flag in ("--probe-config", "--env-config", "--browser-config"):
+    config_data = {"probes": {}, "env": {}, "browsers": {}, "network": {}}
+    for config_flag in ("--probe-config", "--env-config", "--browser-config",
+                        "--network-config"):
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump(config_data, f)
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -351,6 +354,42 @@ class CliTestCase(BaseCliTestCase):
       message = str(cm.exception)
       self.assertIn("--config", message)
       self.assertIn(config_flag, message)
+
+  def test_config_file_with_network(self):
+    local_server_path = pathlib.Path("custom/server")
+    local_server_path.mkdir(parents=True)
+    self.fs.create_file(local_server_path / "index.html", st_size=100)
+    config_file = pathlib.Path("/config.hjson")
+    config_data = {
+        "probes": {},
+        "env": {},
+        "browsers": {},
+        "network": str(local_server_path),
+    }
+    with config_file.open("w", encoding="utf-8") as f:
+      hjson.dump(config_data, f)
+
+    browsers = []
+
+    def get_browser(self, args: argparse.Namespace):
+      browsers = [
+          mock_browser.MockChromeDev(
+              "dev",
+              platform=self.platform,
+              network=args.network.create(self.platform)),
+      ]
+      return browsers
+
+    with mock.patch.object(CrossBenchCLI, "_get_browsers", get_browser):
+      url = "http://test.com"
+      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
+                   "--env-validation=skip")
+      for browser in browsers:
+        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        assert isinstance(browser.network, LocalFileNetwork)
+        network: LocalFileNetwork = browser.network
+        self.assertFalse(network.is_live)
+        self.assertEqual(network.path, local_server_path)
 
   def test_config_file_with_probe(self):
     config_file = pathlib.Path("/config.hjson")
@@ -362,7 +401,8 @@ class CliTestCase(BaseCliTestCase):
             }
         },
         "env": {},
-        "browsers": {}
+        "browsers": {},
+        "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -384,7 +424,8 @@ class CliTestCase(BaseCliTestCase):
             "screen_brightness_percent": 66,
             "cpu_max_usage_percent": 77,
         },
-        "browsers": {}
+        "browsers": {},
+        "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -414,7 +455,8 @@ class CliTestCase(BaseCliTestCase):
             "browser_2": {
                 "path": "chrome-stable"
             }
-        }
+        },
+        "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)

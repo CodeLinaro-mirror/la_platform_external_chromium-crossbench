@@ -304,6 +304,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.mock_args = mock.Mock(
         wraps=False,
         driver_path=None,
+        network_config=None,
         browser_config=None,
         viewport=None,
         splash_screen=None,

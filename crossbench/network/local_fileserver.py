@@ -85,6 +85,10 @@ class LocalFileNetwork(Network):
     if self._extra_headers:
       self._validate_extra_headers()
 
+  @property
+  def path(self) -> LocalPath:
+    return self._path
+
   def _try_parse_headers(self) -> immutabledict[str, str]:
     for name in ("HEADERS", "HEADERS.txt"):
       header_file = self._path / name

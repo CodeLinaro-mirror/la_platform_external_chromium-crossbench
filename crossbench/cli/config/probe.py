@@ -122,6 +122,7 @@ class ProbeListConfig:
 
   def load_config_file(self, file: TextIO) -> None:
     with exception.annotate(f"Loading probe config file: {file.name}"):
+      # TODO: use cli_helper.parse_dict_hjson_file
       data = None
       with exception.annotate(f"Parsing {hjson.__name__}"):
         try:

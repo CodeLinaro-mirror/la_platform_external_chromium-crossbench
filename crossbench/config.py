@@ -447,7 +447,7 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def load_config_path(cls: Type[ConfigObjectT],
-                       path: pth.LocalPath) -> ConfigObjectT:
+                       path: pth.LocalPathLike) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       data = cli_helper.parse_dict_hjson_file(path)
       return cls.load_dict(data)

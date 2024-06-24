@@ -440,9 +440,14 @@ class CrossBenchCLI:
     network_settings_group = network_group.add_mutually_exclusive_group()
     network_settings_group.add_argument(
         "--network",
-        "--network-config",
         type=cli_config.NetworkConfig.parse,
         default=cli_config.NetworkConfig.default(),
+        help=("Either an inline network config or an file path to full "
+              "network config hjson file (see --network-config)."))
+    network_settings_group.add_argument(
+        "--network-config",
+        metavar="DIR",
+        type=cli_config.NetworkConfig.load_config_path,
         help=cli_config.NetworkConfig.help())
     network_settings_group.add_argument(
         "--local-file-server",
@@ -727,45 +732,65 @@ class CrossBenchCLI:
 
   def _benchmark_subcommand_process_args(self, args) -> None:
     if args.config:
-      if args.env_config:
-        raise argparse.ArgumentTypeError(
-            "--config cannot be used together with --env-config")
-      if args.browser_config:
-        raise argparse.ArgumentTypeError(
-            "--config cannot be used together with --browser-config")
-      if args.probe_config:
-        raise argparse.ArgumentTypeError(
-            "--config cannot be used together with --probe-config")
+      self._process_config_args(args)
+    else:
+      # We keep separate *_config args so we can throw in case they conflict with
+      # --config. Since we don't use argparse's dest, we have to manually copy
+      # the args.*_config back.
+      if network_config := args.network_config:
+        args.network = network_config
 
-      config_file = args.config
-      config_data = cli_helper.parse_hjson_file(config_file)
-      found_any_config = False
+  def _process_config_args(self, args) -> None:
+    if args.env_config:
+      raise argparse.ArgumentTypeError(
+          "--config cannot be used together with --env-config")
+    if args.network_config:
+      raise argparse.ArgumentTypeError(
+          "--config cannot be used together with --network-config")
+    if args.browser_config:
+      raise argparse.ArgumentTypeError(
+          "--config cannot be used together with --browser-config")
+    if args.probe_config:
+      raise argparse.ArgumentTypeError(
+          "--config cannot be used together with --probe-config")
 
-      if config_data.get("env"):
-        args.env_config = cli_config.parse_env_config_file(config_file)
-        found_any_config = True
-      else:
-        logging.warning("Skipping env config: no 'env' property in %s",
-                        config_file)
+    config_file = args.config
+    config_data = cli_helper.parse_hjson_file(config_file)
+    found_any_config = False
 
-      if config_data.get("browsers"):
-        args.browser_config = config_file
-        found_any_config = True
-      else:
-        logging.warning(
-            "Skipping browsers config: No 'browsers' property in %s",
-            config_file)
+    if config_data.get("env"):
+      args.env_config = cli_config.parse_env_config_file(config_file)
+      found_any_config = True
+    else:
+      logging.warning("Skipping env config: no 'env' property in %s",
+                      config_file)
 
-      if config_data.get("probes"):
-        args.probe_config = config_file
-        found_any_config = True
-      else:
-        logging.warning("Skipping probes config: no 'probes' property in %s",
-                        config_file)
+    if network_config_data := config_data.get("network"):
+      # TODO: migrate all --config helper to this format
+      args.network = cli_config.NetworkConfig.parse(network_config_data)
+      found_any_config = True
+    else:
+      logging.warning("Skipping network config: no 'network' property in %s",
+                      config_file)
 
-      if not found_any_config:
-        raise argparse.ArgumentTypeError(
-            f"--config: config file has no config properties {config_file}")
+    if config_data.get("browsers"):
+      args.browser_config = config_file
+      found_any_config = True
+    else:
+      logging.warning("Skipping browsers config: No 'browsers' property in %s",
+                      config_file)
+
+    if config_data.get("probes"):
+      args.probe_config = config_file
+      found_any_config = True
+    else:
+      logging.warning("Skipping probes config: no 'probes' property in %s",
+                      config_file)
+
+    if not found_any_config:
+      raise argparse.ArgumentTypeError(
+          f"--config: config file has no config properties {config_file}")
+
 
   def _log_benchmark_subcommand_failure(self, benchmark: Optional[Benchmark],
                                         runner: Optional[Runner],
@@ -913,10 +938,14 @@ class CrossBenchCLI:
         logging.debug("log_result_summary failed: %s", e)
 
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
+    # TODO: move browser instance create to separate method.
+    # TODO: move --browser-config parsing to BrowserVariantsConfig
     args.browser_config = cli_config.BrowserVariantsConfig.from_cli_args(args)
     return args.browser_config.variants
 
   def _get_probes(self, args: argparse.Namespace) -> Sequence[Probe]:
+    # TODO: move probe creation to separate method
+    # TODO: move --probe-config parsing to ProbeListConfig
     args.probe_config = cli_config.ProbeListConfig.from_cli_args(args)
     return args.probe_config.probes
 
@@ -934,6 +963,7 @@ class CrossBenchCLI:
     return args.env_validation
 
   def _get_env_config(self, args: argparse.Namespace) -> HostEnvironmentConfig:
+    # TODO: move env_config to args.env and use ConfigObject
     if args.env:
       return args.env
     if args.env_config:
