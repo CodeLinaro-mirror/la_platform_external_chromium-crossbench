@@ -1,0 +1,3 @@
+[submodule "third_party/ts_proxy"]
+	path = third_party/ts_proxy
+	url = https://chromium.googlesource.com/external/github.com/catchpoint/WebPageTest.tsproxy
