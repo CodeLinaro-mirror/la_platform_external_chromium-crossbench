@@ -10,6 +10,7 @@ import logging
 import tempfile
 from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
                     Type, Union, cast)
+import zipfile
 
 from crossbench import helper
 from crossbench import path as pth
@@ -152,7 +153,8 @@ class ChromeDownloader(Downloader):
         continue
       for archive_version, archive_url in self._archive_urls(url, version):
         try:
-          result = self.host_platform.sh_stdout("gsutil", "ls", archive_url)
+          gsutil = self.host_platform.which("gsutil")
+          result = self.host_platform.sh_stdout(gsutil, "ls", archive_url)
         except SubprocessError as e:
           logging.debug("gsutil failed: %s", e)
           continue
@@ -161,7 +163,8 @@ class ChromeDownloader(Downloader):
     return self._requested_version, None
 
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
-    self.host_platform.sh("gsutil", "cp", archive_url, tmp_dir)
+    gsutil = self.host_platform.which("gsutil")
+    self.host_platform.sh(gsutil, "cp", archive_url, tmp_dir)
     archive_candidates = list(tmp_dir.glob("*"))
     assert len(archive_candidates) == 1, (
         f"Download tmp dir contains more than one file: {tmp_dir}: "
@@ -306,7 +309,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
 
 class ChromeDownloaderAndroid(ChromeDownloader):
   """The android downloader for Chrome pulls .apks and the
-  corresponding .apk library and install both on the attached device."""
+  corresponding .apk library and installs both on the attached device."""
   ARCHIVE_SUFFIX: str = ".apks"
   LIBRARY_ARCHIVE_SUFFIX: str = ".lib.apk"
   STORAGE_URL: str = "gs://chrome-signed/android-B0urB0N/"
@@ -473,14 +476,46 @@ class ChromeDownloaderAndroid(ChromeDownloader):
 
 
 class ChromeDownloaderWin(ChromeDownloader):
-  # TODO: fully implement
+  ARCHIVE_SUFFIX: str = ".zip"
+  ARCHIVE_STEM: str = "chrome-win64-clang"
+  STORAGE_URL: str = "gs://chrome-unsigned/desktop-5c0tCh/"
 
   @classmethod
   def is_valid(cls, path_or_identifier: pth.RemotePathLike,
                browser_platform: Platform) -> bool:
-    return False
+    return cls._is_valid(path_or_identifier, browser_platform)
+
+  def __init__(self,
+               version_identifier: Union[str, pth.LocalPath],
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               cache_dir: Optional[pth.LocalPath] = None):
+    assert not browser_type
+    assert browser_platform.is_win, f"{type(self)} can only be used on windows"
+    platform_name = "win64-clang"
+    super().__init__(version_identifier, "chrome", platform_name,
+                     browser_platform, cache_dir)
 
   def _archive_urls(
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
-    raise NotImplementedError("Downloading on Windows not yet supported")
+    parts = version.parts
+    stable = (ChromeVersion.stable(parts),
+              f"{folder_url}{self.ARCHIVE_STEM}.zip")
+    return (stable,)
+
+  def _extracted_path(self) -> pth.LocalPath:
+    # TODO: support local vs remote
+    return self._out_dir / f"Google Chrome {self._requested_version}"
+
+  def _installed_app_path(self) -> pth.LocalPath:
+    return self._extracted_path() / "chrome.exe"
+
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
+    extracted_path = self._extracted_path()
+    tmp_path = self.host_platform.mkdtemp()
+    with zipfile.ZipFile(archive_path, 'r') as zip_file:
+      zip_file.extractall(tmp_path)
+    self.host_platform.rename(tmp_path / self.ARCHIVE_STEM, extracted_path)
+    assert self.host_platform.is_dir(extracted_path), "Could not extract"
