@@ -287,9 +287,12 @@ class Adb:
       raise ValueError("Got empty package name")
     self.shell("am", "force-stop", package_name)
 
-  def install(self, bundle: LocalPath, allow_downgrade: bool = False) -> None:
+  def install(self,
+              bundle: LocalPath,
+              allow_downgrade: bool = False,
+              modules: Optional[str] = None) -> None:
     if bundle.suffix == ".apks":
-      self.install_apks(bundle, allow_downgrade)
+      self.install_apks(bundle, allow_downgrade, modules)
     if bundle.suffix == ".apk":
       self.install_apk(bundle, allow_downgrade)
 
@@ -304,15 +307,20 @@ class Adb:
 
   def install_apks(self,
                    apks: LocalPath,
-                   allow_downgrade: bool = False) -> None:
+                   allow_downgrade: bool = False,
+                   modules: Optional[str] = None) -> None:
     if not apks.exists():
       raise ValueError(f"APK {apks} does not exist.")
     cmd = [
-        "bundletool", "install-apks", f"--device-id={self._serial_id}",
-        f"--apks={apks}"
+        "bundletool",
+        "install-apks",
+        f"--apks={apks}",
+        f"--device-id={self._serial_id}",
     ]
     if allow_downgrade:
       cmd.append("--allow-downgrade")
+    if modules:
+      cmd.append(f"--modules={modules}")
     self._host_platform.sh(*cmd)
 
   def uninstall(self, package_name: str, missing_ok: bool = False) -> None:

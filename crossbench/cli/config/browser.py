@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import Any, Dict, Optional, TextIO, Tuple, Union, cast
+from typing import Any, Dict, Optional, TextIO, Tuple, cast
 
 import hjson
 
@@ -147,6 +147,8 @@ class BrowserConfig(ConfigObject):
     identifier = maybe_path_or_identifier.lower()
     path = None
     if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
+      if cls._is_downloadable_identifier(maybe_path_or_identifier):
+        return maybe_path_or_identifier
       # Assume a path since short-names never contain back-/slashes.
       if driver_type.is_remote:
         path = cli_helper.parse_path(maybe_path_or_identifier)
@@ -163,11 +165,7 @@ class BrowserConfig(ConfigObject):
             f"   {{my-browser: '{maybe_path_or_identifier}'}}")
       if maybe_path := cls._try_parse_short_name(identifier, driver_type):
         return maybe_path
-      # TODO: handle remote platforms.
-      platform = plt.PLATFORM
-      if ChromeDownloader.is_valid(maybe_path_or_identifier, platform):
-        return maybe_path_or_identifier
-      if FirefoxDownloader.is_valid(maybe_path_or_identifier, platform):
+      if cls._is_downloadable_identifier(maybe_path_or_identifier):
         return maybe_path_or_identifier
       if driver_type == BrowserDriverType.ANDROID:
         if ANDROID_PACKAGE_RE.fullmatch(maybe_path_or_identifier):
@@ -180,6 +178,16 @@ class BrowserConfig(ConfigObject):
     if cls.is_supported_browser_path(path):
       return path
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
+
+  @classmethod
+  def _is_downloadable_identifier(cls, maybe_path_or_identifier: str) -> bool:
+    # TODO: handle remote platforms.
+    platform = plt.PLATFORM
+    if ChromeDownloader.is_valid(maybe_path_or_identifier, platform):
+      return True
+    if FirefoxDownloader.is_valid(maybe_path_or_identifier, platform):
+      return True
+    return False
 
   @classmethod
   def _try_parse_short_name(
