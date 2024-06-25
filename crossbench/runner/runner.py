@@ -398,12 +398,7 @@ class Runner:
         f"Invalid repetitions count: {self.repetitions}")
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
-    logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
-    for browser in self.browsers:
-      with self._exceptions.capture(
-          f"Preparing browser type={browser.type_name} "
-          f"unique_name={browser.unique_name}"):
-        browser.setup_binary(self)  # pytype: disable=wrong-arg-types
+    self._setup_browsers()
     self._exceptions.assert_success()
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
@@ -415,6 +410,21 @@ class Runner:
     with self._exceptions.annotate(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)  # pytype:  disable=wrong-arg-types
+
+  def _setup_browsers(self) -> None:
+    logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
+    for browser in self.browsers:
+      with self._exceptions.capture(
+          f"Preparing browser type={browser.type_name} "
+          f"unique_name={browser.unique_name}"):
+        self._setup_browser(browser)
+
+  def _setup_browser(self, browser: Browser) -> None:
+    browser.setup_binary(self)  # pytype: disable=wrong-arg-types
+    for probe in browser.probes:
+      assert probe in self._probes, (
+          f"Browser {browser} probe {probe} not in Runner.probes. "
+          "Use Runner.attach_probe()")
 
   def has_any_live_network(self) -> bool:
     for browser in self.browsers:
@@ -484,10 +494,10 @@ class Runner:
       for thread_group in thread_groups:
         thread_group.join()
 
-  def _run_single_threaded(self, thread_groups: RunThreadGroup) -> None:
+  def _run_single_threaded(self, thread_group: RunThreadGroup) -> None:
     # Special case single thread groups
     with self._exceptions.annotate("Running single thread group"):
-      thread_groups.run()
+      thread_group.run()
 
   def _teardown(self) -> None:
     self._assert_state(RunnerState.RUNNING, RunnerState.TEARDOWN)

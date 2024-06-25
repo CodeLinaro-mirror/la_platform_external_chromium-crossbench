@@ -10,7 +10,6 @@ import io
 import logging
 import pathlib
 import shlex
-
 from subprocess import CompletedProcess
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Mapping, Optional,
                     Sequence, Tuple, Union)
@@ -30,9 +29,9 @@ from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
-from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.win import WinPlatform
 from crossbench.runner.run import Run
@@ -292,7 +291,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
       self.assertTrue(mock_browser_cls.APP_PATH.exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    self.browsers = [
+    self.browsers: Sequence[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev("dev", platform=self.platform),
         mock_browser.MockChromeStable("stable", platform=self.platform)
     ]
