@@ -875,6 +875,31 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     self.assertIn("--stories", str(cm.exception))
     self.assertIn("page config", str(cm.exception).lower())
 
+  def test_conflicting_global_config(self):
+    config_data = {
+        "browsers": {
+            "chrome": "chrome-stable"
+        },
+        "pages": {
+            "google_search_result": [{
+                "action": "get",
+                "url": "https://www.google.com/search?q=cats"
+            },]
+        }
+    }
+    config_file = pathlib.Path("config.hjson")
+    with config_file.open("w") as f:
+      json.dump(config_data, f)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      with self.patch_get_browser():
+        self.run_cli("loading", "run", "--stories=https://test.com",
+                     "--config=config.hjson", "--page-config=config.hjson",
+                     "--env-validation=skip", "--throw")
+    error_message = str(cm.exception).lower()
+    self.assertIn("conflict", error_message)
+    self.assertIn("--config", error_message)
+    self.assertIn("--page-config", error_message)
+
   def test_page_list_file(self):
     config = pathlib.Path("test/pages.txt")
     self.fs.create_file(config)
@@ -981,6 +1006,35 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       for browser in self.browsers:
         self.assertListEqual([url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
+
+  def test_global_config_actions_config(self):
+    url_1 = "http://one.test.com"
+    url_2 = "http://two.test.com"
+    global_config_file = pathlib.Path("config.hjson")
+    global_config_data = {
+        # Dummy entry, not actually used by the test
+        "browsers": {
+            "chrome": "chrome-stable"
+        },
+        "pages": {
+            "test_one": [{
+                "action": "get",
+                "url": url_1
+            }, {
+                "action": "get",
+                "url": url_2
+            }]
+        }
+    }
+    with global_config_file.open("w") as f:
+      json.dump(global_config_data, f)
+    with self.patch_get_browser():
+      self.run_cli("loading", "run", f"--config={global_config_file}",
+                   "--env-validation=skip", "--throw")
+      for browser in self.browsers:
+        self.assertListEqual([url_1, url_2],
+                             browser.url_list[self.SPLASH_URLS_LEN:])
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -7,7 +7,8 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
+                    Type)
 
 from crossbench import cli_helper
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
@@ -56,6 +57,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         help="List of urls and durations to load: url,seconds,...")
     page_config_group.add_argument(
         "--page-config",
+        "--pages-config",
         dest="pages_config",
         type=PagesConfig.parse,
         help="Stories we want to perform in the benchmark run following a"
@@ -214,7 +216,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
   @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     has_default_stories: bool = args.stories and args.stories == "default"
-    if config := args.pages_config:
+    if config := cls._get_pages_config(args):
       # TODO: make stories and page_config mutually exclusive.
       if not has_default_stories:
         raise argparse.ArgumentTypeError(
@@ -234,6 +236,22 @@ class PageLoadBenchmark(SubStoryBenchmark):
 
     # Fall back to story filter class.
     return super().stories_from_cli_args(args)
+
+  @classmethod
+  def _get_pages_config(cls, args: argparse.Namespace) -> Optional[PagesConfig]:
+    if global_config := args.config:
+      # TODO: migrate --config to an already parsed hjson/json dict
+      config_file = global_config
+      config_data = cli_helper.parse_hjson_file(config_file)
+      if pages_config_dict := config_data.get("pages"):
+        if args.pages_config:
+          raise argparse.ArgumentTypeError(
+              "Conflicting arguments: "
+              "either specify a --config file without a 'pages' property "
+              "or remove the --page-config argument.")
+        # TODO: PagesConfig.load_dict should be able to parse the inner dict.
+        return PagesConfig.load_dict({"pages": pages_config_dict})
+    return args.pages_config
 
   @classmethod
   def aliases(cls) -> Tuple[str, ...]:
