@@ -316,7 +316,10 @@ class _BaseRunnerTestCase(BaseCrossbenchTestCase):
     self.out_dir.parent.mkdir(exist_ok=False, parents=True)
     self.stories = [MockStory("story_1"), MockStory("story_2")]
     self.benchmark = MockBenchmark(self.stories)
-    self.browsers = [MockChromeDev("chrome-dev"), MockFirefox("firefox-stable")]
+    self.browsers = [
+        MockChromeDev("chrome-dev", platform=self.platform),
+        MockFirefox("firefox-stable", platform=self.platform)
+    ]
 
   def default_runner(self,
                      browsers: Optional[List[Browser]] = None,

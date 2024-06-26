@@ -15,8 +15,8 @@ import multiprocessing
 import signal
 import subprocess
 import time
-from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence,
-                    Tuple, cast)
+from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional,
+                    Sequence, Tuple, cast)
 
 from crossbench import helper
 from crossbench import path as pth
@@ -88,6 +88,8 @@ class CallGraphMode(StrEnumWithHelp):
 
 V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 
+RENDERER_CMD_PATH: Final[pth.LocalPath] = pth.LocalPath(
+    __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
 
 class ProfilingProbe(Probe):
   """
@@ -438,12 +440,11 @@ class ProfilingProbe(Probe):
       if self._expose_v8_interpreted_frames:
         browser.js_flags.set(V8_INTERPRETED_FRAMES_FLAG)
     if browser.platform.is_linux and browser.platform.is_local:
-      cmd = pth.LocalPath(__file__).parent / "linux-perf-chrome-renderer-cmd.sh"
       assert not browser.platform.is_remote, (
           "Copying renderer command prefix to remote platform is "
           "not implemented yet")
-      assert cmd.is_file(), f"Didn't find {cmd}"
-      browser.flags["--renderer-cmd-prefix"] = str(cmd)
+      assert RENDERER_CMD_PATH.is_file(), f"Didn't find {RENDERER_CMD_PATH}"
+      browser.flags["--renderer-cmd-prefix"] = str(RENDERER_CMD_PATH)
     # Disable sandbox to write profiling data
     browser.flags.set("--no-sandbox")
 

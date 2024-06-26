@@ -677,7 +677,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(driver_path, st_size=100)
     config = BrowserConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config, BrowserConfig)
-    self.assertEqual(config.browser, mock_browser.MockChromeStable.APP_PATH)
+    self.assertEqual(config.browser,
+                     mock_browser.MockChromeStable.mock_app_path())
     self.assertEqual(config.driver.type, BrowserDriverType.WEB_DRIVER)
     self.assertEqual(config.driver.path, driver_path)
 
@@ -882,14 +883,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         Type[mock_browser.MockBrowser], BrowserConfig]] = {
             "chr-stable":
                 (mock_browser.MockChromeStable,
-                 BrowserConfig(mock_browser.MockChromeStable.APP_PATH)),
-            "chr-dev": (mock_browser.MockChromeDev,
-                        BrowserConfig(mock_browser.MockChromeDev.APP_PATH)),
+                 BrowserConfig(mock_browser.MockChromeStable.mock_app_path())),
+            "chr-dev":
+                (mock_browser.MockChromeDev,
+                 BrowserConfig(mock_browser.MockChromeDev.mock_app_path())),
             "chrome-stable":
                 (mock_browser.MockChromeStable,
-                 BrowserConfig(mock_browser.MockChromeStable.APP_PATH)),
-            "chrome-dev": (mock_browser.MockChromeDev,
-                           BrowserConfig(mock_browser.MockChromeDev.APP_PATH)),
+                 BrowserConfig(mock_browser.MockChromeStable.mock_app_path())),
+            "chrome-dev":
+                (mock_browser.MockChromeDev,
+                 BrowserConfig(mock_browser.MockChromeDev.mock_app_path())),
         }
     for _, (_, browser_config) in self.browser_lookup.items():
       self.assertTrue(browser_config.path.exists())
@@ -1459,10 +1462,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(config.variants), 2)
     browser_0 = config.variants[0]
     assert isinstance(browser_0, mock_browser.MockChromeStable)
-    self.assertEqual(browser_0.app_path, mock_browser.MockChromeStable.APP_PATH)
+    self.assertEqual(browser_0.app_path,
+                     mock_browser.MockChromeStable.mock_app_path())
     browser_1 = config.variants[1]
     assert isinstance(browser_1, mock_browser.MockChromeDev)
-    self.assertEqual(browser_1.app_path, mock_browser.MockChromeDev.APP_PATH)
+    self.assertEqual(browser_1.app_path,
+                     mock_browser.MockChromeDev.mock_app_path())
 
   def test_custom_driver(self):
     chromedriver = pth.LocalPath("path/to/chromedriver")
@@ -1494,7 +1499,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(config.variants), 1)
     browser_0 = config.variants[0]
     assert isinstance(browser_0, mock_browser.MockChromeStable)
-    self.assertEqual(browser_0.app_path, mock_browser.MockChromeStable.APP_PATH)
+    self.assertEqual(browser_0.app_path,
+                     mock_browser.MockChromeStable.mock_app_path())
 
   def test_inline_flags(self):
     with mock.patch.object(
@@ -1502,7 +1508,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         return_value="101.22.333.44"), mock.patch.object(
             Chrome,
             "stable_path",
-            return_value=mock_browser.MockChromeStable.APP_PATH):
+            return_value=mock_browser.MockChromeStable.mock_app_path()):
 
       config = BrowserVariantsConfig(
           {
@@ -1517,7 +1523,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertEqual(len(config.variants), 1)
       browser = config.variants[0]
       # TODO: Fix once app lookup is cleaned up
-      self.assertEqual(browser.app_path, mock_browser.MockChromeStable.APP_PATH)
+      self.assertEqual(browser.app_path,
+                       mock_browser.MockChromeStable.mock_app_path())
       self.assertEqual(browser.version, "101.22.333.44")
 
   def test_inline_load_safari(self):
@@ -1556,7 +1563,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(config.variants), 3 * 3)
     for browser in config.variants:
       assert isinstance(browser, mock_browser.MockChromeStable)
-      self.assertEqual(browser.app_path, mock_browser.MockChromeStable.APP_PATH)
+      self.assertEqual(browser.app_path,
+                       mock_browser.MockChromeStable.mock_app_path())
 
   def test_flag_group_combination(self):
     config = BrowserVariantsConfig(
@@ -1588,8 +1596,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
     # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.APP_PATH.suffix
-    browser_bin = browser_cls.APP_PATH.with_name(
+    suffix = browser_cls.mock_app_path().suffix
+    browser_bin = browser_cls.mock_app_path().with_name(
         f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin),}}}
@@ -1611,8 +1619,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
     # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.APP_PATH.suffix
-    browser_bin = browser_cls.APP_PATH.with_name(
+    suffix = browser_cls.mock_app_path().suffix
+    browser_bin = browser_cls.mock_app_path().with_name(
         f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     args = mock.Mock(

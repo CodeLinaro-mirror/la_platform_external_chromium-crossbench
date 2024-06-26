@@ -6,11 +6,20 @@ import pathlib
 import unittest
 
 from crossbench.probes.profiling.system_profiling import (
-    CallGraphMode, TargetMode, generate_simpleperf_command_line)
+    RENDERER_CMD_PATH, CallGraphMode, CleanupMode, ProfilingProbe, TargetMode,
+    generate_simpleperf_command_line)
 from tests import test_helper
+from tests.crossbench.mock_browser import (MockChromeStable, MockFirefox,
+                                           MockSafari)
+from tests.crossbench.mock_helper import LinuxMockPlatform, MacOsMockPlatform
+from tests.crossbench.probes.helper import GenericProbeTestCase
 
 
-class SystemProfilingProbeTestCase(unittest.TestCase):
+class SystemProfilingProbeTestCase(GenericProbeTestCase):
+
+  def setUp(self):
+    super().setUp()
+    self.fs.add_real_file(RENDERER_CMD_PATH)
 
   def test_simpleperf_command_line_with_tid(self):
     output_path = pathlib.Path("simpleperf.perf.data")
@@ -211,6 +220,89 @@ class SystemProfilingProbeTestCase(unittest.TestCase):
                 "cpu-cycles,instructions", "--no-inherit", "-o", output_path
             ])
 
+  def test_create_non_defaults(self):
+    probe = ProfilingProbe.from_config({
+        "js": False,
+        "browser_process": True,
+        "spare_renderer_process": True,
+        "v8_interpreted_frames": False,
+        "pprof": False,
+        "cleanup": "never",
+        "target": "renderer_process_only",
+        "pin_renderer_main_core": 3,
+        "call_graph_mode": "dwarf",
+        "frequency": 1200,
+        "count": 430,
+        "cpu": [1, 2, 3],
+        "events": ["instructions", "cache-misses"],
+        "grouped_events": ["cache-references", "cache-misses"],
+        "add_counters": ["aa", "bb"],
+    })
+    self.assertFalse(probe.sample_js)
+    self.assertTrue(probe.sample_browser_process)
+    self.assertFalse(probe.run_pprof)
+    self.assertTrue(probe.cleanup_mode, CleanupMode.NEVER)
+    self.assertEqual(probe.target, TargetMode.RENDERER_PROCESS_ONLY)
+    self.assertTrue(probe.start_profiling_after_setup)
+    self.assertEqual(probe.pin_renderer_main_core, 3)
+    self.assertEqual(probe.call_graph_mode, CallGraphMode.DWARF)
+    self.assertEqual(probe.frequency, 1200)
+    self.assertEqual(probe.count, 430)
+    self.assertEqual(probe.cpu, (1, 2, 3))
+    self.assertEqual(probe.events, ("instructions", "cache-misses"))
+    self.assertEqual(probe.grouped_events, ("cache-references", "cache-misses"))
+    self.assertEqual(probe.add_counters, ("aa", "bb"))
+
+  def test_spare_renderer(self):
+    browser_a = self.browsers[0]
+    browser_b = self.browsers[0]
+
+    probe_spare = ProfilingProbe(spare_renderer_process=True)
+    browser_a.attach_probe(probe_spare)
+    self.assertNotIn("SpareRendererForSitePerProcess",
+                     browser_b.features.disabled)
+
+    probe_no_spare = ProfilingProbe(spare_renderer_process=False)
+    browser_b.attach_probe(probe_no_spare)
+    self.assertIn("SpareRendererForSitePerProcess", browser_b.features.disabled)
+
+  def test_attach_unsupported(self):
+    probe = ProfilingProbe()
+
+    macos_platform = MacOsMockPlatform()
+    TEST_BROWSERS = (MockSafari, MockFirefox, MockChromeStable)
+    for browser_cls in TEST_BROWSERS:
+      browser_cls.setup_fs(self.fs, macos_platform)
+      name = browser_cls.__name__
+      browser_cls(name, platform=macos_platform).attach_probe(probe)
+
+    linux_platform = LinuxMockPlatform()
+    for browser_cls in TEST_BROWSERS:
+      browser_cls.setup_fs(self.fs, linux_platform)
+    with self.assertRaises(AssertionError):
+      MockFirefox("firefox", platform=linux_platform).attach_probe(probe)
+    MockChromeStable("chrome", platform=linux_platform).attach_probe(probe)
+
+
+class EnumTestCase(unittest.TestCase):
+
+  def test_cleanup_mode(self):
+    self.assertIs(CleanupMode(True), CleanupMode.ALWAYS)
+    self.assertIs(CleanupMode(False), CleanupMode.NEVER)
+
+    self.assertIs(CleanupMode("always"), CleanupMode.ALWAYS)
+    self.assertIs(CleanupMode("never"), CleanupMode.NEVER)
+    self.assertIs(CleanupMode("auto"), CleanupMode.AUTO)
+
+  def test_target_mode(self):
+    self.assertIs(
+        TargetMode("renderer_main_only"), TargetMode.RENDERER_MAIN_ONLY)
+    self.assertIs(
+        TargetMode("RENDERER_MAIN_ONLY"), TargetMode.RENDERER_MAIN_ONLY)
+
+  def test_call_graph_mode(self):
+    self.assertIs(CallGraphMode("frame_pointer"), CallGraphMode.FRAME_POINTER)
+    self.assertIs(CallGraphMode("FRAME_POINTER"), CallGraphMode.FRAME_POINTER)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
