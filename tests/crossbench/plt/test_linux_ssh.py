@@ -26,23 +26,17 @@ class LinuxSshPlatformTest(PosixPlatformTestCase):
         ssh_port=self.SSH_PORT,
         ssh_user=self.SSH_USER)
 
-  def test_is_remote(self):
-    self.assertTrue(self.platform.is_remote)
-
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
 
+  def test_basic_properties(self):
+    self.assertTrue(self.platform.is_remote)
+    self.assertEqual(self.platform.host, self.HOST)
+    self.assertEqual(self.platform.port, self.PORT)
+    self.assertIs(self.platform.host_platform, self.mock_platform)
+
   def test_name(self):
     self.assertEqual(self.platform.name, "linux_ssh")
-
-  def test_host(self):
-    self.assertEqual(self.platform.host, self.HOST)
-
-  def test_port(self):
-    self.assertEqual(self.platform.port, self.PORT)
-
-  def test_host_platform(self):
-    self.assertIs(self.platform.host_platform, self.mock_platform)
 
   def test_version(self):
     self.expect_sh(

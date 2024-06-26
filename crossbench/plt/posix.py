@@ -123,10 +123,10 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if not binary_name:
       raise ValueError("Got empty path")
     try:
-      maybe_bin = self.path(
-          self.sh_stdout("which", self.path(binary_name)).strip())
-      if self.exists(maybe_bin):
-        return maybe_bin
+      if maybe_path := self.sh_stdout("which", self.path(binary_name)).strip():
+        maybe_bin = self.path(maybe_path)
+        if self.exists(maybe_bin):
+          return maybe_bin
     except SubprocessError:
       pass
     return None

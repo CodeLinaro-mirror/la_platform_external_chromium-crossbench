@@ -86,14 +86,16 @@ class Adb:
         raise ValueError(
             f"Too many adb devices attached, please specify one of: {devices}")
       device_identifier = list(devices.keys())[0]
-    assert device_identifier, f"Invalid device identifier: {device_identifier}"
+    if not device_identifier:
+      raise ValueError(f"Invalid device identifier: {repr(device_identifier)}")
     if device_identifier in devices:
       return device_identifier, devices[device_identifier]
     matches: List[str] = []
     under_name = device_identifier.replace(" ", "_")
-    for key, value in devices.items():
-      if device_identifier in value or under_name in value:
-        matches.append(key)
+    for key, device_info in devices.items():
+      for _, info_value in device_info.items():
+        if device_identifier in info_value or (under_name in info_value):
+          matches.append(key)
     if not matches:
       raise ValueError(
           f"Could not find adb device matching: '{device_identifier}'")
@@ -426,7 +428,6 @@ class AndroidAdbPlatform(PosixPlatform):
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
     if result_path := self.which(str(self.path(app_or_bin))):
-      assert self.exists(result_path), f"{result_path} does not exist."
       return result_path
     if str(app_or_bin) in self.adb.packages():
       return app_or_bin_path

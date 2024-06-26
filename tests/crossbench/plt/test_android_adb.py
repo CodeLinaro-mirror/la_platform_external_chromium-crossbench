@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import pathlib
+from typing import Final
 from unittest import mock
 
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
@@ -12,10 +13,22 @@ from crossbench.plt.arch import MachineArch
 from tests import test_helper
 from tests.crossbench.plt.helper import PosixPlatformTestCase
 
-ADB_DEVICES_SAMPLE_OUTPUT = """List of devices attached
-emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64
+ADB_DEVICE_SAMPLE_OUTPUT = """List of devices attached
+emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64"""
+ADB_DEVICES_SAMPLE_OUTPUT = ADB_DEVICE_SAMPLE_OUTPUT + """
 emulator-5554 device product:sdk_google_phone_x86 model:Android_SDK_built_for_x86 device:generic_x86
 0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo"""
+
+DUMPSYS_DISPLAY_OUTPUT: Final[str] = """
+  SensorObserver
+    mIsProxActive=false
+    mDozeStateByDisplay:
+      0 -> false
+BrightnessSynchronizer
+  mLatestIntBrightness=43
+  mLatestFloatBrightness=0.163
+  mCurrentUpdate=null
+"""
 
 
 class AndroidAdbPlatformTest(PosixPlatformTestCase):
@@ -30,28 +43,80 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
         return_value=pathlib.Path("adb"))
     adb_patcher.start()
     self.addCleanup(adb_patcher.stop)
-    self.expect_sh(pathlib.Path("adb"), "start-server")
-    self.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=ADB_DEVICES_SAMPLE_OUTPUT)
+    self.expect_startup_devices()
     self.adb = Adb(self.mock_platform, self.DEVICE_ID)
     self.platform = AndroidAdbPlatform(
         self.mock_platform, self.DEVICE_ID, adb=self.adb)
+
+  def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
+    self.expect_sh(pathlib.Path("adb"), "start-server")
+    self.expect_sh(pathlib.Path("adb"), "devices", "-l", result=devices)
 
   def expect_adb(self, *args, result=""):
     self.expect_sh(
         pathlib.Path("adb"), "-s", self.DEVICE_ID, *args, result=result)
 
-  def test_is_remote(self):
-    self.assertTrue(self.platform.is_remote)
+  def test_create_no_devices(self):
+    self.expect_startup_devices("List of devices attached")
+    with self.assertRaises(ValueError):
+      Adb(self.mock_platform, self.DEVICE_ID)
 
-  def test_name(self):
+  def test_create_default_too_many_devices(self):
+    self.expect_startup_devices()
+    with self.assertRaises(ValueError) as cm:
+      Adb(self.mock_platform)
+    self.assertIn("too many", str(cm.exception).lower())
+
+  def test_create_default_one_device(self):
+    self.expect_startup_devices(ADB_DEVICE_SAMPLE_OUTPUT)
+    adb = Adb(self.mock_platform)
+    self.assertEqual(adb.serial_id, "emulator-5556")
+
+  def test_create_default_one_device_invalid(self):
+    self.expect_startup_devices(ADB_DEVICE_SAMPLE_OUTPUT)
+    with self.assertRaises(ValueError) as cm:
+      Adb(self.mock_platform, "")
+    self.assertIn("invalid device identifier", str(cm.exception).lower())
+
+  def test_create_by_name(self):
+    self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
+    adb = Adb(self.mock_platform, "Nexus_7")
+    self.assertEqual(adb.serial_id, "0a388e93")
+    self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
+    adb = Adb(self.mock_platform, "Nexus 7")
+    self.assertEqual(adb.serial_id, "0a388e93")
+
+  def test_create_by_name_duplicate(self):
+    self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
+    with self.assertRaises(ValueError) as cm:
+      Adb(self.mock_platform, "Android_SDK_built_for_x86")
+    self.assertIn("devices", str(cm.exception).lower())
+
+  def test_basic_properties(self):
+    self.assertTrue(self.platform.is_remote)
     self.assertEqual(self.platform.name, "android")
+    self.assertIs(self.platform.host_platform, self.mock_platform)
+    self.assertEqual(self.platform.default_tmp_dir,
+                     pathlib.PurePosixPath("/data/local/tmp/"))
+
+  def test_adb_basic_properties(self):
+    self.assertEqual(self.adb.serial_id, self.DEVICE_ID)
+    self.assertDictEqual(
+        self.adb.device_info, {
+            "device": "generic_x86",
+            "model": "Android_SDK_built_for_x86",
+            "product": "sdk_google_phone_x86"
+        })
+    self.assertIn(self.DEVICE_ID, str(self.adb))
 
   def test_is_android(self):
     self.assertTrue(self.platform.is_android)
 
-  def test_host_platform(self):
-    self.assertIs(self.platform.host_platform, self.mock_platform)
+  def test_has_roo(self):
+    self.expect_adb("shell", "id", result="uid=2000(shell) gid=2000(shell)")
+    self.assertFalse(self.adb.has_root())
+    self.expect_adb("shell", "id", result="uid=0(root)n gid=0(root)")
+    self.assertTrue(self.adb.has_root())
 
   def test_version(self):
     self.expect_adb(
@@ -194,6 +259,49 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
     self.expect_adb("shell", "dumpsys", "display", result=display_info)
     self.assertEqual(self.platform.get_main_display_brightness(), 100)
 
+  def test_search_binary_empty_path(self):
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary(pathlib.Path(""))
+    self.assertIn("empty path", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary("")
+    self.assertIn("empty path", str(cm.exception))
+
+  def test_search_binary(self):
+    self.expect_adb(
+        "shell", "which", self.platform.path("ls"), result="/system/bin/ls")
+    self.expect_adb("shell", "[", "-e", "/system/bin/ls", "]", result="")
+    path = self.platform.search_binary("ls")
+    self.assertEqual(path, self.platform.path("/system/bin/ls"))
+
+    self.expect_adb(
+        "shell", "which", self.platform.path("com.google.chrome"), result="")
+    self.expect_adb("shell", "cmd", "package", "list", "packages", result="")
+    path = self.platform.search_binary("com.google.chrome")
+    self.assertIsNone(path)
+
+    self.expect_adb(
+        "shell", "which", self.platform.path("com.google.chrome"), result="")
+    self.expect_adb(
+        "shell",
+        "cmd",
+        "package",
+        "list",
+        "packages",
+        result="package:com.google.chrome")
+    path = self.platform.search_binary("com.google.chrome")
+    self.assertEqual(path, pathlib.PurePath("com.google.chrome"))
+
+  def test_home(self):
+    # not implemented yet
+    with self.assertRaises(RuntimeError):
+      self.platform.home()
+
+  def test_get_main_display_brightness(self):
+    self.expect_adb(
+        "shell", "dumpsys", "display", result=DUMPSYS_DISPLAY_OUTPUT)
+    brightness = self.platform.get_main_display_brightness()
+    self.assertEqual(brightness, 16)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
