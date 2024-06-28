@@ -9,13 +9,13 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Iterable, List, Optional, cast
 
 from crossbench import cli_helper, compat, helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags.js_flags import JSFlags
-from crossbench.helper.path_finder import V8CheckoutFinder
+from crossbench.helper.path_finder import V8ToolsFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import (ProbeConfigParser, ProbeContext, ProbeKeyT,
                                      ResultLocation)
@@ -264,76 +264,3 @@ def _process_profview_json(d8_binary: RemotePath, tick_processor: RemotePath,
         stdout=f,
         stderr=subprocess.PIPE)
   return result_json
-
-
-class V8ToolsFinder:
-  """Helper class to find d8 binaries and the tick-processor.
-  If no explicit d8 and checkout path are given, $D8_PATH and common v8 and
-  chromium installation directories are checked."""
-
-  def __init__(self, platform: plt.Platform, d8_binary: Optional[RemotePath],
-               v8_checkout: Optional[RemotePath]) -> None:
-    self.platform = platform
-    self.d8_binary: Optional[RemotePath] = d8_binary
-    self.v8_checkout: Optional[RemotePath] = None
-    if v8_checkout:
-      self.v8_checkout = v8_checkout
-    else:
-      self.v8_checkout = V8CheckoutFinder(self.platform).path
-    self.tick_processor: Optional[RemotePath] = None
-    self.d8_binary = self._find_d8()
-    if self.d8_binary:
-      self.tick_processor = self._find_v8_tick_processor()
-    logging.debug("V8ToolsFinder found d8_binary='%s' tick_processor='%s'",
-                  self.d8_binary, self.tick_processor)
-
-  def _find_d8(self) -> Optional[RemotePath]:
-    if self.d8_binary and self.platform.is_file(self.d8_binary):
-      return self.d8_binary
-    environ = self.platform.environ
-    if "D8_PATH" in environ:
-      candidate = self.platform.path(environ["D8_PATH"]) / "d8"
-      if self.platform.is_file(candidate):
-        return candidate
-      candidate = self.platform.path(environ["D8_PATH"])
-      if self.platform.is_file(candidate):
-        return candidate
-    # Try potential build location
-    for candidate_dir in V8CheckoutFinder(self.platform).candidates:
-      for build_type in ("release", "optdebug", "Default", "Release"):
-        candidates = list(
-            self.platform.glob(candidate_dir, f"out/*{build_type}/d8"))
-        if not candidates:
-          continue
-        d8_candidate = candidates[0]
-        if self.platform.is_file(d8_candidate):
-          return d8_candidate
-    return None
-
-  def _find_v8_tick_processor(self) -> Optional[RemotePath]:
-    if self.platform.is_linux:
-      tick_processor = "tools/linux-tick-processor"
-    elif self.platform.is_macos:
-      tick_processor = "tools/mac-tick-processor"
-    elif self.platform.is_win:
-      tick_processor = "tools/windows-tick-processor.bat"
-    else:
-      logging.debug(
-          "Not looking for the v8 tick-processor on unsupported platform: %s",
-          self.platform)
-      return None
-    if self.v8_checkout and self.platform.is_dir(self.v8_checkout):
-      candidate = self.v8_checkout / tick_processor
-      assert self.platform.is_file(candidate), (
-          f"Provided v8_checkout has no '{tick_processor}' at {candidate}")
-    assert self.d8_binary
-    # Try inferring the V8 checkout from a built d8:
-    # .../foo/v8/v8/out/x64.release/d8
-    candidate = self.d8_binary.parents[2] / tick_processor
-    if self.platform.is_file(candidate):
-      return candidate
-    if self.v8_checkout:
-      candidate = self.v8_checkout / tick_processor
-      if self.platform.is_file(candidate):
-        return candidate
-    return None
