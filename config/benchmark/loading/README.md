@@ -1,12 +1,34 @@
-# Configs for the loading benchmark
+# Loading benchmark
+
+This folder contains configs for the loading benchmark. The goal of the benchmark is to facilitate web performance optimization based on a realistic workload. The benchmark has two workload variants:
+
+* A general-purpose workload representative of the web usage on mobile phones ("phone");
+
+* A workload representing the projected web usage on Android tablets ("tablet").
+
+To maintain reproducibility, the benchmark uses the [web page replay](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/README.md) mechanism. Archives of the web pages are stored in the `chrome-partner-telemetry` cloud bucket, so you'll need access to that bucket to run the benchmark on recorded pages (you can still run the benchmark on live sites if you don't have the access, but there's no guarantee that results will be reproducible/comparable).
 
 ## Running the benchmark
+
+With the "phone" workload:
 
 ```
 ./cb.py loading --page-config config/benchmark/loading/page_config_phone.hjson --probe-config config/benchmark/loading/probe_config.hjson --network-config config/benchmark/loading/network_config.hjson --separate --browser <browser>
 ```
 
+With the "tablet" workload:
+
+```
+./cb.py loading --page-config config/benchmark/loading/page_config_tablet.hjson --probe-config config/benchmark/loading/probe_config.hjson --network-config config/benchmark/loading/network_config.hjson --separate --browser <browser>  -- --request-desktop-sites
+```
+
 The browser can be `android:chrome-canary`, `android:chrome-stable` etc. See crossbench docs for the full list of options.
+
+Metric results for each page will be located in `results/latest/runs/*/trace_processor/lcp_metric.json`.
+
+## Common issues
+
+### Problems finding wpr.go
 
 If you see a `Could not find wpr.go binary` error:
 
@@ -23,6 +45,14 @@ git clone https://chromium.googlesource.com/catapult
 ```
 
 Then modify the `wpr_go_bin` attribute in the `config/benchmark/loading/network_config.hjson` to point to the location of the `wpr.go` file. You can find it at `web_page_replay_go/src/wpr.go` inside the catapult repository.
+
+### Problems accessing the cloud bucket
+
+In some cases you might need to download the web page archive manually. In this case, save the file `gs://chrome-partner-telemetry/loading_benchmark/archive.wprgo` locally and run the benchmark as follows:
+
+```
+./cb.py loading --page-config config/benchmark/loading/page_config_phone.hjson --probe-config config/benchmark/loading/probe_config.hjson --network <path to archive.wprgo> --separate --browser <browser>
+```
 
 ## Other running options
 
