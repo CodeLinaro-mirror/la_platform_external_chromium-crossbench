@@ -78,7 +78,7 @@ class TestJSProbe(GenericProbeTestCase):
     self.assertEqual(len(js_result_files), result_count)
 
     (story_data, repetitions_data, stories_data,
-     browsers_data) = self.check_merged_json_results(runner, probe)
+     browsers_data) = self.get_non_empty_json_results(runner, probe)
     self.assertIsInstance(story_data, dict)
     self.assertIsInstance(repetitions_data, dict)
     self.assertIsInstance(stories_data, dict)

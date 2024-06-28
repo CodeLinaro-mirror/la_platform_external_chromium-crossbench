@@ -44,7 +44,9 @@ class V8RCSProbe(ChromiumProbe):
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (run.results[self].file for run in group.runs)
     result_file = self.runner_platform.concat_files(
-        inputs=result_files, output=merged_result_path)
+        inputs=result_files,
+        output=merged_result_path,
+        prefix=f"\n== Page: {group.story.name}\n")
     return LocalProbeResult(file=(result_file,))
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
@@ -56,7 +58,6 @@ class V8RCSProbe(ChromiumProbe):
           logging.info("Probe %s: skipping non-existing results file: %s",
                        self.NAME, merged_repetitions_file)
           continue
-        merged_file.write(f"\n== Page: {repetition_group.story.name}\n")
         with merged_repetitions_file.open(encoding="utf-8") as f:
           merged_file.write(f.read())
     return LocalProbeResult(file=(merged_result_path,))

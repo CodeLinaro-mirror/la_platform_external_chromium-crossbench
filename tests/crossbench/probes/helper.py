@@ -54,7 +54,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
         throw=throw)
     return runner
 
-  def check_merged_json_results(self, runner: Runner,
+  def get_non_empty_json_results(self, runner: Runner,
                                 probe: Probe) -> Tuple[Any, Any, Any, Any]:
     story_json_file = runner.runs[0].results[probe].json
     with story_json_file.open() as f:
@@ -77,3 +77,30 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     self.assertIsNotNone(browsers_json_data)
     return (story_json_data, repetitions_json_data, stories_json_data,
             browsers_json_data)
+
+  def get_non_empty_results_str(
+      self,
+      runner: Runner,
+      probe: Probe,
+      suffix: str,
+      has_browsers_data: bool = True) -> Tuple[str, str, str, str]:
+    story_file = runner.runs[0].results[probe].get(suffix)
+    story_data = story_file.read_text()
+    self.assertTrue(story_data)
+
+    repetitions_file = runner.repetitions_groups[0].results[probe].get(suffix)
+    repetitions_data = repetitions_file.read_text()
+    self.assertTrue(repetitions_data)
+
+    stories_file = runner.story_groups[0].results[probe].get(suffix)
+    stories_data = stories_file.read_text()
+    self.assertTrue(stories_data)
+
+    if has_browsers_data:
+      browsers_file = runner.browser_group.results[probe].get(suffix)
+      browsers_data = browsers_file.read_text()
+      self.assertTrue(browsers_data)
+    else:
+      browsers_data = ""
+
+    return (story_data, repetitions_data, stories_data, browsers_data)

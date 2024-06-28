@@ -617,10 +617,14 @@ class Platform(abc.ABC):
         f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
     return path
 
-  def concat_files(self, inputs: Iterable[pth.LocalPath],
-                   output: pth.LocalPath) -> pth.LocalPath:
+  def concat_files(self,
+                   inputs: Iterable[pth.LocalPath],
+                   output: pth.LocalPath,
+                   prefix: str = "") -> pth.LocalPath:
     assert self.is_local, "Unsupported operation on remote platform"
     with output.open("w", encoding="utf-8") as output_f:
+      if prefix:
+        output_f.write(prefix)
       for input_file in inputs:
         assert input_file.is_file()
         with input_file.open(encoding="utf-8") as input_f:
