@@ -325,5 +325,18 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.assertNotIn("custom_binary_b", str(cm.exception))
 
 
+class ValidationModeTestCase(unittest.TestCase):
+
+  def test_construct(self):
+    self.assertIs(ValidationMode("throw"), ValidationMode.THROW)
+    self.assertIs(ValidationMode("THROW"), ValidationMode.THROW)
+    self.assertIs(ValidationMode("prompt"), ValidationMode.PROMPT)
+    self.assertIs(ValidationMode("PROMPT"), ValidationMode.PROMPT)
+    self.assertIs(ValidationMode("warn"), ValidationMode.WARN)
+    self.assertIs(ValidationMode("WARN"), ValidationMode.WARN)
+    self.assertIs(ValidationMode("skip"), ValidationMode.SKIP)
+    self.assertIs(ValidationMode("SKIP"), ValidationMode.SKIP)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

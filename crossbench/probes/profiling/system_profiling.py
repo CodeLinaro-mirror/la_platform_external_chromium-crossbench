@@ -57,11 +57,6 @@ class CleanupMode(StrEnumWithHelp):
 
 @enum.unique
 class TargetMode(StrEnumWithHelp):
-
-  @classmethod
-  def _missing_(cls, value) -> Optional[TargetMode]:
-    return super()._missing_(value.lower())
-
   RENDERER_MAIN_ONLY = ("renderer_main_only",
                         "Profile Renderer Main thread only")
   RENDERER_PROCESS_ONLY = ("renderer_process_only",
@@ -73,11 +68,6 @@ class TargetMode(StrEnumWithHelp):
 
 @enum.unique
 class CallGraphMode(StrEnumWithHelp):
-
-  @classmethod
-  def _missing_(cls, value) -> Optional[CallGraphMode]:
-    return super()._missing_(value.lower())
-
   # Refer to the documentation below for more details and comparison
   # between these options:
   # https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md.
