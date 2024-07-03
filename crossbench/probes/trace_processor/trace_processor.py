@@ -11,6 +11,7 @@ import logging
 import os
 import shutil
 import stat
+import zipfile
 from urllib.request import urlretrieve
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
@@ -316,15 +317,14 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
     return LocalProbeResult(file=[merged_trace], csv=csv_files, json=json_files)
 
   def _merge_trace_files(self) -> pth.LocalPath:
-    merged_trace = self.local_result_path / "merged_trace.pb"
-    with open(merged_trace, "wb") as output_f:
+    merged_trace = self.local_result_path / "merged_trace.zip"
+    with zipfile.ZipFile(merged_trace, 'w') as zip_file:
       for probe_name in self.probe.probes:
-        self._write_probe_result_traces(probe_name, output_f)
+        for f in self.run.results.get_by_name(probe_name).file_list:
+          if _is_trace_file(f):
+            zip_file.write(f)
 
-    self.runner_platform.sh("gzip", merged_trace)
-    merged_trace_gzipped = self.local_result_path / "merged_trace.pb.gz"
-
-    return merged_trace_gzipped
+    return merged_trace
 
   def _write_probe_result_traces(self, probe_name: str, output_f: IO) -> None:
     # TODO: implement probe dependencies
