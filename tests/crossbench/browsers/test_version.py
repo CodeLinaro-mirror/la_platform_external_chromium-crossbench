@@ -17,6 +17,7 @@ from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
                                          BrowserVersionParseError,
                                          PartialBrowserVersionError,
                                          UnknownBrowserVersion)
+from tests import test_helper
 
 
 class BrowserVersionChannelTestCase(unittest.TestCase):
@@ -934,3 +935,6 @@ class UnknownBrowserVersionTestCase(unittest.TestCase):
 
 # Hide the abstract base test class from all test runner
 del _BrowserVersionTestCase
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

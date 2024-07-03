@@ -6,8 +6,10 @@ import argparse
 import pathlib
 from unittest import mock
 
-from crossbench.network.traffic_shaping.ts_proxy import (TsProxyServer,
+from crossbench.network.traffic_shaping.ts_proxy import (TsProxyProcess,
+                                                         TsProxyServer,
                                                          TsProxyTrafficShaper)
+from tests import test_helper
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
@@ -17,6 +19,11 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
     super().setUp()
     self.ts_proxy_path = pathlib.Path("/chrome/tsproxy/tsproxy.py")
     self.fs.create_file(self.ts_proxy_path, st_size=100)
+    # Avoid dealing with fcntl for testing.
+    patcher = mock.patch.object(
+        TsProxyProcess, "_setup_non_blocking_io", return_value=None)
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
 
 class TsProxyTestCase(TsProxyBaseTestCase):
@@ -91,3 +98,7 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
 
     popen.assert_called_once()
     proc.stdin.write.assert_called_with("exit\n")
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

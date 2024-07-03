@@ -18,6 +18,7 @@ from crossbench.cli_helper import (
     parse_non_empty_dir_path, parse_non_empty_file_path, parse_non_empty_str,
     parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
     parse_positive_zero_int, parse_sh_cmd, parse_unique_sequence)
+from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -404,3 +405,7 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       parse_unique_sequence([1, 1], name="custom test name")
     self.assertIn("custom test name", str(cm.exception))
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

@@ -16,6 +16,7 @@ from immutabledict import immutabledict
 
 from crossbench import cli_helper, compat
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
 
@@ -534,3 +535,7 @@ class ConfigEnumTestCase(unittest.TestCase):
                           (CustomConfigEnum.B,
                            CustomConfigEnum.B), ("c", CustomConfigEnum.C)):
       self.assertIs(CustomConfigEnum.parse(value), result)
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

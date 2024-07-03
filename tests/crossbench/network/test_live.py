@@ -4,6 +4,7 @@
 
 from unittest import mock
 from crossbench.network.live import LiveNetwork
+from tests import test_helper
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
@@ -27,3 +28,7 @@ class LiveNetworkTestCase(BaseCrossbenchTestCase):
         with network.open(mock_browser_session):
           pass
     self.assertFalse(network.is_running)
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

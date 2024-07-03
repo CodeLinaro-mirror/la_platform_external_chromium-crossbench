@@ -7,6 +7,7 @@ from __future__ import annotations
 import unittest
 
 from crossbench.browsers.attributes import BrowserAttributes
+from tests import test_helper
 
 
 class BrowserAttributesTestCase(unittest.TestCase):
@@ -52,3 +53,7 @@ class BrowserAttributesTestCase(unittest.TestCase):
     self.assertTrue(custom.is_firefox)
     self.assertTrue(BrowserAttributes.FIREFOX.is_firefox)
     self.assertFalse(BrowserAttributes.CHROME.is_firefox)
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)
