@@ -15,7 +15,7 @@ import psutil
 
 from crossbench import helper, plt
 from crossbench.browsers.browser import Browser
-from crossbench.env import ValidationError
+from crossbench.env import HostEnvironment, ValidationError
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -117,9 +117,9 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
                                                  **kwargs)
     return self.platform.exec_apple_script(wrapper_script, *args)
 
-  def setup(self, session: BrowserSessionRunGroup) -> None:
-    self._check_system_events_allowed(session.runner)
-    super().setup(session)
+  def validate_env(self, env: HostEnvironment) -> None:
+    super().validate_env(env)
+    self._check_system_events_allowed(env)
 
   def start(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running
@@ -136,14 +136,14 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     self._setup_window()
     self._check_js_from_apple_script_allowed(session.runner)
 
-  def _check_system_events_allowed(self, runner: Runner) -> None:
+  def _check_system_events_allowed(self, env: HostEnvironment) -> None:
     try:
       self._exec_apple_script(SYSTEM_EVENTS_CHECK)
     except plt.SubprocessError as e:
       logging.error("Not allowed to run AppleScript and send System Events!")
       logging.debug("    SubprocessError: %s", e)
       app_name = try_get_parent_app_name(self.platform) or "parent"
-      runner.env.handle_warning(
+      env.handle_warning(
           f"Enable the 'System Events' permission for the {app_name} App. \n"
           "  See 'System Settings' > 'Privacy & Security' > 'Automation'.\n")
     try:

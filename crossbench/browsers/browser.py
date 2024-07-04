@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
   from crossbench.flags.chrome import ChromeFeatures
+  from crossbench.env import HostEnvironment
   from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
@@ -161,6 +162,10 @@ class Browser(abc.ABC):
   @property
   def is_running(self) -> bool:
     return self._is_running
+
+  def validate_env(self, env: HostEnvironment) -> None:
+    """Called before starting a browser / browser session to perform
+    a pre-run checklist."""
 
   @property
   def is_local(self) -> bool:

@@ -15,8 +15,8 @@ import stat
 import tempfile
 import urllib.error
 import zipfile
-from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Tuple, Type, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
+                    Sequence, Tuple, Type, cast)
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -28,7 +28,8 @@ from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.browsers.chromium.version import ChromeDriverVersion
+from crossbench.browsers.chromium.version import (ChromeDriverVersion,
+                                                  ChromiumVersion)
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -126,14 +127,39 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
                      service: ChromiumService) -> ChromiumDriver:
     pass
 
-  def _check_driver_version(self) -> None:
+  def _validate_driver_version(self) -> None:
     assert self._driver_path, "No driver available"
+    error_message = None
+    if self.is_local and is_build_dir(
+        self.platform.local_path(self.app_path.parent)):
+      error_message = self._validate_locally_built_driver(
+          self.platform.local_path(self._driver_path))
+    else:
+      error_message = self._validate_any_driver_version(self._driver_path)
+    if error_message:
+      raise RuntimeError("\n".join(error_message))
+
+  def _validate_locally_built_driver(
+      self, driver_path: pth.LocalPath) -> Optional[Iterable[str]]:
+    # TODO: migrate to version object on the browser
+    browser_version = ChromiumVersion.parse(self.version)
+    driver_version = ChromeDriverVersion.parse(
+        self.platform.app_version(driver_path))
+    if browser_version.parts == driver_version.parts:
+      return None
+    return (f"Chromedriver version mismatch: driver={driver_version.parts_str} "
+            f"browser={browser_version.parts_str} ({self}).",
+            build_chromedriver_instructions(driver_path.parent))
+
+  def _validate_any_driver_version(
+      self, driver_path: pth.RemotePath) -> Optional[Iterable[str]]:
     raw_version_str = self.platform.host_platform.sh_stdout(
-        self._driver_path, "--version")
+        driver_path, "--version")
     driver_version = ChromeDriverVersion.parse(raw_version_str)
-    if driver_version.major != self.major_version:
-      raise RuntimeError(f"Driver version {driver_version} "
-                         f"does not match browser {self.version} ({self})")
+    if driver_version.major == self.major_version:
+      return None
+    return (f"Chromedriver version mismatch: driver={driver_version} "
+            f"browser={self.version} ({self})",)
 
   def start_profiling(self) -> None:
     assert isinstance(self._driver, ChromiumDriver)
@@ -323,11 +349,13 @@ class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
 class DriverNotFoundError(ValueError):
   pass
 
-
 def build_chromedriver_instructions(build_dir: pth.RemotePath) -> str:
-  return ("Please build 'chromedriver' manually for local builds.\n"
-          f"autoninja -C {build_dir} chromedriver")
+  return ("Please build 'chromedriver' manually for local builds:\n"
+          f"    autoninja -C {build_dir} chromedriver")
 
+
+def is_build_dir(path: pth.LocalPath) -> bool:
+  return (path / "args.gn").is_file()
 
 class ChromeDriverFinder:
   driver_path: pth.LocalPath
@@ -351,11 +379,10 @@ class ChromeDriverFinder:
     # assume it's a local build
     lookup_dir = pth.LocalPath(self.browser.app_path.parent)
     driver_path = lookup_dir / "chromedriver"
-    is_build_dir = (lookup_dir / "args.gn").exists()
     if driver_path.is_file():
       return driver_path
     error_message: List[str] = [f"Driver '{driver_path}' does not exist."]
-    if is_build_dir:
+    if is_build_dir(lookup_dir):
       error_message += [build_chromedriver_instructions(lookup_dir)]
     else:
       error_message += ["Please manually provide a chromedriver binary."]

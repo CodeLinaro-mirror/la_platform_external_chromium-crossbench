@@ -72,7 +72,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
         options=options, service=service)
     return driver
 
-  def _check_driver_version(self) -> None:
+  def _validate_driver_version(self) -> None:
     # TODO
     # version = self.platform.sh_stdout(self._driver_path, "--version")
     pass

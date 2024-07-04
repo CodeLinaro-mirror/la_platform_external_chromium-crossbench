@@ -90,6 +90,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def _validate(self) -> None:
     if not self._runs:
       raise ValueError("BrowserSessionRunGroup must be non-empty.")
+    self.browser.validate_env(self.runner.env)
+    for run in self.runs:
+      run.validate_env(self.runner.env)
     self._validate_same_browser_probes()
 
   def _validate_same_browser_probes(self) -> None:
@@ -102,7 +105,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
                          f"runs[0].browser == {first_run.browser} vs. "
                          f"runs[{index}].browser == {run.browser}")
       if first_probes != tuple(run.probes):
-        raise ValueError("Got conflicting Probes within a browser session.")
+        raise ValueError(
+            "Got conflicting Probes within a browser session.\n"
+            "All browsers must have the same probes within a session.")
 
   @property
   def raw_sessions_dir(self) -> LocalPath:

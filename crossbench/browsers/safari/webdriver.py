@@ -151,7 +151,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       options.use_technology_preview = True
     return options
 
-  def _check_driver_version(self) -> None:
+  def _validate_driver_version(self) -> None:
     # The bundled driver is always ok
     assert self._driver_path
     for parent in self._driver_path.parents:

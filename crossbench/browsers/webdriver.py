@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
+  from crossbench.env import HostEnvironment
   from crossbench.flags.base import Flags
   from crossbench.network.base import Network
   from crossbench.path import LocalPath, RemotePath
@@ -100,11 +101,14 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     pass
 
   @abc.abstractmethod
-  def _check_driver_version(self) -> None:
+  def _validate_driver_version(self) -> None:
     pass
 
+  def validate_env(self, env: HostEnvironment) -> None:
+    super().validate_env(env)
+    self._validate_driver_version()
+
   def start(self, session: BrowserSessionRunGroup) -> None:
-    self._check_driver_version()
     assert self._driver_path
     try:
       self._driver = self._start_driver(session, self._driver_path)
@@ -116,7 +120,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._find_driver_pid()
     self._set_driver_timeouts(session)
     self._setup_window()
-    self._check_driver_version()
 
   def _find_driver_pid(self) -> None:
     service = getattr(self._driver, "service", None)
@@ -280,7 +283,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE
 
-  def _check_driver_version(self) -> None:
+  def _validate_driver_version(self) -> None:
     raise NotImplementedError()
 
   def _extract_version(self) -> str:

@@ -230,6 +230,10 @@ class Run(ResultOrigin):
     assert not file.exists(), f"Probe results file exists already. file={file}"
     return file
 
+  def validate_env(self, env: HostEnvironment) -> None:
+    """Called before starting a browser / browser session to perform
+    a pre-run checklist."""
+
   def setup(self, is_dry_run: bool = False) -> None:
     self._state.transition(State.INITIAL, to=State.SETUP)
     self._setup_dirs()
