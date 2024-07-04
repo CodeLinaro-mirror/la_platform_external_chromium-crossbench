@@ -27,7 +27,7 @@ class ShellProbe(Probe):
   """
   NAME = "shell"
   IS_GENERAL_PURPOSE = True
-  RESULT_LOCATION = ResultLocation.BROWSER
+  RESULT_LOCATION = ResultLocation.LOCAL
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -147,16 +147,16 @@ class ShellProbeContext(ProbeContext[ShellProbe]):
     if not cmd:
       return
     stdout_path = self.local_result_path / f"{name}.stdout.txt"
-    self.browser_platform.touch(stdout_path)
+    self.runner_platform.touch(stdout_path)
     self._result_files.append(stdout_path)
     stderr_path = self.local_result_path / f"{name}.stderr.txt"
-    self.browser_platform.touch(stderr_path)
+    self.runner_platform.touch(stderr_path)
     self._result_files.append(stderr_path)
     with stdout_path.open("w") as stdout, stderr_path.open("w") as stderr:
       self.browser_platform.sh(*cmd, shell=True, stdout=stdout, stderr=stderr)
 
   def setup(self) -> None:
-    self.browser_platform.mkdir(self.local_result_path)
+    self.runner_platform.mkdir(self.local_result_path)
     self._maybe_run_cmd("setup", self.probe.setup_cmd)
 
   def start(self) -> None:
