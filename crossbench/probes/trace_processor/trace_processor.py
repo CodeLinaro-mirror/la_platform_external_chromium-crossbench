@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import json
 import logging
 import os
 import shutil
@@ -22,6 +23,7 @@ from crossbench import plt
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.helper.path_finder import TraceProcessorFinder
 from crossbench.plt.base import ListCmdArgsT, Platform
+from crossbench.probes import metric as cb_metric
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
@@ -236,10 +238,10 @@ class TraceProcessorProbe(Probe):
   def get_context(self, run: Run) -> TraceProcessorProbeContext:
     return TraceProcessorProbeContext(self, run)
 
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+  def _merge_csv(self, group_dir: pth.LocalPath,
+                 group: BrowsersRunGroup) -> List[pth.LocalPath]:
     writers: dict[str, csv.DictWriter] = {}
-    group_dir = group.get_local_probe_result_path(self)
-    group_dir.mkdir()
+    csv_files: List[pth.LocalPath] = []
     with ExitStack() as stack:
       extra_columns: dict[str, Any] = {}
       for story in group.story_groups:
@@ -258,7 +260,9 @@ class TraceProcessorProbe(Probe):
                     filter(skip_empty_lines, csv_file),
                     dialect=csv.unix_dialect)
                 if not file.name in writers:
-                  f = (group_dir / file.name).open("x", newline='')
+                  merged_csv_file = group_dir / file.name
+                  csv_files.append(merged_csv_file)
+                  f = merged_csv_file.open("x", newline='')
                   stack.enter_context(f)
                   fieldnames = sorted(extra_columns.keys()) + list(
                       reader.fieldnames)
@@ -271,8 +275,29 @@ class TraceProcessorProbe(Probe):
                 for row in reader:
                   row.update(extra_columns)
                   w.writerow(row)
+    return csv_files
 
-    return EmptyProbeResult()
+  def _merge_json(self, group_dir: pth.LocalPath,
+                  group: BrowsersRunGroup) -> List[pth.LocalPath]:
+    merged_metrics = cb_metric.MetricsMerger()
+    for run in group.runs:
+      for file in run.results[self].json_list:
+        with file.open() as json_file:
+          merged_metrics.add(json.load(json_file))
+
+    merged_json_file = group_dir / "metrics.json"
+    with merged_json_file.open("x") as f:
+      json.dump(merged_metrics.to_json(), f, indent=4)
+
+    return [merged_json_file]
+
+  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    group_dir = group.get_local_probe_result_path(self)
+    group_dir.mkdir()
+    merged_csv = self._merge_csv(group_dir, group)
+    merged_json = self._merge_json(group_dir, group)
+    return LocalProbeResult(csv=merged_csv, json=merged_json)
+
 
 class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
