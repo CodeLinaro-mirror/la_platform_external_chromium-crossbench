@@ -6,7 +6,7 @@ This folder contains configs for the loading benchmark. The goal of the benchmar
 
 * A workload representing the projected web usage on Android tablets ("tablet").
 
-To maintain reproducibility, the benchmark uses the [web page replay](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/README.md) mechanism. Archives of the web pages are stored in the `chrome-partner-telemetry` cloud bucket, so you'll need access to that bucket to run the benchmark on recorded pages (you can still run the benchmark on live sites if you don't have the access, but there's no guarantee that results will be reproducible/comparable).
+To maintain reproducibility, the benchmark uses the [web page replay](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/README.md) mechanism (requires golang, check [go.mod](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/go.mod) for the minimum version). Archives of the web pages are stored in the `chrome-partner-telemetry` cloud bucket, so you'll need access to that bucket to run the benchmark on recorded pages (you can still run the benchmark on live sites if you don't have the access, but there's no guarantee that results will be reproducible/comparable).
 
 ## Running the benchmark
 
@@ -34,7 +34,7 @@ If you see a `Could not find wpr.go binary` error:
 
 * If you have chromium checked out locally: set `CHROMIUM_SRC` environment variable to the path of your chromium/src folder.
 
-* If not: see the next section.
+* If not (or if you're still getting this error): see the next section.
 
 ### Running the benchmark without full chromium checkout
 
@@ -44,7 +44,7 @@ Check out the [catapult](https://chromium.googlesource.com/catapult) repository:
 git clone https://chromium.googlesource.com/catapult
 ```
 
-Then modify the `wpr_go_bin` attribute in the `config/benchmark/loading/network_config.hjson` to point to the location of the `wpr.go` file. You can find it at `web_page_replay_go/src/wpr.go` inside the catapult repository.
+Then modify the `wpr_go_bin` attribute in the `config/benchmark/loading/network_config.hjson` to point to the absolute location of the `wpr.go` file. You can find it at `web_page_replay_go/src/wpr.go` inside the catapult repository.
 
 ### Problems accessing the cloud bucket
 
