@@ -29,11 +29,15 @@ class LinuxSshPlatformTest(PosixPlatformTestCase):
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
 
+  def test_is_remote_ssh(self):
+    self.assertTrue(self.platform.is_remote_ssh)
+
   def test_basic_properties(self):
     self.assertTrue(self.platform.is_remote)
     self.assertEqual(self.platform.host, self.HOST)
     self.assertEqual(self.platform.port, self.PORT)
     self.assertIs(self.platform.host_platform, self.mock_platform)
+    self.assertTrue(self.platform.is_posix)
 
   def test_name(self):
     self.assertEqual(self.platform.name, "linux_ssh")

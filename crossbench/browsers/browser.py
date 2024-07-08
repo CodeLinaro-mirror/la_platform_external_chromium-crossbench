@@ -169,7 +169,11 @@ class Browser(abc.ABC):
 
   @property
   def is_local(self) -> bool:
-    return True
+    return self.platform.is_local
+
+  @property
+  def is_remote(self) -> bool:
+    return self.platform.is_remote
 
   def set_log_file(self, path: pth.RemotePath) -> None:
     self.log_file = path

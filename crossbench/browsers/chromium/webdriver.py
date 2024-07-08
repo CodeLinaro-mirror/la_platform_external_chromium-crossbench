@@ -366,13 +366,21 @@ class ChromeDriverFinder:
     self.browser = browser
     self.platform: Platform = browser.platform
     self.host_platform: Platform = browser.platform.host_platform
-    assert self.browser.is_local, (
-        "Cannot download chromedriver for remote browser yet")
     extension: str = ""
     if self.host_platform.is_win:
       extension = ".exe"
     self.driver_path: pth.LocalPath = (
         cache_dir / f"chromedriver-{self.browser.major_version}{extension}")
+    self._validate_browser()
+
+  def _validate_browser(self) -> None:
+    browser_platform = self.browser.platform
+    if browser_platform.is_local:
+      return
+    # Some remote platforms rely on a local chromedriver
+    if (browser_platform.is_android or browser_platform.is_remote_ssh):
+      return
+    raise RuntimeError("Cannot download chromedriver for remote browser yet")
 
   def find_local_build(self) -> pth.LocalPath:
     assert self.browser.app_path

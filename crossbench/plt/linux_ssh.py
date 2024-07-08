@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 class SshPlatform:
   """TODO: use abstract base class"""
 
+  @property
+  def is_remote_ssh(self) -> bool:
+    return True
+
 
 class LinuxSshPlatform(SshPlatform, LinuxPlatform):
 

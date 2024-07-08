@@ -42,6 +42,9 @@ class BasePlatformTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
   def test_is_posix(self):
     self.assertFalse(self.platform.is_posix)
 
+  def test_is_remote_ssh(self):
+    self.assertFalse(self.platform.is_remote_ssh)
+
 
 class PosixPlatformTestCase(BasePlatformTestCase):
   platform: PosixPlatform

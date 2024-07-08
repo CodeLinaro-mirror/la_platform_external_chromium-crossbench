@@ -174,6 +174,10 @@ class Platform(abc.ABC):
     return False
 
   @property
+  def is_remote_ssh(self) -> bool:
+    return False
+
+  @property
   def environ(self) -> Environ:
     assert self.is_local, "Unsupported operation on remote platform"
     return LocalEnviron()
