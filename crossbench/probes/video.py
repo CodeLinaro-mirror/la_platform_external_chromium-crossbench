@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
 
 from crossbench import helper
 from crossbench.probes.probe import (Probe, ProbeContext, ProbeMissingDataError,
-                                     ResultLocation)
+                                     ResultLocation, ProbeConfigParser)
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 
@@ -32,7 +32,7 @@ class VideoProbe(Probe):
   """
   General-purpose Probe that collects screen-recordings.
 
-  It also produces a timestrip png and creates merged versions of these files
+  It can also produce a timestrip png and creates merged versions of these files
   for visually comparing various browsers / variants / cb.stories
   """
   NAME = "video"
@@ -42,13 +42,29 @@ class VideoProbe(Probe):
   TIMESTRIP_FILE_SUFFIX = f".timestrip.{IMAGE_FORMAT}"
   FRAMERATE = 60
 
-  def __init__(self) -> None:
+  @classmethod
+  def config_parser(cls) -> ProbeConfigParser:
+    parser = super().config_parser()
+    parser.add_argument(
+        "generate_timestrip",
+        aliases=("timestrip",),
+        type=bool,
+        default=True,
+        help=("Produce a timestrip png"))
+    return parser
+
+  def __init__(self, generate_timestrip: bool = True) -> None:
     super().__init__()
     self._duration = None
+    self._generate_timestrip = generate_timestrip
 
   @property
   def result_path_name(self) -> str:
     return f"{self.name}.mp4"
+
+  @property
+  def generate_timestrip(self) -> bool:
+    return self._generate_timestrip
 
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
@@ -92,22 +108,18 @@ class VideoProbe(Probe):
     return VideoProbeContext(self, run)
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
-    result_file = group.get_local_probe_result_path(self)
-    timeline_strip_file = result_file.with_suffix(self.TIMESTRIP_FILE_SUFFIX)
     runs = tuple(group.runs)
     if len(runs) == 1:
       # In the simple case just copy the files
-      run_result_file, run_timeline_strip_file = runs[0].results[self].file_list
-      # TODO migrate to platform
-      shutil.copy(run_result_file, result_file)
-      shutil.copy(run_timeline_strip_file, timeline_strip_file)
-      return LocalProbeResult(file=(result_file, timeline_strip_file))
-    logging.info("TIMESTRIP merge page repetitions")
-    timeline_strips = (run.results[self].file_list[1] for run in runs)
-    self.runner_platform.sh("montage", *timeline_strips, "-tile", "1x",
-                            "-gravity", "NorthWest", "-geometry", "x100",
-                            timeline_strip_file)
+      run_files = runs[0].results[self].file_list
+      group_files = [group.path / f.name for f in run_files]
+      for src, dest in zip(run_files, group_files):
+        # TODO migrate to platform
+        shutil.copy(src, dest)
+      return LocalProbeResult(file=group_files)
 
+    video_file = group.get_local_probe_result_path(self)
+    group_files = [video_file]
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
     video_file_inputs: List[Union[str, LocalPath]] = []
@@ -124,8 +136,18 @@ class VideoProbe(Probe):
         "-filter_complex",
         f"hstack=inputs={len(runs)},"
         f"drawtext={draw_text},"
-        "scale=3000:-2", *self.VIDEO_QUALITY, result_file)
-    return LocalProbeResult(file=(result_file, timeline_strip_file))
+        "scale=3000:-2", *self.VIDEO_QUALITY, video_file)
+
+    if self._generate_timestrip:
+      timeline_strip_file = video_file.with_suffix(self.TIMESTRIP_FILE_SUFFIX)
+      logging.info("TIMESTRIP merge page repetitions")
+      timeline_strips = (run.results[self].file_list[1] for run in runs)
+      self.runner_platform.sh("montage", *timeline_strips, "-tile", "1x",
+                              "-gravity", "NorthWest", "-geometry", "x100",
+                              timeline_strip_file)
+      group_files.append(timeline_strip_file)
+
+    return LocalProbeResult(file=group_files)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """Merge story videos from multiple browser/configurations"""
@@ -249,8 +271,11 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     # Copy files
     browser_result = self.browser_result(file=(self.result_path,))
     self._default_result_path = browser_result.file
-    assert self.browser_platform.exists(self.result_path)
-    # Convert
+    assert self.runner_platform.exists(self.result_path)
+
+    if not self.probe.generate_timestrip:
+      return LocalProbeResult(file=(self.local_result_path,))
+
     with tempfile.TemporaryDirectory() as tmp_dir:
       self._convert_to_constant_framerate()
       timestrip_file = self._create_time_strip(
