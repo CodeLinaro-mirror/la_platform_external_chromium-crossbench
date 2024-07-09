@@ -26,6 +26,9 @@ class ChromiumVersion(BrowserVersion):
       "dev": BrowserVersionChannel.ALPHA,
       "canary": BrowserVersionChannel.PRE_ALPHA,
   }
+  _CHANNEL_NAME_LOOKUP: Dict[BrowserVersionChannel, str] = {
+      channel: name for name, channel in _CHANNEL_LOOKUP.items()
+  }
   _CHANNEL_RE = re.compile("|".join(_CHANNEL_LOOKUP.keys()), re.I)
 
   @classmethod
@@ -155,9 +158,8 @@ class ChromiumVersion(BrowserVersion):
     return self.is_pre_alpha
 
   def _channel_name(self, channel: BrowserVersionChannel) -> str:
-    for name, lookup_channel in self._CHANNEL_LOOKUP.items():
-      if channel == lookup_channel:
-        return name
+    if name := self._CHANNEL_NAME_LOOKUP[channel]:
+      return name
     raise ValueError(f"Unsupported channel: {channel}")
 
 

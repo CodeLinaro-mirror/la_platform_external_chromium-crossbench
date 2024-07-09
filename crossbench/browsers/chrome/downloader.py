@@ -8,9 +8,9 @@ import contextlib
 import json
 import logging
 import tempfile
+import zipfile
 from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
                     Type, Union, cast)
-import zipfile
 
 from crossbench import helper
 from crossbench import path as pth
@@ -102,7 +102,7 @@ class ChromeDownloader(Downloader):
     requested_channel = BrowserVersionChannel.ANY
     if self._requested_version.has_channel:
       requested_channel = self._requested_version.channel
-      channel_filter = f"channel={requested_channel}"
+      channel_filter = f"channel={self._requested_version.channel_name}"
 
     url = self.VERSION_URL.format(
         platform=platform,
