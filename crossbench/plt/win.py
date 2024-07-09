@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 import os
 import shutil
 from typing import Optional
@@ -22,10 +23,6 @@ class WinPlatform(Platform):
       pth.LocalPath(os.path.expandvars("%LOCALAPPDATA%")),
   )
 
-  def __init__(self) -> None:
-    self._cpu = ""
-    self._version = ""
-
   @property
   def is_win(self) -> bool:
     return True
@@ -39,18 +36,14 @@ class WinPlatform(Platform):
     # TODO: implement
     return ""
 
-  @property
-  def version(self) -> str:
-    if not self._version:
-      self._version = self.sh_stdout("cmd", "/c", "ver").strip()
-    return self._version
+  @functools.cached_property
+  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+    return self.sh_stdout("cmd", "/c", "ver").strip()
 
-  @property
-  def cpu(self) -> str:
-    if not self._cpu:
-      self._cpu = self.sh_stdout("wmic", "cpu", "get",
-                                 "name").strip().splitlines()[2].strip()
-    return self._cpu
+  @functools.cached_property
+  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+    return self.sh_stdout("wmic", "cpu", "get",
+                          "name").strip().splitlines()[2].strip()
 
   def search_binary(self,
                     app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:

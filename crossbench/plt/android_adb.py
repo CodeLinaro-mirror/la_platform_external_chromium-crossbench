@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
 import shlex
@@ -344,7 +345,6 @@ class AndroidAdbPlatform(PosixPlatform):
                device_identifier: Optional[str] = None,
                adb: Optional[Adb] = None) -> None:
     super().__init__()
-    self._machine: Optional[MachineArch] = None
     self._system_details: Optional[Dict[str, Any]] = None
     self._cpu_details: Optional[Dict[str, Any]] = None
     self._host_platform = host_platform
@@ -368,28 +368,22 @@ class AndroidAdbPlatform(PosixPlatform):
   def host_platform(self) -> Platform:
     return self._host_platform
 
-  @property
-  def version(self) -> str:
-    if not self._version:
-      self._version = self.adb.getprop("ro.build.version.release")
-    return self._version
+  @functools.cached_property
+  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+    return self.adb.getprop("ro.build.version.release")
 
-  @property
-  def device(self) -> str:
-    if not self._device:
-      self._device = self.adb.getprop("ro.product.model")
-    return self._device
+  @functools.cached_property
+  def device(self) -> str:  #pylint: disable=invalid-overridden-method
+    return self.adb.getprop("ro.product.model")
 
-  @property
-  def cpu(self) -> str:
-    if self._cpu:
-      return self._cpu
+  @functools.cached_property
+  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
-    self._cpu = f"{variant} {platform}"
+    cpu_str = f"{variant} {platform}"
     if cores_info := self._get_cpu_cores_info():
-      self._cpu = f"{self._cpu} {cores_info}"
-    return self._cpu
+      cpu_str = f"{cpu_str} {cores_info}"
+    return cpu_str
 
   @property
   def adb(self) -> Adb:
@@ -402,16 +396,13 @@ class AndroidAdbPlatform(PosixPlatform):
       "x86_64": MachineArch.X64,
   }
 
-  @property
-  def machine(self) -> MachineArch:
-    if self._machine:
-      return self._machine
+  @functools.cached_property
+  def machine(self) -> MachineArch:  #pylint: disable=invalid-overridden-method
     cpu_abi = self.adb.getprop("ro.product.cpu.abi")
     arch = self._MACHINE_ARCH_LOOKUP.get(cpu_abi, None)
     if not arch:
       raise ValueError(f"Unknown android CPU ABI: {cpu_abi}")
-    self._machine = arch
-    return self._machine
+    return arch
 
   def app_path_to_package(self, app_path: RemotePathLike) -> str:
     path = self.path(app_path)

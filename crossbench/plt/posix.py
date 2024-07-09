@@ -5,13 +5,15 @@
 from __future__ import annotations
 
 import abc
+import functools
 import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
 
+from crossbench import path as pth
 from crossbench.plt.base import (Environ, ListCmdArgsT, Platform,
                                  SubprocessError)
-from crossbench import path as pth
+
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
@@ -20,16 +22,11 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
-    self._version: str = ""
-    self._device: str = ""
-    self._cpu: str = ""
     self._default_tmp_dir = pth.RemotePath("")
 
-  @property
-  def version(self) -> str:
-    if not self._version:
-      self._version = self.sh_stdout("uname", "-r").strip()
-    return self._version
+  @functools.cached_property
+  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+    return self.sh_stdout("uname", "-r").strip()
 
   def _raw_machine_arch(self):
     if self.is_local:

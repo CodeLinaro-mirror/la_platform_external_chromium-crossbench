@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 import os
 from typing import Any, Dict, Optional, Tuple
 
@@ -35,29 +36,26 @@ class LinuxPlatform(PosixPlatform):
   def check_system_monitoring(self, disable: bool = False) -> bool:
     return True
 
-  @property
-  def device(self) -> str:
-    if not self._device:
-      try:
-        id_dir = self.path("/sys/devices/virtual/dmi/id")
-        vendor = self.cat(id_dir / "sys_vendor").strip()
-        product = self.cat(id_dir / "product_name").strip()
-        self._device = f"{vendor} {product}"
-      except (FileNotFoundError, SubprocessError):
-        self._device = "UNKNOWN"
-    return self._device
+  @functools.cached_property
+  def device(self) -> str:  #pylint: disable=invalid-overridden-method
+    try:
+      id_dir = self.path("/sys/devices/virtual/dmi/id")
+      vendor = self.cat(id_dir / "sys_vendor").strip()
+      product = self.cat(id_dir / "product_name").strip()
+      return f"{vendor} {product}"
+    except (FileNotFoundError, SubprocessError):
+      return "UNKNOWN"
 
-  @property
-  def cpu(self) -> str:
-    if self._cpu:
-      return self._cpu
+  @functools.cached_property
+  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+    cpu_str = "UNKNOWN"
     for line in self.cat(self.path("/proc/cpuinfo")).splitlines():
       if line.startswith("model name"):
-        _, self._cpu = line.split(":", maxsplit=2)
+        _, cpu_str = line.split(":", maxsplit=2)
         break
     if cores_info := self._get_cpu_cores_info():
-      self._cpu = f"{self._cpu} {cores_info}"
-    return self._cpu
+      cpu_str = f"{cpu_str} {cores_info}"
+    return cpu_str
 
   @property
   def has_display(self) -> bool:

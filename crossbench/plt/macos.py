@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import ctypes
+import functools
 import json
 import logging
 import plistlib
@@ -38,26 +39,19 @@ class MacOSPlatform(PosixPlatform):
   def name(self) -> str:
     return "macos"
 
-  @property
+  @functools.cached_property
   def version(self) -> str:
-    if not self._version:
-      self._version = self.sh_stdout("sw_vers", "-productVersion").strip()
-    return self._version
+    return self.sh_stdout("sw_vers", "-productVersion").strip()
 
-  @property
-  def device(self) -> str:
-    if not self._device:
-      self._device = self.sh_stdout("sysctl",
-                                    "hw.model").strip().split(maxsplit=1)[1]
-    return self._device
+  @functools.cached_property
+  def device(self) -> str:  #pylint: disable=invalid-overridden-method
+    return self.sh_stdout("sysctl", "hw.model").strip().split(maxsplit=1)[1]
 
-  @property
-  def cpu(self) -> str:
-    if not self._cpu:
-      brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
-      cores_info = self._get_cpu_cores_info()
-      self._cpu = f"{brand} {cores_info}"
-    return self._cpu
+  @functools.cached_property
+  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+    brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
+    cores_info = self._get_cpu_cores_info()
+    return f"{brand} {cores_info}"
 
   def _get_cpu_cores_info(self):
     cores = self.sh_stdout("sysctl", "-n", "machdep.cpu.core_count").strip()

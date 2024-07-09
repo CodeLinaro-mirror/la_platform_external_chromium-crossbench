@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import collections.abc
 import datetime as dt
+import functools
 import logging
 import os
 import pathlib
@@ -120,7 +121,7 @@ class Platform(abc.ABC):
   def host_platform(self) -> Platform:
     return self
 
-  @property
+  @functools.cached_property
   def machine(self) -> MachineArch:
     raw = self._raw_machine_arch()
     if raw in ("i386", "i686", "x86", "ia32"):
@@ -270,10 +271,9 @@ class Platform(abc.ABC):
     if not binary_name:
       raise ValueError("Got empty path")
     assert self.is_local, "Unsupported operation on remote platform"
-    result = shutil.which(binary_name)
-    if not result:
-      return None
-    return self.path(result)
+    if result := shutil.which(binary_name):
+      return self.path(result)
+    return None
 
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
