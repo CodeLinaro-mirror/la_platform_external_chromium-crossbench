@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 class _State(enum.IntEnum):
   BUILDING = enum.auto()
   READY = enum.auto()
+  SETUP = enum.auto()
   STARTING = enum.auto()
   RUNNING = enum.auto()
   STOPPING = enum.auto()
@@ -53,6 +54,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def __init__(self, runner: Runner, browser: Browser, index: int,
                root_dir: LocalPath, throw: bool) -> None:
     super().__init__(throw)
+    # TODO: migrate to StateMachine
     self._state: _State = _State.BUILDING
     self._runner = runner
     self._durations = helper.Durations()
@@ -105,12 +107,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
                          f"runs[0].browser == {first_run.browser} vs. "
                          f"runs[{index}].browser == {run.browser}")
       if first_probes != tuple(run.probes):
-        raise ValueError(
-            "Got conflicting Probes within a browser session.\n"
-            "All browsers must have the same probes within a session.")
+        raise ValueError("Got conflicting Probes within a browser session.\n"
+                         "All runs must have the same probes within a session.")
 
   @property
-  def raw_sessions_dir(self) -> LocalPath:
+  def raw_session_dir(self) -> LocalPath:
     return (self.root_dir / self.browser.unique_name / "sessions" /
             str(self.index))
 
@@ -123,11 +124,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._runs[0]
 
   def _get_session_dir(self) -> LocalPath:
+    assert self._state == _State.READY
     if self.is_single_run:
       return self.first_run.out_dir
     if not self._runs:
       raise ValueError("Cannot have empty browser session")
-    return self.raw_sessions_dir
+    return self.raw_session_dir
 
   @property
   def out_dir(self) -> LocalPath:
@@ -219,6 +221,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   @contextlib.contextmanager
   def open(self, is_dry_run: bool = False) -> Iterator[bool]:
+    assert self._state == _State.READY
+    self._state = _State.SETUP
     yielded = False
     with self.exceptions.capture():
       self._setup_session_dir()
@@ -234,13 +238,14 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   @contextlib.contextmanager
   def _open(self, is_dry_run: bool = False) -> Iterator[None]:
+    assert self._state == _State.SETUP
     with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
     try:
-      logging.debug("Starting network: %s", self.network)
-      with self.network.open(self), self._probe_context_manager.open():
+      with self._start_network(), self._start_probes():
         self._start(is_dry_run)
         try:
+          assert self._state == _State.RUNNING
           yield
         except Exception as e:
           logging.debug(
@@ -250,6 +255,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       self._teardown(is_dry_run)
 
   def _setup(self, is_dry_run: bool) -> None:
+    assert self._state == _State.SETUP
     self._probe_context_manager.setup(self.probes, is_dry_run)
     # TODO: handle session vs run probe.
     for run in self.runs:
@@ -269,15 +275,29 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         return
       if self.is_single_run:
         # If there is a single run per session we reuse the run-dir.
-        self.raw_sessions_dir.parent.mkdir(parents=True, exist_ok=True)
-        self.raw_sessions_dir.symlink_to(self.path)
+        self.raw_session_dir.parent.mkdir(parents=True, exist_ok=True)
+        self.raw_session_dir.symlink_to(self.path)
+
+  @contextlib.contextmanager
+  def _start_network(self):
+    logging.debug("Starting network: %s", self.network)
+    with self._exceptions.annotate(f"Starting Network: {self.network}"):
+      with self.network.open(self):
+        yield
+
+  @contextlib.contextmanager
+  def _start_probes(self):
+    with self._exceptions.annotate("Starting Session Probes"):
+      with self._probe_context_manager.open():
+        yield
 
   def _start(self, is_dry_run: bool) -> None:
-    assert self._state == _State.READY
+    assert self._state == _State.SETUP
     self._state = _State.STARTING
     with self.measure("browser-session-start"):
       with self._exceptions.annotate(f"Starting Browser: {self.browser}"):
         self._start_browser(is_dry_run)
+        self._state = _State.RUNNING
 
   def _start_browser(self, is_dry_run: bool) -> None:
     assert self._state == _State.STARTING
@@ -302,7 +322,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         raise
 
   def _teardown(self, is_dry_run: bool) -> None:
-    assert self._state in (_State.RUNNING, _State.STARTING)
+    assert self._state in (_State.SETUP, _State.STARTING, _State.RUNNING)
     self._state = _State.STOPPING
     if is_dry_run:
       return
@@ -321,7 +341,6 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # in a unclean state.
     if self.browser.is_running:
       self._runs[-1]._teardown_browser()
-
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:

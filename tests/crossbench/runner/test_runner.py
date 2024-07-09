@@ -2,180 +2,25 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import datetime as dt
 import json
 import pathlib
 import unittest
-from typing import Any, List, Optional
 
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
 from crossbench.probes import all as all_probes
-from crossbench.probes.probe import (Probe, ProbeContext,
-                                     ProbeIncompatibleBrowser)
-from crossbench.probes.results import LocalProbeResult, ProbeResult
+from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.runner.groups import BrowserSessionRunGroup
 from crossbench.runner.groups.thread import RunThreadGroup
-from crossbench.runner.run import Run
 from crossbench.runner.runner import Runner, ThreadMode
-from crossbench.runner.timing import SAFE_MAX_TIMEOUT_TIMEDELTA, Timing
 from tests import test_helper
-from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
-from tests.crossbench.mock_helper import (BaseCrossbenchTestCase, MockBenchmark,
-                                          MockStory)
+from tests.crossbench.mock_browser import MockChromeDev
+from tests.crossbench.mock_helper import MockBenchmark
+from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
+                                            MockPlatform, MockProbe,
+                                            MockProbeContext, MockRun,
+                                            MockRunner)
 
-
-class TimingTestCase(unittest.TestCase):
-
-  def test_default_instance(self):
-    t = Timing()
-    self.assertEqual(t.unit, dt.timedelta(seconds=1))
-    self.assertEqual(t.timeout_unit, dt.timedelta())
-    self.assertEqual(t.timedelta(10), dt.timedelta(seconds=10))
-    self.assertEqual(t.units(1), 1)
-    self.assertEqual(t.units(dt.timedelta(seconds=1)), 1)
-
-  def test_default_instance_slowdown(self):
-    t = Timing(
-        unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11))
-    self.assertEqual(t.unit, dt.timedelta(seconds=10))
-    self.assertEqual(t.timeout_unit, dt.timedelta(seconds=11))
-    self.assertEqual(t.timedelta(10), dt.timedelta(seconds=100))
-    self.assertEqual(t.units(100), 10)
-    self.assertEqual(t.units(dt.timedelta(seconds=100)), 10)
-    self.assertEqual(t.timeout_timedelta(10), dt.timedelta(seconds=110))
-
-  def test_default_instance_speedup(self):
-    t = Timing(unit=dt.timedelta(seconds=0.1))
-    self.assertEqual(t.unit, dt.timedelta(seconds=0.1))
-    self.assertEqual(t.timedelta(10), dt.timedelta(seconds=1))
-    self.assertEqual(t.units(1), 10)
-    self.assertEqual(t.units(dt.timedelta(seconds=1)), 10)
-
-  def test_invalid_params(self):
-    with self.assertRaises(ValueError) as cm:
-      _ = Timing(cool_down_time=dt.timedelta(seconds=-1))
-    self.assertIn("Timing.cool_down_time", str(cm.exception))
-
-    with self.assertRaises(ValueError) as cm:
-      _ = Timing(unit=dt.timedelta(seconds=-1))
-    self.assertIn("Timing.unit", str(cm.exception))
-    with self.assertRaises(ValueError) as cm:
-      _ = Timing(unit=dt.timedelta())
-    self.assertIn("Timing.unit", str(cm.exception))
-
-    with self.assertRaises(ValueError) as cm:
-      _ = Timing(run_timeout=dt.timedelta(seconds=-1))
-    self.assertIn("Timing.run_timeout", str(cm.exception))
-
-  def test_to_units(self):
-    t = Timing()
-    self.assertEqual(t.units(100), 100)
-    self.assertEqual(t.units(dt.timedelta(minutes=1.5)), 90)
-    with self.assertRaises(ValueError):
-      _ = t.timedelta(-1)
-
-    t = Timing(unit=dt.timedelta(seconds=10))
-    self.assertEqual(t.units(100), 10)
-    self.assertEqual(t.units(dt.timedelta(minutes=1.5)), 9)
-    with self.assertRaises(ValueError):
-      _ = t.timedelta(-1)
-
-    t = Timing(unit=dt.timedelta(seconds=0.1))
-    self.assertEqual(t.units(100), 1000)
-    self.assertEqual(t.units(dt.timedelta(minutes=1.5)), 900)
-    with self.assertRaises(ValueError):
-      _ = t.timedelta(-1)
-
-  def test_to_timedelta(self):
-    t = Timing()
-    self.assertEqual(t.timedelta(12).total_seconds(), 12)
-    self.assertEqual(t.timedelta(dt.timedelta(minutes=1.5)).total_seconds(), 90)
-    with self.assertRaises(ValueError):
-      _ = t.timedelta(-1)
-
-    t = Timing(unit=dt.timedelta(seconds=10))
-    self.assertEqual(t.timedelta(12).total_seconds(), 120)
-    self.assertEqual(
-        t.timedelta(dt.timedelta(minutes=1.5)).total_seconds(), 900)
-    with self.assertRaises(ValueError):
-      _ = t.timedelta(-1)
-
-    t = Timing(unit=dt.timedelta(seconds=0.5))
-    self.assertEqual(t.timedelta(12).total_seconds(), 6)
-    self.assertEqual(t.timedelta(dt.timedelta(minutes=1.5)).total_seconds(), 45)
-    with self.assertRaises(ValueError):
-      _ = t.timedelta(-1)
-
-  def test_timeout_timing(self):
-    t = Timing(
-        unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=10))
-    self.assertEqual(t.timedelta(12).total_seconds(), 12)
-    self.assertEqual(t.timeout_timedelta(12).total_seconds(), 120)
-
-  def test_timeout_timing_invalid(self):
-    with self.assertRaises(ValueError):
-      _ = Timing(
-          unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=0.1))
-    with self.assertRaises(ValueError):
-      _ = Timing(
-          unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=-1))
-
-  def test_no_timeout(self):
-    self.assertFalse(Timing().has_no_timeout)
-    t = Timing(timeout_unit=dt.timedelta.max)
-    self.assertTrue(t.has_no_timeout)
-    self.assertEqual(t.timedelta(12).total_seconds(), 12)
-    self.assertEqual(t.timeout_timedelta(0.000001), SAFE_MAX_TIMEOUT_TIMEDELTA)
-    self.assertEqual(t.timeout_timedelta(12), SAFE_MAX_TIMEOUT_TIMEDELTA)
-
-  def test_timeout_overflow(self):
-    t = Timing(timeout_unit=dt.timedelta(days=1000))
-    self.assertEqual(t.timeout_timedelta(12), SAFE_MAX_TIMEOUT_TIMEDELTA)
-    self.assertEqual(t.timeout_timedelta(1500), SAFE_MAX_TIMEOUT_TIMEDELTA)
-
-
-class MockBrowser:
-
-  def __init__(self, unique_name: str, platform) -> None:
-    self.unique_name = unique_name
-    self.platform = platform
-    self.network = MockNetwork()
-
-  def __str__(self):
-    return self.unique_name
-
-
-class MockRun:
-
-  def __init__(self, runner, browser_session, name) -> None:
-    self.runner = runner
-    self.browser_session = browser_session
-    self.browser = browser_session.browser
-    self.browser_platform = self.browser.platform
-    self.name = name
-
-  def __str__(self):
-    return self.name
-
-
-class MockPlatform:
-
-  def __init__(self, name) -> None:
-    self.name = name
-
-  def __str__(self):
-    return self.name
-
-
-class MockRunner:
-
-  def __init__(self) -> None:
-    self.runs = tuple()
-
-
-class MockNetwork:
-  pass
 
 # Skip strict type checks for better mocking
 # pytype: disable=wrong-arg-types
@@ -279,62 +124,7 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.assertTupleEqual(group_b.runs, (runs[1], runs[3]))
 
 
-class MockProbe(Probe):
-  NAME = "test-probe"
-
-  def __init__(self, test_data: Any) -> None:
-    super().__init__()
-    self.test_data = test_data
-
-  @property
-  def result_path_name(self) -> str:
-    return f"{self.name}.json"
-
-  def get_context(self, run: Run):
-    return MockProbeContext(self, run)
-
-
-class MockProbeContext(ProbeContext):
-
-  def start(self) -> None:
-    pass
-
-  def stop(self) -> None:
-    pass
-
-  def teardown(self) -> ProbeResult:
-    with self.result_path.open("w") as f:
-      json.dump(self.probe.test_data, f)
-    return LocalProbeResult(json=(self.result_path,))
-
-
-class _BaseRunnerTestCase(BaseCrossbenchTestCase):
-
-  def setUp(self):
-    super().setUp()
-    self.out_dir = pathlib.Path("testing/out_dir")
-    self.out_dir.parent.mkdir(exist_ok=False, parents=True)
-    self.stories = [MockStory("story_1"), MockStory("story_2")]
-    self.benchmark = MockBenchmark(self.stories)
-    self.browsers = [
-        MockChromeDev("chrome-dev", platform=self.platform),
-        MockFirefox("firefox-stable", platform=self.platform)
-    ]
-
-  def default_runner(self,
-                     browsers: Optional[List[Browser]] = None,
-                     throw: bool = True) -> Runner:
-    if browsers is None:
-      browsers = self.browsers
-    return Runner(
-        self.out_dir,
-        browsers,
-        self.benchmark,
-        platform=self.platform,
-        throw=throw)
-
-
-class RunnerTestCase(_BaseRunnerTestCase):
+class RunnerTestCase(BaseRunnerTestCase):
 
   def test_default_instance(self):
     runner = self.default_runner()
@@ -453,7 +243,7 @@ def run_setup_fail(is_dry_run):
   raise CustomException()
 
 
-class RunThreadGroupTestCase(_BaseRunnerTestCase):
+class RunThreadGroupTestCase(BaseRunnerTestCase):
 
   def tearDown(self) -> None:
     for browser in self.browsers:
@@ -653,8 +443,6 @@ class RunThreadGroupTestCase(_BaseRunnerTestCase):
       exception_entry = exceptions[0]
       self.assertIsInstance(exception_entry.exception, CustomException)
 
-
-del _BaseRunnerTestCase
 # pytype: enable=wrong-arg-types
 
 if __name__ == "__main__":

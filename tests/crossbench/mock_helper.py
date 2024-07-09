@@ -135,11 +135,14 @@ class MockPlatformMixin:
       # Convert all args to str first, sh accepts both str and Paths.
       expected = tuple(map(str, self.expected_sh_cmds.pop(0)))
       str_args = tuple(map(str, args))
-      assert expected == str_args, f"Expected sh_cmd: {expected}, got: {args}"
+      assert expected == str_args, (f"After {len(self.sh_cmds)} cmds: \n"
+                                    f"  expected: {expected}\n"
+                                    f"  got:      {args}")
     self.sh_cmds.append(args)
     if not self.sh_results:
       cmd = shlex.join(map(str, args))
-      raise ValueError(f"MockPlatform has no more sh outputs for cmd: {cmd}")
+      raise ValueError(f"After {len(self.sh_cmds)} cmds: "
+                       f"MockPlatform has no more sh outputs for cmd: {cmd}")
     return self.sh_results.pop(0)
 
   def sh(self,
@@ -291,7 +294,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
       self.assertTrue(mock_browser_cls.mock_app_path().exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    self.browsers: Sequence[mock_browser.MockBrowser] = [
+    self.browsers: List[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev("dev", platform=self.platform),
         mock_browser.MockChromeStable("stable", platform=self.platform)
     ]
