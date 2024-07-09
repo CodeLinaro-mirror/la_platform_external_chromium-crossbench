@@ -3,6 +3,8 @@
 # found in the LICENSE file.
 
 import pathlib
+import re
+import unicodedata
 from typing import Union
 
 # A path that can refer to files on a remote platform with potentially
@@ -17,3 +19,11 @@ RemotePathLike = Union[str, RemotePath]
 LocalPath = pathlib.Path
 
 LocalPathLike = Union[str, LocalPath]
+
+_UNSAFE_FILENAME_CHARS_RE = re.compile(r"[^a-zA-Z0-9+\-_.]")
+
+
+def safe_filename(name: str) -> str:
+  normalized_name = unicodedata.normalize("NFKD", name)
+  ascii_name = normalized_name.encode("ascii", "ignore").decode("ascii")
+  return _UNSAFE_FILENAME_CHARS_RE.sub("_", ascii_name)

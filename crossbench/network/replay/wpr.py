@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from crossbench import cli_helper
 from crossbench.flags.base import Flags
@@ -25,17 +25,19 @@ if TYPE_CHECKING:
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
-               archive_path_or_url: str,
+               archive: Union[LocalPath, str],
                traffic_shaper: Optional[TrafficShaper] = None,
                wpr_go_bin: Optional[LocalPath] = None,
                browser_platform: Platform = PLATFORM):
-    super().__init__(archive_path_or_url, traffic_shaper, browser_platform)
+    super().__init__(archive, traffic_shaper, browser_platform)
     if not wpr_go_bin:
       if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
         wpr_go_bin = self.runner_platform.local_path(local_wpr_go)
     if not wpr_go_bin:
       raise RuntimeError(
           f"Could not find wpr.go binary on {self.runner_platform}")
+    if not self.runner_platform.which("go"):
+      raise ValueError(f"'go' binary not found on {self.runner_platform}")
     self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
         cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
     self._server: Optional[WprReplayServer] = None
@@ -69,7 +71,6 @@ class WprReplayNetwork(ReplayNetwork):
     # TODO: make ports configurable
     platform.reverse_port_forward(8080, 8080)
     platform.reverse_port_forward(8081, 8081)
-
 
   @contextlib.contextmanager
   def _open_replay_server(self, session: BrowserSessionRunGroup):

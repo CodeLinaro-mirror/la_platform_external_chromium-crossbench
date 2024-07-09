@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-import re
 import sys
-import unicodedata
 from typing import Final
 
 from crossbench.plt.arch import MachineArch
@@ -28,11 +26,3 @@ def _get_default() -> Platform:
 
 
 PLATFORM: Final[Platform] = _get_default()
-
-_UNSAFE_FILENAME_CHARS_RE = re.compile(r"[^a-zA-Z0-9+\-_.]+")
-
-
-def safe_filename(name: str) -> str:
-  normalized_name = unicodedata.normalize("NFKD", name)
-  ascii_name = normalized_name.encode("ascii", "ignore").decode("ascii")
-  return _UNSAFE_FILENAME_CHARS_RE.sub("_", ascii_name)

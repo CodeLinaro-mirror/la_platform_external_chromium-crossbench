@@ -13,9 +13,9 @@ import os
 import shutil
 import stat
 import zipfile
-from urllib.request import urlretrieve
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple
+from urllib.request import urlretrieve
 
 from crossbench import cli_helper, exception
 from crossbench import path as pth
@@ -25,8 +25,7 @@ from crossbench.helper.path_finder import TraceProcessorFinder
 from crossbench.plt.base import ListCmdArgsT, Platform
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -95,8 +94,8 @@ class TraceProcessor:
     self._platform.mkdir(out_dir)
     for metric in metrics:
       with self._exceptions.capture(f"Running metric: {metric}"):
-        file_safe_name = metric.translate(str.maketrans("\\/", "__"))
-        out_file = out_dir / f"{file_safe_name}.json"
+        safe_filename = pth.safe_filename(metric)
+        out_file = out_dir / f"{safe_filename}.json"
         cmd = self._build_trace_processor_cmd(trace_file, metric=metric)
         with out_file.open("x") as f:
           self._platform.sh(*cmd, stdout=f)
@@ -114,8 +113,8 @@ class TraceProcessor:
     self._platform.mkdir(out_dir)
     for query in queries:
       with self._exceptions.capture(f"Running query: {query}"):
-        file_safe_name = query.translate(str.maketrans("\\/", "__"))
-        out_file = out_dir / f"{file_safe_name}.csv"
+        safe_filename = pth.safe_filename(query)
+        out_file = out_dir / f"{safe_filename}.csv"
         cmd = self._build_trace_processor_cmd(trace_file, query=query)
         with out_file.open("x") as f:
           self._platform.sh(*cmd, stdout=f)

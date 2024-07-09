@@ -10,6 +10,7 @@ import enum
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from crossbench import cli_helper, exception
+from crossbench import path as pth
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.base import Network
 from crossbench.network.live import LiveNetwork
@@ -19,8 +20,6 @@ from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
                                                      TrafficShaper)
 from crossbench.plt.base import Platform
-
-from crossbench import path as pth
 
 
 @enum.unique
@@ -259,17 +258,19 @@ class NetworkConfig(ConfigObject):
           "wpr_go_bin can only be used for the WPR replay network")
 
   def create(self, browser_platform: Platform) -> Network:
-    runner_platform: Platform = browser_platform.host_platform
-    traffic_shaper = self._create_traffic_shaper(browser_platform)
-    if self.type is NetworkType.LIVE:
-      return LiveNetwork(traffic_shaper, runner_platform)
-    if self.type is NetworkType.LOCAL:
-      assert self.path
-      return LocalFileNetwork(self.path, traffic_shaper, runner_platform)
-    if self.type is NetworkType.WPR:
-      return WprReplayNetwork(
-          self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-          runner_platform)
+    with exception.annotate_argparsing(
+        f"Setting up {self.type} network for {browser_platform}"):
+      runner_platform: Platform = browser_platform.host_platform
+      traffic_shaper = self._create_traffic_shaper(browser_platform)
+      if self.type is NetworkType.LIVE:
+        return LiveNetwork(traffic_shaper, runner_platform)
+      if self.type is NetworkType.LOCAL:
+        assert self.path
+        return LocalFileNetwork(self.path, traffic_shaper, runner_platform)
+      if self.type is NetworkType.WPR:
+        return WprReplayNetwork(
+            self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
+            runner_platform)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:

@@ -9,10 +9,9 @@ import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Sequence
 
-from crossbench import plt
+from crossbench.path import safe_filename
 
 if TYPE_CHECKING:
-  from crossbench.probes.probe import Probe
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -27,7 +26,7 @@ class Story(abc.ABC):
                name: str,
                duration: dt.timedelta = dt.timedelta(seconds=15)):
     assert name, "Invalid page name"
-    self._name = plt.safe_filename(name)
+    self._name = safe_filename(name)
     self._duration = duration
     if self._duration:
       assert self._duration.total_seconds() > 0, (

@@ -926,6 +926,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           f"Test file {self.EXAMPLE_REMOTE_CONFIG_PATH} does not exist")
     self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
 
+    self._expect_linux_ssh("uname -m", result="arm64")
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
     self._expect_linux_ssh("'[' -f /path/to/google/chrome ']'")
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
@@ -936,6 +937,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_linux_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
 
     self._expect_chromeos_ssh("'[' -e /usr/local/autotest/bin/autologin.py ']'")
+    self._expect_chromeos_ssh("uname -m", result="arm64")
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh("'[' -f /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")

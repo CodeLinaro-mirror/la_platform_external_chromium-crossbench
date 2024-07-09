@@ -28,6 +28,7 @@ _WPR_PORT_RE = re.compile(r".*Starting server on "
 class WprStartupError(RuntimeError):
   pass
 
+
 class WprBase(abc.ABC):
 
   _key_file: LocalPath
@@ -52,7 +53,7 @@ class WprBase(abc.ABC):
     self._log_file: Optional[TextIO] = None
     self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
     if not self._platform.which("go"):
-      raise ValueError(f"'go' binary not available on {self._platform}")
+      raise ValueError(f"'go' binary not found on {self._platform}")
     self._archive_path = self._validate_archive_path(archive_path)
     if http_port == https_port:
       raise ValueError("http_port must be different from https_port, "

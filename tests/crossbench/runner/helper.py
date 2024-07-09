@@ -7,9 +7,9 @@ import json
 import pathlib
 from typing import Any, List, Optional
 
-from crossbench import plt
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
+from crossbench.path import safe_filename
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -44,7 +44,7 @@ class MockRun:
     self.timing = Timing()
     self.is_success = True
     self.out_dir = (
-        browser_session.root_dir / plt.safe_filename(self.browser.unique_name) /
+        browser_session.root_dir / safe_filename(self.browser.unique_name) /
         "stories" / name / "repetition=0" / "temperature-cold")
 
   def validate_env(self, env: HostEnvironment):

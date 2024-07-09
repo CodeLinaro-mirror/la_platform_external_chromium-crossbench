@@ -82,8 +82,8 @@ class Run(ResultOrigin):
     return f"Run({self.name}, {self._state}, {self.browser})"
 
   def _get_out_dir(self, root_dir: pth.LocalPath) -> pth.LocalPath:
-    return (root_dir / plt.safe_filename(self.browser.unique_name) / "stories" /
-            plt.safe_filename(self.story.name) / str(self.repetition_name) /
+    return (root_dir / pth.safe_filename(self.browser.unique_name) / "stories" /
+            pth.safe_filename(self.story.name) / str(self.repetition_name) /
             str(self._temperature))
 
   @property

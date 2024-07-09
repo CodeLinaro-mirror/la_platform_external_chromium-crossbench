@@ -22,11 +22,11 @@ if TYPE_CHECKING:
   import datetime as dt
 
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.env import HostEnvironment
+  from crossbench.flags.chrome import ChromeFeatures
+  from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
-  from crossbench.flags.chrome import ChromeFeatures
-  from crossbench.env import HostEnvironment
-  from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict
@@ -104,7 +104,7 @@ class Browser(abc.ABC):
   def unique_name(self, name: str) -> None:
     assert name
     # Replace any potentially unsafe chars in the name
-    self._unique_name = plt.safe_filename(name).lower()
+    self._unique_name = pth.safe_filename(name).lower()
 
   @property
   def network(self) -> Network:
