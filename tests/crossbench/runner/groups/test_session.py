@@ -6,6 +6,7 @@ import unittest
 from typing import Optional
 
 from crossbench.browsers.browser import Browser
+from crossbench.helper.state import UnexpectedStateError
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockProbe,
@@ -45,11 +46,11 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_out_dir_single_run(self):
     session = self.default_session()
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(UnexpectedStateError):
       _ = session.out_dir
     run_1 = MockRun(self.runner, session, "run 1")
     session.append(run_1)
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(UnexpectedStateError):
       _ = session.out_dir
     session.set_ready()
     self.assertEqual(session.out_dir, run_1.out_dir)
@@ -96,7 +97,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     run_1 = MockRun(self.runner, session, "run 1")
     session.append(run_1)
     session.set_ready()
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(UnexpectedStateError):
       session.append(MockRun(self.runner, session, "run 3"))
 
   def test_append_wrong_session(self):

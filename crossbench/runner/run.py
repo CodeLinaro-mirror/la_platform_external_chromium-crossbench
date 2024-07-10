@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, Optional
 
 from crossbench import compat
 from crossbench import path as pth
-from crossbench import plt
 from crossbench.exception import Annotator, TInfoStack
-from crossbench.helper import (ChangeCWD, Durations, Spinner, State,
-                               StateMachine)
+from crossbench.helper import ChangeCWD, Durations, Spinner
+from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import ProbeResultDict
 from crossbench.runner.actions import Actions
@@ -54,7 +53,7 @@ class Run(ResultOrigin):
                name: Optional[str] = None,
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
-    self._state = StateMachine()
+    self._state = StateMachine(State.INITIAL)
     self._runner = runner
     self._browser_session = browser_session
     self._browser: Browser = browser_session.browser
@@ -298,7 +297,7 @@ class Run(ResultOrigin):
     self.browser.splash_screen.run(self)
     with self._probe_context_manager.open():
       logging.info("RUNNING STORY")
-      assert self._state == State.RUN, "Invalid state"
+      self._state.expect(State.RUN)
       try:
         with self.measure("run"), Spinner(), self.exceptions.capture():
           if not is_dry_run:

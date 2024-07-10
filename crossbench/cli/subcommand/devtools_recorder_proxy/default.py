@@ -21,6 +21,7 @@ from websockets.server import WebSocketServerProtocol
 
 from crossbench import compat, helper
 from crossbench import path as pth
+from crossbench.helper.state import BaseState, StateMachine
 
 if TYPE_CHECKING:
   from crossbench.plt.base import ListCmdArgsT
@@ -28,9 +29,9 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class State(compat.StrEnum):
-  CONNECTED: "State" = "connected"
-  RUNNING: "State" = "running"
+class State(BaseState):
+  CONNECTED = enum.auto()
+  RUNNING = enum.auto()
 
 
 @enum.unique
@@ -76,7 +77,7 @@ class CrossbenchDevToolsRecorderProxy:
     self._use_auth_token: bool = use_auth_token
     self._print_cmd_output: bool = False
     self._port: int = self.DEFAULT_PORT
-    self._state: State = State.CONNECTED
+    self._state = StateMachine(State.CONNECTED)
     self._crossbench_task: Optional[asyncio.Task] = None
     self._crossbench_process = None
     self._tmp_json = pth.LocalPath(
@@ -165,15 +166,12 @@ class CrossbenchDevToolsRecorderProxy:
     if self._crossbench_process:
       logging.info("# CROSSBENCH COMMAND: KILL")
       helper.wait_and_kill(self._crossbench_process)
-    self._state = State.CONNECTED
+    self._state.transition(State.CONNECTED, State.CONNECTED, to=State.CONNECTED)
     return await self._status_command()
 
   async def _run_command(self, args) -> Tuple[Response, str]:
-    if self._state != State.CONNECTED:
-      raise Exception("Invalid state")
-    assert self._state == State.CONNECTED
+    self._state.transition(State.CONNECTED, to=State.RUNNING)
     assert self._crossbench_process is None
-    self._state = State.RUNNING
     cb_path = pth.LocalPath(__file__).parents[2] / "cb.py"
     os.environ["PYTHONUNBUFFERED"] = "1"
     cmd: ListCmdArgsT = []
@@ -229,7 +227,7 @@ class CrossbenchDevToolsRecorderProxy:
     await self._send_message(
         self._send_output(stdout.decode("utf-8"), stderr.decode("utf-8")))
     returncode = self._crossbench_process.returncode
-    self._state = State.CONNECTED
+    self._state.transition(State.RUNNING, to=State.CONNECTED)
     self._crossbench_task = None
     self._crossbench_process = None
     await self._send_message(self._status_command())
@@ -254,4 +252,4 @@ class CrossbenchDevToolsRecorderProxy:
       await self._send_message(self._send_output(None, stderr_str))
 
   async def _status_command(self) -> Tuple[Response, str]:
-    return Response.STATUS, str(self._state)
+    return Response.STATUS, str(self._state.name)

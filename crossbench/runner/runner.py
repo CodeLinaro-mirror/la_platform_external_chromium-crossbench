@@ -18,6 +18,7 @@ from crossbench import plt
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
+from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
@@ -73,11 +74,11 @@ class ThreadMode(compat.StrEnumWithHelp):
 
 
 @enum.unique
-class RunnerState(compat.StrEnum):
-  INITIAL: "RunnerState" = "INITIAL"
-  SETUP: "RunnerState" = "SETUP"
-  RUNNING: "RunnerState" = "RUNNING"
-  TEARDOWN: "RunnerState" = "TEARDOWN"
+class RunnerState(BaseState):
+  INITIAL = enum.auto()
+  SETUP = enum.auto()
+  RUNNING = enum.auto()
+  TEARDOWN = enum.auto()
 
 class Runner:
 
@@ -183,7 +184,7 @@ class Runner:
       timing: Timing = Timing(),
       thread_mode: ThreadMode = ThreadMode.NONE,
       throw: bool = False):
-    self._state = RunnerState.INITIAL
+    self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
@@ -215,12 +216,6 @@ class Runner:
     self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
     self._browser_group: Optional[BrowsersRunGroup] = None
-
-  def _assert_state(self, current: RunnerState,
-                    next_state: RunnerState) -> None:
-    assert self._state is current, (
-        f"Expected state == {current}, but got {self._state}")
-    self._state = next_state
 
   def _prepare_benchmark(self) -> None:
     for benchmark_probe_cls in self._benchmark.PROBES:
@@ -375,7 +370,7 @@ class Runner:
     self._platform.sleep(delta)
 
   def run(self, is_dry_run: bool = False) -> None:
-    assert self._state is RunnerState.INITIAL, "Cannot reuse Runner"
+    self._state.expect(RunnerState.INITIAL)
     with helper.SystemSleepPreventer():
       with self._exceptions.annotate("Preparing"):
         self._setup()
@@ -390,7 +385,7 @@ class Runner:
     self.assert_successful_sessions_and_runs()
 
   def _setup(self) -> None:
-    self._assert_state(RunnerState.INITIAL, RunnerState.SETUP)
+    self._state.transition(RunnerState.INITIAL, to=RunnerState.SETUP)
     logging.info("-" * 80)
     logging.info("SETUP")
     logging.info("-" * 80)
@@ -475,7 +470,7 @@ class Runner:
     return self._thread_mode.group(self._all_runs)
 
   def _run(self, is_dry_run: bool = False) -> None:
-    self._assert_state(RunnerState.SETUP, RunnerState.RUNNING)
+    self._state.transition(RunnerState.SETUP, to=RunnerState.RUNNING)
     thread_groups: List[RunThreadGroup] = []
     with self._exceptions.info("Creating thread groups for all Runs"):
       thread_groups = self._get_thread_groups()
@@ -500,7 +495,7 @@ class Runner:
       thread_group.run()
 
   def _teardown(self) -> None:
-    self._assert_state(RunnerState.RUNNING, RunnerState.TEARDOWN)
+    self._state.transition(RunnerState.RUNNING, to=RunnerState.TEARDOWN)
     logging.info("=" * 80)
     logging.info("RUNS COMPLETED")
     logging.info("-" * 80)

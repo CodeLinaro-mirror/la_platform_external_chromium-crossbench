@@ -9,10 +9,11 @@ import enum
 import logging
 from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
 
-from crossbench import helper
 from crossbench.exception import TInfoStack
 from crossbench.flags.base import Flags
 from crossbench.flags.js_flags import JSFlags
+from crossbench.helper import ChangeCWD, Durations
+from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes.probe_context import ProbeSessionContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResultDict
 from crossbench.runner.groups.base import RunGroup
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class _State(enum.IntEnum):
+class State(BaseState):
   BUILDING = enum.auto()
   READY = enum.auto()
   SETUP = enum.auto()
@@ -54,10 +55,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def __init__(self, runner: Runner, browser: Browser, index: int,
                root_dir: LocalPath, throw: bool) -> None:
     super().__init__(throw)
-    # TODO: migrate to StateMachine
-    self._state: _State = _State.BUILDING
+    self._state: StateMachine[State] = StateMachine(State.BUILDING)
     self._runner = runner
-    self._durations = helper.Durations()
+    self._durations = Durations()
     self._browser = browser
     self._network: Network = browser.network
     self._index: int = index
@@ -72,7 +72,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         self, self._probe_results)
 
   def append(self, run: Run) -> None:
-    assert self._state == _State.BUILDING
+    self._state.expect(State.BUILDING)
     assert run.browser_session == self
     assert run.browser is self._browser
     # TODO: assert that the runs have compatible flags (likely we're only
@@ -81,8 +81,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._runs.append(run)
 
   def set_ready(self) -> None:
-    assert self._state == _State.BUILDING
-    self._state = _State.READY
+    self._state.transition(State.BUILDING, to=State.READY)
     self._validate()
     self._set_path(self._get_session_dir())
     self._probe_results = ProbeResultDict(self.path)
@@ -124,7 +123,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._runs[0]
 
   def _get_session_dir(self) -> LocalPath:
-    assert self._state >= _State.READY
+    self._state.expect_at_least(State.READY)
     if self.is_single_run:
       return self.first_run.out_dir
     if not self._runs:
@@ -136,7 +135,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._get_session_dir()
 
   @property
-  def durations(self) -> helper.Durations:
+  def durations(self) -> Durations:
     return self._durations
 
   @property
@@ -157,7 +156,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   @property
   def is_running(self) -> bool:
-    return self._state == _State.RUNNING
+    return self._state == State.RUNNING
 
   @property
   def root_dir(self) -> LocalPath:
@@ -173,12 +172,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   @property
   def extra_js_flags(self) -> JSFlags:
-    assert self._state < _State.RUNNING
+    self._state.expect_before(State.RUNNING)
     return self._extra_js_flags
 
   @property
   def extra_flags(self) -> Flags:
-    assert self._state < _State.RUNNING
+    self._state.expect_before(State.RUNNING)
     return self._extra_flags
 
   def add_flag_details(self, details_json: JsonDict) -> None:
@@ -221,12 +220,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   @contextlib.contextmanager
   def open(self, is_dry_run: bool = False) -> Iterator[bool]:
-    assert self._state == _State.READY
-    self._state = _State.SETUP
+    self._state.transition(State.READY, to=State.SETUP)
     yielded = False
     with self.exceptions.capture():
       self._setup_session_dir()
-      with helper.ChangeCWD(self.path):
+      with ChangeCWD(self.path):
         with self._open(is_dry_run):
           yielded = True
           yield self.is_success
@@ -238,14 +236,14 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   @contextlib.contextmanager
   def _open(self, is_dry_run: bool = False) -> Iterator[None]:
-    assert self._state == _State.SETUP
+    self._state.expect(State.SETUP)
     with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
     try:
       with self._start_network(), self._start_probes():
         self._start(is_dry_run)
         try:
-          assert self._state == _State.RUNNING
+          self._state.expect(State.RUNNING)
           yield
         except Exception as e:
           logging.debug(
@@ -255,7 +253,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       self._teardown(is_dry_run)
 
   def _setup(self, is_dry_run: bool) -> None:
-    assert self._state == _State.SETUP
+    self._state.expect(State.SETUP)
     self._probe_context_manager.setup(self.probes, is_dry_run)
     # TODO: handle session vs run probe.
     for run in self.runs:
@@ -292,15 +290,14 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         yield
 
   def _start(self, is_dry_run: bool) -> None:
-    assert self._state == _State.SETUP
-    self._state = _State.STARTING
+    self._state.transition(State.SETUP, to=State.STARTING)
     with self.measure("browser-session-start"):
       with self._exceptions.annotate(f"Starting Browser: {self.browser}"):
         self._start_browser(is_dry_run)
-        self._state = _State.RUNNING
+        self._state.transition(State.STARTING, to=State.RUNNING)
 
   def _start_browser(self, is_dry_run: bool) -> None:
-    assert self._state == _State.STARTING
+    self._state.expect(State.STARTING)
     assert self.network.is_running, "Network isn't running yet"
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
@@ -322,20 +319,19 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         raise
 
   def _teardown(self, is_dry_run: bool) -> None:
-    assert self._state in (_State.SETUP, _State.STARTING, _State.RUNNING)
-    self._state = _State.STOPPING
+    self._state.transition(
+        State.SETUP, State.STARTING, State.RUNNING, to=State.STOPPING)
     if is_dry_run:
       return
     with self.measure("browser-session-teardown"):
       try:
         self._stop_browser()
       finally:
-        assert self._state == _State.STOPPING
-        self._state = _State.DONE
+        self._state.transition(State.STOPPING, to=State.DONE)
     self._probe_context_manager.teardown()
 
   def _stop_browser(self) -> None:
-    assert self._state == _State.STOPPING
+    self._state.expect(State.STOPPING)
     # TODO: move complete implementation here
     # This can happen if a browser / probe setup error occurs and we're
     # in a unclean state.

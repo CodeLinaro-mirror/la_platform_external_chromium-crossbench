@@ -8,6 +8,7 @@ import unittest
 
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
+from crossbench.helper.state import UnexpectedStateError
 from crossbench.probes import all as all_probes
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.runner.groups import BrowserSessionRunGroup
@@ -148,7 +149,7 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     runner.run(is_dry_run)
     # Don't reuse the Runner:
-    with self.assertRaises(AssertionError):
+    with self.assertRaises(UnexpectedStateError):
       runner.run(is_dry_run)
 
     self.assertEqual(len(runner.runs), 4)
