@@ -58,9 +58,9 @@ class _ConfigArgParser:
     self.required: bool = required
     self.is_enum: bool = inspect.isclass(type) and issubclass(type, enum.Enum)
     self.depends_on = frozenset(depends_on) if depends_on else frozenset()
+    self.choices: Optional[frozenset] = self._validate_choices(choices)
     if self.type:
       self._validate_callable()
-    self.choices: Optional[frozenset] = self._validate_choices(choices)
     if self.default is not None:
       self._validate_default()
     self._validate_depends_on(depends_on)

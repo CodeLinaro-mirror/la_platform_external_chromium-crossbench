@@ -265,7 +265,9 @@ class CrossbenchFakeFsTestCase(
         "gettext.dgettext", side_effect=lambda domain, message: message)
     gettext_patcher.start()
     self.addCleanup(gettext_patcher.stop)
+
     sleep_patcher = mock.patch('time.sleep', return_value=None)
+    sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
 
   def create_file(self,
@@ -335,6 +337,26 @@ class SysExitTestException(Exception):
 class BaseCliTestCase(BaseCrossbenchTestCase):
 
   SPLASH_URLS_LEN: Final[int] = 2
+
+  def setUp(self) -> None:
+    super().setUp()
+
+    # tabulate and textwrap can be slow for tests, let's mock them out.
+    def mock_tabulate(table, *args, **kwargs):
+      del args, kwargs
+      return str(table)
+
+    patcher = mock.patch("tabulate.tabulate", side_effect=mock_tabulate)
+    self.addCleanup(patcher.stop)
+    patcher.start()
+
+    def mock_wrap(text, *args, **kwargs):
+      del args, kwargs
+      return [text]
+
+    patcher = mock.patch("textwrap.wrap", side_effect=mock_wrap)
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
   def run_cli_output(self,
                      *args,

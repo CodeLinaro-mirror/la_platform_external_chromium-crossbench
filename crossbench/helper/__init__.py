@@ -291,6 +291,8 @@ class Durations:
 
 def wrap_lines(body: str, width: int = 80, indent: str = "") -> Iterable[str]:
   for line in body.splitlines():
+    if len(line) <= width:
+      yield f"{indent}{line}"
     for split in textwrap.wrap(line, width):
       yield f"{indent}{split}"
 
