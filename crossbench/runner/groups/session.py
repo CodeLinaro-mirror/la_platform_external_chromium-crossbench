@@ -124,7 +124,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._runs[0]
 
   def _get_session_dir(self) -> LocalPath:
-    assert self._state == _State.READY
+    assert self._state >= _State.READY
     if self.is_single_run:
       return self.first_run.out_dir
     if not self._runs:
