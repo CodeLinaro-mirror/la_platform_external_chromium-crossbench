@@ -397,8 +397,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig.parse("webdriver:chrome"),
         BrowserConfig(
             Chrome.stable_path(self.platform),
-            DriverConfig(BrowserDriverType.WEB_DRIVER),
-            NetworkConfig.default()))
+            DriverConfig(BrowserDriverType.WEB_DRIVER)))
     self.assertEqual(
         BrowserConfig.parse("applescript:chrome"),
         BrowserConfig(
@@ -440,6 +439,11 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             Chrome.stable_path(self.platform),
             DriverConfig(BrowserDriverType.IOS)))
+    self.assertIsNone(config.network)
+    self.platform.sh_results = [
+        XCTRACE_DEVICES_SINGLE_OUTPUT,
+    ]
+    config = BrowserConfig.parse("ios:chrome:live")
     self.assertEqual(config.network, NetworkConfig.default())
 
   def test_parse_simple_with_driver_ios_with_network(self):
@@ -1642,6 +1646,63 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browser = config.variants[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.app_path, browser_bin)
+
+  def test_from_cli_args_browser_config_network_override(self):
+    ts_proxy_path = pth.LocalPath("/tsproxy/tsproxy.py")
+    self.fs.create_file(ts_proxy_path, st_size=100)
+    browser_config_dict = {
+        "browsers": {
+            "default-network": {
+                "path": "chrome-stable",
+                "network": "default"
+            },
+            "default": "chrome-stable",
+            "custom-network": {
+                "path": "chrome-stable",
+                "network": "4G"
+            }
+        }
+    }
+    config_file = pth.LocalPath("browsers.config.json")
+    with config_file.open("w") as f:
+      json.dump(browser_config_dict, f)
+    network_3g = NetworkConfig.parse("3G-slow")
+    network_4g = NetworkConfig.parse("4G")
+    self.assertNotEqual(network_3g.speed.in_kbps, network_4g.speed.in_kbps)
+    args = mock.Mock(
+        browser=None,
+        browser_config=config_file,
+        network=network_3g,
+        enable_features=None,
+        disable_features=None,
+        driver_path=None,
+        js_flags=None,
+        other_browser_args=[])
+
+    with mock.patch.object(
+        BrowserVariantsConfig,
+        "_get_browser_cls",
+        return_value=mock_browser.MockChromeStable
+    ), mock.patch(
+        "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
+      finder.return_value = mock.Mock(path=ts_proxy_path)
+      config = BrowserVariantsConfig.from_cli_args(args,)
+    self.assertEqual(len(config.variants), 3)
+    browser_1, browser_2, browser_3 = config.variants  # pylint: disable=unbalanced-tuple-unpacking
+    # Browser 1 provides an explicit default override:
+    self.assertTrue(browser_1.network.is_live)
+    self.assertTrue(browser_1.network.traffic_shaper.is_live)
+    # Browser 2: uses the default --network:
+    self.assertTrue(browser_2.network.is_live)
+    self.assertFalse(browser_2.network.traffic_shaper.is_live)
+    self.assertEqual(browser_2.network.traffic_shaper._ts_proxy._in_kbps,
+                     network_3g.speed.in_kbps)
+    # Browser 3; Uses an explicit 4G override:
+    self.assertTrue(browser_3.network.is_live)
+    self.assertFalse(browser_3.network.traffic_shaper.is_live)
+    self.assertEqual(browser_3.network.traffic_shaper._ts_proxy._in_kbps,
+                     network_4g.speed.in_kbps)
+
 
 
 class FlagsConfigTestCase(unittest.TestCase):

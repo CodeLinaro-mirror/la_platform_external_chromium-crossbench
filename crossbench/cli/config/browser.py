@@ -45,14 +45,15 @@ VERSION_FOR_RANGE_RE = re.compile(r"(?P<prefix>[^\d]*)(?P<milestone>\d+)")
 class BrowserConfig(ConfigObject):
   browser: pth.RemotePathLike
   driver: DriverConfig = DriverConfig.default()
-  network: NetworkConfig = NetworkConfig.default()
+  # Make network optional since --network provides a global default and we do
+  # want to have the option to explicitly specify the default network in a
+  # browser config.
+  network: Optional[NetworkConfig] = None
 
   def __post_init__(self) -> None:
     if not self.browser:
       raise ValueError(f"{type(self).__name__}.browser cannot be None.")
     if not self.driver:
-      raise ValueError(f"{type(self).__name__}.driver cannot be None.")
-    if not self.network:
       raise ValueError(f"{type(self).__name__}.driver cannot be None.")
 
   @classmethod
@@ -64,7 +65,7 @@ class BrowserConfig(ConfigObject):
   def loads(cls, value: str) -> BrowserConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
-    network = NetworkConfig.default()
+    network: Optional[NetworkConfig] = None
     driver = DriverConfig.default()
     path: Optional[pth.RemotePathLike] = None
     if ":" not in value or cls.value_has_path_prefix(value):
@@ -77,7 +78,6 @@ class BrowserConfig(ConfigObject):
       # Variant 3: Full inline hjson
       return cls.load_inline_hjson(value)
     assert path, "Invalid path"
-    assert network, "Invalid network"
     return cls(path, driver, network)
 
   @classmethod
@@ -247,8 +247,8 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def _parse_inline_short_form(
-      cls,
-      value: str) -> Tuple[DriverConfig, pth.RemotePathLike, NetworkConfig]:
+      cls, value: str
+  ) -> Tuple[DriverConfig, pth.RemotePathLike, Optional[NetworkConfig]]:
     assert ":" in value
     match = SHORT_FORM_RE.fullmatch(value)
     if not match:
@@ -267,7 +267,7 @@ class BrowserConfig(ConfigObject):
       driver = cast(DriverConfig, DriverConfig.parse(match.group("driver")))
     path: pth.RemotePathLike = cls._parse_path_or_identifier(
         path_or_identifier, driver.type)
-    network = NetworkConfig.default()
+    network = None
     if network_identifier is not None:
       network = NetworkConfig.loads(network_identifier)
     return (driver, path, network)
@@ -298,10 +298,7 @@ class BrowserConfig(ConfigObject):
     parser.add_argument(
         "driver", type=DriverConfig, default=DriverConfig.default())
     parser.add_argument(
-        "network",
-        required=False,
-        default=NetworkConfig.default(),
-        type=NetworkConfig)
+        "network", required=False, default=None, type=NetworkConfig)
     return parser
 
   @property
