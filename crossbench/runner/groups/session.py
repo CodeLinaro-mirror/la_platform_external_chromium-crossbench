@@ -268,6 +268,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def _setup_session_dir(self):
     with self.measure("browser-session-setup-dir"):
       self.path.mkdir(parents=True, exist_ok=True)
+      if not self.runner.create_symlinks:
+        logging.debug("Symlink disabled by command line option")
+        return
       if self.runner_platform.is_win:
         logging.debug("Skipping session_dir symlink on windows.")
         return

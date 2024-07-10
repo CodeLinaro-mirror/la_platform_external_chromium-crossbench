@@ -5,6 +5,7 @@
 import argparse
 import datetime as dt
 import json
+import os
 import pathlib
 import unittest
 from typing import List, Optional, Type
@@ -860,6 +861,36 @@ class FastCliTestCase(BaseCliTestCase):
         self.assertIs(browser.splash_screen, splash_screen.SplashScreen.NONE)
         self.assertListEqual(browser.url_list, [url])
         self.assertEqual(len(browser.js_flags), 0)
+
+  def test_create_symlinks(self):
+    with self.mock_chrome_stable():
+      out_dir = self.out_dir / "create_symlinks"
+      self.assertFalse(out_dir.exists())
+      url = "http://test.com"
+      cli = self.run_cli(
+          "loading", f"--urls={url}", "--throw", "--fast",
+          f"--out-dir={out_dir}")
+      self.assertTrue(cli.args.create_symlinks)
+      links = list(out_dir.glob("*/sessions/*"))
+      self.assertEqual(len(links), 1)
+      self.assertTrue(links[0].is_symlink())
+      links = list(out_dir.glob("*/stories/**/session"))
+      self.assertEqual(len(links), 1)
+      self.assertTrue(links[0].is_symlink())
+
+  def test_no_symlinks(self):
+    with self.mock_chrome_stable():
+      out_dir = self.out_dir / "no_symlinks"
+      self.assertFalse(out_dir.exists())
+      url = "http://test.com"
+      cli = self.run_cli(
+          "loading", f"--urls={url}", "--throw", "--fast", "--no-symlinks",
+          f"--out-dir={out_dir}")
+      self.assertFalse(cli.args.create_symlinks)
+      for dirpath, dirnames, filenames in os.walk(out_dir):
+        dirpath = pathlib.Path(dirpath)
+        for name in dirnames + filenames:
+          self.assertFalse((dirpath / name).is_symlink())
 
   def test_debug(self):
     with self.mock_chrome_stable():

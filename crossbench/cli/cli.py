@@ -866,6 +866,9 @@ class CrossBenchCLI:
       self._update_symlinks(args, runner)
 
   def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
+    if not args.create_symlinks:
+      logging.debug("Symlink disabled by command line option")
+      return
     if plt.PLATFORM.is_win:
       logging.debug("Skipping session_dir symlink on windows.")
       return

@@ -133,6 +133,14 @@ class Runner:
               ThreadMode.help_text(indent=2)))
 
     out_dir_group = parser.add_argument_group("Output Directory Options")
+    out_dir_group.add_argument(
+        "--no-symlinks",
+        "--nosymlinks",
+        dest="create_symlinks",
+        action="store_false",
+        default=True,
+        help="Do not create symlinks in the output directory.")
+
     out_dir_xor_group = out_dir_group.add_mutually_exclusive_group()
     out_dir_xor_group.add_argument(
         "--out-dir",
@@ -167,6 +175,7 @@ class Runner:
         "cache_temperatures": args.cache_temperatures,
         "thread_mode": args.thread_mode,
         "throw": args.throw,
+        "create_symlinks": args.create_symlinks,
     }
 
   def __init__(
@@ -183,7 +192,8 @@ class Runner:
       cache_temperatures: Iterable[str] = ("default",),
       timing: Timing = Timing(),
       thread_mode: ThreadMode = ThreadMode.NONE,
-      throw: bool = False):
+      throw: bool = False,
+      create_symlinks: bool = True):
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
@@ -216,6 +226,7 @@ class Runner:
     self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
     self._browser_group: Optional[BrowsersRunGroup] = None
+    self._create_symlinks: bool = create_symlinks
 
   def _prepare_benchmark(self) -> None:
     for benchmark_probe_cls in self._benchmark.PROBES:
@@ -303,6 +314,10 @@ class Runner:
   @property
   def warmup_repetitions(self) -> int:
     return self._warmup_repetitions
+
+  @property
+  def create_symlinks(self) -> bool:
+    return self._create_symlinks
 
   @property
   def exceptions(self) -> exception.Annotator:

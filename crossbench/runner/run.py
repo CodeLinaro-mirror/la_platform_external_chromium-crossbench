@@ -255,6 +255,9 @@ class Run(ResultOrigin):
     session_run_dir = self._out_dir / "session"
     assert not session_run_dir.exists(), (
         f"Cannot setup session dir twice: {session_run_dir}")
+    if not self.runner.create_symlinks:
+      logging.debug("Symlink disabled by command line option")
+      return
     if self.runner_platform.is_win:
       logging.debug("Skipping session_dir symlink on windows.")
       return
