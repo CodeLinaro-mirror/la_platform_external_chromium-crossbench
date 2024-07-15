@@ -65,6 +65,7 @@ class MockPlatformMixin:
       self.expected_sh_cmds = []
     self.expected_sh_cmds.append(args)
     self.sh_results.append(result)
+    assert isinstance(result, str)
 
   @property
   def name(self) -> str:
@@ -137,7 +138,7 @@ class MockPlatformMixin:
       str_args = tuple(map(str, args))
       assert expected == str_args, (f"After {len(self.sh_cmds)} cmds: \n"
                                     f"  expected: {expected}\n"
-                                    f"  got:      {args}")
+                                    f"  got:      {str_args}")
     self.sh_cmds.append(args)
     if not self.sh_results:
       cmd = shlex.join(map(str, args))

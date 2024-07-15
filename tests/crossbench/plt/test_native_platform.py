@@ -235,6 +235,22 @@ class PlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
 
+  def test_binary_lookup_override(self):
+    test_binary = "crossbench-non-existing-test-binary"
+    self.assertIsNone(self.platform.lookup_binary_override(test_binary))
+    self.assertIsNone(self.platform.which(test_binary))
+    # Use an arbitrary existing binary for testing.
+    override_binary = self.platform.which("python3")
+    self.assertTrue(override_binary)
+    with self.platform.override_binary(test_binary, override_binary):
+      self.assertEqual(self.platform.which(test_binary), override_binary)
+      with self.platform.override_binary(test_binary, None):
+        self.assertIsNone(self.platform.lookup_binary_override(test_binary))
+        self.assertIsNone(self.platform.which(test_binary))
+      self.assertEqual(self.platform.which(test_binary), override_binary)
+    self.assertIsNone(self.platform.lookup_binary_override(test_binary))
+    self.assertIsNone(self.platform.which(test_binary))
+
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class PosixPlatformTestCase(PlatformTestCase):
@@ -269,6 +285,20 @@ class PosixPlatformTestCase(PlatformTestCase):
     result_path = self.platform.search_binary(pathlib.Path("ls"))
     self.assertIsNotNone(result_path)
     self.assertIn("ls", result_path.parts)
+    self.assertTrue(self.platform.exists(result_path))
+
+  def test_search_binary_posix_lookup_override(self):
+    path = pathlib.Path("ls")
+    override = self.platform.which("python3")
+    with self.platform.override_binary(path, override):
+      result_path = self.platform.search_binary(path)
+      self.assertEqual(result_path, override)
+      self.assertTrue(self.platform.exists(result_path))
+
+    result_path_2 = self.platform.search_binary(path)
+    self.assertNotEqual(result_path_2, result_path)
+    self.assertTrue(self.platform.exists(result_path_2))
+    self.assertIsNone(self.platform.lookup_binary_override(path))
 
   def test_environ(self):
     env = self.platform.environ
@@ -331,15 +361,29 @@ class MacOSPlatformTestCase(PosixPlatformTestCase):
     assert isinstance(plt.PLATFORM, plt.MacOSPlatform)
     self.platform = plt.PLATFORM
 
-  def test_search_binary_not_found(self):
+  def test_search_app_binary_not_found(self):
     binary = self.platform.search_binary(pathlib.Path("Invalid App Name"))
     self.assertIsNone(binary)
     binary = self.platform.search_binary(pathlib.Path("Non-existent App.app"))
     self.assertIsNone(binary)
 
-  def test_search_binary(self):
+  def test_search_app_binary(self):
     binary = self.platform.search_binary(pathlib.Path("Safari.app"))
-    self.assertTrue(binary and binary.is_file())
+    self.assertIsNotNone(binary)
+    self.assertTrue(self.platform.is_file(binary))
+    # We should get the binary not the app bundle
+    self.assertFalse(binary.suffix, ".app")
+    self.assertEqual(binary.name, "Safari")
+
+  def test_search_app_binary_override(self):
+    override = pathlib.Path("/System/Applications/Calendar.app")
+    with self.platform.override_binary("Safari.app", override):
+      binary = self.platform.search_binary(pathlib.Path("Safari.app"))
+      self.assertIsNotNone(binary)
+      self.assertTrue(self.platform.is_file(binary))
+      # We should get the binary not the app bundle
+      self.assertFalse(binary.suffix, ".app")
+    self.assertEqual(binary.name, "Calendar")
 
   def test_search_app_invalid(self):
     with self.assertRaises(ValueError):
@@ -350,8 +394,18 @@ class MacOSPlatformTestCase(PosixPlatformTestCase):
 
   def test_search_app(self):
     binary = self.platform.search_app(pathlib.Path("Safari.app"))
-    self.assertTrue(binary and binary.exists())
-    self.assertTrue(binary and binary.is_dir())
+    self.assertIsNotNone(binary)
+    self.assertTrue(self.platform.exists(binary))
+    self.assertTrue(self.platform.is_dir(binary))
+
+  def test_search_app_override(self):
+    override = pathlib.Path("/System/Applications/Calendar.app")
+    with self.platform.override_binary("Safari.app", override):
+      binary = self.platform.search_app(pathlib.Path("Safari.app"))
+      self.assertIsNotNone(binary)
+      self.assertTrue(self.platform.exists(binary))
+      self.assertTrue(self.platform.is_dir(binary))
+      self.assertEqual(binary.name, "Calendar.app")
 
   def test_app_version_app(self):
     app = self.platform.search_app(pathlib.Path("Safari.app"))

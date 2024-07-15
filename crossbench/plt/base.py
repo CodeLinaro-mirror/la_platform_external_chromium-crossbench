@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import collections.abc
+import contextlib
 import datetime as dt
 import functools
 import logging
@@ -81,6 +82,9 @@ class SubprocessError(subprocess.CalledProcessError):
 
 class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin
+
+  def __init__(self) -> None:
+    self._binary_lookup_override: Dict[str, pth.RemotePath] = {}
 
   @property
   @abc.abstractmethod
@@ -271,9 +275,40 @@ class Platform(abc.ABC):
     if not binary_name:
       raise ValueError("Got empty path")
     assert self.is_local, "Unsupported operation on remote platform"
+    if override := self.lookup_binary_override(binary_name):
+      return override
     if result := shutil.which(binary_name):
       return self.path(result)
     return None
+
+  def lookup_binary_override(
+      self, binary_name: pth.RemotePathLike) -> Optional[pth.RemotePath]:
+    return self._binary_lookup_override.get(str(binary_name))
+
+  def set_binary_lookup_override(self, binary_name: pth.RemotePathLike,
+                                 result: Optional[pth.RemotePath]):
+    name = str(binary_name)
+    if result is None:
+      prev_result = self._binary_lookup_override.pop(name, None)
+      if prev_result is None:
+        logging.debug(
+            "Could not remove binary override for %s as it was never set",
+            binary_name)
+      return
+    if self.search_binary(result) is None:
+      raise ValueError(f"Suggested binary override for {repr(name)} "
+                       f"does not exist: {result}")
+    self._binary_lookup_override[name] = result
+
+  @contextlib.contextmanager
+  def override_binary(self, binary_name: pth.RemotePathLike,
+                      result: Optional[pth.RemotePath]):
+    prev_override = self.lookup_binary_override(binary_name)
+    self.set_binary_lookup_override(binary_name, result)
+    try:
+      yield
+    finally:
+      self.set_binary_lookup_override(binary_name, prev_override)
 
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:

@@ -22,6 +22,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
+    super().__init__()
     self._default_tmp_dir = pth.RemotePath("")
 
   @functools.cached_property
@@ -119,6 +120,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().which(binary_name)
     if not binary_name:
       raise ValueError("Got empty path")
+    if override := self.lookup_binary_override(str(binary_name)):
+      return override
     try:
       if maybe_path := self.sh_stdout("which", self.path(binary_name)).strip():
         maybe_bin = self.path(maybe_path)

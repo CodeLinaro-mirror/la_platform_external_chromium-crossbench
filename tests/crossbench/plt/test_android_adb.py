@@ -31,7 +31,7 @@ BrightnessSynchronizer
 """
 
 
-class AndroidAdbPlatformTest(PosixPlatformTestCase):
+class AndroidAdbMockPlatformTest(PosixPlatformTestCase):
   __test__ = True
   DEVICE_ID = "emulator-5554"
   platform: AndroidAdbPlatform
@@ -274,6 +274,18 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
     path = self.platform.search_binary("ls")
     self.assertEqual(path, self.platform.path("/system/bin/ls"))
 
+  def test_binary_lookup_override(self):
+    # Overriding the default test for android.
+    ls_path = self.platform.path("ls")
+    override_path = self.platform.path("/root/sbin/ls")
+    # override_binary checks if the result binary exists.
+    self.expect_adb("shell", "which", override_path, result=str(override_path))
+    self.expect_adb("shell", "[", "-e", "/root/sbin/ls", "]", result="")
+    with self.platform.override_binary(ls_path, override_path):
+      path = self.platform.search_binary("ls")
+      self.assertEqual(path, override_path)
+
+  def test_search_binary_app_package_non(self):
     self.expect_adb(
         "shell", "which", self.platform.path("com.google.chrome"), result="")
     self.expect_adb("shell", "cmd", "package", "list", "packages", result="")
@@ -291,6 +303,32 @@ class AndroidAdbPlatformTest(PosixPlatformTestCase):
         result="package:com.google.chrome")
     path = self.platform.search_binary("com.google.chrome")
     self.assertEqual(path, pathlib.PurePath("com.google.chrome"))
+
+  def test_search_binary_app_package_lookup_override(self):
+    chrome_package = self.platform.path("com.google.chrome")
+    chrome_dev_package = self.platform.path("com.chrome.dev")
+    self.expect_adb("shell", "which", chrome_dev_package, result="")
+    self.expect_adb(
+        "shell",
+        "cmd",
+        "package",
+        "list",
+        "packages",
+        result="package:com.chrome.dev")
+    with self.platform.override_binary(chrome_package, chrome_dev_package):
+      path = self.platform.search_binary(chrome_package)
+      self.assertEqual(chrome_dev_package, path)
+
+  def test_override_binary_non_existing_package(self):
+    chrome_package = self.platform.path("com.google.chrome")
+    chrome_dev_package = self.platform.path("com.chrome.dev")
+    self.expect_adb("shell", "which", chrome_dev_package, result="")
+    self.expect_adb("shell", "cmd", "package", "list", "packages", result="")
+    with self.assertRaises(ValueError) as cm:
+      with self.platform.override_binary(chrome_package, chrome_dev_package):
+        pass
+    self.assertIn(str(chrome_package), str(cm.exception))
+    self.assertIn(str(chrome_dev_package), str(cm.exception))
 
   def test_home(self):
     # not implemented yet

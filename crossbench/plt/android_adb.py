@@ -418,7 +418,7 @@ class AndroidAdbPlatform(PosixPlatform):
     app_or_bin_path = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
-    if result_path := self.which(str(self.path(app_or_bin))):
+    if result_path := self.which(app_or_bin_path):
       return result_path
     if str(app_or_bin) in self.adb.packages():
       return app_or_bin_path

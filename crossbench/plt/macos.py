@@ -93,22 +93,35 @@ class MacOSPlatform(PosixPlatform):
     app_or_bin_path: pth.RemotePath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
-    if result_path := self.which(str(app_or_bin_path)):
-      assert self.exists(result_path), f"{result_path} does not exist."
-      return result_path
     is_app = app_or_bin_path.suffix == ".app"
+    if not is_app:
+      # Look up basic binaries with `which` if possible.
+      if result_path := self.which(str(app_or_bin_path)):
+        assert self.exists(result_path), f"{result_path} does not exist."
+        return result_path
+    if app_path := self.lookup_binary_override(app_or_bin_path):
+      if app_path := self._validate_search_binary_candidate(is_app, app_path):
+        return app_path
     for search_path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = self.path(search_path) / app_or_bin_path
-      if not is_app:
-        if self.is_file(result_path):
-          return result_path
-        continue
-      if not self.is_dir(result_path):
-        continue
-      result_path = self._find_app_binary_path(result_path)
-      if self.exists(result_path):
+      if app_path := self._validate_search_binary_candidate(
+          is_app, result_path):
+        return app_path
+    return None
+
+  def _validate_search_binary_candidate(
+      self, is_app: bool,
+      result_path: pth.RemotePath) -> Optional[pth.RemotePath]:
+    if not is_app:
+      if self.is_file(result_path):
         return result_path
+      return None
+    if not self.is_dir(result_path):
+      return None
+    result_path = self._find_app_binary_path(result_path)
+    if self.exists(result_path):
+      return result_path
     return None
 
   def search_app(self,
