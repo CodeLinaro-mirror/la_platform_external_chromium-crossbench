@@ -235,12 +235,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       yield False
 
   @contextlib.contextmanager
-  def _open(self, is_dry_run: bool = False) -> Iterator[None]:
+  def _open(self, is_dry_run: bool) -> Iterator[None]:
     self._state.expect(State.SETUP)
     with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
     try:
-      with self._start_network(), self._start_probes():
+      with self._start_network(), self._start_probes(is_dry_run):
         self._start(is_dry_run)
         try:
           self._state.expect(State.RUNNING)
@@ -287,9 +287,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         yield
 
   @contextlib.contextmanager
-  def _start_probes(self):
+  def _start_probes(self, is_dry_run: bool):
     with self._exceptions.annotate("Starting Session Probes"):
-      with self._probe_context_manager.open():
+      with self._probe_context_manager.open(is_dry_run):
         yield
 
   def _start(self, is_dry_run: bool) -> None:
@@ -324,22 +324,20 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def _teardown(self, is_dry_run: bool) -> None:
     self._state.transition(
         State.SETUP, State.STARTING, State.RUNNING, to=State.STOPPING)
-    if is_dry_run:
-      return
     with self.measure("browser-session-teardown"):
       try:
-        self._stop_browser()
+        self._stop_browser(is_dry_run)
       finally:
         self._state.transition(State.STOPPING, to=State.DONE)
-    self._probe_context_manager.teardown()
+    self._probe_context_manager.teardown(is_dry_run)
 
-  def _stop_browser(self) -> None:
+  def _stop_browser(self, is_dry_run: bool) -> None:
     self._state.expect(State.STOPPING)
     # TODO: move complete implementation here
     # This can happen if a browser / probe setup error occurs and we're
     # in a unclean state.
     if self.browser.is_running:
-      self._runs[-1]._teardown_browser()
+      self._runs[-1]._teardown_browser(is_dry_run)
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:

@@ -134,6 +134,100 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     self.assertFalse(session.extra_flags)
     self.assertFalse(session.extra_js_flags)
 
+  def test_open_not_ready(self):
+    session = self.default_session()
+    self.assertFalse(session.is_running)
+    did_run = False
+    with self.assertRaises(UnexpectedStateError):
+      with session.open():
+        did_run = True
+    self.assertFalse(session.is_running)
+    self.assertFalse(did_run)
+
+  def test_open_not_ready_with_run(self):
+    session = self.default_session()
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    self.assertFalse(session.is_running)
+    did_run = False
+    with self.assertRaises(UnexpectedStateError):
+      with session.open():
+        did_run = True
+    self.assertFalse(session.is_running)
+    self.assertTrue(session.is_success)
+    self.assertFalse(run.did_setup)
+    self.assertFalse(run.did_run)
+    self.assertFalse(did_run)
+
+  def test_open(self):
+    session = self.default_session()
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    session.set_ready()
+    self.assertFalse(session.is_running)
+    self.assertFalse(run.did_setup)
+    self.assertFalse(run.did_teardown)
+    did_run = False
+    with session.open() as startup_is_success:
+      self.assertTrue(session.is_running)
+      self.assertTrue(run.did_setup)
+      self.assertTrue(session.browser.is_running)
+      self.assertFalse(run.did_teardown_browser)
+      self.assertTrue(session._probe_context_manager.is_running)
+      # runs would be triggered here...
+      did_run = True
+    self.assertTrue(startup_is_success)
+    self.assertFalse(session.is_running)
+    self.assertFalse(session.browser.is_running)
+    self.assertFalse(session._probe_context_manager.is_running)
+    self.assertTrue(session.is_success)
+    self.assertTrue(session.path.is_dir())
+    self.assertFalse(run.did_run)
+    self.assertTrue(run.did_teardown_browser)
+    self.assertTrue(did_run)
+
+  def test_open_dry_run(self):
+    session = self.default_session()
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    session.set_ready()
+    self.assertFalse(session.is_running)
+    did_run = False
+    with session.open(is_dry_run=True) as startup_is_success:
+      self.assertTrue(session.is_running)
+      self.assertFalse(session.browser.is_running)
+      self.assertTrue(session._probe_context_manager.is_running)
+      # runs would be triggered here...
+      did_run = True
+    self.assertTrue(startup_is_success)
+    self.assertFalse(session.is_running)
+    self.assertFalse(session.browser.is_running)
+    self.assertFalse(session._probe_context_manager.is_running)
+    self.assertFalse(run.did_teardown_browser)
+    self.assertTrue(did_run)
+
+  def test_open_inner_throw(self):
+    session = self.default_session()
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    session.set_ready()
+    did_run = False
+    with self.assertRaises(ValueError):
+      with session.open() as startup_is_success:
+        self.assertTrue(session.browser.is_running)
+        self.assertFalse(run.did_teardown_browser)
+        self.assertTrue(session._probe_context_manager.is_running)
+        did_run = True
+        raise ValueError("Run failed")
+    # Startup succeed, the inner evaluation failed.
+    self.assertTrue(startup_is_success)
+    self.assertFalse(session._probe_context_manager.is_running)
+    self.assertFalse(session.browser.is_running)
+    self.assertFalse(session.is_running)
+    self.assertFalse(session.is_success)
+    self.assertTrue(run.did_teardown_browser)
+    self.assertTrue(did_run)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

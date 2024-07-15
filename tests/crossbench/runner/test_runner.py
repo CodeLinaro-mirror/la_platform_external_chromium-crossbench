@@ -282,7 +282,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     def test_run(run_method):
       nonlocal run_count
       run_count += 1
-      run_method()
+      run_method(is_dry_run=False)
 
     for run in runs:
       run.run = (lambda run_method: lambda is_dry_run: test_run(run_method))(

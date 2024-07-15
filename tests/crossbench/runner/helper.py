@@ -34,21 +34,50 @@ class MockBrowser:
 
 class MockRun:
 
-  def __init__(self, runner, browser_session, name) -> None:
+  def __init__(self, runner, browser_session, name, index=0) -> None:
     self.runner = runner
     self.browser_session = browser_session
     self.browser = browser_session.browser
     self.browser_platform = self.browser.platform
     self.name = name
     self.probes = []
+    self.is_warmup = False
     self.timing = Timing()
     self.is_success = True
+    self.index = index
     self.out_dir = (
         browser_session.root_dir / safe_filename(self.browser.unique_name) /
         "stories" / name / "repetition=0" / "temperature-cold")
+    self.did_setup = False
+    self.did_run = False
+    self.did_teardown = False
+    self.did_teardown_browser = False
+    self.is_dry_run: Optional[bool] = None
 
   def validate_env(self, env: HostEnvironment):
     pass
+
+  def setup(self, is_dry_run: bool) -> None:
+    assert self.is_dry_run is None
+    self.is_dry_run = is_dry_run
+    assert not self.did_setup
+    self.did_setup = True
+
+  def run(self, is_dry_run: bool) -> None:
+    assert self.is_dry_run is is_dry_run
+    assert not self.did_run
+    self.did_run = True
+
+  def teardown(self, is_dry_run: bool) -> None:
+    assert self.is_dry_run is is_dry_run
+    assert not self.did_teardown
+    self.did_teardown = True
+
+  def _teardown_browser(self, is_dry_run: bool) -> None:
+    assert self.is_dry_run is is_dry_run
+    assert not self.did_teardown_browser
+    self.did_teardown_browser = True
+    self.browser.quit(self.runner)
 
   def __str__(self):
     return self.name

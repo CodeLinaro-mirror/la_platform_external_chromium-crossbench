@@ -36,3 +36,7 @@ class JetStream22Benchmark(JetStream2Benchmark):
   @classmethod
   def version(cls) -> Tuple[int, ...]:
     return (2, 2)
+
+  @classmethod
+  def aliases(cls) -> Tuple[str, ...]:
+    return ("js", "jetstream", "js2", "jetstream_2") + super().aliases()

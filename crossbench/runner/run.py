@@ -233,7 +233,7 @@ class Run(ResultOrigin):
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
 
-  def setup(self, is_dry_run: bool = False) -> None:
+  def setup(self, is_dry_run: bool) -> None:
     self._state.transition(State.INITIAL, to=State.SETUP)
     self._setup_dirs()
     self._cool_down(is_dry_run)
@@ -282,7 +282,7 @@ class Run(ResultOrigin):
       self._runner.wait(self._runner.timing.cool_down_time, absolute_time=True)
       self._runner.cool_down()
 
-  def run(self, is_dry_run: bool = False) -> None:
+  def run(self, is_dry_run: bool) -> None:
     self._state.transition(State.SETUP, to=State.READY)
     self._start_datetime = dt.datetime.now()
     with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
@@ -292,13 +292,12 @@ class Run(ResultOrigin):
       except Exception as e:  # pylint: disable=broad-except
         self._exceptions.append(e)
       finally:
-        if not is_dry_run:
-          self.teardown()
+        self.teardown(is_dry_run)
 
   def _run(self, is_dry_run: bool) -> None:
     self._state.transition(State.READY, to=State.RUN)
     self.browser.splash_screen.run(self)
-    with self._probe_context_manager.open():
+    with self._probe_context_manager.open(is_dry_run):
       logging.info("RUNNING STORY")
       self._state.expect(State.RUN)
       try:
@@ -328,14 +327,16 @@ class Run(ResultOrigin):
     with self.measure("story-tear-down"):
       self._story.teardown(self)
 
-  def teardown(self) -> None:
+  def teardown(self, is_dry_run: bool) -> None:
     self._state.transition(State.RUN, to=State.DONE)
-    self._teardown_browser()
+    self._teardown_browser(is_dry_run)
+    self._probe_context_manager.teardown(is_dry_run)
+    if not is_dry_run:
+      self._rm_browser_tmp_dir()
 
-    self._probe_context_manager.teardown()
-    self._rm_browser_tmp_dir()
-
-  def _teardown_browser(self) -> None:
+  def _teardown_browser(self, is_dry_run: bool) -> None:
+    if is_dry_run:
+      return
     if not self.browser_session.is_last_run(self):
       logging.debug("Skipping browser teardown (not last in session): %s", self)
       return
