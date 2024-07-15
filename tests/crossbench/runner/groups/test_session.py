@@ -4,6 +4,7 @@
 
 import unittest
 from typing import Optional
+from unittest import mock
 
 from crossbench.browsers.browser import Browser
 from crossbench.helper.state import UnexpectedStateError
@@ -20,9 +21,11 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     self.root_dir = self.out_dir / "custom"
     self.runner = self.default_runner()
 
-  def default_session(self, browser: Optional[Browser] = None):
+  def default_session(self,
+                      browser: Optional[Browser] = None,
+                      throw: bool = True):
     browser = browser or self.browsers[0]
-    return BrowserSessionRunGroup(self.runner, browser, 0, self.root_dir, True)
+    return BrowserSessionRunGroup(self.runner, browser, 0, self.root_dir, throw)
 
   def test_basic_properties(self):
     session = self.default_session()
@@ -182,6 +185,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     self.assertFalse(session._probe_context_manager.is_running)
     self.assertTrue(session.is_success)
     self.assertTrue(session.path.is_dir())
+    self.assertTrue(run.did_setup)
     self.assertFalse(run.did_run)
     self.assertTrue(run.did_teardown_browser)
     self.assertTrue(did_run)
@@ -203,11 +207,12 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     self.assertFalse(session.is_running)
     self.assertFalse(session.browser.is_running)
     self.assertFalse(session._probe_context_manager.is_running)
+    self.assertTrue(run.did_setup)
     self.assertFalse(run.did_teardown_browser)
     self.assertTrue(did_run)
 
   def test_open_inner_throw(self):
-    session = self.default_session()
+    session = self.default_session(throw=True)
     run = MockRun(self.runner, session, "run 0")
     session.append(run)
     session.set_ready()
@@ -218,16 +223,83 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
         self.assertFalse(run.did_teardown_browser)
         self.assertTrue(session._probe_context_manager.is_running)
         did_run = True
-        raise ValueError("Run failed")
-    # Startup succeed, the inner evaluation failed.
+        raise ValueError("Test run failed")
     self.assertTrue(startup_is_success)
+    self.assertTrue(did_run)
+    self._validate_post_inner_throw(session, run)
+
+  def _validate_post_inner_throw(self, session, run):
+    # Startup succeed, the inner evaluation failed.
     self.assertFalse(session._probe_context_manager.is_running)
     self.assertFalse(session.browser.is_running)
     self.assertFalse(session.is_running)
     self.assertFalse(session.is_success)
+    self.assertTrue(run.did_setup)
     self.assertTrue(run.did_teardown_browser)
-    self.assertTrue(did_run)
+    self.assertIn("Test run failed", str(session.exceptions[0].exception))
 
+  def test_open_inner_throw_capture(self):
+    session = self.default_session(throw=False)
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    session.set_ready()
+    did_run = False
+    with session.open() as startup_is_success:
+      self.assertTrue(session.browser.is_running)
+      self.assertFalse(run.did_teardown_browser)
+      self.assertTrue(session._probe_context_manager.is_running)
+      did_run = True
+      raise ValueError("Test run failed")
+    self.assertTrue(did_run)
+    # Startup succeed, the inner evaluation failed.
+    self.assertTrue(startup_is_success)
+    self._validate_post_inner_throw(session, run)
+    self.assertEqual(len(session.exceptions), 1)
+
+  def test_open_network_error(self):
+    session = self.default_session(throw=False)
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    session.set_ready()
+    did_run = False
+    with mock.patch.object(
+        session.network,
+        "open",
+        side_effect=ValueError("Network startup error")):
+      with session.open() as startup_is_success:
+        # Due to how context managers work we run the inner code even if
+        # the setup failed.
+        self.assertFalse(startup_is_success)
+        did_run = True
+    self.assertTrue(did_run)
+    self.assertEqual(len(session.exceptions), 1)
+    self._validate_open_network_error(session, run)
+
+  def test_open_network_error_throw(self):
+    session = self.default_session(throw=True)
+    run = MockRun(self.runner, session, "run 0")
+    session.append(run)
+    session.set_ready()
+    did_run = False
+    with self.assertRaises(ValueError) as cm:
+      with mock.patch.object(
+          session.network,
+          "open",
+          side_effect=ValueError("Network startup error")):
+        with session.open():
+          did_run = True
+    self.assertFalse(did_run)
+    self.assertIn("Network startup error", str(cm.exception))
+    self._validate_open_network_error(session, run)
+
+  def _validate_open_network_error(self, session, run):
+    self.assertFalse(session._probe_context_manager.is_running)
+    self.assertFalse(session.browser.is_running)
+    self.assertFalse(session.is_running)
+    self.assertFalse(session.is_success)
+    self.assertTrue(run.did_setup)
+    self.assertFalse(run.did_teardown_browser)
+    self.assertIn("Network startup error", str(session.exceptions[0].exception))
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
