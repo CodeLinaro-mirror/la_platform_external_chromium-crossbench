@@ -9,6 +9,7 @@ import logging
 from typing import TYPE_CHECKING, Final, Iterator, Optional, Tuple
 
 from crossbench import path as pth
+from crossbench.plt.base import Platform
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform

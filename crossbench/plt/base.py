@@ -29,6 +29,7 @@ import psutil
 
 from crossbench import path as pth
 from crossbench.plt.arch import MachineArch
+from crossbench.plt.bin import Binary
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -301,8 +302,17 @@ class Platform(abc.ABC):
     self._binary_lookup_override[name] = result
 
   @contextlib.contextmanager
-  def override_binary(self, binary_name: pth.RemotePathLike,
+  def override_binary(self, binary: Union[pth.RemotePathLike, Binary],
                       result: Optional[pth.RemotePath]):
+    binary_name: pth.RemotePathLike = ""
+    if isinstance(binary, Binary):
+      if override := binary.platform_path(self):
+        binary_name = override
+      else:
+        raise RuntimeError("Cannot override binary:"
+                           f" {binary} is not supported supported on {self}")
+    else:
+      binary_name = binary
     prev_override = self.lookup_binary_override(binary_name)
     self.set_binary_lookup_override(binary_name, result)
     try:

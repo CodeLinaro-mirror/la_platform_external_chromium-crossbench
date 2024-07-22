@@ -1020,7 +1020,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       browsers = BrowserVariantsConfig.from_cli_args(args).variants
     self.assertEqual(len(browsers), 2)
     self.assertEqual(browsers[0].label, "android.arm64.remote_0")
-    self.assertEqual(browsers[1].label, "mock.arm64.local_1")
+    self.assertEqual(browsers[1].label, f"{self.platform}_1")
 
     with self.assertRaises(ConfigError) as cm:
       BrowserVariantsConfig(

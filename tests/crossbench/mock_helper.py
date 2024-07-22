@@ -69,7 +69,7 @@ class MockPlatformMixin:
 
   @property
   def name(self) -> str:
-    return "mock"
+    return f"mock.{super().name}"
 
   @property
   def machine(self) -> MachineArch:
