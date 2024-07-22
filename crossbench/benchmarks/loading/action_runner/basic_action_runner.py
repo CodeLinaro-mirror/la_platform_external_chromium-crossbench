@@ -123,6 +123,10 @@ class BasicActionRunner(ActionRunner):
       if not result:
         logging.warning("Timed out waiting for '%s'", action.selector)
 
+  def inject_new_document_script(
+      self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
+    run.browser.run_script_on_new_document(action.script)
+
   def tap(self, run: Run, action: i_action.TapAction) -> None:
     raise NotImplementedError("Tap action not implemented in BasicActionRunner")
 

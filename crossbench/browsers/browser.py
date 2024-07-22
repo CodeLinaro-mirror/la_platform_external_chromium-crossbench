@@ -301,6 +301,11 @@ class Browser(abc.ABC):
   ) -> Any:
     pass
 
+  def run_script_on_new_document(self, script: str) -> None:
+    del script
+    raise NotImplementedError(
+        f"New document script injection is not supported by {self}")
+
   @abc.abstractmethod
   def show_url(self,
                runner: Runner,

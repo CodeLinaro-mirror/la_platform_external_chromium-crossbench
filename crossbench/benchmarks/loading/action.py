@@ -9,6 +9,7 @@ import argparse
 import datetime as dt
 import enum
 import json
+import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
 
 from crossbench import cli_helper
@@ -16,6 +17,7 @@ from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.config import ConfigEnum
 
 if TYPE_CHECKING:
+  import crossbench.path as pth
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -30,6 +32,10 @@ class ActionType(ConfigEnum):
   SWIPE: "ActionType" = ("swipe", "Swipe on screen")
   WAIT_FOR_ELEMENT: "ActionType" = ("wait_for_element",
                                     "Wait until element appears on the page")
+  INJECT_NEW_DOCUMENT_SCRIPT: "ActionType" = ("inject_new_document_script", (
+      "Evaluates given script in every frame upon creation "
+      "(before loading frame's scripts). "
+      "Only supported in chromium-based browsers."))
 
 
 @enum.unique
@@ -458,6 +464,53 @@ class WaitForElementAction(Action):
     return details
 
 
+class InjectNewDocumentScriptAction(Action):
+  TYPE: ActionType = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
+
+  @classmethod
+  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_dict(value)
+    kwargs["script"] = value.pop("script", None)
+    if path := value.pop("script_path", None):
+      kwargs["script_path"] = cli_helper.parse_existing_file_path(
+          path, name="script_path")
+    return kwargs
+
+  def __init__(self,
+               script: Optional[str],
+               script_path: Optional[pth.LocalPath],
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._script = ""
+    if bool(script) == bool(script_path):
+      raise ValueError(f"One of {self}.script or {self}.path, but not both, "
+                       "have to specified. ")
+    if script:
+      self._script = script
+    elif script_path:
+      self._script = script_path.read_text()
+      logging.debug("Loading script from %s: %s", script_path, script)
+      # TODO: support argument injection into shared file script.
+    super().__init__(timeout)
+
+  @property
+  def script(self) -> str:
+    return self._script
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.inject_new_document_script(run, self)
+
+  def validate(self) -> None:
+    super().validate()
+    if not self.script:
+      raise ValueError(
+          f"{self}.script is missing or the provided script file is empty.")
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["script"] = self.script
+    return details
+
+
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
     TapAction,
@@ -466,6 +519,7 @@ ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     SwipeAction,
     WaitAction,
     WaitForElementAction,
+    InjectNewDocumentScriptAction,
 )
 
 ACTIONS: Dict[ActionType, Type] = {

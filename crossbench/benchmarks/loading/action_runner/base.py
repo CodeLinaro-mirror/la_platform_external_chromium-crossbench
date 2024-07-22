@@ -46,3 +46,8 @@ class ActionRunner(abc.ABC):
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
     pass
+
+  @abc.abstractmethod
+  def inject_new_document_script(
+      self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
+    pass

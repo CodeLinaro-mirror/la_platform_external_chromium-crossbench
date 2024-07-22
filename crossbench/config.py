@@ -7,21 +7,22 @@ from __future__ import annotations
 import abc
 import argparse
 import collections
+import collections.abc
 import enum
 import inspect
 import logging
 import re
 import textwrap
-import collections.abc
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
                     Optional, Set, Tuple, Type, TypeVar, Union, cast)
-
-import tabulate
 from urllib.parse import urlparse
 
-from crossbench import cli_helper, compat, exception, helper
+import tabulate
+
 # Use indirection to support pyfakefs
+from crossbench import cli_helper, compat, exception, helper
 from crossbench import path as pth
+from crossbench.helper import ChangeCWD
 
 if TYPE_CHECKING:
   ArgParserType = Union[Callable[..., Any], Type]
@@ -449,8 +450,10 @@ class ConfigObject(abc.ABC):
   def load_config_path(cls: Type[ConfigObjectT],
                        path: pth.LocalPathLike) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
-      data = cli_helper.parse_dict_hjson_file(path)
-      return cls.load_dict(data)
+      file_path = cli_helper.parse_existing_file_path(path)
+      data = cli_helper.parse_dict_hjson_file(file_path)
+      with ChangeCWD(file_path.parent):
+        return cls.load_dict(data)
 
   @classmethod
   @abc.abstractmethod

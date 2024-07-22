@@ -161,6 +161,10 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     return (f"Chromedriver version mismatch: driver={driver_version} "
             f"browser={self.version} ({self})",)
 
+  def run_script_on_new_document(self, script: str) -> None:
+    self._driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
+                                 {"source": script})
+
   def start_profiling(self) -> None:
     assert isinstance(self._driver, ChromiumDriver)
     # TODO: reuse the TraceProbe categories,
