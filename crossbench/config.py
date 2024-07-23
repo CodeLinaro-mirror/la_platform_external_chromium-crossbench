@@ -574,7 +574,11 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     kwargs = self.kwargs_from_config(config_data)
     if config_data:
       logging.debug("Got unused properties: %s", config_data.keys())
-    return self.cls(**kwargs)
+    return self.new_instance_from_kwargs(kwargs)
+
+  def new_instance_from_kwargs(self, kwargs: Dict[str,
+                                                  Any]) -> ConfigResultObjectT:
+    return self._cls(**kwargs)
 
   @property
   def arg_parsers(self) -> Tuple[_ConfigArgParser]:

@@ -10,11 +10,11 @@ import datetime as dt
 import enum
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
 
-from crossbench import cli_helper
+from crossbench import cli_helper, exception
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
-from crossbench.config import ConfigEnum
+from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 
 if TYPE_CHECKING:
   import crossbench.path as pth
@@ -38,6 +38,26 @@ class ActionType(ConfigEnum):
       "Only supported in chromium-based browsers."))
 
 
+class ActionTypeConfigParser(ConfigParser):
+  """Custom ConfigParser for ActionType that works on
+  Action Configs. This way we can pop the 'value' or 'type' key from the
+  config dict."""
+
+  def __init__(self):
+    super().__init__("ActionType parser", ActionType)
+    self.add_argument(
+        "action",
+        aliases=("type",),
+        type=cli_helper.parse_non_empty_str,
+        required=True)
+
+  def new_instance_from_kwargs(self, kwargs: Dict[str, Any]) -> ActionType:
+    return ActionType(kwargs["action"])
+
+
+_ACTION_TYPE_CONFIG_PARSER = ActionTypeConfigParser()
+
+
 @enum.unique
 class ButtonClick(ConfigEnum):
   LEFT: "ButtonClick" = ("left", "Press left mouse button")
@@ -47,27 +67,34 @@ class ButtonClick(ConfigEnum):
 
 ACTION_TIMEOUT = dt.timedelta(seconds=20)
 
+ActionT = TypeVar("ActionT", bound="Action")
 
-class Action(abc.ABC):
+
+class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ActionType = ActionType.GET
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = {}
-    if timeout := value.pop("timeout", None):
-      kwargs["timeout"] = cli_helper.Duration.parse_non_zero(timeout)
-    return kwargs
+  def loads(cls: Type[ActionT], value: str) -> ActionT:
+    raise NotImplementedError("Not supported")
 
   @classmethod
-  def pop_required_input(cls, data: JsonDict, key: str) -> Any:
-    if key not in data:
-      raise argparse.ArgumentTypeError(
-          f"{cls.__name__}: Missing '{key}' property in {json.dumps(data)}")
-    value = data.pop(key)
-    if value is None:
-      raise argparse.ArgumentTypeError(
-          f"{cls.__name__}: {key} should not be None")
-    return value
+  def load_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
+    action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
+    action_cls: Type[ActionT] = ACTIONS[action_type]
+    with exception.annotate_argparsing(
+        f"Parsing Action details  ...{{ action: \"{action_type}\", ...}}:"):
+      action = action_cls.config_parser().parse(config)
+    assert isinstance(action, cls), f"Expected {cls} but got {type(action)}"
+    return action
+
+  @classmethod
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser.add_argument(
+        "timeout",
+        type=cli_helper.Duration.parse_non_zero,
+        default=ACTION_TIMEOUT)
+    return parser
 
   def __init__(self, timeout: dt.timedelta = ACTION_TIMEOUT):
     self._timeout: dt.timedelta = timeout
@@ -96,6 +123,9 @@ class Action(abc.ABC):
 
   def to_json(self) -> JsonDict:
     return {"type": str(self.TYPE), "timeout": self.timeout.total_seconds()}
+
+  def __str__(self) -> str:
+    return type(self).__name__
 
   def __eq__(self, other: object) -> bool:
     if isinstance(other, Action):
@@ -133,21 +163,47 @@ class WindowTarget(ConfigEnum):
       "If no ancestors, behaves as _self.")
 
 
-class GetAction(Action):
+class BaseDurationAction(Action):
+
+  def __init__(self,
+               duration: dt.timedelta,
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._duration: dt.timedelta = duration
+    super().__init__(timeout)
+
+  @property
+  def duration(self) -> dt.timedelta:
+    return self._duration
+
+  def validate(self) -> None:
+    super().validate()
+    self.validate_duration()
+
+  def validate_duration(self) -> None:
+    if self.duration.total_seconds() <= 0:
+      raise ValueError(
+          f"{self}.duration should be positive, but got {self.duration}")
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["duration"] = self.duration.total_seconds()
+    return details
+
+
+class GetAction(BaseDurationAction):
   TYPE: ActionType = ActionType.GET
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["url"] = cli_helper.parse_url_str(
-        cls.pop_required_input(value, "url"))
-    if duration := value.pop("duration", None):
-      kwargs["duration"] = cli_helper.Duration.parse_zero(duration)
-    if ready_state := value.pop("ready-state", None):
-      kwargs["ready_state"] = ReadyState.parse(ready_state)
-    if target := value.pop("target", None):
-      kwargs["target"] = WindowTarget.parse(target)
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument("url", type=cli_helper.parse_url_str, required=True)
+    parser.add_argument(
+        "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
+    parser.add_argument(
+        "ready_state", type=ReadyState.parse, default=ReadyState.ANY)
+    parser.add_argument(
+        "target", type=WindowTarget.parse, default=WindowTarget.SELF)
+    return parser
 
   def __init__(self,
                url: str,
@@ -158,17 +214,17 @@ class GetAction(Action):
     if not url:
       raise ValueError(f"{self}.url is missing")
     self._url: str = url
-
-    self._duration = duration
-    if ready_state != ReadyState.ANY:
-      if duration != dt.timedelta():
-        raise ValueError(
-            f"Expected empty duration with ReadyState {ready_state} "
-            f"but got: {self.duration}")
-      self._duration = dt.timedelta()
     self._ready_state = ready_state
     self._target = target
-    super().__init__(timeout)
+    super().__init__(duration, timeout)
+
+  def validate_duration(self) -> None:
+    if self.ready_state != ReadyState.ANY:
+      if self.duration != dt.timedelta():
+        raise ValueError(
+            f"Expected empty duration with ReadyState {self.ready_state} "
+            f"but got: {self.duration}")
+      self._duration = dt.timedelta()
 
   @property
   def url(self) -> str:
@@ -192,42 +248,20 @@ class GetAction(Action):
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["url"] = self.url
-    details["duration"] = self.duration.total_seconds()
     details["ready_state"] = str(self.ready_state)
     details["target"] = str(self.target)
     return details
 
 
-class DurationAction(Action):
+class DurationAction(BaseDurationAction):
   TYPE: ActionType = ActionType.WAIT
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["duration"] = cli_helper.Duration.parse_non_zero(
-        cls.pop_required_input(value, "duration"))
-    return kwargs
-
-  def __init__(self,
-               duration: dt.timedelta,
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
-    self._duration: dt.timedelta = duration
-    super().__init__(timeout)
-
-  @property
-  def duration(self) -> dt.timedelta:
-    return self._duration
-
-  def validate(self) -> None:
-    super().validate()
-    if self.duration.total_seconds() <= 0:
-      raise ValueError(
-          f"{self}.duration should be positive, but got {self.duration}")
-
-  def to_json(self) -> JsonDict:
-    details = super().to_json()
-    details["duration"] = self.duration.total_seconds()
-    return details
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "duration", type=cli_helper.Duration.parse_non_zero, required=True)
+    return parser
 
 
 class WaitAction(DurationAction):
@@ -237,15 +271,18 @@ class WaitAction(DurationAction):
     action_runner.wait(run, self)
 
 
-class ScrollAction(DurationAction):
+class ScrollAction(BaseDurationAction):
   TYPE: ActionType = ActionType.SCROLL
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    if distance := value.pop("distance", None):
-      kwargs["distance"] = cli_helper.parse_float(distance)
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument("distance", type=cli_helper.parse_float, default=500)
+    parser.add_argument(
+        "duration",
+        type=cli_helper.Duration.parse_non_zero,
+        default=dt.timedelta(seconds=1))
+    return parser
 
   def __init__(self,
                distance: float = 500.0,
@@ -276,14 +313,14 @@ class ClickAction(Action):
   TYPE: ActionType = ActionType.CLICK
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["selector"] = cls.pop_required_input(value, "selector")
-    if required := value.pop("required", None):
-      kwargs["required"] = cli_helper.parse_bool(required)
-    if scroll_into_view := value.pop("scroll_into_view", None):
-      kwargs["scroll_into_view"] = cli_helper.parse_bool(scroll_into_view)
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "selector", type=cli_helper.parse_non_empty_str, required=True)
+    parser.add_argument("required", type=cli_helper.parse_bool, default=False)
+    parser.add_argument(
+        "scroll_into_view", type=cli_helper.parse_bool, default=False)
+    return parser
 
   def __init__(self,
                selector: str,
@@ -328,12 +365,12 @@ class TapAction(Action):
   TYPE: ActionType = ActionType.TAP
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["selector"] = value.pop("selector", None)
-    kwargs["x"] = value.pop("x", None)
-    kwargs["y"] = value.pop("y", None)
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
+    parser.add_argument("x", type=cli_helper.parse_positive_zero_int)
+    parser.add_argument("y", type=cli_helper.parse_positive_zero_int)
+    return parser
 
   def __init__(self,
                selector: Optional[str] = None,
@@ -384,13 +421,13 @@ class SwipeAction(DurationAction):
   TYPE: ActionType = ActionType.SWIPE
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["startx"] = cls.pop_required_input(value, "startx")
-    kwargs["starty"] = cls.pop_required_input(value, "starty")
-    kwargs["endx"] = cls.pop_required_input(value, "endx")
-    kwargs["endy"] = cls.pop_required_input(value, "endy")
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument("startx", type=cli_helper.parse_int, required=True)
+    parser.add_argument("starty", type=cli_helper.parse_int, required=True)
+    parser.add_argument("endx", type=cli_helper.parse_int, required=True)
+    parser.add_argument("endy", type=cli_helper.parse_int, required=True)
+    return parser
 
   def __init__(self,
                startx: int,
@@ -437,10 +474,11 @@ class WaitForElementAction(Action):
   TYPE: ActionType = ActionType.WAIT_FOR_ELEMENT
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["selector"] = cls.pop_required_input(value, "selector")
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "selector", type=cli_helper.parse_non_empty_str, required=True)
+    return parser
 
   def __init__(self, selector: str, timeout: dt.timedelta = ACTION_TIMEOUT):
     self._selector = selector
@@ -468,13 +506,14 @@ class InjectNewDocumentScriptAction(Action):
   TYPE: ActionType = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
 
   @classmethod
-  def kwargs_from_dict(cls, value: JsonDict) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_dict(value)
-    kwargs["script"] = value.pop("script", None)
-    if path := value.pop("script_path", None):
-      kwargs["script_path"] = cli_helper.parse_existing_file_path(
-          path, name="script_path")
-    return kwargs
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument("script", type=cli_helper.parse_non_empty_str)
+    parser.add_argument(
+        "script_path",
+        aliases=("path",),
+        type=cli_helper.parse_existing_file_path)
+    return parser
 
   def __init__(self,
                script: Optional[str],
@@ -482,8 +521,9 @@ class InjectNewDocumentScriptAction(Action):
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
     self._script = ""
     if bool(script) == bool(script_path):
-      raise ValueError(f"One of {self}.script or {self}.path, but not both, "
-                       "have to specified. ")
+      raise ValueError(
+          f"One of {self}.script or {self}.script_path, but not both, "
+          "have to specified. ")
     if script:
       self._script = script
     elif script_path:

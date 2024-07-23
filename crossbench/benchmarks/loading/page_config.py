@@ -177,25 +177,12 @@ class PagesConfig(ConfigObject):
     for i, action_config in enumerate(actions):
       with exception.annotate_argparsing(
           f"Parsing action   ...['{scenario_name}'][{i}]"):
-        action_step = cls._parse_action(i, action_config)
+        action_step = Action.load_dict(action_config)
         actions_list.append(action_step)
     if not actions_list:
       raise argparse.ArgumentTypeError(
           f"Expect non-empty actions for {scenario_name}")
     return tuple(actions_list)
-
-  @classmethod
-  def _parse_action(cls, i, action_config: JsonDict) -> Action:
-    if "action" not in action_config:
-      raise argparse.ArgumentTypeError(
-          f"Missing 'action' property in {json.dumps(action_config)}")
-    action_type: ActionType = ActionType.parse(action_config.get("action"))
-    action_cls: Type[Action] = ACTIONS[action_type]
-    with exception.annotate_argparsing(
-        f"Parsing details  ...[{i}]{{ action: \"{action_type}\", ...}}:"):
-      kwargs = action_cls.kwargs_from_dict(action_config)
-      return action_cls(**kwargs)
-    raise exception.UnreachableError()
 
   @classmethod
   def _extract_first_actions_url(cls, actions: Sequence[Action]) -> str:

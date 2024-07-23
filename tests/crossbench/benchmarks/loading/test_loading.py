@@ -592,7 +592,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                   "duration": 5.0
               }]
           }})
-    self.assertIn("Missing 'action'", str(cm.exception))
+    self.assertIn("'action'", str(cm.exception))
 
   def test_invalid_action(self):
     invalid_actions = [None, "", [], {}, "unknown action name", 12]
@@ -739,14 +739,8 @@ DEVTOOLS_RECORDER_EXAMPLE = {
 }
 
 
-class _ConfigBaseTestCase(fake_filesystem_unittest.TestCase):
 
-  def setUp(self) -> None:
-    super().setUp()
-    self.setUpPyfakefs(modules_to_reload=[crossbench.path])
-
-
-class DevToolsRecorderPageConfigTestCase(_ConfigBaseTestCase):
+class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -775,7 +769,7 @@ class DevToolsRecorderPageConfigTestCase(_ConfigBaseTestCase):
     self.assertEqual(config_file, config_dict)
 
 
-class ListPageConfigTestCase(_ConfigBaseTestCase):
+class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -832,7 +826,7 @@ class ListPageConfigTestCase(_ConfigBaseTestCase):
     config_list = ListPagesConfig.parse(page_configs)
     self.assertEqual(config_file, config_list)
 
-  def test_load_file_empty_liens(self):
+  def test_load_file_empty_lines(self):
     page_configs = ["http://a.com,12s", "http://b.com,13s"]
     config_file = pathlib.Path("page_list.txt")
     with config_file.open("w") as f:
