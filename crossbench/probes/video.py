@@ -51,12 +51,20 @@ class VideoProbe(Probe):
         type=bool,
         default=True,
         help=("Produce a timestrip png"))
+    parser.add_argument(
+        "merge_runs",
+        type=bool,
+        default=True,
+        help=("Merge videos from multiple runs"))
     return parser
 
-  def __init__(self, generate_timestrip: bool = True) -> None:
+  def __init__(self,
+               generate_timestrip: bool = True,
+               merge_runs: bool = True) -> None:
     super().__init__()
     self._duration = None
     self._generate_timestrip = generate_timestrip
+    self._merge_runs = merge_runs
 
   @property
   def result_path_name(self) -> str:
@@ -65,6 +73,10 @@ class VideoProbe(Probe):
   @property
   def generate_timestrip(self) -> bool:
     return self._generate_timestrip
+
+  @property
+  def merge_runs(self) -> bool:
+    return self._merge_runs
 
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
@@ -108,6 +120,8 @@ class VideoProbe(Probe):
     return VideoProbeContext(self, run)
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
+    if not self.merge_runs:
+      return LocalProbeResult()
     runs = tuple(group.runs)
     if len(runs) == 1:
       # In the simple case just copy the files
@@ -151,6 +165,8 @@ class VideoProbe(Probe):
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """Merge story videos from multiple browser/configurations"""
+    if not self.merge_runs:
+      return LocalProbeResult()
     groups = list(group.repetitions_groups)
     if len(groups) <= 1:
       return EmptyProbeResult()
