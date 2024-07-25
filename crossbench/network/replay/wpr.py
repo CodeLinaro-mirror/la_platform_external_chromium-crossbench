@@ -36,7 +36,7 @@ class WprReplayNetwork(ReplayNetwork):
     if not wpr_go_bin:
       raise RuntimeError(
           f"Could not find wpr.go binary on {self.runner_platform}")
-    if not self.runner_platform.which("go"):
+    if wpr_go_bin.suffix == '.go' and not self.runner_platform.which("go"):
       raise ValueError(f"'go' binary not found on {self.runner_platform}")
     self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
         cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
@@ -79,7 +79,8 @@ class WprReplayNetwork(ReplayNetwork):
         self._wpr_go_bin,
         http_port=8080,
         https_port=8081,
-        log_path=session.out_dir / "network.wpr.log")
+        log_path=session.out_dir / "network.wpr.log",
+        platform=self.runner_platform)
     logging.debug("Starting WPR server")
     try:
       self._server.start()

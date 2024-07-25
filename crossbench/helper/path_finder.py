@@ -61,10 +61,7 @@ def default_chromium_candidates(
   if chromium_src := platform.environ.get("CHROMIUM_SRC"):
     candidates.append(platform.path(chromium_src))
   if platform.is_local:
-    # Assume that crossbench is in chrome's third_party dir:
-    # Input:   chromium/src/third_party/crossbench/crossbench/probes/helper.py
-    # Output:  chromium/src
-    candidates.append(pth.LocalPath(__file__).parents[4])
+    candidates.append(chromium_src_relative_local_path())
   home_dir = platform.home()
   candidates += [
       # Guessing default locations
@@ -76,6 +73,14 @@ def default_chromium_candidates(
       platform.path("C:/src/chrome/src"),
   ]
   return tuple(candidates)
+
+
+def chromium_src_relative_local_path():
+  """Gets the local relative path of `chromium/src`.
+
+  Assuming the cli.py path is `third_party/crossbench/crossbench/cli/cli.py`.
+  """
+  return pth.LocalPath(__file__).parents[4]
 
 
 def is_chromium_checkout_dir(platform: Platform,
@@ -249,47 +254,45 @@ class V8ToolsFinder:
     return None
 
 
-class BaseBinaryToolFinder(BaseToolFinder):
+class BaseChromiumBinaryToolFinder(BaseToolFinder):
 
   def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
     return self._platform.is_file(candidate)
 
-
-class TraceconvFinder(BaseBinaryToolFinder):
-  _TRACECONV: Final = pth.RemotePath("third_party/perfetto/tools/traceconv")
-
   def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
-    if chrome_checkout := ChromiumCheckoutFinder(self._platform).path:
-      return (chrome_checkout / self._TRACECONV,)
-    return tuple()
+    relative_path = chromium_src_relative_local_path() / self.chrome_path()
+    if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
+      return (relative_path, maybe_chrome / self.chrome_path(),)
+    return (relative_path,)
 
 
-class TraceProcessorFinder(BaseBinaryToolFinder):
+class TraceconvFinder(BaseChromiumBinaryToolFinder):
 
-  _TRACE_PROCESSOR: Final = pth.RemotePath(
+  @classmethod
+  def chrome_path(cls) -> pth.RemotePath:
+   return pth.RemotePath(
+      "third_party/perfetto/tools/traceconv")
+
+
+class TraceProcessorFinder(BaseChromiumBinaryToolFinder):
+
+  @classmethod
+  def chrome_path(cls) -> pth.RemotePath:
+   return pth.RemotePath(
       "third_party/perfetto/tools/trace_processor")
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
-    if chrome_checkout := ChromiumCheckoutFinder(self._platform).path:
-      return (chrome_checkout / self._TRACE_PROCESSOR,)
-    return tuple()
 
+class WprGoToolFinder(BaseChromiumBinaryToolFinder):
 
-class WprGoToolFinder(BaseBinaryToolFinder):
-  _WPR_GO: Final = pth.RemotePath(
+  @classmethod
+  def chrome_path(cls) -> pth.RemotePath:
+   return pth.RemotePath(
       "third_party/catapult/web_page_replay_go/src/wpr.go")
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
-    if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
-      return (maybe_chrome / self._WPR_GO,)
-    return tuple()
 
+class TsProxyFinder(BaseChromiumBinaryToolFinder):
 
-class TsProxyFinder(BaseBinaryToolFinder):
-  _TS_PROXY: Final = pth.RemotePath(
+  @classmethod
+  def chrome_path(cls) -> pth.RemotePath:
+   return pth.RemotePath(
       "third_party/catapult/third_party/tsproxy/tsproxy.py")
-
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
-    if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
-      return (maybe_chrome / self._TS_PROXY,)
-    return tuple()

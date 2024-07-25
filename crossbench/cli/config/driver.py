@@ -260,7 +260,7 @@ class DriverConfig(ConfigObject):
 
   def validate_android(self) -> None:
     platform = plt.PLATFORM
-    devices = adb_devices(platform)
+    devices = adb_devices(platform, self.adb_bin)
     names = list(devices.keys())
     if not devices:
       raise argparse.ArgumentTypeError("No ADB devices attached.")

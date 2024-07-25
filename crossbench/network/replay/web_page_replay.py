@@ -14,6 +14,7 @@ import time
 from typing import TYPE_CHECKING, Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper
+from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgsT
 
 if TYPE_CHECKING:
@@ -52,8 +53,22 @@ class WprBase(abc.ABC):
       self._log_path = cli_helper.parse_not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
     self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
-    if not self._platform.which("go"):
-      raise ValueError(f"'go' binary not found on {self._platform}")
+    if self._bin_path.suffix == '.go':
+      # `go` binary is required to run a Go source file (`wpr.go`).
+      if local_go := self._platform.which("go"):
+        self._go_cmd = (local_go, "run", self._bin_path)
+      else:
+        raise ValueError(f"'go' binary not available on {self._platform}")
+      wpr_root: LocalPath = self._bin_path.parents[1]
+    else:
+      # Assuming the binary path is precompiled and executable.
+      self._go_cmd = (self._bin_path,)
+      if local_wpr_go := WprGoToolFinder(self._platform).path:
+        wpr_root: LocalPath = self._platform.local_path(
+            local_wpr_go.parents[1])
+      else:
+        raise ValueError(
+            f"Could not find web_page_replay_go on {self._platform}")
     self._archive_path = self._validate_archive_path(archive_path)
     if http_port == https_port:
       raise ValueError("http_port must be different from https_port, "
@@ -63,8 +78,6 @@ class WprBase(abc.ABC):
     self._num_parsed_ports: int = 0
 
     self._host: str = host
-
-    wpr_root: LocalPath = self._bin_path.parents[1]
 
     if key_file:
       self._key_file = key_file
@@ -124,11 +137,7 @@ class WprBase(abc.ABC):
     return cmd
 
   def start(self):
-    go_cmd: TupleCmdArgsT = (
-        "go",
-        "run",
-        self._bin_path,
-    ) + self.cmd
+    go_cmd: TupleCmdArgsT = self._go_cmd + self.cmd
     logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
     self._num_parsed_ports = 0
     try:
