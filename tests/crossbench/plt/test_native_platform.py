@@ -235,6 +235,8 @@ class PlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
 
+  @unittest.skipIf(
+      not plt.PLATFORM.which("python3"), reason="python3 not installed")
   def test_binary_lookup_override(self):
     test_binary = "crossbench-non-existing-test-binary"
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
