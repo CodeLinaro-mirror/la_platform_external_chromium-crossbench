@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 @enum.unique
 class ActionType(ConfigEnum):
   GET: "ActionType" = ("get", "Open a URL")
+  JS: "ActionType" = ("js", "Run a custom script")
   WAIT: "ActionType" = ("wait", "Wait for a given time")
   SCROLL: "ActionType" = ("scroll", "Scroll on page")
   CLICK: "ActionType" = ("click", "Click on element")
@@ -512,8 +513,8 @@ def parse_replacement_dict(value: Any) -> Dict[str, str]:
   return dict_value
 
 
-class InjectNewDocumentScriptAction(Action):
-  TYPE: ActionType = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
+class JsAction(Action):
+  TYPE: ActionType = ActionType.JS
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
@@ -556,7 +557,7 @@ class InjectNewDocumentScriptAction(Action):
     return self._script
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.inject_new_document_script(run, self)
+    action_runner.js(run, self)
 
   def validate(self) -> None:
     super().validate()
@@ -575,10 +576,18 @@ class InjectNewDocumentScriptAction(Action):
     return details
 
 
+class InjectNewDocumentScriptAction(JsAction):
+  TYPE: ActionType = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.inject_new_document_script(run, self)
+
+
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
     TapAction,
     GetAction,
+    JsAction,
     ScrollAction,
     SwipeAction,
     WaitAction,

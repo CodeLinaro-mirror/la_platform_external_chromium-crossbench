@@ -25,9 +25,9 @@ from crossbench.plt.android_adb import AndroidAdbPlatform
 if TYPE_CHECKING:
   import datetime as dt
 
+  from crossbench.flags.base import Flags
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
-  from crossbench.flags.base import Flags
 
 
 class MockNetwork(Network):

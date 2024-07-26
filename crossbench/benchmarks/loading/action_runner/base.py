@@ -22,6 +22,10 @@ class ActionRunner(abc.ABC):
     with run.actions("WaitAction", measure=False) as actions:
       actions.wait(action.duration)
 
+  def js(self, run: Run, action: i_action.JsAction) -> None:
+    with run.actions("JS", measure=False) as actions:
+      actions.js(action.script, action.timeout)
+
   @abc.abstractmethod
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
     pass
