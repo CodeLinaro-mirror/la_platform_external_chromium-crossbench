@@ -333,8 +333,16 @@ def parse_port(value: Any, msg: str = "port") -> int:
       f"Expected 1 <= {port} <= 65535, but got: {port}")
 
 
-def parse_non_empty_str(value: Any, name: str = "string") -> str:
+def parse_str(value: Any, name: str = "value") -> str:
   value = parse_not_none(value, f"non-empty {name}")
+  if isinstance(value, str):
+    return value
+  raise argparse.ArgumentTypeError(
+      f"Expected str, but got {type_str(value)}: {value}")
+
+
+def parse_non_empty_str(value: Any, name: str = "string") -> str:
+  value = parse_str(value, f"non-empty {name}")
   if not isinstance(value, str):
     raise argparse.ArgumentTypeError(
         f"Expected non-empty {name}, but got {type_str(value)}: {value}")

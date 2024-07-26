@@ -502,6 +502,16 @@ class WaitForElementAction(Action):
     return details
 
 
+def parse_replacement_dict(value: Any) -> Dict[str, str]:
+  dict_value = cli_helper.parse_dict(value)
+  for replace_key, replace_value in dict_value.items():
+    with exception.annotate_argparsing(
+        f"Parsing ...[{repr(replace_key)}] = {repr(value)}"):
+      cli_helper.parse_non_empty_str(replace_key, "replacement key")
+      cli_helper.parse_str(replace_value, "replacement value")
+  return dict_value
+
+
 class InjectNewDocumentScriptAction(Action):
   TYPE: ActionType = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
 
@@ -513,12 +523,17 @@ class InjectNewDocumentScriptAction(Action):
         "script_path",
         aliases=("path",),
         type=cli_helper.parse_existing_file_path)
+    parser.add_argument(
+        "replacements", aliases=("replace",), type=parse_replacement_dict)
     return parser
 
   def __init__(self,
                script: Optional[str],
                script_path: Optional[pth.LocalPath],
+               replacements: Optional[Dict[str, str]] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._original_script = script
+    self._script_path = script_path
     self._script = ""
     if bool(script) == bool(script_path):
       raise ValueError(
@@ -530,6 +545,10 @@ class InjectNewDocumentScriptAction(Action):
       self._script = script_path.read_text()
       logging.debug("Loading script from %s: %s", script_path, script)
       # TODO: support argument injection into shared file script.
+    self._replacements = replacements
+    if replacements:
+      for key, value in replacements.items():
+        self._script = self._script.replace(key, value)
     super().__init__(timeout)
 
   @property
@@ -547,7 +566,12 @@ class InjectNewDocumentScriptAction(Action):
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["script"] = self.script
+    if self._original_script:
+      details["script"] = self._original_script
+    if self._script_path:
+      details["script_path"] = str(self._script_path)
+    if self._replacements:
+      details["replacements"] = self._replacements
     return details
 
 

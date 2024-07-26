@@ -17,7 +17,7 @@ from crossbench.cli_helper import (
     parse_int, parse_json_file, parse_json_file_path, parse_non_empty_dict,
     parse_non_empty_dir_path, parse_non_empty_file_path, parse_non_empty_str,
     parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
-    parse_positive_zero_int, parse_sh_cmd, parse_unique_sequence)
+    parse_positive_zero_int, parse_sh_cmd, parse_str, parse_unique_sequence)
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -114,6 +114,16 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
   def setUp(self):
     super().setUp()
     self._json_test_data = {"int": 1, "array": [1, "2"]}
+
+  def test_parse_str(self):
+    self.assertEqual(parse_str(""), "")
+    self.assertEqual(parse_str("1234"), "1234")
+
+  def test_parse_str_invalid(self):
+    for invalid in (None, 1, [], {}, [1], ["a"], {"a": "a"}):
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        parse_str(invalid)
+      self.assertIn(str(invalid), str(cm.exception))
 
   def test_parse_non_empty_str(self):
     self.assertEqual(parse_non_empty_str("a string"), "a string")
