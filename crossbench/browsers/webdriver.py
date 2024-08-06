@@ -284,7 +284,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     return BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE
 
   def _validate_driver_version(self) -> None:
-    raise NotImplementedError()
+    pass
 
   def _extract_version(self) -> str:
     raise NotImplementedError()
