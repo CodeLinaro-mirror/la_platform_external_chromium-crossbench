@@ -438,5 +438,80 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
+  def test_inject_new_document_script_path_with_replacements(self):
+    path = self.create_file("/foo/bar.js", contents="alert($ALERT$)")
+    config_dict = {
+        "action": "inject_new_document_script",
+        "script_path": str(path),
+        "replace": {
+            "$ALERT$": "'something'"
+        }
+    }
+    action = InjectNewDocumentScriptAction.load_dict(config_dict)
+    self.assertFalse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.INJECT_NEW_DOCUMENT_SCRIPT)
+    self.assertEqual(action.script, "alert('something')")
+    action.validate()
+
+    action_2 = InjectNewDocumentScriptAction.load_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_inject_new_document_script_invalid(self):
+    config_dict = {
+        "action": "inject_new_document_script",
+        "script": "",
+    }
+    with self.assertRaises(ValueError) as cm:
+      InjectNewDocumentScriptAction.load_dict(config_dict)
+    self.assertIn("script", str(cm.exception))
+    self.assertFalse(config_dict)
+
+  def test_inject_new_document_script_invalid_path(self):
+    config_dict = {
+        "action": "inject_new_document_script",
+        "script_path": "",
+    }
+    with self.assertRaises(ValueError) as cm:
+      InjectNewDocumentScriptAction.load_dict(config_dict)
+    self.assertIn("script_path", str(cm.exception))
+    self.assertFalse(config_dict)
+    config_dict = {
+        "action": "inject_new_document_script",
+        "script_path": "/does/not/exist.js",
+    }
+    with self.assertRaises(ValueError) as cm:
+      InjectNewDocumentScriptAction.load_dict(config_dict)
+    self.assertIn("script_path", str(cm.exception))
+    self.assertFalse(config_dict)
+
+  def test_inject_new_document_script_invalid_script_xor_path(self):
+    path = self.create_file("/foo/bar.js", contents="alert(2)")
+    config_dict = {
+        "action": "inject_new_document_script",
+        "script": "alert(1)",
+        "script_path": str(path),
+    }
+    with self.assertRaises(ValueError) as cm:
+      InjectNewDocumentScriptAction.load_dict(config_dict)
+    self.assertIn("script_path", str(cm.exception))
+    self.assertFalse(config_dict)
+
+  def test_inject_new_document_script_invalid_replacements(self):
+    path = self.create_file("/foo/bar.js", contents="alert(2)")
+    config_dict = {
+        "action": "inject_new_document_script",
+        "script_path": str(path),
+        "replacements": {
+            1: 1,
+            "one": 1,
+        }
+    }
+    with self.assertRaises(ValueError) as cm:
+      InjectNewDocumentScriptAction.load_dict(config_dict)
+    self.assertIn("replacements", str(cm.exception))
+    self.assertFalse(config_dict)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
