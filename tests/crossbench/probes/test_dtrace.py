@@ -20,7 +20,7 @@ class DTraceProbeTestCase(CrossbenchFakeFsTestCase):
     config_file = (test_helper.config_dir() / "doc/probe/dtrace.config.hjson")
     self.fs.add_real_file(config_file)
     self.assertTrue(config_file.is_file())
-    example_script_file = pathlib.Path("/dtrace.config.example.d")
+    example_script_file = config_file.parent / "dtrace.config.example.d"
     self.fs.create_file(example_script_file, st_size=100)
     self.assertTrue(example_script_file.is_file())
     probes = ProbeListConfig.load_path(config_file).probes

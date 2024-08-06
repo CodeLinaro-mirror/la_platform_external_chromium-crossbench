@@ -5,6 +5,7 @@
 import inspect
 
 import crossbench.path as pth
+from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, INTERNAL_PROBES
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.dtrace import DTraceProbe
@@ -26,6 +27,23 @@ from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+
+
+class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
+
+  def test_invalid_empty(self):
+    with self.assertRaises(ValueError) as cm:
+      ProbeListConfig.parse({"probes": ""})
+    self.assertIn("str", str(cm.exception).lower())
+    with self.assertRaises(ValueError) as cm:
+      ProbeListConfig.parse({"browsers": {}})
+    self.assertIn("probes", str(cm.exception).lower())
+
+  def test_empty(self):
+    probe_list = ProbeListConfig.parse({"probes": []})
+    self.assertEqual(probe_list.probes, [])
+    probe_list = ProbeListConfig.parse({"probes": {}})
+    self.assertEqual(probe_list.probes, [])
 
 
 class ProbeTestCase(CrossbenchFakeFsTestCase):

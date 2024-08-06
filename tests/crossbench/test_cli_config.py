@@ -371,10 +371,10 @@ class BrowserConfigTestCase(BaseConfigTestCase):
   def test_parse_invalid_windows_path(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse("selenium\\bar")
-    self.assertIn("selenium\\bar", str(cm.exception))
+    self.assertIn("selenium\\\\bar", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse("C:\\selenium\\bar")
-    self.assertIn("C:\\selenium\\bar", str(cm.exception))
+    self.assertIn("C:\\\\selenium\\\\bar", str(cm.exception))
 
   def test_parse_simple_missing_driver(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -740,8 +740,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     probe_config_file = pth.LocalPath("/probe.config.hjson")
     with probe_config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with probe_config_file.open(encoding="utf-8") as f:
-      return ProbeListConfig.load(f)
+    return ProbeListConfig.parse(probe_config_file)
 
   def test_invalid_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
