@@ -424,50 +424,60 @@ class SwipeAction(DurationAction):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument("startx", type=cli_helper.parse_int, required=True)
-    parser.add_argument("starty", type=cli_helper.parse_int, required=True)
-    parser.add_argument("endx", type=cli_helper.parse_int, required=True)
-    parser.add_argument("endy", type=cli_helper.parse_int, required=True)
+    parser.add_argument(
+        "start_x",
+        aliases=("startx",),
+        type=cli_helper.parse_int,
+        required=True)
+    parser.add_argument(
+        "start_y",
+        aliases=("starty",),
+        type=cli_helper.parse_int,
+        required=True)
+    parser.add_argument(
+        "end_x", aliases=("endx",), type=cli_helper.parse_int, required=True)
+    parser.add_argument(
+        "end_y", aliases=("endy",), type=cli_helper.parse_int, required=True)
     return parser
 
   def __init__(self,
-               startx: int,
-               starty: int,
-               endx: int,
-               endy: int,
+               start_x: int,
+               start_y: int,
+               end_x: int,
+               end_y: int,
                duration: dt.timedelta = dt.timedelta(seconds=1),
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
-    self._startx: int = startx
-    self._starty: int = starty
-    self._endx: int = endx
-    self._endy: int = endy
+    self._start_x: int = start_x
+    self._start_y: int = start_y
+    self._end_x: int = end_x
+    self._end_y: int = end_y
     super().__init__(duration, timeout)
 
   @property
-  def startx(self) -> int:
-    return self._startx
+  def start_x(self) -> int:
+    return self._start_x
 
   @property
-  def starty(self) -> int:
-    return self._starty
+  def start_y(self) -> int:
+    return self._start_y
 
   @property
-  def endx(self) -> int:
-    return self._endx
+  def end_x(self) -> int:
+    return self._end_x
 
   @property
-  def endy(self) -> int:
-    return self._endy
+  def end_y(self) -> int:
+    return self._end_y
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.swipe(run, self)
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["startx"] = self._startx
-    details["starty"] = self._starty
-    details["endx"] = self._endx
-    details["endy"] = self._endy
+    details["start_x"] = self._start_x
+    details["start_y"] = self._start_y
+    details["end_x"] = self._end_x
+    details["end_y"] = self._end_y
     return details
 
 

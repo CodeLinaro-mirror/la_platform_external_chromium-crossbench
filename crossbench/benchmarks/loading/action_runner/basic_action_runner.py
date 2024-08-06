@@ -126,10 +126,3 @@ class BasicActionRunner(ActionRunner):
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     run.browser.run_script_on_new_document(action.script)
-
-  def tap(self, run: Run, action: i_action.TapAction) -> None:
-    raise NotImplementedError("Tap action not implemented in BasicActionRunner")
-
-  def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
-    raise NotImplementedError(
-        "Swipe action not implemented in BasicActionRunner")

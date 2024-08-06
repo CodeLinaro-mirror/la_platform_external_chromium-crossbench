@@ -9,12 +9,6 @@ from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.runner.run import Run
 
+
 class ChromeOSInputActionRunner(BasicActionRunner):
-
-    def tap(self, run: Run, action: i_action.TapAction) -> None:
-        raise NotImplementedError(
-            "Tap action not implemented in ChromeOSInputActionRunner")
-
-    def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
-        raise NotImplementedError(
-            "Swipe action not implemented in ChromeOSInputActionRunner")
+  pass

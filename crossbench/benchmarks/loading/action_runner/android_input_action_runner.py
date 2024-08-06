@@ -40,9 +40,9 @@ class AndroidInputActionRunner(BasicActionRunner):
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     with run.actions("SwipeAction", measure=False):
-      x1 = str(action.startx)
-      y1 = str(action.starty)
-      x2 = str(action.endx)
-      y2 = str(action.endy)
+      x1 = str(action.start_x)
+      y1 = str(action.start_y)
+      x2 = str(action.end_x)
+      y2 = str(action.end_y)
       dur_ms = str(action.duration // dt.timedelta(milliseconds=1))
       run.browser.platform.sh('input', 'swipe', x1, y1, x2, y2, dur_ms)

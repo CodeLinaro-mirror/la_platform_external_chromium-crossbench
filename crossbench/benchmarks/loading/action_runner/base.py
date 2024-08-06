@@ -12,6 +12,16 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
+class ActionNotImplementedError(NotImplementedError):
+
+  def __init__(self, runner: ActionRunner, action: i_action.Action) -> None:
+    self.runner = runner
+    self.action = action
+    message = (f"{str(action.TYPE).capitalize()}-action "
+               "not implemented in {type(runner).__name__}")
+    super().__init__(message)
+
+
 class ActionRunner(abc.ABC):
 
   def run_all(self, run: Run, actions: Iterable[i_action.Action]):
@@ -26,32 +36,25 @@ class ActionRunner(abc.ABC):
     with run.actions("JS", measure=False) as actions:
       actions.js(action.script, action.timeout)
 
-  @abc.abstractmethod
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
 
-  @abc.abstractmethod
   def get(self, run: Run, action: i_action.GetAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
 
-  @abc.abstractmethod
   def click(self, run: Run, action: i_action.ClickAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
 
-  @abc.abstractmethod
   def tap(self, run: Run, action: i_action.TapAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
 
-  @abc.abstractmethod
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
 
-  @abc.abstractmethod
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
 
-  @abc.abstractmethod
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
-    pass
+    raise ActionNotImplementedError(self, action)
