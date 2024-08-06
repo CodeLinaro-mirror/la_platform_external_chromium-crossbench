@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crossbench"
-version = "1.0.4"
+version = "1.0.5"
 authors = [ "Camillo Bruni <cbruni@chromium.org>" ]
 description = "A cross-browser, cross-system web benchmark runner"
 readme = "README.md"
