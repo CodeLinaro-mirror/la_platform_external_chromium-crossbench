@@ -128,7 +128,7 @@ class CustomConfigObject(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomConfigObject]:
-    parser = cls.base_config_parse()
+    parser = cls.base_config_parser()
     parser.add_argument(
         "name", aliases=("name_alias", "name_alias2"), type=str, required=True)
     parser.add_argument("array", type=list)
@@ -152,14 +152,14 @@ class CustomConfigObject(ConfigObject):
     return parser
 
   @classmethod
-  def base_config_parse(cls) -> ConfigParser[CustomConfigObject]:
+  def base_config_parser(cls) -> ConfigParser[CustomConfigObject]:
     return ConfigParser("CustomConfigObject parser", cls)
 
 
 class CustomConfigObjectWithDefault(CustomConfigObject):
 
   @classmethod
-  def base_config_parse(cls) -> ConfigParser[CustomConfigObjectWithDefault]:
+  def base_config_parser(cls) -> ConfigParser[CustomConfigObjectWithDefault]:
     return ConfigParser("CustomConfigObject parser", cls, default=cls.default())
 
 

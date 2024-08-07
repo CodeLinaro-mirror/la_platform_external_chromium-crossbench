@@ -284,10 +284,10 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def load_dict(cls, config: Dict[str, Any]) -> BrowserConfig:
-    return cls.config_parse().parse(config)
+    return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parse(cls) -> ConfigParser[BrowserConfig]:
+  def config_parser(cls) -> ConfigParser[BrowserConfig]:
     parser = ConfigParser("BrowserConfig parser", cls)
     parser.add_argument(
         "browser",
