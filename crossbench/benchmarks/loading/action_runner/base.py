@@ -7,8 +7,11 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Iterable
 
+from crossbench import exception
+
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
+  from crossbench.benchmarks.loading.page_config import ActionBlock
   from crossbench.runner.run import Run
 
 
@@ -24,9 +27,13 @@ class ActionNotImplementedError(NotImplementedError):
 
 class ActionRunner(abc.ABC):
 
-  def run_all(self, run: Run, actions: Iterable[i_action.Action]):
-    for action in actions:
-      action.run_with(run, self)
+  def run_blocks(self, run: Run, action_blocks: Iterable[ActionBlock]):
+    index = 0
+    for block in action_blocks:
+      index += 1
+      with exception.annotate(f"Running block {index}: {block.label}"):
+        for action in block.actions:
+          action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
     with run.actions("WaitAction", measure=False) as actions:

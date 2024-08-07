@@ -414,6 +414,8 @@ class ConfigObject(abc.ABC):
         maybe_path = pth.LocalPath(value).expanduser()
         if cls.is_valid_path(maybe_path):
           return cls.load_path(maybe_path)
+        if cls.value_has_path_prefix(value):
+          return cls.load_unknown_path(maybe_path)
       except OSError:
         pass
       return cls.loads(value)
@@ -435,6 +437,12 @@ class ConfigObject(abc.ABC):
     if not path.is_file():
       return False
     return path.suffix in cls.VALID_EXTENSIONS
+
+  @classmethod
+  def load_unknown_path(cls: Type[ConfigObjectT],
+                        path: pth.LocalPath) -> ConfigObjectT:
+    # TODO: this should be redirected to load_config_path
+    return cls.loads(str(path))
 
   @classmethod
   def load_path(cls: Type[ConfigObjectT], path: pth.LocalPath) -> ConfigObjectT:

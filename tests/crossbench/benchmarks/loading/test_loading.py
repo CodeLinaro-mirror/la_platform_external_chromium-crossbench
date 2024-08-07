@@ -14,7 +14,6 @@ import unittest
 from typing import Sequence, cast
 
 import hjson
-from pyfakefs import fake_filesystem_unittest
 
 import crossbench
 import crossbench.env
@@ -307,7 +306,8 @@ class TestExamplePageConfig(unittest.TestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertGreater(len(page.actions), 1)
+      self.assertEqual(len(page.action_blocks), 1)
+      self.assertGreater(len(page.action_blocks[0].actions), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_android_page_config_file(self):
@@ -320,7 +320,8 @@ class TestExamplePageConfig(unittest.TestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertGreater(len(page.actions), 1)
+      self.assertEqual(len(page.action_blocks), 1)
+      self.assertGreater(len(page.action_blocks[0].actions), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_phone(self):
@@ -333,7 +334,8 @@ class TestExamplePageConfig(unittest.TestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertGreater(len(page.actions), 1)
+      self.assertEqual(len(page.action_blocks), 1)
+      self.assertGreater(len(page.action_blocks[0].actions), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_tablet(self):
@@ -346,7 +348,9 @@ class TestExamplePageConfig(unittest.TestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertGreater(len(page.actions), 1)
+      self.assertEqual(len(page.action_blocks), 1)
+      self.assertGreater(len(page.action_blocks[0].actions), 1)
+
 
 
 class PageConfigTestsCase(unittest.TestCase):
@@ -569,7 +573,9 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(len(pages), 1)
     page = pages[0]
     self.assertEqual(page.label, "Google Story")
-    self.assertListEqual([str(action.TYPE) for action in page.actions],
+    self.assertEqual(len(page.action_blocks), 1)
+    actions = page.action_blocks[0].actions
+    self.assertListEqual([str(action.TYPE) for action in actions],
                          ["get", "wait", "scroll"])
 
   def test_no_scenarios(self):
@@ -668,9 +674,10 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
         })
         self.assertEqual(len(page_config.pages), 1)
         page = page_config.pages[0]
-        self.assertEqual(len(page.actions), 2)
-        self.assertEqual(page.actions[1].duration,
-                         dt.timedelta(seconds=duration))
+        self.assertEqual(len(page.action_blocks), 1)
+        actions = page.action_blocks[0].actions
+        self.assertEqual(len(actions), 2)
+        self.assertEqual(actions[1].duration, dt.timedelta(seconds=duration))
 
   def test_action_invalid_duration(self):
     invalid_durations = [
@@ -761,7 +768,8 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     page = config.pages[0]
     self.assertEqual(page.label, "cnn load")
     self.assertEqual(page.url, "https://edition.cnn.com/")
-    self.assertGreater(len(page.actions), 1)
+    self.assertEqual(len(page.action_blocks), 1)
+    self.assertGreater(len(page.action_blocks[0].actions), 1)
 
   def test_basic_config_from_file(self):
     config_path = pathlib.Path("devtools.config.json")
@@ -1044,13 +1052,15 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
   def test_parse_default_action_list(self):
     config = ActionBlockListConfig.parse([{
         "action": "get",
-        "url": "http://test.com"
+        "url": "http://test.com",
+        "duration": "12.5s",
     }])
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "default")
     self.assertEqual(len(block.actions), 1)
     self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+    self.assertEqual(block.duration, dt.timedelta(seconds=12.5))
 
   def test_parse_single_block_action_list(self):
     config = ActionBlockListConfig.parse([{
@@ -1068,16 +1078,20 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
 
   def test_parse_multi_block_action_list(self):
     config = ActionBlockListConfig.parse([{
-        "label": "block 0",
+        "label":
+            "block 0",
         "actions": [{
             "action": "get",
-            "url": "http://test.com/0"
+            "url": "http://test.com/0",
+            "duration": "10s",
         }]
     }, {
-        "label": "block 1",
+        "label":
+            "block 1",
         "actions": [{
             "action": "get",
-            "url": "http://test.com/1"
+            "url": "http://test.com/1",
+            "duration": "11s",
         }]
     }])
     self.assertEqual(len(config.blocks), 2)
@@ -1086,6 +1100,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       self.assertEqual(len(block.actions), 1)
       self.assertEqual(block.actions[0].TYPE, ActionType.GET)
       self.assertEqual(block.actions[0].url, f"http://test.com/{index}")
+      self.assertEqual(block.duration, dt.timedelta(seconds=10 + index))
 
   def test_parse_single_block_dict(self):
     config = ActionBlockListConfig.parse(
@@ -1106,16 +1121,19 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
         "block 1": {
             "actions": [{
                 "action": "get",
-                "url": "http://test.com/0"
+                "url": "http://test.com/0",
+                "duration": "1s",
             }, {
                 "action": "get",
-                "url": "http://test.com/1"
+                "url": "http://test.com/1",
+                "duration": "20s",
             }]
         }
     })
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
+    self.assertEqual(block.duration, dt.timedelta(seconds=21))
     self.assertEqual(len(block.actions), 2)
     for index, action in enumerate(block.actions):
       self.assertEqual(action.TYPE, ActionType.GET)

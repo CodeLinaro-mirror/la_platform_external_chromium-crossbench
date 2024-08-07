@@ -8,8 +8,6 @@ import abc
 import datetime as dt
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench.benchmarks.loading.action import Action
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.playback_controller import \
@@ -17,6 +15,8 @@ from crossbench.benchmarks.loading.playback_controller import \
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.benchmarks.loading.page_config import ActionBlock
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -119,22 +119,22 @@ class CombinedPage(Page):
 class InteractivePage(Page):
 
   def __init__(self,
-               actions: Tuple[Action, ...],
+               action_blocks: Tuple[ActionBlock, ...],
                name: str,
                playback: PlaybackController = PlaybackController.default(),
                action_runner: Optional[ActionRunner] = None,
                about_blank_duration: dt.timedelta = dt.timedelta()):
     self._name: str = name
     self._action_runner: ActionRunner = action_runner or BasicActionRunner()
-    assert isinstance(actions, tuple)
-    self._actions: Tuple[Action, ...] = actions
-    assert self._actions, "Must have at least 1 valid action"
+    assert isinstance(action_blocks, tuple)
+    self._action_blocks: Tuple[ActionBlock, ...] = action_blocks
+    assert self._action_blocks, "Must have at least 1 valid action"
     duration = self._get_duration()
     super().__init__(name, duration, playback, about_blank_duration)
 
   @property
-  def actions(self) -> Tuple[Action, ...]:
-    return self._actions
+  def action_blocks(self) -> Tuple[ActionBlock, ...]:
+    return self._action_blocks
 
   @property
   def action_runner(self) -> ActionRunner:
@@ -147,18 +147,17 @@ class InteractivePage(Page):
 
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      self.action_runner.run_all(run, self._actions)
+      self.action_runner.run_blocks(run, self._action_blocks)
 
   def details_json(self) -> JsonDict:
     result = super().details_json()
-    result["actions"] = list(action.to_json() for action in self._actions)
+    result["actions"] = list(block.to_json() for block in self._action_blocks)
     return result
 
   def _get_duration(self) -> dt.timedelta:
     duration = dt.timedelta()
-    for action in self._actions:
-      if action.duration is not None:
-        duration += action.duration
+    for block in self._action_blocks:
+      duration += block.duration
     return duration
 
 

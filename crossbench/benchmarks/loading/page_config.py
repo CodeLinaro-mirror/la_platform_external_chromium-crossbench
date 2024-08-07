@@ -19,10 +19,11 @@ from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   GetAction, ReadyState,
                                                   WaitAction)
 from crossbench.benchmarks.loading.page import PAGES
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 
+if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.playback_controller import \
+      PlaybackController
 
 @dataclasses.dataclass(frozen=True)
 class ActionBlock(ConfigObject):
@@ -61,6 +62,20 @@ class ActionBlock(ConfigObject):
   def validate(self) -> None:
     super().validate()
     cli_helper.parse_non_empty_sequence(self.actions, "actions")
+
+  def to_json(self) -> Dict[str, Any]:
+    return {
+        "label": self.label,
+        "actions": [action.to_json() for action in self.actions]
+    }
+
+  @property
+  def duration(self) -> dt.timedelta:
+    total_duration = dt.timedelta()
+    for action in self.actions:
+      if duration := action.duration:
+        total_duration += duration
+    return total_duration
 
 
 @dataclasses.dataclass(frozen=True)
@@ -132,7 +147,7 @@ class PageConfig(ConfigObject):
   url: str = ""
   duration: dt.timedelta = dt.timedelta()
   playback: Optional[PlaybackController] = None
-  actions: Tuple[Action, ...] = tuple()
+  action_blocks: Tuple[ActionBlock, ...] = tuple()
 
   @classmethod
   def loads(cls: Type[PageConfig], value: str) -> PageConfig:
@@ -210,6 +225,11 @@ class PagesConfig(ConfigObject):
     return cls.load_sequence(values)
 
   @classmethod
+  def load_unknown_path(cls, path: pth.LocalPath) -> PagesConfig:
+    # Make sure we get errors for invalid files.
+    return cls.load_config_path(path)
+
+  @classmethod
   def parse_other(cls, value: Any) -> PagesConfig:
     if isinstance(value, (list, tuple)):
       return cls.load_sequence(value)
@@ -258,10 +278,15 @@ class PagesConfig(ConfigObject):
       with exception.annotate_argparsing(
           f"Parsing scenario ...['{scenario_name}']"):
         actions = cls._parse_actions(actions, scenario_name)
+        # Use default action block
+        action_blocks = (ActionBlock(actions=actions),)
         url = cls._extract_first_actions_url(actions)
         pages.append(
             PageConfig(
-                label=scenario_name, url=url, playback=None, actions=actions))
+                label=scenario_name,
+                url=url,
+                playback=None,
+                action_blocks=action_blocks))
     return PagesConfig(tuple(pages))
 
   @classmethod
@@ -303,8 +328,10 @@ class DevToolsRecorderPagesConfig(PagesConfig):
       title = config["title"]
       assert title, "No title provided"
       actions = tuple(cls._parse_steps(config["steps"]))
+      # Use default block
+      action_blocks = (ActionBlock(actions=actions),)
       url = cls._extract_first_actions_url(actions)
-      pages = (PageConfig(label=title, url=url, actions=actions),)
+      pages = (PageConfig(label=title, url=url, action_blocks=action_blocks),)
       return DevToolsRecorderPagesConfig(pages)
     raise exception.UnreachableError()
 

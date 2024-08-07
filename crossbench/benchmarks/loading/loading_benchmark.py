@@ -171,11 +171,11 @@ class LoadingPageFilter(StoryFilter[Page]):
 
     label: str = config.label if use_labels else config.url
     duration = duration or DEFAULT_DURATION
-    if not config.actions:
+    if not config.action_blocks:
       return LivePage(label, config.url, duration, playback,
                       args.about_blank_duration)
-    return InteractivePage(config.actions, label, playback, args.action_runner,
-                           args.about_blank_duration)
+    return InteractivePage(config.action_blocks, label, playback,
+                           args.action_runner, args.about_blank_duration)
 
   def create_stories(self, separate: bool) -> Sequence[Page]:
     logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
