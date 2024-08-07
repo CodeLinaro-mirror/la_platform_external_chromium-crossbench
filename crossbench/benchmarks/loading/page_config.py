@@ -8,7 +8,6 @@ import argparse
 import copy
 import dataclasses
 import datetime as dt
-import json
 import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
@@ -16,16 +15,115 @@ from urllib.parse import urlparse
 
 from crossbench import cli_helper, exception
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action import (ACTIONS, Action, ActionType,
-                                                  ClickAction, GetAction,
-                                                  ReadyState, WaitAction)
+from crossbench.benchmarks.loading.action import (Action, ClickAction,
+                                                  GetAction, ReadyState,
+                                                  WaitAction)
 from crossbench.benchmarks.loading.page import PAGES
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
-from crossbench.config import ConfigObject
+from crossbench.config import ConfigError, ConfigObject, ConfigParser
 
-if TYPE_CHECKING:
-  from crossbench.types import JsonDict
+
+@dataclasses.dataclass(frozen=True)
+class ActionBlock(ConfigObject):
+  label: str = "default"
+  actions: Tuple[Action, ...] = tuple()
+
+  @classmethod
+  def loads(cls: Type[ActionBlock], value: str) -> ActionBlock:
+    raise NotImplementedError("Cannot create action blocks from strings")
+
+  @classmethod
+  def parse_other(cls: Type[ActionBlock], value: Any) -> ActionBlock:
+    if isinstance(value, (tuple, list)):
+      return cls.load_sequence(value)
+    return super().parse_other(value)
+
+  @classmethod
+  def load_dict(cls: Type[ActionBlock], config: Dict[str, Any]) -> ActionBlock:
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  def config_parser(cls: Type[ActionBlock]) -> ConfigParser[ActionBlock]:
+    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser.add_argument(
+        "label", type=cli_helper.parse_non_empty_str, default="default")
+    parser.add_argument("actions", type=Action, required=True, is_list=True)
+    return parser
+
+  @classmethod
+  def load_sequence(cls: Type[ActionBlock],
+                    config: Sequence[Dict[str, Any]]) -> ActionBlock:
+    with exception.annotate_argparsing(
+        "Parsing default block action sequence:"):
+      return cls.load_dict({"actions": config})
+
+  def validate(self) -> None:
+    super().validate()
+    cli_helper.parse_non_empty_sequence(self.actions, "actions")
+
+
+@dataclasses.dataclass(frozen=True)
+class ActionBlockListConfig(ConfigObject):
+  blocks: Tuple[ActionBlock, ...] = tuple()
+
+  @classmethod
+  def parse_other(cls: Type[ActionBlockListConfig],
+                  value: Any) -> ActionBlockListConfig:
+    if isinstance(value, (tuple, list)):
+      return cls.load_sequence(value)
+    return super().parse_other(value)
+
+  @classmethod
+  def load_sequence(cls: Type[ActionBlockListConfig],
+                    config: Sequence[Dict[str, Any]]) -> ActionBlockListConfig:
+    """Parse either a sequence of blocks or a sequence of actions for an
+    implicit default block.
+
+    Blocks:
+    [{ "label": "block 1", "actions": [...]}, ... ]
+
+    Default block actions:
+    [{ "action": "get", ...}, { "action": ...}, ...]
+    """
+    config = cli_helper.parse_non_empty_sequence(config, "actions")
+    if cls._is_default_block_actions(config):
+      config = [{"actions": config}]
+
+    blocks: List[ActionBlock] = []
+    for index, block_config in enumerate(config):
+      block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
+      blocks.append(ActionBlock.load_dict(block_config))
+    return cls(tuple(blocks))
+
+  @classmethod
+  def _is_default_block_actions(cls, config: Sequence[Dict[str, Any]]) -> bool:
+    return "action" in config[0]
+
+  @classmethod
+  def load_dict(cls: Type[ActionBlockListConfig],
+                config: Dict[str, Any]) -> ActionBlockListConfig:
+    config = cli_helper.parse_non_empty_dict(config, "actions")
+    blocks: List[ActionBlock] = []
+    for label, block_data in config.items():
+      with exception.annotate_argparsing(f"Parsing action block  ...[{label}]"):
+        if isinstance(block_data, (list, tuple)):
+          block_data = {"actions": block_data}
+        if inner_label := block_data.get("label"):
+          raise ConfigError(
+              "ActionBlock inside a dict cannot have a 'label' property, "
+              f"but got label={repr(inner_label)}")
+        block_data["label"] = label
+        blocks.append(ActionBlock.parse(block_data))
+    return cls(tuple(blocks))
+
+  @classmethod
+  def loads(cls, value: str) -> ActionBlockListConfig:
+    raise NotImplementedError("Cannot create action blocks from strings")
+
+  def validate(self) -> None:
+    super().validate()
+    cli_helper.parse_non_empty_sequence(self.blocks, "blocks")
 
 
 @dataclasses.dataclass(frozen=True)

@@ -20,15 +20,18 @@ import crossbench
 import crossbench.env
 import crossbench.path
 import crossbench.runner
+from crossbench.benchmarks.loading.action import ActionType
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, LivePage)
 from crossbench.benchmarks.loading.page_config import (
-    DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
+    ActionBlockListConfig, DevToolsRecorderPagesConfig, ListPagesConfig,
+    PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
     TimeoutPlaybackController)
+from crossbench.config import ConfigError
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -1028,6 +1031,158 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       for browser in self.browsers:
         self.assertListEqual([url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
+
+
+class ActionBlockListConfigTestCase(unittest.TestCase):
+
+  def test_parse_invalid(self):
+    for invalid in ("", (), {}, 1):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          ActionBlockListConfig.parse(invalid)
+
+  def test_parse_default_action_list(self):
+    config = ActionBlockListConfig.parse([{
+        "action": "get",
+        "url": "http://test.com"
+    }])
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "default")
+    self.assertEqual(len(block.actions), 1)
+    self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+
+  def test_parse_single_block_action_list(self):
+    config = ActionBlockListConfig.parse([{
+        "label": "block 1",
+        "actions": [{
+            "action": "get",
+            "url": "http://test.com"
+        }]
+    }])
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(len(block.actions), 1)
+    self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+
+  def test_parse_multi_block_action_list(self):
+    config = ActionBlockListConfig.parse([{
+        "label": "block 0",
+        "actions": [{
+            "action": "get",
+            "url": "http://test.com/0"
+        }]
+    }, {
+        "label": "block 1",
+        "actions": [{
+            "action": "get",
+            "url": "http://test.com/1"
+        }]
+    }])
+    self.assertEqual(len(config.blocks), 2)
+    for index, block in enumerate(config.blocks):
+      self.assertEqual(block.label, f"block {index}")
+      self.assertEqual(len(block.actions), 1)
+      self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+      self.assertEqual(block.actions[0].url, f"http://test.com/{index}")
+
+  def test_parse_single_block_dict(self):
+    config = ActionBlockListConfig.parse(
+        {"block 1": {
+            "actions": [{
+                "action": "get",
+                "url": "http://test.com"
+            }]
+        }})
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(len(block.actions), 1)
+    self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+
+  def test_parse_single_block_multi_action_dict(self):
+    config = ActionBlockListConfig.parse({
+        "block 1": {
+            "actions": [{
+                "action": "get",
+                "url": "http://test.com/0"
+            }, {
+                "action": "get",
+                "url": "http://test.com/1"
+            }]
+        }
+    })
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(len(block.actions), 2)
+    for index, action in enumerate(block.actions):
+      self.assertEqual(action.TYPE, ActionType.GET)
+      self.assertEqual(action.url, f"http://test.com/{index}")
+
+  def test_parse_multi_block_actions_dict(self):
+    config = ActionBlockListConfig.parse({
+        "block 0": {
+            "actions": [{
+                "action": "get",
+                "url": "http://test.com/0"
+            }]
+        },
+        "block 1": {
+            "actions": [{
+                "action": "get",
+                "url": "http://test.com/1"
+            }]
+        }
+    })
+    self.assertEqual(len(config.blocks), 2)
+    for index, block in enumerate(config.blocks):
+      self.assertEqual(block.label, f"block {index}")
+      self.assertEqual(len(block.actions), 1)
+      self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+      self.assertEqual(block.actions[0].url, f"http://test.com/{index}")
+
+  def test_parse_multi_block_actions_list(self):
+    config = ActionBlockListConfig.parse({
+        "block 0": [{
+            "action": "get",
+            "url": "http://test.com/0"
+        }],
+        "block 1": [{
+            "action": "get",
+            "url": "http://test.com/1"
+        }]
+    })
+    self.assertEqual(len(config.blocks), 2)
+    for index, block in enumerate(config.blocks):
+      self.assertEqual(block.label, f"block {index}")
+      self.assertEqual(len(block.actions), 1)
+      self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+      self.assertEqual(block.actions[0].url, f"http://test.com/{index}")
+
+  def test_parse_dict_label_conflict(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      ActionBlockListConfig.parse({
+          "block 1": {
+              "label": "block 2",
+              "actions": [{
+                  "action": "get",
+                  "url": "http://test.com"
+              }]
+          }
+      })
+    self.assertIn("block 2", str(cm.exception))
+
+  def test_parse_invalid_dict_missing_actions(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      ActionBlockListConfig.parse({"block 1": {}})
+    self.assertIn("actions", str(cm.exception))
+
+  def test_parse_invalid_dict_empty_actions(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      ActionBlockListConfig.parse({"block 1": {"actions": []}})
+    self.assertIn("actions", str(cm.exception))
 
 
 if __name__ == "__main__":

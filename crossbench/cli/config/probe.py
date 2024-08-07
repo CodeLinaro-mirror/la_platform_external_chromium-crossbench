@@ -139,12 +139,12 @@ class ProbeListConfig(ConfigObject):
       return
     for probe_config in probes:
       with exception.annotate(f"Parsing --probe={probe_config.name}"):
-        self.add_probe(probe_config)
+        self._add_probe(probe_config)
 
   @property
   def probes(self) -> List[Probe]:
     return self._probes
 
-  def add_probe(self, probe_config: ProbeConfig) -> None:
+  def _add_probe(self, probe_config: ProbeConfig) -> None:
     probe: Probe = probe_config.cls.from_config(probe_config.config)
     self._probes.append(probe)

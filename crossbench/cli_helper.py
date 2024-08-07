@@ -282,6 +282,21 @@ def parse_non_empty_dict(value: Any, name: str = "value") -> Dict:
   return dict_value
 
 
+def parse_sequence(value: Any, name: str = "value") -> Sequence[Any]:
+  if isinstance(value, (list, tuple)):
+    return value
+  raise argparse.ArgumentTypeError(
+      f"Expected sequence, but {name} is {type_str(value)}: {repr(value)}")
+
+
+def parse_non_empty_sequence(value: Any, name: str = "value") -> Sequence[Any]:
+  sequence_value = parse_sequence(value)
+  if not sequence_value:
+    raise argparse.ArgumentTypeError(
+        f"Expected {name} to be a non-empty sequence.")
+  return sequence_value
+
+
 def try_resolve_existing_path(value: str) -> Optional[pth.LocalPath]:
   if not value:
     return None

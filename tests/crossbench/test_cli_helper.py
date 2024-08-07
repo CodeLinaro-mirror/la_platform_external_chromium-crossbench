@@ -15,9 +15,10 @@ from crossbench.cli_helper import (
     Duration, parse_bool, parse_dict, parse_dir_path, parse_existing_file_path,
     parse_float, parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson,
     parse_int, parse_json_file, parse_json_file_path, parse_non_empty_dict,
-    parse_non_empty_dir_path, parse_non_empty_file_path, parse_non_empty_str,
-    parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
-    parse_positive_zero_int, parse_sh_cmd, parse_str, parse_unique_sequence)
+    parse_non_empty_dir_path, parse_non_empty_file_path,
+    parse_non_empty_sequence, parse_non_empty_str, parse_path, parse_port,
+    parse_positive_int, parse_positive_zero_float, parse_positive_zero_int,
+    parse_sequence, parse_sh_cmd, parse_str, parse_unique_sequence)
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -415,6 +416,32 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       parse_unique_sequence([1, 1], name="custom test name")
     self.assertIn("custom test name", str(cm.exception))
+
+  def test_parse_sequence(self):
+    self.assertListEqual(parse_sequence([]), [])
+    self.assertListEqual(parse_sequence([1, 2]), [1, 2])
+    self.assertTupleEqual(parse_sequence(tuple()), tuple())
+    self.assertTupleEqual(parse_sequence((1, 2)), (1, 2))
+
+  def test_parse_sequence_invalid(self):
+    for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2))):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          parse_sequence(invalid)
+
+  def test_parse_non_empty_sequence(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = parse_non_empty_sequence([])
+    self.assertListEqual(parse_non_empty_sequence([1, 2]), [1, 2])
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = parse_non_empty_sequence(tuple())
+    self.assertTupleEqual(parse_non_empty_sequence((1, 2)), (1, 2))
+
+  def test_parse_non_empty_sequence_invalid(self):
+    for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2)), (), []):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          parse_non_empty_sequence(invalid)
 
 
 if __name__ == "__main__":
