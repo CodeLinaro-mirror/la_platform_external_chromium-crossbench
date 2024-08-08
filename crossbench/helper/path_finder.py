@@ -259,6 +259,10 @@ class BaseChromiumBinaryToolFinder(BaseToolFinder):
   def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
     return self._platform.is_file(candidate)
 
+  @classmethod
+  def chrome_path(cls) -> pth.RemotePath:
+    raise NotImplementedError()
+
   def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
     relative_path = chromium_src_relative_local_path() / self.chrome_path()
     if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
@@ -270,29 +274,37 @@ class TraceconvFinder(BaseChromiumBinaryToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
-   return pth.RemotePath(
-      "third_party/perfetto/tools/traceconv")
+    return pth.RemotePath("third_party/perfetto/tools/traceconv")
 
 
 class TraceProcessorFinder(BaseChromiumBinaryToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
-   return pth.RemotePath(
-      "third_party/perfetto/tools/trace_processor")
+    return pth.RemotePath("third_party/perfetto/tools/trace_processor")
+
+
+CROSSBENCH_DIR = pth.LocalPath(__file__).parents[2]
 
 
 class WprGoToolFinder(BaseChromiumBinaryToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
-   return pth.RemotePath(
-      "third_party/catapult/web_page_replay_go/src/wpr.go")
+    return pth.RemotePath("third_party/catapult/web_page_replay_go/src/wpr.go")
+
+  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+    candidates = super()._default_candidates()
+    return candidates + (CROSSBENCH_DIR /
+                         "third_party/webpagereplay/src/wpr.go",)
 
 
 class TsProxyFinder(BaseChromiumBinaryToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
-   return pth.RemotePath(
-      "third_party/catapult/third_party/tsproxy/tsproxy.py")
+    return pth.RemotePath("third_party/catapult/third_party/tsproxy/tsproxy.py")
+
+  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+    candidates = super()._default_candidates()
+    return candidates + (CROSSBENCH_DIR / "third_party/tsproxy/tsproxy.py",)
