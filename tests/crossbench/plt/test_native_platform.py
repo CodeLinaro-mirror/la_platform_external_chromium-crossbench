@@ -291,7 +291,7 @@ class PosixPlatformTestCase(PlatformTestCase):
 
   def test_search_binary_posix_lookup_override(self):
     path = pathlib.Path("ls")
-    override = self.platform.which("python3")
+    override = self.platform.which("cp")
     with self.platform.override_binary(path, override):
       result_path = self.platform.search_binary(path)
       self.assertEqual(result_path, override)
