@@ -21,7 +21,7 @@ class ActionNotImplementedError(NotImplementedError):
     self.runner = runner
     self.action = action
     message = (f"{str(action.TYPE).capitalize()}-action "
-               "not implemented in {type(runner).__name__}")
+               f"not implemented in {type(runner).__name__}")
     super().__init__(message)
 
 
