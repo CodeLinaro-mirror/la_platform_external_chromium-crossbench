@@ -240,6 +240,9 @@ class Adb:
   def reverse(self, remote: int, local: int, protocol: str = "tcp") -> None:
     self._adb("reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
 
+  def reverse_remove(self, remote: int, protocol: str = "tcp") -> None:
+    self._adb("reverse", "--remove", f"{protocol}:{remote}")
+
   def pull(self, device_src_path: RemotePath,
            local_dest_path: LocalPath) -> None:
     self._adb("pull", self.path(device_src_path), local_dest_path)
@@ -533,6 +536,9 @@ class AndroidAdbPlatform(PosixPlatform):
 
   def reverse_port_forward(self, remote_port: int, local_port: int) -> None:
     self.adb.reverse(remote_port, local_port, protocol="tcp")
+
+  def stop_reverse_port_forward(self, remote_port: int) -> None:
+    self.adb.reverse_remove(remote_port, protocol="tcp")
 
   def rsync(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
     return self.pull(from_path, to_path)

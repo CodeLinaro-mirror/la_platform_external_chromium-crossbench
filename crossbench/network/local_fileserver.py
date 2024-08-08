@@ -116,7 +116,8 @@ class LocalFileNetwork(Network):
       with self._open_local_file_server():
         # TODO: properly hook up traffic shaper for the local http server
         with self._traffic_shaper.open(self, session):
-          yield self
+          with self._forward_ports(session):
+            yield self
 
   @contextlib.contextmanager
   def _open_local_file_server(self):
@@ -140,6 +141,19 @@ class LocalFileNetwork(Network):
       finally:
         server.shutdown()
         server_thread.join()
+
+  @contextlib.contextmanager
+  def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
+    browser_platform = session.browser_platform
+    if browser_platform.is_remote:
+      logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
+                   browser_platform)
+      # TODO: create port-forwarder service that is shut down properly.
+      # TODO: make ports configurable
+      browser_platform.reverse_port_forward(self._port, self._port)
+    yield
+    if browser_platform.is_remote:
+      browser_platform.stop_reverse_port_forward(self._port)
 
   def __str__(self) -> str:
     extra_headers_str = ""

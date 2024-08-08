@@ -380,6 +380,10 @@ class Platform(abc.ABC):
       raise ValueError("Cannot forward a remote port on a local platform.")
     assert self.is_local, "Unsupported operation on remote platform"
 
+  def stop_reverse_port_forward(self, remote_port: int) -> None:
+    del remote_port
+    assert self.is_local, "Unsupported operation on remote platform"
+
   def cat(self, file: pth.RemotePathLike, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""
     with self.local_path(file).open(encoding=encoding) as f:

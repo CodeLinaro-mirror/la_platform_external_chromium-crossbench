@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Iterator, Optional, Union
 
 from crossbench import cli_helper
 from crossbench.flags.base import Flags
@@ -48,8 +48,6 @@ class WprReplayNetwork(ReplayNetwork):
     if not browser.attributes.is_chromium_based:
       raise ValueError(
           "Only chromium-based browsers are supported for wpr replay.")
-    if browser.platform.is_remote:
-      self._setup_remote_port_forwarding(browser)
     # TODO: make ports configurable.
     # TODO: use traffic shaper settings.
     return Flags({
@@ -63,14 +61,11 @@ class WprReplayNetwork(ReplayNetwork):
              "2HcXCSKKJS0lEXLQEWhpHUfGuojiU0tiT5gOF9LP6IQ=")
     })
 
-  def _setup_remote_port_forwarding(self, browser: Browser) -> None:
-    logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
-                 browser.platform)
-    platform = browser.platform
-    # TODO: create port-forwarder service that is shut down properly.
-    # TODO: make ports configurable
-    platform.reverse_port_forward(8080, 8080)
-    platform.reverse_port_forward(8081, 8081)
+  @contextlib.contextmanager
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+    with super().open(session):
+      with self._forward_ports(session):
+        yield self
 
   @contextlib.contextmanager
   def _open_replay_server(self, session: BrowserSessionRunGroup):
@@ -87,6 +82,21 @@ class WprReplayNetwork(ReplayNetwork):
       yield self
     finally:
       self._server.stop()
+
+  @contextlib.contextmanager
+  def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
+    browser_platform = session.browser_platform
+    if browser_platform.is_remote:
+      logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
+                   browser_platform)
+      # TODO: create port-forwarder service that is shut down properly.
+      # TODO: make ports configurable
+      browser_platform.reverse_port_forward(8080, 8080)
+      browser_platform.reverse_port_forward(8081, 8081)
+    yield
+    if browser_platform.is_remote:
+      browser_platform.stop_reverse_port_forward(8080)
+      browser_platform.stop_reverse_port_forward(8081)
 
   def __str__(self) -> str:
     return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"

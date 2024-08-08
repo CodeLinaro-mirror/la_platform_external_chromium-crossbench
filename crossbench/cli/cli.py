@@ -26,9 +26,9 @@ from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.cli import ui
+from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
     CrossbenchDevToolsRecorderProxy
-from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
@@ -454,7 +454,7 @@ class CrossBenchCLI:
         "--local-fileserver",
         "--file-server",
         "--fileserver",
-        default=cli_config.NetworkConfig.parse_local,
+        type=cli_config.NetworkConfig.parse_local,
         metavar="DIR",
         dest="network",
         help="Start a local http file server at the given directory.")
