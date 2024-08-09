@@ -340,6 +340,16 @@ class Adb:
       else:
         raise
 
+  def grant_notification_permissions(self, package_name: str) -> None:
+    if not package_name:
+      raise ValueError("Got empty package name")
+    cmd: ListCmdArgsT = ["pm", "grant"]
+    if int(self.getprop("ro.build.version.release")) >= 14:
+      user = self.cmd("user", "get-main-user").strip()
+      cmd.extend(["--user", user])
+    cmd.extend([package_name, "android.permission.POST_NOTIFICATIONS"])
+    self.shell(*cmd)
+
 
 class AndroidAdbPlatform(PosixPlatform):
 
