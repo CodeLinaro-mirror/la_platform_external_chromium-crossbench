@@ -9,8 +9,8 @@ from crossbench.flags.base import Flags, FrozenFlagsError
 from crossbench.flags.chrome import (ChromeBaseFeatures, ChromeBlinkFeatures,
                                      ChromeFeatures, ChromeFlags)
 from crossbench.flags.js_flags import JSFlags
+from crossbench.flags.known_chrome_flags import KNOWN_CHROME_FLAGS
 from crossbench.flags.known_js_flags import KNOWN_JS_FLAGS
-from crossbench.flags.konwn_chrome_flags import KNOWN_CHROME_FLAGS
 from tests import test_helper
 
 
