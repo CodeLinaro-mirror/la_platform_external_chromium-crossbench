@@ -13,6 +13,8 @@ from typing import Optional, Tuple
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
   BasicActionRunner
+from crossbench.benchmarks.loading.action_runner.element_not_found_error \
+  import ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
@@ -233,15 +235,13 @@ class AndroidInputActionRunner(BasicActionRunner):
     with run.actions("ClickAction", measure=False) as actions:
       if action.scroll_into_view and not self._scroll_element_into_view(
           actions, action.selector) and action.required:
-        raise RuntimeError(
-            f"Could not find matching DOM element: {repr(action.selector)}")
+        raise ElementNotFoundError(action.selector)
 
       coordinates = self._get_element_centerpoint(run, actions, action.selector)
 
       if not coordinates:
         if action.required:
-          raise RuntimeError(
-              f"Could not find matching DOM element: {repr(action.selector)}")
+          raise ElementNotFoundError(action.selector)
         return
 
       mouse_str: str = ""

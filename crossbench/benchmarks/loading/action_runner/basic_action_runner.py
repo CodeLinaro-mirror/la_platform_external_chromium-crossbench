@@ -12,6 +12,8 @@ from typing import Optional, Tuple
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.point import Point
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.element_not_found_error \
+  import ElementNotFoundError
 from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
 
@@ -109,8 +111,7 @@ class BasicActionRunner(ActionRunner):
 
     with run.actions("ClickAction", measure=False) as actions:
       if not actions.js(script, arguments=[selector]) and action.required:
-        raise RuntimeError(
-            f"Could not find matching DOM element: {repr(action.selector)}")
+        raise ElementNotFoundError(action.selector)
 
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
