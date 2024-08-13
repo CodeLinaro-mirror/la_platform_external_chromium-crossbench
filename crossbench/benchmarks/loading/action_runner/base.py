@@ -73,7 +73,15 @@ class ActionRunner(abc.ABC):
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
-    raise ActionNotImplementedError(self, action)
+    input_source = action.input_source
+    if input_source is InputSource.JS:
+      self.scroll_js(run, action)
+    elif input_source is InputSource.TOUCH:
+      self.scroll_touch(run, action)
+    elif input_source is InputSource.MOUSE:
+      self.scroll_mouse(run, action)
+    else:
+      raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
     raise ActionNotImplementedError(self, action)
@@ -85,6 +93,15 @@ class ActionRunner(abc.ABC):
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
+    raise InputSourceNotImplementedError(self, action, action.input_source)
+
+  def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
+    raise InputSourceNotImplementedError(self, action, action.input_source)
+
+  def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
+    raise InputSourceNotImplementedError(self, action, action.input_source)
+
+  def scroll_mouse(self, run: Run, action: i_action.ScrollAction) -> None:
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:

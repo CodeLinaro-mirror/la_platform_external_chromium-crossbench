@@ -278,6 +278,8 @@ class ScrollAction(BaseDurationAction):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
+    parser.add_argument(
+        "source", type=InputSource.parse, default=InputSource.JS)
     parser.add_argument("distance", type=cli_helper.parse_float, default=500)
     parser.add_argument(
         "duration",
@@ -286,11 +288,17 @@ class ScrollAction(BaseDurationAction):
     return parser
 
   def __init__(self,
+               source: InputSource,
                distance: float = 500.0,
                duration: dt.timedelta = dt.timedelta(seconds=1),
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._input_source = source
     self._distance = distance
     super().__init__(duration, timeout)
+
+  @property
+  def input_source(self) -> InputSource:
+    return self._input_source
 
   @property
   def distance(self) -> float:

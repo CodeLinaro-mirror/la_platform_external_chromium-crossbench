@@ -112,7 +112,7 @@ class BasicActionRunner(ActionRunner):
         raise RuntimeError(
             f"Could not find matching DOM element: {repr(action.selector)}")
 
-  def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
+  def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
       duration_s = action.duration.total_seconds()
       distance = action.distance

@@ -110,6 +110,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
     self.assertEqual(action.duration, dt.timedelta(seconds=1))
     self.assertEqual(action.distance, 500)
+    self.assertEqual(action.input_source, InputSource.JS)
     self.assertTrue(action.has_timeout)
     action.validate()
 
@@ -122,7 +123,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "scroll",
         "distance": "123",
         "timeout": "12s",
-        "duration": "34s"
+        "duration": "34s",
+        "source": "js",
     }
     action = ScrollAction.load_dict(config_dict)
     self.assertFalse(config_dict)
@@ -130,12 +132,24 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.timeout, dt.timedelta(seconds=12))
     self.assertEqual(action.duration, dt.timedelta(seconds=34))
     self.assertEqual(action.distance, 123)
+    self.assertEqual(action.input_source, InputSource.JS)
     self.assertTrue(action.has_timeout)
     action.validate()
 
     action_2 = ScrollAction.load_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
+
+  def test_parse_scroll_invalid_source(self):
+    config_dict = {
+        "action": "scroll",
+        "source": "invalid source",
+    }
+
+    with self.assertRaises(ValueError) as cm:
+      ScrollAction.load_dict(config_dict)
+
+    self.assertIn("source", str(cm.exception))
 
   def test_scroll_invalid_distance(self):
     with self.assertRaises(ValueError) as cm:
