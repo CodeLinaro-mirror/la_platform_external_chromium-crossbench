@@ -155,6 +155,19 @@ class LocalFileNetwork(Network):
     if browser_platform.is_remote:
       browser_platform.stop_reverse_port_forward(self._port)
 
+  @property
+  def http_port(self) -> Optional[int]:
+    return self._port
+
+  @property
+  def https_port(self) -> Optional[int]:
+    # TODO: support https locally
+    return None
+
+  @property
+  def host(self) -> Optional[str]:
+    return self._host
+
   def __str__(self) -> str:
     extra_headers_str = ""
     if self._extra_headers:

@@ -49,17 +49,20 @@ class WprReplayNetwork(ReplayNetwork):
       raise ValueError(
           "Only chromium-based browsers are supported for wpr replay.")
     # TODO: make ports configurable.
-    # TODO: use traffic shaper settings.
-    return Flags({
-        "--host-resolver-rules":
-            (f"MAP *:80 127.0.0.1:{self._server.http_port},"
-             f"MAP *:443 127.0.0.1:{self._server.https_port},"
-             "EXCLUDE localhost"),
-        # TODO: read this from wpr_public_hash.txt like in the recorder probe
-        "--ignore-certificate-errors-spki-list":
-            ("PhrPvGIaAMmd29hj8BCZOq096yj7uMpRNHpn5PDxI6I=,"
-             "2HcXCSKKJS0lEXLQEWhpHUfGuojiU0tiT5gOF9LP6IQ=")
-    })
+    extra_flags = super().extra_flags(browser)
+    # TODO: read this from wpr_public_hash.txt like in the recorder probe
+    extra_flags["--ignore-certificate-errors-spki-list"] = (
+        "PhrPvGIaAMmd29hj8BCZOq096yj7uMpRNHpn5PDxI6I=,"
+        "2HcXCSKKJS0lEXLQEWhpHUfGuojiU0tiT5gOF9LP6IQ=")
+    if self._traffic_shaper.is_live:
+      # Only remap ports if we're not using the SOCKS proxy from the traffic
+      # shaper.
+      extra_flags["--host-resolver-rules"] = (
+          f"MAP *:80 {self.host}:{self.http_port},"
+          f"MAP *:443 {self.host}:{self.https_port},"
+          "EXCLUDE localhost")
+
+    return extra_flags
 
   @contextlib.contextmanager
   def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
@@ -86,17 +89,35 @@ class WprReplayNetwork(ReplayNetwork):
   @contextlib.contextmanager
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
     browser_platform = session.browser_platform
-    if browser_platform.is_remote:
-      logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
-                   browser_platform)
-      # TODO: create port-forwarder service that is shut down properly.
-      # TODO: make ports configurable
-      browser_platform.reverse_port_forward(8080, 8080)
-      browser_platform.reverse_port_forward(8081, 8081)
+    if self._traffic_shaper.is_live or browser_platform.is_remote:
+      yield
+      return
+    http_port = self.http_port
+    https_port = self.https_port
+    logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
+                 browser_platform)
+    # TODO: create port-forwarder service that is shut down properly.
+    # TODO: make ports configurable
+    browser_platform.reverse_port_forward(http_port, http_port)
+    browser_platform.reverse_port_forward(https_port, https_port)
     yield
-    if browser_platform.is_remote:
-      browser_platform.stop_reverse_port_forward(8080)
-      browser_platform.stop_reverse_port_forward(8081)
+    browser_platform.stop_reverse_port_forward(http_port)
+    browser_platform.stop_reverse_port_forward(https_port)
+
+  @property
+  def http_port(self) -> Optional[int]:
+    assert self._server, "WPR is not running"
+    return self._server.http_port
+
+  @property
+  def https_port(self) -> Optional[int]:
+    assert self._server, "WPR is not running"
+    return self._server.https_port
+
+  @property
+  def host(self) -> Optional[str]:
+    assert self._server, "WPR is not running"
+    return self._server.host
 
   def __str__(self) -> str:
     return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"

@@ -148,7 +148,7 @@ class NetworkConfig(ConfigObject):
     parser.add_argument(
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
     parser.add_argument(
-        "path", type=cli_helper.parse_existing_file_path, required=False)
+        "path", type=cli_helper.parse_existing_path, required=False)
     parser.add_argument("url", type=str, required=False)
     parser.add_argument(
         "wpr_go_bin",

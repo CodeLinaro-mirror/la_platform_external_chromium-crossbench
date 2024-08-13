@@ -31,6 +31,7 @@ class WprStartupError(RuntimeError):
 
 
 class WprBase(abc.ABC):
+  NAME: str = ""
 
   _key_file: LocalPath
   _cert_file: LocalPath
@@ -115,6 +116,10 @@ class WprBase(abc.ABC):
     return self._https_port
 
   @property
+  def host(self) -> str:
+    return self._host
+
+  @property
   def cert_file(self) -> LocalPath:
     return self._cert_file
 
@@ -154,7 +159,7 @@ class WprBase(abc.ABC):
       atexit.register(self.stop)
       logging.info("WPR: waiting for startup")
       self._wait_for_startup()
-      logging.info("WPR: Starting wpr.go recorder: DONE")
+      logging.info("WPR: Starting wpr.go %s: DONE", self.NAME)
 
     except BaseException as e:
       logging.debug("WPR got startup errors: %s %s", type(e), e)
@@ -225,8 +230,8 @@ class WprBase(abc.ABC):
         raise WprStartupError(f"WPR: could not parse host from: {line}")
 
     if self._num_parsed_ports == 2 and self._http_port and self._https_port:
-      logging.debug("WPR: https_port=%s http_port=%s", self._http_port,
-                    self._https_port)
+      logging.debug("WPR: https_port=%s http_port=%s", self._https_port,
+                    self._http_port)
       return True
     return False
 
@@ -254,6 +259,7 @@ class WprBase(abc.ABC):
 
 
 class WprRecorder(WprBase):
+  NAME: str = "recorder"
 
   @property
   def cmd(self) -> TupleCmdArgsT:
@@ -264,6 +270,7 @@ class WprRecorder(WprBase):
 
 
 class WprReplayServer(WprBase):
+  NAME: str = "replay"
 
   def __init__(self,
                archive_path: LocalPath,

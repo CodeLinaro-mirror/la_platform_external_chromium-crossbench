@@ -53,9 +53,14 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
       _ = server.socks_proxy_port
     self.assertIsNone(server.stop())
 
+  def test_basic_instance_http_port(self):
+    server = TsProxyServer(self.ts_proxy_path, http_port=8080)
+    self.assertFalse(server.is_running)
+    with self.assertRaises(AssertionError):
+      _ = server.socks_proxy_port
+    self.assertIsNone(server.stop())
+
   def test_ports(self):
-    with self.assertRaises(ValueError):
-      TsProxyServer(self.ts_proxy_path, http_port=400)
     with self.assertRaises(ValueError):
       TsProxyServer(self.ts_proxy_path, https_port=400)
     with self.assertRaises(ValueError):
