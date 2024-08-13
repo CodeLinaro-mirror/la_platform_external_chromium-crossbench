@@ -47,22 +47,10 @@ class AndroidInputActionRunner(BasicActionRunner):
       r" (?P<bottom>\d+)\)")
 
   def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
-    with run.actions("ClickAction", measure=False) as actions:
-      if action.scroll_into_view and not self._scroll_element_into_view(
-          actions, action.selector) and action.required:
-        raise RuntimeError(
-            f"Could not find matching DOM element: {repr(action.selector)}")
+    self._click_impl(run, action, False)
 
-      coordinates = self._get_element_centerpoint(run, actions, action.selector)
-
-      if not coordinates:
-        if action.required:
-          raise RuntimeError(
-              f"Could not find matching DOM element: {repr(action.selector)}")
-        return
-
-    run.browser.platform.sh("input", "tap", str(coordinates.x),
-                            str(coordinates.y))
+  def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
+    self._click_impl(run, action, True)
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     with run.actions("SwipeAction", measure=False):
@@ -239,3 +227,28 @@ class AndroidInputActionRunner(BasicActionRunner):
         return_on_success=True)
 
     return actions.js(script, arguments=[selector])
+
+  def _click_impl(self, run: Run, action: i_action.ClickAction,
+                  use_mouse: bool) -> None:
+    with run.actions("ClickAction", measure=False) as actions:
+      if action.scroll_into_view and not self._scroll_element_into_view(
+          actions, action.selector) and action.required:
+        raise RuntimeError(
+            f"Could not find matching DOM element: {repr(action.selector)}")
+
+      coordinates = self._get_element_centerpoint(run, actions, action.selector)
+
+      if not coordinates:
+        if action.required:
+          raise RuntimeError(
+              f"Could not find matching DOM element: {repr(action.selector)}")
+        return
+
+      mouse_str: str = ""
+
+      if use_mouse:
+        mouse_str = "mouse"
+
+      run.browser.platform.sh(
+          f"input {mouse_str} tap {str(coordinates.x)} {str(coordinates.y)}",
+          shell=True)
