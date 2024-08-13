@@ -14,7 +14,7 @@ from crossbench import exception
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
   from crossbench.benchmarks.loading.page_config import ActionBlock
-  from crossbench.benchmarks.loading.point import Point
+  from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 
 
@@ -44,13 +44,22 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
 
 
 class ActionRunner(abc.ABC):
+  _info_stack: Optional[exception.TInfoStack]
+
+  # info_stack is a unqiue identifier for the currently running or most recently
+  # run action.
+  @property
+  def info_stack(self) -> exception.TInfoStack:
+    if not self._info_stack:
+      raise Exception("info_stack can not be called before run_blocks")
+    return self._info_stack
 
   def run_blocks(self, run: Run, action_blocks: Iterable[ActionBlock]):
-    index = 0
-    for block in action_blocks:
-      index += 1
-      with exception.annotate(f"Running block {index}: {block.label}"):
-        for action in block.actions:
+    for block_index, block in enumerate(action_blocks, start=1):
+      # TODO: Instead maybe just pass context down. Or pass unique path to every action __init__
+      with exception.annotate(f"Running block {block_index}: {block.label}"):
+        for action_index, action in enumerate(block.actions, start=1):
+          self._info_stack = (f"block_{block_index}", f"action_{action_index}")
           action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
@@ -114,3 +123,21 @@ class ActionRunner(abc.ABC):
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)
+
+  # screenshot_path is a helper for screenshot that generates the full path of a
+  # screenshot file based on info_stack. The screenshot dir is created if
+  # necessary.
+  # TODO: the folder management should be done in a probe.
+  def screenshot_path(self, out_dir: LocalPath, suffix: str) -> LocalPath:
+    screenshot_path = out_dir / "screenshot"
+    screenshot_path.mkdir(exist_ok=True)
+    filename = "_".join(self.info_stack) + f"_{suffix}.png"
+    return screenshot_path / filename
+
+  # TODO: Move this into a probe, which can have multiple implementations for
+  # different platforms or fullscreen vs. window, etc.
+  def screenshot_impl(self, run: Run, suffix: str) -> None:
+    run.browser.screenshot(self.screenshot_path(run.out_dir, suffix))
+
+  def screenshot(self, run: Run, _action: i_action.ScreenshotAction) -> None:
+    self.screenshot_impl(run, "screenshot")

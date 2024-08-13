@@ -200,6 +200,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         self._wrap_webdriver_exception(e, msg, url)
       raise
 
+  def screenshot(self, path: LocalPath) -> None:
+    if not self._driver.get_screenshot_as_file(path.as_posix()):
+      raise DriverException(
+          f"Browser failed to get_screenshot_as_file to file '{path}'", self)
+
   def _wrap_webdriver_exception(
       self, e: selenium.common.exceptions.WebDriverException, msg: str,
       url: str) -> None:

@@ -313,6 +313,10 @@ class Browser(abc.ABC):
                target: Optional[str] = None) -> None:
     pass
 
+  def screenshot(self, path: pth.LocalPath) -> None:
+    # TODO: implement screenshot on browser and platform.
+    raise NotImplementedError(f"Taking screenshots is not supported by {self}")
+
   def _sync_viewport_flag(self, flags: Flags, flag: str,
                           is_requested_by_viewport: bool,
                           replacement: Viewport) -> None:

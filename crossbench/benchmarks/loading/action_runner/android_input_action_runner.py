@@ -252,3 +252,8 @@ class AndroidInputActionRunner(BasicActionRunner):
       run.browser.platform.sh(
           f"input {mouse_str} tap {str(coordinates.x)} {str(coordinates.y)}",
           shell=True)
+
+  # TODO: Move this to a probe. See ActionRunner.
+  def screenshot_impl(self, run: Run, suffix: str) -> None:
+    with open(self.screenshot_path(run.out_dir, suffix), "w") as file:
+      run.browser.platform.sh('screencap', '-p', stdout=file)
