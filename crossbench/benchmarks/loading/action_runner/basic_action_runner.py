@@ -7,43 +7,70 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
+from typing import Optional, Tuple
 
 from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.point import Point
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
 
 
 class BasicActionRunner(ActionRunner):
-  XPATH_SELECT = """
+  XPATH_SELECT_ELEMENT = """
       let element = document.evaluate(arguments[0], document).iterateNext();
-      if (!element) return false;
-      if (arguments[1]) element.scrollIntoView();
-      element.click();
-      return true;
-    """
-  CSS_SELECT = """
-      let element = document.querySelector(arguments[0]);
-      if (!element) return false;
-      if (arguments[1]) element.scrollIntoView();
-      element.click();
-      return true;
     """
 
-  def click(self, run: Run, action: i_action.ClickAction) -> None:
-    with run.actions("ClickAction", measure=False) as actions:
-      # TODO: support more selector types
-      prefix = "xpath/"
-      selector: str = action.selector
-      if selector.startswith(prefix):
-        selector = selector[len(prefix):]
-        script = self.XPATH_SELECT
-      else:
-        script = self.CSS_SELECT
-      found_element = actions.js(
-          script, arguments=[selector, action.scroll_into_view])
-      if not found_element and action.required:
-        raise RuntimeError(
-            f"Could not find matching DMO element: {repr(selector)}")
+  CSS_SELECT_ELEMENT = """
+      let element = document.querySelector(arguments[0]);
+    """
+
+  CHECK_ELEMENT_EXISTS = """
+      if (!element) return false;
+  """
+
+  ELEMENT_SCROLL_INTO_VIEW = """
+      element.scrollIntoView();
+  """
+
+  ELEMENT_CLICK = """
+      element.click();
+  """
+
+  RETURN_SUCCESS = """
+      return true;
+  """
+
+  def get_selector_script(self,
+                          selector: str,
+                          check_element_exists=False,
+                          scroll_into_view=False,
+                          click=False,
+                          return_on_success=False) -> Tuple[str, str]:
+    # TODO: support more selector types
+
+    script: str = ""
+
+    prefix = "xpath/"
+    if selector.startswith(prefix):
+      selector = selector[len(prefix):]
+      script = self.XPATH_SELECT_ELEMENT
+    else:
+      script = self.CSS_SELECT_ELEMENT
+
+    if check_element_exists:
+      script += self.CHECK_ELEMENT_EXISTS
+
+    if scroll_into_view:
+      script += self.ELEMENT_SCROLL_INTO_VIEW
+
+    if click:
+      script += self.ELEMENT_CLICK
+
+    if return_on_success:
+      script += self.RETURN_SUCCESS
+
+    return selector, script
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
     # TODO: potentially refactor the timing and logging out to the base class.
@@ -70,6 +97,20 @@ class BasicActionRunner(ActionRunner):
         run_duration = dt.timedelta(seconds=time.time() - start_time)
         logging.info("%s took longer (%s) than expected action duration (%s).",
                      action, run_duration, action.duration)
+
+  def click_js(self, run: Run, action: i_action.ClickAction) -> None:
+
+    selector, script = self.get_selector_script(
+        action.selector,
+        check_element_exists=True,
+        scroll_into_view=action.scroll_into_view,
+        click=True,
+        return_on_success=True)
+
+    with run.actions("ClickAction", measure=False) as actions:
+      if not actions.js(script, arguments=[selector]) and action.required:
+        raise RuntimeError(
+            f"Could not find matching DOM element: {repr(action.selector)}")
 
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:

@@ -18,6 +18,7 @@ from crossbench import path as pth
 from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   GetAction, ReadyState,
                                                   WaitAction)
+from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.page import PAGES
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 
@@ -362,7 +363,11 @@ class DevToolsRecorderPagesConfig(PagesConfig):
             xpath = selector
             break
       assert xpath, "Need xpath selector for click action"
-      return ClickAction(xpath, scroll_into_view=True, timeout=default_timeout)
+      return ClickAction(
+          InputSource.JS,
+          selector=xpath,
+          scroll_into_view=True,
+          timeout=default_timeout)
     if step_type == "setViewport":
       # Resizing is ignored for now.
       return None

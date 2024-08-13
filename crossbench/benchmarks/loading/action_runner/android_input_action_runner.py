@@ -13,6 +13,7 @@ from typing import Optional, Tuple
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
   BasicActionRunner
+from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
@@ -45,18 +46,23 @@ class AndroidInputActionRunner(BasicActionRunner):
       r"mAppBounds=Rect\((?P<left>\d+), (?P<top>\d+) - (?P<right>\d+),"
       r" (?P<bottom>\d+)\)")
 
-  def tap(self, run: Run, action: i_action.TapAction) -> None:
-    with run.actions("TapAction", measure=False) as actions:
-      self._init_chrome_window_size_if_necessary(run, actions)
+  def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
+    with run.actions("ClickAction", measure=False) as actions:
+      if action.scroll_into_view and not self._scroll_element_into_view(
+          actions, action.selector) and action.required:
+        raise RuntimeError(
+            f"Could not find matching DOM element: {repr(action.selector)}")
 
-      if action.selector:
-        x, y = self._get_element_centerpoint(actions, action.selector)
+      coordinates = self._get_element_centerpoint(run, actions, action.selector)
 
-      else:
-        x = action.x
-        y = action.y
+      if not coordinates:
+        if action.required:
+          raise RuntimeError(
+              f"Could not find matching DOM element: {repr(action.selector)}")
+        return
 
-      run.browser.platform.sh("input", "tap", str(x), str(y))
+    run.browser.platform.sh("input", "tap", str(coordinates.x),
+                            str(coordinates.y))
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     with run.actions("SwipeAction", measure=False):
@@ -157,25 +163,35 @@ class AndroidInputActionRunner(BasicActionRunner):
   # Given a selector, return the bounding rectangle for the element in terms of
   # the device's native pixel count.
   def _get_element_bounding_rect(self, actions: Actions,
-                                 selector: str) -> DisplayRectangle:
-    (
-        element_left,
-        element_right,
-        element_top,
-        element_bottom,
-    ) = actions.js(
-        """
-            const rect =
-                document.querySelector(arguments[0]).getBoundingClientRect();
+                                 selector: str) -> Optional[DisplayRectangle]:
+
+    selector, script = self.get_selector_script(selector)
+
+    script += """
+            if(!element) return [false, 0, 0, 0, 0];
+
+            const rect = element.getBoundingClientRect();
             return [
+              true,
               rect.left,
               rect.right,
               rect.top,
               rect.bottom,
             ];
-        """,
+    """
+    (
+        found_element,
+        element_left,
+        element_right,
+        element_top,
+        element_bottom,
+    ) = actions.js(
+        script,
         arguments=[selector],
     )
+
+    if not found_element:
+      return None
 
     ratio = self._get_actual_pixel_ratio(actions)
 
@@ -191,8 +207,6 @@ class AndroidInputActionRunner(BasicActionRunner):
     element_left += window_bounds.left
     element_right += window_bounds.left
 
-    # Adjust the top and bottom coordinates of the element by the window
-    # position in android plus the top android system window border.
     element_top += self._chrome_window_bounds.top
     element_bottom += self._chrome_window_bounds.top
 
@@ -201,13 +215,27 @@ class AndroidInputActionRunner(BasicActionRunner):
 
   # Given a selector, find the center point of the element in terms of the
   # device's native pixel count.
-  def _get_element_centerpoint(self, actions: Actions,
-                               selector: str) -> Tuple[int, int]:
+  def _get_element_centerpoint(self, run: Run, actions: Actions,
+                               selector: str) -> Optional[Point]:
+    self._init_chrome_window_size_if_necessary(run, actions)
 
-    rect: DisplayRectangle = self._get_element_bounding_rect(actions, selector)
+    rect: Optional[DisplayRectangle] = self._get_element_bounding_rect(
+        actions, selector)
+
+    if not rect:
+      return None
 
     # Find the center of the element.
     x = (rect.left + rect.right) / 2
     y = (rect.top + rect.bottom) / 2
 
-    return round(x), round(y)
+    return Point(round(x), round(y))
+
+  def _scroll_element_into_view(self, actions: Actions, selector: str) -> bool:
+    selector, script = self.get_selector_script(
+        selector,
+        check_element_exists=True,
+        scroll_into_view=True,
+        return_on_success=True)
+
+    return actions.js(script, arguments=[selector])

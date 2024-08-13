@@ -11,6 +11,8 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
 
 from crossbench import cli_helper, exception
+from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.benchmarks.loading.point import Point
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 
@@ -26,8 +28,8 @@ class ActionType(ConfigEnum):
   JS: "ActionType" = ("js", "Run a custom script")
   WAIT: "ActionType" = ("wait", "Wait for a given time")
   SCROLL: "ActionType" = ("scroll", "Scroll on page")
-  CLICK: "ActionType" = ("click", "Click on element")
-  TAP: "ActionType" = ("tap", "Tap on element")
+  CLICK: "ActionType" = ("click",
+                         "Click on element or at specified coordinates")
   SWIPE: "ActionType" = ("swipe", "Swipe on screen")
   WAIT_FOR_ELEMENT: "ActionType" = ("wait_for_element",
                                     "Wait until element appears on the page")
@@ -315,104 +317,88 @@ class ClickAction(Action):
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
-        "selector", type=cli_helper.parse_non_empty_str, required=True)
+        "source", type=InputSource.parse, default=InputSource.JS)
+    parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
     parser.add_argument("required", type=cli_helper.parse_bool, default=False)
     parser.add_argument(
         "scroll_into_view", type=cli_helper.parse_bool, default=False)
-    return parser
-
-  def __init__(self,
-               selector: str,
-               required: bool = False,
-               scroll_into_view: bool = False,
-               timeout: dt.timedelta = ACTION_TIMEOUT):
-    # TODO: convert to custom selector object.
-    self._selector = selector
-    self._scroll_into_view: bool = scroll_into_view
-    self._required: bool = required
-    super().__init__(timeout)
-
-  @property
-  def scroll_into_view(self) -> bool:
-    return self._scroll_into_view
-
-  @property
-  def selector(self) -> str:
-    return self._selector
-
-  @property
-  def required(self) -> bool:
-    return self._required
-
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.click(run, self)
-
-  def validate(self) -> None:
-    super().validate()
-    if not self.selector:
-      raise ValueError(f"{self}.selector is missing.")
-
-  def to_json(self) -> JsonDict:
-    details = super().to_json()
-    details["selector"] = self.selector
-    details["required"] = self.required
-    details["scroll_into_view"] = self.scroll_into_view
-    return details
-
-
-class TapAction(Action):
-  TYPE: ActionType = ActionType.TAP
-
-  @classmethod
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
-    parser = super().config_parser()
-    parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
     parser.add_argument("x", type=cli_helper.parse_positive_zero_int)
     parser.add_argument("y", type=cli_helper.parse_positive_zero_int)
     return parser
 
   def __init__(self,
+               source: InputSource,
                selector: Optional[str] = None,
+               required: bool = False,
+               scroll_into_view: bool = False,
                x: Optional[int] = None,
                y: Optional[int] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT):
     # TODO: convert to custom selector object.
+    self._input_source = source
     self._selector = selector
-    self._x = x
-    self._y = y
+    self._required: bool = required
+    self._scroll_into_view: bool = scroll_into_view
+
+    if x is not None and y is not None:
+      self._coordinates = Point(x, y)
+    else:
+      self._coordinates: Optional[Point] = None
+
     super().__init__(timeout)
+
+  @property
+  def input_source(self) -> InputSource:
+    return self._input_source
 
   @property
   def selector(self) -> Optional[str]:
     return self._selector
 
   @property
-  def x(self) -> Optional[int]:
-    return self._x
+  def required(self) -> bool:
+    return self._required
 
   @property
-  def y(self) -> Optional[int]:
-    return self._y
+  def scroll_into_view(self) -> bool:
+    return self._scroll_into_view
+
+  @property
+  def coordinates(self) -> Optional[Point]:
+    return self._coordinates
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.tap(run, self)
+    action_runner.click(run, self)
 
   def validate(self) -> None:
     super().validate()
-    if self.selector:
-      if self.x is not None or self.y is not None:
-        raise ValueError("Only one is allowed: either selector or coordinates")
-    else:
-      if self.x is None or self.y is None:
-        raise ValueError("Both selector and coordinates are missing")
+
+    if self._selector and self._coordinates:
+      raise ValueError("Only one is allowed: either selector or coordinates")
+
+    if not self._selector and not self._coordinates:
+      raise ValueError("Either selector or coordinates are required")
+
+    if self._input_source is InputSource.JS and self._coordinates:
+      raise ValueError("X,Y Coordinates cannot be used with JS click source.")
+
+    if self._required and self._coordinates:
+      raise ValueError("'required' is not compatible with coordinates")
+
+    if self._scroll_into_view and self._coordinates:
+      raise ValueError("'scroll_into_view' is not compatible with coordinates")
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    if self.selector:
-      details["selector"] = self.selector
+    details["source"] = self._input_source
+
+    if self._selector:
+      details["selector"] = self._selector
+      details["required"] = self._required
+      details["scroll_into_view"] = self._scroll_into_view
     else:
-      details["x"] = self.x
-      details["y"] = self.y
+      details["x"] = self._coordinates.x
+      details["y"] = self._coordinates.y
     return details
 
 
@@ -593,7 +579,6 @@ class InjectNewDocumentScriptAction(JsAction):
 
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
-    TapAction,
     GetAction,
     JsAction,
     ScrollAction,

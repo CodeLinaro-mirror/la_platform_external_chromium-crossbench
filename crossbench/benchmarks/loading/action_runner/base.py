@@ -5,24 +5,42 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Optional
+
+from crossbench.benchmarks.loading.input_source import InputSource
 
 from crossbench import exception
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
   from crossbench.benchmarks.loading.page_config import ActionBlock
+  from crossbench.benchmarks.loading.point import Point
   from crossbench.runner.run import Run
 
 
 class ActionNotImplementedError(NotImplementedError):
 
-  def __init__(self, runner: ActionRunner, action: i_action.Action) -> None:
+  def __init__(self,
+               runner: ActionRunner,
+               action: i_action.Action,
+               msg_context: str = "") -> None:
     self.runner = runner
     self.action = action
+
+    if msg_context:
+      msg_context = ". Context: " + msg_context
+
     message = (f"{str(action.TYPE).capitalize()}-action "
-               f"not implemented in {type(runner).__name__}")
+               f"not implemented in {type(runner).__name__}{msg_context}")
     super().__init__(message)
+
+
+class InputSourceNotImplementedError(ActionNotImplementedError):
+
+  def __init__(self, runner: ActionRunner, action: i_action.Action,
+               input_source: InputSource) -> None:
+    input_source_message = f"Source: '{input_source}' not implemented"
+    super().__init__(runner, action, input_source_message)
 
 
 class ActionRunner(abc.ABC):
@@ -43,17 +61,31 @@ class ActionRunner(abc.ABC):
     with run.actions("JS", measure=False) as actions:
       actions.js(action.script, action.timeout)
 
+  def click(self, run: Run, action: i_action.ClickAction) -> None:
+    input_source = action.input_source
+    if input_source is InputSource.JS:
+      self.click_js(run, action)
+    elif input_source is InputSource.TOUCH:
+      self.click_touch(run, action)
+    elif input_source is InputSource.MOUSE:
+      self.click_mouse(run, action)
+    else:
+      raise RuntimeError(f"Unsupported input source: '{input_source}'")
+
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
     raise ActionNotImplementedError(self, action)
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
     raise ActionNotImplementedError(self, action)
 
-  def click(self, run: Run, action: i_action.ClickAction) -> None:
-    raise ActionNotImplementedError(self, action)
+  def click_js(self, run: Run, action: i_action.ClickAction) -> None:
+    raise InputSourceNotImplementedError(self, action, action.input_source)
 
-  def tap(self, run: Run, action: i_action.TapAction) -> None:
-    raise ActionNotImplementedError(self, action)
+  def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
+    raise InputSourceNotImplementedError(self, action, action.input_source)
+
+  def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
+    raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     raise ActionNotImplementedError(self, action)

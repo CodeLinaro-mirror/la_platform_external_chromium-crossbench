@@ -7,10 +7,11 @@ from __future__ import annotations
 import datetime as dt
 
 import crossbench.path as pth
+from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.action import (
     ACTION_TIMEOUT, ActionType, ClickAction, GetAction,
     InjectNewDocumentScriptAction, JsAction, ReadyState, ScrollAction,
-    SwipeAction, TapAction, WaitAction, WaitForElementAction, WindowTarget)
+    SwipeAction, WaitAction, WaitForElementAction, WindowTarget)
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -144,15 +145,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ScrollAction.load_dict({"action": "scroll", "distance": "0"})
     self.assertIn("distance", str(cm.exception))
 
-  def test_parse_click_default(self):
+  def test_parse_click_minimal_selector(self):
     config_dict = {"action": "click", "selector": "#button"}
     action = ClickAction.load_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.CLICK)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.input_source, InputSource.JS)
     self.assertEqual(action.selector, "#button")
     self.assertFalse(action.required)
     self.assertFalse(action.scroll_into_view)
+    self.assertIsNone(action.coordinates)
     self.assertTrue(action.has_timeout)
     action.validate()
 
@@ -160,9 +163,29 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
-  def test_parse_click_all(self):
+  def test_parse_click_minimal_coordinates(self):
+    config_dict = {"action": "click", "source": "touch", "x": 1, "y": 2}
+    action = ClickAction.load_dict(config_dict)
+    self.assertFalse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.CLICK)
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.input_source, InputSource.TOUCH)
+    self.assertIsNone(action.selector)
+    self.assertFalse(action.required)
+    self.assertFalse(action.scroll_into_view)
+    self.assertEqual(action.coordinates.x, 1)
+    self.assertEqual(action.coordinates.y, 2)
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = ClickAction.load_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_click_selector_all(self):
     config_dict = {
         "action": "click",
+        "source": "js",
         "selector": "#button",
         "required": True,
         "scroll_into_view": True,
@@ -172,6 +195,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.CLICK)
     self.assertEqual(action.timeout, dt.timedelta(seconds=12))
+    self.assertEqual(action.input_source, InputSource.JS)
     self.assertEqual(action.selector, "#button")
     self.assertTrue(action.required)
     self.assertTrue(action.scroll_into_view)
@@ -181,6 +205,15 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action_2 = ClickAction.load_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
+
+  def test_parse_click_invalid_source(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "click",
+          "source": "invalid_source",
+          "selector": "#button"
+      })
+    self.assertIn("source", str(cm.exception))
 
   def test_parse_click_invalid_selector(self):
     with self.assertRaises(ValueError) as cm:
@@ -192,47 +225,53 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     ClickAction.load_dict(input_dict)
     self.assertDictEqual(input_dict, {"duration": "12s"})
 
-  def test_parse_tap_default(self):
-    config_dict = {"action": "tap", "selector": "#button"}
-    action = TapAction.load_dict(config_dict)
-    self.assertFalse(config_dict)
-    self.assertEqual(action.TYPE, ActionType.TAP)
-    self.assertEqual(action.timeout, ACTION_TIMEOUT)
-    self.assertEqual(action.selector, "#button")
-    self.assertIsNone(action.x)
-    self.assertIsNone(action.y)
-    self.assertTrue(action.has_timeout)
-    action.validate()
-
-    action_2 = TapAction.load_dict(action.to_json())
-    self.assertEqual(action, action_2)
-    action_2.validate()
-
-  def test_parse_tap_position(self):
-    config_dict = {"action": "tap", "x": 100, "y": 200, "timeout": "12s"}
-    action = TapAction.load_dict(config_dict)
-    self.assertFalse(config_dict)
-    self.assertEqual(action.TYPE, ActionType.TAP)
-    self.assertEqual(action.timeout, dt.timedelta(seconds=12))
-    self.assertIsNone(action.selector)
-    self.assertEqual(action.x, 100)
-    self.assertEqual(action.y, 200)
-    self.assertTrue(action.has_timeout)
-    action.validate()
-
-    action_2 = TapAction.load_dict(action.to_json())
-    self.assertEqual(action, action_2)
-    action_2.validate()
-
-  def test_parse_tap_invalid(self):
+  def test_parse_click_selector_and_coordinates(self):
     with self.assertRaises(ValueError) as cm:
-      TapAction.load_dict({
-          "action": "tap",
+      ClickAction.load_dict({
+          "action": "click",
+          "source": "TOUCH",
           "selector": "#button",
-          "x": 100,
-          "y": 200,
+          "x": 0,
+          "y": 0
       })
-    self.assertIn("selector", str(cm.exception))
+    self.assertIn("either selector or coordinates", str(cm.exception))
+
+  def test_parse_click_incomplete_coordinates(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({"action": "click", "source": "TOUCH", "x": 0})
+    self.assertIn("Either selector or coordinates", str(cm.exception))
+
+  def test_parse_click_coordinates_with_required(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "click",
+          "source": "TOUCH",
+          "x": 0,
+          "y": 0,
+          "required": "true"
+      })
+    self.assertIn("required", str(cm.exception))
+
+  def test_parse_click_coordinates_with_scroll(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "click",
+          "source": "TOUCH",
+          "x": 0,
+          "y": 0,
+          "scroll_into_view": "true"
+      })
+    self.assertIn("scroll_into_view", str(cm.exception))
+
+  def test_parse_click_coordinates_with_js(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({"action": "click", "source": "JS", "x": 0, "y": 0})
+    self.assertIn("JS", str(cm.exception))
+
+  def test_parse_click_missing_coordinates_and_selector(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({"action": "click", "source": "TOUCH"})
+    self.assertIn("Either selector or coordinates", str(cm.exception))
 
   def test_parse_swipe(self):
     config_dict = {
