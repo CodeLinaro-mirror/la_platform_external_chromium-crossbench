@@ -13,6 +13,7 @@ from crossbench.benchmarks.experimental.power.power_benchmark import \
 from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
+from crossbench.benchmarks.jetstream.jetstream_3_0 import JetStream30Benchmark
 from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
@@ -36,6 +37,7 @@ ALL = (
     JetStream20Benchmark,
     JetStream21Benchmark,
     JetStream22Benchmark,
+    JetStream30Benchmark,
     PageLoadBenchmark,
     ManualBenchmark,
     MotionMark10Benchmark,

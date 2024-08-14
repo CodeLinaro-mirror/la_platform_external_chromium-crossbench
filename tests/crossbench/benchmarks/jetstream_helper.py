@@ -126,3 +126,8 @@ class JetStream2BaseTestCase(
     self.assertIn("JetStream results", output)
     self.assertIn("102.22.33.44", output)
     self.assertIn("100.22.33.44", output)
+
+
+# TODO: introduce JetStreamBaseTestCase
+class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
+  pass
