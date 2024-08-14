@@ -286,15 +286,23 @@ class ScrollAction(BaseDurationAction):
         "duration",
         type=cli_helper.Duration.parse_non_zero,
         default=dt.timedelta(seconds=1))
+    parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
+    parser.add_argument("required", type=cli_helper.parse_bool, default=False)
     return parser
 
   def __init__(self,
                source: InputSource,
                distance: float = 500.0,
                duration: dt.timedelta = dt.timedelta(seconds=1),
+               selector: Optional[str] = None,
+               required: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
     self._input_source = source
     self._distance = distance
+
+    # TODO: convert to custom selector object.
+    self._selector = selector
+    self._required = required
     super().__init__(duration, timeout)
 
   @property
@@ -305,6 +313,14 @@ class ScrollAction(BaseDurationAction):
   def distance(self) -> float:
     return self._distance
 
+  @property
+  def selector(self) -> Optional[str]:
+    return self._selector
+
+  @property
+  def required(self) -> bool:
+    return self._required
+
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.scroll(run, self)
 
@@ -312,6 +328,10 @@ class ScrollAction(BaseDurationAction):
     super().validate()
     if not self.distance:
       raise ValueError(f"{self}.distance is not provided")
+
+    if self.required and not self.selector:
+      raise ValueError(
+          "'required' can only be used when a selector is specified")
 
   def to_json(self) -> JsonDict:
     details = super().to_json()

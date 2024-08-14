@@ -21,11 +21,11 @@ from crossbench.runner.run import Run
 class BasicActionRunner(ActionRunner):
   XPATH_SELECT_ELEMENT = """
       let element = document.evaluate(arguments[0], document).iterateNext();
-    """
+  """
 
   CSS_SELECT_ELEMENT = """
       let element = document.querySelector(arguments[0]);
-    """
+  """
 
   CHECK_ELEMENT_EXISTS = """
       if (!element) return false;
@@ -41,6 +41,19 @@ class BasicActionRunner(ActionRunner):
 
   RETURN_SUCCESS = """
       return true;
+  """
+
+  SELECT_WINDOW = """
+      let element = window;
+  """
+
+  SCROLL_ELEMENT_TO = """
+      element.scrollTo({top:arguments[1], behavior:'smooth'});
+  """
+
+  GET_CURRENT_SCROLL_POSITION = """
+      if (!element) return [false, 0];
+      return [true, element[arguments[1]]];
   """
 
   def get_selector_script(self,
@@ -115,9 +128,30 @@ class BasicActionRunner(ActionRunner):
 
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
+      selector = ""
+      selector_script = self.SELECT_WINDOW
+
+      if action.selector:
+        selector, selector_script = self.get_selector_script(action.selector)
+
+      current_scroll_position_script = (
+          selector_script + self.GET_CURRENT_SCROLL_POSITION)
+
+      found_element, initial_scrollY = actions.js(
+          current_scroll_position_script,
+          arguments=[selector,
+                     self._get_scroll_field(bool(action.selector))])
+
+      if not found_element:
+        if action.required:
+          raise ElementNotFoundError(action.selector)
+        return
+
+      do_scroll_script = selector_script + self.SCROLL_ELEMENT_TO
+
       duration_s = action.duration.total_seconds()
       distance = action.distance
-      initial_scrollY = actions.js("return window.scrollY")
+
       start_time = time.time()
       # TODO: use the chrome.gpuBenchmarking.smoothScrollBy extension
       # if available.
@@ -126,10 +160,10 @@ class BasicActionRunner(ActionRunner):
         if time_delta >= duration_s:
           break
         scrollY = initial_scrollY + time_delta / duration_s * distance
-        actions.js(f"window.scrollTo({{top:{scrollY}, behavior:'smooth'}});")
+        actions.js(do_scroll_script, arguments=[selector, scrollY])
         actions.wait(0.2)
       scrollY = initial_scrollY + distance
-      actions.js(f"window.scrollTo({{top:{scrollY}, behavior:'smooth'}});")
+      actions.js(do_scroll_script, arguments=[selector, scrollY])
 
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
@@ -168,3 +202,9 @@ class BasicActionRunner(ActionRunner):
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     run.browser.run_script_on_new_document(action.script)
+
+  def _get_scroll_field(self, has_selector: bool) -> str:
+    if has_selector:
+      return "scrollTop"
+
+    return "scrollY"

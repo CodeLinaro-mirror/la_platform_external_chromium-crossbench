@@ -125,6 +125,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "timeout": "12s",
         "duration": "34s",
         "source": "js",
+        "selector": "#button",
+        "required": "true"
     }
     action = ScrollAction.load_dict(config_dict)
     self.assertFalse(config_dict)
@@ -133,6 +135,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.duration, dt.timedelta(seconds=34))
     self.assertEqual(action.distance, 123)
     self.assertEqual(action.input_source, InputSource.JS)
+    self.assertTrue(action.required)
+    self.assertEqual(action.selector, "#button")
     self.assertTrue(action.has_timeout)
     action.validate()
 
@@ -150,6 +154,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ScrollAction.load_dict(config_dict)
 
     self.assertIn("source", str(cm.exception))
+
+  def test_parse_scroll_required_missing_selector(self):
+    config_dict = {
+        "action": "scroll",
+        "required": "true",
+    }
+
+    with self.assertRaises(ValueError) as cm:
+      ScrollAction.load_dict(config_dict)
+
+    self.assertIn("required", str(cm.exception))
 
   def test_scroll_invalid_distance(self):
     with self.assertRaises(ValueError) as cm:
