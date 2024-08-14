@@ -89,7 +89,7 @@ class WprReplayNetwork(ReplayNetwork):
   @contextlib.contextmanager
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
     browser_platform = session.browser_platform
-    if self._traffic_shaper.is_live or browser_platform.is_remote:
+    if self._traffic_shaper.is_live or not browser_platform.is_remote:
       yield
       return
     http_port = self.http_port
