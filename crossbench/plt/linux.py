@@ -90,3 +90,7 @@ class LinuxPlatform(PosixPlatform):
       if self.exists(result_path):
         return result_path
     return None
+
+  def screenshot(self, result_path: pth.RemotePath) -> None:
+    # TODO: maybe use imagemagick's 'import' as more portable alternative
+    self.sh("gnome-screenshot", "--file", result_path)

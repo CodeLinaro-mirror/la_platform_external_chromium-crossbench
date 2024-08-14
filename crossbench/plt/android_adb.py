@@ -650,3 +650,6 @@ class AndroidAdbPlatform(PosixPlatform):
         "Android": self._getprop_system_details(),
     }
     return self._system_details
+
+  def screenshot(self, result_path: RemotePath) -> None:
+    self.sh("screencap", "-p", result_path)

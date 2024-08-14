@@ -22,6 +22,7 @@ from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
+from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.trace_processor.trace_processor import \
@@ -65,6 +66,7 @@ GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     PowerMetricsProbe,
     PowerSamplerProbe,
     ProfilingProbe,
+    ScreenshotProbe,
     ShellPollingProbe,
     ShellProbe,
     SystemStatsProbe,

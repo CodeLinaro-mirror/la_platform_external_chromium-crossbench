@@ -340,3 +340,6 @@ class MacOSPlatform(PosixPlatform):
         main_display, ctypes.byref(display_brightness))
     assert ret == 0
     return round(display_brightness.value * 100)
+
+  def screenshot(self, result_path: pth.RemotePath) -> None:
+    self.sh("screencapture", "-x", result_path)

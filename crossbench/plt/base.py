@@ -695,3 +695,8 @@ class Platform(abc.ABC):
   def check_autobrightness(self) -> bool:
     raise NotImplementedError(
         "Implementation is only available on MacOS for now")
+
+  def screenshot(self, result_path: pth.RemotePath) -> None:
+    # TODO: support screen coordinates
+    raise NotImplementedError(
+        "Implementation is only available on MacOS for now")

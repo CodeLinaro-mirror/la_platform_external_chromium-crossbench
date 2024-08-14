@@ -17,6 +17,7 @@ from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
+from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.tracing import TracingProbe
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
@@ -62,13 +63,14 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
 
   def general_purpose_probe_instances(self):
     yield BrowserProfilingProbe()
-    yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DTraceProbe(pth.LocalPath("script.dtrace"))
+    yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"))
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
     yield PowerSamplerProbe()
     yield ProfilingProbe()
+    yield ScreenshotProbe()
     yield ShellPollingProbe(cmd=["ls"])
     yield SystemStatsProbe()
     yield TracingProbe()
