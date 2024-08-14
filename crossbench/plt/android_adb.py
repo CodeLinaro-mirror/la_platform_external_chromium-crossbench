@@ -122,6 +122,10 @@ class Adb:
   def serial_id(self) -> str:
     return self._serial_id
 
+  @functools.cached_property
+  def build_version(self) -> int:
+    return int(self.getprop("ro.build.version.release"))
+
   @property
   def device_info(self) -> Dict[str, str]:
     return self._device_info
@@ -341,10 +345,14 @@ class Adb:
         raise
 
   def grant_notification_permissions(self, package_name: str) -> None:
+    if self.build_version < 13:
+      # Notification permission setting is needed for Android 13 and above.
+      # https://developer.android.com/develop/ui/views/notifications/notification-permission  # pylint: disable=line-too-long
+      return
     if not package_name:
       raise ValueError("Got empty package name")
     cmd: ListCmdArgsT = ["pm", "grant"]
-    if int(self.getprop("ro.build.version.release")) >= 14:
+    if self.build_version >= 14:
       user = self.cmd("user", "get-main-user").strip()
       cmd.extend(["--user", user])
     cmd.extend([package_name, "android.permission.POST_NOTIFICATIONS"])
@@ -383,7 +391,7 @@ class AndroidAdbPlatform(PosixPlatform):
 
   @functools.cached_property
   def version(self) -> str:  #pylint: disable=invalid-overridden-method
-    return self.adb.getprop("ro.build.version.release")
+    return str(self.adb.build_version)
 
   @functools.cached_property
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
