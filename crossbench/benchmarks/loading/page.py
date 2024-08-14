@@ -6,8 +6,12 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
+import logging
+
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
+from crossbench.benchmarks.loading.action_runner.base import \
+    ActionNotImplementedError
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.playback_controller import \
@@ -145,9 +149,21 @@ class InteractivePage(Page):
     assert isinstance(self._action_runner, BasicActionRunner)
     self._action_runner = action_runner
 
+  def failure_screenshot(self, run: Run) -> None:
+    try:
+      self.action_runner.screenshot_impl(run, "failure")
+    except ActionNotImplementedError:
+      logging.debug("Skipping failure screenshot, action not implemented")
+    except Exception as e:
+      logging.error("Failed to take a failure screenshot: %s", str(e))
+
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      self.action_runner.run_blocks(run, self._action_blocks)
+      try:
+        self.action_runner.run_blocks(run, self._action_blocks)
+      except Exception:
+        self.failure_screenshot(run)
+        raise
 
   def details_json(self) -> JsonDict:
     result = super().details_json()
