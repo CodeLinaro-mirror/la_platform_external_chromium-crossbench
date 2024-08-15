@@ -192,6 +192,35 @@ class BaseDurationAction(Action):
     return details
 
 
+class InputSourceAction(BaseDurationAction):
+
+  @classmethod
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "source", type=InputSource.parse, default=InputSource.JS)
+    return parser
+
+  def __init__(self,
+               source: InputSource,
+               duration: dt.timedelta,
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._input_source = source
+    super().__init__(duration, timeout)
+
+  @property
+  def input_source(self) -> InputSource:
+    return self._input_source
+
+  def validate(self) -> None:
+    super().validate()
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["source"] = self.input_source
+    return details
+
+
 class GetAction(BaseDurationAction):
   TYPE: ActionType = ActionType.GET
 
@@ -273,14 +302,12 @@ class WaitAction(DurationAction):
     action_runner.wait(run, self)
 
 
-class ScrollAction(BaseDurationAction):
+class ScrollAction(InputSourceAction):
   TYPE: ActionType = ActionType.SCROLL
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument(
-        "source", type=InputSource.parse, default=InputSource.JS)
     parser.add_argument("distance", type=cli_helper.parse_float, default=500)
     parser.add_argument(
         "duration",
@@ -297,17 +324,12 @@ class ScrollAction(BaseDurationAction):
                selector: Optional[str] = None,
                required: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
-    self._input_source = source
     self._distance = distance
 
     # TODO: convert to custom selector object.
     self._selector = selector
     self._required = required
-    super().__init__(duration, timeout)
-
-  @property
-  def input_source(self) -> InputSource:
-    return self._input_source
+    super().__init__(source, duration, timeout)
 
   @property
   def distance(self) -> float:
@@ -339,14 +361,12 @@ class ScrollAction(BaseDurationAction):
     return details
 
 
-class ClickAction(BaseDurationAction):
+class ClickAction(InputSourceAction):
   TYPE: ActionType = ActionType.CLICK
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument(
-        "source", type=InputSource.parse, default=InputSource.JS)
     parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
     parser.add_argument("required", type=cli_helper.parse_bool, default=False)
     parser.add_argument(
@@ -367,7 +387,6 @@ class ClickAction(BaseDurationAction):
                y: Optional[int] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT):
     # TODO: convert to custom selector object.
-    self._input_source = source
     self._selector = selector
     self._required: bool = required
     self._scroll_into_view: bool = scroll_into_view
@@ -377,11 +396,7 @@ class ClickAction(BaseDurationAction):
     else:
       self._coordinates: Optional[Point] = None
 
-    super().__init__(duration, timeout)
-
-  @property
-  def input_source(self) -> InputSource:
-    return self._input_source
+    super().__init__(source, duration, timeout)
 
   @property
   def selector(self) -> Optional[str]:
@@ -426,7 +441,6 @@ class ClickAction(BaseDurationAction):
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["source"] = self._input_source
 
     if self._selector:
       details["selector"] = self._selector
