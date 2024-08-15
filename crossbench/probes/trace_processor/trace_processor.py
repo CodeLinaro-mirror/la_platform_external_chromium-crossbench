@@ -38,7 +38,8 @@ _METRICS_DIR = pth.LocalPath(__file__).parent / "metrics"
 
 def _is_trace_file(path: pth.LocalPath):
   return path.name.endswith(".trace.pb") or path.name.endswith(
-      ".trace.pb.gz") or path.name.endswith(".perf.data")
+      ".trace.pb.gz") or path.name.endswith(".perf.data") or path.name.endswith(
+          "logcat.txt")
 
 
 def _download_trace_processor() -> pth.LocalPath:
@@ -155,7 +156,8 @@ class TraceProcessor:
         raise RuntimeError(f"Query check failed: {query}")
 
 
-_SOURCE_PROBES: frozenset[str] = frozenset(("perfetto", "tracing", "profiling"))
+_SOURCE_PROBES: frozenset[str] = frozenset(
+    ("perfetto", "tracing", "profiling", "logcat"))
 
 
 def parse_probe_name(value: Any) -> str:

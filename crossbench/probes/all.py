@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Tuple, Type
 
+from crossbench.probes.android_logcat import AndroidLogcatProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
@@ -57,6 +58,7 @@ assert INTERNAL_PROBES[1] == DurationsProbe
 
 # Probes that can be used on arbitrary stories and may be user configurable.
 GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
+    AndroidLogcatProbe,
     BrowserProfilingProbe,
     DTraceProbe,
     DebuggerProbe,
