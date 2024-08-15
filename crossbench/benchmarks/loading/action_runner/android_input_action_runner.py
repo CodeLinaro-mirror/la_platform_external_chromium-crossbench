@@ -37,6 +37,14 @@ class DisplayRectangle:
   # edge of the screen.
   bottom: int
 
+  @property
+  def mid_x(self) -> float:
+    return (self.left + self.right) / 2
+
+  @property
+  def mid_y(self) -> float:
+    return (self.top + self.bottom) / 2
+
 
 class AndroidInputActionRunner(BasicActionRunner):
 
@@ -48,6 +56,58 @@ class AndroidInputActionRunner(BasicActionRunner):
       r"mAppBounds=Rect\((?P<left>\d+), (?P<top>\d+) - (?P<right>\d+),"
       r" (?P<bottom>\d+)\)")
 
+  def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
+    with run.actions("ScrollAction", measure=False) as actions:
+
+      self._init_chrome_window_size_if_necessary(run, actions)
+
+      # The scroll distance is specified in terms of css pixels so adjust to the
+      # native pixel density.
+      total_scroll_distance = self._css_to_native_distance(
+          actions, action.distance)
+
+      # Default to scrolling within the entire chrome window.
+      scroll_area: Optional[DisplayRectangle] = self._chrome_window_bounds
+
+      if action.selector:
+        scroll_area = self._get_element_bounding_rect(actions, action.selector)
+
+      if not scroll_area:
+        if action.required:
+          raise ElementNotFoundError(action.selector)
+        return
+
+      scrollable_top = scroll_area.top
+      scrollable_bottom = scroll_area.bottom
+
+      max_swipe_distance = scrollable_bottom - scrollable_top
+
+      remaining_distance = abs(total_scroll_distance)
+
+      while remaining_distance > 0:
+
+        current_distance = min(max_swipe_distance, remaining_distance)
+
+        # The duration for this swipe should be only a fraction of the total
+        # duration since the entire distance may not be covered in one swipe.
+        current_duration = (current_distance /
+                            abs(total_scroll_distance)) * action.duration
+
+        # If scrolling down, the swipe should start at the bottom and end above.
+        y_start = scrollable_bottom
+        y_end = scrollable_bottom - current_distance
+
+        # If scrolling up, the swipe should start at the top and end below.
+        if total_scroll_distance < 0:
+          y_start = scrollable_top
+          y_end = scrollable_top + current_distance
+
+        self._swipe_impl(run, round(scroll_area.mid_x), round(y_start),
+                         round(scroll_area.mid_x), round(y_end),
+                         current_duration)
+
+        remaining_distance -= current_distance
+
   def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
     self._click_impl(run, action, False)
 
@@ -56,12 +116,16 @@ class AndroidInputActionRunner(BasicActionRunner):
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     with run.actions("SwipeAction", measure=False):
-      x1 = str(action.start_x)
-      y1 = str(action.start_y)
-      x2 = str(action.end_x)
-      y2 = str(action.end_y)
-      dur_ms = str(action.duration // dt.timedelta(milliseconds=1))
-      run.browser.platform.sh("input", "swipe", x1, y1, x2, y2, dur_ms)
+      self._swipe_impl(run, action.start_x, action.start_y, action.end_x,
+                       action.end_y, action.duration)
+
+  def _swipe_impl(self, run: Run, start_x: int, start_y: int, end_x: int,
+                  end_y: int, duration: dt.timedelta) -> None:
+
+    duration_millis = round(duration // dt.timedelta(milliseconds=1))
+
+    run.browser.platform.sh("input", "swipe", str(start_x), str(start_y),
+                            str(end_x), str(end_y), str(duration_millis))
 
   def _init_chrome_window_size_if_necessary(self, run: Run,
                                             actions: Actions) -> None:
@@ -69,7 +133,7 @@ class AndroidInputActionRunner(BasicActionRunner):
     # initialize it now.
     # Note: this assumes the chrome app will not be moved or resized during
     # the test.
-    if self._chrome_window_bounds is None:
+    if not self._chrome_window_bounds:
       self._chrome_window_bounds = self._find_chrome_window_size(run, actions)
 
   # Returns the name of the browser's main window as reported by android's
@@ -143,12 +207,15 @@ class AndroidInputActionRunner(BasicActionRunner):
     # Note: this calculation assumes there are no system borders on the side of
     # the chrome window.
 
-    if window_bounds is None:
+    if not window_bounds:
       window_bounds = self._chrome_window_bounds
 
     inner_width = actions.js("return window.innerWidth;")
 
     return float((window_bounds.right - window_bounds.left) / inner_width)
+
+  def _css_to_native_distance(self, actions: Actions, distance: float) -> float:
+    return distance * self._get_actual_pixel_ratio(actions)
 
   # Given a selector, return the bounding rectangle for the element in terms of
   # the device's native pixel count.
@@ -215,11 +282,7 @@ class AndroidInputActionRunner(BasicActionRunner):
     if not rect:
       return None
 
-    # Find the center of the element.
-    x = (rect.left + rect.right) / 2
-    y = (rect.top + rect.bottom) / 2
-
-    return Point(round(x), round(y))
+    return Point(round(rect.mid_x), round(rect.mid_y))
 
   def _scroll_element_into_view(self, actions: Actions, selector: str) -> bool:
     selector, script = self.get_selector_script(
