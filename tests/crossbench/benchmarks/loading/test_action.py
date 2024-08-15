@@ -249,11 +249,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ClickAction.load_dict({"action": "click", "selector": ""})
     self.assertIn("selector", str(cm.exception))
 
-  def test_pase_click_unused_duration(self):
-    input_dict = {"action": "click", "selector": "#button", "duration": "12s"}
-    ClickAction.load_dict(input_dict)
-    self.assertDictEqual(input_dict, {"duration": "12s"})
-
   def test_parse_click_selector_and_coordinates(self):
     with self.assertRaises(ValueError) as cm:
       ClickAction.load_dict({

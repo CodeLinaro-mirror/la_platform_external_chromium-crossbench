@@ -37,9 +37,18 @@ class ActionNotImplementedError(NotImplementedError):
 
 class InputSourceNotImplementedError(ActionNotImplementedError):
 
-  def __init__(self, runner: ActionRunner, action: i_action.Action,
-               input_source: InputSource) -> None:
-    input_source_message = f"Source: '{input_source}' not implemented"
+  def __init__(self,
+               runner: ActionRunner,
+               action: i_action.Action,
+               input_source: InputSource,
+               msg_context: str = "") -> None:
+
+    if msg_context:
+      msg_context = ". Context: " + msg_context
+
+    input_source_message = (f"Source: '{input_source}'"
+                            f"not implemented{msg_context}")
+
     super().__init__(runner, action, input_source_message)
 
 

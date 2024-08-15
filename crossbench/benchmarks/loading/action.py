@@ -339,7 +339,7 @@ class ScrollAction(BaseDurationAction):
     return details
 
 
-class ClickAction(Action):
+class ClickAction(BaseDurationAction):
   TYPE: ActionType = ActionType.CLICK
 
   @classmethod
@@ -353,10 +353,13 @@ class ClickAction(Action):
         "scroll_into_view", type=cli_helper.parse_bool, default=False)
     parser.add_argument("x", type=cli_helper.parse_positive_zero_int)
     parser.add_argument("y", type=cli_helper.parse_positive_zero_int)
+    parser.add_argument(
+        "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
     return parser
 
   def __init__(self,
                source: InputSource,
+               duration: dt.timedelta = dt.timedelta(),
                selector: Optional[str] = None,
                required: bool = False,
                scroll_into_view: bool = False,
@@ -374,7 +377,7 @@ class ClickAction(Action):
     else:
       self._coordinates: Optional[Point] = None
 
-    super().__init__(timeout)
+    super().__init__(duration, timeout)
 
   @property
   def input_source(self) -> InputSource:
@@ -416,6 +419,10 @@ class ClickAction(Action):
 
     if self._scroll_into_view and self._coordinates:
       raise ValueError("'scroll_into_view' is not compatible with coordinates")
+
+  def validate_duration(self) -> None:
+    # A click action is allowed to have a zero duration.
+    return
 
   def to_json(self) -> JsonDict:
     details = super().to_json()

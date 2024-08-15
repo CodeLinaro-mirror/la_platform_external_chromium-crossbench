@@ -10,6 +10,8 @@ import time
 from typing import Optional, Tuple
 
 from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.action_runner.base import \
+  InputSourceNotImplementedError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.action_runner.element_not_found_error \
@@ -114,6 +116,10 @@ class BasicActionRunner(ActionRunner):
                      action, run_duration, action.duration)
 
   def click_js(self, run: Run, action: i_action.ClickAction) -> None:
+
+    if action.duration > dt.timedelta():
+      raise InputSourceNotImplementedError(self, action, action.input_source,
+                                           "Non-zero duration not implemented")
 
     selector, script = self.get_selector_script(
         action.selector,

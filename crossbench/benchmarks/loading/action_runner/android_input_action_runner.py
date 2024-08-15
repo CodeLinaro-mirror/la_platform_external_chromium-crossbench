@@ -11,6 +11,8 @@ import time
 from typing import Optional, Tuple
 
 from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.action_runner.base import \
+  InputSourceNotImplementedError
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
   BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.element_not_found_error \
@@ -295,6 +297,10 @@ class AndroidInputActionRunner(BasicActionRunner):
 
   def _click_impl(self, run: Run, action: i_action.ClickAction,
                   use_mouse: bool) -> None:
+    if action.duration > dt.timedelta():
+      raise InputSourceNotImplementedError(self, action, action.input_source,
+                                           "Non-zero duration not implemented")
+
     with run.actions("ClickAction", measure=False) as actions:
       if action.scroll_into_view and not self._scroll_element_into_view(
           actions, action.selector) and action.required:
