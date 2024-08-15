@@ -31,6 +31,7 @@ from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
     TimeoutPlaybackController)
 from crossbench.config import ConfigError
+from crossbench.helper import ChangeCWD
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -294,11 +295,21 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self.assertEqual(browser_2_urls, story_urls)
 
 
-class TestExamplePageConfig(unittest.TestCase):
+class TestExamplePageConfig(CrossbenchFakeFsTestCase):
+
+  CNN_JS_INSTRUMENTATION_PATH = (
+      test_helper.config_dir() / "benchmark/loading/cnn_instrumentation.js")
+
+  GLOBO_JS_INSTRUMENTATION_PATH = (
+      test_helper.config_dir() / "benchmark/loading/globo_instrumentation.js")
+
+  YT_JS_INSTRUMENTATION_PATH = (
+      test_helper.config_dir() / "benchmark/loading/youtube_instrumentation.js")
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/page.config.hjson"
+    self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
@@ -313,6 +324,7 @@ class TestExamplePageConfig(unittest.TestCase):
   def test_parse_android_page_config_file(self):
     example_config_file = (
         test_helper.config_dir() / "team/woa/android_input_page_config.hjson")
+    self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
@@ -325,12 +337,17 @@ class TestExamplePageConfig(unittest.TestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_phone(self):
+    self.fs.add_real_file(self.CNN_JS_INSTRUMENTATION_PATH)
+    self.fs.add_real_file(self.GLOBO_JS_INSTRUMENTATION_PATH)
+
     config_file = (
         test_helper.config_dir() / "benchmark/loading/page_config_phone.hjson")
+    self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
-    dict_config = PagesConfig.load_dict(data)
+    with ChangeCWD(test_helper.config_dir() / "benchmark/loading"):
+      dict_config = PagesConfig.load_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
@@ -339,12 +356,17 @@ class TestExamplePageConfig(unittest.TestCase):
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_tablet(self):
+    self.fs.add_real_file(self.CNN_JS_INSTRUMENTATION_PATH)
+    self.fs.add_real_file(self.YT_JS_INSTRUMENTATION_PATH)
+
     config_file = (
         test_helper.config_dir() / "benchmark/loading/page_config_tablet.hjson")
+    self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
-    dict_config = PagesConfig.load_dict(data)
+    with ChangeCWD(test_helper.config_dir() / "benchmark/loading"):
+      dict_config = PagesConfig.load_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
