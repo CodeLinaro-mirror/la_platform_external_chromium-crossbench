@@ -23,7 +23,7 @@ const button_observer = new MutationObserver(mutations => {
   const banner_observer = new MutationObserver(function(e) {
     for (m of e) {
       if (m.type == 'attributes' && banner_node.style.display == 'none') {
-        performance.mark('cookie_banner_hidden')
+        performance.mark('cookie_banner_gone')
         break
       }
     }

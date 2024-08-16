@@ -6,7 +6,7 @@ SELECT LCPMetric(
       SELECT dur / 1e6
       FROM slice
       WHERE name = 'PageLoadMetrics.NavigationToLargestContentfulPaint'
-      ORDER BY ts DESC
+      ORDER BY ts
       LIMIT 1
   )
 );

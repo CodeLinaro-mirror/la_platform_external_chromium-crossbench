@@ -4,7 +4,14 @@
   probes: {
     trace_processor: {
       probes: ["perfetto"],
-      metrics: ["lcp_metric"],
+      metrics: [
+        "lcp_metric",
+        "amazon_page_load_metric",
+        "cnn_page_load_metric",
+        "globo_page_load_metric",
+        "wikipedia_page_load_metric",
+        "youtube_page_load_metric",
+      ],
       queries: [
         "loading/cpu",
         "loading/dom",
@@ -34,12 +41,13 @@
           config {
             name: "track_event"
             chrome_config {
-                trace_config: "{\"record_mode\":\"record-until-full\",\"included_categories\":[\"loading\",\"toplevel\",\"toplevel.flow\",\"devtools.timeline\",\"interactions\",\"v8\",\"v8.execute\",\"blink\",\"blink.worker\",\"navigation\",\"gpu\",\"scheduler\",\"disabled-by-default-v8.compile\",\"disabled-by-default-v8.runtime_stats\",\"disabled-by-default-histogram_samples\",\"disabled-by-default-devtools.timeline\"],\"excluded_categories\":[\"*\"],\"histogram_names\":[\"Blink.UseCounter.Features\"]}"
+                trace_config: "{\"record_mode\":\"record-until-full\",\"included_categories\":[\"benchmark\",\"loading\",\"toplevel\",\"toplevel.flow\",\"devtools.timeline\",\"interactions\",\"v8\",\"v8.execute\",\"blink\",\"blink.user_timing\",\"blink.worker\",\"navigation\",\"gpu\",\"scheduler\",\"disabled-by-default-v8.compile\",\"disabled-by-default-v8.runtime_stats\",\"disabled-by-default-histogram_samples\",\"disabled-by-default-devtools.timeline\"],\"excluded_categories\":[\"*\"],\"histogram_names\":[\"Blink.UseCounter.Features\"]}"
                 privacy_filtering_enabled: false
                 client_priority: USER_INITIATED
             }
             track_event_config {
               disabled_categories: "*"
+              enabled_categories: "benchmark"
               enabled_categories: "loading"
               enabled_categories: "toplevel"
               enabled_categories: "toplevel.flow"
@@ -48,6 +56,7 @@
               enabled_categories: "v8"
               enabled_categories: "v8.execute"
               enabled_categories: "blink"
+              enabled_categories: "blink.user_timing"
               enabled_categories: "blink.worker"
               enabled_categories: "navigation"
               enabled_categories: "gpu"
