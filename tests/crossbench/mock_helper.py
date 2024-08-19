@@ -24,6 +24,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
@@ -298,8 +299,10 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.browsers: List[mock_browser.MockBrowser] = [
-        mock_browser.MockChromeDev("dev", platform=self.platform),
-        mock_browser.MockChromeStable("stable", platform=self.platform)
+        mock_browser.MockChromeDev(
+            "dev", settings=Settings(platform=self.platform)),
+        mock_browser.MockChromeStable(
+            "stable", settings=Settings(platform=self.platform))
     ]
     mock_platform_patcher = mock.patch.object(plt, "PLATFORM", self.platform)
     mock_platform_patcher.start()

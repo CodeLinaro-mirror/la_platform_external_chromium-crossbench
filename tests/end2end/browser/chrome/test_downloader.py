@@ -16,6 +16,7 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
+from crossbench.browsers.settings import Settings
 from tests import test_helper
 
 if plt.PLATFORM.which("gsutil") is None and plt.PLATFORM.is_macos:
@@ -53,7 +54,8 @@ def _load_and_check_version(output_dir: pathlib.Path,
   else:
     assert not archives
   assert app_path.exists()
-  chrome = ChromeWebDriver("test-chrome", app_path, platform=plt.PLATFORM)
+  chrome = ChromeWebDriver(
+      "test-chrome", app_path, settings=Settings(platform=plt.PLATFORM))
   assert version_str in chrome.version
   _load_and_check_chromedriver(output_dir, chrome)
   return app_path

@@ -23,12 +23,8 @@ if TYPE_CHECKING:
 
   from selenium.webdriver.common.timeouts import Timeouts
 
-  from crossbench import plt
-  from crossbench.browsers.splash_screen import SplashScreen
-  from crossbench.browsers.viewport import Viewport
+  from crossbench.browsers.settings import Settings
   from crossbench.env import HostEnvironment
-  from crossbench.flags.base import Flags
-  from crossbench.network.base import Network
   from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
@@ -60,17 +56,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def __init__(self,
                label: str,
                path: Optional[RemotePath] = None,
-               flags: Optional[Flags.InitialDataType] = None,
-               js_flags: Optional[Flags.InitialDataType] = None,
-               cache_dir: Optional[RemotePath] = None,
-               network: Optional[Network] = None,
-               driver_path: Optional[RemotePath] = None,
-               viewport: Optional[Viewport] = None,
-               splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[plt.Platform] = None):
-    super().__init__(label, path, flags, js_flags, cache_dir, network, None,
-                     viewport, splash_screen, platform)
-    self._driver_path = driver_path
+               settings: Optional[Settings] = None):
+    super().__init__(label, path, settings)
+    self._driver_path = self._settings.driver_path
 
   @property
   def type_name(self) -> str:

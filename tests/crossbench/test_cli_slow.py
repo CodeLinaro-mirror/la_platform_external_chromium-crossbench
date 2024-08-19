@@ -11,6 +11,7 @@ from unittest import mock
 import hjson
 
 from crossbench import __version__
+from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config import BrowserVariantsConfig
 from crossbench.cli.config.browser import BrowserConfig
@@ -133,11 +134,10 @@ class CliSlowTestCase(BaseCliTestCase):
     browsers = []
 
     def get_browser(self, args: argparse.Namespace):
+      session = Settings(
+          platform=self.platform, network=args.network.create(self.platform))
       browsers = [
-          mock_browser.MockChromeDev(
-              "dev",
-              platform=self.platform,
-              network=args.network.create(self.platform)),
+          mock_browser.MockChromeDev("dev", settings=session),
       ]
       return browsers
 

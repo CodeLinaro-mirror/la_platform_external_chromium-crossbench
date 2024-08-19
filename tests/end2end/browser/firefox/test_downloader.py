@@ -13,6 +13,7 @@ from crossbench import compat, plt
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.firefox.webdriver import (FirefoxDriverFinder,
                                                    FirefoxWebDriver)
+from crossbench.browsers.settings import Settings
 from tests import test_helper
 
 
@@ -39,7 +40,8 @@ class FirefoxDownloaderTestCase():
     else:
       assert not archives
     assert app_path.exists()
-    browser = FirefoxWebDriver("test-browser", app_path, platform=plt.PLATFORM)
+    browser = FirefoxWebDriver(
+        "test-browser", app_path, settings=Settings(platform=plt.PLATFORM))
     # TODO: fix using dedicated Version object
     base_version_str = version_str.split("b")[0]
     assert base_version_str in browser.version

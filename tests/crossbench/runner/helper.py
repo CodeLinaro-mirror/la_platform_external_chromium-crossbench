@@ -8,6 +8,7 @@ import pathlib
 from typing import Any, List, Optional
 
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.settings import Settings
 from crossbench.env import HostEnvironment
 from crossbench.path import safe_filename
 from crossbench.probes.probe import Probe, ProbeContext
@@ -140,8 +141,9 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     self.stories = [MockStory("story_1"), MockStory("story_2")]
     self.benchmark = MockBenchmark(self.stories)
     self.browsers: List[Browser] = [
-        MockChromeDev("chrome-dev", platform=self.platform),
-        MockFirefox("firefox-stable", platform=self.platform)
+        MockChromeDev("chrome-dev", settings=Settings(platform=self.platform)),
+        MockFirefox(
+            "firefox-stable", settings=Settings(platform=self.platform))
     ]
 
   def default_runner(self,

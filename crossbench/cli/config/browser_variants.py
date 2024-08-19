@@ -23,6 +23,7 @@ from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
                                                 convert_flags_to_label)
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
+from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
@@ -403,9 +404,7 @@ class BrowserVariantsConfig:
       # TODO: move the browser instantiation to a separate step and only
       # create BrowserConfig objects first.
       # pytype: disable=not-instantiable
-      browser_instance = browser_cls(
-          label=label,
-          path=browser_config.path,
+      settings = Settings(
           flags=browser_flags,
           network=network,
           driver_path=args.driver_path or browser_config.driver.path,
@@ -413,6 +412,8 @@ class BrowserVariantsConfig:
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform)
+      browser_instance = browser_cls(
+          label=label, path=browser_config.path, settings=settings)
       # pytype: enable=not-instantiable
       self._variants.append(browser_instance)
 
@@ -688,15 +689,17 @@ class BrowserVariantsConfig:
       if len(flags_sets) > 1:
         label = self._flags_to_label(label, flags)
       assert self._check_unique_label(label), f"Non-unique label: {label}"
-      browser_instance = browser_cls(  # pytype: disable=not-instantiable
-          label=label,
-          path=path,
+      settings = Settings(
           flags=flags,
           network=network,
           driver_path=args.driver_path or browser_config.driver.path,
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform)
+      browser_instance = browser_cls(  # pytype: disable=not-instantiable
+          label=label,
+          path=path,
+          settings=settings)
       logging.info("SELECTED BROWSER: name=%s path='%s' ",
                    browser_instance.unique_name, path)
       self._variants.append(browser_instance)

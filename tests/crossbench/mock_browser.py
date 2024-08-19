@@ -11,12 +11,11 @@ import pathlib
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
                     cast)
 
-import pyfakefs
-
 from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.settings import Settings
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
@@ -78,17 +77,15 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               *args,
                path: Optional[pathlib.Path] = None,
-               platform: Optional[plt.Platform] = None,
-               **kwargs):
-    platform = platform or plt.PLATFORM
+               settings: Optional[Settings] = None):
+    settings = settings or Settings()
+    platform = settings.platform
     path = path or self.mock_app_path(platform)
     self.app_path = path
-    maybe_driver = kwargs.pop("driver_path", None)
-    if maybe_driver:
+    if maybe_driver := settings.driver_path:
       assert isinstance(maybe_driver, pathlib.Path) and maybe_driver.exists()
-    super().__init__(label, path, *args, platform=platform, **kwargs)
+    super().__init__(label, path, settings=settings)
     self.url_list: List[str] = []
     self.js_list: List[str] = []
     self.js_side_effects: List[Any] = []

@@ -5,6 +5,7 @@
 import pathlib
 import unittest
 
+from crossbench.browsers.settings import Settings
 from crossbench.probes.profiling.system_profiling import (
     RENDERER_CMD_PATH, CallGraphMode, CleanupMode, ProfilingProbe, TargetMode,
     generate_simpleperf_command_line)
@@ -274,14 +275,19 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     for browser_cls in TEST_BROWSERS:
       browser_cls.setup_fs(self.fs, macos_platform)
       name = browser_cls.__name__
-      browser_cls(name, platform=macos_platform).attach_probe(probe)
+      browser_cls(
+          name, settings=Settings(platform=macos_platform)).attach_probe(probe)
 
     linux_platform = LinuxMockPlatform()
     for browser_cls in TEST_BROWSERS:
       browser_cls.setup_fs(self.fs, linux_platform)
     with self.assertRaises(AssertionError):
-      MockFirefox("firefox", platform=linux_platform).attach_probe(probe)
-    MockChromeStable("chrome", platform=linux_platform).attach_probe(probe)
+      MockFirefox(
+          "firefox",
+          settings=Settings(platform=linux_platform)).attach_probe(probe)
+    MockChromeStable(
+        "chrome",
+        settings=Settings(platform=linux_platform)).attach_probe(probe)
 
 
 class EnumTestCase(unittest.TestCase):

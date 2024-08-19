@@ -5,6 +5,7 @@
 import argparse
 
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
+from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
@@ -23,9 +24,12 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
       ChromeWebDriverForTesting(
           label="browser-label",
           path=mock_browser.MockChromeStable.mock_app_path(),
-          js_flags=[],
-          flags=["--disable-field-trial-config", "--enable-field-trial-config"],
-          platform=self.platform)
+          settings=Settings(
+              js_flags=[],
+              flags=[
+                  "--disable-field-trial-config", "--enable-field-trial-config"
+              ],
+              platform=self.platform))
     msg = str(cm.exception)
     self.assertIn("--enable-field-trial-config", msg)
     self.assertIn("--disable-field-trial-config", msg)
@@ -34,14 +38,14 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
     browser = ChromeWebDriverForTesting(
         label="browser-label",
         path=mock_browser.MockChromeStable.mock_app_path(),
-        platform=self.platform)
+        settings=Settings(platform=self.platform))
     self.assertIn("--disable-field-trial-config", browser.flags)
 
     browser_field_trial = ChromeWebDriverForTesting(
         label="browser-label",
         path=mock_browser.MockChromeStable.mock_app_path(),
-        flags=["--force-fieldtrials"],
-        platform=self.platform)
+        settings=Settings(
+            flags=["--force-fieldtrials"], platform=self.platform))
     self.assertIn("--force-fieldtrials", browser_field_trial.flags)
     self.assertNotIn("--disable-field-trial-config", browser_field_trial.flags)
 
@@ -50,8 +54,7 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
       browser = ChromeWebDriverForTesting(
           label="browser-label",
           path=mock_browser.MockChromeStable.mock_app_path(),
-          flags=[field_trial_flag],
-          platform=self.platform)
+          settings=Settings(flags=[field_trial_flag], platform=self.platform))
       flags = browser.flags
       for no_experiment_flag in ChromeWebDriver.NO_EXPERIMENTS_FLAGS:
         self.assertNotIn(no_experiment_flag, flags)
