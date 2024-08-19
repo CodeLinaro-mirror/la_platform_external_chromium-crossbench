@@ -318,9 +318,8 @@ class AndroidInputActionRunner(BasicActionRunner):
       if use_mouse:
         mouse_str = "mouse"
 
-      run.browser.platform.sh(
-          f"input {mouse_str} tap {str(coordinates.x)} {str(coordinates.y)}",
-          shell=True)
+      run.browser.platform.sh("input", mouse_str, "tap", str(coordinates.x),
+                              str(coordinates.y))
 
   # TODO: Move this to a probe. See ActionRunner.
   def screenshot_impl(self, run: Run, suffix: str) -> None:
