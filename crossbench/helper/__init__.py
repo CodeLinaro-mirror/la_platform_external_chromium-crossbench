@@ -380,9 +380,6 @@ def wait_and_terminate(process,
       process.send_signal(signal)
     process.wait(timeout)
     return
-  except KeyboardInterrupt:  # pylint: disable=try-except-raise
-    # Propagate keyboard interrupts, unlike all other exceptions.
-    raise
   except TimeoutExpired as e:
     logging.debug("Got timeout while waiting "
                   "for process shutdown (%s): %s", process, e)

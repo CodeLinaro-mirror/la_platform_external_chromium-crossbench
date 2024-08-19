@@ -108,8 +108,6 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         min=2, timeout=self.MAX_STARTUP_TIMEOUT).wait_with_backoff():
       try:
         return webdriver.Safari(**driver_kwargs)
-      except KeyboardInterrupt:  # pylint: disable=try-except-raise
-        raise
       except Exception as e:
         retries += 1
         exception_type = type(e)

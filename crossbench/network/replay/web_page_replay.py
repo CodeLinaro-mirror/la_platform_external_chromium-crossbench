@@ -160,9 +160,9 @@ class WprBase(abc.ABC):
       logging.info("WPR: waiting for startup")
       self._wait_for_startup()
       logging.info("WPR: Starting wpr.go %s: DONE", self.NAME)
-
     except BaseException as e:
-      logging.debug("WPR got startup errors: %s %s", type(e), e)
+      if isinstance(e, Exception):
+        logging.debug("WPR got startup errors: %s %s", type(e), e)
       force_shutdown = isinstance(e, WprStartupError)
       self.stop(force_shutdown)
       self._handle_startup_error()
