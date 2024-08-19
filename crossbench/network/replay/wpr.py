@@ -28,7 +28,8 @@ class WprReplayNetwork(ReplayNetwork):
                archive: Union[LocalPath, str],
                traffic_shaper: Optional[TrafficShaper] = None,
                wpr_go_bin: Optional[LocalPath] = None,
-               browser_platform: Platform = PLATFORM):
+               browser_platform: Platform = PLATFORM,
+               persist_server: bool = False):
     super().__init__(archive, traffic_shaper, browser_platform)
     if not wpr_go_bin:
       if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
@@ -41,6 +42,12 @@ class WprReplayNetwork(ReplayNetwork):
     self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
         cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
     self._server: Optional[WprReplayServer] = None
+    self._persist_server = persist_server
+
+  def __del__(self):
+    if self._persist_server:
+      logging.debug("Stopping WPR server")
+      self._server.stop()
 
   def extra_flags(self, browser: Browser) -> Flags:
     assert self.is_running, "Extra network flags are not valid"
@@ -70,21 +77,31 @@ class WprReplayNetwork(ReplayNetwork):
       with self._forward_ports(session):
         yield self
 
+  def _ensure_server_started(self, session: BrowserSessionRunGroup):
+    log_dir = session.root_dir if self._persist_server else session.out_dir
+    if not self._server or not self._persist_server:
+      self._server = WprReplayServer(
+          self.archive_path,
+          self._wpr_go_bin,
+          http_port=8080,
+          https_port=8081,
+          log_path=log_dir / "network.wpr.log",
+          platform=self.runner_platform)
+      logging.debug("Starting WPR server")
+      self._server.start()
+    else:
+      # TODO: reset wpr server state for reuse
+      logging.debug("WPR server already started")
+
   @contextlib.contextmanager
   def _open_replay_server(self, session: BrowserSessionRunGroup):
-    self._server = WprReplayServer(
-        self.archive_path,
-        self._wpr_go_bin,
-        http_port=8080,
-        https_port=8081,
-        log_path=session.out_dir / "network.wpr.log",
-        platform=self.runner_platform)
-    logging.debug("Starting WPR server")
+    self._ensure_server_started(session)
+
     try:
-      self._server.start()
       yield self
     finally:
-      self._server.stop()
+      if not self._persist_server:
+        self._server.stop()
 
   @contextlib.contextmanager
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:

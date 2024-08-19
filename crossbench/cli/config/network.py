@@ -132,6 +132,7 @@ class NetworkConfig(ConfigObject):
   path: Optional[pth.LocalPath] = None
   url: Optional[str] = None
   wpr_go_bin: Optional[pth.LocalPath] = None
+  persist_server: bool = False
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
@@ -157,6 +158,7 @@ class NetworkConfig(ConfigObject):
         help=("Location of the wpr.go binary or source, "
               "used for WPR replay network. "
               "If not specified, a default lookup in known locations is used."))
+    parser.add_argument("persist_server", type=bool, default=False)
     return parser
 
   @classmethod
@@ -256,6 +258,10 @@ class NetworkConfig(ConfigObject):
     if self.wpr_go_bin and self.type is not NetworkType.WPR:
       raise argparse.ArgumentTypeError(
           "wpr_go_bin can only be used for the WPR replay network")
+    if self.persist_server and self.type is not NetworkType.WPR:
+      # TODO: support fileserver as well
+      raise argparse.ArgumentTypeError(
+          "persist_server can only be used for the WPR replay network")
 
   def create(self, browser_platform: Platform) -> Network:
     with exception.annotate_argparsing(
@@ -270,7 +276,7 @@ class NetworkConfig(ConfigObject):
       if self.type is NetworkType.WPR:
         return WprReplayNetwork(
             self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-            runner_platform)
+            runner_platform, self.persist_server)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:
