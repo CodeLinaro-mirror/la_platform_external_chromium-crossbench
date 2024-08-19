@@ -313,6 +313,9 @@ class Browser(abc.ABC):
                target: Optional[str] = None) -> None:
     pass
 
+  def switch_to_new_tab(self) -> None:
+    raise NotImplementedError(f"New tab is not supported by {self}")
+
   def screenshot(self, path: pth.LocalPath) -> None:
     # TODO: implement screenshot on browser and platform.
     raise NotImplementedError(f"Taking screenshots is not supported by {self}")

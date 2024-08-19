@@ -41,6 +41,7 @@ SHORT_FORM_RE = re.compile(r"((?P<driver>\w{3,}):)??"
 ANDROID_PACKAGE_RE = re.compile(r"[a-z]+(\.[a-z]+){2,}")
 VERSION_FOR_RANGE_RE = re.compile(r"(?P<prefix>[^\d]*)(?P<milestone>\d+)")
 
+
 @dataclasses.dataclass(frozen=True)
 class BrowserConfig(ConfigObject):
   browser: pth.RemotePathLike
@@ -201,6 +202,9 @@ class BrowserConfig(ConfigObject):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.RemotePath("com.android.chrome")
       return browsers.Chrome.stable_path(platform)
+    if identifier in ("chrome-app"):
+      if driver_type == BrowserDriverType.ANDROID:
+        return pth.RemotePath("com.google.android.apps.chrome")
     if identifier in ("chrome-beta", "chr-beta"):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.RemotePath("com.chrome.beta")

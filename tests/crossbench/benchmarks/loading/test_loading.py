@@ -23,13 +23,24 @@ from crossbench.benchmarks.loading.action import ActionType
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
-                                                CombinedPage, LivePage)
+                                                CombinedPage, LivePage,
+                                                InteractivePage)
 from crossbench.benchmarks.loading.page_config import (
     ActionBlockListConfig, DevToolsRecorderPagesConfig, ListPagesConfig,
     PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
     TimeoutPlaybackController)
+from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
+    BasicActionRunner
+from crossbench.benchmarks.loading.action_runner.config import \
+    ActionRunnerConfig
+from crossbench.benchmarks.loading.action_runner.android_input_action_runner import \
+    AndroidInputActionRunner
+from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner import \
+    ChromeOSInputActionRunner
 from crossbench.config import ConfigError
 from crossbench.helper import ChangeCWD
 from crossbench.runner.runner import Runner
@@ -133,6 +144,44 @@ class PlaybackControllerTest(unittest.TestCase):
         break
 
 
+class TabControllerTest(unittest.TestCase):
+
+  def test_parse_invalid(self):
+    for invalid in ["sing", "mult", "mlt", "5"]:
+      with self.subTest(pattern=invalid):
+        with self.assertRaises((argparse.ArgumentTypeError, ValueError)):
+          TabController.parse(invalid)
+
+  def test_parse_multiple(self):
+    tab_controller = TabController.parse("multiple")
+    self.assertTrue(tab_controller.multiple_tabs)
+
+  def test_parse_single(self):
+    tab_controller = TabController.parse("single")
+    self.assertFalse(tab_controller.multiple_tabs)
+
+
+class ActionRunnerConfigTest(unittest.TestCase):
+
+  def test_parse_invalid(self):
+    for invalid in ["bas", "adnroid", "chroms"]:
+      with self.subTest(pattern=invalid):
+        with self.assertRaises((argparse.ArgumentTypeError, ValueError)):
+          ActionRunnerConfig.parse(invalid)
+
+  def test_parse_basic(self):
+    action_runner = ActionRunnerConfig.parse("basic")
+    self.assertIsInstance(action_runner, BasicActionRunner)
+
+  def test_parse_android(self):
+    action_runner = ActionRunnerConfig.parse("android")
+    self.assertIsInstance(action_runner, AndroidInputActionRunner)
+
+  def test_parse_chromeos(self):
+    action_runner = ActionRunnerConfig.parse("chromeos")
+    self.assertIsInstance(action_runner, ChromeOSInputActionRunner)
+
+
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
 
   @property
@@ -144,9 +193,14 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
       patterns: Sequence[str],
       separate: bool = True,
       playback: PlaybackController = PlaybackController.default(),
+      tabs: TabController = TabController.default(),
+      action_runner: ActionRunner = BasicActionRunner(),
       about_blank_duration: dt.timedelta = dt.timedelta()) -> LoadingPageFilter:
     args = argparse.Namespace(
-        about_blank_duration=about_blank_duration, playback=playback)
+        about_blank_duration=about_blank_duration,
+        playback=playback,
+        tabs=tabs,
+        action_runner=action_runner)
     return cast(LoadingPageFilter,
                 super().story_filter(patterns, args=args, separate=separate))
 
@@ -272,6 +326,33 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     urls = [url1] * 3 + [url2] * 3
     self._assert_urls_loaded(urls)
 
+  def test_page_action_runner(self):
+    stories = PAGE_LIST
+    self._test_run(stories)
+    for story in stories:
+      self.assertIsInstance(story.action_runner, BasicActionRunner)
+
+  def test_combined_page_action_runner_invalid(self):
+    config = ActionBlockListConfig.parse([{
+        "label": "block 1",
+        "actions": [{
+            "action": "get",
+            "url": "http://test.com"
+        }]
+    }])
+    page_1 = InteractivePage(
+        config.blocks,
+        "blank",
+        dt.timedelta(seconds=1),
+        action_runner=BasicActionRunner())
+    page_2 = InteractivePage(
+        config.blocks,
+        "amazon",
+        dt.timedelta(seconds=5),
+        action_runner=ChromeOSInputActionRunner())
+    with self.assertRaises(TypeError):
+      CombinedPage((page_1, page_2))
+
   def _test_run(self, stories, throw: bool = False):
     benchmark = self.benchmark_cls(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
@@ -372,7 +453,6 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     for page in dict_config.pages:
       self.assertEqual(len(page.action_blocks), 1)
       self.assertGreater(len(page.action_blocks[0].actions), 1)
-
 
 
 class PageConfigTestsCase(unittest.TestCase):
@@ -769,7 +849,6 @@ DEVTOOLS_RECORDER_EXAMPLE = {
         },
     ]
 }
-
 
 
 class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):

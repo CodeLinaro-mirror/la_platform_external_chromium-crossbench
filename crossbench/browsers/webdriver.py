@@ -180,13 +180,16 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     handles = self._driver.window_handles
     assert handles, "Browser has no more opened windows."
-    self._driver.switch_to.window(handles[0])
+    self._driver.switch_to.window(handles[-1])
     try:
       self._driver.get(url)
     except selenium.common.exceptions.WebDriverException as e:
       if msg := e.msg:
         self._wrap_webdriver_exception(e, msg, url)
       raise
+
+  def switch_to_new_tab(self) -> None:
+    self._driver.switch_to.new_window('tab')
 
   def screenshot(self, path: LocalPath) -> None:
     if not self._driver.get_screenshot_as_file(path.as_posix()):
@@ -225,8 +228,15 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       # pylint: disable=raise-missing-from
       raise ValueError(f"Could not execute JS: {e.msg}")
 
+  def close_all_tabs(self) -> None:
+    if len(self._driver.window_handles) > 1:
+      for handle in self._driver.window_handles:
+        self._driver.switch_to.window(handle)
+        self._driver.close()
+
   def quit(self, runner: Runner) -> None:
     assert self._is_running
+    self.close_all_tabs()
     self.force_quit()
 
   def force_quit(self) -> None:
@@ -242,6 +252,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       except selenium.common.exceptions.NoSuchWindowException:
         # No window is good.
         pass
+      except selenium.common.exceptions.InvalidSessionIdException:
+        # Closing the last tab will close the session as well.
+        return
       try:
         self._driver.quit()
       except selenium.common.exceptions.InvalidSessionIdException:

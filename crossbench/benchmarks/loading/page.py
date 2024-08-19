@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import logging
 
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Iterable
 
 from crossbench.benchmarks.loading.action_runner.base import \
     ActionNotImplementedError
@@ -16,6 +16,8 @@ from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
+from crossbench.benchmarks.loading.tab_controller import \
+    TabController
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -26,6 +28,7 @@ if TYPE_CHECKING:
 
 DEFAULT_DURATION_SECONDS = 15
 DEFAULT_DURATION = dt.timedelta(seconds=DEFAULT_DURATION_SECONDS)
+
 
 class Page(Story, metaclass=abc.ABCMeta):
 
@@ -39,20 +42,33 @@ class Page(Story, metaclass=abc.ABCMeta):
                name: str,
                duration: dt.timedelta = DEFAULT_DURATION,
                playback: PlaybackController = PlaybackController.default(),
+               tabs: TabController = TabController.default(),
+               action_runner: Optional[ActionRunner] = None,
                about_blank_duration: dt.timedelta = dt.timedelta()):
     self._playback: PlaybackController = playback
+    self._tabs: TabController = tabs
+    self._action_runner: ActionRunner = action_runner or BasicActionRunner()
     self._about_blank_duration = about_blank_duration
     super().__init__(name, duration)
+
+  @property
+  def action_runner(self) -> ActionRunner:
+    return self._action_runner
 
   def set_parent(self, parent: Page) -> None:
     # TODO: support nested playback controllers.
     self._playback = PlaybackController.default()
+    self._tabs = TabController.default()
     del parent
 
   def _maybe_navigate_to_about_blank(self, run: Run) -> None:
     if duration := self._about_blank_duration:
       run.browser.show_url(run.runner, "about:blank")
       run.runner.wait(duration)
+
+  @abc.abstractmethod
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    pass
 
 
 class LivePage(Page):
@@ -64,9 +80,12 @@ class LivePage(Page):
       url: str,
       duration: dt.timedelta = DEFAULT_DURATION,
       playback: PlaybackController = PlaybackController.default(),
+      tabs: TabController = TabController.default(),
+      action_runner: Optional[ActionRunner] = None,
       about_blank_duration: dt.timedelta = dt.timedelta()
   ) -> None:
-    super().__init__(name, duration, playback, about_blank_duration)
+    super().__init__(name, duration, playback, tabs, action_runner,
+                     about_blank_duration)
     assert url, "Invalid page url"
     self.url: str = url
 
@@ -80,9 +99,10 @@ class LivePage(Page):
 
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      run.browser.show_url(run.runner, self.url)
-      run.runner.wait(self.duration)
-      self._maybe_navigate_to_about_blank(run)
+      self.action_runner.run_page(run, self)
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.run_page(run, self)
 
   def __str__(self) -> str:
     return f"Page(name={self.name}, url={self.url})"
@@ -91,29 +111,50 @@ class LivePage(Page):
 class CombinedPage(Page):
 
   def __init__(self,
-               pages: Sequence[Page],
+               pages: Iterable[Page],
                name: str = "combined",
                playback: PlaybackController = PlaybackController.default(),
+               tabs: TabController = TabController.default(),
+               action_runner: Optional[ActionRunner] = None,
                about_blank_duration: dt.timedelta = dt.timedelta()):
-    assert len(pages), "No sub-pages provided for CombinedPage"
-    assert len(pages) > 1, "Combined Page needs more than one page"
-    self._pages = pages
+    self._pages = tuple(pages)
+    assert self._pages, "No sub-pages provided for CombinedPage"
+    assert len(self._pages) > 1, "Combined Page needs more than one page"
+    self._tabs = tabs
+
     duration = dt.timedelta()
     for page in self._pages:
       page.set_parent(self)
       duration += page.duration
-    super().__init__(name, duration, playback, about_blank_duration)
+    super().__init__(name, duration, playback, tabs, action_runner,
+                     about_blank_duration)
     self.url = None
+    self.validate_action_runner()
+
+  @property
+  def pages(self) -> Iterable[Page]:
+    return self._pages
 
   def details_json(self) -> JsonDict:
     result = super().details_json()
     result["pages"] = list(page.details_json() for page in self._pages)
     return result
 
+  def validate_action_runner(self) -> None:
+    for page in self._pages:
+      if isinstance(page, InteractivePage):
+        if type(page.action_runner) is not type(self.action_runner):
+          raise TypeError(
+              f"Type of action_runner of sub pages should be the same. "
+              f"Type should be {type(self.action_runner)}, "
+              f"but got {type(page.action_runner)}")
+
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      for page in self._pages:
-        page.run(run)
+      self.action_runner.run_combined_page(run, self)
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.run_combined_page(run, self)
 
   def __str__(self) -> str:
     combined_name = ",".join(page.name for page in self._pages)
@@ -126,15 +167,16 @@ class InteractivePage(Page):
                action_blocks: Tuple[ActionBlock, ...],
                name: str,
                playback: PlaybackController = PlaybackController.default(),
+               tabs: TabController = TabController.default(),
                action_runner: Optional[ActionRunner] = None,
                about_blank_duration: dt.timedelta = dt.timedelta()):
     self._name: str = name
-    self._action_runner: ActionRunner = action_runner or BasicActionRunner()
     assert isinstance(action_blocks, tuple)
     self._action_blocks: Tuple[ActionBlock, ...] = action_blocks
     assert self._action_blocks, "Must have at least 1 valid action"
     duration = self._get_duration()
-    super().__init__(name, duration, playback, about_blank_duration)
+    super().__init__(self._name, duration, playback, tabs, action_runner,
+                     about_blank_duration)
 
   @property
   def action_blocks(self) -> Tuple[ActionBlock, ...]:
@@ -159,11 +201,10 @@ class InteractivePage(Page):
 
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      try:
-        self.action_runner.run_blocks(run, self._action_blocks)
-      except Exception:
-        self.failure_screenshot(run)
-        raise
+      self.action_runner.run_interactive_page(run, self)
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.run_interactive_page(run, self)
 
   def details_json(self) -> JsonDict:
     result = super().details_json()

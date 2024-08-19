@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.playback_controller import \
       PlaybackController
 
+
 @dataclasses.dataclass(frozen=True)
 class ActionBlock(ConfigObject):
   label: str = "default"

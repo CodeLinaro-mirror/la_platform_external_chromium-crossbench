@@ -22,6 +22,9 @@ from crossbench.benchmarks.loading.page_config import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
+from crossbench.benchmarks.loading.tab_controller import \
+    TabController
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 
 if TYPE_CHECKING:
   from crossbench.cli.parser import CrossBenchArgumentParser
@@ -77,6 +80,16 @@ class LoadingPageFilter(StoryFilter[Page]):
         help=("Run a single story from a serialized DevTools recorder session. "
               "See https://developer.chrome.com/docs/devtools/recorder/ "
               "for more details."))
+    parser.add_argument(
+        "--tabs",
+        type=TabController.parse,
+        default=TabController.default(),
+        help="Open the given urls in single tab or multiple tabs. "
+        "Default is single. "
+        "Valid values are: 'multiple', 'single'. "
+        "For 'multiple', it will open the given urls in multiple tabs. "
+        "For 'single', it will open the given urls in single tab sequentially. "
+    )
 
     playback_group = parser.add_mutually_exclusive_group()
     playback_group.add_argument(
@@ -159,6 +172,7 @@ class LoadingPageFilter(StoryFilter[Page]):
   def _story_from_config(cls, args: argparse.Namespace, config: PageConfig,
                          use_labels: bool) -> Page:
     playback: PlaybackController = args.playback
+    tabs: TabController = args.tabs
     if config.playback:
       # TODO: support custom config playback
       playback = config.playback
@@ -166,15 +180,16 @@ class LoadingPageFilter(StoryFilter[Page]):
     if config.label in PAGES:
       page = PAGES[config.label]
       duration = duration or page.duration
-      return LivePage(page.name, page.url, duration, playback,
+      return LivePage(page.name, page.url, duration, playback, tabs, None,
                       args.about_blank_duration)
 
     label: str = config.label if use_labels else config.url
     duration = duration or DEFAULT_DURATION
+
     if not config.action_blocks:
-      return LivePage(label, config.url, duration, playback,
+      return LivePage(label, config.url, duration, playback, tabs, None,
                       args.about_blank_duration)
-    return InteractivePage(config.action_blocks, label, playback,
+    return InteractivePage(config.action_blocks, label, playback, tabs,
                            args.action_runner, args.about_blank_duration)
 
   def create_stories(self, separate: bool) -> Sequence[Page]:
@@ -182,7 +197,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     if not separate and len(self.stories) > 1:
       combined_name = "_".join(page.name for page in self.stories)
       self.stories = (CombinedPage(self.stories, combined_name,
-                                   self._args.playback),)
+                                   self._args.playback, self._args.tabs, None),)
     return self.stories
 
 
@@ -225,7 +240,8 @@ class PageLoadBenchmark(SubStoryBenchmark):
       pages = LoadingPageFilter.stories_from_config(args, config)
       if args.separate or len(pages) == 1:
         return pages
-      return (CombinedPage(pages, "Page Scenarios - Combined", args.playback),)
+      return (CombinedPage(pages, "Page Scenarios - Combined", args.playback,
+                           args.tabs, None),)
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.

@@ -16,6 +16,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page_config import ActionBlock
   from crossbench.path import LocalPath
   from crossbench.runner.run import Run
+  from crossbench.benchmarks.loading.page import Page, CombinedPage, InteractivePage
 
 
 class ActionNotImplementedError(NotImplementedError):
@@ -150,3 +151,23 @@ class ActionRunner(abc.ABC):
 
   def screenshot(self, run: Run, _action: i_action.ScreenshotAction) -> None:
     self.screenshot_impl(run, "screenshot")
+
+  def run_page(self, run: Run, page: Page):
+    run.browser.show_url(run.runner, page.url)
+    run.runner.wait(page.duration)
+    page._maybe_navigate_to_about_blank(run)
+
+  def run_interactive_page(self, run: Run, page: InteractivePage):
+    try:
+      page.action_runner.run_blocks(run, page.action_blocks)
+    except Exception:
+      page.failure_screenshot(run)
+      raise
+
+  def run_combined_page(self, run: Run, page: CombinedPage):
+    for i, sub_page in enumerate(page.pages):
+      # Create a new tab for the multiple_tab case.
+      if i > 0 and page._tabs.multiple_tabs:
+        browser = run.browser
+        browser.switch_to_new_tab()
+      sub_page.run_with(run, self)
