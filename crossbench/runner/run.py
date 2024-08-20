@@ -24,6 +24,7 @@ from crossbench.runner.timing import Timing
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.probes.probe import Probe
@@ -166,6 +167,10 @@ class Run(ResultOrigin):
   @property
   def runner(self) -> Runner:
     return self._runner
+
+  @property
+  def benchmark(self) -> Benchmark:
+    return self._runner.benchmark
 
   @property
   def browser_session(self) -> BrowserSessionRunGroup:

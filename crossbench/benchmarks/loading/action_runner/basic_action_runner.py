@@ -10,12 +10,11 @@ import time
 from typing import Optional, Tuple
 
 from crossbench.benchmarks.loading import action as i_action
-from crossbench.benchmarks.loading.action_runner.base import \
-  InputSourceNotImplementedError
+from crossbench.benchmarks.loading.action_runner.base import (
+    ActionRunner, InputSourceNotImplementedError)
+from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
-from crossbench.benchmarks.loading.action_runner.element_not_found_error \
-  import ElementNotFoundError
 from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
 

@@ -7,16 +7,16 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Iterable, Optional
 
-from crossbench.benchmarks.loading.input_source import InputSource
-
 from crossbench import exception
+from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
+  from crossbench.benchmarks.loading.page import (CombinedPage, InteractivePage,
+                                                  Page)
   from crossbench.benchmarks.loading.page_config import ActionBlock
   from crossbench.path import LocalPath
   from crossbench.runner.run import Run
-  from crossbench.benchmarks.loading.page import Page, CombinedPage, InteractivePage
 
 
 class ActionNotImplementedError(NotImplementedError):
@@ -53,10 +53,11 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
     super().__init__(runner, action, input_source_message)
 
 
-class ActionRunner(abc.ABC):
+class ActionRunner:
+  # TODO: Don't share state across runs
   _info_stack: Optional[exception.TInfoStack]
 
-  # info_stack is a unqiue identifier for the currently running or most recently
+  # info_stack is a unique identifier for the currently running or most recently
   # run action.
   @property
   def info_stack(self) -> exception.TInfoStack:
@@ -159,7 +160,7 @@ class ActionRunner(abc.ABC):
 
   def run_interactive_page(self, run: Run, page: InteractivePage):
     try:
-      page.action_runner.run_blocks(run, page.action_blocks)
+      self.run_blocks(run, page.action_blocks)
     except Exception:
       page.failure_screenshot(run)
       raise

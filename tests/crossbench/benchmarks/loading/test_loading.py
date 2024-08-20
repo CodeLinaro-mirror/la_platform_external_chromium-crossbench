@@ -20,11 +20,20 @@ import crossbench.env
 import crossbench.path
 import crossbench.runner
 from crossbench.benchmarks.loading.action import ActionType
+from crossbench.benchmarks.loading.action_runner.android_input_action_runner import \
+    AndroidInputActionRunner
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
+    BasicActionRunner
+from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner import \
+    ChromeOSInputActionRunner
+from crossbench.benchmarks.loading.action_runner.config import \
+    ActionRunnerConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
-                                                CombinedPage, LivePage,
-                                                InteractivePage)
+                                                CombinedPage, InteractivePage,
+                                                LivePage)
 from crossbench.benchmarks.loading.page_config import (
     ActionBlockListConfig, DevToolsRecorderPagesConfig, ListPagesConfig,
     PageConfig, PagesConfig)
@@ -32,15 +41,6 @@ from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
     TimeoutPlaybackController)
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.config import \
-    ActionRunnerConfig
-from crossbench.benchmarks.loading.action_runner.android_input_action_runner import \
-    AndroidInputActionRunner
-from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner import \
-    ChromeOSInputActionRunner
 from crossbench.config import ConfigError
 from crossbench.helper import ChangeCWD
 from crossbench.runner.runner import Runner
@@ -325,33 +325,6 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self._test_run(stories)
     urls = [url1] * 3 + [url2] * 3
     self._assert_urls_loaded(urls)
-
-  def test_page_action_runner(self):
-    stories = PAGE_LIST
-    self._test_run(stories)
-    for story in stories:
-      self.assertIsInstance(story.action_runner, BasicActionRunner)
-
-  def test_combined_page_action_runner_invalid(self):
-    config = ActionBlockListConfig.parse([{
-        "label": "block 1",
-        "actions": [{
-            "action": "get",
-            "url": "http://test.com"
-        }]
-    }])
-    page_1 = InteractivePage(
-        config.blocks,
-        "blank",
-        dt.timedelta(seconds=1),
-        action_runner=BasicActionRunner())
-    page_2 = InteractivePage(
-        config.blocks,
-        "amazon",
-        dt.timedelta(seconds=5),
-        action_runner=ChromeOSInputActionRunner())
-    with self.assertRaises(TypeError):
-      CombinedPage((page_1, page_2))
 
   def _test_run(self, stories, throw: bool = False):
     benchmark = self.benchmark_cls(stories)

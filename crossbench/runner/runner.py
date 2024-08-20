@@ -308,6 +308,10 @@ class Runner:
     return iter(self._default_probes)
 
   @property
+  def benchmark(self) -> Benchmark:
+    return self._benchmark
+
+  @property
   def repetitions(self) -> int:
     return self._repetitions
 

@@ -12,6 +12,9 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from crossbench import cli_helper
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
+    BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.config import \
     ActionRunnerConfig
 from crossbench.benchmarks.loading.page import (DEFAULT_DURATION, PAGE_LIST,
@@ -22,11 +25,10 @@ from crossbench.benchmarks.loading.page_config import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
-from crossbench.benchmarks.loading.tab_controller import \
-    TabController
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.tab_controller import TabController
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.stories.story import Story
 
@@ -115,11 +117,6 @@ class LoadingPageFilter(StoryFilter[Page]):
         type=cli_helper.Duration.parse_zero,
         default=dt.timedelta(),
         help=("If non-zero, navigate to about:blank after every page."))
-
-    parser.add_argument(
-        "--action-runner",
-        type=ActionRunnerConfig.parse,
-        help="Set the action runner for interactive pages.")
     return parser
 
   @classmethod
@@ -180,24 +177,24 @@ class LoadingPageFilter(StoryFilter[Page]):
     if config.label in PAGES:
       page = PAGES[config.label]
       duration = duration or page.duration
-      return LivePage(page.name, page.url, duration, playback, tabs, None,
+      return LivePage(page.name, page.url, duration, playback, tabs,
                       args.about_blank_duration)
 
     label: str = config.label if use_labels else config.url
     duration = duration or DEFAULT_DURATION
 
     if not config.action_blocks:
-      return LivePage(label, config.url, duration, playback, tabs, None,
+      return LivePage(label, config.url, duration, playback, tabs,
                       args.about_blank_duration)
     return InteractivePage(config.action_blocks, label, playback, tabs,
-                           args.action_runner, args.about_blank_duration)
+                           args.about_blank_duration)
 
   def create_stories(self, separate: bool) -> Sequence[Page]:
     logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
     if not separate and len(self.stories) > 1:
       combined_name = "_".join(page.name for page in self.stories)
       self.stories = (CombinedPage(self.stories, combined_name,
-                                   self._args.playback, self._args.tabs, None),)
+                                   self._args.playback, self._args.tabs),)
     return self.stories
 
 
@@ -226,6 +223,11 @@ class PageLoadBenchmark(SubStoryBenchmark):
   ) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
+
+    parser.add_argument(
+        "--action-runner",
+        type=ActionRunnerConfig.parse,
+        help="Set the action runner for interactive pages.")
     return parser
 
   @classmethod
@@ -241,7 +243,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
       if args.separate or len(pages) == 1:
         return pages
       return (CombinedPage(pages, "Page Scenarios - Combined", args.playback,
-                           args.tabs, None),)
+                           args.tabs),)
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.
@@ -273,7 +275,20 @@ class PageLoadBenchmark(SubStoryBenchmark):
   def aliases(cls) -> Tuple[str, ...]:
     return ("load", "ld")
 
-  def __init__(self, stories: Sequence[Page]) -> None:
+  @classmethod
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["action_runner"] = args.action_runner
+    return kwargs
+
+  def __init__(self,
+               stories: Sequence[Page],
+               action_runner: Optional[ActionRunner] = None) -> None:
+    self._action_runner = action_runner or BasicActionRunner()
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)
+
+  @property
+  def action_runner(self) -> ActionRunner:
+    return self._action_runner
