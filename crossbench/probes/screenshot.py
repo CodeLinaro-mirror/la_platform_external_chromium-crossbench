@@ -34,9 +34,6 @@ class ScreenshotProbe(Probe):
     # TODO: support interval-based screenshots
     return parser
 
-  def __init__(self) -> None:
-    super().__init__()
-
   def _pre_check_viewport_size(self, env: HostEnvironment) -> None:
     for browser in env.runner.browsers:
       viewport: Viewport = browser.viewport
@@ -85,7 +82,7 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
   def screenshot(self, label: Optional[str] = None) -> None:
     # TODO: support screen coordinates
     if not label:
-      label = str(dt.datetime.now().strftime('%Y-%m-%d_%H%M%S'))
+      label = str(dt.datetime.now().strftime("%Y-%m-%d_%H%M%S"))
     path = self.result_path / f"{label}.{ScreenshotProbe.IMAGE_FORMAT}"
     # TODO: use the browser's implementation first which might be more portable
     self.browser_platform.screenshot(path)

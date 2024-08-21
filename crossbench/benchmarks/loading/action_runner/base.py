@@ -62,12 +62,13 @@ class ActionRunner:
   @property
   def info_stack(self) -> exception.TInfoStack:
     if not self._info_stack:
-      raise Exception("info_stack can not be called before run_blocks")
+      raise RuntimeError("info_stack can not be called before run_blocks")
     return self._info_stack
 
   def run_blocks(self, run: Run, action_blocks: Iterable[ActionBlock]):
     for block_index, block in enumerate(action_blocks, start=1):
-      # TODO: Instead maybe just pass context down. Or pass unique path to every action __init__
+      # TODO: Instead maybe just pass context down.
+      # Or pass unique path to every action __init__
       with exception.annotate(f"Running block {block_index}: {block.label}"):
         for action_index, action in enumerate(block.actions, start=1):
           self._info_stack = (f"block_{block_index}", f"action_{action_index}")
@@ -166,13 +167,19 @@ class ActionRunner:
   def screenshot_impl(self, run: Run, suffix: str) -> None:
     run.browser.screenshot(self.screenshot_path(run.out_dir, suffix))
 
-  def screenshot(self, run: Run, _action: i_action.ScreenshotAction) -> None:
+  def screenshot(self, run: Run, action: i_action.ScreenshotAction) -> None:
+    del action
     self.screenshot_impl(run, "screenshot")
 
   def run_page(self, run: Run, page: Page):
     run.browser.show_url(run.runner, page.url)
     run.runner.wait(page.duration)
-    page._maybe_navigate_to_about_blank(run)
+    self._maybe_navigate_to_about_blank(run, page)
+
+  def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
+    if duration := page.about_blank_duration:
+      run.browser.show_url(run.runner, "about:blank")
+      run.runner.wait(duration)
 
   def run_interactive_page(self, run: Run, page: InteractivePage):
     try:
@@ -184,7 +191,7 @@ class ActionRunner:
   def run_combined_page(self, run: Run, page: CombinedPage):
     for i, sub_page in enumerate(page.pages):
       # Create a new tab for the multiple_tab case.
-      if i > 0 and page._tabs.multiple_tabs:
+      if i > 0 and page.tabs.multiple_tabs:
         browser = run.browser
         browser.switch_to_new_tab()
       sub_page.run_with(run, self)

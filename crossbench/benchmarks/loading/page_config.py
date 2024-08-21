@@ -167,7 +167,7 @@ class PageConfig(ConfigObject):
   @classmethod
   def load_dict(cls: Type[PageConfig], config: Dict[str, Any]) -> PageConfig:
     # TODO: use this method and move actions parsing to here from PagesConfig
-    url = config['url']
+    url = config["url"]
     label, url = cls._parse_url(url)
     duration = dt.timedelta()
     if duration_str := config.get("duration"):
@@ -407,7 +407,7 @@ class ListPagesConfig(PagesConfig):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
             "Config does not provide a 'pages' dict.")
-      pages = config['pages']
+      pages = config["pages"]
       if isinstance(pages, str):
         pages = [pages]
       if not isinstance(pages, (list, tuple)):

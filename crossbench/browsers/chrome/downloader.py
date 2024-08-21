@@ -329,7 +329,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   ARM_64_BUILD: Final[str] = "arm_64"
   ARM_64_HIGH_BUILD: Final[str] = "high-arm_64"
 
-  CHANNEL_PACKAGE_LOOKUP = {
+  CHANNEL_PACKAGE_LOOKUP: Dict[str, Tuple[str, BrowserVersionChannel]] = {
       "Beta": (
           "com.chrome.beta",
           BrowserVersionChannel.BETA,
@@ -525,7 +525,7 @@ class ChromeDownloaderWin(ChromeDownloader):
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
     tmp_path = self.host_platform.mkdtemp()
-    with zipfile.ZipFile(archive_path, 'r') as zip_file:
+    with zipfile.ZipFile(archive_path, "r") as zip_file:
       zip_file.extractall(tmp_path)
     self.host_platform.rename(tmp_path / self.ARCHIVE_STEM, extracted_path)
     assert self.host_platform.is_dir(extracted_path), "Could not extract"

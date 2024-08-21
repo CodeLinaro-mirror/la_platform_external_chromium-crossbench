@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath
-  from crossbench.plt.base import CmdArgT, TupleCmdArgsT
+  from crossbench.plt.base import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
 
 class PollingProbe(Probe, metaclass=abc.ABCMeta):
@@ -42,11 +42,11 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
 
   def __init__(
       self,
-      cmd: Iterable[CmdArgT],
+      cmd: Iterable[CmdArg],
       interval: dt.timedelta = dt.timedelta(seconds=1)
   ) -> None:
     super().__init__()
-    self._cmd: TupleCmdArgsT = tuple(cmd)
+    self._cmd: TupleCmdArgs = tuple(cmd)
     self._interval = interval
     if interval.total_seconds() < 0.1:
       raise ValueError(f"Polling interval must be >= 0.1s, but got: {interval}")
@@ -61,7 +61,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
     return self._interval
 
   @property
-  def cmd(self) -> TupleCmdArgsT:
+  def cmd(self) -> TupleCmdArgs:
     return self._cmd
 
   def validate_env(self, env: HostEnvironment) -> None:
@@ -116,11 +116,11 @@ class PollingProbeContext(ProbeContext[PollingProbe]):
 
 class CMDPoller(threading.Thread):
 
-  def __init__(self, platform: plt.Platform, cmd: Iterable[CmdArgT],
+  def __init__(self, platform: plt.Platform, cmd: Iterable[CmdArg],
                interval: dt.timedelta, path: LocalPath):
     super().__init__()
     self._platform = platform
-    self._cmd: TupleCmdArgsT = tuple(cmd)
+    self._cmd: TupleCmdArgs = tuple(cmd)
     self._path: LocalPath = path
     if interval < dt.timedelta(seconds=0.1):
       raise ValueError("Poller interval should be >= 0.1s for accuracy, "

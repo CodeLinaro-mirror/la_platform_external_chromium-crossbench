@@ -46,16 +46,15 @@ class Page(Story, metaclass=abc.ABCMeta):
     self._about_blank_duration = about_blank_duration
     super().__init__(name, duration)
 
+  @property
+  def about_blank_duration(self) -> dt.timedelta:
+    return self._about_blank_duration
+
   def set_parent(self, parent: Page) -> None:
     # TODO: support nested playback controllers.
     self._playback = PlaybackController.default()
     self._tabs = TabController.default()
     del parent
-
-  def _maybe_navigate_to_about_blank(self, run: Run) -> None:
-    if duration := self._about_blank_duration:
-      run.browser.show_url(run.runner, "about:blank")
-      run.runner.wait(duration)
 
   @abc.abstractmethod
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
@@ -125,6 +124,10 @@ class CombinedPage(Page):
     self.url = None
 
   @property
+  def tabs(self) -> TabController:
+    return self._tabs
+
+  @property
   def pages(self) -> Iterable[Page]:
     return self._pages
 
@@ -171,7 +174,7 @@ class InteractivePage(Page):
       action_runner.screenshot_impl(run, "failure")
     except ActionNotImplementedError:
       logging.debug("Skipping failure screenshot, action not implemented")
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       logging.error("Failed to take a failure screenshot: %s", str(e))
 
   def run(self, run: Run) -> None:

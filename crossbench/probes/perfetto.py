@@ -130,7 +130,8 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._host_config_file: pth.LocalPath = run.out_dir / "perfetto_config.textproto"
+    self._host_config_file: pth.LocalPath = (
+        run.out_dir / "perfetto_config.textproto")
     self._browser_config_file: pth.RemotePath = (
         _PERFETTO_CONFIG_REMOTE_DIR / "perfetto_config.textproto")
     self._pid: Optional[int] = None

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
   from crossbench.path import LocalPath, RemotePath
-  from crossbench.plt.base import ListCmdArgsT, Platform
+  from crossbench.plt.base import ListCmdArgs, Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 fnctl = None
@@ -144,6 +144,26 @@ class TsProxyServer:
     assert self._proc, "ts_proxy is not running."
     return self._proc.socks_proxy_port
 
+  @property
+  def ts_proxy_path(self) -> LocalPath:
+    return self._ts_proxy_path
+
+  @property
+  def rtt_ms(self) -> Optional[int]:
+    return self._rtt_ms
+
+  @property
+  def in_kbps(self) -> Optional[int]:
+    return self._in_kbps
+
+  @property
+  def out_kbps(self) -> Optional[int]:
+    return self._out_kbps
+
+  @property
+  def window(self) -> Optional[int]:
+    return self._window
+
   def start(self) -> None:
     assert not self._proc, "ts_proxy is already running."
     self._proc = TsProxyProcess(self._ts_proxy_path, self._host,
@@ -185,7 +205,7 @@ class TsProxyProcess:
                verbose: bool = False,
                timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
     """Start TsProxy server and verify that it started."""
-    cmd: ListCmdArgsT = [
+    cmd: ListCmdArgs = [
         sys.executable,
         ts_proxy_path,
     ]
@@ -226,7 +246,7 @@ class TsProxyProcess:
     self._verify_default_encoding()
     # In python3 universal_newlines forces subprocess to encode/decode,
     # allowing per-line buffering.
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # pylint: disable=consider-using-with
         cmd,
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
@@ -243,7 +263,7 @@ class TsProxyProcess:
       self._stdin: IO[str] = stdin
     else:
       raise RuntimeError("Missing stdin")
-    if fcntl:
+    if fcntl:  # pylint: disable=using-constant-test
       self._setup_non_blocking_io()
     self._wait_for_startup(timeout)
 
@@ -395,11 +415,11 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   def _create_remapping_ts_proxy(self, network) -> TsProxyServer:
     return TsProxyServer(
-        self._ts_proxy._ts_proxy_path,
-        rtt_ms=self._ts_proxy._rtt_ms,
-        in_kbps=self._ts_proxy._in_kbps,
-        out_kbps=self._ts_proxy._out_kbps,
-        window=self._ts_proxy._window,
+        self._ts_proxy.ts_proxy_path,
+        rtt_ms=self._ts_proxy.rtt_ms,
+        in_kbps=self._ts_proxy.in_kbps,
+        out_kbps=self._ts_proxy.out_kbps,
+        window=self._ts_proxy.window,
         host=network.host,
         http_port=network.http_port,
         https_port=network.https_port)

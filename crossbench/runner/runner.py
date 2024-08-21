@@ -180,22 +180,21 @@ class Runner:
         "create_symlinks": args.create_symlinks,
     }
 
-  def __init__(
-      self,
-      out_dir: pth.LocalPath,
-      browsers: Sequence[Browser],
-      benchmark: Benchmark,
-      additional_probes: Iterable[Probe] = (),
-      platform: plt.Platform = plt.PLATFORM,
-      env_config: Optional[HostEnvironmentConfig] = None,
-      env_validation_mode: ValidationMode = ValidationMode.THROW,  # pytype: disable=annotation-type-mismatch
-      repetitions: int = 1,
-      warmup_repetitions: int = 0,
-      cache_temperatures: Iterable[str] = ("default",),
-      timing: Timing = Timing(),
-      thread_mode: ThreadMode = ThreadMode.NONE,
-      throw: bool = False,
-      create_symlinks: bool = True):
+  def __init__(self,
+               out_dir: pth.LocalPath,
+               browsers: Sequence[Browser],
+               benchmark: Benchmark,
+               additional_probes: Iterable[Probe] = (),
+               platform: plt.Platform = plt.PLATFORM,
+               env_config: Optional[HostEnvironmentConfig] = None,
+               env_validation_mode: ValidationMode = ValidationMode.THROW,
+               repetitions: int = 1,
+               warmup_repetitions: int = 0,
+               cache_temperatures: Iterable[str] = ("default",),
+               timing: Timing = Timing(),
+               thread_mode: ThreadMode = ThreadMode.NONE,
+               throw: bool = False,
+               create_symlinks: bool = True):
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"

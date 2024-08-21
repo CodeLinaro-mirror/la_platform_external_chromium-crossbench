@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
                                         StoriesRunGroup)
   from crossbench.runner.run import Run
-  from crossbench.types import JSON, JsonDict, JsonList
+  from crossbench.types import Json, JsonDict, JsonList
 
 
 class InternalProbe(probe.Probe):
@@ -95,7 +95,7 @@ class SystemDetailsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.system.details"
 
-  def to_json(self, actions: Actions) -> JSON:
+  def to_json(self, actions: Actions) -> Json:
     return actions.run.browser_platform.system_details()
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
@@ -109,7 +109,7 @@ class ErrorsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.errors"
 
-  def to_json(self, actions: Actions) -> JSON:
+  def to_json(self, actions: Actions) -> Json:
     return actions.run.exceptions.to_json()
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
@@ -155,7 +155,7 @@ class DurationsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.durations"
 
-  def to_json(self, actions: Actions) -> JSON:
+  def to_json(self, actions: Actions) -> Json:
     return actions.run.durations.to_json()
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:

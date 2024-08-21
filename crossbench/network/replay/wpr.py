@@ -22,6 +22,10 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
+# use value for pylint
+assert GS_PREFIX
+
+
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
@@ -37,7 +41,7 @@ class WprReplayNetwork(ReplayNetwork):
     if not wpr_go_bin:
       raise RuntimeError(
           f"Could not find wpr.go binary on {self.runner_platform}")
-    if wpr_go_bin.suffix == '.go' and not self.runner_platform.which("go"):
+    if wpr_go_bin.suffix == ".go" and not self.runner_platform.which("go"):
       raise ValueError(f"'go' binary not found on {self.runner_platform}")
     self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
         cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))

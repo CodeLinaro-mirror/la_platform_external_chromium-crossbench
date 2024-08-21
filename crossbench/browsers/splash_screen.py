@@ -44,7 +44,8 @@ class SplashScreen:
 
 
 _BLANK_PAGE_HTML = "<html></html>"
-_BLANK_PAGE_DATA_URL = f"data:text/html;charset=utf-8,{urllib.parse.quote(_BLANK_PAGE_HTML)}"
+_BLANK_PAGE_DATA_URL = (
+    f"data:text/html;charset=utf-8,{urllib.parse.quote(_BLANK_PAGE_HTML)}")
 
 
 class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):

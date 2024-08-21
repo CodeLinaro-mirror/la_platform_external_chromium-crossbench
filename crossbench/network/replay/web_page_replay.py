@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper
 from crossbench.helper.path_finder import WprGoToolFinder
-from crossbench.plt import PLATFORM, Platform, TupleCmdArgsT
+from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
@@ -54,9 +54,9 @@ class WprBase(abc.ABC):
       self._log_path = cli_helper.parse_not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
     self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
-    self._go_cmd: TupleCmdArgsT = ()
+    self._go_cmd: TupleCmdArgs = ()
     wpr_root: LocalPath
-    if self._bin_path.suffix == '.go':
+    if self._bin_path.suffix == ".go":
       # `go` binary is required to run a Go source file (`wpr.go`).
       if local_go := self._platform.which("go"):
         self._go_cmd = (local_go, "run", self._bin_path)
@@ -126,12 +126,12 @@ class WprBase(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def cmd(self) -> TupleCmdArgsT:
+  def cmd(self) -> TupleCmdArgs:
     pass
 
   @property
-  def base_cmd_flags(self) -> TupleCmdArgsT:
-    cmd: TupleCmdArgsT = (
+  def base_cmd_flags(self) -> TupleCmdArgs:
+    cmd: TupleCmdArgs = (
         f"--http_port={self._http_port}",
         f"--https_port={self._https_port}",
         f"--https_key_file={self._key_file}",
@@ -142,13 +142,13 @@ class WprBase(abc.ABC):
       cmd += (f"--inject_scripts={injected_scripts}",)
     return cmd
 
-  def start(self) -> None:
-    go_cmd: TupleCmdArgsT = self._go_cmd + self.cmd
+  def start(self):
+    go_cmd: TupleCmdArgs = self._go_cmd + self.cmd
     logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
     self._num_parsed_ports = 0
     try:
       if self._log_path:
-        self._log_file = self._log_path.open("w")
+        self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
       with helper.ChangeCWD(self._bin_path.parent):
         logging.debug("Logging to %s", self._log_path)
         self._process = self._platform.popen(
@@ -175,10 +175,10 @@ class WprBase(abc.ABC):
       return
     logging.error("WPR: Check log files %s", self._log_path)
     try:
-      with self._log_path.open("r") as f:
+      with self._log_path.open("r", encoding="utf-8") as f:
         log_lines = list(f.readlines())
         logging.error("  %s", "  ".join(log_lines[-4:]))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       logging.debug("Got exception while reading wpr log file: %s", e)
 
   def _wait_for_startup(self) -> None:
@@ -186,7 +186,7 @@ class WprBase(abc.ABC):
     assert self._log_path, "missing log_path"
     assert self._num_parsed_ports == 0, "WPR did not shut down correctly."
     time.sleep(1)
-    with self._log_path.open("r") as log_file:
+    with self._log_path.open("r", encoding="utf-8") as log_file:
       while self._process.poll() is None:
         line = log_file.readline()
         if not line:
@@ -201,7 +201,7 @@ class WprBase(abc.ABC):
       with self._open_wpr_cmd_url("generate-200") as r:
         if r.status == 200:
           return
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       logging.debug("Could not query wpr server: %s", e)
     self._raise_startup_failure()
 
@@ -263,7 +263,7 @@ class WprRecorder(WprBase):
   NAME: str = "recorder"
 
   @property
-  def cmd(self) -> TupleCmdArgsT:
+  def cmd(self) -> TupleCmdArgs:
     return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
 
   def _validate_archive_path(self, path: LocalPath) -> LocalPath:
@@ -299,7 +299,7 @@ class WprReplayServer(WprBase):
     return cli_helper.parse_non_empty_file_path(path, "WPR.go replay archive")
 
   @property
-  def cmd(self) -> TupleCmdArgsT:
+  def cmd(self) -> TupleCmdArgs:
     cmd = ("replay",) + super().base_cmd_flags
     if self._rules_file:
       cmd += (f"--rules_file={self._rules_file }",)

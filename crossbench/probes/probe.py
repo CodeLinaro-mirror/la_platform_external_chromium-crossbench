@@ -244,7 +244,6 @@ class Probe(abc.ABC):
       self: ProbeT,
       session: BrowserSessionRunGroup) -> Optional[ProbeSessionContext[ProbeT]]:
     del session
-    return None
 
   def log_run_result(self, run: Run) -> None:
     """

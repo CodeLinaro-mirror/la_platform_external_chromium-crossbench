@@ -22,7 +22,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.helper.path_finder import TraceProcessorFinder
-from crossbench.plt.base import ListCmdArgsT, Platform
+from crossbench.plt.base import ListCmdArgs, Platform
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -42,8 +42,10 @@ def _is_trace_file(path: pth.LocalPath):
           "logcat.txt")
 
 
+TRACE_PROCESSOR_DOWNLOAD_URL = "https://get.perfetto.dev/trace_processor"
+
+
 def _download_trace_processor() -> pth.LocalPath:
-  TRACE_PROCESSOR_DOWNLOAD_URL = "https://get.perfetto.dev/trace_processor"
   destination = BROWSERS_CACHE / "trace_processor"
   urlretrieve(TRACE_PROCESSOR_DOWNLOAD_URL, destination)
   st = os.stat(destination)
@@ -69,10 +71,11 @@ class TraceProcessor:
     self._platform = platform
     self._trace_processor = trace_processor
 
-  def _build_trace_processor_cmd(self, trace_file: pth.LocalPath,
+  def _build_trace_processor_cmd(self,
+                                 trace_file: pth.LocalPath,
                                  metric: Optional[str] = None,
-                                 query: Optional[str] = None) -> ListCmdArgsT:
-    cmd: ListCmdArgsT = [
+                                 query: Optional[str] = None) -> ListCmdArgs:
+    cmd: ListCmdArgs = [
         self._trace_processor,
         "--metric-extension",
         str(_METRICS_DIR) + "@/ext",
@@ -136,8 +139,8 @@ class TraceProcessor:
       process = self._platform.sh(*cmd, capture_output=True, check=False)
       if process.returncode != 0:
         logging.error(
-            "Checking metric '%s' failed. Trace processor stderr:\n%s",
-            metric, process.stderr.decode('ascii'))
+            "Checking metric '%s' failed. Trace processor stderr:\n%s", metric,
+            process.stderr.decode("ascii"))
         raise RuntimeError(f"Metric check failed: {metric}")
 
   def check_queries(self, queries: Iterable[str]) -> None:
@@ -150,9 +153,8 @@ class TraceProcessor:
                                             query=query)
       process = self._platform.sh(*cmd, capture_output=True, check=False)
       if process.returncode != 0:
-        logging.error(
-            "Checking query '%s' failed. Trace processor stderr:\n%s",
-            query, process.stderr.decode('ascii'))
+        logging.error("Checking query '%s' failed. Trace processor stderr:\n%s",
+                      query, process.stderr.decode("ascii"))
         raise RuntimeError(f"Query check failed: {query}")
 
 
@@ -229,10 +231,10 @@ class TraceProcessorProbe(Probe):
           for run in rep.runs:
             extra_columns["repetition"] = run.repetition
             for file in run.results[self].csv_list:
-              with file.open(newline='') as csv_file:
+              with file.open(newline="") as csv_file:
 
                 def skip_empty_lines(line):
-                  return line != '\n'
+                  return line != "\n"
 
                 reader = csv.DictReader(
                     filter(skip_empty_lines, csv_file),
@@ -240,7 +242,7 @@ class TraceProcessorProbe(Probe):
                 if not file.name in writers:
                   merged_csv_file = group_dir / file.name
                   csv_files.append(merged_csv_file)
-                  f = merged_csv_file.open("x", newline='')
+                  f = merged_csv_file.open("x", newline="")
                   stack.enter_context(f)
                   fieldnames = sorted(extra_columns.keys()) + list(
                       reader.fieldnames)
@@ -327,7 +329,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
   def _merge_trace_files(self) -> pth.LocalPath:
     merged_trace = self.local_result_path / "merged_trace.zip"
-    with zipfile.ZipFile(merged_trace, 'w') as zip_file:
+    with zipfile.ZipFile(merged_trace, "w") as zip_file:
       for f in self.run.results.all_traces():
         zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
 
@@ -336,9 +338,11 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
   def _write_probe_result_traces(self, probe_name: str, output_f: IO) -> None:
     # TODO: implement probe dependencies
     probe_results = self.run.results.get_by_name(probe_name)
-    assert probe_results, f"Did not find results for required probe {probe_name}"
+    assert probe_results, (
+        f"Did not find results for required probe {probe_name}")
     if probe_results.is_empty:
-      logging.warn("TRACE_PROCESSOR: No trace files found for %s", probe_name)
+      logging.warning("TRACE_PROCESSOR: No trace files found for %s",
+                      probe_name)
       return
     for f in probe_results.file_list:
       if not _is_trace_file(f):

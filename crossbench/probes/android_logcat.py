@@ -4,24 +4,16 @@
 
 from __future__ import annotations
 
-import abc
-import logging
-import subprocess
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
 
-from crossbench import helper
-from crossbench import path as pth
-from crossbench.cli_helper import parse_remote_path
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ProbeKeyT,
-                                     ResultLocation)
+                                     ProbeIncompatibleBrowser, ResultLocation)
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
 
@@ -90,8 +82,8 @@ class AndroidLogcatProbeContext(ProbeContext[AndroidLogcatProbe]):
 
   def teardown(self) -> ProbeResult:
     assert self._start_time
-    file = self.result_path.with_suffix(".txt")
-    with open(file, "w") as f:
+    file = self.local_result_path.with_suffix(".txt")
+    with file.open("w", encoding="utf-8") as f:
       self.runner_platform.sh(
           "adb",
           "logcat",

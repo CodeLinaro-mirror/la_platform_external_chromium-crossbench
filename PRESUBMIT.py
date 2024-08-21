@@ -33,9 +33,10 @@ def CheckChange(input_api, output_api, on_commit):
       "missing-class-docstring",
       "useless-super-delegation",
       "useless-return",
-      "line-too-long",  # Annoying false-positives on URLs
-      "cyclic-import",  # TODO: This is not working as expected with pytype
-      "no-member",  # Need newer pylint to handle issues with generics
+      "line-too-long",  # Annoying false-positives on URLs.
+      "cyclic-import",  # TODO: This is not working as expected with pytype.
+      "no-member",  # Need newer pylint to handle issues with generics>
+      "bad-option-value"  # Some annotations are only supported in newer pylint versions.
   ]
   tests += input_api.canned_checks.GetPylint(
       input_api,

@@ -686,9 +686,6 @@ class InjectNewDocumentScriptAction(JsAction):
 class ScreenshotAction(Action):
   TYPE: ActionType = ActionType.SCREENSHOT
 
-  def __init__(self, timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
-    super().__init__(timeout)
-
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.screenshot(run, self)
 

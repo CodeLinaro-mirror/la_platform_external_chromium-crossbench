@@ -146,7 +146,7 @@ class BasicActionRunner(ActionRunner):
       current_scroll_position_script = (
           selector_script + self.GET_CURRENT_SCROLL_POSITION)
 
-      found_element, initial_scrollY = actions.js(
+      found_element, initial_scroll_y = actions.js(
           current_scroll_position_script,
           arguments=[selector,
                      self._get_scroll_field(bool(action.selector))])
@@ -168,11 +168,11 @@ class BasicActionRunner(ActionRunner):
         time_delta = time.time() - start_time
         if time_delta >= duration_s:
           break
-        scrollY = initial_scrollY + time_delta / duration_s * distance
-        actions.js(do_scroll_script, arguments=[selector, scrollY])
+        scroll_y = initial_scroll_y + time_delta / duration_s * distance
+        actions.js(do_scroll_script, arguments=[selector, scroll_y])
         actions.wait(0.2)
-      scrollY = initial_scrollY + distance
-      actions.js(do_scroll_script, arguments=[selector, scrollY])
+      scroll_y = initial_scroll_y + distance
+      actions.js(do_scroll_script, arguments=[selector, scroll_y])
 
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
@@ -215,7 +215,6 @@ class BasicActionRunner(ActionRunner):
   def _get_scroll_field(self, has_selector: bool) -> str:
     if has_selector:
       return "scrollTop"
-
     return "scrollY"
 
   def _rate_limit_keystrokes(

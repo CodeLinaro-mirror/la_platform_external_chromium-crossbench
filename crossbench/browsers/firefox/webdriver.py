@@ -141,7 +141,7 @@ class FirefoxDriverFinder:
 
   def _get_driver_version(self) -> Tuple[int, int, int]:
     version = self.browser.major_version
-    # See https://firefox-source-docs.mozilla.org/testing/geckodriver/Support.html
+    # See https://firefox-source-docs.mozilla.org/testing/geckodriver/Support.html # noqa
     if version < 52:
       raise ValueError(f"Firefox {version} is too old for geckodriver.")
     if version < 53:

@@ -187,7 +187,7 @@ class DriverConfig(ConfigObject):
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
     try:
       return re.compile(maybe_pattern)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       logging.debug(
           "Falling back to full string match for "
           "invalid regexp search pattern: %s %s", maybe_pattern, e)
@@ -313,8 +313,8 @@ class DriverConfig(ConfigObject):
       # for attached simulators or devices. Currently only a single device
       # is supported
       pass
-    if (self.type == BrowserDriverType.LINUX_SSH or
-        self.type == BrowserDriverType.CHROMEOS_SSH):
+    if self.type in (BrowserDriverType.LINUX_SSH,
+                     BrowserDriverType.CHROMEOS_SSH):
       return self.get_ssh_platform()
     return plt.PLATFORM
 

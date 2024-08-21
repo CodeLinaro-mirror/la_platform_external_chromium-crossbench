@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+from typing import Any, Dict
 
 from crossbench.config import ConfigObject
-from typing import Any, Dict
 
 
 @dataclasses.dataclass(frozen=True)
@@ -26,7 +26,7 @@ class TabController(ConfigObject):
     if value == "single":
       return cls.single()
     raise argparse.ArgumentTypeError(
-        'Value has to be either multiple or single')
+        "Value has to be either multiple or single")
 
   @classmethod
   def default(cls) -> TabController:
@@ -34,8 +34,8 @@ class TabController(ConfigObject):
 
   @classmethod
   def multiple(cls) -> TabController:
-    """
-    Specify multiple_tabs as True. The given urls will be opened in multiple tabs.
+    """ Specify multiple_tabs as True. The given urls will be opened
+    in multiple tabs.
     """
     return TabController(True)
 

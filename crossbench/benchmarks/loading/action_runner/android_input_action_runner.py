@@ -341,5 +341,6 @@ class AndroidInputActionRunner(BasicActionRunner):
 
   # TODO: Move this to a probe. See ActionRunner.
   def screenshot_impl(self, run: Run, suffix: str) -> None:
-    with open(self.screenshot_path(run.out_dir, suffix), "w") as file:
+    with self.screenshot_path(run.out_dir, suffix).open(
+        "w", encoding="utf-8") as file:
       run.browser.platform.sh("screencap", "-p", stdout=file)

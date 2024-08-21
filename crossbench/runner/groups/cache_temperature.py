@@ -90,4 +90,4 @@ class CacheTemperatureRunGroup(RunGroup):
     return info
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
-    return probe.merge_cache_temperatures(self)  # pytype: disable=wrong-arg-types
+    return probe.merge_cache_temperatures(self)

@@ -35,10 +35,10 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
-CmdArgT = pth.RemotePathLike
-ListCmdArgsT = List[CmdArgT]
-TupleCmdArgsT = Tuple[CmdArgT, ...]
-CmdArgsT = Union[ListCmdArgsT, TupleCmdArgsT]
+CmdArg = pth.RemotePathLike
+ListCmdArgs = List[CmdArg]
+TupleCmdArgs = Tuple[CmdArg, ...]
+CmdArgs = Union[ListCmdArgs, TupleCmdArgs]
 
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
@@ -509,7 +509,7 @@ class Platform(abc.ABC):
     return self.local_path(path).stat().st_size
 
   def sh_stdout(self,
-                *args: CmdArgT,
+                *args: CmdArg,
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
@@ -525,7 +525,7 @@ class Platform(abc.ABC):
     return completed_process.stdout.decode(encoding)
 
   def popen(self,
-            *args: CmdArgT,
+            *args: CmdArg,
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -545,7 +545,7 @@ class Platform(abc.ABC):
         env=env)
 
   def sh(self,
-         *args: CmdArgT,
+         *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
          stdout=None,

@@ -102,7 +102,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
         # TODO: support clean logging of chrome stdout / stderr
         service_args=["--verbose"])
     # TODO: support remote platforms
-    service.log_file = pth.LocalPath(self.stdout_log_file).open(
+    service.log_file = pth.LocalPath(self.stdout_log_file).open(  # pylint: disable=consider-using-with
         "w", encoding="utf-8")
     driver: ChromiumDriver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args

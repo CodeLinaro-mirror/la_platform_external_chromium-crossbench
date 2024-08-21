@@ -116,7 +116,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "--about-blank",
         type=cli_helper.Duration.parse_zero,
         default=dt.timedelta(),
-        help=("If non-zero, navigate to about:blank after every page."))
+        help="If non-zero, navigate to about:blank after every page.")
     return parser
 
   @classmethod

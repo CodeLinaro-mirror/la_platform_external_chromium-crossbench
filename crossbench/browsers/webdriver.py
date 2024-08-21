@@ -189,7 +189,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       raise
 
   def switch_to_new_tab(self) -> None:
-    self._driver.switch_to.new_window('tab')
+    self._driver.switch_to.new_window("tab")
 
   def screenshot(self, path: LocalPath) -> None:
     if not self._driver.get_screenshot_as_file(path.as_posix()):

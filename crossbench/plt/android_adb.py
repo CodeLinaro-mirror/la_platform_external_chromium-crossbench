@@ -17,7 +17,7 @@ from crossbench.plt.posix import PosixPlatform
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath, RemotePath, RemotePathLike
-  from crossbench.plt.base import CmdArgT, ListCmdArgsT, Platform
+  from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
   from crossbench.types import JsonDict
 
 
@@ -131,7 +131,7 @@ class Adb:
     return self._device_info
 
   def popen(self,
-            *args: CmdArgT,
+            *args: CmdArg,
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -142,13 +142,13 @@ class Adb:
     assert not env, "ADB does not support setting env vars."
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
-    adb_cmd: ListCmdArgsT = [self._adb_bin, "-s", self._serial_id, "shell"]
+    adb_cmd: ListCmdArgs = [self._adb_bin, "-s", self._serial_id, "shell"]
     adb_cmd.extend(args)
     return self._host_platform.popen(
         *adb_cmd, stdout=stdout, stderr=stderr, stdin=stdin)
 
   def _adb(self,
-           *args: CmdArgT,
+           *args: CmdArg,
            shell: bool = False,
            capture_output: bool = False,
            stdout=None,
@@ -159,7 +159,7 @@ class Adb:
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
     del shell
-    adb_cmd: ListCmdArgsT = []
+    adb_cmd: ListCmdArgs = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
@@ -176,12 +176,12 @@ class Adb:
         check=check)
 
   def _adb_stdout(self,
-                  *args: CmdArgT,
+                  *args: CmdArg,
                   quiet: bool = False,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
-    adb_cmd: ListCmdArgsT = []
+    adb_cmd: ListCmdArgs = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
@@ -191,7 +191,7 @@ class Adb:
         *adb_cmd, quiet=quiet, encoding=encoding, check=check)
 
   def shell_stdout(self,
-                   *args: CmdArgT,
+                   *args: CmdArg,
                    quiet: bool = False,
                    encoding: str = "utf-8",
                    env: Optional[Mapping[str, str]] = None,
@@ -209,7 +209,7 @@ class Adb:
         "shell", *args, quiet=quiet, encoding=encoding, check=check)
 
   def shell(self,
-            *args: CmdArgT,
+            *args: CmdArg,
             shell: bool = False,
             capture_output: bool = False,
             stdout=None,
@@ -219,7 +219,7 @@ class Adb:
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
     # See shell_stdout for more `adb shell` options.
-    adb_cmd: ListCmdArgsT = ["shell", *args]
+    adb_cmd: ListCmdArgs = ["shell", *args]
     return self._adb(
         *adb_cmd,
         shell=shell,
@@ -261,21 +261,21 @@ class Adb:
           *args: str,
           quiet: bool = False,
           encoding: str = "utf-8") -> str:
-    cmd: ListCmdArgsT = ["cmd", *args]
+    cmd: ListCmdArgs = ["cmd", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
   def dumpsys(self,
               *args: str,
               quiet: bool = False,
               encoding: str = "utf-8") -> str:
-    cmd: ListCmdArgsT = ["dumpsys", *args]
+    cmd: ListCmdArgs = ["dumpsys", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
   def getprop(self,
               *args: str,
               quiet: bool = False,
               encoding: str = "utf-8") -> str:
-    cmd: ListCmdArgsT = ["getprop", *args]
+    cmd: ListCmdArgs = ["getprop", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding).strip()
 
   def services(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:
@@ -340,7 +340,7 @@ class Adb:
       raise ValueError("Got empty package name")
     try:
       self._adb("uninstall", package_name)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       if missing_ok:
         logging.debug("Could not uninstall %s: %s", package_name, e)
       else:
@@ -353,7 +353,7 @@ class Adb:
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    cmd: ListCmdArgsT = ["pm", "grant"]
+    cmd: ListCmdArgs = ["pm", "grant"]
     if self.build_version >= 14:
       user = self.cmd("user", "get-main-user").strip()
       cmd.extend(["--user", user])
@@ -505,7 +505,7 @@ class AndroidAdbPlatform(PosixPlatform):
     return self.path("/data/local/tmp/")
 
   def sh(self,
-         *args: CmdArgT,
+         *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
          stdout=None,
@@ -526,7 +526,7 @@ class AndroidAdbPlatform(PosixPlatform):
         check=check)
 
   def sh_stdout(self,
-                *args: CmdArgT,
+                *args: CmdArg,
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
@@ -538,7 +538,7 @@ class AndroidAdbPlatform(PosixPlatform):
         *args, env=env, quiet=quiet, encoding=encoding, check=check)
 
   def popen(self,
-            *args: CmdArgT,
+            *args: CmdArg,
             shell: bool = False,
             stdout=None,
             stderr=None,

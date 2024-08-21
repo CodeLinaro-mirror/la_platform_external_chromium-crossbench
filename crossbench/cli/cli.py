@@ -735,9 +735,9 @@ class CrossBenchCLI:
     if args.config:
       self._process_config_args(args)
     else:
-      # We keep separate *_config args so we can throw in case they conflict with
-      # --config. Since we don't use argparse's dest, we have to manually copy
-      # the args.*_config back.
+      # We keep separate *_config args so we can throw in case they conflict
+      # with --config. Since we don't use argparse's dest, we have to manually
+      # copy the args.*_config back.
       if network_config := args.network_config:
         args.network = network_config
 
@@ -848,7 +848,7 @@ class CrossBenchCLI:
     for log_file in candidates[:limit]:
       try:
         log_file = log_file.relative_to(pth.LocalPath.cwd())
-      except Exception as e:
+      except Exception as e:  # pylint: disable=broad-except
         logging.debug("Could not create relative log_file: %s", e)
       logging.error("  - %s", log_file)
     if (pending := len(candidates) - limit) > 0:
@@ -860,7 +860,7 @@ class CrossBenchCLI:
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
       self._log_results(args, runner, is_success=runner.is_success)
-    except:  # pylint disable=broad-except
+    except:  # pylint: disable=broad-except
       self._log_results(args, runner, is_success=False)
       raise
     finally:
@@ -936,7 +936,7 @@ class CrossBenchCLI:
     for probe in runner.probes:
       try:
         probe.log_browsers_result(browser_group)
-      except Exception as e:  # pylint disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except
         if args.throw:
           raise
         logging.debug("log_result_summary failed: %s", e)

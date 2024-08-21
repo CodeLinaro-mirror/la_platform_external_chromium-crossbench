@@ -139,7 +139,7 @@ def parse_enum(label: str, enum_cls: Type[EnumT], data: Any,
     assert isinstance(enum_value, enum.Enum)
     assert isinstance(enum_value, enum_cls)
     return enum_value
-  except Exception as e:
+  except Exception as e:  # pylint: disable=broad-except
     logging.debug("Could not auto-convert data '%s' to enum %s: %s", data,
                   enum_cls, e)
 
@@ -178,7 +178,8 @@ def _extract_decoding_error(message: str, value: pth.RemotePathLike,
       return f"{message}\n    {str(e)}"
     return f"{message}: {value}\n    {str(e)}"
   if isinstance(value, pth.RemotePath):
-    line = pth.LocalPath(value).open().readlines()[lineno]
+    with pth.LocalPath(value).open(encoding="utf-8") as f:
+      line = f.readlines()[lineno]
   else:
     line = value.splitlines()[lineno]
   if len(line) > _MAX_LEN:

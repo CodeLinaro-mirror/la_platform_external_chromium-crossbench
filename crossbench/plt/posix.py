@@ -11,8 +11,7 @@ import re
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
 
 from crossbench import path as pth
-from crossbench.plt.base import (Environ, ListCmdArgsT, Platform,
-                                 SubprocessError)
+from crossbench.plt.base import Environ, ListCmdArgs, Platform, SubprocessError
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -40,7 +39,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       _, max_core = self.cat(max_cores_file).strip().split("-", maxsplit=1)
       cores = int(max_core) + 1
       return f"{cores} cores"
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
       logging.debug("Failed to get detailed CPU stats: %s", e)
       return ""
 
@@ -199,7 +198,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if not dir:
       dir = self.default_tmp_dir
     template = self.path(dir) / f"{prefix}.XXXXXXXXXXX"
-    args: ListCmdArgsT = ["mktemp"]
+    args: ListCmdArgs = ["mktemp"]
     if is_dir:
       args.append("-d")
     args.append(str(template))

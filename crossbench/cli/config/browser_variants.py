@@ -76,13 +76,13 @@ class FlagsVariantConfig:
 
 
 try:
-  tuple_t = tuple[FlagsVariantConfig, ...]
+  FlagsGroupConfigTuple = tuple[FlagsVariantConfig, ...]
 except:  # pylint: disable=bare-except
   # Python 3.8 fallback
-  tuple_t = tuple
+  FlagsGroupConfigTuple = tuple
 
 
-class FlagsGroupConfig(tuple_t):
+class FlagsGroupConfig(FlagsGroupConfigTuple):
   """
   Config container for a list of FlagsVariantConfig:
   FlagsGroupConfig(
@@ -561,7 +561,8 @@ class BrowserVariantsConfig:
       return
     # Expand to full version names
     for browser in self._variants:
-      browser.unique_name = f"{browser.type_name}_{browser.version}_{browser.label}"
+      browser.unique_name = (
+          f"{browser.type_name}_{browser.version}_{browser.label}")
     if self._has_unique_variant_names():
       return
     logging.info("Got unique browser names and versions, "
