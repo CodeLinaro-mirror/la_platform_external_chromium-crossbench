@@ -100,4 +100,4 @@ class AndroidLogcatProbeContext(ProbeContext[AndroidLogcatProbe]):
           *self.probe.filterspec,
           stdout=f)
 
-    return LocalProbeResult(file=(file,))
+    return LocalProbeResult(trace=(file,))

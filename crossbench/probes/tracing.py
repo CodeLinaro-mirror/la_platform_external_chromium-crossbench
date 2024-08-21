@@ -305,4 +305,4 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
     self.browser_platform.sh(self._traceconv, "json", self.result_path,
                              json_trace_file)
     return self.browser_result(
-        json=(json_trace_file,), file=(self.result_path,))
+        json=(json_trace_file,), trace=(self.result_path,))

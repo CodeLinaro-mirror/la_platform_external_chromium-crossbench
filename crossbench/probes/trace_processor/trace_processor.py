@@ -156,17 +156,6 @@ class TraceProcessor:
         raise RuntimeError(f"Query check failed: {query}")
 
 
-_SOURCE_PROBES: frozenset[str] = frozenset(
-    ("perfetto", "tracing", "profiling", "logcat"))
-
-
-def parse_probe_name(value: Any) -> str:
-  if value in _SOURCE_PROBES:
-    return value
-  raise argparse.ArgumentTypeError("Unknown trace processor source probe, "
-                                   f"choices are: {_SOURCE_PROBES}")
-
-
 class TraceProcessorProbe(Probe):
   """
   Trace processor probe.
@@ -191,27 +180,19 @@ class TraceProcessorProbe(Probe):
         default=tuple(),
         help="Name of query to be run (under probes/trace_processor/queries)")
     parser.add_argument(
-        "probes",
-        type=parse_probe_name,
-        is_list=True,
-        default=tuple(),
-        help="Names of probes whose traces need to be processed")
-    parser.add_argument(
         "trace_processor_bin",
         type=cli_helper.parse_local_binary_path,
         required=False,
         help="Path to the trace_processor binary")
     return parser
 
-  def __init__(self, metrics: Iterable[str], queries: Iterable[str],
-               probes: Iterable[str],
+  def __init__(self,
+               metrics: Iterable[str],
+               queries: Iterable[str],
                trace_processor_bin: Optional[pth.LocalPath] = None):
     super().__init__()
     self._metrics = tuple(metrics)
     self._queries = tuple(queries)
-    if not probes:
-      raise ValueError("Please specify probes to process")
-    self._probes = tuple(probes)
     if not trace_processor_bin:
       if tp_chromium_path := TraceProcessorFinder(plt.PLATFORM).path:
         trace_processor_bin = pth.LocalPath(tp_chromium_path)
@@ -227,10 +208,6 @@ class TraceProcessorProbe(Probe):
   @property
   def queries(self) -> Tuple[str, ...]:
     return self._queries
-
-  @property
-  def probes(self) -> Tuple[str, ...]:
-    return self._probes
 
   @property
   def trace_processor_bin(self) -> pth.LocalPath:
@@ -299,6 +276,12 @@ class TraceProcessorProbe(Probe):
     merged_json = self._merge_json(group_dir, group)
     return LocalProbeResult(csv=merged_csv, json=merged_json)
 
+  def log_browsers_result(self, group: BrowsersRunGroup) -> None:
+    logging.info("-" * 80)
+    logging.critical("TraceProcessor traces:")
+    for run in group.runs:
+      logging.critical("  - %s", run.results[self].file)
+
 
 class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
@@ -345,10 +328,8 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
   def _merge_trace_files(self) -> pth.LocalPath:
     merged_trace = self.local_result_path / "merged_trace.zip"
     with zipfile.ZipFile(merged_trace, 'w') as zip_file:
-      for probe_name in self.probe.probes:
-        for f in self.run.results.get_by_name(probe_name).file_list:
-          if _is_trace_file(f):
-            zip_file.write(f)
+      for f in self.run.results.all_traces():
+        zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
 
     return merged_trace
 

@@ -629,7 +629,7 @@ class LinuxProfilingContext(ProfilingContext):
                    "for interactive analysis:")
       logging.info("   pprof --http=localhost:1984 %s",
                    " ".join(map(str, perf_files)))
-    return self.browser_result(file=perf_files)
+    return self.browser_result(trace=perf_files)
 
   def _inject_v8_symbols(
       self, run: Run, perf_files: List[pth.RemotePath]) -> List[pth.RemotePath]:
@@ -923,7 +923,7 @@ class AndroidProfilingContext(ProfilingContext):
                                     "crossbench-probe-profiling-stop")
 
   def teardown(self) -> ProbeResult:
-    return self.browser_result(file=[self.result_path])
+    return self.browser_result(trace=[self.result_path])
 
 
 def generate_simpleperf_command_line(

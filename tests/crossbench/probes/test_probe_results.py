@@ -198,37 +198,49 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     json = self.create_file("result.json")
     csv = self.create_file("result.csv")
     url = "http://foo.bar.com"
+    trace = self.create_file("trace.pb")
 
     result = LocalProbeResult(
-        url=(url,), file=(file,), json=(json,), csv=(csv,))
+        url=(url,), file=(file,), json=(json,), csv=(csv,), trace=(trace,))
     self.assertFalse(result.is_empty)
-    self.assertListEqual(list(result.all_files()), [file, json, csv])
+    self.assertListEqual(list(result.all_files()), [file, json, csv, trace])
     self.assertListEqual(result.url_list, [url])
+    self.assertListEqual(result.trace_list, [trace])
 
     merged = result.merge(EmptyProbeResult())
     self.assertFalse(merged.is_empty)
-    self.assertListEqual(list(merged.all_files()), [file, json, csv])
-    self.assertListEqual(result.url_list, [url])
+    self.assertListEqual(list(merged.all_files()), [file, json, csv, trace])
+    self.assertListEqual(merged.url_list, [url])
+    self.assertListEqual(merged.trace_list, [trace])
 
     file_2 = self.create_file("result.2.custom")
     json_2 = self.create_file("result.2.json")
     csv_2 = self.create_file("result.2.csv")
     url_2 = "http://foo.bar.com/2"
+    trace_2 = self.create_file("trace.2.pb")
     other = LocalProbeResult(
-        url=(url_2,), file=(file_2,), json=(json_2,), csv=(csv_2,))
+        url=(url_2,),
+        file=(file_2,),
+        json=(json_2,),
+        csv=(csv_2,),
+        trace=(trace_2,))
     merged = result.merge(other)
     self.assertFalse(merged.is_empty)
     self.assertListEqual(
-        list(merged.all_files()), [file, file_2, json, json_2, csv, csv_2])
+        list(merged.all_files()),
+        [file, file_2, json, json_2, csv, csv_2, trace, trace_2])
     self.assertListEqual(merged.url_list, [url, url_2])
     # result is unchanged:
     self.assertFalse(result.is_empty)
-    self.assertListEqual(list(result.all_files()), [file, json, csv])
+    self.assertListEqual(list(result.all_files()), [file, json, csv, trace])
     self.assertListEqual(result.url_list, [url])
+    self.assertListEqual(result.trace_list, [trace])
     # other is unchanged:
     self.assertFalse(other.is_empty)
-    self.assertListEqual(list(other.all_files()), [file_2, json_2, csv_2])
+    self.assertListEqual(
+        list(other.all_files()), [file_2, json_2, csv_2, trace_2])
     self.assertListEqual(other.url_list, [url_2])
+    self.assertListEqual(other.trace_list, [trace_2])
 
   def test_merge_duplicate_files(self):
     path = self.create_file("result.custom")
@@ -240,6 +252,22 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
       result_1.merge(result_2)
     with self.assertRaises(DuplicateProbeResult):
       result_2.merge(result_1)
+
+  def test_traces_are_files(self):
+    trace = self.create_file("trace.pb")
+
+    result = LocalProbeResult(trace=(trace,))
+    self.assertFalse(result.is_empty)
+    self.assertListEqual(list(result.all_files()), [trace])
+    self.assertListEqual(list(result.trace_list), [trace])
+
+  def test_traces_can_be_duplicate(self):
+    trace = self.create_file("trace.pb")
+
+    result = LocalProbeResult(trace=(trace,), file=(trace,))
+    self.assertFalse(result.is_empty)
+    self.assertListEqual(list(result.all_files()), [trace])
+    self.assertListEqual(list(result.trace_list), [trace])
 
 
 class MockRun:

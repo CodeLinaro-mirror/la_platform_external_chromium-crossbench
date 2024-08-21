@@ -58,3 +58,6 @@ build-backend = "poetry.core.masonry.api"
 addopts = "--ignore=tests/cbb -n auto --dist=loadgroup"
 log_cli = 1
 log_cli_level = "DEBUG"
+testpaths = [
+    "tests",
+]

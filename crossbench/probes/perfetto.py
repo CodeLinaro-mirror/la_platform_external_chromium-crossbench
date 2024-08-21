@@ -208,4 +208,4 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
     local_result_file = local_result_file.with_suffix(
         f"{local_result_file.suffix}.gz")
 
-    return LocalProbeResult(file=(local_result_file,))
+    return LocalProbeResult(trace=(local_result_file,))

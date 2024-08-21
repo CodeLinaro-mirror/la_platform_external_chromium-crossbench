@@ -3,7 +3,6 @@
     // Uncomment the following line to record a WPR archive.
     // wpr: {},
     trace_processor: {
-      probes: ["perfetto"],
       metrics: [
         "lcp_metric",
         "amazon_page_load_metric",

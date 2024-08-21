@@ -22,6 +22,8 @@ from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.runner.groups import (BrowserSessionRunGroup, BrowsersRunGroup,
                                       CacheTemperatureRunGroup,
                                       RepetitionsRunGroup, RunThreadGroup,
@@ -255,7 +257,10 @@ class Runner:
       default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
       self.attach_probe(default_probe)
       self._default_probes.append(default_probe)
-    for probe in probe_list:
+    for index, probe in enumerate(probe_list):
+      assert (not isinstance(probe, TraceProcessorProbe) or index == 0), (
+          f"TraceProcessorProbe must be first in the list to be able "
+          f"to process other probes data. Found it at index: {index}")
       self.attach_probe(probe)
     # Results probe must be first in the list, and thus last to be processed
     # so all other probes have data by the time we write the results summary.

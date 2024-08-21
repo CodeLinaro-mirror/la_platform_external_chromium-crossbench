@@ -18,19 +18,6 @@ from crossbench.probes.results import LocalProbeResult
 
 class TraceProcessorProbeTestCase(unittest.TestCase):
 
-  def test_missing_probes(self):
-    with self.assertRaises(ValueError) as cm:
-      TraceProcessorProbe.from_config({})
-    self.assertIn("probes", str(cm.exception))
-
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
-  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
-                   "trace_processor not available")
-  def test_parse_config(self):
-    probe: TraceProcessorProbe = TraceProcessorProbe.from_config(
-        {"probes": ["perfetto", "tracing"]})
-    self.assertEqual(("perfetto", "tracing"), probe.probes)
-
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
                    "trace_processor not available")
@@ -49,7 +36,7 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
   def test_merge_browsers(self):
     self.create_file("tp")
     probe: TraceProcessorProbe = TraceProcessorProbe.from_config(
-        {"probes": ["perfetto"], "trace_processor_bin": "tp"})
+        {"trace_processor_bin": "tp"})
     browsers_run_group = unittest.mock.MagicMock()
     browsers_run_group.get_local_probe_result_path = unittest.mock.MagicMock(
         return_value=pth.LocalPath("result/"))
