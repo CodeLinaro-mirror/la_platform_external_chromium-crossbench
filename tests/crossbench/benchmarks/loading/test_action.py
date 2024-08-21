@@ -155,6 +155,14 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
     self.assertIn("source", str(cm.exception))
 
+  def test_parse_scroll_valid_but_unsupported_source(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "scroll",
+          "source": "keyboard",
+      })
+    self.assertIn("source", str(cm.exception))
+
   def test_parse_scroll_required_missing_selector(self):
     config_dict = {
         "action": "scroll",
@@ -240,6 +248,15 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ClickAction.load_dict({
           "action": "click",
           "source": "invalid_source",
+          "selector": "#button"
+      })
+    self.assertIn("source", str(cm.exception))
+
+  def test_parse_click_valid_but_unsupported_source(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "click",
+          "source": "keyboard",
           "selector": "#button"
       })
     self.assertIn("source", str(cm.exception))

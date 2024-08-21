@@ -192,7 +192,7 @@ class BaseDurationAction(Action):
     return details
 
 
-class InputSourceAction(BaseDurationAction):
+class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
@@ -214,6 +214,16 @@ class InputSourceAction(BaseDurationAction):
 
   def validate(self) -> None:
     super().validate()
+    self.validate_input_source()
+
+  def validate_input_source(self) -> None:
+    if self.input_source not in self.supported_input_sources():
+      raise ValueError(
+          f"Unsupported input source for {self.__class__.__name__}")
+
+  @abc.abstractmethod
+  def supported_input_sources(self) -> Tuple[InputSource, ...]:
+    pass
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
@@ -355,6 +365,9 @@ class ScrollAction(InputSourceAction):
       raise ValueError(
           "'required' can only be used when a selector is specified")
 
+  def supported_input_sources(self) -> Tuple[InputSource, ...]:
+    return (InputSource.JS, InputSource.TOUCH)
+
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["distance"] = str(self.distance)
@@ -438,6 +451,9 @@ class ClickAction(InputSourceAction):
   def validate_duration(self) -> None:
     # A click action is allowed to have a zero duration.
     return
+
+  def supported_input_sources(self) -> Tuple[InputSource, ...]:
+    return (InputSource.JS, InputSource.TOUCH, InputSource.MOUSE)
 
   def to_json(self) -> JsonDict:
     details = super().to_json()

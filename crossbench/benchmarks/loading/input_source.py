@@ -14,3 +14,5 @@ class InputSource(ConfigEnum):
       "js", "Inject a script into the webpage to simulate the action.")
   TOUCH: "InputSource" = ("touch", "Use the touchscreen to perform the action")
   MOUSE: "InputSource" = ("mouse", "Use the mouse to perform the action")
+  KEYBOARD: "InputSource" = ("keyboard",
+                             "Use the keyboard to perform the action")
