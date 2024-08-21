@@ -129,6 +129,10 @@ class AndroidInputActionRunner(BasicActionRunner):
     run.browser.platform.sh("input", "swipe", str(start_x), str(start_y),
                             str(end_x), str(end_y), str(duration_millis))
 
+  def text_input_keyboard(self, run: Run,
+                          action: i_action.TextInputAction) -> None:
+    self._rate_limit_keystrokes(run, action, self._type_characters)
+
   def _init_chrome_window_size_if_necessary(self, run: Run,
                                             actions: Actions) -> None:
     # If the chrome window position has not yet been found,
@@ -320,6 +324,14 @@ class AndroidInputActionRunner(BasicActionRunner):
 
       run.browser.platform.sh("input", mouse_str, "tap", str(coordinates.x),
                               str(coordinates.y))
+
+  def _type_characters(self, run: Run, _: Actions, characters: str) -> None:
+    # TODO(kalutes) handle special characters and other whitespaces like '\t'
+
+    # The 'input text' command cannot handle spaces directly. Replace space
+    # characters with the encoding '%s'.
+    characters = characters.replace(" ", "%s")
+    run.browser.platform.sh("input", "keyboard", "text", characters)
 
   # TODO: Move this to a probe. See ActionRunner.
   def screenshot_impl(self, run: Run, suffix: str) -> None:

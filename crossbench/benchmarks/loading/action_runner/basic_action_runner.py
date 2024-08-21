@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.base import (
@@ -213,3 +213,41 @@ class BasicActionRunner(ActionRunner):
       return "scrollTop"
 
     return "scrollY"
+
+  def _rate_limit_keystrokes(
+      self, run: Run, action: i_action.TextInputAction,
+      do_type_function: Callable[[Run, Actions, str], None]) -> None:
+    character_delay_s = (action.duration / len(action.text)).total_seconds()
+
+    start_time = time.time()
+
+    action_expected_end_time = start_time + action.duration.total_seconds()
+
+    with run.actions("TextInput", measure=False) as actions:
+
+      # When no duration is specified, input the entire text at once.
+      if action.duration == dt.timedelta():
+        do_type_function(run, actions, action.text)
+        return
+
+      character_expected_end_time = start_time
+
+      for character in action.text:
+        character_expected_end_time += character_delay_s
+
+        do_type_function(run, actions, character)
+
+        expected_end_delta = character_expected_end_time - time.time()
+
+        if expected_end_delta > 0:
+          actions.wait(expected_end_delta)
+
+      overrun_time = time.time() - action_expected_end_time
+
+      # There will always be a slight overrun due to the overhead of the final
+      # actions.wait() call, but that is acceptable. Check if the overrun was
+      # significant.
+      if overrun_time > 0.01:
+        logging.warning(
+            "text_input action is behind schedule! Consider extending this "
+            "action's duration otherwise the action may timeout.")
