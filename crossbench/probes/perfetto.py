@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Iterable, Optional, cast
 
 from crossbench import helper
 from crossbench import path as pth

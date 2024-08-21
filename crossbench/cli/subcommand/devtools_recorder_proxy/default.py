@@ -36,8 +36,8 @@ class State(BaseState):
 
 @enum.unique
 class Response(compat.StrEnum):
-  STATUS: "Response" = "status"
-  OUTPUT: "Response" = "output"
+  STATUS = "status"
+  OUTPUT = "output"
 
 
 class AuthenticationError(ValueError):

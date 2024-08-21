@@ -231,6 +231,7 @@ class Runner:
     self._create_symlinks: bool = create_symlinks
 
   def _prepare_benchmark(self) -> None:
+    benchmark_probe_cls: Type[BenchmarkProbeMixin]
     for benchmark_probe_cls in self._benchmark.PROBES:
       assert inspect.isclass(benchmark_probe_cls), (
           f"{self._benchmark}.PROBES must contain classes only, "

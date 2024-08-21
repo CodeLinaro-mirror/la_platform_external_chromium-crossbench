@@ -10,13 +10,12 @@ from typing import TYPE_CHECKING, List, Optional
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeMissingDataError)
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import RemotePath
   from crossbench.runner.groups import BrowsersRunGroup, RepetitionsRunGroup
   from crossbench.runner.run import Run
 

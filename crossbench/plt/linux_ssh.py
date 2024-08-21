@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import CmdArgsT, CmdArgT, ListCmdArgsT

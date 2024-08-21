@@ -7,7 +7,6 @@ from __future__ import annotations
 import abc
 import argparse
 import datetime as dt
-import logging
 from typing import Iterator
 
 from crossbench import cli_helper

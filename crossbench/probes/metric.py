@@ -17,7 +17,7 @@ from crossbench.probes import helper
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
-  from crossbench.types import JsonDict
+  from crossbench.types import JSON, JsonDict
 
 
 def format_metric(value: Union[float, int],
@@ -260,16 +260,16 @@ class MetricsMerger:
           values.append(value)
 
   def to_json(self,
-              value_fn: Optional[Callable[[Any], Any]] = None,
+              value_fn: Optional[Callable[[Any], JSON]] = None,
               sort: bool = True) -> JsonDict:
     items = []
     for key, value in self._data.items():
       assert isinstance(value, Metric)
       if value_fn is None:
-        value = value.to_json()
+        json_value: JSON = value.to_json()
       else:
-        value = value_fn(value)
-      items.append((key, value))
+        json_value = value_fn(value)
+      items.append((key, json_value))
     if sort:
       # Make sure the data is always in the same order, independent of the input
       # order

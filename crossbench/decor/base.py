@@ -10,7 +10,7 @@ import datetime as dt
 import enum
 from typing import Any, Dict, Generic, Optional, Set, Type, TypeVar
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.config import ConfigParser
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes.results import EmptyProbeResult, ProbeResult

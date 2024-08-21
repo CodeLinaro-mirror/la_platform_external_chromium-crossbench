@@ -41,6 +41,10 @@ class ChromeDownloader(Downloader):
       ("android", "arm64"): "android",
   }
 
+  def __init__(self, *args, **kwargs):
+    self._gsutil: Optional[pth.RemotePath] = None
+    super().__init__(*args, **kwargs)
+
   @classmethod
   def is_valid_version(cls, path_or_identifier: str):
     return ChromeVersion.is_valid_unique(path_or_identifier)
@@ -71,13 +75,21 @@ class ChromeDownloader(Downloader):
 
   def _pre_check(self) -> None:
     super()._pre_check()
-    if self._requested_version and not self.host_platform.which("gsutil"):
+    if not self._requested_version:
+      return
+    self._gsutil = self.host_platform.which("gsutil")
+    if not self._gsutil:
       raise ValueError(
           f"Cannot download chrome version {self._requested_version}: "
           "please install gsutil.\n"
           "- https://cloud.google.com/storage/docs/gsutil_install\n"
           "- Run 'gcloud auth login' to get access to the archives "
           "(googlers only).")
+
+  @property
+  def gsutil(self) -> pth.RemotePath:
+    assert self._gsutil, "gsutil not be found."
+    return self._gsutil
 
   def _requested_version_validation(self) -> None:
     pass
@@ -153,8 +165,7 @@ class ChromeDownloader(Downloader):
         continue
       for archive_version, archive_url in self._archive_urls(url, version):
         try:
-          gsutil = self.host_platform.which("gsutil")
-          result = self.host_platform.sh_stdout(gsutil, "ls", archive_url)
+          result = self.host_platform.sh_stdout(self.gsutil, "ls", archive_url)
         except SubprocessError as e:
           logging.debug("gsutil failed: %s", e)
           continue
@@ -163,8 +174,7 @@ class ChromeDownloader(Downloader):
     return self._requested_version, None
 
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
-    gsutil = self.host_platform.which("gsutil")
-    self.host_platform.sh(gsutil, "cp", archive_url, tmp_dir)
+    self.host_platform.sh(self.gsutil, "cp", archive_url, tmp_dir)
     archive_candidates = list(tmp_dir.glob("*"))
     assert len(archive_candidates) == 1, (
         f"Download tmp dir contains more than one file: {tmp_dir}: "

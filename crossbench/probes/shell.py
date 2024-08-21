@@ -11,7 +11,6 @@ from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import LocalProbeResult, ProbeResult
-from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
   from crossbench import path as pth

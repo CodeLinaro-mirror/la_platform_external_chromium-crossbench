@@ -15,7 +15,7 @@ import re
 import shlex
 import sys
 from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional,
-                    Sequence, Type, TypeVar, cast)
+                    Sequence, Type, TypeVar, Union, cast)
 from urllib.parse import urlparse
 
 import colorama
@@ -116,7 +116,7 @@ def parse_binary_path(
 
 def parse_remote_path(value: Optional[pth.RemotePathLike],
                       name: str = "value") -> pth.RemotePath:
-  some_value = parse_not_none(value, name)
+  some_value: pth.RemotePathLike = parse_not_none(value, name)
   if not some_value:
     raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
   return pth.RemotePath(some_value)
@@ -132,7 +132,7 @@ EnumT = TypeVar("EnumT", bound=enum.Enum)
 
 
 def parse_enum(label: str, enum_cls: Type[EnumT], data: Any,
-               choices: Iterable[EnumT]) -> EnumT:
+               choices: Union[Type[EnumT], Iterable[EnumT]]) -> EnumT:
   try:
     # Try direct conversion, relying on the Enum._missing_ hook:
     enum_value = enum_cls(data)

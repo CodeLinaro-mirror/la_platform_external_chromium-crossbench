@@ -122,17 +122,17 @@ class WprReplayNetwork(ReplayNetwork):
     browser_platform.stop_reverse_port_forward(https_port)
 
   @property
-  def http_port(self) -> Optional[int]:
+  def http_port(self) -> int:
     assert self._server, "WPR is not running"
     return self._server.http_port
 
   @property
-  def https_port(self) -> Optional[int]:
+  def https_port(self) -> int:
     assert self._server, "WPR is not running"
     return self._server.https_port
 
   @property
-  def host(self) -> Optional[str]:
+  def host(self) -> str:
     assert self._server, "WPR is not running"
     return self._server.host
 

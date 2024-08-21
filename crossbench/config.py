@@ -165,15 +165,14 @@ class _ConfigArgParser:
       assert isinstance(default, enum_type), (
           f"Default must be a {enum_type} enum, but got: {self.default}")
 
-  def _validate_depends_on(self,
-                           original_value: Optional[Iterable[str]]) -> None:
-    if not self.depends_on:
+  def _validate_depends_on(self, depends_on: Optional[Iterable[str]]) -> None:
+    if not depends_on:
       return
-    if not self._is_iterable_non_str(original_value):
+    if not self._is_iterable_non_str(depends_on):
       raise TypeError(f"Expected depends_on to be a collection of str, "
-                      f"but got {type(original_value).__name__}: "
-                      f"{repr(original_value)}")
-    for i, value in enumerate(original_value):
+                      f"but got {type(depends_on).__name__}: "
+                      f"{repr(depends_on)}")
+    for i, value in enumerate(depends_on):
       if not isinstance(value, str):
         raise TypeError(f"Expected depends_on[{i}] to be a str, but got "
                         f"{type(value).__name__}: {repr(value)}")
@@ -344,6 +343,7 @@ class _ConfigArgParser:
     assert self.is_enum
     assert self.choices
     assert self.type
+    assert isinstance(self.type, type), "type for enum has to be a Class."
     if issubclass(self.type, ConfigEnum):
       return self.type.parse(data)
     assert issubclass(self.type, enum.Enum)

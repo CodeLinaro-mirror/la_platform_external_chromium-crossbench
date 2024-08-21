@@ -11,9 +11,9 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
 
 from crossbench import cli_helper, exception
+from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 
 if TYPE_CHECKING:
@@ -24,22 +24,21 @@ if TYPE_CHECKING:
 
 @enum.unique
 class ActionType(ConfigEnum):
-  GET: "ActionType" = ("get", "Open a URL")
-  JS: "ActionType" = ("js", "Run a custom script")
-  WAIT: "ActionType" = ("wait", "Wait for a given time")
-  SCROLL: "ActionType" = ("scroll", "Scroll on page")
-  CLICK: "ActionType" = ("click",
-                         "Click on element or at specified coordinates")
-  SWIPE: "ActionType" = ("swipe", "Swipe on screen")
-  TEXT_INPUT: "ActionType" = ("text_input", "Type printable characters at a"
-                              "specified speed.")
-  WAIT_FOR_ELEMENT: "ActionType" = ("wait_for_element",
-                                    "Wait until element appears on the page")
-  INJECT_NEW_DOCUMENT_SCRIPT: "ActionType" = ("inject_new_document_script", (
+  GET = ("get", "Open a URL")
+  JS = ("js", "Run a custom script")
+  WAIT = ("wait", "Wait for a given time")
+  SCROLL = ("scroll", "Scroll on page")
+  CLICK = ("click", "Click on element or at specified coordinates")
+  SWIPE = ("swipe", "Swipe on screen")
+  TEXT_INPUT = ("text_input", "Type printable characters at a"
+                "specified speed.")
+  WAIT_FOR_ELEMENT = ("wait_for_element",
+                      "Wait until element appears on the page")
+  INJECT_NEW_DOCUMENT_SCRIPT = ("inject_new_document_script", (
       "Evaluates given script in every frame upon creation "
       "(before loading frame's scripts). "
       "Only supported in chromium-based browsers."))
-  SCREENSHOT: "ActionType" = ("screenshot", "Take a screenshot")
+  SCREENSHOT = ("screenshot", "Take a screenshot")
 
 
 class ActionTypeConfigParser(ConfigParser):
@@ -64,9 +63,9 @@ _ACTION_TYPE_CONFIG_PARSER = ActionTypeConfigParser()
 
 @enum.unique
 class ButtonClick(ConfigEnum):
-  LEFT: "ButtonClick" = ("left", "Press left mouse button")
-  RIGHT: "ButtonClick" = ("right", "Press right mouse button")
-  MIDDLE: "ButtonClick" = ("middle", "Press middle mouse button")
+  LEFT = ("left", "Press left mouse button")
+  RIGHT = ("right", "Press right mouse button")
+  MIDDLE = ("middle", "Press middle mouse button")
 
 
 ACTION_TIMEOUT = dt.timedelta(seconds=20)
@@ -141,30 +140,26 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 class ReadyState(ConfigEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Document/readyState"""
   # Non-blocking:
-  ANY: "ReadyState" = ("any", "Ignore ready state")
+  ANY = ("any", "Ignore ready state")
   # Blocking (on dom event):
-  LOADING: "ReadyState" = ("loading", "The document is still loading.")
-  INTERACTIVE: "ReadyState" = ("interactive",
-                               "The document has finished loading "
-                               "but sub-resources might still be loading")
-  COMPLETE: "ReadyState" = (
-      "complete", "The document and all sub-resources have finished loading.")
+  LOADING = ("loading", "The document is still loading.")
+  INTERACTIVE = ("interactive", "The document has finished loading "
+                 "but sub-resources might still be loading")
+  COMPLETE = ("complete",
+              "The document and all sub-resources have finished loading.")
 
 
 @enum.unique
 class WindowTarget(ConfigEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Window/open"""
-  SELF: "WindowTarget" = ("_self", "The current browsing context. (Default)")
-  BLANK: "WindowTarget" = (
-      "_blank", "Usually a new tab, but users can configure browsers "
-      "to open a new window instead.")
-  PARENT: "WindowTarget" = ("_parent",
-                            "The parent browsing context of the current one. "
-                            "If no parent, behaves as _self.")
-  TOP: "WindowTarget" = (
-      "_top", "The topmost browsing context "
-      "(the 'highest' context that's an ancestor of the current one). "
-      "If no ancestors, behaves as _self.")
+  SELF = ("_self", "The current browsing context. (Default)")
+  BLANK = ("_blank", "Usually a new tab, but users can configure browsers "
+           "to open a new window instead.")
+  PARENT = ("_parent", "The parent browsing context of the current one. "
+            "If no parent, behaves as _self.")
+  TOP = ("_top", "The topmost browsing context "
+         "(the 'highest' context that's an ancestor of the current one). "
+         "If no ancestors, behaves as _self.")
 
 
 class BaseDurationAction(Action):
@@ -405,12 +400,9 @@ class ClickAction(InputSourceAction):
     self._selector = selector
     self._required: bool = required
     self._scroll_into_view: bool = scroll_into_view
-
+    self._coordinates: Optional[Point] = None
     if x is not None and y is not None:
       self._coordinates = Point(x, y)
-    else:
-      self._coordinates: Optional[Point] = None
-
     super().__init__(source, duration, timeout)
 
   @property
@@ -465,6 +457,7 @@ class ClickAction(InputSourceAction):
       details["required"] = self._required
       details["scroll_into_view"] = self._scroll_into_view
     else:
+      assert self._coordinates
       details["x"] = self._coordinates.x
       details["y"] = self._coordinates.y
     return details

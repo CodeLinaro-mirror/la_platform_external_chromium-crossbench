@@ -190,7 +190,7 @@ class JsonResultProbeContext(ProbeContext[JsonResultProbeT],
 
   def __init__(self, probe: JsonResultProbeT, run: Run) -> None:
     super().__init__(probe, run)
-    self._json_data = None
+    self._json_data: JSON = None
 
   @property
   def probe(self) -> JsonResultProbeT:

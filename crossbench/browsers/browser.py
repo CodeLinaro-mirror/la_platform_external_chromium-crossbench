@@ -147,7 +147,8 @@ class Browser(abc.ABC):
     return self._pid
 
   @property
-  def is_running(self) -> Optional[bool]:
+  def is_running_process(self) -> Optional[bool]:
+    # TODO: activate this method again
     if self.pid is None:
       return None
     info = self.platform.process_info(self.pid)
@@ -215,7 +216,7 @@ class Browser(abc.ABC):
         "app_name": self.app_name,
         "version": self.version,
         "flags": tuple(self.flags),
-        "js_flags": [],
+        "js_flags": tuple(),
         "path": str(self.path),
         "clear_cache_dir": self.clear_cache_dir,
         "major_version": self.major_version,

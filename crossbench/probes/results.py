@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set,
-                    Tuple, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
+                    cast)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
 
-from crossbench import cli_helper, path as pth
+from crossbench import cli_helper
+from crossbench import path as pth
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 
 if TYPE_CHECKING:

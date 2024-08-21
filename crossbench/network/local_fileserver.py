@@ -33,7 +33,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   @classmethod
   def bind(
-      cls,
+      cls: Type[CustomHeadersRequestHandler],
       server_dir: LocalPath,
       extra_headers: Mapping[str, str],
   ) -> Type[http.server.SimpleHTTPRequestHandler]:

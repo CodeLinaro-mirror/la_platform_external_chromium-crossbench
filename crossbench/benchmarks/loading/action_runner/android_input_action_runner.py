@@ -7,16 +7,15 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import re
-import time
-from typing import Optional, Tuple
+from typing import Optional
 
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.base import \
-  InputSourceNotImplementedError
+    InputSourceNotImplementedError
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-  BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.element_not_found_error \
-  import ElementNotFoundError
+    BasicActionRunner
+from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
@@ -54,6 +53,11 @@ class AndroidInputActionRunner(BasicActionRunner):
   # screen as reported by Android window manager.
   _chrome_window_bounds: Optional[DisplayRectangle] = None
 
+  @property
+  def chrome_window_bounds(self) -> DisplayRectangle:
+    assert self._chrome_window_bounds, "Uninitialized chrome window bounds"
+    return self._chrome_window_bounds
+
   _BOUNDS_RE = re.compile(
       r"mAppBounds=Rect\((?P<left>\d+), (?P<top>\d+) - (?P<right>\d+),"
       r" (?P<bottom>\d+)\)")
@@ -69,15 +73,17 @@ class AndroidInputActionRunner(BasicActionRunner):
           actions, action.distance)
 
       # Default to scrolling within the entire chrome window.
-      scroll_area: Optional[DisplayRectangle] = self._chrome_window_bounds
+      scroll_area: Optional[DisplayRectangle] = None
 
-      if action.selector:
-        scroll_area = self._get_element_bounding_rect(actions, action.selector)
+      if selector := action.selector:
+        scroll_area = self._get_element_bounding_rect(actions, selector)
+        if not scroll_area:
+          if action.required:
+            raise ElementNotFoundError(selector)
+          return
+      else:
+        scroll_area = self.chrome_window_bounds
 
-      if not scroll_area:
-        if action.required:
-          raise ElementNotFoundError(action.selector)
-        return
 
       scrollable_top = scroll_area.top
       scrollable_bottom = scroll_area.bottom
@@ -214,7 +220,7 @@ class AndroidInputActionRunner(BasicActionRunner):
     # the chrome window.
 
     if not window_bounds:
-      window_bounds = self._chrome_window_bounds
+      window_bounds = self.chrome_window_bounds
 
     inner_width = actions.js("return window.innerWidth;")
 
@@ -266,12 +272,12 @@ class AndroidInputActionRunner(BasicActionRunner):
 
     # Adjust the left and right coordinates of the element by the window
     # position in android.
-    window_bounds = self._chrome_window_bounds
+    window_bounds = self.chrome_window_bounds
     element_left += window_bounds.left
     element_right += window_bounds.left
 
-    element_top += self._chrome_window_bounds.top
-    element_bottom += self._chrome_window_bounds.top
+    element_top += window_bounds.top
+    element_bottom += window_bounds.top
 
     return DisplayRectangle(element_left, element_right, element_top,
                             element_bottom)
@@ -304,21 +310,14 @@ class AndroidInputActionRunner(BasicActionRunner):
     if action.duration > dt.timedelta():
       raise InputSourceNotImplementedError(self, action, action.input_source,
                                            "Non-zero duration not implemented")
-
     with run.actions("ClickAction", measure=False) as actions:
-      if action.scroll_into_view and not self._scroll_element_into_view(
-          actions, action.selector) and action.required:
-        raise ElementNotFoundError(action.selector)
-
       coordinates = action.coordinates
 
-      if action.selector:
+      if selector := action.selector:
         if action.scroll_into_view and not self._scroll_element_into_view(
-            actions, action.selector) and action.required:
-          raise ElementNotFoundError(action.selector)
-
-        coordinates = self._get_element_centerpoint(run, actions,
-                                                    action.selector)
+            actions, selector) and action.required:
+          raise ElementNotFoundError(selector)
+        coordinates = self._get_element_centerpoint(run, actions, selector)
 
       if not coordinates:
         if action.required:
@@ -326,7 +325,6 @@ class AndroidInputActionRunner(BasicActionRunner):
         return
 
       mouse_str: str = ""
-
       if use_mouse:
         mouse_str = "mouse"
 
@@ -344,4 +342,4 @@ class AndroidInputActionRunner(BasicActionRunner):
   # TODO: Move this to a probe. See ActionRunner.
   def screenshot_impl(self, run: Run, suffix: str) -> None:
     with open(self.screenshot_path(run.out_dir, suffix), "w") as file:
-      run.browser.platform.sh('screencap', '-p', stdout=file)
+      run.browser.platform.sh("screencap", "-p", stdout=file)

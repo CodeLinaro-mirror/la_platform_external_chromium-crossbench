@@ -3,16 +3,13 @@
 # found in the LICENSE file.
 
 import enum
-from typing import Any, Type, TypeVar
 
 from crossbench.config import ConfigEnum
 
 
 @enum.unique
 class InputSource(ConfigEnum):
-  JS: "InputSource" = (
-      "js", "Inject a script into the webpage to simulate the action.")
-  TOUCH: "InputSource" = ("touch", "Use the touchscreen to perform the action")
-  MOUSE: "InputSource" = ("mouse", "Use the mouse to perform the action")
-  KEYBOARD: "InputSource" = ("keyboard",
-                             "Use the keyboard to perform the action")
+  JS = ("js", "Inject a script into the webpage to simulate the action.")
+  TOUCH = ("touch", "Use the touchscreen to perform the action")
+  MOUSE = ("mouse", "Use the mouse to perform the action")
+  KEYBOARD = ("keyboard", "Use the keyboard to perform the action")

@@ -7,16 +7,17 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Tuple
 
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.base import (
     ActionRunner, InputSourceNotImplementedError)
 from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.benchmarks.loading.point import Point
-from crossbench.runner.actions import Actions
-from crossbench.runner.run import Run
+
+if TYPE_CHECKING:
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.run import Run
 
 
 class BasicActionRunner(ActionRunner):
@@ -119,9 +120,12 @@ class BasicActionRunner(ActionRunner):
     if action.duration > dt.timedelta():
       raise InputSourceNotImplementedError(self, action, action.input_source,
                                            "Non-zero duration not implemented")
+    selector = action.selector
+    if not selector:
+      raise RuntimeError("Missing selector")
 
     selector, script = self.get_selector_script(
-        action.selector,
+        selector,
         check_element_exists=True,
         scroll_into_view=action.scroll_into_view,
         click=True,
@@ -129,7 +133,7 @@ class BasicActionRunner(ActionRunner):
 
     with run.actions("ClickAction", measure=False) as actions:
       if not actions.js(script, arguments=[selector]) and action.required:
-        raise ElementNotFoundError(action.selector)
+        raise ElementNotFoundError(selector)
 
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
@@ -149,7 +153,7 @@ class BasicActionRunner(ActionRunner):
 
       if not found_element:
         if action.required:
-          raise ElementNotFoundError(action.selector)
+          raise ElementNotFoundError(selector)
         return
 
       do_scroll_script = selector_script + self.SCROLL_ELEMENT_TO

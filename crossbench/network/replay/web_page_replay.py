@@ -54,19 +54,20 @@ class WprBase(abc.ABC):
       self._log_path = cli_helper.parse_not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
     self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
+    self._go_cmd: TupleCmdArgsT = ()
+    wpr_root: LocalPath
     if self._bin_path.suffix == '.go':
       # `go` binary is required to run a Go source file (`wpr.go`).
       if local_go := self._platform.which("go"):
         self._go_cmd = (local_go, "run", self._bin_path)
       else:
         raise ValueError(f"'go' binary not available on {self._platform}")
-      wpr_root: LocalPath = self._bin_path.parents[1]
+      wpr_root = self._bin_path.parents[1]
     else:
       # Assuming the binary path is precompiled and executable.
       self._go_cmd = (self._bin_path,)
       if local_wpr_go := WprGoToolFinder(self._platform).path:
-        wpr_root: LocalPath = self._platform.local_path(
-            local_wpr_go.parents[1])
+        wpr_root = self._platform.local_path(local_wpr_go.parents[1])
       else:
         raise ValueError(
             f"Could not find web_page_replay_go on {self._platform}")
@@ -141,7 +142,7 @@ class WprBase(abc.ABC):
       cmd += (f"--inject_scripts={injected_scripts}",)
     return cmd
 
-  def start(self):
+  def start(self) -> None:
     go_cmd: TupleCmdArgsT = self._go_cmd + self.cmd
     logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
     self._num_parsed_ports = 0

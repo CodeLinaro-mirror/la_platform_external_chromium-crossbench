@@ -24,10 +24,9 @@ from crossbench.plt.base import Platform
 
 @enum.unique
 class NetworkType(ConfigEnum):
-  LIVE: "NetworkType" = ("live", "Live network.")
-  WPR: "NetworkType" = ("wpr", "Replayed network from a wpr.go archive.")
-  LOCAL: "NetworkType" = ("local",
-                          "Serve content from a local http file server.")
+  LIVE = ("live", "Live network.")
+  WPR = ("wpr", "Replayed network from a wpr.go archive.")
+  LOCAL = ("local", "Serve content from a local http file server.")
 
 
 def _settings_str(name: str) -> str:
@@ -40,16 +39,15 @@ def _settings_str(name: str) -> str:
 @enum.unique
 class NetworkSpeedPreset(ConfigEnum):
   """Presets that match ts_proxy settings."""
-  LIVE: "NetworkSpeedPreset" = ("live", "Untroubled default network settings")
-  MOBILE_3G_SLOW: "NetworkSpeedPreset" = (
-      "3G-slow", f"Slow 3G network settings: {_settings_str('3G-slow')}")
-  MOBILE_3G_REGULAR: "NetworkSpeedPreset" = (
+  LIVE = ("live", "Untroubled default network settings")
+  MOBILE_3G_SLOW = ("3G-slow",
+                    f"Slow 3G network settings: {_settings_str('3G-slow')}")
+  MOBILE_3G_REGULAR = (
       "3G-regular",
       f"Regular 3G network settings: {_settings_str('3G-regular')}")
-  MOBILE_3G_FAST: "NetworkSpeedPreset" = (
-      "3G-fast", f"Slow 3G network settings: {_settings_str('3G-fast')}")
-  MOBILE_4G: "NetworkSpeedPreset" = (
-      "4G", f"Regular 4G network settings: {_settings_str('4G')}")
+  MOBILE_3G_FAST = ("3G-fast",
+                    f"Slow 3G network settings: {_settings_str('3G-fast')}")
+  MOBILE_4G = ("4G", f"Regular 4G network settings: {_settings_str('4G')}")
 
 
 @dataclasses.dataclass(frozen=True)

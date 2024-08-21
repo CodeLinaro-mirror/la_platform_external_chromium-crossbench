@@ -181,9 +181,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._extra_flags
 
   def add_flag_details(self, details_json: JsonDict) -> None:
-    assert isinstance(details_json["js_flags"], (list, tuple))
+    assert isinstance(details_json["js_flags"], tuple)
     details_json["js_flags"] += tuple(self._extra_js_flags)
-    assert isinstance(details_json["flags"], (list, tuple))
+    assert isinstance(details_json["flags"], tuple)
     details_json["flags"] += tuple(self._extra_flags)
 
   def setup_selenium_options(self, options: ArgOptions):
