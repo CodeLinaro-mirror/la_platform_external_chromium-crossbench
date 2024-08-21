@@ -31,6 +31,8 @@ class ActionType(ConfigEnum):
   CLICK: "ActionType" = ("click",
                          "Click on element or at specified coordinates")
   SWIPE: "ActionType" = ("swipe", "Swipe on screen")
+  TEXT_INPUT: "ActionType" = ("text_input", "Type printable characters at a"
+                              "specified speed.")
   WAIT_FOR_ELEMENT: "ActionType" = ("wait_for_element",
                                     "Wait until element appears on the page")
   INJECT_NEW_DOCUMENT_SCRIPT: "ActionType" = ("inject_new_document_script", (
@@ -531,6 +533,51 @@ class SwipeAction(DurationAction):
     return details
 
 
+class TextInputAction(InputSourceAction):
+  TYPE: ActionType = ActionType.TEXT_INPUT
+
+  @classmethod
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "text", type=cli_helper.parse_non_empty_str, required=True)
+    parser.add_argument(
+        "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
+    return parser
+
+  def __init__(self,
+               source: InputSource,
+               duration: dt.timedelta,
+               text: str,
+               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+    self._text: str = text
+    super().__init__(source, duration, timeout)
+
+  @property
+  def text(self) -> str:
+    return self._text
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.text_input(run, self)
+
+  def validate(self) -> None:
+    super().validate()
+    if not self._text:
+      raise ValueError(f"{self}.text is missing.")
+
+  def validate_duration(self) -> None:
+    # A text input action is allowed to have a zero duration.
+    return
+
+  def supported_input_sources(self) -> Tuple[InputSource, ...]:
+    return (InputSource.JS, InputSource.KEYBOARD)
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["text"] = self._text
+    return details
+
+
 class WaitForElementAction(Action):
   TYPE: ActionType = ActionType.WAIT_FOR_ELEMENT
 
@@ -661,6 +708,7 @@ ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ScreenshotAction,
     ScrollAction,
     SwipeAction,
+    TextInputAction,
     WaitAction,
     WaitForElementAction,
 )

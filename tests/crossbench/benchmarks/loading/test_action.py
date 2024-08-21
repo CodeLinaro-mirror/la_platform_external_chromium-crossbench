@@ -11,7 +11,8 @@ from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.action import (
     ACTION_TIMEOUT, ActionType, ClickAction, GetAction,
     InjectNewDocumentScriptAction, JsAction, ReadyState, ScrollAction,
-    SwipeAction, WaitAction, WaitForElementAction, WindowTarget)
+    SwipeAction, TextInputAction, WaitAction, WaitForElementAction,
+    WindowTarget)
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -338,6 +339,73 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action_2 = SwipeAction.load_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
+
+  def test_parse_text_input_minimal(self):
+    config_dict = {
+        "action": "text_input",
+        "duration": "10s",
+        "text": "some text"
+    }
+    action = TextInputAction.load_dict(config_dict)
+    self.assertFalse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.TEXT_INPUT)
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.input_source, InputSource.JS)
+    self.assertEqual(action.text, "some text")
+    self.assertEqual(action.duration, dt.timedelta(seconds=10))
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = TextInputAction.load_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_text_input_non_default_source(self):
+    config_dict = {
+        "action": "text_input",
+        "duration": "1s",
+        "source": "keyboard",
+        "text": "some text",
+    }
+    action = TextInputAction.load_dict(config_dict)
+    self.assertFalse(config_dict)
+    self.assertEqual(action.input_source, InputSource.KEYBOARD)
+
+  def test_parse_text_input_invalid_source(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "text_input",
+          "duration": "1s",
+          "source": "invalid_source",
+          "text": "some text",
+      })
+    self.assertIn("source", str(cm.exception))
+
+  def test_parse_text_input_valid_but_unsupported_source(self):
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict({
+          "action": "text_input",
+          "duration": "1s",
+          "source": "mouse",
+          "text": "some text",
+      })
+    self.assertIn("source", str(cm.exception))
+
+  def test_parse_text_input_negative_duration(self):
+    config_dict = {
+        "action": "text_input",
+        "text": "some text",
+        "duration": "-1s"
+    }
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict(config_dict)
+    self.assertIn("duration", str(cm.exception))
+
+  def test_parse_text_input_missing_text(self):
+    config_dict = {"action": "text_input", "duration": "1s"}
+    with self.assertRaises(ValueError) as cm:
+      ClickAction.load_dict(config_dict)
+    self.assertIn("text", str(cm.exception))
 
   def test_parse_wait_for_element(self):
     config_dict = {
