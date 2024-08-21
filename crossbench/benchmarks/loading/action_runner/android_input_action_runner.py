@@ -310,7 +310,15 @@ class AndroidInputActionRunner(BasicActionRunner):
           actions, action.selector) and action.required:
         raise ElementNotFoundError(action.selector)
 
-      coordinates = self._get_element_centerpoint(run, actions, action.selector)
+      coordinates = action.coordinates
+
+      if action.selector:
+        if action.scroll_into_view and not self._scroll_element_into_view(
+            actions, action.selector) and action.required:
+          raise ElementNotFoundError(action.selector)
+
+        coordinates = self._get_element_centerpoint(run, actions,
+                                                    action.selector)
 
       if not coordinates:
         if action.required:
