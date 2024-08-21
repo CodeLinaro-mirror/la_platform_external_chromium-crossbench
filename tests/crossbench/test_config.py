@@ -123,8 +123,8 @@ class CustomConfigObject(ConfigObject):
 
 
   @classmethod
-  def parse_dict(cls, config: Dict[str, Any]) -> CustomConfigObject:
-    return cls.config_parser().parse(config)
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> CustomConfigObject:
+    return cls.config_parser().parse(config, **kwargs)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomConfigObject]:
@@ -154,6 +154,14 @@ class CustomConfigObject(ConfigObject):
   @classmethod
   def base_config_parser(cls) -> ConfigParser[CustomConfigObject]:
     return ConfigParser("CustomConfigObject parser", cls)
+
+
+class CustomConfigObjectStrict(CustomConfigObject):
+
+  @classmethod
+  def base_config_parser(cls) -> ConfigParser[CustomConfigObjectStrict]:
+    return ConfigParser(
+        "CustomConfigObjectStrict parser", cls, allow_unused_config_data=False)
 
 
 class CustomConfigObjectWithDefault(CustomConfigObject):
@@ -306,7 +314,45 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config, config_2)
 
-  def test_parse_dict_default(self):
+  def test_load_dict_extra_kwargs(self):
+    config = CustomConfigObject.parse({
+        "name": "foo",
+    }, array=[], integer=123)
+    self.assertEqual(config.name, "foo")
+    self.assertListEqual(config.array, [])
+    self.assertEqual(config.integer, 123)
+
+  def test_load_dict_extra_kwargs_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      CustomConfigObject.parse({
+          "name": "foo",
+      }, array=123, integer=[])
+    self.assertIn("array", str(cm.exception))
+
+  def test_load_dict_unused(self):
+    config_data = {"name": "foo", "unused_data": 666}
+    config = CustomConfigObject.parse(config_data)
+    self.assertTrue(config_data)
+    assert isinstance(config, CustomConfigObject)
+    self.assertEqual(config.name, "foo")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      CustomConfigObjectStrict.parse(config_data)
+    self.assertIn("unused_data", str(cm.exception))
+    self.assertTrue(config_data)
+
+  def test_load_dict_unused_extra_kwargs(self):
+    config_data = {"name": "foo", "unused_data": 666}
+    config = CustomConfigObject.parse(config_data, other_unused=999)
+    self.assertTrue(config_data)
+    assert isinstance(config, CustomConfigObject)
+    self.assertEqual(config.name, "foo")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      CustomConfigObjectStrict.parse(config_data, other_unused=999)
+    self.assertIn("unused_data", str(cm.exception))
+    self.assertIn("other_unused", str(cm.exception))
+    self.assertTrue(config_data)
+
+  def test_load_dict_default(self):
     self.assertIsNone(CustomConfigObject.config_parser().default)
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({})

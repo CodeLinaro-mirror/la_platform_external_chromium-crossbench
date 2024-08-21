@@ -1130,11 +1130,30 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
         "duration": "12.5s",
     }])
     self.assertEqual(len(config.blocks), 1)
+    self.assertIsNone(config.login)
     block = config.blocks[0]
     self.assertEqual(block.label, "default")
     self.assertEqual(len(block.actions), 1)
     self.assertEqual(block.actions[0].TYPE, ActionType.GET)
     self.assertEqual(block.duration, dt.timedelta(seconds=12.5))
+
+  def test_parse_default_action_list_2(self):
+    config = ActionBlockListConfig.parse([{
+        "action": "get",
+        "url": "http://test.com",
+        "duration": "12.5s",
+    }, {
+        "action": "wait",
+        "duration": "100s",
+    }])
+    self.assertEqual(len(config.blocks), 1)
+    self.assertIsNone(config.login)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "default")
+    self.assertEqual(len(block.actions), 2)
+    self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+    self.assertEqual(block.actions[1].TYPE, ActionType.WAIT)
+    self.assertEqual(block.duration, dt.timedelta(seconds=112.5))
 
   def test_parse_single_block_action_list(self):
     config = ActionBlockListConfig.parse([{
@@ -1145,6 +1164,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
         }]
     }])
     self.assertEqual(len(config.blocks), 1)
+    self.assertIsNone(config.login)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
     self.assertEqual(len(block.actions), 1)
@@ -1169,6 +1189,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
         }]
     }])
     self.assertEqual(len(config.blocks), 2)
+    self.assertIsNone(config.login)
     for index, block in enumerate(config.blocks):
       self.assertEqual(block.label, f"block {index}")
       self.assertEqual(len(block.actions), 1)
@@ -1185,10 +1206,29 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
             }]
         }})
     self.assertEqual(len(config.blocks), 1)
+    self.assertIsNone(config.login)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
     self.assertEqual(len(block.actions), 1)
     self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+
+  def test_parse_block_dict_action_list_2(self):
+    config = ActionBlockListConfig.parse({
+        "block 1": [{
+            "action": "get",
+            "url": "http://test.com"
+        }, {
+            "action": "wait",
+            "duration": "2s"
+        }]
+    })
+    self.assertEqual(len(config.blocks), 1)
+    self.assertIsNone(config.login)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(len(block.actions), 2)
+    self.assertEqual(block.actions[0].TYPE, ActionType.GET)
+    self.assertEqual(block.actions[1].TYPE, ActionType.WAIT)
 
   def test_parse_single_block_multi_action_dict(self):
     config = ActionBlockListConfig.parse({

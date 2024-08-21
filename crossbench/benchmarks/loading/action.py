@@ -94,14 +94,24 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument(
+        "index",
+        type=cli_helper.parse_positive_zero_int,
+        required=False,
+        default=0)
+    parser.add_argument(
         "timeout",
         type=cli_helper.Duration.parse_non_zero,
         default=ACTION_TIMEOUT)
     return parser
 
-  def __init__(self, timeout: dt.timedelta = ACTION_TIMEOUT):
+  def __init__(self, timeout: dt.timedelta = ACTION_TIMEOUT, index: int = 0):
     self._timeout: dt.timedelta = timeout
+    self._index = index
     self.validate()
+
+  @property
+  def index(self) -> int:
+    return self._index
 
   @property
   def duration(self) -> dt.timedelta:
@@ -166,9 +176,10 @@ class BaseDurationAction(Action):
 
   def __init__(self,
                duration: dt.timedelta,
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._duration: dt.timedelta = duration
-    super().__init__(timeout)
+    super().__init__(timeout, index)
 
   @property
   def duration(self) -> dt.timedelta:
@@ -201,9 +212,10 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
   def __init__(self,
                source: InputSource,
                duration: dt.timedelta,
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._input_source = source
-    super().__init__(duration, timeout)
+    super().__init__(duration, timeout, index)
 
   @property
   def input_source(self) -> InputSource:
@@ -248,13 +260,14 @@ class GetAction(BaseDurationAction):
                duration: dt.timedelta = dt.timedelta(),
                timeout: dt.timedelta = ACTION_TIMEOUT,
                ready_state: ReadyState = ReadyState.ANY,
-               target: WindowTarget = WindowTarget.SELF):
+               target: WindowTarget = WindowTarget.SELF,
+               index: int = 0):
     if not url:
       raise ValueError(f"{self}.url is missing")
     self._url: str = url
     self._ready_state = ready_state
     self._target = target
-    super().__init__(duration, timeout)
+    super().__init__(duration, timeout, index)
 
   def validate_duration(self) -> None:
     if self.ready_state != ReadyState.ANY:
@@ -330,13 +343,14 @@ class ScrollAction(InputSourceAction):
                duration: dt.timedelta = dt.timedelta(seconds=1),
                selector: Optional[str] = None,
                required: bool = False,
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._distance = distance
 
     # TODO: convert to custom selector object.
     self._selector = selector
     self._required = required
-    super().__init__(source, duration, timeout)
+    super().__init__(source, duration, timeout, index)
 
   @property
   def distance(self) -> float:
@@ -395,7 +409,8 @@ class ClickAction(InputSourceAction):
                scroll_into_view: bool = False,
                x: Optional[int] = None,
                y: Optional[int] = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT):
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0):
     # TODO: convert to custom selector object.
     self._selector = selector
     self._required: bool = required
@@ -403,7 +418,7 @@ class ClickAction(InputSourceAction):
     self._coordinates: Optional[Point] = None
     if x is not None and y is not None:
       self._coordinates = Point(x, y)
-    super().__init__(source, duration, timeout)
+    super().__init__(source, duration, timeout, index)
 
   @property
   def selector(self) -> Optional[str]:
@@ -491,12 +506,13 @@ class SwipeAction(DurationAction):
                end_x: int,
                end_y: int,
                duration: dt.timedelta = dt.timedelta(seconds=1),
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._start_x: int = start_x
     self._start_y: int = start_y
     self._end_x: int = end_x
     self._end_y: int = end_y
-    super().__init__(duration, timeout)
+    super().__init__(duration, timeout, index)
 
   @property
   def start_x(self) -> int:
@@ -542,9 +558,10 @@ class TextInputAction(InputSourceAction):
                source: InputSource,
                duration: dt.timedelta,
                text: str,
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._text: str = text
-    super().__init__(source, duration, timeout)
+    super().__init__(source, duration, timeout, index)
 
   @property
   def text(self) -> str:
@@ -581,9 +598,12 @@ class WaitForElementAction(Action):
         "selector", type=cli_helper.parse_non_empty_str, required=True)
     return parser
 
-  def __init__(self, selector: str, timeout: dt.timedelta = ACTION_TIMEOUT):
+  def __init__(self,
+               selector: str,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0):
     self._selector = selector
-    super().__init__(timeout)
+    super().__init__(timeout, index)
 
   @property
   def selector(self) -> str:
@@ -632,7 +652,8 @@ class JsAction(Action):
                script: Optional[str],
                script_path: Optional[pth.LocalPath],
                replacements: Optional[Dict[str, str]] = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT) -> None:
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._original_script = script
     self._script_path = script_path
     self._script = ""
@@ -650,7 +671,7 @@ class JsAction(Action):
     if replacements:
       for key, value in replacements.items():
         self._script = self._script.replace(key, value)
-    super().__init__(timeout)
+    super().__init__(timeout, index)
 
   @property
   def script(self) -> str:
@@ -685,6 +706,11 @@ class InjectNewDocumentScriptAction(JsAction):
 
 class ScreenshotAction(Action):
   TYPE: ActionType = ActionType.SCREENSHOT
+
+  def __init__(self,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
+    super().__init__(timeout, index)
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.screenshot(run, self)

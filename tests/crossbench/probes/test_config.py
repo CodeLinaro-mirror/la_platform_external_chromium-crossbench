@@ -115,7 +115,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
     config_data = {"bool_argument_name": True}
     kwargs = parser.kwargs_from_config(config_data)
-    self.assertDictEqual(config_data, {})
+    self.assertDictEqual(config_data, {"bool_argument_name": True})
     self.assertDictEqual(kwargs, {"bool_argument_name": True})
 
   def test_bool(self):
@@ -123,7 +123,7 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser.add_argument("bool_argument_name", type=bool)
     config_data = {"bool_argument_name": True}
     kwargs = parser.kwargs_from_config(config_data)
-    self.assertDictEqual(config_data, {})
+    self.assertDictEqual(config_data, {"bool_argument_name": True})
     self.assertDictEqual(kwargs, {"bool_argument_name": True})
 
   def test_int_list_invalid(self):
@@ -144,7 +144,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
     config_data = {"int_list": [0, 1]}
     kwargs = parser.kwargs_from_config(config_data)
-    self.assertDictEqual(config_data, {})
+    self.assertDictEqual(config_data, {"int_list": [0, 1]})
     self.assertDictEqual(kwargs, {"int_list": [0, 1]})
 
   def test_custom_type(self):
@@ -152,7 +152,7 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser.add_argument("custom", type=custom_arg_type)
     config_data = {"custom": [1, 2, "stuff"]}
     kwargs = parser.kwargs_from_config(config_data)
-    self.assertDictEqual(config_data, {})
+    self.assertDictEqual(config_data, {"custom": [1, 2, "stuff"]})
     result = kwargs["custom"]
     self.assertIsInstance(result, CustomArgType)
     self.assertListEqual(result.value, [1, 2, "stuff"])

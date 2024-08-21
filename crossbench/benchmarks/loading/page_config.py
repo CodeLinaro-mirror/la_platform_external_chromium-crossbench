@@ -9,8 +9,8 @@ import copy
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
+                    Tuple, Type)
 from urllib.parse import urlparse
 
 from crossbench import cli_helper, exception
@@ -30,36 +30,53 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class ActionBlock(ConfigObject):
   label: str = "default"
+  index: int = 0
   actions: Tuple[Action, ...] = tuple()
+
+  def __post_init__(self):
+    # TODO: enable validating action indices
+    # for index, action in enumerate(self.actions):
+    #   if index != action.index:
+    #     raise ValueError(
+    #         f"action[{index}].index should be {index}, but got {action.index}")
+    if not self.actions:
+      raise argparse.ArgumentTypeError("Invalid block without actions")
 
   @classmethod
   def parse_str(cls: Type[ActionBlock], value: str) -> ActionBlock:
     raise NotImplementedError("Cannot create action blocks from strings")
 
   @classmethod
-  def parse_other(cls: Type[ActionBlock], value: Any) -> ActionBlock:
+  def parse_other(cls: Type[ActionBlock], value: Any, **kwargs) -> ActionBlock:
     if isinstance(value, (tuple, list)):
-      return cls.parse_sequence(value)
-    return super().parse_other(value)
+      return cls.parse_sequence(value, **kwargs)
+    return super().parse_other(value, **kwargs)
 
   @classmethod
-  def parse_dict(cls: Type[ActionBlock], config: Dict[str, Any]) -> ActionBlock:
-    return cls.config_parser().parse(config)
+  def parse_dict(  # pylint: disable=arguments-differ
+      cls: Type,
+      config: Dict[str, Any],
+      index: Optional[int] = None):
+    return cls.config_parser().parse(config, index=index)
 
   @classmethod
   def config_parser(cls: Type[ActionBlock]) -> ConfigParser[ActionBlock]:
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument(
         "label", type=cli_helper.parse_non_empty_str, default="default")
+    parser.add_argument(
+        "index", type=cli_helper.parse_positive_zero_int, required=False)
+    # TODO: enable passing index
     parser.add_argument("actions", type=Action, required=True, is_list=True)
     return parser
 
   @classmethod
   def parse_sequence(cls: Type[ActionBlock],
-                     config: Sequence[Dict[str, Any]]) -> ActionBlock:
+                     config: Sequence[Dict[str, Any]],
+                     index: Optional[int] = None) -> ActionBlock:
     with exception.annotate_argparsing(
         "Parsing default block action sequence:"):
-      return cls.parse_dict({"actions": config})
+      return cls.parse_dict({"actions": config}, index=index)
 
   def validate(self) -> None:
     super().validate()
@@ -80,9 +97,20 @@ class ActionBlock(ConfigObject):
     return total_duration
 
 
+class LoginBlock(ActionBlock):
+  LABEL: Final[str] = "login"
+
+
 @dataclasses.dataclass(frozen=True)
 class ActionBlockListConfig(ConfigObject):
   blocks: Tuple[ActionBlock, ...] = tuple()
+  login: Optional[LoginBlock] = None
+
+  def __post_init__(self):
+    for index, block in enumerate(self.blocks):
+      if index != block.index:
+        raise ValueError(
+            f"blocks[{index}].index should be {index}, but got {block.index}")
 
   @classmethod
   def parse_other(cls: Type[ActionBlockListConfig],
@@ -99,6 +127,7 @@ class ActionBlockListConfig(ConfigObject):
 
     Blocks:
     [{ "label": "block 1", "actions": [...]}, ... ]
+    [ "block 1": [{ "action": ...}, ...], "block 2": [ ... ] ]
 
     Default block actions:
     [{ "action": "get", ...}, { "action": ...}, ...]
@@ -110,7 +139,8 @@ class ActionBlockListConfig(ConfigObject):
     blocks: List[ActionBlock] = []
     for index, block_config in enumerate(config):
       block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
-      blocks.append(ActionBlock.parse_dict(block_config))
+      block = ActionBlock.parse_dict(block_config, index=index)
+      blocks.append(block)
     return cls(tuple(blocks))
 
   @classmethod
@@ -120,19 +150,28 @@ class ActionBlockListConfig(ConfigObject):
   @classmethod
   def parse_dict(cls: Type[ActionBlockListConfig],
                  config: Dict[str, Any]) -> ActionBlockListConfig:
-    config = cli_helper.parse_non_empty_dict(config, "actions")
+    config = cli_helper.parse_non_empty_dict(config, "blocks")
     blocks: List[ActionBlock] = []
-    for label, block_data in config.items():
+    for index, (label, block_data) in enumerate(config.items()):
       with exception.annotate_argparsing(f"Parsing action block  ...[{label}]"):
-        if isinstance(block_data, (list, tuple)):
-          block_data = {"actions": block_data}
-        if inner_label := block_data.get("label"):
-          raise ConfigError(
-              "ActionBlock inside a dict cannot have a 'label' property, "
-              f"but got label={repr(inner_label)}")
-        block_data["label"] = label
-        blocks.append(ActionBlock.parse(block_data))
+        if label == LoginBlock.LABEL:
+          block: ActionBlock = LoginBlock.parse(block_data, index=index)
+        else:
+          block = cls._parse_action_block(index, label, block_data)
+        blocks.append(block)
     return cls(tuple(blocks))
+
+  @classmethod
+  def _parse_action_block(cls, index: int, label: str,
+                          block_data: Any) -> ActionBlock:
+    if isinstance(block_data, (list, tuple)):
+      block_data = {"actions": block_data}
+    if inner_label := block_data.get("label"):
+      raise ConfigError(
+          "ActionBlock inside a dict cannot have a 'label' property, "
+          f"but got label={repr(inner_label)}")
+    block_data["label"] = label
+    return ActionBlock.parse(block_data, index=index)
 
   @classmethod
   def parse_str(cls, value: str) -> ActionBlockListConfig:
@@ -227,15 +266,15 @@ class PagesConfig(ConfigObject):
     return cls.parse_sequence(values)
 
   @classmethod
-  def parse_unknown_path(cls, path: pth.LocalPath) -> PagesConfig:
+  def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> PagesConfig:
     # Make sure we get errors for invalid files.
-    return cls.parse_config_path(path)
+    return cls.parse_config_path(path, **kwargs)
 
   @classmethod
-  def parse_other(cls, value: Any) -> PagesConfig:
+  def parse_other(cls, value: Any, **kwargs) -> PagesConfig:
     if isinstance(value, (list, tuple)):
-      return cls.parse_sequence(value)
-    return super().parse_other(value)
+      return cls.parse_sequence(value, **kwargs)
+    return super().parse_other(value, **kwargs)
 
   @classmethod
   def parse_sequence(cls, values: Sequence[str]) -> PagesConfig:
@@ -385,7 +424,8 @@ class ListPagesConfig(PagesConfig):
         f"URL list file {repr(value)} does not exist.")
 
   @classmethod
-  def parse_path(cls, path: pth.LocalPath) -> PagesConfig:
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> PagesConfig:
+    assert not kwargs, f"{cls.__name__} does not support extra kwargs"
     pages: List[PageConfig] = []
     with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
       line: int = 0

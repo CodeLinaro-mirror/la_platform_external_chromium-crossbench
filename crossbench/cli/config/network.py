@@ -63,10 +63,10 @@ class NetworkSpeedConfig(ConfigObject):
     return NetworkSpeedConfig()
 
   @classmethod
-  def parse(cls, value: Any) -> NetworkSpeedConfig:
+  def parse(cls, value: Any, **kwargs) -> NetworkSpeedConfig:
     if isinstance(value, NetworkSpeedPreset):
       return cls.parse_preset(value)
-    return super().parse(value)
+    return super().parse(value, **kwargs)
 
   @classmethod
   def parse_str(cls, value: str) -> NetworkSpeedConfig:
@@ -209,12 +209,12 @@ class NetworkConfig(ConfigObject):
     return super().is_valid_path(path)
 
   @classmethod
-  def parse_path(cls, path: pth.LocalPath) -> NetworkConfig:
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> NetworkConfig:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return cls.parse_wpr_archive_path(path)
     if path.is_dir():
       return NetworkConfig(NetworkType.LOCAL, path=path)
-    return super().parse_path(path)
+    return super().parse_path(path, **kwargs)
 
   @classmethod
   def parse_wpr_archive_path(cls, path: pth.LocalPath) -> NetworkConfig:

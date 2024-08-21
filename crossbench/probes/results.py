@@ -222,13 +222,6 @@ class LocalProbeResult(ProbeResult):
   """LocalProbeResult can be used for files that are always available on the
   runner/local machine."""
 
-  # pylint: disable-next=useless-parent-delegation
-  def __init__(self,
-               url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.LocalPath]] = None,
-               **kwargs: Iterable[pth.LocalPath]):
-    super().__init__(url, file, **kwargs)
-
 
 class BrowserProbeResult(ProbeResult):
   """BrowserProbeResult are stored on the device where the browser runs.

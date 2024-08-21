@@ -13,8 +13,8 @@ import inspect
 import logging
 import re
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, List,
-                    Optional, Set, Tuple, Type, TypeVar, Union, cast)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable,
+                    List, Optional, Set, Tuple, Type, TypeVar, Union, cast)
 from urllib.parse import urlparse
 
 import tabulate
@@ -390,36 +390,36 @@ class ConfigObject(abc.ABC):
     """
 
   @classmethod
-  def parse(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
+  def parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
     # Quick return for default values used by parsers.
     if isinstance(value, cls):
       return value
     # Make sure we wrap any exception in a argparse.ArgumentTypeError)
     with exception.annotate_argparsing(f"Parsing {cls.__name__}"):
-      return cls._parse(value)
+      return cls._parse(value, **kwargs)
 
   @classmethod
-  def _parse(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
+  def _parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
     if isinstance(value, dict):
-      return cls.parse_dict(value)
+      return cls.parse_dict(value, **kwargs)
     if not value:
       raise ConfigError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pth.LocalPath):
-      return cls.parse_path(value)
+      return cls.parse_path(value, **kwargs)
     if isinstance(value, str):
       if urlparse(value).scheme:
         # TODO(346197734): use parse_url here
-        return cls.parse_str(value)
+        return cls.parse_str(value, **kwargs)
       try:
         maybe_path = pth.LocalPath(value).expanduser()
         if cls.is_valid_path(maybe_path):
-          return cls.parse_path(maybe_path)
+          return cls.parse_path(maybe_path, **kwargs)
         if cls.value_has_path_prefix(value):
-          return cls.parse_unknown_path(maybe_path)
+          return cls.parse_unknown_path(maybe_path, **kwargs)
       except OSError:
         pass
-      return cls.parse_str(value)
-    return cls.parse_other(value)
+      return cls.parse_str(value, **kwargs)
+    return cls.parse_other(value, **kwargs)
 
   @classmethod
   def parse_other(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
@@ -439,30 +439,31 @@ class ConfigObject(abc.ABC):
     return path.suffix in cls.VALID_EXTENSIONS
 
   @classmethod
-  def parse_unknown_path(cls: Type[ConfigObjectT],
-                         path: pth.LocalPath) -> ConfigObjectT:
+  def parse_unknown_path(cls: Type[ConfigObjectT], path: pth.LocalPath,
+                         **kwargs) -> ConfigObjectT:
     # TODO: this should be redirected to parse_config_path
-    return cls.parse_str(str(path))
+    return cls.parse_str(str(path), **kwargs)
 
   @classmethod
-  def parse_path(cls: Type[ConfigObjectT],
-                 path: pth.LocalPath) -> ConfigObjectT:
-    return cls.parse_config_path(path)
+  def parse_path(cls: Type[ConfigObjectT], path: pth.LocalPath,
+                 **kwargs) -> ConfigObjectT:
+    return cls.parse_config_path(path, **kwargs)
 
   @classmethod
-  def parse_inline_hjson(cls: Type[ConfigObjectT], value: str) -> ConfigObjectT:
+  def parse_inline_hjson(cls: Type[ConfigObjectT], value: str,
+                         **kwargs) -> ConfigObjectT:
     with exception.annotate(f"Parsing inline {cls.__name__}"):
       data = cli_helper.parse_inline_hjson(value)
-      return cls.parse_dict(data)
+      return cls.parse_dict(data, **kwargs)
 
   @classmethod
-  def parse_config_path(cls: Type[ConfigObjectT],
-                        path: pth.LocalPathLike) -> ConfigObjectT:
+  def parse_config_path(cls: Type[ConfigObjectT], path: pth.LocalPathLike,
+                        **kwargs) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       file_path = cli_helper.parse_existing_file_path(path)
       data = cli_helper.parse_dict_hjson_file(file_path)
       with ChangeCWD(file_path.parent):
-        return cls.parse_dict(data)
+        return cls.parse_dict(data, **kwargs)
 
   @classmethod
   @abc.abstractmethod
@@ -529,7 +530,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def __init__(self,
                title: str,
                cls: Type[ConfigResultObjectT],
-               default: Optional[ConfigResultObjectT] = None) -> None:
+               default: Optional[ConfigResultObjectT] = None,
+               allow_unused_config_data: bool = True) -> None:
     self.title = title
     assert title, "No title provided"
     self._cls = cls
@@ -540,6 +542,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     self._default = default
     self._args: Dict[str, _ConfigArgParser] = {}
     self._arg_names: Set[str] = set()
+    self._allow_unused_config_data = allow_unused_config_data
 
   @property
   def default(self) -> Optional[ConfigResultObjectT]:
@@ -571,23 +574,48 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def get_argument(self, arg_name: str) -> _ConfigArgParser:
     return self._args[arg_name]
 
-  def kwargs_from_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
+  def kwargs_from_config(self, config_data: Dict[str, Any],
+                         **extra_kwargs) -> Dict[str, Any]:
+    with exception.annotate_argparsing(
+        f"Parsing {self._cls.__name__} extra config kwargs:"):
+      config_data = self._prepare_config_data(config_data, **extra_kwargs)
     with exception.annotate_argparsing(
         f"Parsing {self._cls.__name__} config dict:"):
       kwargs = _ConfigKwargsParser(self, config_data)
+      if config_data:
+        self._handle_unused_config_data(config_data)
       return kwargs.as_dict()
 
-  def parse(self, config_data: Dict[str, Any]) -> ConfigResultObjectT:
-    if self._default and config_data == {}:
+  def parse(self, config_data: Dict[str, Any], **kwargs) -> ConfigResultObjectT:
+    if self._default and config_data == {} and not kwargs:
       return self._default
-    kwargs = self.kwargs_from_config(config_data)
-    if config_data:
-      logging.debug("Got unused properties: %s", config_data.keys())
+    kwargs = self.kwargs_from_config(config_data, **kwargs)
     return self.new_instance_from_kwargs(kwargs)
+
+  def _prepare_config_data(self, config_data: Dict[str, Any],
+                           **extra_kwargs) -> Dict[str, Any]:
+    config_data = dict(config_data)
+    for extra_key, extra_data in extra_kwargs.items():
+      if extra_key in config_data:
+        raise ValueError(
+            f"Extra config data {repr(extra_key)}={repr(extra_data)} "
+            f"was already present in config_data[..]={repr(config_data[extra_key])}"
+        )
+      config_data[extra_key] = extra_data
+    return config_data
 
   def new_instance_from_kwargs(self, kwargs: Dict[str,
                                                   Any]) -> ConfigResultObjectT:
     return self._cls(**kwargs)
+
+  def _handle_unused_config_data(self, unused_config_data: Dict[str,
+                                                                Any]) -> None:
+    logging.debug("Got unused properties: %s", unused_config_data.keys())
+    if not self._allow_unused_config_data:
+      unused_keys = ', '.join(map(repr, unused_config_data.keys()))
+      raise argparse.ArgumentTypeError(
+          f"Config for {self._cls.__name__} contains unused properties: "
+          f"{unused_keys}")
 
   @property
   def arg_parsers(self) -> Tuple[_ConfigArgParser]:

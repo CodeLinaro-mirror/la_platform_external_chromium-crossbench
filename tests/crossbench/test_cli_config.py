@@ -1500,7 +1500,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           variants_config,
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args)
-    self.assertFalse(variants_config["browsers"]["chrome-stable"])
+    self.assertTrue(variants_config["browsers"]["chrome-stable"])
     self.assertEqual(len(config.variants), 1)
     browser_0 = config.variants[0]
     assert isinstance(browser_0, mock_browser.MockChromeStable)
