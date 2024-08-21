@@ -28,7 +28,7 @@ class TestExamplePageConfig(unittest.TestCase):
       file_config = PagesConfig.parse(config_file)
       with config_file.open(encoding="utf-8") as f:
         data = hjson.load(f)
-      dict_config = PagesConfig.load_dict(data)
+      dict_config = PagesConfig.parse_dict(data)
       self.assertTrue(dict_config.pages)
       self.assertTrue(file_config.pages)
       for page in dict_config.pages:

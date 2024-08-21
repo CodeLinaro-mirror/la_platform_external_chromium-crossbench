@@ -42,7 +42,7 @@ class ProbeConfig(ConfigObject):
       raise ValueError(f"{type(self).__name__}.config cannot be None.")
 
   @classmethod
-  def loads(cls, value: str) -> ProbeConfig:
+  def parse_str(cls, value: str) -> ProbeConfig:
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
@@ -60,16 +60,16 @@ class ProbeConfig(ConfigObject):
       if "name" in inline_config:
         raise ProbeConfigError("Inline hjson cannot redefine 'name'.")
       config.update(inline_config)
-    return cls.load_dict(config)
+    return cls.parse_dict(config)
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> ProbeConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> ProbeConfig:
     probe_name = cli_helper.parse_non_empty_str(config.pop("name"), "name")
-    return cls.load_probe_dict(probe_name, config)
+    return cls.parse_probe_dict(probe_name, config)
 
   @classmethod
-  def load_probe_dict(cls, probe_name: str, config: Dict[str,
-                                                         Any]) -> ProbeConfig:
+  def parse_probe_dict(cls, probe_name: str, config: Dict[str,
+                                                          Any]) -> ProbeConfig:
     if probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(probe_cls, config)
     raise cls._unknown_probe_error(probe_name)
@@ -93,32 +93,32 @@ class ProbeListConfig(ConfigObject):
   def from_cli_args(cls, args: argparse.Namespace) -> ProbeListConfig:
     with exception.annotate_argparsing():
       if args.probe_config:
-        return cls.load_path(args.probe_config)
+        return cls.parse_path(args.probe_config)
       return cls(args.probe)
 
   @classmethod
   def parse_other(cls: Type[ProbeListConfig], value: Any) -> ProbeListConfig:
     if isinstance(value, (tuple, list)):
-      return cls.load_sequence(value)
+      return cls.parse_sequence(value)
     return super().parse_other(value)
 
   @classmethod
-  def load_sequence(cls: Type[ProbeListConfig],
-                    config: Sequence[Dict[str, Any]]) -> ProbeListConfig:
+  def parse_sequence(cls: Type[ProbeListConfig],
+                     config: Sequence[Dict[str, Any]]) -> ProbeListConfig:
     probe_configs: List[ProbeConfig] = []
     for index, probe_config in enumerate(config):
       probe_config = cli_helper.parse_dict(probe_config, f"probes[{index}]")
-      probe_configs.append(ProbeConfig.load_dict(probe_config))
+      probe_configs.append(ProbeConfig.parse_dict(probe_config))
     return cls(probe_configs)
 
   @classmethod
-  def load_dict(cls: Type[ProbeListConfig],
-                config: Dict[str, Any]) -> ProbeListConfig:
+  def parse_dict(cls: Type[ProbeListConfig],
+                 config: Dict[str, Any]) -> ProbeListConfig:
     # Support global configs with {"probes": ...}
     if "probes" in config:
       config = config["probes"]
       if isinstance(config, (tuple, list)):
-        return cls.load_sequence(config)
+        return cls.parse_sequence(config)
     elif "browsers" in config or "flags" in config:
       raise ProbeConfigError("Missing 'probes' property in global config.")
     config = cli_helper.parse_dict(config, "probes")
@@ -126,11 +126,11 @@ class ProbeListConfig(ConfigObject):
     for probe_name, config_data in config.items():
       with exception.annotate(f"Parsing probe config probes['{probe_name}']"):
         probe_configs.append(
-            ProbeConfig.load_probe_dict(probe_name, config_data))
+            ProbeConfig.parse_probe_dict(probe_name, config_data))
     return cls(probe_configs)
 
   @classmethod
-  def loads(cls, value: str) -> ProbeListConfig:
+  def parse_str(cls, value: str) -> ProbeListConfig:
     raise NotImplementedError()
 
   def __init__(self, probes: Optional[Iterable[ProbeConfig]] = None):

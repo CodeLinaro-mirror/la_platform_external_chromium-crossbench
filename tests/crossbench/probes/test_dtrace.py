@@ -23,7 +23,7 @@ class DTraceProbeTestCase(CrossbenchFakeFsTestCase):
     example_script_file = config_file.parent / "dtrace.config.example.d"
     self.fs.create_file(example_script_file, st_size=100)
     self.assertTrue(example_script_file.is_file())
-    probes = ProbeListConfig.load_path(config_file).probes
+    probes = ProbeListConfig.parse_path(config_file).probes
     self.assertEqual(len(probes), 1)
     probe = probes[0]
     self.assertIsInstance(probe, DTraceProbe)

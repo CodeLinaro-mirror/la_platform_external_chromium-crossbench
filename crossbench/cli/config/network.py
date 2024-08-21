@@ -65,27 +65,27 @@ class NetworkSpeedConfig(ConfigObject):
   @classmethod
   def parse(cls, value: Any) -> NetworkSpeedConfig:
     if isinstance(value, NetworkSpeedPreset):
-      return cls.load_preset(value)
+      return cls.parse_preset(value)
     return super().parse(value)
 
   @classmethod
-  def loads(cls, value: str) -> NetworkSpeedConfig:
+  def parse_str(cls, value: str) -> NetworkSpeedConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     if value == "default":
       return cls.default()
     preset = NetworkSpeedPreset.parse(value)  # pytype: disable=wrong-arg-types
-    return cls.load_preset(preset)
+    return cls.parse_preset(preset)
 
   @classmethod
-  def load_preset(cls, preset: NetworkSpeedPreset) -> NetworkSpeedConfig:
+  def parse_preset(cls, preset: NetworkSpeedPreset) -> NetworkSpeedConfig:
     if preset == NetworkSpeedPreset.LIVE:
       return cls.default()
     preset_kwargs = ts_proxy.TRAFFIC_SETTINGS[str(preset)]
     return cls(**preset_kwargs)
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> NetworkSpeedConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> NetworkSpeedConfig:
     return cls.config_parser().parse(config)
 
   @classmethod
@@ -173,27 +173,27 @@ class NetworkConfig(ConfigObject):
   @classmethod
   def parse_local(cls, value: Any) -> NetworkConfig:
     local_server_dir: pth.LocalPath = cli_helper.parse_dir_path(value)
-    config: NetworkConfig = cls.load_path(local_server_dir)
+    config: NetworkConfig = cls.parse_path(local_server_dir)
     if config.type != NetworkType.LOCAL:
       raise argparse.ArgumentTypeError(
           f"Expected local file server, but got {config.type}. ")
     return config
 
   @classmethod
-  def loads(cls, value: str) -> NetworkConfig:
+  def parse_str(cls, value: str) -> NetworkConfig:
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
       return cls.default()
     if value[0] == "{":
-      return cls.load_inline_hjson(value)
+      return cls.parse_inline_hjson(value)
     # TODO(346197734): Move to load_url once available.
     if value.startswith(GS_PREFIX):
-      return cls.load_wpr_archive_url(value)
-    return cls.load_live(value)
+      return cls.parse_wpr_archive_url(value)
+    return cls.parse_live(value)
 
   @classmethod
-  def load_live(cls, value: Any) -> NetworkConfig:
+  def parse_live(cls, value: Any) -> NetworkConfig:
     with exception.annotate_argparsing("Live network with speed config"):
       speed = NetworkSpeedConfig.parse(value)
       return cls(NetworkType.LIVE, speed)
@@ -209,24 +209,24 @@ class NetworkConfig(ConfigObject):
     return super().is_valid_path(path)
 
   @classmethod
-  def load_path(cls, path: pth.LocalPath) -> NetworkConfig:
+  def parse_path(cls, path: pth.LocalPath) -> NetworkConfig:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
-      return cls.load_wpr_archive_path(path)
+      return cls.parse_wpr_archive_path(path)
     if path.is_dir():
       return NetworkConfig(NetworkType.LOCAL, path=path)
-    return super().load_path(path)
+    return super().parse_path(path)
 
   @classmethod
-  def load_wpr_archive_path(cls, path: pth.LocalPath) -> NetworkConfig:
+  def parse_wpr_archive_path(cls, path: pth.LocalPath) -> NetworkConfig:
     path = cli_helper.parse_non_empty_file_path(path, "wpr.go archive")
     return NetworkConfig(type=NetworkType.WPR, path=path)
 
   @classmethod
-  def load_wpr_archive_url(cls, url: str) -> NetworkConfig:
+  def parse_wpr_archive_url(cls, url: str) -> NetworkConfig:
     return NetworkConfig(type=NetworkType.WPR, url=url)
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> NetworkConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> NetworkConfig:
     return cls.config_parser().parse(config)
 
   def validate(self) -> None:

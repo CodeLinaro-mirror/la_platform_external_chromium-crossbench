@@ -267,8 +267,8 @@ class PageLoadBenchmark(SubStoryBenchmark):
               "Conflicting arguments: "
               "either specify a --config file without a 'pages' property "
               "or remove the --page-config argument.")
-        # TODO: PagesConfig.load_dict should be able to parse the inner dict.
-        return PagesConfig.load_dict({"pages": pages_config_dict})
+        # TODO: PagesConfig.parse_dict should be able to parse the inner dict.
+        return PagesConfig.parse_dict({"pages": pages_config_dict})
     return args.pages_config
 
   @classmethod

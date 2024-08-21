@@ -53,7 +53,7 @@ class CustomNestedConfigObject(ConfigObject):
   name: str
 
   @classmethod
-  def loads(cls, value: str) -> CustomNestedConfigObject:
+  def parse_str(cls, value: str) -> CustomNestedConfigObject:
     if ":" in value:
       raise ValueError("Invalid Config")
     if not value:
@@ -61,7 +61,7 @@ class CustomNestedConfigObject(ConfigObject):
     return cls(name=value)
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> CustomNestedConfigObject:
+  def parse_dict(cls, config: Dict[str, Any]) -> CustomNestedConfigObject:
     return cls.config_parser().parse(config)
 
   @classmethod
@@ -90,7 +90,7 @@ class CustomConfigObject(ConfigObject):
     return cls("default")
 
   @classmethod
-  def loads(cls, value: str) -> CustomConfigObject:
+  def parse_str(cls, value: str) -> CustomConfigObject:
     if ":" in value:
       raise ValueError("Invalid Config")
     if not value:
@@ -123,7 +123,7 @@ class CustomConfigObject(ConfigObject):
 
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> CustomConfigObject:
+  def parse_dict(cls, config: Dict[str, Any]) -> CustomConfigObject:
     return cls.config_parser().parse(config)
 
   @classmethod
@@ -268,12 +268,12 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       with self.subTest(value=value):
         self.assertFalse(CustomConfigObject.value_has_path_prefix(value))
 
-  def test_load_invalid_str(self):
+  def test_parse_invalid_str(self):
     for invalid in ("", None, 1, []):
       with self.assertRaises(argparse.ArgumentTypeError):
         CustomConfigObject.parse(invalid)
 
-  def test_load_dict_invalid(self):
+  def test_parse_dict_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({})
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -283,9 +283,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({"name": "foo", "array": [], "integer": "a"})
     with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.load_dict({"name": "foo", "array": [], "integer": "a"})
+      CustomConfigObject.parse_dict({
+          "name": "foo",
+          "array": [],
+          "integer": "a"
+      })
 
-  def test_load_dict(self):
+  def test_parse_dict(self):
     config = CustomConfigObject.parse({"name": "foo"})
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "foo")
@@ -298,11 +302,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.name, "foo")
     self.assertListEqual(config.array, [1, 2, 3])
     self.assertEqual(config.integer, 153)
-    config_2 = CustomConfigObject.load_dict(dict(data))
+    config_2 = CustomConfigObject.parse_dict(dict(data))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config, config_2)
 
-  def test_load_dict_default(self):
+  def test_parse_dict_default(self):
     self.assertIsNone(CustomConfigObject.config_parser().default)
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse({})
@@ -311,12 +315,12 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObjectWithDefault.parse({})
     self.assertEqual(config, CustomConfigObjectWithDefault.default())
 
-  def test_load_dict_alias(self):
+  def test_parse_dict_alias(self):
     config = CustomConfigObject.parse({"name_alias": "foo"})
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "foo")
 
-  def test_load_dict_custom_value_enum(self):
+  def test_parse_dict_custom_value_enum(self):
     config = CustomConfigObject.parse({"name_alias": "foo"})
     assert isinstance(config, CustomConfigObject)
     self.assertIs(config.custom_value_enum, CustomValueEnum.DEFAULT)
@@ -335,7 +339,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       })
       self.assertIs(config.custom_value_enum, result)
 
-  def test_load_dict_custom_value_enum_invalid(self):
+  def test_parse_dict_custom_value_enum_invalid(self):
     for invalid in (1, 2, {}, "A", "B"):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         CustomConfigObject.parse({
@@ -344,37 +348,37 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         })
       self.assertIn(f"{invalid}", str(cm.exception))
 
-  def test_loads(self):
+  def test_parse_str(self):
     config = CustomConfigObject.parse("a name")
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "a name")
 
-  def test_load_path_missing_file(self):
+  def test_parse_path_missing_file(self):
     path = pathlib.Path("invalid.file")
     self.assertFalse(path.exists())
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
     with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.load_path(path)
+      CustomConfigObject.parse_path(path)
 
-  def test_load_path_empty_file(self):
+  def test_parse_path_empty_file(self):
     path = pathlib.Path("test_file.json")
     self.assertFalse(path.exists())
     path.touch()
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
     with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.load_path(path)
+      CustomConfigObject.parse_path(path)
 
-  def test_load_path_invalid_json_file(self):
+  def test_parse_path_invalid_json_file(self):
     path = pathlib.Path("test_file.json")
     path.write_text("{{", encoding="utf-8")
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
     with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.load_path(path)
+      CustomConfigObject.parse_path(path)
 
-  def test_load_path_empty_json_object(self):
+  def test_parse_path_empty_json_object(self):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump({}, f)
@@ -382,7 +386,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       CustomConfigObject.parse(path)
     self.assertIn("non-empty data", str(cm.exception))
 
-  def test_load_path_invalid_json_array(self):
+  def test_parse_path_invalid_json_array(self):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump([], f)
@@ -390,11 +394,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       CustomConfigObject.parse(path)
     self.assertIn("non-empty data", str(cm.exception))
 
-  def test_load_path_minimal(self):
+  def test_parse_path_minimal(self):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump({"name": "Config Name"}, f)
-    config = CustomConfigObject.load_path(path)
+    config = CustomConfigObject.parse_path(path)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     self.assertIsNone(config.array)
@@ -409,11 +413,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       "integer": 166
   })
 
-  def test_load_path_full(self):
+  def test_parse_path_full(self):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump(dict(self.TEST_DICT), f)
-    config = CustomConfigObject.load_path(path)
+    config = CustomConfigObject.parse_path(path)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     self.assertListEqual(config.array, [1, 3])
@@ -422,8 +426,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config_2 = CustomConfigObject.parse(str(path))
     self.assertEqual(config, config_2)
 
-  def test_load_dict_full(self):
-    config = CustomConfigObject.load_dict(dict(self.TEST_DICT))
+  def test_parse_dict_full(self):
+    config = CustomConfigObject.parse_dict(dict(self.TEST_DICT))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     self.assertListEqual(config.array, [1, 3])
@@ -432,10 +436,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
   TEST_DICT_NESTED = immutabledict({"name": "a nested name"})
 
-  def test_load_dict_nested(self):
+  def test_parse_dict_nested(self):
     test_dict = dict(self.TEST_DICT)
     test_dict["nested"] = dict(self.TEST_DICT_NESTED)
-    config = CustomConfigObject.load_dict(test_dict)
+    config = CustomConfigObject.parse_dict(test_dict)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     self.assertListEqual(config.array, [1, 3])
@@ -443,19 +447,19 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.nested,
                      CustomNestedConfigObject(name="a nested name"))
 
-  def test_load_dict_nested_file(self):
+  def test_parse_dict_nested_file(self):
     path = pathlib.Path("nested.json")
     self.assertFalse(path.exists())
     with path.open("w", encoding="utf-8") as f:
       json.dump(dict(self.TEST_DICT_NESTED), f)
     test_dict = dict(self.TEST_DICT)
     test_dict["nested"] = str(path)
-    config = CustomConfigObject.load_dict(test_dict)
+    config = CustomConfigObject.parse_dict(test_dict)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.nested,
                      CustomNestedConfigObject(name="a nested name"))
 
-  def test_load_missing_depending(self):
+  def test_parse_missing_depending(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       CustomConfigObject.parse({"name": "foo", "depending_nested": "a value"})
     self.assertIn("depending_nested", str(cm.exception))
@@ -469,7 +473,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("depending_nested", str(cm.exception))
     self.assertIn("Expected nested", str(cm.exception))
 
-  def test_load_depending_simple(self):
+  def test_parse_depending_simple(self):
     config = CustomConfigObject.parse({
         "name": "foo",
         "nested": "nested string value",
@@ -480,40 +484,40 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         "nested": config.nested
     })
 
-  def test_load_generic_enum(self):
+  def test_parse_generic_enum(self):
     test_dict = dict(self.TEST_DICT)
     test_dict["generic_enum"] = "b"
-    config = CustomConfigObject.load_dict(test_dict)
+    config = CustomConfigObject.parse_dict(test_dict)
     self.assertIs(config.generic_enum, GenericEnum.B)
     test_dict = dict(self.TEST_DICT)
     test_dict["generic_enum"] = "c"
-    config = CustomConfigObject.load_dict(test_dict)
+    config = CustomConfigObject.parse_dict(test_dict)
     self.assertIs(config.generic_enum, GenericEnum.C)
 
-  def test_load_generic_enum_invalid(self):
+  def test_parse_generic_enum_invalid(self):
     test_dict = dict(self.TEST_DICT)
     test_dict["generic_enum"] = "unknown value"
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      CustomConfigObject.load_dict(test_dict)
+      CustomConfigObject.parse_dict(test_dict)
     error_message = str(cm.exception).lower()
     self.assertIn("choices are", error_message)
     self.assertIn("generic_enum", error_message)
 
-  def test_load_config_enum(self):
+  def test_parse_config_enum(self):
     test_dict = dict(self.TEST_DICT)
     test_dict["config_enum"] = "b"
-    config = CustomConfigObject.load_dict(test_dict)
+    config = CustomConfigObject.parse_dict(test_dict)
     self.assertIs(config.config_enum, CustomConfigEnum.B)
     test_dict = dict(self.TEST_DICT)
     test_dict["config_enum"] = "c"
-    config = CustomConfigObject.load_dict(test_dict)
+    config = CustomConfigObject.parse_dict(test_dict)
     self.assertIs(config.config_enum, CustomConfigEnum.C)
 
-  def test_load_custom_enum_invalid(self):
+  def test_parse_custom_enum_invalid(self):
     test_dict = dict(self.TEST_DICT)
     test_dict["config_enum"] = "unknown value"
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      CustomConfigObject.load_dict(test_dict)
+      CustomConfigObject.parse_dict(test_dict)
     error_message = str(cm.exception).lower()
     self.assertIn("choices are", error_message)
     self.assertIn("config_enum", error_message)
@@ -521,7 +525,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
 class ConfigEnumTestCase(unittest.TestCase):
 
-  def test_load_invalid(self):
+  def test_parse_invalid(self):
     for invalid in ("", None):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         CustomConfigEnum.parse(invalid)

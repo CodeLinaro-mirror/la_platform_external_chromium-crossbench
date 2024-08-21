@@ -20,7 +20,7 @@ class TestJSProbe(GenericProbeTestCase):
     config_file = (test_helper.config_dir() / "doc/probe/js.config.hjson")
     self.fs.add_real_file(config_file)
     self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.load_path(config_file).probes
+    probes = ProbeListConfig.parse_path(config_file).probes
     self.assertEqual(len(probes), 1)
     probe = probes[0]
     self.assertIsInstance(probe, JSProbe)

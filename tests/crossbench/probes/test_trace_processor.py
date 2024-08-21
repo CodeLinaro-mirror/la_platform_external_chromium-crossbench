@@ -2,18 +2,18 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import json
 import unittest
 
 import hjson
-import json
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import TraceProcessorProbe
+from crossbench.probes.results import LocalProbeResult
 from tests import test_helper
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
-from crossbench.probes.results import LocalProbeResult
 
 
 class TraceProcessorProbeTestCase(unittest.TestCase):
@@ -25,7 +25,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     config_file = (
         test_helper.config_dir() / "doc/probe/trace_processor.config.hjson")
     self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.load_path(config_file).probes
+    probes = ProbeListConfig.parse_path(config_file).probes
     self.assertEqual(len(probes), 2)
     probe = probes[0]
     self.assertIsInstance(probe, TraceProcessorProbe)

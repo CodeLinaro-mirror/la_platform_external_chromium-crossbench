@@ -9,11 +9,11 @@ from typing import Dict, List, Type
 import hjson
 from pyfakefs import fake_filesystem_unittest
 
-from crossbench import plt
-from crossbench.helper.path_finder import default_chromium_candidates
 import crossbench.path
+from crossbench import plt
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.helper import ChangeCWD
+from crossbench.helper.path_finder import default_chromium_candidates
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.probe import Probe
 from tests import test_helper
@@ -63,7 +63,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
       probe_name = config_file.name.split(".")[0]
     probe_cls = PROBE_LOOKUP[probe_name]
 
-    probes = ProbeListConfig.load_path(config_file).probes
+    probes = ProbeListConfig.parse_path(config_file).probes
     self.assertTrue(probes)
     self.assertTrue(
         any(map(lambda probe: isinstance(probe, probe_cls), probes)))

@@ -367,7 +367,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
-    dict_config = PagesConfig.load_dict(data)
+    dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
@@ -382,7 +382,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
-    dict_config = PagesConfig.load_dict(data)
+    dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
@@ -401,7 +401,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     with config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
     with ChangeCWD(test_helper.config_dir() / "benchmark/loading"):
-      dict_config = PagesConfig.load_dict(data)
+      dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
@@ -420,7 +420,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     with config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
     with ChangeCWD(test_helper.config_dir() / "benchmark/loading"):
-      dict_config = PagesConfig.load_dict(data)
+      dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
@@ -655,9 +655,9 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_no_scenarios(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      PagesConfig.load_dict({})
+      PagesConfig.parse_dict({})
     with self.assertRaises(argparse.ArgumentTypeError):
-      PagesConfig.load_dict({"pages": {}})
+      PagesConfig.parse_dict({"pages": {}})
 
   def test_scenario_invalid_actions(self):
     invalid_actions = [None, "", [], {}, "invalid string", 12]
@@ -665,11 +665,11 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       config_dict = {"pages": {"name": invalid_action}}
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
-          PagesConfig.load_dict(config_dict)
+          PagesConfig.parse_dict(config_dict)
 
   def test_missing_action(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      PagesConfig.load_dict(
+      PagesConfig.parse_dict(
           {"pages": {
               "TEST": [{
                   "action___": "wait",
@@ -691,11 +691,11 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
-          PagesConfig.load_dict(config_dict)
+          PagesConfig.parse_dict(config_dict)
 
   def test_missing_get_action_scenario(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      PagesConfig.load_dict(
+      PagesConfig.parse_dict(
           {"pages": {
               "TEST": [{
                   "action": "wait",
@@ -733,7 +733,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     ]
     for input_value, duration in durations:
       with self.subTest(duration=duration):
-        page_config = PagesConfig.load_dict({
+        page_config = PagesConfig.parse_dict({
             "pages": {
                 "TEST": [
                     {
@@ -762,7 +762,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     for invalid_duration in invalid_durations:
       with self.subTest(duration=invalid_duration), self.assertRaises(
           (AssertionError, ValueError, argparse.ArgumentTypeError)):
-        PagesConfig.load_dict({
+        PagesConfig.parse_dict({
             "pages": {
                 "TEST": [
                     {
@@ -865,11 +865,11 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("pages", str(cm.exception))
 
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      ListPagesConfig.load_dict({"pages": None})
+      ListPagesConfig.parse_dict({"pages": None})
     self.assertIn("None", str(cm.exception))
 
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      ListPagesConfig.load_dict({"pages": []})
+      ListPagesConfig.parse_dict({"pages": []})
     self.assertIn("empty", str(cm.exception))
 
   def test_direct_string_single(self):
@@ -885,7 +885,7 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
 
   @unittest.skip("Combined pages per line not supported yet")
   def test_direct_string_multiple(self):
-    config = ListPagesConfig.load_dict(
+    config = ListPagesConfig.parse_dict(
         {"pages": "http://a.com,12s,http://b.com,13s"})
     self.assertEqual(len(config.pages), 2)
     story_1, story_2 = config.pages
@@ -902,7 +902,7 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config_str, config_dict_list)
     self.assertEqual(config_str, config_list)
 
-  def test_load_file(self):
+  def test_parse_file(self):
     page_configs = ["http://a.com,12s", "http://b.com,13s"]
     config_file = pathlib.Path("page_list.txt")
     with config_file.open("w") as f:
@@ -911,7 +911,7 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
     config_list = ListPagesConfig.parse(page_configs)
     self.assertEqual(config_file, config_list)
 
-  def test_load_file_empty_lines(self):
+  def test_parse_file_empty_lines(self):
     page_configs = ["http://a.com,12s", "http://b.com,13s"]
     config_file = pathlib.Path("page_list.txt")
     with config_file.open("w") as f:

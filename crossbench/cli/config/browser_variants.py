@@ -98,27 +98,27 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
     if data is None:
       return FlagsGroupConfig()
     if isinstance(data, str):
-      return cls.loads(data)
+      return cls.parse_str(data)
     if isinstance(data, dict):
-      return cls.load_dict(data)
+      return cls.parse_dict(data)
     if isinstance(data, (list, tuple)):
-      return cls.load_sequence(data)
+      return cls.parse_sequence(data)
     raise ConfigError(f"Invalid type {type(data)}: {repr(data)}")
 
   @classmethod
-  def load_dict(cls, config: Dict) -> FlagsGroupConfig:
+  def parse_dict(cls, config: Dict) -> FlagsGroupConfig:
     if not config:
       return FlagsGroupConfig()
     all_flag_keys = all(key.startswith("-") for key in config.keys())
     all_str_values = all(isinstance(value, str) for value in config.values())
     if not all_flag_keys:
-      return cls.load_dict_with_labels(config)
+      return cls.parse_dict_with_labels(config)
     if all_str_values:
-      return cls.load_dict_simple(config)
-    return cls._load_variants_dict(config)
+      return cls.parse_dict_simple(config)
+    return cls._parse_variants_dict(config)
 
   @classmethod
-  def load_dict_with_labels(cls, config: Dict) -> FlagsGroupConfig:
+  def parse_dict_with_labels(cls, config: Dict) -> FlagsGroupConfig:
     variants: OrderedSet[FlagsVariantConfig] = OrderedSet()
     logging.debug("Using custom flag group labels")
     for label, value in config.items():
@@ -131,13 +131,13 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
     return FlagsGroupConfig(tuple(variants))
 
   @classmethod
-  def load_dict_simple(cls, config: Dict) -> FlagsGroupConfig:
+  def parse_dict_simple(cls, config: Dict) -> FlagsGroupConfig:
     logging.debug("Using single flag group dict")
     variants = (FlagsVariantConfig.parse(DEFAULT_LABEL, 0, config),)
     return FlagsGroupConfig(variants)
 
   @classmethod
-  def _load_variants_dict(cls, data: Dict[str, Any]) -> FlagsGroupConfig:
+  def _parse_variants_dict(cls, data: Dict[str, Any]) -> FlagsGroupConfig:
     # data == {
     #  "--flag": None,
     #  "--flag-b": "custom flag value",
@@ -174,11 +174,11 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
   def _dict_variant_to_group(cls, flag_name: str,
                              data: Any) -> FlagsGroupConfig:
     if data is None:
-      return cls.loads(flag_name)
+      return cls.parse_str(flag_name)
     if isinstance(data, str):
       data_str: str = data.strip()
       if not data_str:
-        return cls.loads(flag_name)
+        return cls.parse_str(flag_name)
       data = (data_str,)
     assert isinstance(data, (list, tuple)), "Invalid flag variant type"
     flags: OrderedSet[Optional[str]] = OrderedSet()
@@ -194,7 +194,7 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
         raise ConfigError("Same flag variant was specified more than once: "
                           f"{repr(flag)} for entry {repr(flag_name)}")
       flags.add(flag)
-    return cls.load_sequence(flags)
+    return cls.parse_sequence(flags)
 
   @classmethod
   def _validate_variant_flag(cls, flag_name: str, flag_value: Any) -> None:
@@ -203,7 +203,7 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
                         f"None (from python) for flag {repr(flag_name)}")
 
   @classmethod
-  def load_sequence(cls, data: Sequence) -> FlagsGroupConfig:
+  def parse_sequence(cls, data: Sequence) -> FlagsGroupConfig:
     variants: List[FlagsVariantConfig] = []
     duplicates: Set[str] = set()
     for flag_data in data:
@@ -219,7 +219,7 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
     return FlagsGroupConfig(tuple(variants))
 
   @classmethod
-  def loads(cls, value: str) -> FlagsGroupConfig:
+  def parse_str(cls, value: str) -> FlagsGroupConfig:
     if not value.strip():
       return FlagsGroupConfig()
     variants = (FlagsVariantConfig.parse(DEFAULT_LABEL, 0, value),)
@@ -271,13 +271,13 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
 class FlagsConfig(ConfigObject, immutabledict[str, FlagsGroupConfig]):
 
   @classmethod
-  def loads(cls, value: str) -> FlagsConfig:
+  def parse_str(cls, value: str) -> FlagsConfig:
     if not value:
       raise ConfigError("Cannot parse empty string")
-    return cls({"default": FlagsGroupConfig.loads(value)})
+    return cls({"default": FlagsGroupConfig.parse_str(value)})
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> FlagsConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> FlagsConfig:
     groups: Dict[str, FlagsGroupConfig] = {}
     for group_name, group_data in config.items():
       with exception.annotate(f"Parsing flag-group: flags[{repr(group_name)}]"):
@@ -294,10 +294,10 @@ class BrowserVariantsConfig:
       with cli_helper.late_argument_type_error_wrapper("--browser-config"):
         path = args.browser_config.expanduser()
         with path.open(encoding="utf-8") as f:
-          browser_config.load(f, args)
+          browser_config.parse_text_io(f, args)
     else:
       with cli_helper.late_argument_type_error_wrapper("--browser"):
-        browser_config.load_from_args(args)
+        browser_config.parse_args(args)
     return browser_config
 
   def __init__(self,
@@ -311,22 +311,23 @@ class BrowserVariantsConfig:
     self._cache_dir: pth.LocalPath = BROWSERS_CACHE
     if raw_config_data:
       assert args, "args object needed when loading from dict."
-      self.load_dict(raw_config_data, args)
+      self.parse_dict(raw_config_data, args)
 
   @property
   def variants(self) -> List[Browser]:
     assert self._variants
     return self._variants
 
-  def load(self, f: TextIO, args: argparse.Namespace) -> None:
+  def parse_text_io(self, f: TextIO, args: argparse.Namespace) -> None:
     with exception.annotate(f"Loading browser config file: {f.name}"):
       config = {}
       with exception.annotate(f"Parsing {hjson.__name__}"):
         config = hjson.load(f)
       with exception.annotate(f"Parsing config file: {f.name}"):
-        self.load_dict(config, args)
+        self.parse_dict(config, args)
 
-  def load_dict(self, config: Dict[str, Any], args: argparse.Namespace) -> None:
+  def parse_dict(self, config: Dict[str, Any],
+                 args: argparse.Namespace) -> None:
     with exception.annotate(
         f"Parsing {type(self).__name__} dict", throw_cls=ConfigError):
       if "flags" in config:
@@ -339,7 +340,7 @@ class BrowserVariantsConfig:
       with exception.annotate("Parsing config['browsers']"):
         self._parse_browsers(config["browsers"], args)
 
-  def load_from_args(self, args: argparse.Namespace) -> None:
+  def parse_args(self, args: argparse.Namespace) -> None:
     self._cache_dir = args.cache_dir
     browser_list: List[BrowserConfig] = args.browser or [
         BrowserConfig.default()
@@ -486,7 +487,7 @@ class BrowserVariantsConfig:
         flag_groups.append(maybe_flag_group)
     if inline_flags:
       flag_data = {"inline": inline_flags}
-      flag_groups.append(FlagsGroupConfig.load_dict(flag_data))
+      flag_groups.append(FlagsGroupConfig.parse_dict(flag_data))
     return flag_groups
 
   def _validate_flags(self, browser_name: str, flag_group_names: List[str]):

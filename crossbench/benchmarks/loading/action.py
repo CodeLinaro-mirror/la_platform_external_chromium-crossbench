@@ -77,11 +77,11 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ActionType = ActionType.GET
 
   @classmethod
-  def loads(cls: Type[ActionT], value: str) -> ActionT:
+  def parse_str(cls: Type[ActionT], value: str) -> ActionT:
     raise NotImplementedError("Not supported")
 
   @classmethod
-  def load_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
+  def parse_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
     action_cls: Type[ActionT] = ACTIONS[action_type]
     with exception.annotate_argparsing(

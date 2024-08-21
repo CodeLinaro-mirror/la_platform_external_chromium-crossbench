@@ -448,7 +448,7 @@ class CrossBenchCLI:
     network_settings_group.add_argument(
         "--network-config",
         metavar="DIR",
-        type=cli_config.NetworkConfig.load_config_path,
+        type=cli_config.NetworkConfig.parse_config_path,
         help=cli_config.NetworkConfig.help())
     network_settings_group.add_argument(
         "--local-file-server",

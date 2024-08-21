@@ -33,17 +33,17 @@ class ActionBlock(ConfigObject):
   actions: Tuple[Action, ...] = tuple()
 
   @classmethod
-  def loads(cls: Type[ActionBlock], value: str) -> ActionBlock:
+  def parse_str(cls: Type[ActionBlock], value: str) -> ActionBlock:
     raise NotImplementedError("Cannot create action blocks from strings")
 
   @classmethod
   def parse_other(cls: Type[ActionBlock], value: Any) -> ActionBlock:
     if isinstance(value, (tuple, list)):
-      return cls.load_sequence(value)
+      return cls.parse_sequence(value)
     return super().parse_other(value)
 
   @classmethod
-  def load_dict(cls: Type[ActionBlock], config: Dict[str, Any]) -> ActionBlock:
+  def parse_dict(cls: Type[ActionBlock], config: Dict[str, Any]) -> ActionBlock:
     return cls.config_parser().parse(config)
 
   @classmethod
@@ -55,11 +55,11 @@ class ActionBlock(ConfigObject):
     return parser
 
   @classmethod
-  def load_sequence(cls: Type[ActionBlock],
-                    config: Sequence[Dict[str, Any]]) -> ActionBlock:
+  def parse_sequence(cls: Type[ActionBlock],
+                     config: Sequence[Dict[str, Any]]) -> ActionBlock:
     with exception.annotate_argparsing(
         "Parsing default block action sequence:"):
-      return cls.load_dict({"actions": config})
+      return cls.parse_dict({"actions": config})
 
   def validate(self) -> None:
     super().validate()
@@ -88,12 +88,12 @@ class ActionBlockListConfig(ConfigObject):
   def parse_other(cls: Type[ActionBlockListConfig],
                   value: Any) -> ActionBlockListConfig:
     if isinstance(value, (tuple, list)):
-      return cls.load_sequence(value)
+      return cls.parse_sequence(value)
     return super().parse_other(value)
 
   @classmethod
-  def load_sequence(cls: Type[ActionBlockListConfig],
-                    config: Sequence[Dict[str, Any]]) -> ActionBlockListConfig:
+  def parse_sequence(cls: Type[ActionBlockListConfig],
+                     config: Sequence[Dict[str, Any]]) -> ActionBlockListConfig:
     """Parse either a sequence of blocks or a sequence of actions for an
     implicit default block.
 
@@ -110,7 +110,7 @@ class ActionBlockListConfig(ConfigObject):
     blocks: List[ActionBlock] = []
     for index, block_config in enumerate(config):
       block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
-      blocks.append(ActionBlock.load_dict(block_config))
+      blocks.append(ActionBlock.parse_dict(block_config))
     return cls(tuple(blocks))
 
   @classmethod
@@ -118,8 +118,8 @@ class ActionBlockListConfig(ConfigObject):
     return "action" in config[0]
 
   @classmethod
-  def load_dict(cls: Type[ActionBlockListConfig],
-                config: Dict[str, Any]) -> ActionBlockListConfig:
+  def parse_dict(cls: Type[ActionBlockListConfig],
+                 config: Dict[str, Any]) -> ActionBlockListConfig:
     config = cli_helper.parse_non_empty_dict(config, "actions")
     blocks: List[ActionBlock] = []
     for label, block_data in config.items():
@@ -135,7 +135,7 @@ class ActionBlockListConfig(ConfigObject):
     return cls(tuple(blocks))
 
   @classmethod
-  def loads(cls, value: str) -> ActionBlockListConfig:
+  def parse_str(cls, value: str) -> ActionBlockListConfig:
     raise NotImplementedError("Cannot create action blocks from strings")
 
   def validate(self) -> None:
@@ -152,7 +152,7 @@ class PageConfig(ConfigObject):
   action_blocks: Tuple[ActionBlock, ...] = tuple()
 
   @classmethod
-  def loads(cls: Type[PageConfig], value: str) -> PageConfig:
+  def parse_str(cls: Type[PageConfig], value: str) -> PageConfig:
     parts = value.rsplit(",", maxsplit=1)
     if len(parts) == 1:
       label, url = cls._parse_url(parts[0])
@@ -165,7 +165,7 @@ class PageConfig(ConfigObject):
         duration=cli_helper.Duration.parse_non_zero(duration_str))
 
   @classmethod
-  def load_dict(cls: Type[PageConfig], config: Dict[str, Any]) -> PageConfig:
+  def parse_dict(cls: Type[PageConfig], config: Dict[str, Any]) -> PageConfig:
     # TODO: use this method and move actions parsing to here from PagesConfig
     url = config["url"]
     label, url = cls._parse_url(url)
@@ -208,7 +208,7 @@ class PagesConfig(ConfigObject):
           f"pages[{index}] is not a PageConfig but {type(page).__name__}")
 
   @classmethod
-  def loads(cls, value: str) -> PagesConfig:
+  def parse_str(cls, value: str) -> PagesConfig:
     values: List[str] = []
     previous_part: Optional[str] = None
     for part in value.strip().split(","):
@@ -224,21 +224,21 @@ class PagesConfig(ConfigObject):
       except cli_helper.DurationParseError:
         previous_part = part
         values.append(part)
-    return cls.load_sequence(values)
+    return cls.parse_sequence(values)
 
   @classmethod
-  def load_unknown_path(cls, path: pth.LocalPath) -> PagesConfig:
+  def parse_unknown_path(cls, path: pth.LocalPath) -> PagesConfig:
     # Make sure we get errors for invalid files.
-    return cls.load_config_path(path)
+    return cls.parse_config_path(path)
 
   @classmethod
   def parse_other(cls, value: Any) -> PagesConfig:
     if isinstance(value, (list, tuple)):
-      return cls.load_sequence(value)
+      return cls.parse_sequence(value)
     return super().parse_other(value)
 
   @classmethod
-  def load_sequence(cls, values: Sequence[str]) -> PagesConfig:
+  def parse_sequence(cls, values: Sequence[str]) -> PagesConfig:
     if not values:
       raise argparse.ArgumentTypeError("Got empty page list.")
     pages: List[PageConfig] = []
@@ -249,7 +249,7 @@ class PagesConfig(ConfigObject):
     return PagesConfig(pages=tuple(pages))
 
   @classmethod
-  def load_dict(cls, config: Dict) -> PagesConfig:
+  def parse_dict(cls, config: Dict) -> PagesConfig:
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
@@ -302,7 +302,7 @@ class PagesConfig(ConfigObject):
     for i, action_config in enumerate(actions):
       with exception.annotate_argparsing(
           f"Parsing action   ...['{scenario_name}'][{i}]"):
-        action_step = Action.load_dict(action_config)
+        action_step = Action.parse_dict(action_config)
         actions_list.append(action_step)
     if not actions_list:
       raise argparse.ArgumentTypeError(
@@ -320,11 +320,11 @@ class PagesConfig(ConfigObject):
 class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
-  def loads(cls: Type[PagesConfig], value: str) -> PagesConfig:
+  def parse_str(cls: Type[PagesConfig], value: str) -> PagesConfig:
     raise NotImplementedError()
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> DevToolsRecorderPagesConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> DevToolsRecorderPagesConfig:
     config = cli_helper.parse_non_empty_dict(config)
     with exception.annotate_argparsing("Loading DevTools recording file"):
       title = config["title"]
@@ -380,12 +380,12 @@ class ListPagesConfig(PagesConfig):
   VALID_EXTENSIONS: Tuple[str, ...] = (".txt", ".list")
 
   @classmethod
-  def loads(cls, value: str) -> PagesConfig:
+  def parse_str(cls, value: str) -> PagesConfig:
     raise argparse.ArgumentTypeError(
         f"URL list file {repr(value)} does not exist.")
 
   @classmethod
-  def load_path(cls, path: pth.LocalPath) -> PagesConfig:
+  def parse_path(cls, path: pth.LocalPath) -> PagesConfig:
     pages: List[PageConfig] = []
     with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
       line: int = 0
@@ -401,7 +401,7 @@ class ListPagesConfig(PagesConfig):
     return PagesConfig(pages=tuple(pages))
 
   @classmethod
-  def load_dict(cls, config: Dict) -> PagesConfig:
+  def parse_dict(cls, config: Dict) -> PagesConfig:
     config = cli_helper.parse_non_empty_dict(config, "pages")
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:
@@ -413,5 +413,5 @@ class ListPagesConfig(PagesConfig):
       if not isinstance(pages, (list, tuple)):
         raise argparse.ArgumentTypeError(
             f"Expected list/tuple for pages, but got {type(pages)}")
-      return cls.load_sequence(pages)
+      return cls.parse_sequence(pages)
     raise exception.UnreachableError()

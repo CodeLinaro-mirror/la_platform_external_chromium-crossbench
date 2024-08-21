@@ -219,7 +219,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertIsNone(config_1.adb_bin)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    config_2 = DriverConfig.load_dict(config_dict)
+    config_2 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_2, DriverConfig)
     self.assertEqual(config_2.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_2.device_id, "0a388e93")
@@ -231,7 +231,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {"type": 'adb', "device_id": "0a388e93"}
-    config_3 = DriverConfig.load_dict(config_dict)
+    config_3 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_3, DriverConfig)
     self.assertEqual(config_3.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_3.device_id, "0a388e93")
@@ -415,13 +415,13 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             Chrome.stable_path(self.platform),
             DriverConfig(BrowserDriverType.WEB_DRIVER),
-            NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
+            NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)))
     self.assertEqual(
         BrowserConfig.parse("selenium:chrome:4G"),
         BrowserConfig(
             Chrome.stable_path(self.platform),
             DriverConfig(BrowserDriverType.WEB_DRIVER),
-            NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
+            NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)))
 
   def test_parse_simple_ambiguous_with_driver_ios(self):
     self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]
@@ -456,9 +456,9 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             Chrome.stable_path(self.platform),
             DriverConfig(BrowserDriverType.IOS),
-            NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)))
+            NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)))
     self.assertEqual(config.network,
-                     NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G))
+                     NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
 
   def test_parse_simple_ambiguous_with_driver_android(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -641,7 +641,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_1.driver.type, BrowserDriverType.ANDROID)
 
     self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
-    config_2 = BrowserConfig.load_dict(config_dict)
+    config_2 = BrowserConfig.parse_dict(config_dict)
     assert isinstance(config_2, BrowserConfig)
     self.assertEqual(config_2.driver.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1, config_2)
@@ -656,7 +656,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("devices", str(cm.exception))
 
     self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
-    config_3 = BrowserConfig.load_dict(short_config_dict)
+    config_3 = BrowserConfig.parse_dict(short_config_dict)
     assert isinstance(config_3, BrowserConfig)
     self.assertEqual(config_3.driver.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1, config_3)
@@ -668,7 +668,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "browser": "adb:chrome",
     }
     with self.assertRaises(argparse.ArgumentTypeError):
-      BrowserConfig.load_dict(config_dict)
+      BrowserConfig.parse_dict(config_dict)
 
   def test_parse_inline_driver_browser(self):
     driver_path = pth.LocalPath("custom/chromedriver")
@@ -909,7 +909,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                                    "root@my-chromeos-machine", cmd, **kwargs)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
-  def test_load_browser_config_template(self):
+  def test_parse_browser_config_template(self):
     if not self.EXAMPLE_CONFIG_PATH.exists():
       raise unittest.SkipTest(
           f"Test file {self.EXAMPLE_CONFIG_PATH} does not exist")
@@ -917,13 +917,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     with self.EXAMPLE_CONFIG_PATH.open(encoding="utf-8") as f:
       config = BrowserVariantsConfig(
           browser_lookup_override=self.browser_lookup)
-      config.load(f, args=self.mock_args)
+      config.parse_text_io(f, args=self.mock_args)
     self.assertIn("flag-group-1", config.flags_config)
     self.assertGreaterEqual(len(config.flags_config), 1)
     self.assertGreaterEqual(len(config.variants), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
-  def test_load_remote_browser_config_template(self):
+  def test_parse_remote_browser_config_template(self):
     if not self.EXAMPLE_REMOTE_CONFIG_PATH.exists():
       raise unittest.SkipTest(
           f"Test file {self.EXAMPLE_REMOTE_CONFIG_PATH} does not exist")
@@ -952,7 +952,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     with self.EXAMPLE_REMOTE_CONFIG_PATH.open(encoding="utf-8") as f:
       config = BrowserVariantsConfig()
-      config.load(f, args=self.mock_args)
+      config.parse_text_io(f, args=self.mock_args)
       self.assertEqual(len(config.variants), 2)
       for variant in config.variants:
         self.assertTrue(variant.platform.is_remote)
@@ -1711,7 +1711,7 @@ class FlagsConfigTestCase(unittest.TestCase):
       FlagsConfig.parse("")
     self.assertIn("empty", str(cm.exception).lower())
     with self.assertRaises(ConfigError) as cm:
-      FlagsConfig.loads("")
+      FlagsConfig.parse_str("")
     self.assertIn("empty", str(cm.exception).lower())
 
   def test_empty_dict(self):
@@ -2108,7 +2108,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           NetworkSpeedConfig.parse(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          NetworkSpeedConfig.loads(str(invalid))
+          NetworkSpeedConfig.parse_str(str(invalid))
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         NetworkSpeedConfig.parse("not a speed preset value")
       self.assertIn("choices are", str(cm.exception).lower())
@@ -2130,7 +2130,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
 
     for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
       config = NetworkSpeedConfig.parse(str(preset))
-      self.assertEqual(config, NetworkSpeedConfig.load_preset(preset))
+      self.assertEqual(config, NetworkSpeedConfig.parse_preset(preset))
 
   def test_parse_invalid_preset(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -2175,7 +2175,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       with self.assertRaises(argparse.ArgumentTypeError):
         NetworkConfig.parse(invalid)
       with self.assertRaises(argparse.ArgumentTypeError):
-        NetworkConfig.loads(str(invalid))
+        NetworkConfig.parse_str(str(invalid))
 
   def test_parse_default(self):
     config = NetworkConfig.parse("default")
@@ -2232,15 +2232,15 @@ class NetworkConfigTestCase(BaseConfigTestCase):
 
   def test_parse_speed_preset(self):
     for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
-      config = NetworkConfig.loads(preset.value)
-      self.assertEqual(config.speed, NetworkSpeedConfig.load_preset(preset))
+      config = NetworkConfig.parse_str(preset.value)
+      self.assertEqual(config.speed, NetworkSpeedConfig.parse_preset(preset))
 
   def test_parse_live_preset(self):
-    live_a = NetworkConfig.load_live("4G")
-    live_b = NetworkConfig.load_live(NetworkSpeedConfig.parse("4G"))
-    live_c = NetworkConfig.load_live(
+    live_a = NetworkConfig.parse_live("4G")
+    live_b = NetworkConfig.parse_live(NetworkSpeedConfig.parse("4G"))
+    live_c = NetworkConfig.parse_live(
         NetworkSpeedConfig.parse(NetworkSpeedPreset.MOBILE_4G))
-    live_d = NetworkConfig.load_live(NetworkSpeedPreset.MOBILE_4G)
+    live_d = NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)
     self.assertEqual(live_a, live_b)
     self.assertEqual(live_a, live_c)
     self.assertEqual(live_a, live_d)
@@ -2275,7 +2275,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, NetworkType.LIVE)
     self.assertEqual(
         config.speed,
-        NetworkSpeedConfig.load_preset(NetworkSpeedPreset.MOBILE_4G))
+        NetworkSpeedConfig.parse_preset(NetworkSpeedPreset.MOBILE_4G))
     self.assertIsNone(config.path)
     self.assertTrue(config_dict)
     config_1 = NetworkConfig.parse(json.dumps(config_dict))

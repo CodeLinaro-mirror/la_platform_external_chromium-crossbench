@@ -16,11 +16,11 @@ class TabController(ConfigObject):
   multiple_tabs: bool
 
   @classmethod
-  def load_dict(cls, config: Dict[str, Any]) -> TabController:
+  def parse_dict(cls, config: Dict[str, Any]) -> TabController:
     raise NotImplementedError()
 
   @classmethod
-  def loads(cls, value: str) -> TabController:
+  def parse_str(cls, value: str) -> TabController:
     if value == "multiple":
       return cls.multiple()
     if value == "single":

@@ -7,12 +7,12 @@ from __future__ import annotations
 import datetime as dt
 
 import crossbench.path as pth
-from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.action import (
     ACTION_TIMEOUT, ActionType, ClickAction, GetAction,
     InjectNewDocumentScriptAction, JsAction, ReadyState, ScrollAction,
     SwipeAction, TextInputAction, WaitAction, WaitForElementAction,
     WindowTarget)
+from crossbench.benchmarks.loading.input_source import InputSource
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -21,7 +21,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_get_default(self):
     config_dict = {"action": "get", "url": "http://crossben.ch"}
-    action = GetAction.load_dict(config_dict)
+    action = GetAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.GET)
     self.assertEqual(action.url, "http://crossben.ch")
@@ -30,7 +30,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = GetAction.load_dict(action.to_json())
+    action_2 = GetAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -43,7 +43,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "ready_state": "any",
         "target": "_top"
     }
-    action = GetAction.load_dict(config_dict)
+    action = GetAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.GET)
     self.assertEqual(action.url, "http://crossben.ch")
@@ -54,13 +54,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = GetAction.load_dict(action.to_json())
+    action_2 = GetAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_get_invalid_url(self):
     with self.assertRaises(ValueError) as cm:
-      GetAction.load_dict({
+      GetAction.parse_dict({
           "action": "get",
           "url": "",
       })
@@ -68,7 +68,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_get_invalid_duration(self):
     with self.assertRaises(ValueError) as cm:
-      GetAction.load_dict({
+      GetAction.parse_dict({
           "action": "get",
           "url": "http://crossben.ch",
           "duration": "-12s"
@@ -77,7 +77,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_get_invalid_duration_for_ready_state(self):
     with self.assertRaises(ValueError):
-      GetAction.load_dict({
+      GetAction.parse_dict({
           "action": "get",
           "url": "http://crossben.ch",
           "ready_state": "interactive",
@@ -86,7 +86,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_wait_default(self):
     config_dict = {"action": "wait", "duration": "12s"}
-    action = WaitAction.load_dict(config_dict)
+    action = WaitAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.WAIT)
     self.assertEqual(action.duration, dt.timedelta(seconds=12))
@@ -94,18 +94,18 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = WaitAction.load_dict(action.to_json())
+    action_2 = WaitAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_wait_missing_duration(self):
     with self.assertRaises(ValueError) as cm:
-      WaitAction.load_dict({"action": "wait"})
+      WaitAction.parse_dict({"action": "wait"})
     self.assertIn("duration", str(cm.exception))
 
   def test_parse_scroll_default(self):
     config_dict = {"action": "scroll"}
-    action = ScrollAction.load_dict(config_dict)
+    action = ScrollAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.SCROLL)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -115,7 +115,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = ScrollAction.load_dict(action.to_json())
+    action_2 = ScrollAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -129,7 +129,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "selector": "#button",
         "required": "true"
     }
-    action = ScrollAction.load_dict(config_dict)
+    action = ScrollAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.SCROLL)
     self.assertEqual(action.timeout, dt.timedelta(seconds=12))
@@ -141,7 +141,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = ScrollAction.load_dict(action.to_json())
+    action_2 = ScrollAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -152,13 +152,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     }
 
     with self.assertRaises(ValueError) as cm:
-      ScrollAction.load_dict(config_dict)
+      ScrollAction.parse_dict(config_dict)
 
     self.assertIn("source", str(cm.exception))
 
   def test_parse_scroll_valid_but_unsupported_source(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "scroll",
           "source": "keyboard",
       })
@@ -171,21 +171,21 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     }
 
     with self.assertRaises(ValueError) as cm:
-      ScrollAction.load_dict(config_dict)
+      ScrollAction.parse_dict(config_dict)
 
     self.assertIn("required", str(cm.exception))
 
   def test_scroll_invalid_distance(self):
     with self.assertRaises(ValueError) as cm:
-      ScrollAction.load_dict({"action": "scroll", "distance": ""})
+      ScrollAction.parse_dict({"action": "scroll", "distance": ""})
     self.assertIn("distance", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
-      ScrollAction.load_dict({"action": "scroll", "distance": "0"})
+      ScrollAction.parse_dict({"action": "scroll", "distance": "0"})
     self.assertIn("distance", str(cm.exception))
 
   def test_parse_click_minimal_selector(self):
     config_dict = {"action": "click", "selector": "#button"}
-    action = ClickAction.load_dict(config_dict)
+    action = ClickAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.CLICK)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -197,13 +197,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = ClickAction.load_dict(action.to_json())
+    action_2 = ClickAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_click_minimal_coordinates(self):
     config_dict = {"action": "click", "source": "touch", "x": 1, "y": 2}
-    action = ClickAction.load_dict(config_dict)
+    action = ClickAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.CLICK)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -216,7 +216,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = ClickAction.load_dict(action.to_json())
+    action_2 = ClickAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -229,7 +229,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "scroll_into_view": True,
         "timeout": "12s"
     }
-    action = ClickAction.load_dict(config_dict)
+    action = ClickAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.CLICK)
     self.assertEqual(action.timeout, dt.timedelta(seconds=12))
@@ -240,13 +240,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = ClickAction.load_dict(action.to_json())
+    action_2 = ClickAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_click_invalid_source(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "click",
           "source": "invalid_source",
           "selector": "#button"
@@ -255,7 +255,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_click_valid_but_unsupported_source(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "click",
           "source": "keyboard",
           "selector": "#button"
@@ -264,12 +264,12 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_click_invalid_selector(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({"action": "click", "selector": ""})
+      ClickAction.parse_dict({"action": "click", "selector": ""})
     self.assertIn("selector", str(cm.exception))
 
   def test_parse_click_selector_and_coordinates(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "click",
           "source": "TOUCH",
           "selector": "#button",
@@ -280,12 +280,12 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_click_incomplete_coordinates(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({"action": "click", "source": "TOUCH", "x": 0})
+      ClickAction.parse_dict({"action": "click", "source": "TOUCH", "x": 0})
     self.assertIn("Either selector or coordinates", str(cm.exception))
 
   def test_parse_click_coordinates_with_required(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "click",
           "source": "TOUCH",
           "x": 0,
@@ -296,7 +296,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_click_coordinates_with_scroll(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "click",
           "source": "TOUCH",
           "x": 0,
@@ -307,12 +307,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_click_coordinates_with_js(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({"action": "click", "source": "JS", "x": 0, "y": 0})
+      ClickAction.parse_dict({
+          "action": "click",
+          "source": "JS",
+          "x": 0,
+          "y": 0
+      })
     self.assertIn("JS", str(cm.exception))
 
   def test_parse_click_missing_coordinates_and_selector(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({"action": "click", "source": "TOUCH"})
+      ClickAction.parse_dict({"action": "click", "source": "TOUCH"})
     self.assertIn("Either selector or coordinates", str(cm.exception))
 
   def test_parse_swipe(self):
@@ -324,7 +329,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "endy": 220,
         "duration": "12s"
     }
-    action = SwipeAction.load_dict(config_dict)
+    action = SwipeAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.SWIPE)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -336,7 +341,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = SwipeAction.load_dict(action.to_json())
+    action_2 = SwipeAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -346,7 +351,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "duration": "10s",
         "text": "some text"
     }
-    action = TextInputAction.load_dict(config_dict)
+    action = TextInputAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.TEXT_INPUT)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -356,7 +361,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = TextInputAction.load_dict(action.to_json())
+    action_2 = TextInputAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -367,13 +372,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "source": "keyboard",
         "text": "some text",
     }
-    action = TextInputAction.load_dict(config_dict)
+    action = TextInputAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.input_source, InputSource.KEYBOARD)
 
   def test_parse_text_input_invalid_source(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "text_input",
           "duration": "1s",
           "source": "invalid_source",
@@ -383,7 +388,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_text_input_valid_but_unsupported_source(self):
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict({
+      ClickAction.parse_dict({
           "action": "text_input",
           "duration": "1s",
           "source": "mouse",
@@ -398,13 +403,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "duration": "-1s"
     }
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict(config_dict)
+      ClickAction.parse_dict(config_dict)
     self.assertIn("duration", str(cm.exception))
 
   def test_parse_text_input_missing_text(self):
     config_dict = {"action": "text_input", "duration": "1s"}
     with self.assertRaises(ValueError) as cm:
-      ClickAction.load_dict(config_dict)
+      ClickAction.parse_dict(config_dict)
     self.assertIn("text", str(cm.exception))
 
   def test_parse_wait_for_element(self):
@@ -412,7 +417,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "wait_for_element",
         "selector": "#button",
     }
-    action = WaitForElementAction.load_dict(config_dict)
+    action = WaitForElementAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.WAIT_FOR_ELEMENT)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -420,7 +425,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = WaitForElementAction.load_dict(action.to_json())
+    action_2 = WaitForElementAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -430,7 +435,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "selector": "#button",
         "timeout": "12s"
     }
-    action = WaitForElementAction.load_dict(config_dict)
+    action = WaitForElementAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.WAIT_FOR_ELEMENT)
     self.assertEqual(action.timeout, dt.timedelta(seconds=12))
@@ -438,7 +443,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = WaitForElementAction.load_dict(action.to_json())
+    action_2 = WaitForElementAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -447,7 +452,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "js",
         "script": "alert(1)",
     }
-    action = JsAction.load_dict(config_dict)
+    action = JsAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.JS)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -455,7 +460,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = JsAction.load_dict(action.to_json())
+    action_2 = JsAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -465,7 +470,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "js",
         "script_path": str(path),
     }
-    action = JsAction.load_dict(config_dict)
+    action = JsAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.JS)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -473,7 +478,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = JsAction.load_dict(action.to_json())
+    action_2 = JsAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -486,13 +491,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
             "$ALERT$": "'something'"
         }
     }
-    action = JsAction.load_dict(config_dict)
+    action = JsAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.JS)
     self.assertEqual(action.script, "alert('something')")
     action.validate()
 
-    action_2 = JsAction.load_dict(action.to_json())
+    action_2 = JsAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -502,7 +507,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script": "",
     }
     with self.assertRaises(ValueError) as cm:
-      JsAction.load_dict(config_dict)
+      JsAction.parse_dict(config_dict)
     self.assertIn("script", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -512,7 +517,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script_path": "",
     }
     with self.assertRaises(ValueError) as cm:
-      JsAction.load_dict(config_dict)
+      JsAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
     self.assertFalse(config_dict)
     config_dict = {
@@ -520,7 +525,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script_path": "/does/not/exist.js",
     }
     with self.assertRaises(ValueError) as cm:
-      JsAction.load_dict(config_dict)
+      JsAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -532,7 +537,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script_path": str(path),
     }
     with self.assertRaises(ValueError) as cm:
-      JsAction.load_dict(config_dict)
+      JsAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -547,7 +552,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         }
     }
     with self.assertRaises(ValueError) as cm:
-      JsAction.load_dict(config_dict)
+      JsAction.parse_dict(config_dict)
     self.assertIn("replacements", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -556,7 +561,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "inject_new_document_script",
         "script": "alert(1)",
     }
-    action = InjectNewDocumentScriptAction.load_dict(config_dict)
+    action = InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.INJECT_NEW_DOCUMENT_SCRIPT)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -564,7 +569,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = InjectNewDocumentScriptAction.load_dict(action.to_json())
+    action_2 = InjectNewDocumentScriptAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -574,7 +579,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "inject_new_document_script",
         "script_path": str(path),
     }
-    action = InjectNewDocumentScriptAction.load_dict(config_dict)
+    action = InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.INJECT_NEW_DOCUMENT_SCRIPT)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
@@ -582,7 +587,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.has_timeout)
     action.validate()
 
-    action_2 = InjectNewDocumentScriptAction.load_dict(action.to_json())
+    action_2 = InjectNewDocumentScriptAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -595,13 +600,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
             "$ALERT$": "'something'"
         }
     }
-    action = InjectNewDocumentScriptAction.load_dict(config_dict)
+    action = InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertFalse(config_dict)
     self.assertEqual(action.TYPE, ActionType.INJECT_NEW_DOCUMENT_SCRIPT)
     self.assertEqual(action.script, "alert('something')")
     action.validate()
 
-    action_2 = InjectNewDocumentScriptAction.load_dict(action.to_json())
+    action_2 = InjectNewDocumentScriptAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -611,7 +616,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script": "",
     }
     with self.assertRaises(ValueError) as cm:
-      InjectNewDocumentScriptAction.load_dict(config_dict)
+      InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -621,7 +626,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script_path": "",
     }
     with self.assertRaises(ValueError) as cm:
-      InjectNewDocumentScriptAction.load_dict(config_dict)
+      InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
     self.assertFalse(config_dict)
     config_dict = {
@@ -629,7 +634,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script_path": "/does/not/exist.js",
     }
     with self.assertRaises(ValueError) as cm:
-      InjectNewDocumentScriptAction.load_dict(config_dict)
+      InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -641,7 +646,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "script_path": str(path),
     }
     with self.assertRaises(ValueError) as cm:
-      InjectNewDocumentScriptAction.load_dict(config_dict)
+      InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
     self.assertFalse(config_dict)
 
@@ -656,7 +661,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         }
     }
     with self.assertRaises(ValueError) as cm:
-      InjectNewDocumentScriptAction.load_dict(config_dict)
+      InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("replacements", str(cm.exception))
     self.assertFalse(config_dict)
 

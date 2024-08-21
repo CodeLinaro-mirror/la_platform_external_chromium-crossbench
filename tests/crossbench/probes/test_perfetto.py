@@ -28,7 +28,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
   def test_parse_example_config(self):
     config_file = (test_helper.config_dir() / "doc/probe/perfetto.config.hjson")
     self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.load_path(config_file).probes
+    probes = ProbeListConfig.parse_path(config_file).probes
     self.assertEqual(len(probes), 1)
     probe = probes[0]
     self.assertIsInstance(probe, PerfettoProbe)
