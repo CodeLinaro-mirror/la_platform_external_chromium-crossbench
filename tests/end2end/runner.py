@@ -20,7 +20,7 @@ if __name__ == '__main__':
   pass_through_args = sys.argv[1:]
   return_code = pytest.main([
       "--exitfirst", "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG",
-      "-o", "log_cli=True",
+      "-o", "log_cli=True", "-rs",
       str(end2end_test_dir), *pass_through_args
   ])
   sys.exit(return_code)

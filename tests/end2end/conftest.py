@@ -32,6 +32,11 @@ def pytest_addoption(parser):
       "--driverpath",
       default=None,
       type=cli_helper.parse_path)
+  parser.addoption(
+      "--test-gsutil-path",
+      "--gustilpath",
+      default=None,
+      type=cli_helper.parse_path)
 
 
 def pytest_xdist_auto_num_workers(config):
@@ -61,6 +66,28 @@ def browser_path(request) -> pathlib.Path:
     return maybe_browser_path
   logging.info("Trying default browser path for local runs.")
   return pathlib.Path(browsers.Chrome.stable_path(plt.PLATFORM))
+
+
+@pytest.fixture(scope="session", autouse=True)
+def gsutil_path(request) -> pathlib.Path:
+  maybe_gsutil_path: Optional[pathlib.Path] = request.config.getoption(
+      "--test-gsutil-path")
+  if maybe_gsutil_path:
+    logging.info("gsutil path: %s", maybe_gsutil_path)
+    assert maybe_gsutil_path.exists()
+    return maybe_gsutil_path
+  logging.info("Trying default gsutil path for local runs.")
+  return default_gsutil_path()
+
+
+def default_gsutil_path() -> pathlib.Path:
+  if maybe_gsutil_path := plt.PLATFORM.which("gsutil"):
+    maybe_gsutil_path = plt.PLATFORM.local_path(maybe_gsutil_path)
+    assert maybe_gsutil_path, "could not find fallback gsutil"
+    assert maybe_gsutil_path.exists()
+    return maybe_gsutil_path
+  pytest.skip(f"Could not find gsutil on {plt.PLATFORM}")
+  return pathlib.Path()
 
 
 @pytest.fixture

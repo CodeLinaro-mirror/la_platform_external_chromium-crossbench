@@ -70,27 +70,6 @@ def CheckChange(input_api, output_api, on_commit):
         skip_shebang_check=True,
         run_on_python2=False)
   # ---------------------------------------------------------------------------
-  # Pytype (not supported on windows)
-  # TODO(327478398): move to dedicated cq bot.
-  # if on_commit and platform.system() in ("Linux", "Darwin"):
-  #   tests.append(
-  #       input_api.Command(
-  #           name="pytype",
-  #           cmd=[
-  #               input_api.python3_executable,
-  #               "-m",
-  #               "pytype",
-  #               "--keep-going",
-  #               "--jobs=auto",
-  #               str(testing_path / "crossbench"),
-  #               # Skip tests to speed up type checking.
-  #               # str(testing_path / "tests")
-  #           ],
-  #           message=output_api.PresubmitError,
-  #           kwargs={},
-  #           python3=True,
-  #       ))
-  # ---------------------------------------------------------------------------
   # Run all test
   results += input_api.RunTests(tests)
   return results

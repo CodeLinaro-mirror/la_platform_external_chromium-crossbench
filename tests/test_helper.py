@@ -26,4 +26,6 @@ def run_pytest(path: Union[str, pathlib.Path], *args):
   # Run tests single-threaded by default when running the test file directly.
   if "-n" not in extra_args:
     extra_args.extend(["-n", "1"])
+  if "-r" not in extra_args:
+    extra_args.extend(["-r", "s"])
   sys.exit(pytest.main([str(path), *extra_args]))
