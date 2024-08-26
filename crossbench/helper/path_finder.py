@@ -21,10 +21,10 @@ class BaseToolFinder(abc.ABC):
       platform: Platform,
       candidates: Tuple[pth.RemotePath, ...] = tuple()) -> None:
     self._platform = platform
-    self._candidates = candidates + self._default_candidates()
+    self._candidates = candidates + self.default_candidates()
     self._path: Optional[pth.RemotePath] = self._find_path()
     if self._path:
-      assert self._is_valid_path(self._path)
+      assert self.is_valid_path(self._path)
 
   @property
   def platform(self) -> Platform:
@@ -38,18 +38,18 @@ class BaseToolFinder(abc.ABC):
   def candidates(self) -> Tuple[pth.RemotePath, ...]:
     return self._candidates
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+  def default_candidates(self) -> Tuple[pth.RemotePath, ...]:
     return tuple()
 
   def _find_path(self) -> Optional[pth.RemotePath]:
     # Try potential build location
-    for candidate_dir in self._candidates:
-      if self._is_valid_path(candidate_dir):
-        return candidate_dir
+    for candidate_path in self._candidates:
+      if self.is_valid_path(candidate_path):
+        return candidate_path
     return None
 
   @abc.abstractmethod
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def is_valid_path(self, candidate: pth.RemotePath) -> bool:
     pass
 
 
@@ -93,10 +93,10 @@ class ChromiumCheckoutFinder(BaseToolFinder):
   """Finds a chromium src checkout at either given locations or at
   some preset known checkout locations."""
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+  def default_candidates(self) -> Tuple[pth.RemotePath, ...]:
     return default_chromium_candidates(self.platform)
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def is_valid_path(self, candidate: pth.RemotePath) -> bool:
     return is_chromium_checkout_dir(self.platform, candidate)
 
 
@@ -130,11 +130,11 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
 
   def _find_path(self) -> Optional[pth.RemotePath]:
     for candidate in self._iterate_candidate_bin_paths():
-      if self._is_valid_path(candidate):
+      if self.is_valid_path(candidate):
         return candidate
     return None
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def is_valid_path(self, candidate: pth.RemotePath) -> bool:
     assert candidate.name == self._binary_name
     if not self.platform.is_file(candidate):
       return False
@@ -146,7 +146,7 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
 
 class V8CheckoutFinder(BaseToolFinder):
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+  def default_candidates(self) -> Tuple[pth.RemotePath, ...]:
     home_dir = self._platform.home()
     return (
         # V8 Checkouts
@@ -168,11 +168,11 @@ class V8CheckoutFinder(BaseToolFinder):
     if not maybe_d8_path:
       return None
     for candidate_dir in self.platform.path(maybe_d8_path).parents:
-      if self._is_valid_path(candidate_dir):
+      if self.is_valid_path(candidate_dir):
         return candidate_dir
     return None
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def is_valid_path(self, candidate: pth.RemotePath) -> bool:
     v8_header_file = candidate / "include/v8.h"
     return (self.platform.is_file(v8_header_file) and
             (self.platform.is_dir(candidate / ".git")))
@@ -255,14 +255,14 @@ class V8ToolsFinder:
 
 class BaseChromiumBinaryToolFinder(BaseToolFinder):
 
-  def _is_valid_path(self, candidate: pth.RemotePath) -> bool:
+  def is_valid_path(self, candidate: pth.RemotePath) -> bool:
     return self._platform.is_file(candidate)
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
     raise NotImplementedError()
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+  def default_candidates(self) -> Tuple[pth.RemotePath, ...]:
     relative_path = chromium_src_relative_local_path() / self.chrome_path()
     if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
       return (relative_path, maybe_chrome / self.chrome_path(),)
@@ -286,24 +286,35 @@ class TraceProcessorFinder(BaseChromiumBinaryToolFinder):
 CROSSBENCH_DIR = pth.LocalPath(__file__).parents[2]
 
 
-class WprGoToolFinder(BaseChromiumBinaryToolFinder):
+class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):
+
+  def default_candidates(self) -> Tuple[pth.RemotePath, ...]:
+    candidates = super().default_candidates()
+    return (CROSSBENCH_DIR / self.crossbench_path(),) + candidates
+
+  @classmethod
+  @abc.abstractmethod
+  def crossbench_path(cls) -> pth.RemotePath:
+    pass
+
+
+class WprGoToolFinder(BaseCrossbenchBinaryToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
     return pth.RemotePath("third_party/catapult/web_page_replay_go/src/wpr.go")
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
-    candidates = super()._default_candidates()
-    return candidates + (CROSSBENCH_DIR /
-                         "third_party/webpagereplay/src/wpr.go",)
+  @classmethod
+  def crossbench_path(cls) -> pth.RemotePath:
+    return pth.RemotePath("third_party/webpagereplay/src/wpr.go")
 
 
-class TsProxyFinder(BaseChromiumBinaryToolFinder):
+class TsProxyFinder(BaseCrossbenchBinaryToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.RemotePath:
     return pth.RemotePath("third_party/catapult/third_party/tsproxy/tsproxy.py")
 
-  def _default_candidates(self) -> Tuple[pth.RemotePath, ...]:
-    candidates = super()._default_candidates()
-    return candidates + (CROSSBENCH_DIR / "third_party/tsproxy/tsproxy.py",)
+  @classmethod
+  def crossbench_path(cls) -> pth.RemotePath:
+    return pth.RemotePath("third_party/tsproxy/tsproxy.py")
