@@ -580,36 +580,34 @@ class BrowserVariantsConfig:
 
   def _extract_chrome_flags(self,
                             args: argparse.Namespace) -> List[ChromeFlags]:
-    flags_sets = [ChromeFlags()]
+    initial_flags = ChromeFlags()
 
     if args.enable_features:
-      for flags in flags_sets:
-        flags["--enable-features"] = args.enable_features
+      initial_flags["--enable-features"] = args.enable_features
     if args.disable_features:
-      for flags in flags_sets:
-        flags["--disable-features"] = args.disable_features
-
-    if args.js_flags:
-      def copy_and_set_js_flags(flags: ChromeFlags,
-                                js_flags_str: str) -> ChromeFlags:
-        flags = flags.copy()
-        for js_flag in js_flags_str.split(","):
-          js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
-          flags.js_flags.set(js_flag_name, js_flag_value)
-        return flags
-
-      flags_sets = [
-          copy_and_set_js_flags(flags, js_flags_str)
-          for flags in flags_sets
-          for js_flags_str in args.js_flags
-      ]
-
+      initial_flags["--disable-features"] = args.disable_features
     if args.enable_field_trial_config is True:
-      for flags in flags_sets:
-        flags.set("--enable-field-trial-config")
+      initial_flags.set("--enable-field-trial-config")
     if args.enable_field_trial_config is False:
-      for flags in flags_sets:
-        flags.set("--disable-field-trial-config")
+      initial_flags.set("--disable-field-trial-config")
+
+    flags_sets = [initial_flags]
+    if not args.js_flags:
+      return flags_sets
+
+    def copy_and_set_js_flags(flags: ChromeFlags,
+                              js_flags_str: str) -> ChromeFlags:
+      flags = flags.copy()
+      for js_flag in js_flags_str.split(","):
+        js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
+        flags.js_flags.set(js_flag_name, js_flag_value)
+      return flags
+
+    flags_sets = [
+        copy_and_set_js_flags(flags, js_flags_str)
+        for flags in flags_sets
+        for js_flags_str in args.js_flags
+    ]
     return flags_sets
 
   def _verify_browser_flags(self, args: argparse.Namespace) -> None:

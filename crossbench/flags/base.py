@@ -229,6 +229,13 @@ class BasicFlags(Freezable, collections.UserDict):
       else:
         yield f"{k}={v}"
 
+  def __bool__(self) -> bool:
+    return bool(self.data)
+
+  def __repr__(self) -> str:
+    dict_repr = repr(self.to_dict())
+    return f"{type(self).__name__}({dict_repr})"
+
   def __str__(self) -> str:
     return " ".join(self)
 

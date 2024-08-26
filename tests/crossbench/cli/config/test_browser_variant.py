@@ -804,6 +804,105 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.app_path, browser_bin)
 
+  def test_from_cli_args_browser_additional_flags(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features="feature_on",
+        disable_features="feature_off",
+        js_flags=None,
+        other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
+    with mock.patch.object(
+        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    self.assertEqual(len(config.variants), 1)
+    browser = config.variants[0]
+    self.assertIsInstance(browser, browser_cls)
+    self.assertFalse(browser.js_flags)
+    self.assertEqual(browser.flags["--enable-features"], "feature_on")
+    self.assertEqual(browser.flags["--disable-features"], "feature_off")
+    self.assertIn("--no-sandbox", browser.flags)
+    self.assertEqual(browser.flags["--enable-logging"], "stderr")
+
+  def test_from_cli_args_browser_js_flags(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features=None,
+        disable_features=None,
+        js_flags=["--max-opt=1"],
+        other_browser_args=[])
+    with mock.patch.object(
+        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    self.assertEqual(len(config.variants), 1)
+    browser = config.variants[0]
+    self.assertIsInstance(browser, browser_cls)
+    self.assertEqual(browser.js_flags.to_dict(), {"--max-opt": "1"})
+
+  def test_from_cli_args_browser_extra_browser_js_flags(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features=None,
+        disable_features=None,
+        js_flags=[],
+        other_browser_args=["--js-flags=--max-opt=1,--log-all"])
+    with mock.patch.object(
+        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    self.assertEqual(len(config.variants), 1)
+    browser = config.variants[0]
+    self.assertIsInstance(browser, browser_cls)
+    self.assertEqual(browser.js_flags.to_dict(), {
+        "--max-opt": "1",
+        "--log-all": None
+    })
+
+  def test_from_cli_args_browser_multiple_js_flags(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features="feature_on",
+        disable_features="feature_off",
+        js_flags=["--max-opt=1", "--max-opt=2,--log-all"],
+        other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
+    with mock.patch.object(
+        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    self.assertEqual(len(config.variants), 2)
+    browser_0 = config.variants[0]
+    self.assertIsInstance(browser_0, browser_cls)
+    self.assertEqual(browser_0.js_flags.to_dict(), {"--max-opt": "1"})
+    browser_1 = config.variants[1]
+    self.assertIsInstance(browser_1, browser_cls)
+    self.assertEqual(browser_1.js_flags.to_dict(), {
+        "--max-opt": "2",
+        "--log-all": None
+    })
+
+    for browser in config.variants:
+      self.assertEqual(browser.flags["--enable-features"], "feature_on")
+      self.assertEqual(browser.flags["--disable-features"], "feature_off")
+      self.assertIn("--no-sandbox", browser.flags)
+      self.assertEqual(browser.flags["--enable-logging"], "stderr")
+
   def test_from_cli_args_browser_config_network_override(self):
     ts_proxy_path = pth.LocalPath("/tsproxy/tsproxy.py")
     self.fs.create_file(ts_proxy_path, st_size=100)

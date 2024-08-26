@@ -78,12 +78,8 @@ class Chromium(Browser):
     assert isinstance(self._flags, ChromeFlags)
 
   def _setup_flags(self, settings: Settings) -> ChromeFlags:
-    flags: Flags.InitialDataType = settings.flags
-    js_flags: Flags.InitialDataType = settings.js_flags
-    assert not isinstance(js_flags, str), (
-        f"js_flags should be a list, but got: {repr(js_flags)}")
-    assert not isinstance(
-        flags, str), (f"flags should be a list, but got: {repr(flags)}")
+    flags: Flags = settings.flags
+    js_flags: Flags = settings.js_flags
     self._flags = self.default_flags(self.DEFAULT_FLAGS)
     self._flags.update(flags)
 

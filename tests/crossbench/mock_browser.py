@@ -143,6 +143,11 @@ def app_root(platform: plt.Platform) -> pathlib.Path:
 
 class MockChromiumBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
+  def _setup_flags(self, settings: Settings) -> ChromeFlags:
+    flags = ChromeFlags(settings.flags)
+    flags.js_flags.update(settings.js_flags)
+    return flags
+
   @property
   def chrome_flags(self) -> ChromeFlags:
     chrome_flags = cast(ChromeFlags, self.flags)

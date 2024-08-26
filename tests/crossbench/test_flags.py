@@ -95,6 +95,7 @@ class TestFlags(unittest.TestCase):
     copy = flags.copy()
     self.assertEqual(list(flags), list(copy))
     self.assertEqual(str(flags), str(copy))
+    self.assertTrue(copy)
 
   def test_copy_frozen(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
@@ -119,6 +120,7 @@ class TestFlags(unittest.TestCase):
     flags.update({"--bar": "v2"}, override=True)
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v2")
+    self.assertTrue(flags)
 
   def test_str_basic(self):
     flags = self.CLASS({"--foo": None})
@@ -140,44 +142,53 @@ class TestFlags(unittest.TestCase):
       flags.merge({"--bar": "v2"})
     self.assertEqual(flags["--foo"], "v1")
     self.assertIsNone(flags["--bar"])
+    self.assertTrue(flags)
 
   def test_parse_single(self):
     flags = self.CLASS.parse("--foo")
     self.assertEqual(len(flags), 1)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], None)
     self.assertEqual(str(flags), "--foo")
 
     flags = self.CLASS.parse("--foo=123")
     self.assertEqual(len(flags), 1)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], "123")
     self.assertEqual(str(flags), "--foo=123")
 
     flags = self.CLASS.parse("--foo=--bar123")
     self.assertEqual(len(flags), 1)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], "--bar123")
     self.assertEqual(str(flags), "--foo=--bar123")
 
   def test_parse_nested(self):
     flags = self.CLASS.parse("--foo=--bar=123")
     self.assertEqual(len(flags), 1)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], "--bar=123")
     self.assertEqual(str(flags), "--foo=--bar=123")
 
   def test_parse_multiple(self):
     flags = self.CLASS.parse("--foo --bar")
     self.assertEqual(len(flags), 2)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], None)
     self.assertEqual(flags["--bar"], None)
     flags = self.CLASS.parse("--foo --bar=1")
     self.assertEqual(len(flags), 2)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], None)
     self.assertEqual(flags["--bar"], "1")
     flags = self.CLASS.parse("--foo=1 --bar=2")
     self.assertEqual(len(flags), 2)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], "1")
     self.assertEqual(flags["--bar"], "2")
     flags = self.CLASS.parse("--foo='1' --bar='2'")
     self.assertEqual(len(flags), 2)
+    self.assertTrue(flags)
     self.assertEqual(flags["--foo"], "1")
     self.assertEqual(flags["--bar"], "2")
 
@@ -198,6 +209,10 @@ class TestFlags(unittest.TestCase):
     self.assertListEqual(list(flags), ["--foo", "--bar=1"])
     self.assertListEqual([*flags], ["--foo", "--bar=1"])
 
+  def test_bool_basic(self):
+    self.assertFalse(self.CLASS())
+    self.assertTrue(self.CLASS.parse("--foo --bar"))
+
 
 class TestChromeFlags(TestFlags):
 
@@ -210,12 +225,17 @@ class TestChromeFlags(TestFlags):
     })
     self.assertIsNone(flags["--foo"])
     self.assertEqual(flags["--bar"], "v1")
+    self.assertTrue(flags)
+    self.assertFalse(flags.js_flags)
+    self.assertNotIn("--js-flags", flags)
     with self.assertRaises(ValueError):
       flags["--js-flags"] = "--js-foo, --no-js-foo"
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     with self.assertRaises(ValueError):
       flags["--js-flags"] = "--js-foo=v4, --no-js-bar"
     js_flags = flags.js_flags
+    self.assertTrue(js_flags)
+    self.assertNotIn(flags["--js-flags"], js_flags)
     self.assertEqual(js_flags["--js-foo"], "v3")
     self.assertIsNone(js_flags["--no-js-bar"])
 
@@ -225,13 +245,17 @@ class TestChromeFlags(TestFlags):
         "--bar": "v1",
     })
     self.assertNotIn("--js-flags", flags)
+    self.assertTrue(flags)
     with self.assertRaises(ValueError):
       flags["--js-flags"] = None
     self.assertNotIn("--js-flags", flags)
+    self.assertFalse(flags.js_flags)
     flags["--js-flags"] = ""
     self.assertNotIn("--js-flags", flags)
+    self.assertFalse(flags.js_flags)
     flags["--js-flags"] = "  "
     self.assertNotIn("--js-flags", flags)
+    self.assertFalse(flags.js_flags)
 
   def test_set_js_flags_invalid(self):
     flags = self.CLASS()
@@ -255,42 +279,61 @@ class TestChromeFlags(TestFlags):
     js_flags = flags.js_flags
     self.assertEqual(js_flags["--foo"], "v1")
     self.assertIsNone(js_flags["--no-bar"])
+    self.assertTrue(flags)
+    self.assertTrue(flags.js_flags)
 
   def test_features(self):
     flags = self.CLASS()
     features = flags.features
+    self.assertFalse(flags)
+    self.assertFalse(flags.features)
     self.assertTrue(features.is_empty)
     flags["--enable-features"] = "F1,F2"
+    self.assertTrue(flags)
+    self.assertTrue(flags.features)
     with self.assertRaises(ValueError):
       flags["--disable-features"] = "F1,F2"
     with self.assertRaises(ValueError):
       flags["--disable-features"] = "F2,F1"
     flags["--disable-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
+    self.assertEqual(flags["--enable-features"], "F1,F2")
     self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(flags["--disable-features"], "F3,F4")
+    self.assertTrue(flags)
+    self.assertTrue(flags.features)
 
   def test_blink_features(self):
     flags = self.CLASS()
     features = flags.blink_features
+    self.assertFalse(flags)
+    self.assertFalse(flags.blink_features)
     self.assertTrue(features.is_empty)
     flags["--enable-blink-features"] = "F1,F2"
+    self.assertTrue(flags)
+    self.assertTrue(flags.blink_features)
     with self.assertRaises(ValueError):
       flags["--disable-blink-features"] = "F1,F2"
     with self.assertRaises(ValueError):
       flags["--disable-blink-features"] = "F2,F1"
     flags["--disable-blink-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
+    self.assertEqual(flags["--enable-blink-features"], "F1,F2")
     self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(flags["--disable-blink-features"], "F3,F4")
 
   def test_features_invalid_none(self):
     flags = self.CLASS()
     features = flags.features
+    self.assertFalse(features)
     self.assertTrue(features.is_empty)
     with self.assertRaises(ValueError):
       flags["--disable-features"] = None
+    self.assertFalse(features)
     self.assertTrue(features.is_empty)
     with self.assertRaises(ValueError):
       flags["--enable-features"] = None
+    self.assertFalse(features)
     self.assertTrue(features.is_empty)
 
   def test_blink_features_invalid_none(self):
@@ -302,6 +345,7 @@ class TestChromeFlags(TestFlags):
     self.assertTrue(features.is_empty)
     with self.assertRaises(ValueError):
       flags["--enable-blink-features"] = None
+    self.assertNotIn("--enable-blink-features", flags)
     self.assertTrue(features.is_empty)
 
   def test_user_data_dir(self):
@@ -314,6 +358,8 @@ class TestChromeFlags(TestFlags):
 
   def test_get_list(self):
     flags = self.CLASS()
+    flags["--user-data-dir"] = "/tmp"
+    flags.set("--single-process")
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags["--enable-features"] = "F1,F2"
     flags["--disable-features"] = "F3,F4"
@@ -321,6 +367,8 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_list = list(flags)
     self.assertListEqual(flags_list, [
+        "--user-data-dir=/tmp",
+        "--single-process",
         "--js-flags=--js-foo=v3,--no-js-bar",
         "--enable-features=F1,F2",
         "--disable-features=F3,F4",
@@ -328,31 +376,57 @@ class TestChromeFlags(TestFlags):
         "--disable-blink-features=BLINK_F3,BLINK_F4",
     ])
 
+  def test_to_dict(self):
+    flags = self.CLASS()
+    flags["--user-data-dir"] = "/tmp"
+    flags.set("--single-process")
+    flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
+    flags["--enable-features"] = "F1,F2"
+    flags["--disable-features"] = "F3,F4"
+    flags["--enable-blink-features"] = "BLINK_F1,BLINK_F2"
+    flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
+    self.assertDictEqual(
+        flags.to_dict(), {
+            "--user-data-dir": "/tmp",
+            "--single-process": None,
+            "--js-flags": "--js-foo=v3,--no-js-bar",
+            "--enable-features": "F1,F2",
+            "--disable-features": "F3,F4",
+            "--enable-blink-features": "BLINK_F1,BLINK_F2",
+            "--disable-blink-features": "BLINK_F3,BLINK_F4",
+        })
+
   def test_initial_data_empty(self):
     flags = self.CLASS()
     flags_copy = self.CLASS(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertFalse(flags_copy)
     flags_copy = self.CLASS()
     flags_copy.update(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertFalse(flags_copy)
 
   def test_initial_data_simple(self):
     flags = self.CLASS()
     flags["--no-sandbox"] = None
     flags_copy = self.CLASS(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
     flags_copy = self.CLASS()
     flags_copy.update(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
 
   def test_initial_data_js_flags(self):
     flags = self.CLASS()
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags_copy = self.CLASS(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
     flags_copy = self.CLASS()
     flags_copy.update(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
 
   def test_initial_data_features(self):
     flags = self.CLASS()
@@ -360,9 +434,11 @@ class TestChromeFlags(TestFlags):
     flags["--disable-features"] = "F3,F4"
     flags_copy = self.CLASS(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
     flags_copy = self.CLASS()
     flags_copy.update(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
 
   def test_initial_data_blink_features(self):
     flags = self.CLASS()
@@ -370,9 +446,11 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_copy = self.CLASS(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
     flags_copy = self.CLASS()
     flags_copy.update(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
 
   def test_initial_data_all(self):
     flags = self.CLASS()
@@ -384,9 +462,11 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_copy = self.CLASS(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
     flags_copy = self.CLASS()
     flags_copy.update(flags)
     self.assertListEqual(list(flags), list(flags_copy))
+    self.assertTrue(flags_copy)
 
   def test_set_js_flags(self):
     flags = self.CLASS()
