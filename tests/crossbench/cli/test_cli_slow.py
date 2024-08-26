@@ -21,7 +21,6 @@ from crossbench.probes import internal
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import BaseCliTestCase, SysExitTestException
-from tests.crossbench.test_cli_config import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 
 class CliSlowTestCase(BaseCliTestCase):

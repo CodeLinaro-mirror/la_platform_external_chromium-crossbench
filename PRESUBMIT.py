@@ -54,7 +54,7 @@ def CheckChange(input_api, output_api, on_commit):
     files_to_check = [r".*test_.*\.py$"]
   else:
     # Only check a small subset on upload
-    dirs_to_check = [crossbench_test_path]
+    dirs_to_check = [crossbench_test_path / "cli"]
     files_to_check = [r".*test_cli\.py$"]
   for dir_to_check in dirs_to_check:
     # Skip potentially empty dirs

@@ -590,7 +590,6 @@ class BrowserVariantsConfig:
         flags["--disable-features"] = args.disable_features
 
     if args.js_flags:
-
       def copy_and_set_js_flags(flags: ChromeFlags,
                                 js_flags_str: str) -> ChromeFlags:
         flags = flags.copy()
