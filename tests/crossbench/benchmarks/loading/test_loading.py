@@ -52,7 +52,7 @@ from tests.crossbench.mock_helper import (BaseCliTestCase,
 cb = crossbench
 
 
-class PlaybackControllerTest(unittest.TestCase):
+class PlaybackControllerTestCase(unittest.TestCase):
 
   def test_parse_invalid(self):
     for invalid in [
