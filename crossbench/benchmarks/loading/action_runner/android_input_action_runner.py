@@ -14,8 +14,8 @@ from crossbench.benchmarks.loading.action_runner.base import \
     InputSourceNotImplementedError
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
-    ElementNotFoundError
+from crossbench.benchmarks.loading.action_runner.element_not_found_error \
+  import ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
@@ -38,6 +38,17 @@ class DisplayRectangle:
   # edge of the screen.
   bottom: int
 
+  def __mul__(self, factor: float) -> DisplayRectangle:
+    return DisplayRectangle(
+        round(self.left * factor), round(self.right * factor),
+        round(self.top * factor), round(self.bottom * factor))
+
+  __rmul__ = __mul__
+
+  def __add__(self, other: DisplayRectangle) -> DisplayRectangle:
+    return DisplayRectangle(self.left + other.left, self.right + other.left,
+                            self.top + other.top, self.bottom + other.top)
+
   @property
   def mid_x(self) -> float:
     return (self.left + self.right) / 2
@@ -47,43 +58,123 @@ class DisplayRectangle:
     return (self.top + self.bottom) / 2
 
 
+class ViewportInfo:
+
+  def __init__(self,
+               raw_chrome_window_bounds: DisplayRectangle,
+               window_inner_height: int,
+               window_inner_width: int,
+               element_rect: Optional[DisplayRectangle] = None) -> None:
+    self._element_rect: Optional[DisplayRectangle] = None
+
+    # On android, clank does not report the correct window.devicePixelRatio
+    # when a page is zoomed.
+    # Zoom can happen automatically on load with pages that force a certain
+    # viewport width (such as speedometer), so calculate the ratio manually.
+    # Note: this calculation assumes there are no system borders on the side of
+    # the chrome window.
+    self._actual_pixel_ratio: float = float(
+        (raw_chrome_window_bounds.right - raw_chrome_window_bounds.left) /
+        window_inner_width)
+
+    window_inner_height = int(
+        round(self.actual_pixel_ratio * window_inner_height))
+    window_inner_width = int(
+        round(self.actual_pixel_ratio * window_inner_width))
+
+    # On Android there may be a system added border from the top of the app view
+    # that is included in the mAppBounds rectangle dimensions. Calculate the
+    # height of this border using the difference between the height reported by
+    # chrome and the height reported by android.
+    top_border_height = (raw_chrome_window_bounds.bottom -
+                         raw_chrome_window_bounds.top) - window_inner_height
+
+    self._chrome_window: DisplayRectangle = DisplayRectangle(
+        raw_chrome_window_bounds.left, raw_chrome_window_bounds.right,
+        raw_chrome_window_bounds.top + top_border_height,
+        raw_chrome_window_bounds.bottom)
+    if element_rect:
+      self._element_rect: DisplayRectangle = (
+          element_rect * self.actual_pixel_ratio) + self._chrome_window
+
+  @property
+  def chrome_window(self) -> DisplayRectangle:
+    return self._chrome_window
+
+  @property
+  def actual_pixel_ratio(self) -> float:
+    return self._actual_pixel_ratio
+
+  def element_rect(self) -> Optional[DisplayRectangle]:
+    return self._element_rect
+
+  def element_center(self) -> Optional[Point]:
+    if not self._element_rect:
+      return None
+    return Point(
+        round(self._element_rect.mid_x), round(self._element_rect.mid_y))
+
+  def css_to_native_distance(self, distance: float) -> float:
+    return distance * self.actual_pixel_ratio
+
+
 class AndroidInputActionRunner(BasicActionRunner):
 
   # Represents the position of the chrome main window relative to the entire
   # screen as reported by Android window manager.
-  _chrome_window_bounds: Optional[DisplayRectangle] = None
+  _raw_chrome_window_bounds: Optional[DisplayRectangle] = None
 
   @property
-  def chrome_window_bounds(self) -> DisplayRectangle:
-    assert self._chrome_window_bounds, "Uninitialized chrome window bounds"
-    return self._chrome_window_bounds
+  def raw_chrome_window_bounds(self) -> DisplayRectangle:
+    assert self._raw_chrome_window_bounds, "Uninitialized chrome window bounds"
+    return self._raw_chrome_window_bounds
 
   _BOUNDS_RE = re.compile(
       r"mAppBounds=Rect\((?P<left>\d+), (?P<top>\d+) - (?P<right>\d+),"
       r" (?P<bottom>\d+)\)")
 
+  _GET_JS_VALUES = """
+    let found_element = false
+
+    if (arguments[0] && element) found_element = true;
+
+    if(arguments[1]) element.scrollIntoView();
+
+    rect = new DOMRect();
+    
+    if (arguments[0]) rect = element.getBoundingClientRect();
+
+    return [
+      found_element, 
+      window.innerHeight, 
+      window.innerWidth, 
+      rect.left, 
+      rect.right, 
+      rect.top, 
+      rect.bottom
+    ];
+"""
+
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
 
-      self._init_chrome_window_size_if_necessary(run, actions)
+      viewport_info = self._get_viewport_info(run, actions, action.selector)
 
       # The scroll distance is specified in terms of css pixels so adjust to the
       # native pixel density.
-      total_scroll_distance = self._css_to_native_distance(
-          actions, action.distance)
+      total_scroll_distance = (
+          viewport_info.css_to_native_distance(action.distance))
 
       # Default to scrolling within the entire chrome window.
-      scroll_area: Optional[DisplayRectangle] = None
+      scroll_area: DisplayRectangle = viewport_info.chrome_window
 
-      if selector := action.selector:
-        scroll_area = self._get_element_bounding_rect(actions, selector)
-        if not scroll_area:
+      if action.selector:
+        if element_rect := viewport_info.element_rect():
+          scroll_area = element_rect
+        else:
           if action.required:
-            raise ElementNotFoundError(selector)
+            raise ElementNotFoundError(action.selector)
           return
-      else:
-        scroll_area = self.chrome_window_bounds
-
 
       scrollable_top = scroll_area.top
       scrollable_bottom = scroll_area.bottom
@@ -127,6 +218,38 @@ class AndroidInputActionRunner(BasicActionRunner):
       self._swipe_impl(run, action.start_x, action.start_y, action.end_x,
                        action.end_y, action.duration)
 
+  def text_input_keyboard(self, run: Run,
+                          action: i_action.TextInputAction) -> None:
+    self._rate_limit_keystrokes(run, action, self._type_characters)
+
+  def _click_impl(self, run: Run, action: i_action.ClickAction,
+                  use_mouse: bool) -> None:
+    if action.duration > dt.timedelta():
+      raise InputSourceNotImplementedError(self, action, action.input_source,
+                                           "Non-zero duration not implemented")
+
+    with run.actions("ClickAction", measure=False) as actions:
+
+      coordinates = action.coordinates
+
+      if action.selector:
+        viewport_info = self._get_viewport_info(run, actions, action.selector,
+                                                action.scroll_into_view)
+
+        if center := viewport_info.element_center():
+          coordinates = center
+        else:
+          if action.required:
+            raise ElementNotFoundError(action.selector)
+          return
+
+      mouse_str: str = ""
+      if use_mouse:
+        mouse_str = "mouse"
+
+      run.browser.platform.sh("input", mouse_str, "tap", str(coordinates.x),
+                              str(coordinates.y))
+
   def _swipe_impl(self, run: Run, start_x: int, start_y: int, end_x: int,
                   end_y: int, duration: dt.timedelta) -> None:
 
@@ -135,18 +258,37 @@ class AndroidInputActionRunner(BasicActionRunner):
     run.browser.platform.sh("input", "swipe", str(start_x), str(start_y),
                             str(end_x), str(end_y), str(duration_millis))
 
-  def text_input_keyboard(self, run: Run,
-                          action: i_action.TextInputAction) -> None:
-    self._rate_limit_keystrokes(run, action, self._type_characters)
+  def _get_viewport_info(self,
+                         run: Run,
+                         actions: Actions,
+                         selector: Optional[str] = None,
+                         scroll_into_view: bool = False) -> ViewportInfo:
 
-  def _init_chrome_window_size_if_necessary(self, run: Run,
-                                            actions: Actions) -> None:
+    script = ""
+
+    if selector:
+      selector, script = self.get_selector_script(selector)
+
+    script += self._GET_JS_VALUES
+
+    (found_element, inner_height, inner_width, left, right, top,
+     bottom) = actions.js(
+         script, arguments=[selector, scroll_into_view])
+
     # If the chrome window position has not yet been found,
     # initialize it now.
     # Note: this assumes the chrome app will not be moved or resized during
     # the test.
-    if not self._chrome_window_bounds:
-      self._chrome_window_bounds = self._find_chrome_window_size(run, actions)
+    if not self._raw_chrome_window_bounds:
+      self._raw_chrome_window_bounds = self._find_chrome_window_size(run)
+
+    element_rect: Optional[DisplayRectangle] = None
+    if found_element:
+      element_rect = DisplayRectangle(left, right, top, bottom)
+
+    return ViewportInfo(self.raw_chrome_window_bounds, inner_height,
+                        inner_width, element_rect)
+
 
   # Returns the name of the browser's main window as reported by android's
   # window manager.
@@ -157,8 +299,7 @@ class AndroidInputActionRunner(BasicActionRunner):
 
     raise RuntimeError("Unsupported browser for android action runner.")
 
-  def _find_chrome_window_size(self, run: Run,
-                               actions: Actions) -> DisplayRectangle:
+  def _find_chrome_window_size(self, run: Run) -> DisplayRectangle:
     # Find the chrome app window position by dumping the android app window
     # list.
     #
@@ -187,149 +328,12 @@ class AndroidInputActionRunner(BasicActionRunner):
     if not match:
       raise RuntimeError("Could not find chrome window bounds")
 
-    window_bounds = DisplayRectangle(
+    return DisplayRectangle(
         int(match["left"]),
         int(match["right"]),
         int(match["top"]),
         int(match["bottom"]),
     )
-
-    # On Android there may be a system added border from the top of the app view
-    # that is included in the mAppBounds rectangle dimensions. Calculate the
-    # height of this border using the difference between the height reported by
-    # chrome and the height reported by android.
-    inner_height = actions.js(
-        "return window.innerHeight;") * self._get_actual_pixel_ratio(
-            actions, window_bounds)
-    top_border_height = (window_bounds.bottom -
-                         window_bounds.top) - inner_height
-
-    return DisplayRectangle(window_bounds.left, window_bounds.right,
-                            window_bounds.top + top_border_height,
-                            window_bounds.bottom)
-
-  def _get_actual_pixel_ratio(
-      self,
-      actions: Actions,
-      window_bounds: Optional[DisplayRectangle] = None) -> float:
-    # On android, clank does not report the correct window.devicePixelRatio
-    # when a page is zoomed.
-    # Zoom can happen automatically on load with pages that force a certain
-    # viewport width (such as speedometer), so calculate the ratio manually.
-    # Note: this calculation assumes there are no system borders on the side of
-    # the chrome window.
-
-    if not window_bounds:
-      window_bounds = self.chrome_window_bounds
-
-    inner_width = actions.js("return window.innerWidth;")
-
-    return float((window_bounds.right - window_bounds.left) / inner_width)
-
-  def _css_to_native_distance(self, actions: Actions, distance: float) -> float:
-    return distance * self._get_actual_pixel_ratio(actions)
-
-  # Given a selector, return the bounding rectangle for the element in terms of
-  # the device's native pixel count.
-  def _get_element_bounding_rect(self, actions: Actions,
-                                 selector: str) -> Optional[DisplayRectangle]:
-
-    selector, script = self.get_selector_script(selector)
-
-    script += """
-            if(!element) return [false, 0, 0, 0, 0];
-
-            const rect = element.getBoundingClientRect();
-            return [
-              true,
-              rect.left,
-              rect.right,
-              rect.top,
-              rect.bottom,
-            ];
-    """
-    (
-        found_element,
-        element_left,
-        element_right,
-        element_top,
-        element_bottom,
-    ) = actions.js(
-        script,
-        arguments=[selector],
-    )
-
-    if not found_element:
-      return None
-
-    ratio = self._get_actual_pixel_ratio(actions)
-
-    # Adjust all the browser reported pixel values by the calculated ratio.
-    element_left *= ratio
-    element_right *= ratio
-    element_top *= ratio
-    element_bottom *= ratio
-
-    # Adjust the left and right coordinates of the element by the window
-    # position in android.
-    window_bounds = self.chrome_window_bounds
-    element_left += window_bounds.left
-    element_right += window_bounds.left
-
-    element_top += window_bounds.top
-    element_bottom += window_bounds.top
-
-    return DisplayRectangle(element_left, element_right, element_top,
-                            element_bottom)
-
-  # Given a selector, find the center point of the element in terms of the
-  # device's native pixel count.
-  def _get_element_centerpoint(self, run: Run, actions: Actions,
-                               selector: str) -> Optional[Point]:
-    self._init_chrome_window_size_if_necessary(run, actions)
-
-    rect: Optional[DisplayRectangle] = self._get_element_bounding_rect(
-        actions, selector)
-
-    if not rect:
-      return None
-
-    return Point(round(rect.mid_x), round(rect.mid_y))
-
-  def _scroll_element_into_view(self, actions: Actions, selector: str) -> bool:
-    selector, script = self.get_selector_script(
-        selector,
-        check_element_exists=True,
-        scroll_into_view=True,
-        return_on_success=True)
-
-    return actions.js(script, arguments=[selector])
-
-  def _click_impl(self, run: Run, action: i_action.ClickAction,
-                  use_mouse: bool) -> None:
-    if action.duration > dt.timedelta():
-      raise InputSourceNotImplementedError(self, action, action.input_source,
-                                           "Non-zero duration not implemented")
-    with run.actions("ClickAction", measure=False) as actions:
-      coordinates = action.coordinates
-
-      if selector := action.selector:
-        if action.scroll_into_view and not self._scroll_element_into_view(
-            actions, selector) and action.required:
-          raise ElementNotFoundError(selector)
-        coordinates = self._get_element_centerpoint(run, actions, selector)
-
-      if not coordinates:
-        if action.required:
-          raise ElementNotFoundError(action.selector)
-        return
-
-      mouse_str: str = ""
-      if use_mouse:
-        mouse_str = "mouse"
-
-      run.browser.platform.sh("input", mouse_str, "tap", str(coordinates.x),
-                              str(coordinates.y))
 
   def _type_characters(self, run: Run, _: Actions, characters: str) -> None:
     # TODO(kalutes) handle special characters and other whitespaces like '\t'
