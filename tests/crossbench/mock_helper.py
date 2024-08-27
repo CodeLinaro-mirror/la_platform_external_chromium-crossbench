@@ -316,6 +316,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         browser_config=None,
         viewport=None,
         splash_screen=None,
+        secrets=None,
         cache_dir=pathlib.Path("test_cache_dir"),
         enable_features=None,
         disable_features=None,

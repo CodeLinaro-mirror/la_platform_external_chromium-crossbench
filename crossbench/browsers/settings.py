@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.secrets import SecretsConfig, Secret, SecretType
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags.base import Flags
@@ -29,7 +30,8 @@ class Settings:
                driver_path: Optional[pth.RemotePath] = None,
                viewport: Optional[Viewport] = None,
                splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[plt.Platform] = None):
+               platform: Optional[plt.Platform] = None,
+               secrets: Optional[SecretsConfig] = None):
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)
     self._cache_dir = cache_dir
@@ -38,6 +40,8 @@ class Settings:
     self._network: Network = network or LiveNetwork()
     self._viewport: Viewport = viewport or Viewport.DEFAULT
     self._splash_screen: SplashScreen = splash_screen or SplashScreen.DEFAULT
+    self._secrets: Dict[
+        SecretType, Secret] = secrets.secrets if secrets is not None else {}
 
   def _extract_js_flags(self, flags: Flags,
                         js_flags: Optional[Flags.InitialDataType]) -> Flags:
@@ -84,6 +88,10 @@ class Settings:
   @property
   def network(self) -> Network:
     return self._network
+
+  @property
+  def secrets(self) -> Dict[SecretType, Secret]:
+    return self._secrets
 
   @property
   def splash_screen(self) -> SplashScreen:

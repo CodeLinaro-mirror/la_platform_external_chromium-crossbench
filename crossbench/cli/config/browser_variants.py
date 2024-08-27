@@ -412,7 +412,8 @@ class BrowserVariantsConfig:
           # TODO: support all args in the browser.config file
           viewport=args.viewport,
           splash_screen=args.splash_screen,
-          platform=browser_platform)
+          platform=browser_platform,
+          secrets=args.secrets)
       browser_instance = browser_cls(
           label=label, path=browser_config.path, settings=settings)
       # pytype: enable=not-instantiable
@@ -694,7 +695,8 @@ class BrowserVariantsConfig:
           driver_path=args.driver_path or browser_config.driver.path,
           viewport=args.viewport,
           splash_screen=args.splash_screen,
-          platform=browser_platform)
+          platform=browser_platform,
+          secrets=args.secrets)
       browser_instance = browser_cls(  # pytype: disable=not-instantiable
           label=label,
           path=path,

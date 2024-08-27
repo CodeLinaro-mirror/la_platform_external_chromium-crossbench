@@ -24,8 +24,11 @@ from crossbench.runner.timing import Timing
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
+  from typing import Iterable
+
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.browsers.secrets import SecretType
   from crossbench.env import HostEnvironment
   from crossbench.probes.probe import Probe
   from crossbench.runner.groups import BrowserSessionRunGroup
@@ -245,6 +248,12 @@ class Run(ResultOrigin):
     with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       self._probe_context_manager.setup(self.probes, is_dry_run)
     self._log_setup()
+
+  def do_logins(self, logins: Iterable[SecretType]) -> None:
+    for secret_type in logins:
+      if secret_type not in self.browser.secrets:
+        raise ValueError(f"Requested {secret_type.name} secret not provided")
+      self.browser.secrets[secret_type].login(self)
 
   def setup_selenium_options(self, options: ArgOptions):
     # TODO: move explicitly to session.

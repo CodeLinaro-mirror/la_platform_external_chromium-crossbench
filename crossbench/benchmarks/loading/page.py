@@ -14,6 +14,7 @@ from crossbench.benchmarks.loading.action_runner.base import \
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.browsers.secrets import SecretType
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -110,11 +111,13 @@ class CombinedPage(Page):
                name: str = "combined",
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta()):
+               about_blank_duration: dt.timedelta = dt.timedelta(),
+               logins: Optional[Iterable[SecretType]] = None):
     self._pages = tuple(pages)
     assert self._pages, "No sub-pages provided for CombinedPage"
     assert len(self._pages) > 1, "Combined Page needs more than one page"
     self._tabs = tabs
+    self._logins = logins or []
 
     duration = dt.timedelta()
     for page in self._pages:
@@ -135,6 +138,9 @@ class CombinedPage(Page):
     result = super().details_json()
     result["pages"] = list(page.details_json() for page in self._pages)
     return result
+
+  def setup(self, run: Run) -> None:
+    run.do_logins(self._logins)
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)

@@ -240,10 +240,15 @@ class PageLoadBenchmark(SubStoryBenchmark):
             f"Cannot specify --stories={repr(args.stories)} "
             "with any other page config option.")
       pages = LoadingPageFilter.stories_from_config(args, config)
-      if args.separate or len(pages) == 1:
+      assert not args.separate or len(config.logins) == 0
+      if args.separate or (len(pages) == 1 and len(config.logins) == 0):
         return pages
-      return (CombinedPage(pages, "Page Scenarios - Combined", args.playback,
-                           args.tabs),)
+      return (CombinedPage(
+          pages,
+          "Page Scenarios - Combined",
+          args.playback,
+          args.tabs,
+          logins=config.logins),)
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.

@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 import shlex
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
 
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
   import datetime as dt
 
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.browsers.secrets import SecretT, SecretType
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.env import HostEnvironment
@@ -110,6 +111,10 @@ class Browser(abc.ABC):
   @property
   def network(self) -> Network:
     return self._settings.network
+
+  @property
+  def secrets(self) -> Dict[SecretType, SecretT]:
+    return self._settings.secrets
 
   @property
   def splash_screen(self) -> SplashScreen:

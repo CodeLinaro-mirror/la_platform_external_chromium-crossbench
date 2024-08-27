@@ -20,6 +20,7 @@ from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   WaitAction)
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.page import PAGES
+from crossbench.browsers.secrets import SecretType
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 
 if TYPE_CHECKING:
@@ -239,6 +240,7 @@ class PageConfig(ConfigObject):
 @dataclasses.dataclass(frozen=True)
 class PagesConfig(ConfigObject):
   pages: Tuple[PageConfig, ...] = ()
+  logins: Tuple[SecretType, ...] = ()
 
   def __post_init__(self) -> None:
     super().__post_init__()
@@ -296,11 +298,12 @@ class PagesConfig(ConfigObject):
       pages = cli_helper.parse_non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
         pages = copy.deepcopy(pages)
-        return cls._parse_pages(pages)
+        logins = [SecretType.parse(login) for login in config.get("logins", [])]
+        return PagesConfig(cls._parse_pages(pages), tuple(logins))
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_pages(cls, data: Dict[str, Any]) -> PagesConfig:
+  def _parse_pages(cls, data: Dict[str, Any]) -> Tuple[PageConfig, ...]:
     """
     Behaviour to be aware
 
@@ -328,7 +331,7 @@ class PagesConfig(ConfigObject):
                 url=url,
                 playback=None,
                 action_blocks=action_blocks))
-    return PagesConfig(tuple(pages))
+    return tuple(pages)
 
   @classmethod
   def _parse_actions(cls, actions: List[Dict[str, Any]],
