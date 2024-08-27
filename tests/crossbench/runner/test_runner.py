@@ -86,6 +86,7 @@ class TestThreadModeTestCase(unittest.TestCase):
     groups = ThreadMode.NONE.group(self.runs)
     self.assertEqual(len(groups), 1)
     self.assertTupleEqual(groups[0].runs, self.runs)
+    self.assertEqual(groups[0].index, 0)
 
   def test_group_platform(self):
     groups = ThreadMode.PLATFORM.group(self.runs)
@@ -93,6 +94,8 @@ class TestThreadModeTestCase(unittest.TestCase):
     group_a, group_b = groups
     self.assertTupleEqual(group_a.runs, self.runs[:4])
     self.assertTupleEqual(group_b.runs, self.runs[4:])
+    self.assertEqual(group_a.index, 0)
+    self.assertEqual(group_b.index, 1)
 
   def test_group_browser(self):
     groups = ThreadMode.BROWSER.group(self.runs)
@@ -101,12 +104,16 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.assertTupleEqual(groups[1].runs, (self.runs[1], self.runs[3]))
     self.assertTupleEqual(groups[2].runs, (self.runs[4], self.runs[6]))
     self.assertTupleEqual(groups[3].runs, (self.runs[5], self.runs[7]))
+    for index, group in enumerate(groups):
+      self.assertEqual(group.index, index)
 
   def test_group_session(self):
     groups = ThreadMode.SESSION.group(self.runs)
     self.assertEqual(len(groups), len(self.runs))
     for group, run in zip(groups, self.runs):
       self.assertTupleEqual(group.runs, (run,))
+    for index, group in enumerate(groups):
+      self.assertEqual(group.index, index)
 
   def test_group_session_2(self):
     session_1 = BrowserSessionRunGroup(self.runner, self.browser_a_1, 1,
@@ -123,6 +130,8 @@ class TestThreadModeTestCase(unittest.TestCase):
     group_a, group_b = groups
     self.assertTupleEqual(group_a.runs, (runs[0], runs[2]))
     self.assertTupleEqual(group_b.runs, (runs[1], runs[3]))
+    for index, group in enumerate(groups):
+      self.assertEqual(group.index, index)
 
 
 class RunnerTestCase(BaseRunnerTestCase):
@@ -273,6 +282,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     runner = self.default_runner()
     runs = tuple(runner.get_runs())
     thread = RunThreadGroup(runs)
+    self.assertEqual(thread.index, 0)
     self.assertEqual(thread.runner, runner)
     self.assertSequenceEqual(thread.runs, runs)
     self.assertTrue(thread.is_success)

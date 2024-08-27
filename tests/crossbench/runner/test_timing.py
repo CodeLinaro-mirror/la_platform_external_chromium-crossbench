@@ -19,6 +19,23 @@ class TimingTestCase(unittest.TestCase):
     self.assertEqual(t.units(1), 1)
     self.assertEqual(t.units(dt.timedelta(seconds=1)), 1)
 
+  def test_to_json(self):
+    t = Timing()
+    self.assertDictEqual(t.to_json(), {
+        "coolDownTime": 1.0,
+        "runTimeout": 0.0,
+        "timeoutUnit": 0.0,
+        "unit": 1.0
+    })
+    t = Timing(
+        unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11))
+    self.assertDictEqual(t.to_json(), {
+        "coolDownTime": 1.0,
+        "runTimeout": 0.0,
+        "timeoutUnit": 11.0,
+        "unit": 10.0
+    })
+
   def test_default_instance_slowdown(self):
     t = Timing(
         unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11))
