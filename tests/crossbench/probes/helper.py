@@ -11,6 +11,7 @@ from crossbench.benchmarks.loading.page import CombinedPage, Page
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
+from tests.crossbench.mock_browser import JsInvocation
 from tests.crossbench.mock_helper import BaseCrossbenchTestCase
 
 
@@ -36,9 +37,11 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
       for story in stories:
         story_js_side_effects = js_side_effects_fn(story)
         for browser in self.browsers:
-          browser.js_side_effects += story_js_side_effects
+          for js_result in story_js_side_effects:
+            browser.expect_js(result=js_result)
+
     for browser in self.browsers:
-      browser.js_side_effect = copy.deepcopy(browser.js_side_effects)
+      browser.expected_js = copy.deepcopy(browser.expected_js)
 
     benchmark = PageLoadBenchmark(stories)  # pytype: disable=not-instantiable
     self.assertTrue(len(benchmark.describe()) > 0)

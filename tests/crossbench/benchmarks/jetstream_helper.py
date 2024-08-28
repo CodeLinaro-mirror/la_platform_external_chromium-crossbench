@@ -15,6 +15,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
+from tests.crossbench.mock_browser import JsInvocation
 
 
 class JetStream2BaseTestCase(
@@ -69,18 +70,20 @@ class JetStream2BaseTestCase(
         jetstream_probe_results = {
             story.name: example_story_data for story in stories
         }
-        js_side_effects = [
-            True,  # Page is ready
-            None,  # filter benchmarks
-            True,  # UI is updated and ready,
-            None,  # Start running benchmark
-            True,  # Wait until done
-            jetstream_probe_results,
-        ]
         for browser in self.browsers:
-          browser.js_side_effects += js_side_effects
+          # Page is ready
+          browser.expect_js(result=True)
+          # filter benchmarks
+          browser.expect_js()
+          # UI is updated and ready,
+          browser.expect_js(result=True)
+          # Start running benchmark
+          browser.expect_js()
+          # Wait until done
+          browser.expect_js(result=True)
+          browser.expect_js(result=jetstream_probe_results)
     for browser in self.browsers:
-      browser.js_side_effect = copy.deepcopy(browser.js_side_effects)
+      browser.expected_js = copy.deepcopy(browser.expected_js)
 
     benchmark = self.benchmark_cls(stories, custom_url=custom_url)  # pytype: disable=not-instantiable
     self.assertTrue(len(benchmark.describe()) > 0)
@@ -100,7 +103,7 @@ class JetStream2BaseTestCase(
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
-      self.assertIn(self.probe_cls.JS, browser.js_list)
+      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
 
     csv_file = self.out_dir / f"{self.probe_cls.NAME}.csv"
     with csv_file.open(encoding="utf-8") as f:

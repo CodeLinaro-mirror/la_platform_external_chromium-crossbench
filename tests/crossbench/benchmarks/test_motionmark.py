@@ -20,6 +20,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
+from tests.crossbench.mock_browser import JsInvocation
 
 
 class MotionMark1BaseTestCase(
@@ -123,17 +124,18 @@ class MotionMark1BaseTestCase(
     # The order should match Runner.get_runs
     for _ in range(repetitions):
       for _ in stories:
-        js_side_effects = [
-            True,  # Page is ready
-            1,  # NOF enabled benchmarks
-            None,  # Start running benchmark
-            True,  # Wait until done
-            self.EXAMPLE_PROBE_DATA
-        ]
         for browser in self.browsers:
-          browser.js_side_effects += js_side_effects
+          # Page is ready
+          browser.expect_js(result=True)
+          # NOF enabled benchmarks
+          browser.expect_js(result=1)
+          # Start running benchmark
+          browser.expect_js()
+          # Wait until done
+          browser.expect_js(result=True)
+          browser.expect_js(result=self.EXAMPLE_PROBE_DATA)
     for browser in self.browsers:
-      browser.js_side_effect = copy.deepcopy(browser.js_side_effects)
+      browser.expected_js = copy.deepcopy(browser.expected_js)
     benchmark = self.benchmark_cls(stories, custom_url=custom_url)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
@@ -153,7 +155,7 @@ class MotionMark1BaseTestCase(
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
-      self.assertIn(self.probe_cls.JS, browser.js_list)
+      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
     with (self.out_dir /
           f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))

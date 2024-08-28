@@ -308,7 +308,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     mock_platform_patcher.start()
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
-      self.assertListEqual(browser.js_side_effects, [])
+      self.assertListEqual(browser.expected_js, [])
     self.mock_args = mock.Mock(
         wraps=False,
         driver_path=None,

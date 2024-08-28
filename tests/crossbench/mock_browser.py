@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import copy
+import dataclasses
 import pathlib
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
                     cast)
@@ -27,6 +28,14 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.runner.groups import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
+
+
+@dataclasses.dataclass(frozen=True)
+class JsInvocation:
+  result: Any
+  script: Optional[str] = None
+  arguments: Optional[List[Any]] = None
+  timeout: Optional[dt.timedelta] = None
 
 
 class MockNetwork(Network):
@@ -87,10 +96,27 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
       assert isinstance(maybe_driver, pathlib.Path) and maybe_driver.exists()
     super().__init__(label, path, settings=settings)
     self.url_list: List[str] = []
-    self.js_list: List[str] = []
-    self.js_side_effects: List[Any] = []
+    self.expected_js: List[JsInvocation] = []
+    self.invoked_js: List[JsInvocation] = []
     self.did_run: bool = False
     self.clear_cache_dir: bool = False
+
+  def expect_js(
+      self,
+      expected_js: Optional[JsInvocation] = None,
+      result: Any = None,
+  ) -> None:
+    if not expected_js:
+      self.expected_js.append(JsInvocation(result=result))
+      return
+
+    self.expected_js.append(expected_js)
+    return
+
+  def was_js_invoked(self, expected_script: str) -> bool:
+    return expected_script in [
+        invoked_js.script for invoked_js in self.invoked_js
+    ]
 
   def clear_cache(self, runner: Runner) -> None:
     pass
@@ -119,18 +145,41 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
          script,
          timeout: Optional[dt.timedelta] = None,
          arguments=()):
-    self.js_list.append(script)
-    if timeout:
-      assert timeout.total_seconds() > 0
-    if self.js_side_effects is None:
+    self.invoked_js.append(
+        JsInvocation(
+            result=None, script=script, arguments=arguments, timeout=timeout))
+
+    if self.expected_js is None:
       return None
-    assert self.js_side_effects, ("Not enough mock js_side_effect available. "
-                                  "Please add another js_side_effect entry for "
-                                  f"arguments={arguments} \n"
-                                  f"Script: {script}")
-    result = self.js_side_effects.pop(0)
+
+    assert self.expected_js, ("Not enough expected_js available. "
+                              "Please add another expected_js entry for "
+                              f"arguments={arguments} \n"
+                              f"Script: {script}")
+    expectation = self.expected_js.pop(0)
+
+    if expectation.timeout:
+      assert expectation.timeout == timeout, (
+          f"JS timeout does not match. "
+          f"Expected: {expectation.timeout} Got: {timeout}")
+
+    if expectation.script:
+      assert expectation.script == script, (
+          f"JS script does not match expectation. "
+          f"Expected: {expectation.script} Got: {script}")
+
+    if expectation.arguments:
+      assert len(expectation.arguments) == len(arguments), (
+          f"Number of JS arguments does not match. "
+          f"Expected: {len(expectation.arguments)} Got: {len(arguments)}")
+
+      for expected_argument, argument in zip(expectation.arguments, arguments):
+        assert expected_argument == argument, (
+            f"Arguments do not match. "
+            f"Expected: {expected_argument} Got: {argument}")
+
     # Return copies to avoid leaking data between repetitions.
-    return copy.deepcopy(result)
+    return copy.deepcopy(expectation.result)
 
 
 def app_root(platform: plt.Platform) -> pathlib.Path:

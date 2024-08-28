@@ -17,6 +17,7 @@ from crossbench.benchmarks.speedometer.speedometer import (SpeedometerBenchmark,
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
+from tests.crossbench.mock_browser import JsInvocation
 
 
 class SpeedometerBaseTestCase(
@@ -154,18 +155,21 @@ class SpeedometerBaseTestCase(
       for story in stories:
         speedometer_probe_results = self._generate_test_probe_results(
             iterations, story)
-        js_side_effects = [
-            True,  # Page is ready
-            None,  # _setup_substories
-            None,  # _setup_benchmark_client
-            None,  # _run_stories
-            True,  # Wait until done
-            speedometer_probe_results,
-        ]
+
         for browser in self.browsers:
-          browser.js_side_effects += js_side_effects
+          # Page is ready
+          browser.expect_js(result=True)
+          # _setup_substories
+          browser.expect_js()
+          # _setup_benchmark_client
+          browser.expect_js()
+          # _run_stories
+          browser.expect_js()
+          # Wait until done
+          browser.expect_js(result=True)
+          browser.expect_js(result=speedometer_probe_results)
     for browser in self.browsers:
-      browser.js_side_effect = copy.deepcopy(browser.js_side_effects)
+      browser.expected_js = copy.deepcopy(browser.expected_js)
 
     benchmark = self.benchmark_cls(stories, custom_url=custom_url)  # pytype: disable=not-instantiable
     self.assertTrue(len(benchmark.describe()) > 0)
@@ -196,8 +200,8 @@ class SpeedometerBaseTestCase(
       urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
         self.assertEqual(len(urls), expected_num_urls)
-      self.assertIn(self.probe_cls.JS, browser.js_list)
-      self.assertListEqual(browser.js_side_effects, [])
+      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
+      self.assertListEqual(browser.expected_js, [])
 
     with self.assertLogs(level='INFO') as cm:
       for probe in runner.probes:
