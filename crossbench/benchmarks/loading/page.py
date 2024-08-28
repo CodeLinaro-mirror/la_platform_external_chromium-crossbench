@@ -9,6 +9,7 @@ import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
 
+from crossbench.benchmarks.loading.action import ActionType, GetAction
 from crossbench.benchmarks.loading.action_runner.base import \
     ActionNotImplementedError
 from crossbench.benchmarks.loading.playback_controller import \
@@ -159,29 +160,37 @@ class InteractivePage(Page):
 
   def __init__(self,
                name: str,
-               action_blocks: Tuple[ActionBlock, ...],
-               login_block: Optional[LoginBlock] = None,
+               blocks: Tuple[ActionBlock, ...],
+               login: Optional[LoginBlock] = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta()):
     assert name, "missing name"
     self._name: str = name
-    assert isinstance(action_blocks, tuple)
-    self._action_blocks: Tuple[ActionBlock, ...] = action_blocks
-    assert self._action_blocks, "Must have at least 1 valid action"
-    assert not any(block.is_login for block in action_blocks), (
+    assert isinstance(blocks, tuple)
+    self._blocks: Tuple[ActionBlock, ...] = blocks
+    assert self._blocks, "Must have at least 1 valid action"
+    assert not any(block.is_login for block in blocks), (
         "No login blocks allowed as normal action block")
-    self._login_block = login_block
+    self._login = login
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration)
 
   @property
-  def action_blocks(self) -> Tuple[ActionBlock, ...]:
-    return self._action_blocks
+  def blocks(self) -> Tuple[ActionBlock, ...]:
+    return self._blocks
 
   @property
-  def login_block(self) -> Optional[ActionBlock]:
-    return self._login_block
+  def login(self) -> Optional[ActionBlock]:
+    return self._login
+
+  @property
+  def first_url(self) -> str:
+    for block in self.blocks:
+      for action in block:
+        if action.TYPE == ActionType.GET:
+          return cast(GetAction, action).url
+    raise RuntimeError("No GET action with an URL found.")
 
   def failure_screenshot(self, run: Run, message: str = "failure") -> None:
     action_runner = get_action_runner(run)
@@ -193,9 +202,9 @@ class InteractivePage(Page):
       logging.error("Failed to take a failure screenshot: %s", str(e))
 
   def setup(self, run: Run) -> None:
-    if login_block := self.login_block:
+    if login := self.login:
       action_runner = get_action_runner(run)
-      action_runner.run_login(run, self, login_block)
+      action_runner.run_login(run, self, login)
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
@@ -207,12 +216,12 @@ class InteractivePage(Page):
 
   def details_json(self) -> JsonDict:
     result = super().details_json()
-    result["actions"] = list(block.to_json() for block in self._action_blocks)
+    result["actions"] = list(block.to_json() for block in self._blocks)
     return result
 
   def _get_duration(self) -> dt.timedelta:
     duration = dt.timedelta()
-    for block in self._action_blocks:
+    for block in self._blocks:
       duration += block.duration
     return duration
 

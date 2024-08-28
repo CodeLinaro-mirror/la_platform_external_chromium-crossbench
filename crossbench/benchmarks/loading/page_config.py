@@ -9,8 +9,8 @@ import copy
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Tuple, Type, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
+                    Sequence, Tuple, Type, cast)
 from urllib.parse import urlparse
 
 from crossbench import cli_helper, exception
@@ -58,7 +58,10 @@ class ActionBlock(ConfigObject):
     parser.add_argument(
         "label", type=cli_helper.parse_non_empty_str, default="default")
     parser.add_argument(
-        "index", type=cli_helper.parse_positive_zero_int, required=False)
+        "index",
+        type=cli_helper.parse_positive_zero_int,
+        default=0,
+        required=False)
     # TODO: enable passing index
     parser.add_argument("actions", type=Action, required=True, is_list=True)
     return parser
@@ -101,6 +104,12 @@ class ActionBlock(ConfigObject):
   def is_login(self) -> bool:
     return False
 
+  def __iter__(self) -> Iterator[Action]:
+    yield from self.actions
+
+  def __len__(self) -> int:
+    return len(self.actions)
+
 
 @dataclasses.dataclass(frozen=True)
 class LoginBlock(ActionBlock):
@@ -108,7 +117,8 @@ class LoginBlock(ActionBlock):
 
   def validate(self):
     super().validate()
-    assert self.index == 0, "Login block has to be the first"
+    assert self.index == 0, (
+        f"Login block has to be the first, but got {self.index}")
 
   @property
   def is_login(self) -> bool:
@@ -174,18 +184,22 @@ class ActionBlockListConfig(ConfigObject):
   @classmethod
   def _parse_blocks(cls, block_config_data_gen) -> ActionBlockListConfig:
     blocks: List[ActionBlock] = []
-    login: Optional[LoginBlock] = None
+    logins: List[LoginBlock] = []
     for index, label, block_data in block_config_data_gen:
-      block, login_block = cls._parse_action_block(index, label, block_data)
+      block, login = cls._parse_block(index, label, block_data)
       if block:
         blocks.append(block)
-      if login_block:
-        assert not login, "Can only get one login block"
-        login = login_block
+      if login:
+        logins.append(login)
+    login: Optional[LoginBlock] = None
+    if len(logins) > 1:
+      raise ValueError("Got more than one login block")
+    if logins:
+      login = logins[0]
     return cls(tuple(blocks), login=login)
 
   @classmethod
-  def _parse_action_block(
+  def _parse_block(
       cls, index: int, label: str,
       block_data: Any) -> Tuple[Optional[ActionBlock], Optional[LoginBlock]]:
     if isinstance(block_data, dict):
@@ -228,8 +242,8 @@ class PageConfig(ConfigObject):
   url: str = ""
   duration: dt.timedelta = dt.timedelta()
   playback: Optional[PlaybackController] = None
-  action_blocks: Tuple[ActionBlock, ...] = tuple()
-  login_block: Optional[LoginBlock] = None
+  blocks: Tuple[ActionBlock, ...] = tuple()
+  login: Optional[LoginBlock] = None
 
   @classmethod
   def parse_str(cls: Type[PageConfig], value: str) -> PageConfig:
@@ -363,14 +377,14 @@ class PagesConfig(ConfigObject):
           f"Parsing story ...['{scenario_name}']"):
         actions = cls._parse_actions(actions, scenario_name)
         # Use default action block
-        action_blocks = (ActionBlock(actions=actions),)
+        blocks = (ActionBlock(actions=actions),)
         url = cls._extract_first_actions_url(actions)
         pages.append(
             PageConfig(
                 label=scenario_name,
                 url=url,
                 playback=None,
-                action_blocks=action_blocks))
+                blocks=blocks))
     return tuple(pages)
 
   @classmethod
@@ -413,9 +427,9 @@ class DevToolsRecorderPagesConfig(PagesConfig):
       assert title, "No title provided"
       actions = tuple(cls._parse_steps(config["steps"]))
       # Use default block
-      action_blocks = (ActionBlock(actions=actions),)
+      blocks = (ActionBlock(actions=actions),)
       url = cls._extract_first_actions_url(actions)
-      pages = (PageConfig(label=title, url=url, action_blocks=action_blocks),)
+      pages = (PageConfig(label=title, url=url, blocks=blocks),)
       return DevToolsRecorderPagesConfig(pages)
     raise exception.UnreachableError()
 

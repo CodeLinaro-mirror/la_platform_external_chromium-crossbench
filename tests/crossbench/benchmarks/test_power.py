@@ -32,8 +32,8 @@ class TestExamplePageConfig(unittest.TestCase):
       self.assertTrue(dict_config.pages)
       self.assertTrue(file_config.pages)
       for page in dict_config.pages:
-        self.assertEqual(len(page.action_blocks), 1)
-        self.assertTrue(page.action_blocks[0].actions)
+        self.assertEqual(len(page.blocks), 1)
+        self.assertTrue(page.blocks[0].actions)
 
 
 if __name__ == "__main__":

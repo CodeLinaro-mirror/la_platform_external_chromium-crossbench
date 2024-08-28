@@ -19,7 +19,7 @@ import crossbench
 import crossbench.env
 import crossbench.path
 import crossbench.runner
-from crossbench.benchmarks.loading.action import ActionType
+from crossbench.benchmarks.loading.action import ActionType, GetAction
 from crossbench.benchmarks.loading.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
@@ -35,13 +35,12 @@ from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, InteractivePage,
                                                 LivePage)
 from crossbench.benchmarks.loading.page_config import (
-    ActionBlockListConfig, DevToolsRecorderPagesConfig, ListPagesConfig,
-    PageConfig, PagesConfig)
+    ActionBlock, ActionBlockListConfig, DevToolsRecorderPagesConfig,
+    ListPagesConfig, LoginBlock, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
     TimeoutPlaybackController)
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.config import ConfigError
 from crossbench.helper import ChangeCWD
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -159,6 +158,70 @@ class TabControllerTest(unittest.TestCase):
   def test_parse_single(self):
     tab_controller = TabController.parse("single")
     self.assertFalse(tab_controller.multiple_tabs)
+
+
+class ActionBlockTestCase(unittest.TestCase):
+
+  def test_create_empty_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ActionBlock()
+
+  def test_single_action(self):
+    action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))
+    block = ActionBlock(actions=(action,))
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertTupleEqual(tuple(block), (action,))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = ActionBlock.parse(block.to_json())
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+  def test_multi_action(self):
+    action_2 = GetAction("http://test.com/0", duration=dt.timedelta(seconds=1))
+    action_1 = GetAction("http://test.com/1", duration=dt.timedelta(seconds=2))
+    block = ActionBlock(actions=(action_1, action_2))
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertTupleEqual(tuple(block), (action_1, action_2))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = ActionBlock.parse(block.to_json())
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+
+class LoginBlockTestCase(unittest.TestCase):
+
+  def test_single_action(self):
+    action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))
+    block = LoginBlock(actions=(action,))
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertTupleEqual(tuple(block), (action,))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = LoginBlock.parse(block.to_json())
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+  def test_multi_action(self):
+    action_2 = GetAction("http://test.com/0", duration=dt.timedelta(seconds=1))
+    action_1 = GetAction("http://test.com/1", duration=dt.timedelta(seconds=2))
+    block = LoginBlock(actions=(action_1, action_2))
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertTupleEqual(tuple(block), (action_1, action_2))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = LoginBlock.parse(block.to_json())
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
 
 
 class ActionRunnerConfigTest(unittest.TestCase):
@@ -371,8 +434,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertEqual(len(page.action_blocks), 1)
-      self.assertGreater(len(page.action_blocks[0].actions), 1)
+      self.assertEqual(len(page.blocks), 1)
+      self.assertGreater(len(page.blocks[0].actions), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_android_page_config_file(self):
@@ -386,8 +449,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertEqual(len(page.action_blocks), 1)
-      self.assertGreater(len(page.action_blocks[0].actions), 1)
+      self.assertEqual(len(page.blocks), 1)
+      self.assertGreater(len(page.blocks[0].actions), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_phone(self):
@@ -405,8 +468,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertEqual(len(page.action_blocks), 1)
-      self.assertGreater(len(page.action_blocks[0].actions), 1)
+      self.assertEqual(len(page.blocks), 1)
+      self.assertGreater(len(page.blocks[0].actions), 1)
 
   @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_tablet(self):
@@ -424,8 +487,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
     for page in dict_config.pages:
-      self.assertEqual(len(page.action_blocks), 1)
-      self.assertGreater(len(page.action_blocks[0].actions), 1)
+      self.assertEqual(len(page.blocks), 1)
+      self.assertGreater(len(page.blocks[0].actions), 1)
 
 
 class PageConfigTestsCase(unittest.TestCase):
@@ -648,8 +711,9 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(len(pages), 1)
     page = pages[0]
     self.assertEqual(page.label, "Google Story")
-    self.assertEqual(len(page.action_blocks), 1)
-    actions = page.action_blocks[0].actions
+    self.assertEqual(page.url,  "https://www.google.com")
+    self.assertEqual(len(page.blocks), 1)
+    actions = page.blocks[0].actions
     self.assertListEqual([str(action.TYPE) for action in actions],
                          ["get", "wait", "scroll"])
 
@@ -749,8 +813,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
         })
         self.assertEqual(len(page_config.pages), 1)
         page = page_config.pages[0]
-        self.assertEqual(len(page.action_blocks), 1)
-        actions = page.action_blocks[0].actions
+        self.assertEqual(len(page.blocks), 1)
+        actions = page.blocks[0].actions
         self.assertEqual(len(actions), 2)
         self.assertEqual(actions[1].duration, dt.timedelta(seconds=duration))
 
@@ -842,8 +906,8 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     page = config.pages[0]
     self.assertEqual(page.label, "cnn load")
     self.assertEqual(page.url, "https://edition.cnn.com/")
-    self.assertEqual(len(page.action_blocks), 1)
-    self.assertGreater(len(page.action_blocks[0].actions), 1)
+    self.assertEqual(len(page.blocks), 1)
+    self.assertGreater(len(page.blocks[0].actions), 1)
 
   def test_basic_config_from_file(self):
     config_path = pathlib.Path("devtools.config.json")

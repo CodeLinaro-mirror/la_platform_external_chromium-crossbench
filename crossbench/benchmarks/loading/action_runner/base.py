@@ -65,8 +65,8 @@ class ActionRunner:
       raise RuntimeError("info_stack can not be called before run_blocks")
     return self._info_stack
 
-  def run_blocks(self, run: Run, action_blocks: Iterable[ActionBlock]) -> None:
-    for block in action_blocks:
+  def run_blocks(self, run: Run, blocks: Iterable[ActionBlock]) -> None:
+    for block in blocks:
       self.run_block(run, block)
 
   def run_block(self, run, block: ActionBlock) -> None:
@@ -74,7 +74,7 @@ class ActionRunner:
     # TODO: Instead maybe just pass context down.
     # Or pass unique path to every action __init__
     with exception.annotate(f"Running block {block_index}: {block.label}"):
-      for action_index, action in enumerate(block.actions, start=1):
+      for action_index, action in enumerate(block, start=1):
         self._info_stack = (f"block_{block_index}", f"action_{action_index}")
         action.run_with(run, self)
 
@@ -187,15 +187,14 @@ class ActionRunner:
 
   def run_interactive_page(self, run: Run, page: InteractivePage):
     try:
-      self.run_blocks(run, page.action_blocks)
+      self.run_blocks(run, page.blocks)
     except Exception:
       page.failure_screenshot(run)
       raise
 
-  def run_login(self, run: Run, page: InteractivePage,
-                login_block: ActionBlock):
+  def run_login(self, run: Run, page: InteractivePage, login: ActionBlock):
     try:
-      self.run_block(run, login_block)
+      self.run_block(run, login)
     except Exception:
       page.failure_screenshot(run, "login-failure")
       raise
