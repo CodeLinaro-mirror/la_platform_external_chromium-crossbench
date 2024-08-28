@@ -10,15 +10,17 @@ import json
 import pathlib
 import unittest
 from typing import Any
+from urllib import parse as urlparse
 
 from crossbench.cli_helper import (
     Duration, parse_bool, parse_dict, parse_dir_path, parse_existing_file_path,
-    parse_float, parse_hjson_file_path, parse_httpx_url_str, parse_inline_hjson,
-    parse_int, parse_json_file, parse_json_file_path, parse_non_empty_dict,
-    parse_non_empty_dir_path, parse_non_empty_file_path,
-    parse_non_empty_sequence, parse_non_empty_str, parse_path, parse_port,
-    parse_positive_int, parse_positive_zero_float, parse_positive_zero_int,
-    parse_sequence, parse_sh_cmd, parse_str, parse_unique_sequence)
+    parse_float, parse_fuzzy_url, parse_fuzzy_url_str, parse_hjson_file_path,
+    parse_httpx_url_str, parse_inline_hjson, parse_int, parse_json_file,
+    parse_json_file_path, parse_non_empty_dict, parse_non_empty_dir_path,
+    parse_non_empty_file_path, parse_non_empty_sequence, parse_non_empty_str,
+    parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
+    parse_positive_zero_int, parse_sequence, parse_sh_cmd, parse_str,
+    parse_unique_sequence, parse_url, parse_url_str)
 from tests import test_helper
 from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
 
@@ -443,6 +445,114 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           parse_non_empty_sequence(invalid)
 
+  def test_parse_fuzzy_url(self):
+    expected = (
+        ("/foo/bar", "file:///foo/bar"),
+        ("C:/foo/bar", "file://C:/foo/bar"),
+        ("1234.com", "https://1234.com"),
+        ("http://1234.com", "http://1234.com"),
+        ("test.com", "https://test.com"),
+        ("test.com/", "https://test.com/"),
+        ("test.com/1234", "https://test.com/1234"),
+        ("test.com/bar", "https://test.com/bar"),
+        ("test.com/bar?x=1", "https://test.com/bar?x=1"),
+        ("test.com:1234", "https://test.com:1234"),
+        ("test.com:1234/", "https://test.com:1234/"),
+        ("test.com:1234/56", "https://test.com:1234/56"),
+        ("test.com:1234/56/", "https://test.com:1234/56/"),
+        ("test.com:1234/bar", "https://test.com:1234/bar"),
+        ("test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
+        ("localhost:8123", "https://localhost:8123"),
+        ("localhost:8123/", "https://localhost:8123/"),
+        ("localhost:8123/77", "https://localhost:8123/77"),
+        ("localhost:8123/77/", "https://localhost:8123/77/"),
+        ("localhost:8123/bar", "https://localhost:8123/bar"),
+        ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+    )
+    for url, result in expected:
+      with self.subTest(url=url):
+        self.assertEqual(parse_fuzzy_url_str(url), result)
+        parsed = parse_fuzzy_url(url)
+        self.assertEqual(urlparse.urlunparse(parsed), result)
+
+  def test_parse_fuzzy_url_default_scheme(self):
+    expected = ("test.com", "test.com/", "test.com/bar", "test.com/bar?x=1",
+                "test.com:1234", "test.com:1234/", "test.com:1234/bar",
+                "test.com:1234/bar?x=1", "localhost:8123", "localhost:8123/",
+                "localhost:8123/bar", "localhost:8123/bar?x1")
+    for url in expected:
+      with self.subTest(url=url):
+        result_default = f"https://{url}"
+        self.assertEqual(parse_fuzzy_url_str(url), result_default)
+        parsed = parse_fuzzy_url(url)
+        self.assertEqual(urlparse.urlunparse(parsed), result_default)
+        result_custom = f"ftp://{url}"
+        self.assertEqual(
+            parse_fuzzy_url_str(url, default_scheme="ftp"), result_custom)
+        parsed = parse_fuzzy_url(url, default_scheme="ftp")
+        self.assertEqual(urlparse.urlunparse(parsed), result_custom)
+
+  def test_parse_url(self):
+    expected = (
+        ("file:///foo/bar", "file:///foo/bar"),
+        ("about:blank", "about:blank"),
+        ("http://test.com/bar", "http://test.com/bar"),
+        ("https://test.com/bar", "https://test.com/bar"),
+        ("http://test.com", "http://test.com"),
+        ("https://test.com/", "https://test.com/"),
+        ("http://test.com/bar", "http://test.com/bar"),
+        ("https://test.com/bar?x=1", "https://test.com/bar?x=1"),
+        ("http://test.com:1234", "http://test.com:1234"),
+        ("https://test.com:1234/", "https://test.com:1234/"),
+        ("http://test.com:1234/bar", "http://test.com:1234/bar"),
+        ("https://test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
+        ("http://localhost:8123", "http://localhost:8123"),
+        ("https://localhost:8123/", "https://localhost:8123/"),
+        ("http://localhost:8123/bar", "http://localhost:8123/bar"),
+        ("https://localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+    )
+    for url, result in expected:
+      with self.subTest(url=url):
+        self.assertEqual(parse_url_str(url), result)
+        self.assertEqual(parse_fuzzy_url_str(url), result)
+        parsed = parse_url(url)
+        self.assertEqual(urlparse.urlunparse(parsed), result)
+        parsed_fuzzy = parse_fuzzy_url(url)
+        self.assertEqual(urlparse.urlunparse(parsed_fuzzy), result)
+
+  def test_parse_url_invalid(self):
+    for invalid in (None, "", {}, "http:// foo .com/bar", "htt p://foo.com",
+                    "http://foo.com:-123/bar"):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = parse_url(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = parse_url_str(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = parse_httpx_url_str(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = parse_fuzzy_url_str(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = parse_fuzzy_url(invalid)
+
+  def test_parse_httpx_url_str_invalid(self):
+    for invalid in ("ftp://foo.com:123/bar", "ssh://test.com"):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = parse_httpx_url_str(invalid)
+
+  def test_parse_url_scheme(self):
+    url = "ftp://foo.com"
+    parsed = parse_url(url)
+    self.assertEqual(urlparse.urlunparse(parsed), url)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = parse_url(url, schemes=("https",))
+    parsed = parse_url(
+        url, schemes=(
+            "https",
+            "ftp",
+        ))
+    self.assertEqual(urlparse.urlunparse(parsed), url)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

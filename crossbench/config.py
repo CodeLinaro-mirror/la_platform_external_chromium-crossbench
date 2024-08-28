@@ -362,10 +362,6 @@ class ConfigEnum(compat.StrEnumWithHelp):
     return cli_helper.parse_enum(cls.__name__, cls, value, cls)
 
 
-_PATH_PREFIX = re.compile(r"("
-                          r"((\.\.?|~)?/)|"
-                          r"[a-zA-Z]:(\\|/)"
-                          r")[^\\/]")
 ConfigObjectT = TypeVar("ConfigObjectT", bound="ConfigObject")
 
 class ConfigObject(abc.ABC):
@@ -379,7 +375,7 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
-    return _PATH_PREFIX.match(value) is not None
+    return cli_helper.PATH_PREFIX.match(value) is not None
 
   def __post_init__(self) -> None:
     self.validate()

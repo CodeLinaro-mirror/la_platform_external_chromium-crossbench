@@ -246,7 +246,8 @@ class GetAction(BaseDurationAction):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument("url", type=cli_helper.parse_url_str, required=True)
+    parser.add_argument(
+        "url", type=cli_helper.parse_fuzzy_url_str, required=True)
     parser.add_argument(
         "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
     parser.add_argument(

@@ -16,7 +16,7 @@ import shlex
 import sys
 from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional,
                     Sequence, Type, TypeVar, Union, cast)
-from urllib.parse import urlparse
+from urllib import parse as urlparse
 
 import colorama
 import hjson
@@ -376,26 +376,93 @@ def parse_non_empty_str(value: Any, name: str = "value") -> str:
   return value
 
 
-def parse_url_str(value: str) -> str:
-  # TODO: improve
-  url_str: str = parse_non_empty_str(value, "url")
-  return url_str
-
-
-def parse_httpx_url_str(value: Any) -> str:
-  try:
-    url_str: str = parse_url_str(value)
-    parsed = urlparse(url_str)
-    if parsed.scheme not in ("http", "https"):
-      raise argparse.ArgumentTypeError(
-          "Expected 'http' or 'https' scheme, "
-          f"but got '{parsed.scheme}' for url {repr(value)}")
-    if not parsed.hostname:
-      raise argparse.ArgumentTypeError(
-          f"Missing hostname in url: {repr(value)}")
-  except ValueError as e:
-    raise argparse.ArgumentTypeError(f"Invalid URL: {repr(value)}, {e}") from e
+def parse_url_str(value: str,
+                  name: str = "url",
+                  schemes: Optional[Sequence[str]] = None) -> str:
+  parse_url(value, name, schemes)
   return value
+
+
+def parse_httpx_url_str(value: Any, name: str = "url") -> str:
+  parse_url(value, name, schemes=("http", "https"))
+  return value
+
+
+def parse_base_url(value: str, name: str = "url") -> urlparse.ParseResult:
+  url_str: str = parse_non_empty_str(value, name)
+  try:
+    return urlparse.urlparse(url_str)
+  except ValueError as e:
+    raise argparse.ArgumentTypeError(
+        f"Invalid {name}: {repr(value)}, {e}") from e
+
+
+PATH_PREFIX = re.compile(r"^(?:"
+                         r"(?:\.\.?|~)?|"
+                         r"[a-zA-Z]:"
+                         r")(\\|/)[^\\/]")
+PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
+
+
+def parse_fuzzy_url_str(value: str,
+                        name: str = "url",
+                        schemes: Sequence[str] = ("http", "https", "about",
+                                                  "file"),
+                        default_scheme: str = "https") -> str:
+  parsed = parse_fuzzy_url(value, name, schemes, default_scheme)
+  return urlparse.urlunparse(parsed)
+
+
+def parse_fuzzy_url(value: str,
+                    name: str = "url",
+                    schemes: Sequence[str] = ("http", "https", "about", "file"),
+                    default_scheme: str = "https") -> urlparse.ParseResult:
+  assert default_scheme, "missing default scheme value"
+  value = parse_non_empty_str(value, name)
+  if PATH_PREFIX.match(value):
+    value = f"file://{value}"
+  else:
+    parsed = parse_base_url(value)
+    if not parsed.scheme:
+      value = f"{default_scheme}://{value}"
+    # Check if this was a url without a scheme but with ports, which gets
+    # "wrongly" parsed and the host ends up in result.scheme and port and path
+    # are merged into result.path.
+    if parsed.scheme not in schemes and not parsed.netloc:
+      if PORT_URL_PATH_RE.match(parsed.path):
+        # foo.com:8080/test => https://foo.com:8080/test
+        value = f"{default_scheme}://{value}"
+    schemes = tuple(schemes) + (default_scheme,)
+  return parse_url(value, name, schemes)
+
+
+def parse_url(value: str,
+              name: str = "url",
+              schemes: Optional[Sequence[str]] = None) -> urlparse.ParseResult:
+  parsed = parse_base_url(value)
+  try:
+    scheme = parsed.scheme
+    if schemes and scheme not in schemes:
+      schemes_str = ",".join(map(repr, schemes))
+      raise argparse.ArgumentTypeError(
+          f"Invalid {name}: Expected scheme to be one of {schemes_str}, "
+          f"but got {repr(parsed.scheme)} for url {repr(value)}")
+    if port := parsed.port:
+      _ = parse_port(port, f"{name} port")
+    if scheme in ("file", "about"):
+      return parsed
+    hostname = parsed.hostname
+    if not hostname:
+      raise argparse.ArgumentTypeError(
+          f"Missing hostname in {name}: {repr(value)}")
+    if " " in hostname:
+      raise argparse.ArgumentTypeError(
+          f"Hostname in {name} contains invalid space: {repr(value)}")
+  except ValueError as e:
+    # Some ParseResult properties trigger errors, wrap all of them
+    raise argparse.ArgumentTypeError(
+        f"Invalid {name}: {repr(value)}, {e}") from e
+  return parsed
 
 
 def parse_bool(value: Any, name: str = "value") -> bool:
