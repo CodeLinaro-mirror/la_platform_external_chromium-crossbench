@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import abc
+import datetime as dt
 import json
 import pathlib
 from typing import Any, List, Optional
@@ -10,10 +11,12 @@ from typing import Any, List, Optional
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.env import HostEnvironment
+from crossbench.exception import Annotator
 from crossbench.path import safe_filename
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
+from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
@@ -40,6 +43,7 @@ class MockRun:
     self.browser_session = browser_session
     self.browser = browser_session.browser
     self.browser_platform = self.browser.platform
+    self._exceptions = Annotator(False)
     self.name = name
     self.probes = []
     self.is_warmup = False
@@ -63,6 +67,19 @@ class MockRun:
     self.is_dry_run = is_dry_run
     assert not self.did_setup
     self.did_setup = True
+
+  def actions(self,
+              name: str,
+              verbose: bool = False,
+              measure: bool = True) -> Actions:
+    return Actions(name, self, verbose=verbose, measure=measure)
+
+  @property
+  def exceptions(self) -> Annotator:
+    return self._exceptions
+
+  def max_end_datetime(self) -> dt.datetime:
+    return dt.datetime.max
 
   def run(self, is_dry_run: bool) -> None:
     assert self.is_dry_run is is_dry_run
@@ -97,6 +114,11 @@ class MockRunner:
 
   def __init__(self) -> None:
     self.runs = tuple()
+    self._timing = Timing()
+
+  @property
+  def timing(self) -> Timing:
+    return self._timing
 
 
 class MockNetwork:

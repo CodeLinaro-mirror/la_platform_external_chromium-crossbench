@@ -124,6 +124,16 @@ class MockPlatformMixin:
   def foreground_process(self):
     return None
 
+  def search_platform_binary(
+      self,
+      name: str,
+      macos: Sequence[str] = (),
+      win: Sequence[str] = (),
+      linux: Sequence[str] = ()
+  ) -> pth.RemotePath:
+    del macos, win, linux
+    return self.path(f"/usr/bin/{name}")
+
   def sh_stdout(self,
                 *args: Union[str, pathlib.Path],
                 shell: bool = False,
