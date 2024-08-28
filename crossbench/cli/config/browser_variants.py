@@ -30,6 +30,7 @@ from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
+from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
 
 if TYPE_CHECKING:
@@ -181,15 +182,15 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
         return cls.parse_str(flag_name)
       data = (data_str,)
     assert isinstance(data, (list, tuple)), "Invalid flag variant type"
-    flags: OrderedSet[Optional[str]] = OrderedSet()
+    flags: OrderedSet[Optional[Flags]] = OrderedSet()
     for variant in data:
       if variant is None:
         flag = None
       elif not variant.strip():
-        flag = flag_name
+        flag = Flags((flag_name,))
       else:
         cls._validate_variant_flag(flag_name, variant)
-        flag = f"{flag_name}={variant}"
+        flag = Flags({flag_name: variant})
       if flag in flags:
         raise ConfigError("Same flag variant was specified more than once: "
                           f"{repr(flag)} for entry {repr(flag_name)}")

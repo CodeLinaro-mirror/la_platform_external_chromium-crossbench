@@ -689,6 +689,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertEqual(browser.app_path,
                        mock_browser.MockChromeStable.mock_app_path())
       self.assertEqual(browser.version, "101.22.333.44")
+      self.assertEqual(browser.flags["--foo"], "bar")
 
   def test_inline_load_safari(self):
     if not plt.PLATFORM.is_macos:
@@ -708,7 +709,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "flags": {
                 "group1": {
                     "--foo": [None, "", "v1"],
-                    "--bar": [None, "", "v1"],
+                    "--bar": [None, "", "w1"],
                     "--always_1": "true",
                     "--always_2": "true",
                     "--always_3": "true",
@@ -728,6 +729,85 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       assert isinstance(browser, mock_browser.MockChromeStable)
       self.assertEqual(browser.app_path,
                        mock_browser.MockChromeStable.mock_app_path())
+      expected_flags = (
+          "--always_1=true --always_2=true --always_3=true",
+          "--bar --always_1=true --always_2=true --always_3=true",
+          "--bar=w1 --always_1=true --always_2=true --always_3=true",
+          "--foo --always_1=true --always_2=true --always_3=true",
+          "--foo --bar --always_1=true --always_2=true --always_3=true",
+          "--foo --bar=w1 --always_1=true --always_2=true --always_3=true",
+          "--foo=v1 --always_1=true --always_2=true --always_3=true",
+          "--foo=v1 --bar --always_1=true --always_2=true --always_3=true",
+          "--foo=v1 --bar=w1 --always_1=true --always_2=true --always_3=true",
+      )
+    self.verify_variant_flags(config.variants, expected_flags)
+
+  def verify_variant_flags(self, variants, expected_flags):
+    self.assertEqual(len(variants), len(expected_flags))
+    for index, browser in enumerate(variants):
+      self.assertEqual(
+          str(browser.flags), expected_flags[index],
+          f"Unexpected flags for variant[{index}]")
+
+  def test_flag_combination_js_flags_with_fixed(self):
+    config = BrowserVariantsConfig(
+        {
+            "flags": {
+                "group1": {
+                    "--js-flags": [
+                        None, "--max-opt=1,--trace-ic", "--max-opt=2 --log-all"
+                    ],
+                },
+                "group2": {
+                    "default": "--bar=v1 --foo=w2"
+                }
+            },
+            "browsers": {
+                "chrome-stable": {
+                    "path": "chrome-stable",
+                    "flags": ["group1", "group2"]
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args)
+    self.assertEqual(len(config.variants), 3)
+    for browser in config.variants:
+      assert isinstance(browser, mock_browser.MockChromeStable)
+      self.assertEqual(browser.app_path,
+                       mock_browser.MockChromeStable.mock_app_path())
+    expected_flags = (
+        "--bar=v1 --foo=w2",
+        "--bar=v1 --foo=w2 --js-flags=--max-opt=1,--trace-ic",
+        "--bar=v1 --foo=w2 --js-flags=--max-opt=2,--log-all",
+    )
+    self.verify_variant_flags(config.variants, expected_flags)
+
+  def test_flag_combination_js_flags_combinations_invalid(self):
+    with self.assertRaises(ConfigError) as cm:
+      _ = BrowserVariantsConfig(
+          {
+              "flags": {
+                  "group1": {
+                      "--js-flags": [
+                          None, "--max-opt=2,--trace-ic",
+                          "--max-opt=3 --log-all"
+                      ],
+                  },
+                  "group2": {
+                      "default": "--js-flags=--no-sparkplug"
+                  }
+              },
+              "browsers": {
+                  "chrome-stable": {
+                      "path": "chrome-stable",
+                      "flags": ["group1", "group2"]
+                  }
+              }
+          },
+          browser_lookup_override=self.browser_lookup,
+          args=self.mock_args)
+    self.assertIn("--js-flags", str(cm.exception))
 
   def test_flag_group_combination(self):
     config = BrowserVariantsConfig(
@@ -737,10 +817,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                     "--foo": [None, "", "v1"],
                 },
                 "group2": {
-                    "--bar": [None, "", "v1"],
+                    "--bar": [None, "", "w1"],
                 },
                 "group3": {
-                    "--other": ["v1", "v2"],
+                    "--other": ["x1", "x2"],
                 }
             },
             "browsers": {
@@ -753,6 +833,27 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args)
     self.assertEqual(len(config.variants), 3 * 3 * 2)
+    expected_flags = (
+        "--other=x1",
+        "--other=x2",
+        "--bar --other=x1",
+        "--bar --other=x2",
+        "--bar=w1 --other=x1",
+        "--bar=w1 --other=x2",
+        "--foo --other=x1",
+        "--foo --other=x2",
+        "--foo --bar --other=x1",
+        "--foo --bar --other=x2",
+        "--foo --bar=w1 --other=x1",
+        "--foo --bar=w1 --other=x2",
+        "--foo=v1 --other=x1",
+        "--foo=v1 --other=x2",
+        "--foo=v1 --bar --other=x1",
+        "--foo=v1 --bar --other=x2",
+        "--foo=v1 --bar=w1 --other=x1",
+        "--foo=v1 --bar=w1 --other=x2",
+    )
+    self.verify_variant_flags(config.variants, expected_flags)
 
   def test_from_cli_args_browser_config(self):
     if self.platform.is_win:
