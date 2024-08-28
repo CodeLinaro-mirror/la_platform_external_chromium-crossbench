@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import re
-from typing import Optional
+from typing import List, Optional
 
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.base import \
@@ -243,12 +243,14 @@ class AndroidInputActionRunner(BasicActionRunner):
             raise ElementNotFoundError(action.selector)
           return
 
-      mouse_str: str = ""
-      if use_mouse:
-        mouse_str = "mouse"
+      cmd: List[str] = ["input"]
 
-      run.browser.platform.sh("input", mouse_str, "tap", str(coordinates.x),
-                              str(coordinates.y))
+      if use_mouse:
+        cmd.append("mouse")
+
+      cmd.extend(["tap", str(coordinates.x), str(coordinates.y)])
+
+      run.browser.platform.sh(*cmd)
 
   def _swipe_impl(self, run: Run, start_x: int, start_y: int, end_x: int,
                   end_y: int, duration: dt.timedelta) -> None:

@@ -237,7 +237,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
   def test_click_touch_coordinates(self):
     click_action = ClickAction(InputSource.TOUCH, x=100, y=200)
 
-    self.platform.expect_sh("input", "", "tap", "100", "200")
+    self.platform.expect_sh("input", "tap", "100", "200")
 
     self.run_action(click_action)
 
@@ -318,7 +318,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
         app_bounds=DisplayRectangle(0, 100, 0, 100),
         element_bounds=DisplayRectangle(20, 30, 40, 50))
 
-    self.platform.expect_sh("input", "", "tap", "25", "45")
+    self.platform.expect_sh("input", "tap", "25", "45")
 
     self.run_action(click_action)
 
