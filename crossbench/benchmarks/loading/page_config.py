@@ -10,7 +10,7 @@ import dataclasses
 import datetime as dt
 import logging
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Tuple, Type)
+                    Tuple, Type, cast)
 from urllib.parse import urlparse
 
 from crossbench import cli_helper, exception
@@ -34,15 +34,6 @@ class ActionBlock(ConfigObject):
   index: int = 0
   actions: Tuple[Action, ...] = tuple()
 
-  def __post_init__(self):
-    # TODO: enable validating action indices
-    # for index, action in enumerate(self.actions):
-    #   if index != action.index:
-    #     raise ValueError(
-    #         f"action[{index}].index should be {index}, but got {action.index}")
-    if not self.actions:
-      raise argparse.ArgumentTypeError("Invalid block without actions")
-
   @classmethod
   def parse_str(cls: Type[ActionBlock], value: str) -> ActionBlock:
     raise NotImplementedError("Cannot create action blocks from strings")
@@ -57,8 +48,9 @@ class ActionBlock(ConfigObject):
   def parse_dict(  # pylint: disable=arguments-differ
       cls: Type,
       config: Dict[str, Any],
+      label: Optional[str] = None,
       index: Optional[int] = None):
-    return cls.config_parser().parse(config, index=index)
+    return cls.config_parser().parse(config, label=label, index=index)
 
   @classmethod
   def config_parser(cls: Type[ActionBlock]) -> ConfigParser[ActionBlock]:
@@ -74,14 +66,22 @@ class ActionBlock(ConfigObject):
   @classmethod
   def parse_sequence(cls: Type[ActionBlock],
                      config: Sequence[Dict[str, Any]],
+                     label: Optional[str] = None,
                      index: Optional[int] = None) -> ActionBlock:
     with exception.annotate_argparsing(
         "Parsing default block action sequence:"):
-      return cls.parse_dict({"actions": config}, index=index)
+      return cls.parse_dict({"actions": config}, label=label, index=index)
 
   def validate(self) -> None:
     super().validate()
     cli_helper.parse_non_empty_sequence(self.actions, "actions")
+    # TODO: enable validating action indices
+    # for index, action in enumerate(self.actions):
+    #   if index != action.index:
+    #     raise ValueError(
+    #         f"action[{index}].index should be {index}, but got {action.index}")
+    if not self.actions:
+      raise argparse.ArgumentTypeError("Invalid block without actions")
 
   def to_json(self) -> Dict[str, Any]:
     return {
@@ -97,21 +97,28 @@ class ActionBlock(ConfigObject):
         total_duration += duration
     return total_duration
 
+  @property
+  def is_login(self) -> bool:
+    return False
 
+
+@dataclasses.dataclass(frozen=True)
 class LoginBlock(ActionBlock):
   LABEL: Final[str] = "login"
+
+  def validate(self):
+    super().validate()
+    assert self.index == 0, "Login block has to be the first"
+
+  @property
+  def is_login(self) -> bool:
+    return True
 
 
 @dataclasses.dataclass(frozen=True)
 class ActionBlockListConfig(ConfigObject):
   blocks: Tuple[ActionBlock, ...] = tuple()
   login: Optional[LoginBlock] = None
-
-  def __post_init__(self):
-    for index, block in enumerate(self.blocks):
-      if index != block.index:
-        raise ValueError(
-            f"blocks[{index}].index should be {index}, but got {block.index}")
 
   @classmethod
   def parse_other(cls: Type[ActionBlockListConfig],
@@ -137,12 +144,15 @@ class ActionBlockListConfig(ConfigObject):
     if cls._is_default_block_actions(config):
       config = [{"actions": config}]
 
-    blocks: List[ActionBlock] = []
-    for index, block_config in enumerate(config):
-      block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
-      block = ActionBlock.parse_dict(block_config, index=index)
-      blocks.append(block)
-    return cls(tuple(blocks))
+    def block_config_data_gen():
+      for index, block_config in enumerate(config):
+        with exception.annotate_argparsing(
+            f"Parsing action block  ...[{index}]"):
+          block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
+          label = block_config.get("label")
+          yield index, label, block_config
+
+    return cls._parse_blocks(block_config_data_gen())
 
   @classmethod
   def _is_default_block_actions(cls, config: Sequence[Dict[str, Any]]) -> bool:
@@ -152,27 +162,46 @@ class ActionBlockListConfig(ConfigObject):
   def parse_dict(cls: Type[ActionBlockListConfig],
                  config: Dict[str, Any]) -> ActionBlockListConfig:
     config = cli_helper.parse_non_empty_dict(config, "blocks")
-    blocks: List[ActionBlock] = []
-    for index, (label, block_data) in enumerate(config.items()):
-      with exception.annotate_argparsing(f"Parsing action block  ...[{label}]"):
-        if label == LoginBlock.LABEL:
-          block: ActionBlock = LoginBlock.parse(block_data, index=index)
-        else:
-          block = cls._parse_action_block(index, label, block_data)
-        blocks.append(block)
-    return cls(tuple(blocks))
+
+    def block_config_data_gen():
+      for index, (label, block_data) in enumerate(config.items()):
+        with exception.annotate_argparsing(
+            f"Parsing action block  ...[{label}]"):
+          yield index, label, block_data
+
+    return cls._parse_blocks(block_config_data_gen())
 
   @classmethod
-  def _parse_action_block(cls, index: int, label: str,
-                          block_data: Any) -> ActionBlock:
-    if isinstance(block_data, (list, tuple)):
-      block_data = {"actions": block_data}
-    if inner_label := block_data.get("label"):
-      raise ConfigError(
-          "ActionBlock inside a dict cannot have a 'label' property, "
-          f"but got label={repr(inner_label)}")
-    block_data["label"] = label
-    return ActionBlock.parse(block_data, index=index)
+  def _parse_blocks(cls, block_config_data_gen) -> ActionBlockListConfig:
+    blocks: List[ActionBlock] = []
+    login: Optional[LoginBlock] = None
+    for index, label, block_data in block_config_data_gen:
+      block, login_block = cls._parse_action_block(index, label, block_data)
+      if block:
+        blocks.append(block)
+      if login_block:
+        assert not login, "Can only get one login block"
+        login = login_block
+    return cls(tuple(blocks), login=login)
+
+  @classmethod
+  def _parse_action_block(
+      cls, index: int, label: str,
+      block_data: Any) -> Tuple[Optional[ActionBlock], Optional[LoginBlock]]:
+    if isinstance(block_data, dict):
+      # Early warning for better usability.
+      if inner_label := block_data.get("label"):
+        if inner_label != label:
+          raise ConfigError(
+              "ActionBlock inside a dict cannot have a 'label' property, "
+              f"but got label={repr(inner_label)}")
+    if label == LoginBlock.LABEL:
+      block = None
+      login = LoginBlock.parse(block_data, label=label, index=index)
+    else:
+      block = ActionBlock.parse(block_data, label=label, index=index)
+      login = None
+    return block, login
 
   @classmethod
   def parse_str(cls, value: str) -> ActionBlockListConfig:
@@ -180,7 +209,17 @@ class ActionBlockListConfig(ConfigObject):
 
   def validate(self) -> None:
     super().validate()
+    if not self.blocks:
+      raise ValueError("Missing action blocks.")
     cli_helper.parse_non_empty_sequence(self.blocks, "blocks")
+    start_index = 0
+    if self.login:
+      start_index = 1
+    for index, block in enumerate(self.blocks, start=start_index):
+      if index != block.index:
+        raise ValueError(
+            f"blocks[{index}].index should be {index}, but got {block.index}")
+
 
 
 @dataclasses.dataclass(frozen=True)
@@ -190,6 +229,7 @@ class PageConfig(ConfigObject):
   duration: dt.timedelta = dt.timedelta()
   playback: Optional[PlaybackController] = None
   action_blocks: Tuple[ActionBlock, ...] = tuple()
+  login_block: Optional[LoginBlock] = None
 
   @classmethod
   def parse_str(cls: Type[PageConfig], value: str) -> PageConfig:
@@ -242,8 +282,8 @@ class PagesConfig(ConfigObject):
   pages: Tuple[PageConfig, ...] = ()
   logins: Tuple[SecretType, ...] = ()
 
-  def __post_init__(self) -> None:
-    super().__post_init__()
+  def validate(self) -> None:
+    super().validate()
     for index, page in enumerate(self.pages):
       assert isinstance(page, PageConfig), (
           f"pages[{index}] is not a PageConfig but {type(page).__name__}")
@@ -308,7 +348,7 @@ class PagesConfig(ConfigObject):
     Behaviour to be aware
 
     There's no default Actions. In other words, if there's no Actions
-    for a scenario this specific scenario will be ignored since there's
+    for a story this specific scenario will be ignored since there's
     nothing to do.
 
     If one would want to simply navigate to a site it is important to at
@@ -320,7 +360,7 @@ class PagesConfig(ConfigObject):
     pages = []
     for scenario_name, actions in data.items():
       with exception.annotate_argparsing(
-          f"Parsing scenario ...['{scenario_name}']"):
+          f"Parsing story ...['{scenario_name}']"):
         actions = cls._parse_actions(actions, scenario_name)
         # Use default action block
         action_blocks = (ActionBlock(actions=actions),)
@@ -337,7 +377,7 @@ class PagesConfig(ConfigObject):
   def _parse_actions(cls, actions: List[Dict[str, Any]],
                      scenario_name: str) -> Tuple[Action, ...]:
     if not actions:
-      raise ValueError(f"Scenario '{scenario_name}' has no action")
+      raise ValueError(f"Story'{scenario_name}' has no action")
     if not isinstance(actions, list):
       raise ValueError(f"Expected list, got={type(actions)}, '{actions}'")
     actions_list: List[Action] = []

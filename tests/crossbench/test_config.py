@@ -329,6 +329,25 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       }, array=123, integer=[])
     self.assertIn("array", str(cm.exception))
 
+  def test_load_dict_extra_kwargs_duplicate_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      CustomConfigObject.parse({
+          "name": "foo",
+      }, name="bar")
+    self.assertIn("name", str(cm.exception))
+
+  def test_load_dict_extra_kwargs_duplicate(self):
+    config = CustomConfigObject.parse({
+        "name": "foo",
+    }, name="foo", integer=123)
+    self.assertEqual(config.name, "foo")
+    self.assertEqual(config.integer, 123)
+    config = CustomConfigObject.parse({
+        "name": "foo",
+    }, name=None, integer=999)
+    self.assertEqual(config.name, "foo")
+    self.assertEqual(config.integer, 999)
+
   def test_load_dict_unused(self):
     config_data = {"name": "foo", "unused_data": 666}
     config = CustomConfigObject.parse(config_data)

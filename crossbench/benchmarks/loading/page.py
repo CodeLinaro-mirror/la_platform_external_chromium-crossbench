@@ -20,7 +20,7 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
-  from crossbench.benchmarks.loading.page_config import ActionBlock
+  from crossbench.benchmarks.loading.page_config import ActionBlock, LoginBlock
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -158,15 +158,20 @@ class CombinedPage(Page):
 class InteractivePage(Page):
 
   def __init__(self,
-               action_blocks: Tuple[ActionBlock, ...],
                name: str,
+               action_blocks: Tuple[ActionBlock, ...],
+               login_block: Optional[LoginBlock] = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta()):
+    assert name, "missing name"
     self._name: str = name
     assert isinstance(action_blocks, tuple)
     self._action_blocks: Tuple[ActionBlock, ...] = action_blocks
     assert self._action_blocks, "Must have at least 1 valid action"
+    assert not any(block.is_login for block in action_blocks), (
+        "No login blocks allowed as normal action block")
+    self._login_block = login_block
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration)
 
@@ -174,14 +179,23 @@ class InteractivePage(Page):
   def action_blocks(self) -> Tuple[ActionBlock, ...]:
     return self._action_blocks
 
-  def failure_screenshot(self, run: Run) -> None:
+  @property
+  def login_block(self) -> Optional[ActionBlock]:
+    return self._login_block
+
+  def failure_screenshot(self, run: Run, message: str = "failure") -> None:
     action_runner = get_action_runner(run)
     try:
-      action_runner.screenshot_impl(run, "failure")
+      action_runner.screenshot_impl(run, message)
     except ActionNotImplementedError:
       logging.debug("Skipping failure screenshot, action not implemented")
     except Exception as e:  # pylint: disable=broad-except
       logging.error("Failed to take a failure screenshot: %s", str(e))
+
+  def setup(self, run: Run) -> None:
+    if login_block := self.login_block:
+      action_runner = get_action_runner(run)
+      action_runner.run_login(run, self, login_block)
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)

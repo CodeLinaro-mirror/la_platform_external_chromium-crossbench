@@ -596,7 +596,9 @@ class ConfigParser(Generic[ConfigResultObjectT]):
                            **extra_kwargs) -> Dict[str, Any]:
     config_data = dict(config_data)
     for extra_key, extra_data in extra_kwargs.items():
-      if extra_key in config_data:
+      if extra_data is None:
+        continue
+      if extra_key in config_data and extra_data is not config_data[extra_key]:
         raise ValueError(
             f"Extra config data {repr(extra_key)}={repr(extra_data)} "
             f"was already present in config_data[..]={repr(config_data[extra_key])}"

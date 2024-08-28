@@ -1316,6 +1316,81 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       ActionBlockListConfig.parse({"block 1": {"actions": []}})
     self.assertIn("actions", str(cm.exception))
 
+  def test_parse_login_blocks(self):
+    config = ActionBlockListConfig.parse({
+        "login": [{
+            "action": "get",
+            "url": "http://test.com/login"
+        }],
+        "block 0": [{
+            "action": "get",
+            "url": "http://test.com/1"
+        }]
+    })
+    login = config.login
+    self.assertIsNotNone(login)
+    self.assertEqual(login.label, "login")
+    self.assertEqual(login.index, 0)
+    self.assertEqual(len(login.actions), 1)
+
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 0")
+    self.assertEqual(block.index, 1)
+    self.assertEqual(len(block.actions), 1)
+
+  def test_parse_duplicate_login_block(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      _ = ActionBlockListConfig.parse([{
+          "label": "login",
+          "actions": [{
+              "action": "get",
+              "url": "http://test.com/login"
+          }]
+      }, {
+          "label": "login",
+          "actions": [{
+              "action": "get",
+              "url": "http://test.com/login"
+          }]
+      }])
+
+  def test_parse_single_login_block_action_list(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = ActionBlockListConfig.parse([{
+          "label": "login",
+          "actions": [{
+              "action": "get",
+              "url": "http://test.com/login"
+          }]
+      }])
+    self.assertIn("Missing action blocks", str(cm.exception))
+
+  def test_parse_login_block_with_label(self):
+    config = ActionBlockListConfig.parse([{
+        "label": "login",
+        "actions": [{
+            "action": "get",
+            "url": "http://test.com/login"
+        }]
+    }, {
+        "label": "block 1",
+        "actions": [{
+            "action": "get",
+            "url": "http://test.com/1"
+        }]
+    }])
+    login = config.login
+    self.assertIsNotNone(login)
+    self.assertEqual(login.label, "login")
+    self.assertEqual(login.index, 0)
+    self.assertEqual(len(login.actions), 1)
+
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(block.index, 1)
+    self.assertEqual(len(block.actions), 1)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

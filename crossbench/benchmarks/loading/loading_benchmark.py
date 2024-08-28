@@ -186,8 +186,8 @@ class LoadingPageFilter(StoryFilter[Page]):
     if not config.action_blocks:
       return LivePage(label, config.url, duration, playback, tabs,
                       args.about_blank_duration)
-    return InteractivePage(config.action_blocks, label, playback, tabs,
-                           args.about_blank_duration)
+    return InteractivePage(label, config.action_blocks, config.login_block,
+                           playback, tabs, args.about_blank_duration)
 
   def create_stories(self, separate: bool) -> Sequence[Page]:
     logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
