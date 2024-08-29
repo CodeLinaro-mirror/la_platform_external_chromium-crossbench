@@ -10,21 +10,21 @@ from typing import Optional, Tuple
 from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   ScrollAction, SwipeAction,
                                                   TextInputAction)
-from crossbench.benchmarks.loading.action_runner.android_input_action_runner \
-  import AndroidInputActionRunner, DisplayRectangle, Point, ViewportInfo
+from crossbench.benchmarks.loading.action_runner.android_input_action_runner import (
+    AndroidInputActionRunner, DisplayRectangle, Point, ViewportInfo)
 from crossbench.benchmarks.loading.action_runner.base import \
     InputSourceNotImplementedError
-from crossbench.benchmarks.loading.action_runner.element_not_found_error \
-  import ElementNotFoundError
+from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.browsers.settings import Settings
 from crossbench.runner.groups import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
-                                          CrossbenchFakeFsTestCase,
-                                          LinuxMockPlatform, MockAdb)
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
-from tests.crossbench.runner.helper import (MockRun, MockRunner)
+from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
+                                          LinuxMockPlatform, MockAdb)
+from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
 class ViewportInfoTestCase(unittest.TestCase):

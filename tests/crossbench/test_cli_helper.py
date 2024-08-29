@@ -22,7 +22,7 @@ from crossbench.cli_helper import (
     parse_positive_zero_int, parse_sequence, parse_sh_cmd, parse_str,
     parse_unique_sequence, parse_url, parse_url_str)
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class DurationTestCase(unittest.TestCase):

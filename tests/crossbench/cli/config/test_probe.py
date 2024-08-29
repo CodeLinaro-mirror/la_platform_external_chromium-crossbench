@@ -15,7 +15,7 @@ from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.types import JsonDict
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class TestProbeConfig(CrossbenchFakeFsTestCase):

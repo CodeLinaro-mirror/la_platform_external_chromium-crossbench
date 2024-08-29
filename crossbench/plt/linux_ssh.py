@@ -9,47 +9,31 @@ import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 
 from crossbench.plt.arch import MachineArch
-from crossbench.plt.base import CmdArg, CmdArgs, ListCmdArgs
-from crossbench.plt.linux import LinuxPlatform
+from crossbench.plt.linux import RemoteLinuxPlatform
+from crossbench.plt.ssh import SshPlatformMixin
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath, RemotePath
-  from crossbench.plt.base import Platform
+  from crossbench.plt.base import CmdArg, CmdArgs, ListCmdArgs, Platform
 
 
-class SshPlatform:
-  """TODO: use abstract base class"""
-
-  @property
-  def is_remote_ssh(self) -> bool:
-    return True
-
-
-class LinuxSshPlatform(SshPlatform, LinuxPlatform):
+class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
   def __init__(self, host_platform: Platform, host: str, port: int,
                ssh_port: int, ssh_user: str) -> None:
-    super().__init__()
+    super().__init__(host_platform)
     self._machine: Optional[MachineArch] = None
     self._system_details: Optional[Dict[str, Any]] = None
     self._cpu_details: Optional[Dict[str, Any]] = None
-    self._host_platform = host_platform
+    # TODO: move ssh-related code to SshPlatformMixin
     self._host = host
     self._port = port
     self._ssh_port = ssh_port
     self._ssh_user = ssh_user
 
   @property
-  def is_remote(self) -> bool:
-    return True
-
-  @property
   def name(self) -> str:
     return "linux_ssh"
-
-  @property
-  def host_platform(self) -> Platform:
-    return self._host_platform
 
   @property
   def host(self) -> str:

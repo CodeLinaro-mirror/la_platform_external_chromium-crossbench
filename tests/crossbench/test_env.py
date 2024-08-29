@@ -11,7 +11,7 @@ import hjson
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationError, ValidationMode)
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class HostEnvironmentConfigTestCase(unittest.TestCase):

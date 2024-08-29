@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
 
 from crossbench import path as pth
 from crossbench.plt.base import Environ, ListCmdArgs, Platform, SubprocessError
+from crossbench.plt.remote import RemotePlatformMixin
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -111,8 +112,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def path(self, path: pth.RemotePathLike) -> pth.RemotePath:
     if self.is_local:
-      return super().path(path)
-    return pth.RemotePath(path)
+      return pth.LocalPosixPath(path)
+    return pth.RemotePosixPath(path)
 
   def which(self, binary_name: pth.RemotePathLike) -> Optional[pth.RemotePath]:
     if self.is_local:
@@ -273,3 +274,7 @@ class RemotePosixEnviron(Environ):
 
   def __len__(self) -> int:
     return self._environ.__len__()
+
+
+class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
+  pass

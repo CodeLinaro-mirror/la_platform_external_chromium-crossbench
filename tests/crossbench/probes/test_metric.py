@@ -8,7 +8,7 @@ import unittest
 
 from crossbench.probes import metric
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class FormatMetricTestCase(unittest.TestCase):

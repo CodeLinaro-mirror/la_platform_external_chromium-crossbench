@@ -8,7 +8,7 @@ import abc
 import pathlib
 from unittest import mock
 
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):

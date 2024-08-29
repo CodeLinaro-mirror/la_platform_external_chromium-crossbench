@@ -8,7 +8,7 @@ from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class ChromeWebDriverForTesting(ChromeWebDriver):

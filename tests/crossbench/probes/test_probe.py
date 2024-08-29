@@ -27,7 +27,7 @@ from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):

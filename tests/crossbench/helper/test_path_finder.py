@@ -10,8 +10,8 @@ from crossbench.helper.path_finder import (ChromiumBuildBinaryFinder,
                                            ChromiumCheckoutFinder,
                                            V8CheckoutFinder, V8ToolsFinder)
 from tests import test_helper
-from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
-                                          LinuxMockPlatform, MacOsMockPlatform,
+from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
                                           WinMockPlatform)
 
 

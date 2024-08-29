@@ -10,7 +10,7 @@ import hjson
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.dtrace import DTraceProbe
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class DTraceProbeTestCase(CrossbenchFakeFsTestCase):

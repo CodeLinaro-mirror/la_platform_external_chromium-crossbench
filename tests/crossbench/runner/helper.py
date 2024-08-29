@@ -20,9 +20,9 @@ from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
+from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
-from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
-                                          MockBenchmark, MockStory)
+from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 
 class MockBrowser:

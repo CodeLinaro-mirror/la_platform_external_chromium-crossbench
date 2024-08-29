@@ -13,7 +13,7 @@ from crossbench.benchmarks.loading.action import (
     WindowTarget)
 from crossbench.benchmarks.loading.input_source import InputSource
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ActionTestCase(CrossbenchFakeFsTestCase):

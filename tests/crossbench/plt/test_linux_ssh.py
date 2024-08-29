@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from crossbench import plt
 from tests import test_helper
-from tests.crossbench.plt.helper import PosixPlatformTestCase
+from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
 
-class LinuxSshPlatformTest(PosixPlatformTestCase):
+class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
   __test__ = True
   HOST = "host"
   PORT = 9515

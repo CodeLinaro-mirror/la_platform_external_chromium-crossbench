@@ -13,7 +13,7 @@ from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import TraceProcessorProbe
 from crossbench.probes.results import LocalProbeResult
 from tests import test_helper
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class TraceProcessorProbeTestCase(unittest.TestCase):

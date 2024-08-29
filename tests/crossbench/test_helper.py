@@ -9,7 +9,7 @@ import unittest
 
 from crossbench import compat, helper, plt
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class WaitTestCase(unittest.TestCase):

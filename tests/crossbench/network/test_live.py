@@ -3,9 +3,10 @@
 # found in the LICENSE file.
 
 from unittest import mock
+
 from crossbench.network.live import LiveNetwork
 from tests import test_helper
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class LiveNetworkTestCase(BaseCrossbenchTestCase):

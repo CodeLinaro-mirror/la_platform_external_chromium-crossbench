@@ -11,8 +11,7 @@ from crossbench.benchmarks.loading.page import CombinedPage, Page
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
-from tests.crossbench.mock_browser import JsInvocation
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class GenericProbeTestCase(BaseCrossbenchTestCase):

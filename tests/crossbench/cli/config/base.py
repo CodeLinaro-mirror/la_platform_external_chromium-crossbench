@@ -10,7 +10,7 @@ from unittest import mock
 from crossbench import path as pth
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 XCTRACE_DEVICES_OUTPUT = """
 == Devices ==

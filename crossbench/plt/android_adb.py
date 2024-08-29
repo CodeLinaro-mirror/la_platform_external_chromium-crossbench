@@ -13,10 +13,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
 from crossbench import cli_helper
 from crossbench.plt.arch import MachineArch
-from crossbench.plt.posix import PosixPlatform
+from crossbench.plt.posix import RemotePosixPlatform
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath, RemotePath, RemotePathLike
+  from crossbench.path import (LocalPath, LocalPathLike, RemotePath,
+                               RemotePathLike)
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
   from crossbench.types import JsonDict
 
@@ -361,23 +362,18 @@ class Adb:
     self.shell(*cmd)
 
 
-class AndroidAdbPlatform(PosixPlatform):
+class AndroidAdbPlatform(RemotePosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
                adb: Optional[Adb] = None) -> None:
-    super().__init__()
+    super().__init__(host_platform)
     self._system_details: Optional[Dict[str, Any]] = None
     self._cpu_details: Optional[Dict[str, Any]] = None
-    self._host_platform = host_platform
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb = adb or Adb(host_platform, device_identifier)
-
-  @property
-  def is_remote(self) -> bool:
-    return True
 
   @property
   def is_android(self) -> bool:
@@ -386,10 +382,6 @@ class AndroidAdbPlatform(PosixPlatform):
   @property
   def name(self) -> str:
     return "android"
-
-  @property
-  def host_platform(self) -> Platform:
-    return self._host_platform
 
   @functools.cached_property
   def version(self) -> str:  #pylint: disable=invalid-overridden-method
@@ -564,14 +556,16 @@ class AndroidAdbPlatform(PosixPlatform):
     return self.pull(from_path, to_path)
 
   def pull(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
-    assert self.exists(from_path), (
+    device_path = self.path(from_path)
+    assert self.exists(device_path), (
         f"Source file '{from_path}' does not exist on {self}")
-    to_path.parent.mkdir(parents=True, exist_ok=True)
-    self.adb.pull(from_path, to_path)
+    local_host_path = self.host_path(to_path)
+    local_host_path.parent.mkdir(parents=True, exist_ok=True)
+    self.adb.pull(device_path, local_host_path)
     return to_path
 
   def push(self, from_path: LocalPath, to_path: RemotePath) -> RemotePath:
-    self.adb.push(from_path, to_path)
+    self.adb.push(from_path, self.path(to_path))
     return to_path
 
   def set_file_contents(self,
@@ -579,8 +573,7 @@ class AndroidAdbPlatform(PosixPlatform):
                         data: str,
                         encoding: str = "utf-8") -> None:
     # self.push a tmp file with the given contents
-    tmp_dir: LocalPath = self.host_platform.local_path(
-        self.host_platform.mkdtemp())
+    tmp_dir: LocalPath = self.host_path(self.host_platform.mkdtemp())
     try:
       tmp_file = tmp_dir / "push.data"
       with tmp_file.open("w", encoding=encoding) as f:

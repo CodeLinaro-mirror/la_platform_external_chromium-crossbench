@@ -14,7 +14,7 @@ from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 
 
-class PlatformTestCase(unittest.TestCase):
+class NativePlatformTestCase(unittest.TestCase):
 
   def setUp(self):
     self.platform: plt.Platform = plt.PLATFORM
@@ -255,7 +255,7 @@ class PlatformTestCase(unittest.TestCase):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
-class PosixPlatformTestCase(PlatformTestCase):
+class PosixNativePlatformTestCase(NativePlatformTestCase):
   platform: PosixPlatform
 
   def setUp(self):
@@ -334,7 +334,7 @@ class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
-class MockRemotePosixPlatformTestCase(PosixPlatformTestCase):
+class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   """All Posix operations should also work on a remote platform (e.g. via SSH).
   This test fakes this by temporarily moving the current PLATFORM's is_remove
   getter to return True"""
@@ -355,7 +355,7 @@ class MockRemotePosixPlatformTestCase(PosixPlatformTestCase):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
-class MacOSPlatformTestCase(PosixPlatformTestCase):
+class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
   platform: plt.MacOSPlatform
 
   def setUp(self):
@@ -484,7 +484,7 @@ class MacOSPlatformTestCase(PosixPlatformTestCase):
 
 
 @unittest.skipIf(not plt.PLATFORM.is_win, "Incompatible platform")
-class WinPlatformTestCase(PlatformTestCase):
+class WinNativePlatformTestCase(NativePlatformTestCase):
   platform: plt.WinPlatform
 
   def setUp(self):

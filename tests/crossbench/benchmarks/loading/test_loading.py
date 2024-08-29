@@ -44,9 +44,8 @@ from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.helper import ChangeCWD
 from crossbench.runner.runner import Runner
 from tests import test_helper
+from tests.crossbench.base import BaseCliTestCase, CrossbenchFakeFsTestCase
 from tests.crossbench.benchmarks import helper
-from tests.crossbench.mock_helper import (BaseCliTestCase,
-                                          CrossbenchFakeFsTestCase)
 
 cb = crossbench
 

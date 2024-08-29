@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from crossbench.probes import helper
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class TestMergeCSV(CrossbenchFakeFsTestCase):

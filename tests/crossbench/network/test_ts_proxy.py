@@ -10,7 +10,7 @@ from crossbench.network.traffic_shaping.ts_proxy import (TsProxyProcess,
                                                          TsProxyServer,
                                                          TsProxyTrafficShaper)
 from tests import test_helper
-from tests.crossbench.mock_helper import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class TsProxyBaseTestCase(BaseCrossbenchTestCase):

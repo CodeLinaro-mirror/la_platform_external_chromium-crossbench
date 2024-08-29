@@ -96,7 +96,7 @@ class MacOSPlatform(PosixPlatform):
     is_app = app_or_bin_path.suffix == ".app"
     if not is_app:
       # Look up basic binaries with `which` if possible.
-      if result_path := self.which(str(app_or_bin_path)):
+      if result_path := self.which(app_or_bin_path):
         assert self.exists(result_path), f"{result_path} does not exist."
         return result_path
     if app_path := self.lookup_binary_override(app_or_bin_path):

@@ -5,19 +5,24 @@
 from __future__ import annotations
 
 import abc
-import unittest
+import pathlib
 
 from crossbench import plt
 from crossbench.plt.posix import PosixPlatform
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import MockPlatform
 
 
-class BasePlatformTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
+class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   __test__ = False
   platform: plt.Platform
+  mock_platform: MockPlatform
 
   def setUp(self) -> None:
     super().setUp()
+    self.setUpMockPlatform()
+
+  def setUpMockPlatform(self):
     self.mock_platform = MockPlatform()  # pytype: disable=not-instantiable
 
   def tearDown(self):
@@ -49,7 +54,7 @@ class BasePlatformTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(self.platform.is_remote_ssh)
 
 
-class PosixPlatformTestCase(BasePlatformTestCase):
+class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
   platform: PosixPlatform
 
   def tearDown(self) -> None:
@@ -58,3 +63,14 @@ class PosixPlatformTestCase(BasePlatformTestCase):
 
   def test_is_posix(self):
     self.assertTrue(self.platform.is_posix)
+
+  def test_path_conversion(self):
+    self.assertIsInstance(self.platform.path("foo/bar"), pathlib.PurePosixPath)
+    self.assertIsInstance(
+        self.platform.path(pathlib.PurePath("foo/bar")), pathlib.PurePosixPath)
+    self.assertIsInstance(
+        self.platform.path(pathlib.PureWindowsPath("foo/bar")),
+        pathlib.PurePosixPath)
+    self.assertIsInstance(
+        self.platform.path(pathlib.PurePosixPath("foo/bar")),
+        pathlib.PurePosixPath)

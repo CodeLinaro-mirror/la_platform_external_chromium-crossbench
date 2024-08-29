@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
-from tests.crossbench.plt.test_linux_ssh import LinuxSshPlatformTest
+from tests.crossbench.plt.test_linux_ssh import LinuxSshMockPlatformTestCase
 
 
-class ChromeOsSshPlatformTest(LinuxSshPlatformTest):
+class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   SSH_USER = "chronos"
   platform: ChromeOsSshPlatform
 

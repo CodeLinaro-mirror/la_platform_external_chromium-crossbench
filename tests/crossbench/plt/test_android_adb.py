@@ -11,7 +11,8 @@ from unittest import mock
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.arch import MachineArch
 from tests import test_helper
-from tests.crossbench.plt.helper import PosixPlatformTestCase
+from tests.crossbench.mock_helper import WinMockPlatform
+from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
 ADB_DEVICE_SAMPLE_OUTPUT = """List of devices attached
 emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64"""
@@ -31,13 +32,17 @@ BrightnessSynchronizer
 """
 
 
-class AndroidAdbMockPlatformTest(PosixPlatformTestCase):
-  __test__ = True
+class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"
   platform: AndroidAdbPlatform
 
   def setUp(self) -> None:
     super().setUp()
+    self.setUpAdb()
+    self.platform = AndroidAdbPlatform(
+        self.mock_platform, self.DEVICE_ID, adb=self.adb)
+
+  def setUpAdb(self):
     adb_patcher = mock.patch(
         "crossbench.plt.android_adb._find_adb_bin",
         return_value=pathlib.Path("adb"))
@@ -45,8 +50,6 @@ class AndroidAdbMockPlatformTest(PosixPlatformTestCase):
     self.addCleanup(adb_patcher.stop)
     self.expect_startup_devices()
     self.adb = Adb(self.mock_platform, self.DEVICE_ID)
-    self.platform = AndroidAdbPlatform(
-        self.mock_platform, self.DEVICE_ID, adb=self.adb)
 
   def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
     self.expect_sh(pathlib.Path("adb"), "start-server")
@@ -55,6 +58,37 @@ class AndroidAdbMockPlatformTest(PosixPlatformTestCase):
   def expect_adb(self, *args, result=""):
     self.expect_sh(
         pathlib.Path("adb"), "-s", self.DEVICE_ID, *args, result=result)
+
+  def test_is_android(self):
+    self.assertTrue(self.platform.is_android)
+
+
+
+class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
+  __test__ = True
+
+  def setUpMockPlatform(self):
+    self.mock_platform = WinMockPlatform()
+
+  def test_host_platform(self):
+    self.assertTrue(self.platform.host_platform.is_win)
+    # Enable path type check once we have more mocking support
+    # self.assertIsInstance(
+    #     self.platform.host_path("foo/bar"), pathlib.PureWindowsPath)
+    # self.assertNotEqual(
+    #     str(self.platform.host_path("foo/bar")),
+    #     str(self.platform.path("foo/bar")))
+
+  def test_mktemp(self):
+    self.assertTrue(self.platform.default_tmp_dir.is_absolute())
+    self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
+    self.expect_adb("shell", "mktemp", "-d",
+                    "/data/local/tmp/custom_prefix.XXXXXXXXXXX")
+    self.platform.mkdtemp("custom_prefix")
+
+
+class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
+  __test__ = True
 
   def test_create_no_devices(self):
     self.expect_startup_devices("List of devices attached")
@@ -109,10 +143,7 @@ class AndroidAdbMockPlatformTest(PosixPlatformTestCase):
         })
     self.assertIn(self.DEVICE_ID, str(self.adb))
 
-  def test_is_android(self):
-    self.assertTrue(self.platform.is_android)
-
-  def test_has_roo(self):
+  def test_has_root(self):
     self.expect_adb("shell", "id", result="uid=2000(shell) gid=2000(shell)")
     self.assertFalse(self.adb.has_root())
     self.expect_adb("shell", "id", result="uid=0(root)n gid=0(root)")
@@ -302,7 +333,7 @@ class AndroidAdbMockPlatformTest(PosixPlatformTestCase):
         "packages",
         result="package:com.google.chrome")
     path = self.platform.search_binary("com.google.chrome")
-    self.assertEqual(path, pathlib.PurePath("com.google.chrome"))
+    self.assertEqual(path, pathlib.PurePosixPath("com.google.chrome"))
 
   def test_search_binary_app_package_lookup_override(self):
     chrome_package = self.platform.path("com.google.chrome")

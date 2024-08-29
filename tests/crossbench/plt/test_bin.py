@@ -4,15 +4,17 @@
 
 from __future__ import annotations
 
+import pathlib
+from unittest import mock
+
 import crossbench.path as pth
 from crossbench.plt import PLATFORM
 from crossbench.plt.bin import (Binary, BinaryNotFoundError, LinuxBinary,
                                 MacOsBinary, PosixBinary, WinBinary)
 from tests import test_helper
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
-                                          CrossbenchFakeFsTestCase,
-                                          LinuxMockPlatform, MacOsMockPlatform,
-                                          MockAdb, WinMockPlatform)
+from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
+                                          WinMockPlatform)
 
 
 class BinaryTestCase(CrossbenchFakeFsTestCase):
@@ -65,10 +67,13 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError):
       with platform.override_binary(binary, path):
         self.assertEqual(binary.resolve(platform), path)
+
     self.fs.create_file(path, st_size=100)
-    with platform.override_binary(binary, path):
-      self.assertEqual(binary.resolve(platform), path)
-      self.assertEqual(binary.resolve_cached(platform), path)
+    with mock.patch("shutil.which", return_value=path) as cm:
+      with platform.override_binary(binary, path):
+        self.assertEqual(binary.resolve(platform), path)
+        self.assertEqual(binary.resolve_cached(platform), path)
+    cm.assert_called_once_with(path)
 
     # Still cached
     self.assertEqual(binary.resolve_cached(platform), path)
@@ -93,20 +98,22 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
 
   def test_known_binary_default(self):
     for platform in self.all_mock_platforms():
-      default = pth.LocalPath("foo/bar/default/crossbench_mock_binary")
-      result = default
-      if platform.is_win:
-        result = pth.LocalPath("foo/bar/default/crossbench_mock_binary.exe")
-      binary = Binary("crossbench_mock_binary", default=default)
-      self.assertEqual(binary.platform_path(platform), pth.RemotePath(result))
-      with self.assertRaises(BinaryNotFoundError):
-        binary.resolve(platform)
-      with self.assertRaises(BinaryNotFoundError):
-        binary.resolve_cached(platform)
-      self.fs.create_file(result, st_size=100)
-      self.assertEqual(binary.resolve(platform), result)
-      self.assertEqual(binary.resolve_cached(platform), result)
-      result.unlink()
+      with self.subTest(platform=platform):
+        default = pth.RemotePath("foo/bar/default/crossbench_mock_binary")
+        result = default
+        if platform.is_win:
+          result = pth.RemotePath("foo/bar/default/crossbench_mock_binary.exe")
+        binary = Binary("crossbench_mock_binary", default=default)
+        self.assertEqual(binary.platform_path(platform), pth.RemotePath(result))
+        with self.assertRaises(BinaryNotFoundError):
+          binary.resolve(platform)
+        with self.assertRaises(BinaryNotFoundError):
+          binary.resolve_cached(platform)
+        self.fs.create_file(result, st_size=100)
+        self.assertEqual(pth.RemotePath(binary.resolve(platform)), result)
+        self.assertEqual(
+            pth.RemotePath(binary.resolve_cached(platform)), result)
+        self.fs.remove(result)
 
   def test_known_binary_linux(self):
     result = self.create_binary_path("foo/bar/default/crossbench_mock_binary")
@@ -176,6 +183,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def test_known_binary_win(self):
     result = self.create_binary_path(
         "foo/bar/default/crossbench_mock_binary.exe")
+    result = pathlib.PureWindowsPath(result)
     binary = Binary("crossbench_mock_binary", win=result)
     self.validate_known_binary_win(result, binary)
     binary = WinBinary(result)

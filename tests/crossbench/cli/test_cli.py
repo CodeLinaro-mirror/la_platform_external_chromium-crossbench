@@ -24,8 +24,8 @@ from crossbench.probes import internal
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
-from tests.crossbench.mock_helper import BaseCliTestCase, SysExitTestException
 
 
 class FastCliTestCase(BaseCliTestCase):
@@ -754,7 +754,7 @@ class FastCliTestCase(BaseCliTestCase):
     with self.assertRaises(SysExitTestException):
       self.run_cli("loading", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
- 
+
   def test_parse_env_config_file(self):
     config = pathlib.Path("/test.config.hjson")
     with config.open("w", encoding="utf-8") as f:

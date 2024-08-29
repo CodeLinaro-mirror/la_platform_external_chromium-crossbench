@@ -248,14 +248,14 @@ class Platform(abc.ABC):
 
   @abc.abstractmethod
   def search_binary(self,
-                    app_or_bin: pth.RemotePath) -> Optional[pth.RemotePath]:
+                    app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:
     """Look up a binary in the common search paths based of a path or a single
     segment path with just the binary name.
     Returns the location of the binary (and not the .app bundle on macOS).
     """
 
   @abc.abstractmethod
-  def app_version(self, app_or_bin: pth.RemotePath) -> str:
+  def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
     pass
 
   @property
@@ -287,19 +287,19 @@ class Platform(abc.ABC):
     return self._binary_lookup_override.get(str(binary_name))
 
   def set_binary_lookup_override(self, binary_name: pth.RemotePathLike,
-                                 result: Optional[pth.RemotePath]):
+                                 new_path: Optional[pth.RemotePath]):
     name = str(binary_name)
-    if result is None:
+    if new_path is None:
       prev_result = self._binary_lookup_override.pop(name, None)
       if prev_result is None:
         logging.debug(
             "Could not remove binary override for %s as it was never set",
             binary_name)
       return
-    if self.search_binary(result) is None:
+    if self.search_binary(new_path) is None:
       raise ValueError(f"Suggested binary override for {repr(name)} "
-                       f"does not exist: {result}")
-    self._binary_lookup_override[name] = result
+                       f"does not exist: {new_path}")
+    self._binary_lookup_override[name] = new_path
 
   @contextlib.contextmanager
   def override_binary(self, binary: Union[pth.RemotePathLike, Binary],

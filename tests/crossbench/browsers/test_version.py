@@ -120,7 +120,8 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_parse_any(self):
     if self.ANY_VERSION_STR == "":
-      self.skipTest("'any'-channel version not supported")
+      self.skipTest(
+          f"{type(self).__name__}: 'any'-channel version not supported")
     version: BrowserVersion = self._parse_helper(self.ANY_VERSION_STR)
     self.assertTrue(str(version))
     self.assertFalse(version.has_channel)
@@ -140,7 +141,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_parse_lts(self):
     if self.LTS_VERSION_STR == "":
-      self.skipTest("lts version not supported")
+      self.skipTest(f"{type(self).__name__}: lts version not supported")
     version: BrowserVersion = self._parse_helper(self.LTS_VERSION_STR)
     self.assertEqual(version.channel, BrowserVersionChannel.LTS)
     self.assertTrue(version.is_complete)
@@ -176,7 +177,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_parse_beta(self):
     if not self.BETA_VERSION_STR:
-      self.skipTest("beta version not supported.")
+      self.skipTest(f"{type(self).__name__}: beta version not supported.")
     version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(version.channel, BrowserVersionChannel.BETA)
     self.assertTrue(str(version))
@@ -195,7 +196,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_parse_alpha(self):
     if self.ALPHA_VERSION_STR == "":
-      self.skipTest("alpha version not supported")
+      self.skipTest(f"{type(self).__name__}: alpha version not supported")
     version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
     self.assertEqual(version.channel, BrowserVersionChannel.ALPHA)
     self.assertTrue(str(version))
@@ -214,7 +215,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_parse_pre_alpha(self):
     if self.PRE_ALPHA_VERSION_STR == "":
-      self.skipTest("nightly version not supported")
+      self.skipTest(f"{type(self).__name__}: nightly version not supported")
     version: BrowserVersion = self._parse_helper(self.PRE_ALPHA_VERSION_STR)
     self.assertEqual(version.channel, BrowserVersionChannel.PRE_ALPHA)
     self.assertTrue(str(version))
@@ -240,7 +241,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_no_equal_stable_beta(self):
     if not self.BETA_VERSION_STR:
-      self.skipTest("beta version not supported.")
+      self.skipTest(f"{type(self).__name__} :beta version not supported.")
     version_stable = self.parse(self.STABLE_VERSION_STR)
     version_beta = self.parse(self.BETA_VERSION_STR)
     self.assertNotEqual(version_stable, version_beta)
@@ -248,7 +249,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_stable_lt_beta(self):
     if not self.BETA_VERSION_STR:
-      self.skipTest("beta version not supported.")
+      self.skipTest(f"{type(self).__name__}: beta version not supported.")
     version_stable = self.parse(self.STABLE_VERSION_STR)
     version_beta = self.parse(self.BETA_VERSION_STR)
     # pylint: disable=comparison-with-itself
@@ -267,7 +268,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_contains_basic(self):
     if not self.BETA_VERSION_STR:
-      self.skipTest("beta version not supported.")
+      self.skipTest(f"{type(self).__name__}: beta version not supported.")
     version_stable = self.parse(self.STABLE_VERSION_STR)
     version_beta = self.parse(self.BETA_VERSION_STR)
     self.assertFalse(version_beta.contains(version_stable))

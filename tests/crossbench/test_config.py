@@ -17,7 +17,7 @@ from immutabledict import immutabledict
 from crossbench import cli_helper, compat
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from tests import test_helper
-from tests.crossbench.mock_helper import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 @enum.unique

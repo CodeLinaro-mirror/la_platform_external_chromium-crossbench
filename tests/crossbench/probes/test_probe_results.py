@@ -3,16 +3,15 @@
 # found in the LICENSE file.
 
 import pathlib
-import unittest
 
 from crossbench.probes.probe import Probe
-from crossbench.probes.results import (BrowserProbeResult, DuplicateProbeResult,
-                                       EmptyProbeResult, LocalProbeResult,
-                                       ProbeResultDict)
+from crossbench.probes.results import (BrowserProbeResult,
+                                       DuplicateProbeResult, EmptyProbeResult,
+                                       LocalProbeResult, ProbeResultDict)
 from crossbench.runner.run import Run
 from tests import test_helper
-from tests.crossbench.mock_helper import (BaseCrossbenchTestCase,
-                                          CrossbenchFakeFsTestCase)
+from tests.crossbench.base import (BaseCrossbenchTestCase,
+                                   CrossbenchFakeFsTestCase)
 
 
 class ProbeResultTestCase(CrossbenchFakeFsTestCase):

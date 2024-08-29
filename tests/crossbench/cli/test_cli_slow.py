@@ -20,7 +20,7 @@ from crossbench.network.local_fileserver import LocalFileNetwork
 from crossbench.probes import internal
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import BaseCliTestCase, SysExitTestException
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 
 class CliSlowTestCase(BaseCliTestCase):
