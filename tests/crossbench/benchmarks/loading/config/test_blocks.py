@@ -1,0 +1,82 @@
+# Copyright 2024 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import unittest
+
+from crossbench.benchmarks.loading.action import GetAction
+from crossbench.benchmarks.loading.config.blocks import ActionBlock
+from crossbench.benchmarks.loading.config.login.custom import LoginBlock
+from tests import test_helper
+
+
+class ActionBlockTestCase(unittest.TestCase):
+
+  def test_create_empty_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ActionBlock()
+
+  def test_single_action(self):
+    action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))
+    block = ActionBlock(actions=(action,))
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertTupleEqual(tuple(block), (action,))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = ActionBlock.parse(block.to_json())
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+  def test_multi_action(self):
+    action_2 = GetAction("http://test.com/0", duration=dt.timedelta(seconds=1))
+    action_1 = GetAction("http://test.com/1", duration=dt.timedelta(seconds=2))
+    block = ActionBlock(actions=(action_1, action_2))
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertTupleEqual(tuple(block), (action_1, action_2))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = ActionBlock.parse(block.to_json())
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+
+class LoginBlockTestCase(unittest.TestCase):
+
+  def test_single_action(self):
+    action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))
+    block = LoginBlock(actions=(action,))
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertTupleEqual(tuple(block), (action,))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = LoginBlock.parse(block.to_json())
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 1)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+  def test_multi_action(self):
+    action_2 = GetAction("http://test.com/0", duration=dt.timedelta(seconds=1))
+    action_1 = GetAction("http://test.com/1", duration=dt.timedelta(seconds=2))
+    block = LoginBlock(actions=(action_1, action_2))
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertTupleEqual(tuple(block), (action_1, action_2))
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+    block = LoginBlock.parse(block.to_json())
+    self.assertTrue(block.is_login)
+    self.assertEqual(len(block), 2)
+    self.assertEqual(block.duration, dt.timedelta(seconds=3))
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)
