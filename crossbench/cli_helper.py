@@ -358,7 +358,7 @@ def parse_port(value: Any, name: str = "port") -> int:
 
 
 def parse_str(value: Any, name: str = "value") -> str:
-  value = parse_not_none(value, f"non-empty {name}")
+  value = parse_not_none(value, name)
   if isinstance(value, str):
     return value
   raise argparse.ArgumentTypeError(
@@ -366,7 +366,7 @@ def parse_str(value: Any, name: str = "value") -> str:
 
 
 def parse_non_empty_str(value: Any, name: str = "value") -> str:
-  value = parse_str(value, f"non-empty {name}")
+  value = parse_str(value, name)
   if not isinstance(value, str):
     raise argparse.ArgumentTypeError(
         f"Expected non-empty string {name}, "

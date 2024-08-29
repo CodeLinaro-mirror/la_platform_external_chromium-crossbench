@@ -171,6 +171,12 @@ class CustomConfigObjectWithDefault(CustomConfigObject):
     return ConfigParser("CustomConfigObject parser", cls, default=cls.default())
 
 
+class CustomConfigObjectToArgumentValue(CustomConfigObject):
+
+  def to_argument_value(self):
+    return (self.name, self.array, self.integer)
+
+
 class ConfigParserTestCase(unittest.TestCase):
 
   def setUp(self):
@@ -250,6 +256,25 @@ class ConfigParserTestCase(unittest.TestCase):
           CustomConfigObject,
           default="something else")
     self.assertIn("instance", str(cm.exception))
+
+  def test_config_object_to_argument_value(self):
+    result = CustomConfigObjectToArgumentValue.config_parser().parse(
+        {"name": "custom-name"})
+    self.assertIsInstance(result, CustomConfigObjectToArgumentValue)
+    parser = ConfigParser("TestParser", dict)
+    parser.add_argument("data", type=CustomConfigObjectToArgumentValue)
+
+    result = parser.parse({})
+    self.assertDictEqual(result, {"data": None})
+    result = parser.parse({"data": {"name": "a name"}})
+    self.assertDictEqual(result, {"data": ("a name", None, None)})
+    result = parser.parse(
+        {"data": {
+            "name": "a name",
+            "integer": 1,
+            "array": [1, 2]
+        }})
+    self.assertDictEqual(result, {"data": ("a name", [1, 2], 1)})
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):

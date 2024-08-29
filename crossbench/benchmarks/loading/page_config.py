@@ -53,8 +53,7 @@ class ActionBlock(ConfigObject):
   @classmethod
   def config_parser(cls: Type[ActionBlock]) -> ConfigParser[ActionBlock]:
     parser = ConfigParser(f"{cls.__name__} parser", cls)
-    parser.add_argument(
-        "label", type=cli_helper.parse_non_empty_str, default="default")
+    parser.add_argument("label", type=cls._parse_block_label, default="default")
     parser.add_argument(
         "index",
         type=cli_helper.parse_positive_zero_int,
@@ -72,6 +71,16 @@ class ActionBlock(ConfigObject):
     with exception.annotate_argparsing(
         "Parsing default block action sequence:"):
       return cls.parse_dict({"actions": config}, label=label, index=index)
+
+  @classmethod
+  def _parse_block_label(cls, value: Any) -> Optional[str]:
+    if not value:
+      return None
+    label = cli_helper.parse_non_empty_str(value)
+    if label == LoginBlock.LABEL:
+      raise ConfigError(
+          f"Block label {repr(label)} is reserved for login blocks")
+    return value
 
   def validate(self) -> None:
     super().validate()
@@ -126,7 +135,9 @@ class LoginBlock(ActionBlock):
 @dataclasses.dataclass(frozen=True)
 class ActionBlockListConfig(ConfigObject):
   blocks: Tuple[ActionBlock, ...] = tuple()
-  login: Optional[LoginBlock] = None
+
+  def to_argument_value(self) -> Tuple[ActionBlock, ...]:
+    return self.blocks
 
   @classmethod
   def parse_other(cls: Type[ActionBlockListConfig],
@@ -172,7 +183,8 @@ class ActionBlockListConfig(ConfigObject):
 
   @classmethod
   def _is_default_block_actions(cls, config: Sequence[Dict[str, Any]]) -> bool:
-    return "action" in config[0]
+    sample = config[0]
+    return isinstance(sample, str) or "action" in sample
 
   @classmethod
   def parse_dict(cls: Type[ActionBlockListConfig],
@@ -190,24 +202,13 @@ class ActionBlockListConfig(ConfigObject):
   @classmethod
   def _parse_blocks(cls, block_config_data_gen) -> ActionBlockListConfig:
     blocks: List[ActionBlock] = []
-    logins: List[LoginBlock] = []
     for index, label, block_data in block_config_data_gen:
-      block, login = cls._parse_block(index, label, block_data)
-      if block:
-        blocks.append(block)
-      if login:
-        logins.append(login)
-    login: Optional[LoginBlock] = None
-    if len(logins) > 1:
-      raise ValueError("Got more than one login block")
-    if logins:
-      login = logins[0]
-    return cls(tuple(blocks), login=login)
+      block = cls._parse_block(index, label, block_data)
+      blocks.append(block)
+    return cls(tuple(blocks))
 
   @classmethod
-  def _parse_block(
-      cls, index: int, label: str,
-      block_data: Any) -> Tuple[Optional[ActionBlock], Optional[LoginBlock]]:
+  def _parse_block(cls, index: int, label: str, block_data: Any) -> ActionBlock:
     if isinstance(block_data, dict):
       # Early warning for better usability.
       if inner_label := block_data.get("label"):
@@ -215,13 +216,7 @@ class ActionBlockListConfig(ConfigObject):
           raise ConfigError(
               "ActionBlock inside a dict cannot have a 'label' property, "
               f"but got label={repr(inner_label)}")
-    if label == LoginBlock.LABEL:
-      block = None
-      login = LoginBlock.parse(block_data, label=label, index=index)
-    else:
-      block = ActionBlock.parse(block_data, label=label, index=index)
-      login = None
-    return block, login
+    return ActionBlock.parse(block_data, label=label, index=index)
 
   @classmethod
   def parse_str(cls, value: str) -> ActionBlockListConfig:
@@ -232,11 +227,8 @@ class ActionBlockListConfig(ConfigObject):
     if not self.blocks:
       raise ValueError("Missing action blocks.")
     cli_helper.parse_non_empty_sequence(self.blocks, "blocks")
-    start_index = 0
-    if self.login:
-      start_index = 1
     found_get = False
-    for index, block in enumerate(self.blocks, start=start_index):
+    for index, block in enumerate(self.blocks):
       if index != block.index:
         raise ValueError(
             f"blocks[{index}].index should be {index}, but got {block.index}")
@@ -247,7 +239,7 @@ class ActionBlockListConfig(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class PageConfig(ConfigObject):
-  label: str = ""
+  label: Optional[str] = None
   playback: Optional[PlaybackController] = None
   blocks: Tuple[ActionBlock, ...] = tuple()
   login: Optional[LoginBlock] = None
@@ -269,10 +261,14 @@ class PageConfig(ConfigObject):
     """
     parts = value.rsplit(",", maxsplit=1)
     duration = dt.timedelta()
-    url_label, url = cls._parse_url(parts[0])
+    raw_url: str = parts[0]
+    if raw_url in PAGES:
+      url = PAGES[raw_url].url
+      label = label or raw_url
+    else:
+      url = cli_helper.parse_fuzzy_url_str(raw_url)
     if len(parts) == 2:
       duration = cli_helper.Duration.parse_non_zero(parts[1])
-    label = label or url_label
     return cls.from_url(label, url, duration)
 
   @classmethod
@@ -282,8 +278,9 @@ class PageConfig(ConfigObject):
     value = cli_helper.parse_non_empty_sequence(value,
                                                 "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
-    label = cli_helper.parse_non_empty_str(label, "label")
-    return cls(label, blocks=blocks.blocks, login=blocks.login)
+    if label is not None:
+      label = cli_helper.parse_non_empty_str(label, "label")
+    return cls(label, blocks=blocks.blocks)
 
   @classmethod
   def parse_dict(  # pylint: disable=arguments-differ
@@ -291,54 +288,24 @@ class PageConfig(ConfigObject):
       config: Dict[str, Any],
       label: Optional[str] = None) -> PageConfig:
     config = cli_helper.parse_non_empty_dict(config, "story actions or blocks")
-    if "url" in config:
-      return cls._parse_simple_config_dict(config, label)
-    base = cls.config_parser().parse(config, label=label)
-    blocks = ActionBlockListConfig.parse(config)
-    return cls(base.label, base.playback, blocks.blocks, blocks.login)
+    page_config = cls.config_parser().parse(config, label=label)
+    return page_config
 
   @classmethod
   def config_parser(cls: Type[PageConfig]) -> ConfigParser[PageConfig]:
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument("label", type=cli_helper.parse_non_empty_str)
     parser.add_argument("playback", type=PlaybackController.parse)
+    parser.add_argument(
+        "blocks",
+        aliases=("actions", "url", "urls"),
+        type=ActionBlockListConfig)
+    parser.add_argument("login", type=LoginBlock.parse)
     return parser
 
   @classmethod
-  def _parse_simple_config_dict(cls: Type[PageConfig],
-                                config: Dict[str, Any],
-                                label: Optional[str] = None) -> PageConfig:
-    # TODO: use this method and move actions parsing to here from PagesConfig
-    url = config["url"]
-    url_label, url = cls._parse_url(url)
-    duration = dt.timedelta()
-    if duration_str := config.get("duration"):
-      duration = cli_helper.Duration.parse_non_zero(duration_str)
-    label = label or url_label
-    return cls.from_url(label, url, duration)
-
-  @classmethod
-  def _parse_url(cls, value: str) -> Tuple[str, str]:
-    if value in PAGES:
-      return value, PAGES[value].url
-    url = cli_helper.parse_fuzzy_url(value)
-    return cls._url_extract_label(url), urlparse.urlunparse(url)
-
-  @classmethod
-  def _url_extract_label(cls, url: urlparse.ParseResult) -> str:
-    if url.scheme == "about":
-      return url.path
-    if url.scheme == "file":
-      return pth.LocalPath(url.path).name
-    if hostname := url.hostname:
-      if hostname.startswith("www."):
-        return hostname[len("www."):]
-      return hostname
-    return str(url)
-
-  @classmethod
   def from_url(cls,
-               label: str,
+               label: Optional[str],
                url: str,
                duration: dt.timedelta = dt.timedelta()) -> PageConfig:
     actions = (GetAction(url, duration=duration),)
@@ -352,6 +319,23 @@ class PageConfig(ConfigObject):
   @property
   def duration(self) -> dt.timedelta:
     return sum((action.duration for action in self.actions()), dt.timedelta())
+
+  @property
+  def any_label(self) -> str:
+    return self.label or self.url_label
+
+  @property
+  def url_label(self) -> str:
+    url = urlparse.urlparse(self.first_url)
+    if url.scheme == "about":
+      return url.path
+    if url.scheme == "file":
+      return pth.LocalPath(url.path).name
+    if hostname := url.hostname:
+      if hostname.startswith("www."):
+        return hostname[len("www."):]
+      return hostname
+    return str(url)
 
   @property
   def first_url(self) -> str:

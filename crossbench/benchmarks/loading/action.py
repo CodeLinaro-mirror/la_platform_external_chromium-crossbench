@@ -77,8 +77,8 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ActionType = ActionType.GET
 
   @classmethod
-  def parse_str(cls: Type[ActionT], value: str) -> ActionT:
-    raise NotImplementedError("Not supported")
+  def parse_str(cls, value: str) -> GetAction:
+    return GetAction.parse_str(value)
 
   @classmethod
   def parse_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
@@ -242,6 +242,10 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
 
 class GetAction(BaseDurationAction):
   TYPE: ActionType = ActionType.GET
+
+  @classmethod
+  def parse_str(cls, value: str) -> GetAction:
+    return cls(url=cli_helper.parse_fuzzy_url_str(value))
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:

@@ -57,7 +57,12 @@ class _ConfigArgParser:
     self.help: Optional[str] = help
     self.is_list: bool = is_list
     self.required: bool = required
-    self.is_enum: bool = inspect.isclass(type) and issubclass(type, enum.Enum)
+    type_is_class = inspect.isclass(type)
+    self.type_is_class: bool = type_is_class
+    self.is_enum: bool = type_is_class and issubclass(type, enum.Enum)
+    self.config_object_type: Optional[Type[ConfigObject]] = None
+    if type_is_class and issubclass(type, ConfigObject):
+      self.config_object_type = type
     self.depends_on = frozenset(depends_on) if depends_on else frozenset()
     self.choices: Optional[frozenset] = self._validate_choices(choices)
     if self.type:
@@ -71,9 +76,7 @@ class _ConfigArgParser:
     if not callable(self.type):
       raise TypeError(
           f"Expected type to be a class or a callable, but got: {self.type}")
-    maybe_config_class = self.type
-    if inspect.isclass(maybe_config_class) and issubclass(
-        maybe_config_class, ConfigObject):
+    if self.config_object_type:
       # Config objects and depends_on are handled specially.
       return
 
@@ -331,13 +334,15 @@ class _ConfigArgParser:
       if not isinstance(data, (float, int)):
         raise ValueError(
             f"{self.cls_name}.{self.name}: Expected number, got {data}")
-    config_object_cls = self.type  # pytype needs a local for inspect.isclass.
-    if (inspect.isclass(config_object_cls) and
-        issubclass(config_object_cls, ConfigObject)):
+    if self.config_object_type:
       # TODO: support custom depending kwargs with ConfigObject
       self._validate_type_without_depending_kwargs(depending_kwargs)
-      return config_object_cls.parse(data)
+      return self.parse_config_object(data)
     return self.type(data, **depending_kwargs)
+
+  def parse_config_object(self, data) -> Any:
+    config_object: ConfigObject = self.config_object_type.parse(data)
+    return config_object.to_argument_value()
 
   def parse_enum_data(self, data: Any) -> enum.Enum:
     assert self.is_enum
@@ -384,6 +389,11 @@ class ConfigObject(abc.ABC):
     """Override to perform validation of config properties that cannot be
     checked individually (aka depend on each other).
     """
+
+  def to_argument_value(self) -> Any:
+    """ Called to convert a ConfigObject to the value stored in ConfigParser
+     result. """
+    return self
 
   @classmethod
   def parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:

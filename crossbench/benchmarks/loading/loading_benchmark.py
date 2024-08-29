@@ -180,7 +180,7 @@ class LoadingPageFilter(StoryFilter[Page]):
       return LivePage(page.name, page.url, duration, playback, tabs,
                       args.about_blank_duration)
 
-    label: str = config.label if use_labels else config.first_url
+    label: str = config.any_label if use_labels else config.first_url
     duration = duration or DEFAULT_DURATION
 
     if not config.blocks:
