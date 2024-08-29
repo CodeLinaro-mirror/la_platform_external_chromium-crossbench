@@ -11,7 +11,7 @@ from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   ScrollAction, SwipeAction,
                                                   TextInputAction)
 from crossbench.benchmarks.loading.action_runner.android_input_action_runner \
-  import AndroidInputActionRunner, DisplayRectangle, ViewportInfo
+  import AndroidInputActionRunner, DisplayRectangle, Point, ViewportInfo
 from crossbench.benchmarks.loading.action_runner.base import \
     InputSourceNotImplementedError
 from crossbench.benchmarks.loading.action_runner.element_not_found_error \
@@ -30,29 +30,29 @@ from tests.crossbench.runner.helper import (MockRun, MockRunner)
 class ViewportInfoTestCase(unittest.TestCase):
 
   def test_display_rectangle_mul(self):
-    rect: DisplayRectangle = DisplayRectangle(1, 2, 3, 4)
+    rect: DisplayRectangle = DisplayRectangle(Point(1, 2), 3, 4)
 
     rect = rect * 5
 
-    self.assertEqual(rect.left, 5)
-    self.assertEqual(rect.right, 10)
-    self.assertEqual(rect.top, 15)
-    self.assertEqual(rect.bottom, 20)
+    self.assertEqual(rect.origin.x, 5)
+    self.assertEqual(rect.origin.y, 10)
+    self.assertEqual(rect.width, 15)
+    self.assertEqual(rect.height, 20)
 
-  def test_display_rectangle_add(self):
-    rect: DisplayRectangle = DisplayRectangle(1, 2, 3, 4)
-    rect2: DisplayRectangle = DisplayRectangle(10, 20, 30, 40)
+  def test_display_rectangle_shift_by(self):
+    rect: DisplayRectangle = DisplayRectangle(Point(1, 2), 3, 4)
+    rect2: DisplayRectangle = DisplayRectangle(Point(10, 20), 30, 40)
 
-    rect = rect + rect2
+    rect = rect.shift_by(rect2)
 
-    self.assertEqual(rect.left, 11)
-    self.assertEqual(rect.right, 12)
-    self.assertEqual(rect.top, 33)
-    self.assertEqual(rect.bottom, 34)
+    self.assertEqual(rect.origin.x, 11)
+    self.assertEqual(rect.origin.y, 22)
+    self.assertEqual(rect.width, 3)
+    self.assertEqual(rect.height, 4)
 
   def test_calculate_coordinates_no_element_still_returns_chrome_window(self):
     config: ViewportInfo = ViewportInfo(
-        raw_chrome_window_bounds=DisplayRectangle(0, 100, 0, 100),
+        raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         window_inner_height=100,
         window_inner_width=100)
 
@@ -62,22 +62,22 @@ class ViewportInfoTestCase(unittest.TestCase):
 
   def test_calculate_coordinates_top_system_border_accounted_for(self):
     config: ViewportInfo = ViewportInfo(
-        raw_chrome_window_bounds=DisplayRectangle(0, 100, 0, 100),
+        raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         window_inner_height=90,
         window_inner_width=100)
 
-    self.assertEqual(config.chrome_window.left, 0)
-    self.assertEqual(config.chrome_window.right, 100)
-    self.assertEqual(config.chrome_window.top, 10)
-    self.assertEqual(config.chrome_window.bottom, 100)
+    self.assertEqual(config.chrome_window.origin.x, 0)
+    self.assertEqual(config.chrome_window.width, 100)
+    self.assertEqual(config.chrome_window.origin.y, 10)
+    self.assertEqual(config.chrome_window.height, 90)
 
   def test_calculate_coordinates_chrome_higher_pixel_ratio_calculated_correctly(
       self):
     config: ViewportInfo = ViewportInfo(
-        raw_chrome_window_bounds=DisplayRectangle(0, 100, 0, 100),
+        raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         window_inner_height=400,
         window_inner_width=400,
-        element_rect=DisplayRectangle(200, 200, 200, 200))
+        element_rect=DisplayRectangle(Point(200, 200), 0, 0))
 
     element_center = config.element_center()
     self.assertTrue(element_center)
@@ -89,10 +89,10 @@ class ViewportInfoTestCase(unittest.TestCase):
   def test_calculate_coordinates_chrome_lower_pixel_ratio_calculated_correctly(
       self):
     config: ViewportInfo = ViewportInfo(
-        raw_chrome_window_bounds=DisplayRectangle(0, 600, 0, 600),
+        raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 600, 600),
         window_inner_height=200,
         window_inner_width=200,
-        element_rect=DisplayRectangle(100, 100, 100, 100))
+        element_rect=DisplayRectangle(Point(100, 100), 0, 0))
 
     element_center = config.element_center()
     self.assertTrue(element_center)
@@ -103,10 +103,10 @@ class ViewportInfoTestCase(unittest.TestCase):
 
   def test_calculate_coordinates_chrome_window_offset_accounted_for(self):
     config: ViewportInfo = ViewportInfo(
-        raw_chrome_window_bounds=DisplayRectangle(100, 200, 200, 300),
+        raw_chrome_window_bounds=DisplayRectangle(Point(100, 200), 100, 100),
         window_inner_height=100,
         window_inner_width=100,
-        element_rect=DisplayRectangle(50, 50, 50, 50))
+        element_rect=DisplayRectangle(Point(50, 50), 0, 0))
 
     element_center = config.element_center()
     self.assertTrue(element_center)
@@ -115,10 +115,10 @@ class ViewportInfoTestCase(unittest.TestCase):
 
   def test_calculate_coordinates_element_center_calculated_correctly(self):
     config: ViewportInfo = ViewportInfo(
-        raw_chrome_window_bounds=DisplayRectangle(0, 100, 0, 100),
+        raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         window_inner_height=100,
         window_inner_width=100,
-        element_rect=DisplayRectangle(10, 90, 20, 90))
+        element_rect=DisplayRectangle(Point(10, 20), 80, 70))
 
     element_center = config.element_center()
     self.assertTrue(element_center)
@@ -169,10 +169,10 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
       self,
       found_element: bool = True,
       js_args: Optional[Tuple[str, bool]] = None,
-      app_bounds: DisplayRectangle = DisplayRectangle(0, 10, 0, 10),
+      app_bounds: DisplayRectangle = DisplayRectangle(Point(0, 0), 10, 10),
       window_inner_height: Optional[int] = None,
       window_inner_width: Optional[int] = None,
-      element_bounds: DisplayRectangle = DisplayRectangle(0, 0, 0, 0)):
+      element_bounds: DisplayRectangle = DisplayRectangle(Point(0, 0), 0, 0)):
     self.platform.expect_sh(
         "dumpsys",
         "window",
@@ -186,10 +186,10 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
                 f"{app_bounds.top} - {app_bounds.right}, {app_bounds.bottom})"))
 
     if not window_inner_height:
-      window_inner_height = app_bounds.bottom - app_bounds.top
+      window_inner_height = app_bounds.height
 
     if not window_inner_width:
-      window_inner_width = app_bounds.right - app_bounds.left
+      window_inner_width = app_bounds.width
 
     # element bounding rect
     self.browser.expect_js(
@@ -203,12 +203,12 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
                 window_inner_width,
                 # rect.left
                 element_bounds.left,
-                # rect.right
-                element_bounds.right,
                 # rect.top
                 element_bounds.top,
-                # rect.bottom
-                element_bounds.bottom,
+                # rect.width
+                element_bounds.width,
+                # rect.height
+                element_bounds.height,
             ],
             arguments=js_args))
 
@@ -315,8 +315,8 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.expect_action_setup(
         found_element=True,
-        app_bounds=DisplayRectangle(0, 100, 0, 100),
-        element_bounds=DisplayRectangle(20, 30, 40, 50))
+        app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
+        element_bounds=DisplayRectangle(Point(20, 40), 10, 10))
 
     self.platform.expect_sh("input", "tap", "25", "45")
 
@@ -328,8 +328,8 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.expect_action_setup(
         found_element=True,
-        app_bounds=DisplayRectangle(0, 100, 0, 100),
-        element_bounds=DisplayRectangle(20, 30, 40, 50))
+        app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
+        element_bounds=DisplayRectangle(Point(20, 40), 10, 10))
 
     self.platform.expect_sh("input", "mouse", "tap", "25", "45")
 
@@ -358,7 +358,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.expect_action_setup(
         found_element=False,
-        app_bounds=DisplayRectangle(0, 100, 0, 100),
+        app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         window_inner_height=200,
         window_inner_width=200)
 
@@ -370,7 +370,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     scroll_action = ScrollAction(InputSource.TOUCH, distance=1)
 
     self.expect_action_setup(
-        found_element=False, app_bounds=DisplayRectangle(0, 10, 0, 10))
+        found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
 
     self.platform.expect_sh("input", "swipe", "5", "10", "5", "9", "1000")
 
@@ -380,7 +380,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     scroll_action = ScrollAction(InputSource.TOUCH, distance=-1)
 
     self.expect_action_setup(
-        found_element=False, app_bounds=DisplayRectangle(0, 10, 0, 10))
+        found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
 
     self.platform.expect_sh("input", "swipe", "5", "0", "5", "1", "1000")
 
@@ -390,7 +390,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     scroll_action = ScrollAction(InputSource.TOUCH, distance=100)
 
     self.expect_action_setup(
-        found_element=False, app_bounds=DisplayRectangle(0, 100, 0, 100))
+        found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
     self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "1000")
 
@@ -402,8 +402,8 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.expect_action_setup(
         found_element=True,
-        app_bounds=DisplayRectangle(0, 100, 0, 100),
-        element_bounds=DisplayRectangle(10, 90, 10, 90))
+        app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
+        element_bounds=DisplayRectangle(Point(10, 10), 80, 80))
 
     self.platform.expect_sh("input", "swipe", "50", "90", "50", "80", "1000")
 
@@ -416,7 +416,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
         duration=dt.timedelta(milliseconds=3000))
 
     self.expect_action_setup(
-        found_element=False, app_bounds=DisplayRectangle(0, 100, 0, 100))
+        found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
     self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "3000")
 
@@ -426,7 +426,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     scroll_action = ScrollAction(InputSource.TOUCH, distance=999)
 
     self.expect_action_setup(
-        found_element=False, app_bounds=DisplayRectangle(0, 100, 0, 100))
+        found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
     for _ in range(9):
       self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "100")

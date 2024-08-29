@@ -25,37 +25,50 @@ from crossbench.runner.run import Run
 @dataclasses.dataclass(frozen=True)
 # Represents a rectangular section of the device's display.
 class DisplayRectangle:
-  # The offset in pixels of the left edge of the rectangle from the left
-  # edge of the screen.
-  left: int
-  # The offset in pixels of the right edge of the rectangle from the left
-  # edge of the screen.
-  right: int
-  # The offset in pixels of the top edge of the rectangle from the top edge
-  # of the screen.
-  top: int
-  # The offset in pixels of the bottom edge of the rectangle from the top
-  # edge of the screen.
-  bottom: int
+  # The top left corner of the rectangle.
+  origin: Point
+  # The width in pixels of the rectangle.
+  width: int
+  # The height in pixels of the rectangle.
+  height: int
 
+  # Stretches or squishes the rectangle by |factor|
   def __mul__(self, factor: float) -> DisplayRectangle:
     return DisplayRectangle(
-        round(self.left * factor), round(self.right * factor),
-        round(self.top * factor), round(self.bottom * factor))
+        Point(round(self.origin.x * factor), round(self.origin.y * factor)),
+        round(self.width * factor), round(self.height * factor))
 
   __rmul__ = __mul__
 
-  def __add__(self, other: DisplayRectangle) -> DisplayRectangle:
-    return DisplayRectangle(self.left + other.left, self.right + other.left,
-                            self.top + other.top, self.bottom + other.top)
+  # Translates the rectangle into |other|
+  def shift_by(self, other: DisplayRectangle) -> DisplayRectangle:
+    return DisplayRectangle(
+        Point(self.origin.x + other.origin.x, self.origin.y + other.origin.y),
+        self.width, self.height)
 
   @property
-  def mid_x(self) -> float:
-    return (self.left + self.right) / 2
+  def left(self) -> int:
+    return self.origin.x
 
   @property
-  def mid_y(self) -> float:
-    return (self.top + self.bottom) / 2
+  def right(self) -> int:
+    return self.origin.x + self.width
+
+  @property
+  def top(self) -> int:
+    return self.origin.y
+
+  @property
+  def bottom(self) -> int:
+    return self.origin.y + self.height
+
+  @property
+  def mid_x(self) -> int:
+    return round(self.origin.x + (self.width / 2))
+
+  @property
+  def mid_y(self) -> int:
+    return round(self.origin.y + (self.height / 2))
 
 
 class ViewportInfo:
@@ -73,9 +86,8 @@ class ViewportInfo:
     # viewport width (such as speedometer), so calculate the ratio manually.
     # Note: this calculation assumes there are no system borders on the side of
     # the chrome window.
-    self._actual_pixel_ratio: float = float(
-        (raw_chrome_window_bounds.right - raw_chrome_window_bounds.left) /
-        window_inner_width)
+    self._actual_pixel_ratio: float = float(raw_chrome_window_bounds.width /
+                                            window_inner_width)
 
     window_inner_height = int(
         round(self.actual_pixel_ratio * window_inner_height))
@@ -86,16 +98,18 @@ class ViewportInfo:
     # that is included in the mAppBounds rectangle dimensions. Calculate the
     # height of this border using the difference between the height reported by
     # chrome and the height reported by android.
-    top_border_height = (raw_chrome_window_bounds.bottom -
-                         raw_chrome_window_bounds.top) - window_inner_height
+    top_border_height = raw_chrome_window_bounds.height - window_inner_height
 
     self._chrome_window: DisplayRectangle = DisplayRectangle(
-        raw_chrome_window_bounds.left, raw_chrome_window_bounds.right,
-        raw_chrome_window_bounds.top + top_border_height,
-        raw_chrome_window_bounds.bottom)
+        Point(raw_chrome_window_bounds.origin.x,
+              raw_chrome_window_bounds.origin.y + top_border_height),
+        raw_chrome_window_bounds.width,
+        raw_chrome_window_bounds.height - top_border_height)
+
     if element_rect:
-      self._element_rect: DisplayRectangle = (
-          element_rect * self.actual_pixel_ratio) + self._chrome_window
+      self._element_rect: DisplayRectangle = (element_rect *
+                                              self.actual_pixel_ratio).shift_by(
+                                                  self._chrome_window)
 
   @property
   def chrome_window(self) -> DisplayRectangle:
@@ -111,8 +125,7 @@ class ViewportInfo:
   def element_center(self) -> Optional[Point]:
     if not self._element_rect:
       return None
-    return Point(
-        round(self._element_rect.mid_x), round(self._element_rect.mid_y))
+    return Point(self._element_rect.mid_x, self._element_rect.mid_y)
 
   def css_to_native_distance(self, distance: float) -> float:
     return distance * self.actual_pixel_ratio
@@ -149,9 +162,9 @@ class AndroidInputActionRunner(BasicActionRunner):
       window.innerHeight, 
       window.innerWidth, 
       rect.left, 
-      rect.right, 
       rect.top, 
-      rect.bottom
+      rect.width, 
+      rect.height
     ];
 """
 
@@ -273,8 +286,8 @@ class AndroidInputActionRunner(BasicActionRunner):
 
     script += self._GET_JS_VALUES
 
-    (found_element, inner_height, inner_width, left, right, top,
-     bottom) = actions.js(
+    (found_element, inner_height, inner_width, left, top, width,
+     height) = actions.js(
          script, arguments=[selector, scroll_into_view])
 
     # If the chrome window position has not yet been found,
@@ -286,7 +299,7 @@ class AndroidInputActionRunner(BasicActionRunner):
 
     element_rect: Optional[DisplayRectangle] = None
     if found_element:
-      element_rect = DisplayRectangle(left, right, top, bottom)
+      element_rect = DisplayRectangle(Point(left, top), width, height)
 
     return ViewportInfo(self.raw_chrome_window_bounds, inner_height,
                         inner_width, element_rect)
@@ -330,12 +343,11 @@ class AndroidInputActionRunner(BasicActionRunner):
     if not match:
       raise RuntimeError("Could not find chrome window bounds")
 
+    width = int(match["right"]) - int(match["left"])
+    height = int(match["bottom"]) - int(match["top"])
+
     return DisplayRectangle(
-        int(match["left"]),
-        int(match["right"]),
-        int(match["top"]),
-        int(match["bottom"]),
-    )
+        Point(int(match["left"]), int(match["top"])), width, height)
 
   def _type_characters(self, run: Run, _: Actions, characters: str) -> None:
     # TODO(kalutes) handle special characters and other whitespaces like '\t'
