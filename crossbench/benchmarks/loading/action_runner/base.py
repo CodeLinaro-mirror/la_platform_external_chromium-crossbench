@@ -12,7 +12,8 @@ from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
-  from crossbench.benchmarks.loading.page import (CombinedPage, InteractivePage,
+  from crossbench.benchmarks.loading.page import (CombinedPage,
+                                                  InteractivePage, LivePage,
                                                   Page)
   from crossbench.benchmarks.loading.page_config import ActionBlock
   from crossbench.path import LocalPath
@@ -175,7 +176,7 @@ class ActionRunner:
     del action
     self.screenshot_impl(run, "screenshot")
 
-  def run_page(self, run: Run, page: Page):
+  def run_page(self, run: Run, page: LivePage):
     run.browser.show_url(run.runner, page.url)
     run.runner.wait(page.duration)
     self._maybe_navigate_to_about_blank(run, page)
@@ -188,6 +189,7 @@ class ActionRunner:
   def run_interactive_page(self, run: Run, page: InteractivePage):
     try:
       self.run_blocks(run, page.blocks)
+      self._maybe_navigate_to_about_blank(run, page)
     except Exception:
       page.failure_screenshot(run)
       raise

@@ -31,8 +31,6 @@ DEFAULT_DURATION = dt.timedelta(seconds=DEFAULT_DURATION_SECONDS)
 
 class Page(Story, metaclass=abc.ABCMeta):
 
-  url: Optional[str]
-
   @classmethod
   def all_story_names(cls) -> Tuple[str, ...]:
     return tuple(page.name for page in PAGE_LIST)
@@ -60,6 +58,11 @@ class Page(Story, metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def first_url(self) -> str:
     pass
 
 
@@ -101,6 +104,10 @@ class LivePage(Page):
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.run_page(run, self)
 
+  @property
+  def first_url(self) -> str:
+    return self.url
+
   def __str__(self) -> str:
     return f"Page(name={self.name}, url={self.url})"
 
@@ -134,6 +141,10 @@ class CombinedPage(Page):
   @property
   def pages(self) -> Iterable[Page]:
     return self._pages
+
+  @property
+  def first_url(self) -> str:
+    return self._pages[0].first_url
 
   def details_json(self) -> JsonDict:
     result = super().details_json()

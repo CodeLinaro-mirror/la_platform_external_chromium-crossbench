@@ -313,16 +313,16 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     url2 = "http://example.com/test2"
     stories = self.story_filter([url1, url2]).stories
     self.assertEqual(len(stories), 2)
-    self.assertEqual(stories[0].url, url1)
-    self.assertEqual(stories[1].url, url2)
+    self.assertEqual(stories[0].first_url, url1)
+    self.assertEqual(stories[1].first_url, url2)
 
   def test_page_by_url_www(self):
     url1 = "www.example.com/test1"
     url2 = "www.example.com/test2"
     stories = self.story_filter([url1, url2]).stories
     self.assertEqual(len(stories), 2)
-    self.assertEqual(stories[0].url, f"https://{url1}")
-    self.assertEqual(stories[1].url, f"https://{url2}")
+    self.assertEqual(stories[0].first_url, f"https://{url1}")
+    self.assertEqual(stories[1].first_url, f"https://{url2}")
 
   def test_page_by_url_combined(self):
     url1 = "http://example.com/test1"
@@ -506,34 +506,39 @@ class PageConfigTestsCase(unittest.TestCase):
   def test_parse_blank(self):
     config = PageConfig.parse("about:blank")
     self.assertEqual(config.label, "blank")
-    self.assertEqual(config.url, "about:blank")
+    self.assertEqual(config.first_url, "about:blank")
 
   def test_parse_file(self):
     config = PageConfig.parse("file://foo/bar/custom.html")
     self.assertEqual(config.label, "custom.html")
-    self.assertEqual(config.url, "file://foo/bar/custom.html")
+    self.assertEqual(config.first_url, "file://foo/bar/custom.html")
 
   def test_parse_url(self):
     config = PageConfig.parse("http://www.a.com")
-    self.assertEqual(config.url, "http://www.a.com")
+    self.assertEqual(config.first_url, "http://www.a.com")
     self.assertEqual(config.duration, dt.timedelta())
     self.assertEqual(config.label, "a.com")
 
+  def test_parse_invalid_url(self):
+    for invalid in ("ssh://test.com/bar", "", "http://invalid host/"):
+      with self.subTest(url=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          PageConfig.parse(invalid)
+
   def test_parse_url_no_protocol(self):
     config = PageConfig.parse("www.a.com")
-    self.assertEqual(config.url, "https://www.a.com")
     self.assertEqual(config.duration, dt.timedelta())
     self.assertEqual(config.label, "a.com")
 
   def test_parse_url_numbers(self):
     config = PageConfig.parse("123.a.com")
-    self.assertEqual(config.url, "https://123.a.com")
+    self.assertEqual(config.first_url, "https://123.a.com")
     self.assertEqual(config.duration, dt.timedelta())
     self.assertEqual(config.label, "123.a.com")
 
   def test_parse_with_duration(self):
     config = PageConfig.parse("http://news.b.com,123s")
-    self.assertEqual(config.url, "http://news.b.com")
+    self.assertEqual(config.first_url, "http://news.b.com")
     self.assertEqual(config.duration.total_seconds(), 123)
     self.assertEqual(config.label, "news.b.com")
 
@@ -546,7 +551,7 @@ class PageConfigTestsCase(unittest.TestCase):
   def test_parse_multiple_comma(self):
     # duration splitting should happen in the caller
     config = PageConfig.parse("www.b.com/foo?bar=a,b,c,d,123s")
-    self.assertEqual(config.url, "https://www.b.com/foo?bar=a,b,c,d")
+    self.assertEqual(config.first_url, "https://www.b.com/foo?bar=a,b,c,d")
     self.assertEqual(config.duration.total_seconds(), 123)
     self.assertEqual(config.label, "b.com")
 
@@ -579,42 +584,42 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     config = PagesConfig.parse("http://a.com")
     self.assertEqual(len(config.pages), 1)
     page_config = config.pages[0]
-    self.assertEqual(page_config.url, "http://a.com")
+    self.assertEqual(page_config.first_url, "http://a.com")
 
   def test_parse_single_with_duration(self):
     config = PagesConfig.parse("http://a.com,123s")
     self.assertEqual(len(config.pages), 1)
     page_config = config.pages[0]
-    self.assertEqual(page_config.url, "http://a.com")
+    self.assertEqual(page_config.first_url, "http://a.com")
     self.assertEqual(page_config.duration.total_seconds(), 123)
 
   def test_parse_multiple(self):
     config = PagesConfig.parse("http://a.com,http://b.com")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "http://a.com")
-    self.assertEqual(page_config_1.url, "http://b.com")
+    self.assertEqual(page_config_0.first_url, "http://a.com")
+    self.assertEqual(page_config_1.first_url, "http://b.com")
 
   def test_parse_multiple_short_domain(self):
     config = PagesConfig.parse("a.com,b.com")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "https://a.com")
-    self.assertEqual(page_config_1.url, "https://b.com")
+    self.assertEqual(page_config_0.first_url, "https://a.com")
+    self.assertEqual(page_config_1.first_url, "https://b.com")
 
   def test_parse_multiple_numeric_domain(self):
     config = PagesConfig.parse("111.a.com,222.b.com")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "https://111.a.com")
-    self.assertEqual(page_config_1.url, "https://222.b.com")
+    self.assertEqual(page_config_0.first_url, "https://111.a.com")
+    self.assertEqual(page_config_1.first_url, "https://222.b.com")
 
   def test_parse_multiple_numeric_domain_with_duration(self):
     config = PagesConfig.parse("111.a.com,12s,222.b.com,23s")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "https://111.a.com")
-    self.assertEqual(page_config_1.url, "https://222.b.com")
+    self.assertEqual(page_config_0.first_url, "https://111.a.com")
+    self.assertEqual(page_config_1.first_url, "https://222.b.com")
     self.assertEqual(page_config_0.duration.total_seconds(), 12)
     self.assertEqual(page_config_1.duration.total_seconds(), 23)
 
@@ -622,8 +627,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     config = PagesConfig.parse("http://a.com,123s,http://b.com")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "http://a.com")
-    self.assertEqual(page_config_1.url, "http://b.com")
+    self.assertEqual(page_config_0.first_url, "http://a.com")
+    self.assertEqual(page_config_1.first_url, "http://b.com")
     self.assertEqual(page_config_0.duration.total_seconds(), 123)
     self.assertEqual(page_config_1.duration, dt.timedelta())
 
@@ -631,8 +636,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     config = PagesConfig.parse("http://a.com,http://b.com,123s")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "http://a.com")
-    self.assertEqual(page_config_1.url, "http://b.com")
+    self.assertEqual(page_config_0.first_url, "http://a.com")
+    self.assertEqual(page_config_1.first_url, "http://b.com")
     self.assertEqual(page_config_0.duration, dt.timedelta())
     self.assertEqual(page_config_1.duration.total_seconds(), 123)
 
@@ -640,8 +645,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     config = PagesConfig.parse("http://a.com,1s,http://b.com,123s")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
-    self.assertEqual(page_config_0.url, "http://a.com")
-    self.assertEqual(page_config_1.url, "http://b.com")
+    self.assertEqual(page_config_0.first_url, "http://a.com")
+    self.assertEqual(page_config_1.first_url, "http://b.com")
     self.assertEqual(page_config_0.duration.total_seconds(), 1)
     self.assertEqual(page_config_1.duration.total_seconds(), 123)
 
@@ -658,11 +663,11 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     config_data = {"pages": {"Google Story": []}}
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       PagesConfig.parse(config_data)
-    self.assertIn("action", str(cm.exception).lower())
+    self.assertIn("empty", str(cm.exception).lower())
     config_data = {"pages": {"Google Story": {}}}
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       PagesConfig.parse(config_data)
-    self.assertIn("action", str(cm.exception).lower())
+    self.assertIn("empty", str(cm.exception).lower())
 
   def test_parse_empty_missing_get_action(self):
     config_data = {
@@ -699,6 +704,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
+    self.assertIsNone(config.pages[0].login)
     # Loading the same config from a file should result in the same actions.
     file = pathlib.Path("page.config.hjson")
     assert not file.exists()
@@ -706,15 +712,49 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       hjson.dump(config_data, f)
     pages = PagesConfig.parse(str(file)).pages
     self.assert_single_google_story(pages)
+    self.assertIsNone(config.pages[0].login)
+
+  def test_example_with_login(self):
+    config_data = {
+        "pages": {
+            "Google Story": {
+                "login": [{
+                    "action": "get",
+                    "url": "https://www.google.com/login"
+                },],
+                "actions": [
+                    {
+                        "action": "get",
+                        "url": "https://www.google.com"
+                    },
+                    {
+                        "action": "wait",
+                        "duration": 5
+                    },
+                    {
+                        "action": "scroll",
+                        "direction": "down",
+                        "duration": 3
+                    },
+                ]
+            },
+        }
+    }
+    config = PagesConfig.parse(config_data)
+    self.assert_single_google_story(config.pages)
+    login = config.pages[0].login
+    self.assertEqual(len(login.actions), 1)
+    self.assertEqual(login.actions[0].url, "https://www.google.com/login")
+
 
   def assert_single_google_story(self, pages: Sequence[PageConfig]):
     self.assertTrue(len(pages), 1)
     page = pages[0]
     self.assertEqual(page.label, "Google Story")
-    self.assertEqual(page.url,  "https://www.google.com")
+    self.assertEqual(page.first_url,  "https://www.google.com")
     self.assertEqual(len(page.blocks), 1)
-    actions = page.blocks[0].actions
-    self.assertListEqual([str(action.TYPE) for action in actions],
+    block = page.blocks[0]
+    self.assertListEqual([str(action.TYPE) for action in block],
                          ["get", "wait", "scroll"])
 
   def test_no_scenarios(self):
@@ -725,6 +765,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_scenario_invalid_actions(self):
     invalid_actions = [None, "", [], {}, "invalid string", 12]
+    invalid_actions = ["invalid string", 12]
     for invalid_action in invalid_actions:
       config_dict = {"pages": {"name": invalid_action}}
       with self.subTest(invalid_action=invalid_action):
@@ -740,7 +781,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                   "duration": 5.0
               }]
           }})
-    self.assertIn("'action'", str(cm.exception))
+    self.assertIn("Invalid data:", str(cm.exception))
 
   def test_invalid_action(self):
     invalid_actions = [None, "", [], {}, "unknown action name", 12]
@@ -905,7 +946,7 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(config.pages), 1)
     page = config.pages[0]
     self.assertEqual(page.label, "cnn load")
-    self.assertEqual(page.url, "https://edition.cnn.com/")
+    self.assertEqual(page.first_url, "https://edition.cnn.com/")
     self.assertEqual(len(page.blocks), 1)
     self.assertGreater(len(page.blocks[0].actions), 1)
 
@@ -953,8 +994,8 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
         {"pages": "http://a.com,12s,http://b.com,13s"})
     self.assertEqual(len(config.pages), 2)
     story_1, story_2 = config.pages
-    self.assertEqual(story_1.url, "http://a.com")
-    self.assertEqual(story_2.url, "http://b.com")
+    self.assertEqual(story_1.first_url, "http://a.com")
+    self.assertEqual(story_2.first_url, "http://b.com")
     self.assertEqual(story_1.duration.total_seconds(), 12)
     self.assertEqual(story_2.duration.total_seconds(), 13)
 
@@ -1380,7 +1421,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       ActionBlockListConfig.parse({"block 1": {"actions": []}})
     self.assertIn("actions", str(cm.exception))
 
-  def test_parse_login_blocks(self):
+  def test_parse_logins(self):
     config = ActionBlockListConfig.parse({
         "login": [{
             "action": "get",
@@ -1403,7 +1444,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(block.index, 1)
     self.assertEqual(len(block.actions), 1)
 
-  def test_parse_duplicate_login_block(self):
+  def test_parse_duplicate_login(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = ActionBlockListConfig.parse([{
           "label": "login",
@@ -1419,7 +1460,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
           }]
       }])
 
-  def test_parse_single_login_block_action_list(self):
+  def test_parse_single_login_action_list(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = ActionBlockListConfig.parse([{
           "label": "login",
@@ -1430,7 +1471,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       }])
     self.assertIn("Missing action blocks", str(cm.exception))
 
-  def test_parse_login_block_with_label(self):
+  def test_parse_login_with_label(self):
     config = ActionBlockListConfig.parse([{
         "label": "login",
         "actions": [{

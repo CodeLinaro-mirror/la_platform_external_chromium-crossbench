@@ -159,7 +159,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
     if use_labels:
       # Double check that the urls are unique
-      urls = set(page_config.url for page_config in config.pages)
+      urls = set(page_config.first_url for page_config in config.pages)
       if len(urls) != len(config.pages):
         raise argparse.ArgumentTypeError(
             "Got non-unique story labels and urls.")
@@ -180,11 +180,11 @@ class LoadingPageFilter(StoryFilter[Page]):
       return LivePage(page.name, page.url, duration, playback, tabs,
                       args.about_blank_duration)
 
-    label: str = config.label if use_labels else config.url
+    label: str = config.label if use_labels else config.first_url
     duration = duration or DEFAULT_DURATION
 
     if not config.blocks:
-      return LivePage(label, config.url, duration, playback, tabs,
+      return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
     return InteractivePage(label, config.blocks, config.login, playback, tabs,
                            args.about_blank_duration)

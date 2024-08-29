@@ -11,21 +11,19 @@ import datetime as dt
 import logging
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
                     Sequence, Tuple, Type, cast)
-from urllib.parse import urlparse
+from urllib import parse as urlparse
 
 from crossbench import cli_helper, exception
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action import (Action, ClickAction,
-                                                  GetAction, ReadyState,
-                                                  WaitAction)
+from crossbench.benchmarks.loading.action import (Action, ActionType,
+                                                  ClickAction, GetAction,
+                                                  ReadyState, WaitAction)
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.page import PAGES
+from crossbench.benchmarks.loading.playback_controller import \
+    PlaybackController
 from crossbench.browsers.secrets import SecretType
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
-
-if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.playback_controller import \
-      PlaybackController
 
 
 @dataclasses.dataclass(frozen=True)
@@ -151,18 +149,26 @@ class ActionBlockListConfig(ConfigObject):
     [{ "action": "get", ...}, { "action": ...}, ...]
     """
     config = cli_helper.parse_non_empty_sequence(config, "actions")
+    info = "action block"
     if cls._is_default_block_actions(config):
+      info = "default actions"
       config = [{"actions": config}]
+    if not cls._is_block_sequence_config(config):
+      raise ValueError(
+          "Invalid data: Expected a list of either blocks or actions.")
 
     def block_config_data_gen():
       for index, block_config in enumerate(config):
-        with exception.annotate_argparsing(
-            f"Parsing action block  ...[{index}]"):
+        with exception.annotate_argparsing(f"Parsing {info} ...[{index}]"):
           block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
           label = block_config.get("label")
           yield index, label, block_config
 
     return cls._parse_blocks(block_config_data_gen())
+
+  @classmethod
+  def _is_block_sequence_config(cls, config: Sequence[Dict[str, Any]]) -> bool:
+    return "label" in config[0] or "actions" in config[0]
 
   @classmethod
   def _is_default_block_actions(cls, config: Sequence[Dict[str, Any]]) -> bool:
@@ -229,57 +235,97 @@ class ActionBlockListConfig(ConfigObject):
     start_index = 0
     if self.login:
       start_index = 1
+    found_get = False
     for index, block in enumerate(self.blocks, start=start_index):
       if index != block.index:
         raise ValueError(
             f"blocks[{index}].index should be {index}, but got {block.index}")
-
+      found_get |= any(action.TYPE == ActionType.GET for action in block)
+    if not found_get:
+      raise ValueError("Expected at least one get action in one of the blocks.")
 
 
 @dataclasses.dataclass(frozen=True)
 class PageConfig(ConfigObject):
   label: str = ""
-  url: str = ""
-  duration: dt.timedelta = dt.timedelta()
   playback: Optional[PlaybackController] = None
   blocks: Tuple[ActionBlock, ...] = tuple()
   login: Optional[LoginBlock] = None
 
   @classmethod
-  def parse_str(cls: Type[PageConfig], value: str) -> PageConfig:
-    parts = value.rsplit(",", maxsplit=1)
-    if len(parts) == 1:
-      label, url = cls._parse_url(parts[0])
-      return PageConfig(label=label, url=url)
-    url, duration_str = parts
-    label, url = cls._parse_url(url)
-    return PageConfig(
-        label=label,
-        url=url,
-        duration=cli_helper.Duration.parse_non_zero(duration_str))
+  def parse_other(cls: Type[PageConfig], value: Any, **kwargs) -> PageConfig:
+    if isinstance(value, (list, tuple)):
+      return cls.parse_sequence(value, **kwargs)
+    return super().parse_other(value)
 
   @classmethod
-  def parse_dict(cls: Type[PageConfig], config: Dict[str, Any]) -> PageConfig:
+  def parse_str(  # pylint: disable=arguments-differ
+      cls: Type[PageConfig],
+      value: str,
+      label: Optional[str] = None) -> PageConfig:
+    """
+    Simple comma-separated string with optional duration:
+      value = URL,[DURATION]
+    """
+    parts = value.rsplit(",", maxsplit=1)
+    duration = dt.timedelta()
+    url_label, url = cls._parse_url(parts[0])
+    if len(parts) == 2:
+      duration = cli_helper.Duration.parse_non_zero(parts[1])
+    label = label or url_label
+    return cls.from_url(label, url, duration)
+
+  @classmethod
+  def parse_sequence(cls: Type[PageConfig],
+                     value: Sequence[Any],
+                     label: Optional[str] = None) -> PageConfig:
+    value = cli_helper.parse_non_empty_sequence(value,
+                                                "story actions or blocks")
+    blocks = ActionBlockListConfig.parse_sequence(value)
+    label = cli_helper.parse_non_empty_str(label, "label")
+    return cls(label, blocks=blocks.blocks, login=blocks.login)
+
+  @classmethod
+  def parse_dict(  # pylint: disable=arguments-differ
+      cls: Type[PageConfig],
+      config: Dict[str, Any],
+      label: Optional[str] = None) -> PageConfig:
+    config = cli_helper.parse_non_empty_dict(config, "story actions or blocks")
+    if "url" in config:
+      return cls._parse_simple_config_dict(config, label)
+    base = cls.config_parser().parse(config, label=label)
+    blocks = ActionBlockListConfig.parse(config)
+    return cls(base.label, base.playback, blocks.blocks, blocks.login)
+
+  @classmethod
+  def config_parser(cls: Type[PageConfig]) -> ConfigParser[PageConfig]:
+    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser.add_argument("label", type=cli_helper.parse_non_empty_str)
+    parser.add_argument("playback", type=PlaybackController.parse)
+    return parser
+
+  @classmethod
+  def _parse_simple_config_dict(cls: Type[PageConfig],
+                                config: Dict[str, Any],
+                                label: Optional[str] = None) -> PageConfig:
     # TODO: use this method and move actions parsing to here from PagesConfig
     url = config["url"]
-    label, url = cls._parse_url(url)
+    url_label, url = cls._parse_url(url)
     duration = dt.timedelta()
     if duration_str := config.get("duration"):
       duration = cli_helper.Duration.parse_non_zero(duration_str)
-    return PageConfig(label=label, url=url, duration=duration)
+    label = label or url_label
+    return cls.from_url(label, url, duration)
 
   @classmethod
   def _parse_url(cls, value: str) -> Tuple[str, str]:
     if value in PAGES:
       return value, PAGES[value].url
-    url = urlparse(value)
-    if not url.scheme:
-      value = f"https://{value}"
-    return cls._url_extract_label(value), value
+    url = cli_helper.parse_fuzzy_url(value)
+    return cls._url_extract_label(url), urlparse.urlunparse(url)
 
   @classmethod
-  def _url_extract_label(cls, value: str) -> str:
-    url = urlparse(value)
+  def _url_extract_label(cls, url: urlparse.ParseResult) -> str:
     if url.scheme == "about":
       return url.path
     if url.scheme == "file":
@@ -288,8 +334,31 @@ class PageConfig(ConfigObject):
       if hostname.startswith("www."):
         return hostname[len("www."):]
       return hostname
-    return value
+    return str(url)
 
+  @classmethod
+  def from_url(cls,
+               label: str,
+               url: str,
+               duration: dt.timedelta = dt.timedelta()) -> PageConfig:
+    actions = (GetAction(url, duration=duration),)
+    blocks = (ActionBlock(actions=actions),)
+    return PageConfig(label=label, blocks=blocks)
+
+  def actions(self) -> Iterator[Action]:
+    for block in self.blocks:
+      yield from block
+
+  @property
+  def duration(self) -> dt.timedelta:
+    return sum((action.duration for action in self.actions()), dt.timedelta())
+
+  @property
+  def first_url(self) -> str:
+    for action in self.actions():
+      if action.TYPE == ActionType.GET:
+        return cast(GetAction, action).url
+    raise RuntimeError("No GET action with an URL found.")
 
 @dataclasses.dataclass(frozen=True)
 class PagesConfig(ConfigObject):
@@ -304,6 +373,10 @@ class PagesConfig(ConfigObject):
 
   @classmethod
   def parse_str(cls, value: str) -> PagesConfig:
+    """
+    Simple comma-separate config:
+    value = URL, [DURATION], ...
+    """
     values: List[str] = []
     previous_part: Optional[str] = None
     for part in value.strip().split(","):
@@ -334,83 +407,45 @@ class PagesConfig(ConfigObject):
 
   @classmethod
   def parse_sequence(cls, values: Sequence[str]) -> PagesConfig:
+    """
+    Variant a): List of comma-separate URLs
+      [ "URL,[DURATION]", ... ]
+    """
+    # TODO: support parsing a list of PageConfig dicts
     if not values:
       raise argparse.ArgumentTypeError("Got empty page list.")
     pages: List[PageConfig] = []
     for index, single_line_config in enumerate(values):
       with exception.annotate_argparsing(
           f"Parsing pages[{index}]: {repr(single_line_config)}"):
-        pages.append(PageConfig.parse(single_line_config))
+        pages.append(PageConfig.parse_str(single_line_config))
     return PagesConfig(pages=tuple(pages))
 
   @classmethod
   def parse_dict(cls, config: Dict) -> PagesConfig:
-    with exception.annotate_argparsing("Parsing scenarios / pages"):
+    """
+    Variant a):
+    { "pages": { "LABEL": PAGE_CONFIG }}
+    """
+    with exception.annotate_argparsing("Parsing stories"):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
             "Config does not provide a 'pages' dict.")
       pages = cli_helper.parse_non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
-        pages = copy.deepcopy(pages)
         logins = [SecretType.parse(login) for login in config.get("logins", [])]
-        return PagesConfig(cls._parse_pages(pages), tuple(logins))
+        pages = cls._parse_pages(pages)
+        return PagesConfig(pages, tuple(logins))
     raise exception.UnreachableError()
 
   @classmethod
   def _parse_pages(cls, data: Dict[str, Any]) -> Tuple[PageConfig, ...]:
-    """
-    Behaviour to be aware
-
-    There's no default Actions. In other words, if there's no Actions
-    for a story this specific scenario will be ignored since there's
-    nothing to do.
-
-    If one would want to simply navigate to a site it is important to at
-    least include: {action: "GET", value/url: google.com} in the specific
-    scenario.
-
-    As an example look at: config/doc/page.config.hjson
-    """
     pages = []
-    for scenario_name, actions in data.items():
-      with exception.annotate_argparsing(
-          f"Parsing story ...['{scenario_name}']"):
-        actions = cls._parse_actions(actions, scenario_name)
-        # Use default action block
-        blocks = (ActionBlock(actions=actions),)
-        url = cls._extract_first_actions_url(actions)
-        pages.append(
-            PageConfig(
-                label=scenario_name,
-                url=url,
-                playback=None,
-                blocks=blocks))
+    for name, page_config in data.items():
+      with exception.annotate_argparsing(f"Parsing story ...['{name}']"):
+        page = PageConfig.parse(page_config, label=name)
+        pages.append(page)
     return tuple(pages)
-
-  @classmethod
-  def _parse_actions(cls, actions: List[Dict[str, Any]],
-                     scenario_name: str) -> Tuple[Action, ...]:
-    if not actions:
-      raise ValueError(f"Story'{scenario_name}' has no action")
-    if not isinstance(actions, list):
-      raise ValueError(f"Expected list, got={type(actions)}, '{actions}'")
-    actions_list: List[Action] = []
-    for i, action_config in enumerate(actions):
-      with exception.annotate_argparsing(
-          f"Parsing action   ...['{scenario_name}'][{i}]"):
-        action_step = Action.parse_dict(action_config)
-        actions_list.append(action_step)
-    if not actions_list:
-      raise argparse.ArgumentTypeError(
-          f"Expect non-empty actions for {scenario_name}")
-    return tuple(actions_list)
-
-  @classmethod
-  def _extract_first_actions_url(cls, actions: Sequence[Action]) -> str:
-    for action in actions:
-      if isinstance(action, GetAction):
-        return action.url
-    raise argparse.ArgumentTypeError("Actions must contain at least one GET.")
 
 
 class DevToolsRecorderPagesConfig(PagesConfig):
@@ -423,18 +458,16 @@ class DevToolsRecorderPagesConfig(PagesConfig):
   def parse_dict(cls, config: Dict[str, Any]) -> DevToolsRecorderPagesConfig:
     config = cli_helper.parse_non_empty_dict(config)
     with exception.annotate_argparsing("Loading DevTools recording file"):
-      title = config["title"]
-      assert title, "No title provided"
-      actions = tuple(cls._parse_steps(config["steps"]))
+      title = cli_helper.parse_non_empty_str(config["title"], "title")
+      actions = cls._parse_steps(config["steps"])
       # Use default block
       blocks = (ActionBlock(actions=actions),)
-      url = cls._extract_first_actions_url(actions)
-      pages = (PageConfig(label=title, url=url, blocks=blocks),)
+      pages = (PageConfig(label=title, blocks=blocks),)
       return DevToolsRecorderPagesConfig(pages)
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_steps(cls, steps: List[Dict[str, Any]]) -> List[Action]:
+  def _parse_steps(cls, steps: List[Dict[str, Any]]) -> Tuple[Action, ...]:
     actions: List[Action] = []
     for step in steps:
       maybe_actions: Optional[Action] = cls._parse_step(step)
@@ -442,7 +475,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
         actions.append(maybe_actions)
         # TODO(cbruni): make this configurable
         actions.append(WaitAction(duration=dt.timedelta(seconds=1)))
-    return actions
+    return tuple(actions)
 
   @classmethod
   def _parse_step(cls, step: Dict[str, Any]) -> Optional[Action]:
