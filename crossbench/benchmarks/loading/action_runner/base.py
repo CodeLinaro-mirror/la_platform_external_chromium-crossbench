@@ -12,10 +12,9 @@ from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
-  from crossbench.benchmarks.loading.page import (CombinedPage,
-                                                  InteractivePage, LivePage,
-                                                  Page)
-  from crossbench.benchmarks.loading.page_config import ActionBlock
+  from crossbench.benchmarks.loading.config.pages import ActionBlock
+  from crossbench.benchmarks.loading.page import (CombinedPage, InteractivePage,
+                                                  LivePage, Page)
   from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 

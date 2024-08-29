@@ -20,8 +20,9 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.benchmarks.loading.config.login.custom import LoginBlock
+  from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
-  from crossbench.benchmarks.loading.page_config import ActionBlock, LoginBlock
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 

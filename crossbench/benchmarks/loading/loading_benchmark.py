@@ -17,12 +17,12 @@ from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.config import \
     ActionRunnerConfig
+from crossbench.benchmarks.loading.config.pages import (
+    DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.page import (DEFAULT_DURATION, PAGE_LIST,
                                                 PAGE_LIST_SMALL, PAGES,
                                                 CombinedPage, InteractivePage,
                                                 LivePage, Page)
-from crossbench.benchmarks.loading.page_config import (
-    DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController

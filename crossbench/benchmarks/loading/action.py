@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
 
 from crossbench import cli_helper, exception
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
@@ -20,25 +21,6 @@ if TYPE_CHECKING:
   import crossbench.path as pth
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
-
-
-@enum.unique
-class ActionType(ConfigEnum):
-  GET = ("get", "Open a URL")
-  JS = ("js", "Run a custom script")
-  WAIT = ("wait", "Wait for a given time")
-  SCROLL = ("scroll", "Scroll on page")
-  CLICK = ("click", "Click on element or at specified coordinates")
-  SWIPE = ("swipe", "Swipe on screen")
-  TEXT_INPUT = ("text_input", "Type printable characters at a"
-                "specified speed.")
-  WAIT_FOR_ELEMENT = ("wait_for_element",
-                      "Wait until element appears on the page")
-  INJECT_NEW_DOCUMENT_SCRIPT = ("inject_new_document_script", (
-      "Evaluates given script in every frame upon creation "
-      "(before loading frame's scripts). "
-      "Only supported in chromium-based browsers."))
-  SCREENSHOT = ("screenshot", "Take a screenshot")
 
 
 class ActionTypeConfigParser(ConfigParser):

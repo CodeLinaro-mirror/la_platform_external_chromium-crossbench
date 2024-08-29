@@ -4,9 +4,8 @@
 
 from __future__ import annotations
 
-import dataclasses
-
 import abc
+import dataclasses
 import enum
 import traceback
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar

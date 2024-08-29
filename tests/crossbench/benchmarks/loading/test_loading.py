@@ -29,14 +29,16 @@ from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner im
     ChromeOSInputActionRunner
 from crossbench.benchmarks.loading.action_runner.config import \
     ActionRunnerConfig
+from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
+from crossbench.benchmarks.loading.config.login.custom import LoginBlock
+from crossbench.benchmarks.loading.config.pages import (
+    ActionBlock, DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig,
+    PagesConfig)
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, InteractivePage,
                                                 LivePage)
-from crossbench.benchmarks.loading.page_config import (
-    ActionBlock, ActionBlockListConfig, DevToolsRecorderPagesConfig,
-    ListPagesConfig, LoginBlock, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
     TimeoutPlaybackController)

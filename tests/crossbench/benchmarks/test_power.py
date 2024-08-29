@@ -9,7 +9,7 @@ import unittest
 
 import hjson
 
-from crossbench.benchmarks.loading.page_config import PagesConfig
+from crossbench.benchmarks.loading.config.pages import PagesConfig
 from tests import test_helper
 
 
