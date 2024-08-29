@@ -209,7 +209,12 @@ class ChromeDownloaderLinux(ChromeDownloader):
                      browser_platform, cache_dir)
 
   def _installed_app_path(self) -> pth.LocalPath:
-    return self._extracted_path() / "opt/google/chrome-unstable/chrome"
+    dir_name = "chrome-unstable"
+    if self._requested_version.is_stable or self._requested_version.is_unknown:
+      dir_name = "chrome"
+    if self._requested_version.is_beta:
+      dir_name = "chrome-beta"
+    return self._extracted_path() / "opt/google" / dir_name / "chrome"
 
   def _archive_urls(
       self, folder_url: str,

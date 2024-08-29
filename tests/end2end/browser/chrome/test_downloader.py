@@ -78,6 +78,12 @@ def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
   driver_dir.rmdir()
 
 
+def _delete_extracted_app(output_dir: pathlib.Path, app_version: str) -> None:
+  for extracted_app_path in list(output_dir.iterdir()):
+    if app_version in str(extracted_app_path):
+      shutil.rmtree(str(extracted_app_path))
+
+
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="No canary versions on linux.")
 def test_download_pre_115_canary(output_dir, archive_dir, gsutil_path) -> None:
@@ -106,13 +112,7 @@ def test_download_major_version_milestone(output_dir, archive_dir,
       "111",
   )
 
-  # Delete the extracted app and reload, can't reuse the cached archive since
-  # we're requesting only a milestone that could have been updated
-  # in the meantime.
-  if plt.PLATFORM.is_macos:
-    shutil.rmtree(app_path)
-  else:
-    shutil.rmtree(output_dir / "M111")
+  _delete_extracted_app(output_dir, "M111")
   assert not app_path.exists()
   _load_and_check_version(
       output_dir,
@@ -144,13 +144,7 @@ def test_download_major_version_chrome_for_testing(output_dir, archive_dir,
       "115",
   )
 
-  # Delete the extracted app and reload, can't reuse the cached archive since
-  # we're requesting only a milestone that could have been updated
-  # in the meantime.
-  if plt.PLATFORM.is_macos:
-    shutil.rmtree(app_path)
-  else:
-    shutil.rmtree(output_dir / "M115")
+  _delete_extracted_app(output_dir, "M115")
   assert not app_path.exists()
   _load_and_check_version(
       output_dir,
@@ -172,20 +166,12 @@ def test_download_specific_version_pre_115_stable(output_dir, archive_dir,
   app_path = _load_and_check_version(output_dir, archive_dir, gsutil_path,
                                      f"chrome-{version_str}", version_str)
 
-  # Delete the extracted app and reload, should reuse the cached archive.
-  if plt.PLATFORM.is_macos:
-    shutil.rmtree(app_path)
-  else:
-    shutil.rmtree(output_dir / version_str)
+  _delete_extracted_app(output_dir, version_str)
   assert not app_path.exists()
   app_path = _load_and_check_version(output_dir, archive_dir, gsutil_path,
                                      f"chrome-{version_str}", version_str)
 
-  # Delete app and install from archive.
-  if plt.PLATFORM.is_macos:
-    shutil.rmtree(app_path)
-  else:
-    shutil.rmtree(output_dir / version_str)
+  _delete_extracted_app(output_dir, version_str)
   assert not app_path.exists()
   archives = list(archive_dir.iterdir())
   assert len(archives) == 1
