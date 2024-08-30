@@ -3,13 +3,13 @@
     // Uncomment the following line to record a WPR archive.
     // wpr: {},
     trace_processor: {
-      metrics: [
-        "lcp_metric",
-        "amazon_page_load_metric",
-        "cnn_page_load_metric",
-        "globo_page_load_metric",
-        "wikipedia_page_load_metric",
-        "youtube_page_load_metric",
+      queries: [
+        "loading/lcp_metric",
+        "loading/amazon_page_load_metric",
+        "loading/cnn_page_load_metric",
+        "loading/globo_page_load_metric",
+        "loading/wikipedia_page_load_metric",
+        "loading/youtube_page_load_metric",
       ],
     },
     perfetto: {

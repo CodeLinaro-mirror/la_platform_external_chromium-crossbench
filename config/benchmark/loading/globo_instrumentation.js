@@ -4,18 +4,7 @@
 
 const button_selector = 'button[aria-label=Consent]'
 const banner_selector = 'div[class=fc-consent-root]'
-const menu_button_id = 'menu-toggle'
-const menu_panel_id = 'menu-container'
 var banner_observer;
-
-const two_rafs =
-    function(cb) {
-  window.requestAnimationFrame(function(ts) {
-    window.requestAnimationFrame(function(ts) {
-      cb()
-    })
-  })
-}
 
 const button_observer = new MutationObserver(mutations => {
   const button = document.querySelector(button_selector)
@@ -33,19 +22,13 @@ const button_observer = new MutationObserver(mutations => {
     e.forEach(function(m) {
       m.removedNodes.forEach(function(n) {
         if (n === banner_node) {
-          performance.mark('cookie_banner_deleted')
-          two_rafs(function(ts) {
-            performance.mark('cookie_banner_gone')
-          })
+          performance.mark('cookie_banner_gone')
         }
       })
     })
   });
   banner_observer.observe(banner_node.parentNode, {childList: true});
-  performance.mark('cookie_banner_shown')
-  two_rafs(function(ts) {
-    button.click()
-  })
+  button.click()
 })
 
 button_observer.observe(document, {childList: true, subtree: true});
