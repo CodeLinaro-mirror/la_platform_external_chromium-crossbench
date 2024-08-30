@@ -6,7 +6,8 @@
       queries: [
         "loading/lcp_metric",
         "loading/amazon_page_load_metric",
-        "loading/cnn_page_load_metric",
+        "loading/cnn_desktop_page_load_metric",
+        "loading/cnn_mobile_page_load_metric",
         "loading/globo_page_load_metric",
         "loading/wikipedia_page_load_metric",
         "loading/youtube_page_load_metric",

@@ -10,7 +10,7 @@
     cnn_article: [
       {action: "inject_new_document_script", script_path: "cnn_instrumentation.js", timeout: "5s"},
       {action: "get", url: "https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html"},
-      {action: "wait", duration: "5s"},
+      {action: "wait", duration: "10s"},
       {action: "get", url: "about:blank"},
     ],
     google_doc: [
