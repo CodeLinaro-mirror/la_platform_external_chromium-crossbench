@@ -280,9 +280,9 @@ class TraceProcessorProbe(Probe):
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
-    logging.critical("TraceProcessor traces:")
+    logging.critical("TraceProcessor merged traces:")
     for run in group.runs:
-      logging.critical("  - %s", run.results[self].file)
+      logging.critical("  - %s", run.results[self].trace)
 
 
 class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
@@ -325,7 +325,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
           trace_file=merged_trace,
           out_dir=self.local_result_path)
 
-    return LocalProbeResult(file=[merged_trace], csv=csv_files, json=json_files)
+    return LocalProbeResult(trace=[merged_trace], csv=csv_files, json=json_files)
 
   def _merge_trace_files(self) -> pth.LocalPath:
     merged_trace = self.local_result_path / "merged_trace.zip"

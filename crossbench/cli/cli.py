@@ -945,7 +945,7 @@ class CrossBenchCLI:
       except Exception as e:  # pylint: disable=broad-except
         if args.throw:
           raise
-        logging.debug("log_result_summary failed: %s", e)
+        logging.warning("log_result_summary failed: %s", e)
 
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
     # TODO: move browser instance create to separate method.

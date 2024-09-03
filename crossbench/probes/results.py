@@ -172,10 +172,10 @@ class ProbeResult(abc.ABC):
 
   @property
   def file(self) -> pth.LocalPath:
-    if len(self._files) > 1:
+    if sum(len(files) for files in self._files.values()) > 1:
       raise ValueError("ProbeResult has more than one file.")
-    for suffix in self._files:
-      return self.get(suffix)
+    for files in self._files.values():
+      return files[0]
     raise ValueError("ProbeResult has no files.")
 
   @property
