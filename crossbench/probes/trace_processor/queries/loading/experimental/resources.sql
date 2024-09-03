@@ -39,7 +39,7 @@ WITH
       CASE
         WHEN url LIKE "data:%" THEN length(url)
         ELSE data_len
-        END AS data_len,
+      END AS data_len,
       mime,
       CASE
         WHEN mime LIKE '%css%' THEN 'css'
@@ -55,8 +55,11 @@ WITH
         WHEN mime LIKE '%ecmascript%' THEN 'javascript'
         WHEN mime LIKE '%xml%' THEN 'xml'
         ELSE 'other'
-        END AS mime_category,
-      url
+      END AS mime_category,
+      CASE
+        WHEN length(url) > 100 THEN SUBSTR(url, 1, 90) || '<TRUNCATED>'
+        ELSE url
+      END AS url
     FROM request, response
     USING (id),
     finish USING (id)
