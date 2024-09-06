@@ -201,7 +201,6 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self.assertEqual(browser_2_urls, story_urls)
 
 
-
 class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def test_invalid_duplicate_urls_stories(self):
@@ -600,6 +599,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
           }]
       })
     self.assertIn("login", str(cm.exception))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

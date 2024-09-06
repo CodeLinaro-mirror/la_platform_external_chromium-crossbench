@@ -7,25 +7,42 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.benchmarks.loading.tab_controller import (TabController,
+                                                          RepeatTabController,
+                                                          ForeverTabController)
 from tests import test_helper
 
 
-class TabControllerTest(unittest.TestCase):
+class TabControllerTestCase(unittest.TestCase):
 
   def test_parse_invalid(self):
-    for invalid in ["sing", "mult", "mlt", "5"]:
+    for invalid in ["sing", "mult", "mlt", "x5"]:
       with self.subTest(pattern=invalid):
         with self.assertRaises((argparse.ArgumentTypeError, ValueError)):
           TabController.parse(invalid)
 
-  def test_parse_multiple(self):
-    tab_controller = TabController.parse("multiple")
-    self.assertTrue(tab_controller.multiple_tabs)
+  def test_parse_repeat(self):
+    tab = TabController.parse("3")
+    self.assertIsInstance(tab, RepeatTabController)
+    assert isinstance(tab, RepeatTabController)
+    self.assertEqual(tab.count, 3)
+    self.assertEqual(len(list(tab)), 3)
+    self.assertTrue(tab.multiple_tabs)
+    self.assertFalse(tab.is_forever)
 
-  def test_parse_single(self):
-    tab_controller = TabController.parse("single")
-    self.assertFalse(tab_controller.multiple_tabs)
+  def test_repeat(self):
+    iterations = sum(1 for _ in TabController.repeat(1))
+    self.assertEqual(iterations, 1)
+    iterations = sum(1 for _ in TabController.repeat(10))
+    self.assertEqual(iterations, 10)
+
+  def test_forever(self):
+    count = 0
+    for _ in TabController.forever():
+      count += 1
+      if count > 100:
+        break
+    self.assertEqual(count, 101)
 
 
 if __name__ == "__main__":

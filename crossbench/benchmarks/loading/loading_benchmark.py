@@ -54,16 +54,28 @@ class LoadingPageFilter(StoryFilter[Page]):
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(parser)
     cls.add_page_config_parser(parser)
-    parser.add_argument(
-        "--tabs",
-        type=TabController.parse,
+    tab_group = parser.add_mutually_exclusive_group()
+    tab_group.add_argument(
+        "--single-tab",
+        dest="tabs",
+        const=TabController.single(),
         default=TabController.default(),
-        help="Open the given urls in single tab or multiple tabs. "
-        "Default is single. "
-        "Valid values are: 'multiple', 'single'. "
-        "For 'multiple', it will open the given urls in multiple tabs. "
-        "For 'single', it will open the given urls in single tab sequentially. "
+        action="store_const",
+        help="Open given urls in a single tab.")
+    tab_group.add_argument(
+        "--multiple-tab",
+        dest="tabs",
+        nargs='?',
+        type=TabController.parse,
+        const=TabController.multiple(),
+        help="Open given urls in separate tabs (optional value for number of tabs for each url)."
     )
+    tab_group.add_argument(
+        "--infinite-tab",
+        dest="tabs",
+        const=TabController.forever(),
+        action="store_const",
+        help="Open given urls in seperate tabs infinitely.")
 
     playback_group = parser.add_mutually_exclusive_group()
     playback_group.add_argument(

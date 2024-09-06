@@ -58,13 +58,18 @@ class Page(Story, metaclass=abc.ABCMeta):
     del parent
 
   @abc.abstractmethod
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, run: Run, action_runner: ActionRunner,
+               multiple_tabs: bool) -> None:
     pass
 
   @property
   @abc.abstractmethod
   def first_url(self) -> str:
     pass
+
+  @property
+  def tabs(self) -> TabController:
+    return self._tabs
 
 
 def get_action_runner(run: Run) -> ActionRunner:
@@ -99,11 +104,13 @@ class LivePage(Page):
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
+    multiple_tabs = self.tabs.multiple_tabs
     for _ in self._playback:
-      action_runner.run_page(run, self)
+      action_runner.run_page(run, self, multiple_tabs)
 
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.run_page(run, self)
+  def run_with(self, run: Run, action_runner: ActionRunner,
+               multiple_tabs: bool) -> None:
+    action_runner.run_page(run, self, multiple_tabs)
 
   @property
   def first_url(self) -> str:
@@ -157,11 +164,13 @@ class CombinedPage(Page):
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
+    multiple_tabs = self.tabs.multiple_tabs
     for _ in self._playback:
-      action_runner.run_combined_page(run, self)
+      action_runner.run_combined_page(run, self, multiple_tabs)
 
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.run_combined_page(run, self)
+  def run_with(self, run: Run, action_runner: ActionRunner,
+               multiple_tabs: bool) -> None:
+    action_runner.run_combined_page(run, self, multiple_tabs)
 
   def __str__(self) -> str:
     combined_name = ",".join(page.name for page in self._pages)
@@ -220,11 +229,13 @@ class InteractivePage(Page):
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
+    multiple_tabs = self.tabs.multiple_tabs
     for _ in self._playback:
-      action_runner.run_interactive_page(run, self)
+      action_runner.run_interactive_page(run, self, multiple_tabs)
 
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.run_interactive_page(run, self)
+  def run_with(self, run: Run, action_runner: ActionRunner,
+               multiple_tabs: bool) -> None:
+    action_runner.run_interactive_page(run, self, multiple_tabs)
 
   def details_json(self) -> JsonDict:
     result = super().details_json()
@@ -238,32 +249,36 @@ class InteractivePage(Page):
     return duration
 
 
-PAGE_LIST = (
-    LivePage("blank", "about:blank", dt.timedelta(seconds=1)),
-    LivePage("amazon", "https://www.amazon.de/s?k=heizkissen",
-             dt.timedelta(seconds=5)),
-    LivePage("bing", "https://www.bing.com/images/search?q=not+a+squirrel",
-             dt.timedelta(seconds=5)),
-    LivePage("caf", "http://www.caf.fr", dt.timedelta(seconds=6)),
-    LivePage("cnn", "https://cnn.com/", dt.timedelta(seconds=7)),
-    LivePage("ecma262", "https://tc39.es/ecma262/#sec-numbers-and-dates",
-             dt.timedelta(seconds=10)),
-    LivePage("expedia", "https://www.expedia.com/", dt.timedelta(seconds=7)),
-    LivePage("facebook", "https://facebook.com/shakira",
-             dt.timedelta(seconds=8)),
-    LivePage("maps", "https://goo.gl/maps/TEZde4y4Hc6r2oNN8",
-             dt.timedelta(seconds=10)),
-    LivePage("microsoft", "https://microsoft.com/", dt.timedelta(seconds=6)),
-    LivePage("provincial", "http://www.provincial.com",
-             dt.timedelta(seconds=6)),
-    LivePage("sueddeutsche", "https://www.sueddeutsche.de/wirtschaft",
-             dt.timedelta(seconds=8)),
-    LivePage("theverge", "https://www.theverge.com/", dt.timedelta(seconds=10)),
-    LivePage("timesofindia", "https://timesofindia.indiatimes.com/",
-             dt.timedelta(seconds=8)),
-    LivePage("twitter", "https://twitter.com/wernertwertzog?lang=en",
-             dt.timedelta(seconds=6)),
-)
+PAGE_LIST = (LivePage("blank", "about:blank", dt.timedelta(seconds=1)),
+             LivePage("amazon", "https://www.amazon.de/s?k=heizkissen",
+                      dt.timedelta(seconds=5)),
+             LivePage("bing",
+                      "https://www.bing.com/images/search?q=not+a+squirrel",
+                      dt.timedelta(seconds=5)),
+             LivePage("caf", "http://www.caf.fr", dt.timedelta(seconds=6)),
+             LivePage("cnn", "https://cnn.com/", dt.timedelta(seconds=7)),
+             LivePage("ecma262",
+                      "https://tc39.es/ecma262/#sec-numbers-and-dates",
+                      dt.timedelta(seconds=10)),
+             LivePage("expedia", "https://www.expedia.com/",
+                      dt.timedelta(seconds=7)),
+             LivePage("facebook", "https://facebook.com/shakira",
+                      dt.timedelta(seconds=8)),
+             LivePage("maps", "https://goo.gl/maps/TEZde4y4Hc6r2oNN8",
+                      dt.timedelta(seconds=10)),
+             LivePage("microsoft", "https://microsoft.com/",
+                      dt.timedelta(seconds=6)),
+             LivePage("provincial", "http://www.provincial.com",
+                      dt.timedelta(seconds=6)),
+             LivePage("sueddeutsche", "https://www.sueddeutsche.de/wirtschaft",
+                      dt.timedelta(seconds=8)),
+             LivePage("theverge", "https://www.theverge.com/",
+                      dt.timedelta(seconds=10)),
+             LivePage("timesofindia", "https://timesofindia.indiatimes.com/",
+                      dt.timedelta(seconds=8)),
+             LivePage("twitter", "https://twitter.com/wernertwertzog?lang=en",
+                      dt.timedelta(seconds=6)))
+
 PAGES = {page.name: page for page in PAGE_LIST}
 PAGE_LIST_SMALL = (PAGES["facebook"], PAGES["maps"], PAGES["timesofindia"],
                    PAGES["cnn"])

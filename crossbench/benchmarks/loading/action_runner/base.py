@@ -15,6 +15,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.page import (CombinedPage, InteractivePage,
                                                   LivePage, Page)
+  from crossbench.benchmarks.loading.tab_controller import TabController
   from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 
@@ -175,17 +176,48 @@ class ActionRunner:
     del action
     self.screenshot_impl(run, "screenshot")
 
-  def run_page(self, run: Run, page: LivePage):
-    run.browser.show_url(run.runner, page.url)
-    run.runner.wait(page.duration)
-    self._maybe_navigate_to_about_blank(run, page)
-
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
       run.browser.show_url(run.runner, "about:blank")
       run.runner.wait(duration)
 
-  def run_interactive_page(self, run: Run, page: InteractivePage):
+  def run_page_once(self, run: Run, page: LivePage):
+    run.browser.show_url(run.runner, page.url)
+    run.runner.wait(page.duration)
+    self._maybe_navigate_to_about_blank(run, page)
+
+  def run_page_multiple_tabs(self, run: Run, tabs: TabController,
+                             pages: Iterable[Page]):
+    # TODO: refactor possible logics to TabController.
+    browser = run.browser
+    for _ in tabs:
+      for i, page in enumerate(pages):
+        # Create a new tab for the multiple_tab case.
+        if i > 0:
+          browser.switch_to_new_tab()
+        page.run_with(run, self, False)
+      browser.switch_to_new_tab()
+
+  def run_page(self, run: Run, page: LivePage, multiple_tabs: bool):
+    if multiple_tabs:
+      self.run_page_multiple_tabs(run, page.tabs, [page])
+    else:
+      self.run_page_once(run, page)
+
+  def run_combined_page(self, run: Run, page: CombinedPage,
+                        multiple_tabs: bool):
+    if multiple_tabs:
+      self.run_page_multiple_tabs(run, page.tabs, page.pages)
+    else:
+      for sub_page in page.pages:
+        sub_page.run_with(run, self, False)
+
+  def run_interactive_page(self, run: Run, page: InteractivePage,
+                           multiple_tabs: bool):
+    # TODO(lsuhua): support multiple tabs for interactive page if needed.
+    if multiple_tabs:
+      raise NotImplementedError(
+          "Multiple tabs test for interactive page is not supported.")
     try:
       self.run_blocks(run, page.blocks)
       self._maybe_navigate_to_about_blank(run, page)
@@ -199,11 +231,3 @@ class ActionRunner:
     except Exception:
       page.failure_screenshot(run, "login-failure")
       raise
-
-  def run_combined_page(self, run: Run, page: CombinedPage):
-    for i, sub_page in enumerate(page.pages):
-      # Create a new tab for the multiple_tab case.
-      if i > 0 and page.tabs.multiple_tabs:
-        browser = run.browser
-        browser.switch_to_new_tab()
-      sub_page.run_with(run, self)
