@@ -53,35 +53,7 @@ class LoadingPageFilter(StoryFilter[Page]):
   def add_cli_parser(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(parser)
-    page_config_group = parser.add_mutually_exclusive_group()
-    # TODO: move --stories into mutually exclusive group as well
-    page_config_group.add_argument(
-        "--urls",
-        "--url",
-        dest="urls",
-        help="List of urls and durations to load: url,seconds,...")
-    page_config_group.add_argument(
-        "--page-config",
-        "--pages-config",
-        dest="pages_config",
-        type=PagesConfig.parse,
-        help="Stories we want to perform in the benchmark run following a"
-        "specified scenario. For a reference on how to build scenarios and"
-        "possible actions check config/doc/pages.config.hjson")
-    page_config_group.add_argument(
-        "--url-file",
-        "--urls-file",
-        dest="pages_config",
-        type=ListPagesConfig.parse,
-        help=("List of urls and durations in a line-by-line file. "
-              "Each line has the same format as --url for a single Page."))
-    page_config_group.add_argument(
-        "--devtools-recorder",
-        dest="pages_config",
-        type=DevToolsRecorderPagesConfig.parse,
-        help=("Run a single story from a serialized DevTools recorder session. "
-              "See https://developer.chrome.com/docs/devtools/recorder/ "
-              "for more details."))
+    cls.add_page_config_parser(parser)
     parser.add_argument(
         "--tabs",
         type=TabController.parse,
@@ -117,7 +89,40 @@ class LoadingPageFilter(StoryFilter[Page]):
         type=cli_helper.Duration.parse_zero,
         default=dt.timedelta(),
         help="If non-zero, navigate to about:blank after every page.")
+
     return parser
+
+  @classmethod
+  def add_page_config_parser(cls, parser):
+    page_config_group = parser.add_mutually_exclusive_group()
+    # TODO: move --stories into mutually exclusive group as well
+    page_config_group.add_argument(
+        "--urls",
+        "--url",
+        dest="urls",
+        help="List of urls and durations to load: url,seconds,...")
+    page_config_group.add_argument(
+        "--page-config",
+        "--pages-config",
+        dest="pages_config",
+        type=PagesConfig.parse,
+        help="Stories we want to perform in the benchmark run following a"
+        "specified scenario. For a reference on how to build scenarios and"
+        "possible actions check config/doc/pages.config.hjson")
+    page_config_group.add_argument(
+        "--url-file",
+        "--urls-file",
+        dest="pages_config",
+        type=ListPagesConfig.parse,
+        help=("List of urls and durations in a line-by-line file. "
+              "Each line has the same format as --url for a single Page."))
+    page_config_group.add_argument(
+        "--devtools-recorder",
+        dest="pages_config",
+        type=DevToolsRecorderPagesConfig.parse,
+        help=("Run a single story from a serialized DevTools recorder session. "
+              "See https://developer.chrome.com/docs/devtools/recorder/ "
+              "for more details."))
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
@@ -138,14 +143,22 @@ class LoadingPageFilter(StoryFilter[Page]):
     name_or_url_list = patterns
     if len(name_or_url_list) == 1:
       if name_or_url_list[0] == "all":
-        self.stories = PAGE_LIST
+        self.stories = self.all_stories()
         return
       if name_or_url_list[0] == "default":
-        self.stories = PAGE_LIST_SMALL
+        self.stories = self.default_stories()
         return
     # Let the PageConfig handle the arg splitting again:
     config = PagesConfig.parse(",".join(patterns))
     self.stories = self.stories_from_config(self._args, config)
+
+  @classmethod
+  def all_stories(cls) -> Tuple[Page, ...]:
+    return PAGE_LIST
+
+  @classmethod
+  def default_stories(cls) -> Tuple[Page, ...]:
+    return PAGE_LIST_SMALL
 
   @classmethod
   def stories_from_config(cls, args: argparse.Namespace,
@@ -231,17 +244,23 @@ class PageLoadBenchmark(SubStoryBenchmark):
     return parser
 
   @classmethod
+  def requires_separate(cls, args: argparse.Namespace):
+    return args.separate
+
+  @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     has_default_stories: bool = args.stories and args.stories == "default"
-    if config := cls._get_pages_config(args):
+    if config := cls.get_pages_config(args):
       # TODO: make stories and page_config mutually exclusive.
       if not has_default_stories:
         raise argparse.ArgumentTypeError(
             f"Cannot specify --stories={repr(args.stories)} "
             "with any other page config option.")
       pages = LoadingPageFilter.stories_from_config(args, config)
-      assert not args.separate or len(config.logins) == 0
-      if args.separate or (len(pages) == 1 and len(config.logins) == 0):
+      if cls.requires_separate(args):
+        assert len(config.logins) == 0
+        return pages
+      if len(pages) == 1 and len(config.logins) == 0:
         return pages
       return (CombinedPage(
           pages,
@@ -261,7 +280,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
     return super().stories_from_cli_args(args)
 
   @classmethod
-  def _get_pages_config(cls, args: argparse.Namespace) -> Optional[PagesConfig]:
+  def get_pages_config(cls, args: argparse.Namespace) -> Optional[PagesConfig]:
     if global_config := args.config:
       # TODO: migrate --config to an already parsed hjson/json dict
       config_file = global_config

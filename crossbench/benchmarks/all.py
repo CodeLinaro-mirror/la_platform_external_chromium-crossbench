@@ -11,6 +11,8 @@ from crossbench.benchmarks.jetstream import (JetStream20Benchmark,
                                              JetStream22Benchmark,
                                              JetStream30Benchmark)
 from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark_presets import (
+    PageLoadPhoneBenchmark, PageLoadTabletBenchmark)
 from crossbench.benchmarks.manual import ManualBenchmark
 from crossbench.benchmarks.motionmark import (MotionMark10Benchmark,
                                               MotionMark11Benchmark,

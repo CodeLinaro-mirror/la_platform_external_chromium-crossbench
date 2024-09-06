@@ -145,20 +145,22 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
 class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
-      benchmarks.Speedometer30Benchmark,
-      benchmarks.Speedometer21Benchmark,
-      benchmarks.Speedometer20Benchmark,
-      benchmarks.JetStream30Benchmark,
-      benchmarks.JetStream22Benchmark,
-      benchmarks.JetStream21Benchmark,
       benchmarks.JetStream20Benchmark,
-      benchmarks.MotionMark13Benchmark,
-      benchmarks.MotionMark12Benchmark,
-      benchmarks.MotionMark11Benchmark,
-      benchmarks.MotionMark10Benchmark,
-      benchmarks.PageLoadBenchmark,
-      benchmarks.PowerBenchmark,
+      benchmarks.JetStream21Benchmark,
+      benchmarks.JetStream22Benchmark,
+      benchmarks.JetStream30Benchmark,
       benchmarks.ManualBenchmark,
+      benchmarks.MotionMark10Benchmark,
+      benchmarks.MotionMark11Benchmark,
+      benchmarks.MotionMark12Benchmark,
+      benchmarks.MotionMark13Benchmark,
+      benchmarks.PageLoadBenchmark,
+      benchmarks.PageLoadPhoneBenchmark,
+      benchmarks.PageLoadTabletBenchmark,
+      benchmarks.PowerBenchmark,
+      benchmarks.Speedometer20Benchmark,
+      benchmarks.Speedometer21Benchmark,
+      benchmarks.Speedometer30Benchmark,
   )
 
   RUNNER_CLS: Type[Runner] = Runner
@@ -449,6 +451,7 @@ class CrossBenchCLI:
     network_settings_group.add_argument(
         "--network-config",
         metavar="DIR",
+        default=benchmark_cls.default_network_config_path(),
         type=cli_config.NetworkConfig.parse_config_path,
         help=cli_config.NetworkConfig.help())
     network_settings_group.add_argument(
@@ -653,6 +656,7 @@ class CrossBenchCLI:
     probe_config_group.add_argument(
         "--probe-config",
         type=cli_helper.parse_hjson_file_path,
+        default=benchmark_cls.default_probe_config_path(),
         help=("Browser configuration.json file. "
               "Use this config file to specify more complex Probe settings."
               "See config/doc/probe.config.hjson on how to set up a complex "

@@ -113,6 +113,7 @@ class MockPlatform:
 class MockRunner:
 
   def __init__(self) -> None:
+    self.benchmark = MockBenchmark(stories=[MockStory("mock_story")])
     self.runs = tuple()
     self._timing = Timing()
 

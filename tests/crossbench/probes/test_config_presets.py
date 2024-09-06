@@ -11,6 +11,8 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench.path
 from crossbench import plt
+from crossbench.benchmarks.loading.loading_benchmark_presets import \
+    PageLoadTabletBenchmark
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.helper import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
@@ -49,12 +51,10 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
   def _test_parse_config_dir(self,
                              real_config_dir: pathlib.Path) -> List[Probe]:
     probes = []
+    self.fs.add_real_directory(real_config_dir)
     for probe_config in real_config_dir.glob("**/*.config.hjson"):
-      with self.subTest(probe_config=probe_config):
-        for other_files in probe_config.parent.glob(f"{probe_config.stem}*"):
-          self.fs.add_real_file(other_files)
-        with ChangeCWD(probe_config.parent):
-          probes += self._parse_config(probe_config)
+      with ChangeCWD(probe_config.parent):
+        probes += self._parse_config(probe_config)
     return probes
 
   def _parse_config(self, config_file: pathlib.Path) -> List[Probe]:
@@ -81,6 +81,13 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
   def test_parse_doc_configs(self):
     probe_config_doc = self.real_config_dir / "doc/probe"
     probes = self._test_parse_config_dir(probe_config_doc)
+    self.assertTrue(probes)
+
+  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
+  def test_parse_pageload_configs(self):
+    probe_config = PageLoadTabletBenchmark.default_probe_config_path()
+    self.fs.add_real_file(probe_config)
+    probes = ProbeListConfig.parse_path(probe_config).probes
     self.assertTrue(probes)
 
 

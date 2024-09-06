@@ -20,6 +20,8 @@ from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
+from crossbench.benchmarks.loading.loading_benchmark_presets import \
+    PageLoadTabletBenchmark
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, LivePage)
 from crossbench.benchmarks.loading.playback_controller import \

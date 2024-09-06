@@ -869,7 +869,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    args = mock.Mock(browser=None, browser_config=config_file, driver_path=None)
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=None,
+        browser_config=config_file,
+        driver_path=None)
     with mock.patch.object(
         BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
@@ -888,6 +892,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     args = mock.Mock(
+        network=NetworkConfig.default(),
         browser=[
             BrowserConfig(browser_bin),
         ],
@@ -908,6 +913,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_from_cli_args_browser_additional_flags(self):
     browser_cls = mock_browser.MockChromeStable
     args = mock.Mock(
+        network=NetworkConfig.default(),
         browser=[
             BrowserConfig.parse_str("chrome"),
         ],
@@ -932,6 +938,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_from_cli_args_browser_js_flags(self):
     browser_cls = mock_browser.MockChromeStable
     args = mock.Mock(
+        network=NetworkConfig.default(),
         browser=[
             BrowserConfig.parse_str("chrome"),
         ],
@@ -952,6 +959,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_from_cli_args_browser_extra_browser_js_flags(self):
     browser_cls = mock_browser.MockChromeStable
     args = mock.Mock(
+        network=NetworkConfig.default(),
         browser=[
             BrowserConfig.parse_str("chrome"),
         ],
@@ -975,6 +983,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_from_cli_args_browser_multiple_js_flags(self):
     browser_cls = mock_browser.MockChromeStable
     args = mock.Mock(
+        network=NetworkConfig.default(),
         browser=[
             BrowserConfig.parse_str("chrome"),
         ],

@@ -65,7 +65,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._root_dir: LocalPath = root_dir
     self._browser_tmp_dir: Optional[RemotePath] = None
     self._extra_js_flags = JSFlags()
-    self._extra_flags = Flags()
+    self._extra_flags = runner.benchmark.extra_flags(browser)
     # Temporary objects, reset after all runs are ready (see set_ready).
     self._probe_results = ProbeResultDict(root_dir)
     self._probe_context_manager = ProbeSessionContextManager(

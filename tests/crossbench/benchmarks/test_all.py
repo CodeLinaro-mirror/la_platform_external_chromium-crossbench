@@ -15,6 +15,8 @@ from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
 from crossbench.benchmarks.jetstream.jetstream_3_0 import JetStream30Benchmark
 from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark_presets import (
+    PageLoadPhoneBenchmark, PageLoadTabletBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
     MotionMark10Benchmark
@@ -33,17 +35,19 @@ from crossbench.benchmarks.speedometer.speedometer_3_0 import \
 from tests import test_helper
 
 ALL = (
-    PowerBenchmark,
     JetStream20Benchmark,
     JetStream21Benchmark,
     JetStream22Benchmark,
     JetStream30Benchmark,
-    PageLoadBenchmark,
     ManualBenchmark,
     MotionMark10Benchmark,
     MotionMark11Benchmark,
     MotionMark12Benchmark,
     MotionMark13Benchmark,
+    PageLoadBenchmark,
+    PageLoadPhoneBenchmark,
+    PageLoadTabletBenchmark,
+    PowerBenchmark,
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,
@@ -69,6 +73,10 @@ class AllBenchmarksTestCase(unittest.TestCase):
   def test_story_classes(self):
     seen_story_classes = OrderedSet()
     for benchmark_cls in ALL:
+      if issubclass(benchmark_cls,
+                    PageLoadBenchmark) and (benchmark_cls
+                                            is not PageLoadBenchmark):
+        continue
       self.assertNotIn(benchmark_cls.DEFAULT_STORY_CLS, seen_story_classes)
       seen_story_classes.add(benchmark_cls.DEFAULT_STORY_CLS)
 

@@ -19,6 +19,8 @@ import crossbench
 from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.benchmarks.loading.loading_benchmark_presets import \
+    PageLoadTabletBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
@@ -71,6 +73,8 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
       self.assertTrue(mock_browser_cls.mock_app_path().exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
+    self.fs.add_real_directory(
+        PageLoadTabletBenchmark.default_network_config_path().parent)
     self.browsers: List[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
