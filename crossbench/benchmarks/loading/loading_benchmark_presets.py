@@ -43,6 +43,10 @@ class PresetPageLoadBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS = PresetLoadingPageFilter
 
   @classmethod
+  def cli_description(cls) -> str:
+    return cls.__doc__.strip()
+
+  @classmethod
   def requires_separate(cls, args: argparse.Namespace):
     # Perfetto metrics used in the benchmark require a separate Perfetto
     # session for each run.
