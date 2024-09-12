@@ -38,7 +38,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=None,
             add_counters=None,
             output_path=output_path), [
-                "simpleperf", "record", "-t", "5678", "--post-unwind=yes", "-o",
+                "simpleperf", "record", "-t", "5678", "--call-graph", "dwarf", "--post-unwind=yes", "-o",
                 output_path
             ])
 
@@ -58,7 +58,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=None,
             add_counters=None,
             output_path=output_path), [
-                "simpleperf", "record", "-p", "1234", "--post-unwind=yes", "-o",
+                "simpleperf", "record", "-p", "1234", "--call-graph", "dwarf", "--post-unwind=yes", "-o",
                 output_path
             ])
 
@@ -79,7 +79,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             add_counters=None,
             output_path=output_path), [
                 "simpleperf", "record", "--app", "com.chrome.beta",
-                "--post-unwind=yes", "-o", output_path
+                "--call-graph", "dwarf", "--post-unwind=yes", "-o", output_path
             ])
 
   def test_simpleperf_command_line_systemwide(self):
@@ -98,7 +98,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=None,
             add_counters=None,
             output_path=output_path),
-        ["simpleperf", "record", "-a", "--post-unwind=yes", "-o", output_path])
+        ["simpleperf", "record", "-a", "--call-graph", "dwarf", "--post-unwind=yes", "-o", output_path])
 
   def test_simpleperf_command_line_with_frequency(self):
     output_path = pathlib.Path("simpleperf.perf.data")

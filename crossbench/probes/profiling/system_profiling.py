@@ -959,7 +959,7 @@ def generate_simpleperf_command_line(
   elif call_graph_mode == CallGraphMode.DWARF:
     # Use "--post-unwind=yes" while unwinding with DWARF, to reduce
     # unwinding overhead during profiling.
-    command_line.append("--post-unwind=yes")
+    command_line.extend(["--call-graph", "dwarf", "--post-unwind=yes"])
   else:
     assert call_graph_mode == CallGraphMode.NO_CALL_GRAPH, (
         f"Invalid call_graph_mode: {call_graph_mode}")
