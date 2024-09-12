@@ -445,13 +445,11 @@ class CrossBenchCLI:
     network_settings_group.add_argument(
         "--network",
         type=cli_config.NetworkConfig.parse,
-        default=cli_config.NetworkConfig.default(),
         help=("Either an inline network config or an file path to full "
               "network config hjson file (see --network-config)."))
     network_settings_group.add_argument(
         "--network-config",
         metavar="DIR",
-        default=benchmark_cls.default_network_config_path(),
         type=cli_config.NetworkConfig.parse_config_path,
         help=cli_config.NetworkConfig.help())
     network_settings_group.add_argument(
@@ -741,6 +739,19 @@ class CrossBenchCLI:
       self.describe_subcommand(args)
       sys.exit(0)
 
+  def _process_network_args(self, args) -> None:
+    # The order of preference of flags is as follows:
+    # Explicitly specified network config > explicitly specified network >
+    # benchmark-specific network config > default network.
+    if network_config := args.network_config:
+      args.network = network_config
+    elif args.network:
+      pass
+    elif network_config := args.benchmark_cls.default_network_config_path():
+      args.network = network_config
+    else:
+      args.network = cli_config.NetworkConfig.default()
+
   def _benchmark_subcommand_process_args(self, args) -> None:
     if args.config:
       self._process_config_args(args)
@@ -748,8 +759,7 @@ class CrossBenchCLI:
       # We keep separate *_config args so we can throw in case they conflict
       # with --config. Since we don't use argparse's dest, we have to manually
       # copy the args.*_config back.
-      if network_config := args.network_config:
-        args.network = network_config
+      self._process_network_args(args)
 
   def _process_config_args(self, args) -> None:
     if args.env_config:
@@ -783,6 +793,8 @@ class CrossBenchCLI:
     else:
       logging.warning("Skipping network config: no 'network' property in %s",
                       config_file)
+    if not args.network:
+      args.network = cli_config.NetworkConfig.default()
 
     if config_data.get("browsers"):
       args.browser_config = config_file
