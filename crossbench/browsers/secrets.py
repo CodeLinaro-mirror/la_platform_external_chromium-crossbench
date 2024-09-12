@@ -71,23 +71,26 @@ class GoogleSecret(Secret):
     self._password = password
 
   def _submit_login_field(self, action: Actions, aria_label: str,
-                          input_val: str) -> None:
+                          input_val: str, button_name: str) -> None:
     action.wait_js_condition(
-        f"""return document.querySelector("[aria-label='{aria_label}']") != null""",
-        .2, 10)
+        f"""
+        return document.querySelector("[aria-label='{aria_label}']") != null
+          && document.querySelector("[id={button_name}]") != null;
+        """, .2, 10)
     action.js(f"""
         var inputField = document.querySelector("[aria-label='{aria_label}']");
         inputField.value = '{input_val}';
-        var buttons = document.querySelectorAll("button");
-        Array.from(buttons).find(b => b.innerText == "Next").click();
+        document.querySelector("[id={button_name}]").click();
        """)
 
   def login(self, run: Run) -> None:
     url = "https://accounts.google.com/Logout?continue=https%3A%2F%2Faccounts.google.com%2Fv3%2Fsignin%2Fidentifier%3FflowName%3DGlifWebSignIn%26flowEntry%3DServiceLogin"
     with run.actions("Login") as action:
       action.show_url(url)
-      self._submit_login_field(action, "Email or phone", self._account)
-      self._submit_login_field(action, "Enter your password", self._password)
+      self._submit_login_field(action, "Email or phone", self._account,
+                               "identifierNext")
+      self._submit_login_field(action, "Enter your password", self._password,
+                               "passwordNext")
       action.wait_js_condition(
           """return document.URL.startsWith('https://myaccount.google.com'); """,
           .2, 10)
