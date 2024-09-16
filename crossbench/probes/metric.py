@@ -9,7 +9,7 @@ import logging
 import math
 from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Optional, Sequence, Set, Tuple, Union)
+                    Optional, Sequence, Set, Tuple, Union, Hashable)
 
 from ordered_set import OrderedSet
 
@@ -125,7 +125,9 @@ class Metric:
       else:
         json_data["stddevPercent"] = (stddev / average) * 100
       return json_data
-    # Simplify repeated non-numeric values
+    # Try to simplify repeated non-numeric values
+    if not isinstance(self.values[0], Hashable):
+      return json_data
     if len(set(self.values)) == 1:
       return self.values[0]
     return json_data

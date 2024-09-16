@@ -34,48 +34,62 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
   def test_merge_browsers(self):
-    self.create_file("tp")
-    probe: TraceProcessorProbe = TraceProcessorProbe.from_config(
-        {"trace_processor_bin": "tp"})
+    probe: TraceProcessorProbe = TraceProcessorProbe.from_config("")
+
+    browser = unittest.mock.MagicMock()
+    browser.label = "browser"
+    browser.unique_name = "browser"
+
+    story = unittest.mock.MagicMock()
+    story.name = "story"
+
+    result1 = unittest.mock.MagicMock()
+    csv1 = self.create_file("run1/query.csv", contents='foo,bar\n1,2\n')
+    json1 = self.create_file("run1/metric.json", contents='{"foo":{"bar":7}}')
+    result1.csv_list = [csv1]
+    result1.json_list = [json1]
+
+    run1 = unittest.mock.MagicMock()
+    run1.repetition = 0
+    run1.results = {probe: result1}
+    run1.browser = browser
+    run1.story = story
+    run1.temperature = "default"
+
+    result2 = unittest.mock.MagicMock()
+    csv2 = self.create_file("run2/query.csv", contents='foo,bar\n3,4\n')
+    json2 = self.create_file("run2/metric.json", contents='{"foo":{"bar":9}}')
+    result2.csv_list = [csv2]
+    result2.json_list = [json2]
+
+    run2 = unittest.mock.MagicMock()
+    run2.repetition = 1
+    run2.results = {probe: result2}
+    run2.browser = browser
+    run2.story = story
+    run2.temperature = "default"
+
+    rep_group = unittest.mock.MagicMock()
+    rep_group.story = story
+    rep_group.runs = [run1, run2]
+
+    story_group = unittest.mock.MagicMock()
+    story_group.browser = browser
+    story_group.repetitions_groups = [rep_group]
+
     browsers_run_group = unittest.mock.MagicMock()
     browsers_run_group.get_local_probe_result_path = unittest.mock.MagicMock(
         return_value=pth.LocalPath("result/"))
-    story_group = unittest.mock.MagicMock()
     browsers_run_group.story_groups = [story_group]
-    story_group.browser = unittest.mock.MagicMock()
-    story_group.browser.label = "browser"
-    rep_group = unittest.mock.MagicMock()
-    story_group.repetitions_groups = [rep_group]
-    rep_group.story = unittest.mock.MagicMock()
-    rep_group.story.name = "story"
-    run1 = unittest.mock.MagicMock()
-    run2 = unittest.mock.MagicMock()
-    rep_group.runs = [run1, run2]
     browsers_run_group.runs = [run1, run2]
-    run1.repetition = 0
-    run2.repetition = 1
-    result1 = unittest.mock.MagicMock()
-    result2 = unittest.mock.MagicMock()
-    run1.results = {probe: result1}
-    run2.results = {probe: result2}
-
-    csv1 = self.create_file("run1/query.csv", contents='foo,bar\n1,2\n')
-    csv2 = self.create_file("run2/query.csv", contents='foo,bar\n3,4\n')
-    json1 = self.create_file("run1/metric.json", contents='{"foo":{"bar":7}}')
-    json2 = self.create_file("run2/metric.json", contents='{"foo":{"bar":9}}')
-    result1.csv_list = [csv1]
-    result2.csv_list = [csv2]
-    result1.json_list = [json1]
-    result2.json_list = [json2]
 
     merged_result = probe.merge_browsers(browsers_run_group)
     self.assertEqual(len(merged_result.csv_list), 1)
     self.assertEqual(len(merged_result.json_list), 1)
 
-    EXPECTED_CSV = (
-        "browser_label,cb_story_name,repetition,foo,bar\n"
-        "browser,story,0,1,2\n"
-        "browser,story,1,3,4\n")
+    EXPECTED_CSV = ("foo,bar,cb_browser,cb_story,cb_temperature,cb_run\n"
+                    "1,2,browser,story,default,0\n"
+                    "3,4,browser,story,default,1\n")
     with merged_result.csv.open("r") as f:
       self.assertEqual(f.read(), EXPECTED_CSV)
 
