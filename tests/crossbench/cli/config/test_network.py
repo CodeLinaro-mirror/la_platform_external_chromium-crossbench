@@ -208,6 +208,22 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     config_1 = NetworkConfig.parse(json.dumps(config_dict))
     self.assertEqual(config, config_1)
 
+  def test_parse_dict_local(self):
+    benchmark_folder = pth.LocalPath("third_party/speedometer/v3.0")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "local", "path": benchmark_folder})
+    self.assertIn(str(benchmark_folder), str(cm.exception))
+    self.fs.create_file(benchmark_folder / "index.html", st_size=100)
+    url = "http://foo:1234"
+    config_dict = {"type": "local", "path": str(benchmark_folder), "url": url}
+    config = NetworkConfig.parse(dict(config_dict))
+    self.assertEqual(config.type, NetworkType.LOCAL)
+    self.assertEqual(config.path, benchmark_folder)
+    self.assertEqual(config.url, url)
+    self.assertTrue(config_dict)
+    config_1 = NetworkConfig.parse(json.dumps(config_dict))
+    self.assertEqual(config, config_1)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

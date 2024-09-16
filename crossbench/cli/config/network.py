@@ -270,7 +270,8 @@ class NetworkConfig(ConfigObject):
         return LiveNetwork(traffic_shaper, runner_platform)
       if self.type is NetworkType.LOCAL:
         assert self.path
-        return LocalFileNetwork(self.path, traffic_shaper, runner_platform)
+        return LocalFileNetwork(self.path, self.url, traffic_shaper,
+                                runner_platform)
       if self.type is NetworkType.WPR:
         return WprReplayNetwork(
             self.url or str(self.path), traffic_shaper, self.wpr_go_bin,

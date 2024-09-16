@@ -10,17 +10,21 @@ import http.server
 import json
 import logging
 import threading
-from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Type
+from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
+                    Type)
 
 from immutabledict import immutabledict
 
 from crossbench import plt
 from crossbench.network.base import Network, TrafficShaper
+from crossbench.cli_helper import parse_url
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
+DEFAULT_HOST = "localhost"
+DEFAULT_PORT = 8000
 # List of known headers that are served by the default HTTPServer and might
 # be accidentally overridden by provided extra headers.
 CONFLICTING_EXTRA_HEADERS: Final[frozenset[str]] = frozenset(
@@ -72,14 +76,12 @@ class LocalFileNetwork(Network):
 
   def __init__(self,
                path: LocalPath,
+               url: Optional[str],
                traffic_shaper: Optional[TrafficShaper] = None,
                browser_platform: plt.Platform = plt.PLATFORM):
     super().__init__(traffic_shaper, browser_platform)
     self._path = path
-    # TODO: support custom host
-    self._host = "localhost"
-    # TODO: add more arg parsing support
-    self._port = 8000
+    self._host, self._port = self._parse_url(url)
     # TODO: support custom headers via command line
     self._extra_headers: immutabledict[str, str] = self._try_parse_headers()
     if self._extra_headers:
@@ -88,6 +90,20 @@ class LocalFileNetwork(Network):
   @property
   def path(self) -> LocalPath:
     return self._path
+
+  def _parse_url(self, url: Optional[str]) -> Tuple[str, int]:
+    host = DEFAULT_HOST
+    port = DEFAULT_PORT
+    if not url:
+      logging.info("Using default host=%s, port=%s", host, port)
+      return host, port
+    parsed_url = parse_url(url)
+    if parsed_url.hostname:
+      host = parsed_url.hostname
+    if parsed_url.port:
+      port = parsed_url.port
+    logging.info("Using custom host=%s, port=%s", host, port)
+    return host, port
 
   def _try_parse_headers(self) -> immutabledict[str, str]:
     for name in ("HEADERS", "HEADERS.txt"):
