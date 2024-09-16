@@ -39,6 +39,7 @@ websockets = "^11.0.3"
 [tool.poetry.scripts]
 crossbench = 'crossbench.scripts:crossbench'
 cb = 'crossbench.scripts:crossbench'
+cb_btp = 'crossbench.scripts:cb_btp'
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "^1.6.3"
