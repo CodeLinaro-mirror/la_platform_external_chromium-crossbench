@@ -472,7 +472,7 @@ class Runner:
             if total_repetitions > 1:
               name_parts.append(f"repetition={repetition}")
             if len(self.cache_temperatures) > 1:
-              name_parts.append(f"cache={temperature}")
+              name_parts.append(f"temperature={temperature_icon(temperature)}")
             name_parts.append(f"index={index}")
             yield self.create_run(
                 browser_session,
@@ -571,3 +571,16 @@ class Runner:
       if not self._platform.is_thermal_throttled():
         break
       logging.info("COOLDOWN: still hot, waiting some more")
+
+
+TEMPERATURE_ICONS = {
+    "cold": "🥶",
+    "warm": "⛅",
+    "hot": "🔥",
+}
+
+
+def temperature_icon(temperature: str) -> str:
+  if icon := TEMPERATURE_ICONS.get(temperature):
+    return icon
+  return temperature
