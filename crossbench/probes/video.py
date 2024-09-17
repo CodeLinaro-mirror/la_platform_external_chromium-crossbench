@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
 
 from crossbench import helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeMissingDataError, ResultLocation)
+                                     ProbeMissingDataError)
+from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 
@@ -23,7 +24,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath
-  from crossbench.runner.groups import BrowsersRunGroup, RepetitionsRunGroup
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
 

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.path import LocalPath, RemotePath
   from crossbench.probes.probe import Probe
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.result_origin import ResultOrigin
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner

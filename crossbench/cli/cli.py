@@ -18,7 +18,6 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 import tabulate as tbl
 
 import crossbench.benchmarks.all as benchmarks
-import crossbench.cli.config as cli_config
 from crossbench import __version__, cli_helper
 from crossbench import path as pth
 from crossbench import plt
@@ -27,6 +26,13 @@ from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.secrets import SecretsConfig
 from crossbench.cli import ui
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from crossbench.cli.config.env import (parse_env_config_file,
+                                       parse_inline_env_config)
+from crossbench.cli.config.network import NetworkConfig
+from crossbench.cli.config.probe import (PROBE_LOOKUP, ProbeConfig,
+                                         ProbeListConfig)
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
     CrossbenchDevToolsRecorderProxy
@@ -104,11 +110,11 @@ class AppendDebuggerProbeAction(argparse.Action):
                namespace: argparse.Namespace,
                values: Union[str, Sequence[Any], None],
                option_string: Optional[str] = None) -> None:
-    probes: List[cli_config.ProbeConfig] = getattr(namespace, self.dest, [])
+    probes: List[ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:
       probe_settings["debugger"] = "lldb"
-    probes.append(cli_config.ProbeConfig(DebuggerProbe, probe_settings))
+    probes.append(ProbeConfig(DebuggerProbe, probe_settings))
     if not getattr(namespace, "timeout_unit", None):
       # Set a very large --timeout-unit to allow for very slow debugging without
       # causing timeouts (for instance when waiting on a breakpoint).
@@ -444,27 +450,27 @@ class CrossBenchCLI:
     network_settings_group = network_group.add_mutually_exclusive_group()
     network_settings_group.add_argument(
         "--network",
-        type=cli_config.NetworkConfig.parse,
+        type=NetworkConfig.parse,
         help=("Either an inline network config or an file path to full "
               "network config hjson file (see --network-config)."))
     network_settings_group.add_argument(
         "--network-config",
         metavar="DIR",
-        type=cli_config.NetworkConfig.parse_config_path,
-        help=cli_config.NetworkConfig.help())
+        type=NetworkConfig.parse_config_path,
+        help=NetworkConfig.help())
     network_settings_group.add_argument(
         "--local-file-server",
         "--local-fileserver",
         "--file-server",
         "--fileserver",
-        type=cli_config.NetworkConfig.parse_local,
+        type=NetworkConfig.parse_local,
         metavar="DIR",
         dest="network",
         help="Start a local http file server at the given directory.")
     network_settings_group.add_argument(
         "--wpr",
         "--web-page-replay",
-        type=cli_config.NetworkConfig.parse_wpr,
+        type=NetworkConfig.parse_wpr,
         metavar="WPR_ARCHIVE",
         dest="network",
         help=("Use wpr.archive to replay network requests "
@@ -476,14 +482,14 @@ class CrossBenchCLI:
     env_settings_group = env_group.add_mutually_exclusive_group()
     env_settings_group.add_argument(
         "--env",
-        type=cli_config.parse_inline_env_config,
+        type=parse_inline_env_config,
         help=("Set default runner environment settings. "
               f"Possible values: {', '.join(HostEnvironment.CONFIGS)}"
               "or an inline hjson configuration (see --env-config). "
               "Mutually exclusive with --env-config"))
     env_settings_group.add_argument(
         "--env-config",
-        type=cli_config.parse_env_config_file,
+        type=parse_env_config_file,
         help=("Path to an env.config.hjson file that specifies detailed "
               "runner environment settings and requirements. "
               "See config/env.config.hjson for more details."
@@ -509,7 +515,7 @@ class CrossBenchCLI:
     browser_config_group.add_argument(
         "--browser",
         "-b",
-        type=cli_config.BrowserConfig.parse_with_range,
+        type=BrowserConfig.parse_with_range,
         action="extend",
         default=[],
         help=(
@@ -638,7 +644,7 @@ class CrossBenchCLI:
     probe_config_group.add_argument(
         "--probe",
         action="append",
-        type=cli_config.ProbeConfig.parse,
+        type=ProbeConfig.parse,
         default=[],
         help=(
             "Enable general purpose probes to measure data on all cb.stories. "
@@ -650,7 +656,7 @@ class CrossBenchCLI:
             "Use 'describe probes' or 'describe probe $NAME' for probe "
             "configuration details."
             "Cannot be used together with --probe-config."
-            f"\n\nChoices: {', '.join(cli_config.PROBE_LOOKUP.keys())}"))
+            f"\n\nChoices: {', '.join(PROBE_LOOKUP.keys())}"))
     probe_config_group.add_argument(
         "--probe-config",
         type=cli_helper.parse_hjson_file_path,
@@ -750,7 +756,7 @@ class CrossBenchCLI:
     elif network_config := args.benchmark_cls.default_network_config_path():
       args.network = network_config
     else:
-      args.network = cli_config.NetworkConfig.default()
+      args.network = NetworkConfig.default()
 
   def _benchmark_subcommand_process_args(self, args) -> None:
     if args.config:
@@ -780,7 +786,7 @@ class CrossBenchCLI:
     found_any_config = False
 
     if config_data.get("env"):
-      args.env_config = cli_config.parse_env_config_file(config_file)
+      args.env_config = parse_env_config_file(config_file)
       found_any_config = True
     else:
       logging.warning("Skipping env config: no 'env' property in %s",
@@ -788,13 +794,13 @@ class CrossBenchCLI:
 
     if network_config_data := config_data.get("network"):
       # TODO: migrate all --config helper to this format
-      args.network = cli_config.NetworkConfig.parse(network_config_data)
+      args.network = NetworkConfig.parse(network_config_data)
       found_any_config = True
     else:
       logging.warning("Skipping network config: no 'network' property in %s",
                       config_file)
     if not args.network:
-      args.network = cli_config.NetworkConfig.default()
+      args.network = NetworkConfig.default()
 
     if config_data.get("browsers"):
       args.browser_config = config_file
@@ -966,13 +972,13 @@ class CrossBenchCLI:
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
     # TODO: move browser instance create to separate method.
     # TODO: move --browser-config parsing to BrowserVariantsConfig
-    args.browser_config = cli_config.BrowserVariantsConfig.from_cli_args(args)
+    args.browser_config = BrowserVariantsConfig.from_cli_args(args)
     return args.browser_config.variants
 
   def _get_probes(self, args: argparse.Namespace) -> Sequence[Probe]:
     # TODO: move probe creation to separate method
     # TODO: move --probe-config parsing to ProbeListConfig
-    args.probe_config = cli_config.ProbeListConfig.from_cli_args(args)
+    args.probe_config = ProbeListConfig.from_cli_args(args)
     return args.probe_config.probes
 
   def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:

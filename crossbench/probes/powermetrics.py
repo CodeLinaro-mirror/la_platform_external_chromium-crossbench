@@ -12,13 +12,14 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from crossbench import cli_helper, compat, helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT, ResultLocation)
-from crossbench.probes.results import ProbeResult
+                                     ProbeKeyT)
+from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.path import RemotePath
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 

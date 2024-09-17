@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   import datetime as dt
 
   from crossbench.flags.base import Flags
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 

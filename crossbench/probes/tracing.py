@@ -14,12 +14,12 @@ from crossbench import path as pth
 from crossbench.config import ConfigEnum
 from crossbench.helper.path_finder import TraceconvFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import (ProbeConfigParser, ProbeContext, ProbeKeyT,
-                                     ResultLocation)
-from crossbench.probes.results import ProbeResult
+from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
+from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 # TODO: go over these again and clean the categories.

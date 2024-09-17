@@ -7,13 +7,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterable
 
 from crossbench.runner.groups.base import RunGroup
-from crossbench.runner.groups.repetitions import RepetitionsRunGroup
 
 if TYPE_CHECKING:
   from crossbench import exception
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
 

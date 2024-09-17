@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from crossbench import cli_helper, exception
 from crossbench import path as pth
@@ -17,10 +17,11 @@ from crossbench.network.live import LiveNetwork
 from crossbench.network.local_fileserver import LocalFileNetwork
 from crossbench.network.replay.wpr import GS_PREFIX, WprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
-from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
-                                                     TrafficShaper)
+from crossbench.network.traffic_shaping.live import NoTrafficShaper
 from crossbench.plt.base import Platform
 
+if TYPE_CHECKING:
+  from crossbench.network.traffic_shaping.base import TrafficShaper
 
 @enum.unique
 class NetworkType(ConfigEnum):

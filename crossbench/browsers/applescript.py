@@ -21,8 +21,7 @@ if TYPE_CHECKING:
   import datetime as dt
 
   from crossbench.path import RemotePath
-  from crossbench.runner.groups import BrowserSessionRunGroup
-  from crossbench.runner.run import Run
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 

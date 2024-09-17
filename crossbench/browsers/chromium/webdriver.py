@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
   from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 

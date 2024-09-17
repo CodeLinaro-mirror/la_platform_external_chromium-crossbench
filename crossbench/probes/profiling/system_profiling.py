@@ -27,15 +27,15 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
 from crossbench.plt.base import ListCmdArgs
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ProbeKeyT,
-                                     ResultLocation)
-from crossbench.probes.results import ProbeResult
+                                     ProbeIncompatibleBrowser, ProbeKeyT)
+from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.v8.log import V8LogProbe
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner.groups import BrowsersRunGroup
+  from crossbench.probes.results import ProbeResult
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
 

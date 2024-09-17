@@ -23,7 +23,8 @@ from crossbench.stories.press_benchmark import PressBenchmarkStory
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions
-  from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
 

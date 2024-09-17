@@ -9,12 +9,12 @@ import contextlib
 from typing import TYPE_CHECKING, Iterator, Optional
 
 from crossbench import plt
-from crossbench.flags.base import Flags
-from crossbench.network.traffic_shaping.base import (NoTrafficShaper,
-                                                     TrafficShaper)
+from crossbench.network.traffic_shaping.live import NoTrafficShaper
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.flags.base import Flags
+  from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 

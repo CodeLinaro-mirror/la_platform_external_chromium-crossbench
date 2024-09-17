@@ -21,7 +21,6 @@ from crossbench import compat, helper, plt
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.plt.base import CmdArg
-  from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
 
@@ -306,7 +305,7 @@ class HostEnvironment:
     use_battery = self._config.power_use_battery
     if use_battery is HostEnvironmentConfig.IGNORE:
       return
-    battery_probes: List[Probe] = []
+    battery_probes = []
     # Certain probes may require battery power:
     for probe in self._runner.probes:
       if probe.BATTERY_ONLY:

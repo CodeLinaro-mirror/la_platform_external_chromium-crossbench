@@ -24,10 +24,12 @@ from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
-from crossbench.runner.groups import (BrowserSessionRunGroup, BrowsersRunGroup,
-                                      CacheTemperatureRunGroup,
-                                      RepetitionsRunGroup, RunThreadGroup,
-                                      StoriesRunGroup)
+from crossbench.runner.groups.browsers import BrowsersRunGroup
+from crossbench.runner.groups.cache_temperature import CacheTemperatureRunGroup
+from crossbench.runner.groups.repetitions import RepetitionsRunGroup
+from crossbench.runner.groups.session import BrowserSessionRunGroup
+from crossbench.runner.groups.stories import StoriesRunGroup
+from crossbench.runner.groups.thread import RunThreadGroup
 from crossbench.runner.run import Run
 from crossbench.runner.timing import Timing
 

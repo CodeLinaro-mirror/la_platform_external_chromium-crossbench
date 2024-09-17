@@ -16,7 +16,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
   from crossbench.path import RemotePath
-  from crossbench.runner.groups import BrowsersRunGroup, RepetitionsRunGroup
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
 
 

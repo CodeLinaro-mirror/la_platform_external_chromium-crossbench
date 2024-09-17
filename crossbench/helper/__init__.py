@@ -21,7 +21,7 @@ from subprocess import Popen, TimeoutExpired
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable,
                     Iterator, List, Optional, Tuple, Type, TypeVar, Union)
 
-from crossbench import compat, plt
+from crossbench import plt
 
 if TYPE_CHECKING:
   import signal

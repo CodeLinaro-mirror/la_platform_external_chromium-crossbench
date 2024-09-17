@@ -7,13 +7,14 @@ from __future__ import annotations
 import abc
 import dataclasses
 import enum
-import traceback
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, Type, TypeVar
 
 from crossbench import exception
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
-from crossbench.runner.actions import Actions
-from crossbench.runner.run import Run
+
+if TYPE_CHECKING:
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.run import Run
 
 
 @enum.unique

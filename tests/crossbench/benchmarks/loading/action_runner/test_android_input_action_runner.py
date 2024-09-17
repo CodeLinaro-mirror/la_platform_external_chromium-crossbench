@@ -18,7 +18,7 @@ from crossbench.benchmarks.loading.action_runner.element_not_found_error import 
     ElementNotFoundError
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.browsers.settings import Settings
-from crossbench.runner.groups import BrowserSessionRunGroup
+from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable

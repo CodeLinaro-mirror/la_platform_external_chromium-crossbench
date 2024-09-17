@@ -10,14 +10,14 @@ from typing import TYPE_CHECKING, Optional, TextIO
 
 from crossbench import cli_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT, ProbeValidationError,
-                                     ResultLocation)
-from crossbench.probes.results import ProbeResult
+                                     ProbeKeyT, ProbeValidationError)
+from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import LocalPath
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 

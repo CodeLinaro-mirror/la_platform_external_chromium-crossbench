@@ -14,11 +14,12 @@ from crossbench import cli_helper, exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.helper import Spinner
-from crossbench.network.base import Network, TrafficShaper
-from crossbench.runner.groups.session import BrowserSessionRunGroup
+from crossbench.network.base import Network
 
 if TYPE_CHECKING:
+  from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.path import LocalPath
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 GS_PREFIX = "gs://"

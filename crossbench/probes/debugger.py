@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Dict, Iterable
 from crossbench import cli_helper, plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT, ProbeValidationError,
-                                     ResultLocation)
+                                     ProbeKeyT, ProbeValidationError)
+from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:

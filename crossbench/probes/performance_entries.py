@@ -15,7 +15,8 @@ if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
-  from crossbench.runner.groups import BrowsersRunGroup, StoriesRunGroup
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.types import Json
 
 

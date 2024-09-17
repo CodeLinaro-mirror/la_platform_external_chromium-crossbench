@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, cast
 from crossbench import helper
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import ProbeContext, ResultLocation
+from crossbench.probes.probe import ProbeContext
+from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import (BrowserProbeResult, LocalProbeResult,
                                        ProbeResult)
 

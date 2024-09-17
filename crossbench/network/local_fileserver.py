@@ -16,10 +16,11 @@ from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
 from immutabledict import immutabledict
 
 from crossbench import plt
-from crossbench.network.base import Network, TrafficShaper
 from crossbench.cli_helper import parse_url
+from crossbench.network.base import Network
 
 if TYPE_CHECKING:
+  from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 

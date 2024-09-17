@@ -15,8 +15,8 @@ from crossbench import compat
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeKeyT,
-                                     ProbeResult, ProbeValidationError,
-                                     ResultLocation)
+                                     ProbeValidationError)
+from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.path import RemotePath
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 

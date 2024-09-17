@@ -7,25 +7,27 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-import pandas as pd
-import numpy as np
-from tabulate import tabulate
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
+import numpy as np
+import pandas as pd
+from tabulate import tabulate
+
 from crossbench import path as pth
-from crossbench.probes.probe import Probe, ProbeContext
-from crossbench.probes.results import (EmptyProbeResult, ProbeResult)
-from crossbench.probes.trace_processor.trace_processor import TraceProcessorProbe
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.flags.base import Flags
+from crossbench.probes.probe import Probe, ProbeContext
+from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page import Page
   from crossbench.browsers.browser import Browser
-  from crossbench.runner.groups import BrowsersRunGroup
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.runner import Run
 
 CONFIG_DIR = pth.LocalPath(__file__).parents[3] / "config"

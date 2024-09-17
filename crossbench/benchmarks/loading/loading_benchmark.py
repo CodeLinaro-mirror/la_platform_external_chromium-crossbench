@@ -12,7 +12,6 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from crossbench import cli_helper
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.config import \

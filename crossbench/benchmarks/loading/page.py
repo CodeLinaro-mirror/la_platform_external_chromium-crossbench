@@ -15,7 +15,6 @@ from crossbench.benchmarks.loading.action_runner.base import \
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.browsers.secrets import SecretType
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.config.login.custom import LoginBlock
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+  from crossbench.browsers.secrets import SecretType
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 

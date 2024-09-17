@@ -7,7 +7,8 @@ from __future__ import annotations
 import abc
 import logging
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence, Tuple
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence,
+                    Tuple)
 
 from ordered_set import OrderedSet
 
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
   from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict
 

@@ -14,8 +14,9 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
-                                        StoriesRunGroup)
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
 
 

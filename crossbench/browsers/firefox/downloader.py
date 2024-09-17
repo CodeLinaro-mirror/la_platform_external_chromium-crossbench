@@ -11,9 +11,9 @@ from typing import (TYPE_CHECKING, Dict, Final, Iterable, Optional, Tuple, Type,
 
 from crossbench.browsers.downloader import DMGArchiveHelper, Downloader
 from crossbench.browsers.firefox.version import FirefoxVersion
-from crossbench.browsers.version import BrowserVersion
 
 if TYPE_CHECKING:
+  from crossbench.browsers.version import BrowserVersion
   from crossbench.path import LocalPath, RemotePathLike
   from crossbench.plt.base import Platform
 

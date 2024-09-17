@@ -22,8 +22,9 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions
-  from crossbench.runner.groups import (BrowsersRunGroup, RepetitionsRunGroup,
-                                        RunGroup)
+  from crossbench.runner.groups.base import RunGroup
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
 

@@ -13,8 +13,8 @@ import hjson
 from crossbench import __version__
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config import BrowserVariantsConfig
 from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.network.local_fileserver import LocalFileNetwork
 from crossbench.probes import internal

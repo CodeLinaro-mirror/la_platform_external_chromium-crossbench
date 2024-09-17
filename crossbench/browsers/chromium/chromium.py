@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.flags.base import Flags
   from crossbench.flags.js_flags import JSFlags
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 

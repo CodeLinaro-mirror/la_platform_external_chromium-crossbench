@@ -17,14 +17,14 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper.path_finder import V8ToolsFinder
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import (ProbeConfigParser, ProbeContext, ProbeKeyT,
-                                     ResultLocation)
-from crossbench.probes.results import ProbeResult
+from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
+from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath, RemotePath
-  from crossbench.runner.groups import BrowsersRunGroup
+  from crossbench.probes.results import ProbeResult
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
 _PROF_FLAG = "--prof"

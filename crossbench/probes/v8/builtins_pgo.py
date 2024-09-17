@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Optional
 
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeContext
-from crossbench.probes.results import LocalProbeResult
+from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.probes.results import ProbeResult
-  from crossbench.runner.groups import RepetitionsRunGroup, StoriesRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
 
 

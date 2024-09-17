@@ -12,12 +12,12 @@ from typing import (TYPE_CHECKING, Generic, Iterable, List, Optional, Tuple,
                     TypeVar)
 
 from crossbench.helper.state import State, StateMachine
-from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import BaseProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 from crossbench.runner.result_origin import ResultOrigin
 
 if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResultDict
 
 ResultOriginT = TypeVar("ResultOriginT", bound=ResultOrigin)

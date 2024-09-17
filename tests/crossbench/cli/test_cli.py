@@ -16,7 +16,8 @@ import hjson
 from crossbench import __version__, cli_helper, plt
 from crossbench.browsers import splash_screen, viewport
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config import BrowserConfig, BrowserVariantsConfig
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.path import RemotePath

@@ -22,16 +22,16 @@ from crossbench.runner.result_origin import ResultOrigin
 from crossbench.runner.timing import Timing
 
 if TYPE_CHECKING:
-  from selenium.webdriver.common.options import ArgOptions
-
   from typing import Iterable
+
+  from selenium.webdriver.common.options import ArgOptions
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.browsers.secrets import SecretType
   from crossbench.env import HostEnvironment
   from crossbench.probes.probe import Probe
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict

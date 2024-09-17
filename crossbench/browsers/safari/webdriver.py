@@ -20,7 +20,7 @@ from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.path import RemotePath
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 

@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
 
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ResultLocation)
+                                     ProbeIncompatibleBrowser)
+from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:

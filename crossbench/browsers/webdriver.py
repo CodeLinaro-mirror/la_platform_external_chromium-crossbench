@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath, RemotePath
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 

@@ -24,7 +24,7 @@ from crossbench.browsers.firefox.firefox import Firefox
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class FirefoxWebDriver(WebDriverBrowser, Firefox):

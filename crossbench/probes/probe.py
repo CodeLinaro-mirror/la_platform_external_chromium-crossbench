@@ -5,24 +5,25 @@
 from __future__ import annotations
 
 import abc
-import argparse
-from typing import (TYPE_CHECKING, Any, Dict, Hashable, Optional, Set, Tuple,
-                    Type, TypeVar)
+from typing import (TYPE_CHECKING, Dict, Hashable, Optional, Set, Tuple, Type,
+                    TypeVar)
 
 from crossbench import plt
-from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.config import ConfigParser
 from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.runner.groups import (BrowserSessionRunGroup,
-                                        BrowsersRunGroup,
-                                        CacheTemperatureRunGroup,
-                                        RepetitionsRunGroup, StoriesRunGroup)
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.cache_temperature import \
+      CacheTemperatureRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
 
 

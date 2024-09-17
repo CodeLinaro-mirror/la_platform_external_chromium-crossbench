@@ -11,7 +11,7 @@ from crossbench.env import HostEnvironment
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.probes import all as all_probes
 from crossbench.probes.probe import ProbeIncompatibleBrowser
-from crossbench.runner.groups import BrowserSessionRunGroup
+from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.thread import RunThreadGroup
 from crossbench.runner.runner import Runner, ThreadMode
 from tests import test_helper

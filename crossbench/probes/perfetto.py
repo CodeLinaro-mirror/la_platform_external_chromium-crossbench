@@ -14,8 +14,8 @@ from crossbench import path as pth
 from crossbench.cli_helper import parse_remote_path
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ProbeKeyT,
-                                     ResultLocation)
+                                     ProbeIncompatibleBrowser, ProbeKeyT)
+from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:

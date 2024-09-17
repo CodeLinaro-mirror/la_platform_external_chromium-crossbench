@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.flags.base import Flags
   from crossbench.path import RemotePath
-  from crossbench.runner.groups import BrowserSessionRunGroup
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class Firefox(Browser):

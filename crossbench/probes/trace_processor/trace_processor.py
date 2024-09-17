@@ -8,28 +8,27 @@ import collections
 import json
 import logging
 import zipfile
-import pandas as pd
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Union
 
-from perfetto.batch_trace_processor.api import BatchTraceProcessor, BatchTraceProcessorConfig
-from perfetto.trace_processor.api import TraceProcessorConfig, TraceProcessor
-from perfetto.trace_uri_resolver.resolver import TraceUriResolver
+import pandas as pd
+from google.protobuf.json_format import MessageToJson
+from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
+                                                BatchTraceProcessorConfig)
+from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
-from google.protobuf.json_format import MessageToJson
-from typing import IO, TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union, Dict
-from urllib.request import urlretrieve
+from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 
 from crossbench import cli_helper
 from crossbench import path as pth
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.probes import metric as cb_metric
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench.env import HostEnvironment
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
-  from crossbench.env import HostEnvironment
   from crossbench.types import JsonDict
 
 
@@ -40,7 +39,7 @@ _MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
 class CrossbenchTraceUriResolver(TraceUriResolver):
   PREFIX = 'crossbench'
 
-  def __init__(self, traces: Union[Iterable[Run] | TraceProcessorProbeContext]):
+  def __init__(self, traces: Union[Iterable[Run], TraceProcessorProbeContext]):
 
     def metadata(run: Run) -> Dict[str, str]:
       return {

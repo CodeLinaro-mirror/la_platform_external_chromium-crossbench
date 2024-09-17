@@ -54,13 +54,3 @@ class TrafficShaper(abc.ABC):
       yield self
     finally:
       self._is_running = False
-
-
-class NoTrafficShaper(TrafficShaper):
-
-  @property
-  def is_live(self) -> bool:
-    return True
-
-  def __str__(self) -> str:
-    return "full"

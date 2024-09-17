@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.browsers.secrets import SecretsConfig, Secret, SecretType
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags.base import Flags
@@ -16,6 +15,7 @@ from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
+  from crossbench.browsers.secrets import Secret, SecretsConfig, SecretType
   from crossbench.network.base import Network
 
 
