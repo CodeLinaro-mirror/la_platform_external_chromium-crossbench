@@ -215,8 +215,8 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
         type=cli_helper.parse_positive_int,
         help="Number of iterations each Speedometer subtest is run "
         "within the same session. \n"
-        "Note: --repeat restarts the whole benchmark, --iterations runs the"
-        "same test tests n-times within the same session without the setup "
+        "Note: --repetitions restarts the whole benchmark, --iterations runs "
+        "the same test tests n-times within the same session without the setup "
         "overhead of starting up a whole new browser.")
     return parser
 
