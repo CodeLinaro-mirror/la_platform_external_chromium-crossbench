@@ -96,7 +96,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
   def _setup_contexts(self):
     for probe_context in self._probe_contexts:
       with self.capture(f"probes-setup {probe_context.name}"):
-        probe_context.setup()  # pytype: disable=wrong-arg-types
+        probe_context.setup()
 
   def _handle_setup_error(self, is_dry_run: bool) -> None:
     self._state.transition(State.SETUP, to=State.DONE)

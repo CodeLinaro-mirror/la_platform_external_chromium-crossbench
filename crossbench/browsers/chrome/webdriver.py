@@ -15,8 +15,8 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.helper import ChromePathMixin
 from crossbench.browsers.chromium.webdriver import (
-    ChromiumWebDriver, ChromiumWebDriverAndroid, ChromiumWebDriverSsh,
-    ChromiumWebDriverChromeOsSsh, build_chromedriver_instructions)
+    ChromiumWebDriver, ChromiumWebDriverAndroid, ChromiumWebDriverChromeOsSsh,
+    ChromiumWebDriverSsh, build_chromedriver_instructions)
 from crossbench.browsers.webdriver import DriverException
 
 if TYPE_CHECKING:
@@ -40,9 +40,7 @@ class ChromeWebDriver(ChromePathMixin, ChromiumWebDriver):
     assert isinstance(options, ChromeOptions)
     assert isinstance(service, ChromeService)
     try:
-      return webdriver.Chrome(  # pytype: disable=wrong-keyword-args
-          options=options,
-          service=service)
+      return webdriver.Chrome(options=options, service=service)
     except selenium.common.exceptions.WebDriverException as e:
       msg: List[str] = [f"Could not start WebDriver: {e.msg}"]
       if self.platform.is_android:

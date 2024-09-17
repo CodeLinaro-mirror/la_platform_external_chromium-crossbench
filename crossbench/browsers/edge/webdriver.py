@@ -42,9 +42,9 @@ class EdgeWebDriver(EdgePathMixin, ChromiumWebDriver):
     finder = EdgeWebDriverDownloader(self)
     return finder.download()
 
-  def _create_driver(self, options, service) -> ChromiumDriver:
-    return webdriver.Edge(  # pytype: disable=wrong-keyword-args
-        options=options, service=service)
+  def _create_driver(self, options: EdgeOptions,
+                     service: EdgeService) -> ChromiumDriver:
+    return webdriver.Edge(options=options, service=service)
 
   @property
   def attributes(self) -> BrowserAttributes:

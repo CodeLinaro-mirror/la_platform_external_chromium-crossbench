@@ -50,4 +50,4 @@ class BrowsersRunGroup(RunGroup):
     return ("Merging results from multiple browsers",)
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
-    return probe.merge_browsers(self)  # pytype: disable=wrong-arg-types
+    return probe.merge_browsers(self)

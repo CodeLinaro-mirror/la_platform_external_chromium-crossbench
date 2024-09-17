@@ -68,8 +68,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     service.log_file = self.platform.host_platform.local_path(
         self.stdout_log_file).open(
             "w", encoding="utf-8")
-    driver = webdriver.Firefox(  # pytype: disable=wrong-keyword-args
-        options=options, service=service)
+    driver = webdriver.Firefox(options=options, service=service)
     return driver
 
   def _validate_driver_version(self) -> None:

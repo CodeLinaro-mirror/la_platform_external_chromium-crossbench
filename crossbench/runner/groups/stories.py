@@ -99,5 +99,4 @@ class StoriesRunGroup(RunGroup):
     return info
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
-    # TODO: enable pytype again
-    return probe.merge_stories(self)  # pytype: disable=wrong-arg-types
+    return probe.merge_stories(self)
