@@ -72,13 +72,9 @@ class WprBase(abc.ABC):
         raise ValueError(
             f"Could not find web_page_replay_go on {self._platform}")
     self._archive_path = self._validate_archive_path(archive_path)
-    if http_port == https_port:
-      raise ValueError("http_port must be different from https_port, "
-                       f"but got twice: {http_port}")
-    self._http_port = http_port
-    self._https_port = https_port
+    (self._http_port,
+     self._https_port) = self._validate_ports(http_port, https_port)
     self._num_parsed_ports: int = 0
-
     self._host: str = host
 
     if key_file:
@@ -103,6 +99,20 @@ class WprBase(abc.ABC):
       if not script.is_file():
         raise ValueError(f"Injected script does not exist: {script}")
     self._inject_scripts: Tuple[LocalPath, ...] = tuple(inject_scripts)
+
+  def _validate_ports(self, http_port: int, https_port: int) -> Tuple[int, int]:
+    if http_port == 0:
+      logging.debug("WPR: using auto-port for http")
+    else:
+      http_port = cli_helper.parse_port(http_port, "wpr http port")
+    if https_port == 0:
+      logging.debug("WPR: using auto-port for https")
+    else:
+      https_port = cli_helper.parse_port(https_port, "wpr https port")
+    if http_port and http_port == https_port:
+      raise ValueError("http_port must be different from https_port, "
+                       f"but got twice: {http_port}")
+    return (http_port, https_port)
 
   @abc.abstractmethod
   def _validate_archive_path(self, path: LocalPath) -> LocalPath:
@@ -143,24 +153,13 @@ class WprBase(abc.ABC):
     return cmd
 
   def start(self):
-    go_cmd: TupleCmdArgs = self._go_cmd + self.cmd
-    logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
-    self._num_parsed_ports = 0
     try:
-      if self._log_path:
-        self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
-      with helper.ChangeCWD(self._bin_path.parent):
-        logging.debug("Logging to %s", self._log_path)
-        self._process = self._platform.popen(
-            *go_cmd, stdout=self._log_file, stderr=self._log_file)
-
-      if not self._process:
-        raise WprStartupError(f"Could not start {type(self).__name__}")
-
+      self._start_wpr()
       atexit.register(self.stop)
-      logging.info("WPR: waiting for startup")
+      logging.info("WPR: waiting for startup...")
       self._wait_for_startup()
-      logging.info("WPR: Starting wpr.go %s: DONE", self.NAME)
+      logging.info("WPR: Started wpr.go %s: DONE (http_port=%s, http_port=%s)",
+                   self.NAME, self.http_port, self.https_port)
     except BaseException as e:
       if isinstance(e, Exception):
         logging.debug("WPR got startup errors: %s %s", type(e), e)
@@ -168,6 +167,19 @@ class WprBase(abc.ABC):
       self.stop(force_shutdown)
       self._handle_startup_error()
       raise
+
+  def _start_wpr(self):
+    go_cmd: TupleCmdArgs = self._go_cmd + self.cmd
+    logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
+    self._num_parsed_ports = 0
+    if self._log_path:
+      self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
+    with helper.ChangeCWD(self._bin_path.parent):
+      logging.debug("Logging to %s", self._log_path)
+      self._process = self._platform.popen(
+          *go_cmd, stdout=self._log_file, stderr=self._log_file)
+    if not self._process:
+      raise WprStartupError(f"Could not start {type(self).__name__}")
 
   def _handle_startup_error(self):
     logging.error("WPR: Could not start %s", type(self).__name__)

@@ -87,8 +87,6 @@ class WprReplayNetwork(ReplayNetwork):
       self._server = WprReplayServer(
           self.archive_path,
           self._wpr_go_bin,
-          http_port=8080,
-          https_port=8081,
           log_path=log_dir / "network.wpr.log",
           platform=self.runner_platform)
       logging.debug("Starting WPR server")
