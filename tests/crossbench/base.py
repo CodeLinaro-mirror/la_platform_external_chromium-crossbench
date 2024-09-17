@@ -12,7 +12,6 @@ import pathlib
 from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
-import psutil
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench

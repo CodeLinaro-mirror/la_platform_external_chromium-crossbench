@@ -12,17 +12,16 @@ import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
 from crossbench import cli_helper
+from crossbench import path as pth
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import RemotePosixPlatform
 
 if TYPE_CHECKING:
-  from crossbench.path import (LocalPath, LocalPathLike, RemotePath,
-                               RemotePathLike)
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
   from crossbench.types import JsonDict
 
 
-def _find_adb_bin(platform: Platform) -> RemotePath:
+def _find_adb_bin(platform: Platform) -> pth.RemotePath:
   adb_bin = platform.search_platform_binary(
       name="adb",
       macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
@@ -37,7 +36,7 @@ def _find_adb_bin(platform: Platform) -> RemotePath:
 
 def adb_devices(
     platform: Platform,
-    adb_bin: Optional[RemotePath] = None) -> Dict[str, Dict[str, str]]:
+    adb_bin: Optional[pth.RemotePath] = None) -> Dict[str, Dict[str, str]]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
@@ -58,12 +57,12 @@ class Adb:
 
   _serial_id: str
   _device_info: Dict[str, str]
-  _adb_bin: RemotePath
+  _adb_bin: pth.RemotePath
 
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
-               adb_bin: Optional[RemotePath] = None) -> None:
+               adb_bin: Optional[pth.RemotePath] = None) -> None:
     self._host_platform = host_platform
     if adb_bin:
       self._adb_bin = cli_helper.parse_binary_path(
@@ -116,8 +115,8 @@ class Adb:
   def has_root(self) -> bool:
     return self.shell_stdout("id").startswith("uid=0(root)")
 
-  def path(self, path: RemotePathLike) -> RemotePath:
-    return self._host_platform.path(path)
+  def path(self, path: pth.RemotePathLike) -> pth.RemotePath:
+    return pth.RemotePosixPath(path)
 
   @property
   def serial_id(self) -> str:
@@ -250,12 +249,12 @@ class Adb:
   def reverse_remove(self, remote: int, protocol: str = "tcp") -> None:
     self._adb("reverse", "--remove", f"{protocol}:{remote}")
 
-  def pull(self, device_src_path: RemotePath,
-           local_dest_path: LocalPath) -> None:
+  def pull(self, device_src_path: pth.RemotePath,
+           local_dest_path: pth.LocalPath) -> None:
     self._adb("pull", self.path(device_src_path), local_dest_path)
 
-  def push(self, local_src_path: LocalPath,
-           device_dest_path: RemotePath) -> None:
+  def push(self, local_src_path: pth.LocalPath,
+           device_dest_path: pth.RemotePath) -> None:
     self._adb("push", local_src_path, self.path(device_dest_path))
 
   def cmd(self,
@@ -301,7 +300,7 @@ class Adb:
     self.shell("am", "force-stop", package_name)
 
   def install(self,
-              bundle: LocalPath,
+              bundle: pth.LocalPath,
               allow_downgrade: bool = False,
               modules: Optional[str] = None) -> None:
     if bundle.suffix == ".apks":
@@ -309,7 +308,9 @@ class Adb:
     if bundle.suffix == ".apk":
       self.install_apk(bundle, allow_downgrade)
 
-  def install_apk(self, apk: LocalPath, allow_downgrade: bool = False) -> None:
+  def install_apk(self,
+                  apk: pth.LocalPath,
+                  allow_downgrade: bool = False) -> None:
     if not apk.exists():
       raise ValueError(f"APK {apk} does not exist.")
     args = ["install"]
@@ -319,7 +320,7 @@ class Adb:
     self._adb(*args)
 
   def install_apks(self,
-                   apks: LocalPath,
+                   apks: pth.LocalPath,
                    allow_downgrade: bool = False,
                    modules: Optional[str] = None) -> None:
     if not apks.exists():
@@ -419,7 +420,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       raise ValueError(f"Unknown android CPU ABI: {cpu_abi}")
     return arch
 
-  def app_path_to_package(self, app_path: RemotePathLike) -> str:
+  def app_path_to_package(self, app_path: pth.RemotePathLike) -> str:
     path = self.path(app_path)
     if len(path.parts) > 1:
       raise ValueError(f"Invalid android package name: '{path}'")
@@ -429,7 +430,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       raise ValueError(f"Package '{package}' is not installed on {self._adb}")
     return package
 
-  def search_binary(self, app_or_bin: RemotePathLike) -> Optional[RemotePath]:
+  def search_binary(self,
+                    app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:
     app_or_bin_path = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
@@ -439,12 +441,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       return app_or_bin_path
     return None
 
-  def home(self) -> RemotePath:
+  def home(self) -> pth.RemotePath:
     raise RuntimeError("Cannot access home dir on (non-rooted) android device")
 
   _VERSION_NAME_RE = re.compile(r"versionName=(?P<version>.+)")
 
-  def app_version(self, app_or_bin: RemotePathLike) -> str:
+  def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
     # adb shell dumpsys package com.chrome.canary | grep versionName -C2
     package = self.app_path_to_package(app_or_bin)
     package_info = self.adb.dumpsys("package", str(package))
@@ -493,7 +495,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return int(float(match_result.group("brightness")) * 100)
 
   @property
-  def default_tmp_dir(self) -> RemotePath:
+  def default_tmp_dir(self) -> pth.RemotePath:
     return self.path("/data/local/tmp/")
 
   def sh(self,
@@ -552,10 +554,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     self.adb.reverse_remove(remote_port, protocol="tcp")
 
-  def rsync(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
+  def rsync(self, from_path: pth.RemotePath,
+            to_path: pth.LocalPath) -> pth.LocalPath:
     return self.pull(from_path, to_path)
 
-  def pull(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
+  def pull(self, from_path: pth.RemotePath,
+           to_path: pth.LocalPath) -> pth.LocalPath:
     device_path = self.path(from_path)
     assert self.exists(device_path), (
         f"Source file '{from_path}' does not exist on {self}")
@@ -564,16 +568,17 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self.adb.pull(device_path, local_host_path)
     return to_path
 
-  def push(self, from_path: LocalPath, to_path: RemotePath) -> RemotePath:
+  def push(self, from_path: pth.LocalPath,
+           to_path: pth.RemotePath) -> pth.RemotePath:
     self.adb.push(from_path, self.path(to_path))
     return to_path
 
   def set_file_contents(self,
-                        file: RemotePathLike,
+                        file: pth.RemotePathLike,
                         data: str,
                         encoding: str = "utf-8") -> None:
     # self.push a tmp file with the given contents
-    tmp_dir: LocalPath = self.host_path(self.host_platform.mkdtemp())
+    tmp_dir: pth.LocalPath = self.host_path(self.host_platform.mkdtemp())
     try:
       tmp_file = tmp_dir / "push.data"
       with tmp_file.open("w", encoding=encoding) as f:
@@ -646,5 +651,5 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     }
     return self._system_details
 
-  def screenshot(self, result_path: RemotePath) -> None:
+  def screenshot(self, result_path: pth.RemotePath) -> None:
     self.sh("screencap", "-p", result_path)
