@@ -30,7 +30,6 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
   from crossbench.probes.probe import Probe
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict
 
 
@@ -145,8 +144,8 @@ class Browser(abc.ABC):
   def js_flags(self) -> JSFlags:
     raise NotImplementedError(f"Unsupported feature flags on {self}.")
 
-  def user_agent(self, runner: Runner) -> str:
-    return str(self.js(runner, "return window.navigator.userAgent"))
+  def user_agent(self) -> str:
+    return str(self.js("return window.navigator.userAgent"))
 
   @property
   def pid(self) -> Optional[int]:
@@ -229,14 +228,13 @@ class Browser(abc.ABC):
         "log": {}
     }
 
-  def setup_binary(self, runner: Runner) -> None:
+  def setup_binary(self) -> None:
     pass
 
   def setup(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running, (
         "Previously used browser was not correctly stopped.")
-    runner = session.runner
-    self.clear_cache(runner)
+    self.clear_cache()
     self.start(session)
     assert self._is_running
 
@@ -244,8 +242,7 @@ class Browser(abc.ABC):
   def _extract_version(self) -> str:
     pass
 
-  def clear_cache(self, runner: Runner) -> None:
-    del runner
+  def clear_cache(self) -> None:
     if self.clear_cache_dir and self.cache_dir:
       self.platform.rm(self.cache_dir, missing_ok=True, dir=True)
 
@@ -276,8 +273,7 @@ class Browser(abc.ABC):
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     return flags
 
-  def quit(self, runner: Runner) -> None:
-    del runner
+  def quit(self) -> None:
     assert self._is_running, "Browser is already stopped"
     try:
       self.force_quit()
@@ -301,7 +297,6 @@ class Browser(abc.ABC):
   @abc.abstractmethod
   def js(
       self,
-      runner: Runner,
       script: str,
       timeout: Optional[dt.timedelta] = None,
       arguments: Sequence[object] = ()
@@ -314,10 +309,7 @@ class Browser(abc.ABC):
         f"New document script injection is not supported by {self}")
 
   @abc.abstractmethod
-  def show_url(self,
-               runner: Runner,
-               url: str,
-               target: Optional[str] = None) -> None:
+  def show_url(self, url: str, target: Optional[str] = None) -> None:
     pass
 
   def switch_to_new_tab(self) -> None:
@@ -349,5 +341,5 @@ class Browser(abc.ABC):
     # Poor-man's hash, browsers should be unique.
     return hash(id(self))
 
-  def performance_mark(self, runner: Runner, name: str):
-    self.js(runner, "performance.mark(arguments[0]);", arguments=[name])
+  def performance_mark(self, name: str):
+    self.js("performance.mark(arguments[0]);", arguments=[name])

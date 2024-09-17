@@ -36,7 +36,7 @@ class ScreenshotProbe(Probe):
     return parser
 
   def _pre_check_viewport_size(self, env: HostEnvironment) -> None:
-    for browser in env.runner.browsers:
+    for browser in env.browsers:
       viewport: Viewport = browser.viewport
       if viewport.is_headless:
         env.handle_warning(

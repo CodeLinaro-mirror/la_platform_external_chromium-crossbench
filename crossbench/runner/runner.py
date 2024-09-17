@@ -222,10 +222,9 @@ class Runner:
     self._thread_mode = thread_mode
     self._exceptions = exception.Annotator(throw)
     self._platform = platform
-    self._env = HostEnvironment(
-        self,  # pytype: disable=wrong-arg-types
-        env_config,
-        env_validation_mode)
+    self._env = HostEnvironment(self.platform, self.out_dir, self.browsers,
+                                self.probes, self.repetitions, env_config,
+                                env_validation_mode)
     self._attach_default_probes(additional_probes)
     self._prepare_benchmark()
     self._cache_temperature_groups: Tuple[CacheTemperatureRunGroup, ...] = ()
@@ -444,7 +443,7 @@ class Runner:
         self._setup_browser(browser)
 
   def _setup_browser(self, browser: Browser) -> None:
-    browser.setup_binary(self)  # pytype: disable=wrong-arg-types
+    browser.setup_binary()
     for probe in browser.probes:
       assert probe in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "
@@ -466,8 +465,12 @@ class Runner:
       for story in self.stories:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
-          browser_session = BrowserSessionRunGroup(self, browser, session_index,
-                                                   self.out_dir, throw)
+          extra_benchmark_flags = self.benchmark.extra_flags(browser)
+          browser_session = BrowserSessionRunGroup(self.env, self.probes,
+                                                   browser,
+                                                   extra_benchmark_flags,
+                                                   session_index, self.out_dir,
+                                                   self.create_symlinks, throw)
           session_index += 1
           for t_index, temperature in enumerate(self.cache_temperatures):
             name_parts = [f"story={story.name}"]
@@ -543,25 +546,25 @@ class Runner:
     self._cache_temperature_groups = CacheTemperatureRunGroup.groups(
         self._measured_runs, throw)
     for cache_temp_group in self._cache_temperature_groups:
-      cache_temp_group.merge(self)
+      cache_temp_group.merge(self.probes)
       self._exceptions.extend(cache_temp_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: repetitions")
     self._repetitions_groups = RepetitionsRunGroup.groups(
         self._cache_temperature_groups, throw)
     for repetition_group in self._repetitions_groups:
-      repetition_group.merge(self)
+      repetition_group.merge(self.probes)
       self._exceptions.extend(repetition_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: stories")
     self._story_groups = StoriesRunGroup.groups(self._repetitions_groups, throw)
     for story_group in self._story_groups:
-      story_group.merge(self)
+      story_group.merge(self.probes)
       self._exceptions.extend(story_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: browsers")
     self._browser_group = BrowsersRunGroup(self._story_groups, throw)
-    self._browser_group.merge(self)
+    self._browser_group.merge(self.probes)
     self._exceptions.extend(self._browser_group.exceptions, is_nested=True)
 
   def cool_down(self) -> None:

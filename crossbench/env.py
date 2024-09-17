@@ -11,7 +11,7 @@ import logging
 import os
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Optional, Union)
+                    Optional, Tuple, Union)
 from urllib.parse import urlparse
 
 import colorama
@@ -20,8 +20,9 @@ from crossbench import compat, helper, plt
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.plt.base import CmdArg
-  from crossbench.runner.runner import Runner
+  from crossbench.path import LocalPath
+  from crossbench.plt.base import CmdArg, Platform
+  from crossbench.probes.probe import Probe
 
 
 def merge_bool(name: str, left: Optional[bool],
@@ -173,18 +174,33 @@ class HostEnvironment:
   }
 
   def __init__(self,
-               runner: Runner,
+               platform: Platform,
+               out_dir: LocalPath,
+               browsers: Iterable[Browser],
+               probes: Iterable[Probe],
+               repetitions: int,
                config: Optional[HostEnvironmentConfig] = None,
                validation_mode: ValidationMode = ValidationMode.THROW):
     self._wait_until = dt.datetime.now()
     self._config = config or HostEnvironmentConfig()
-    self._runner = runner
-    self._platform = runner.platform
+    self._out_dir = out_dir
+    self._browsers = tuple(browsers)
+    self._probes = tuple(probes)
+    self._repetitions = repetitions
+    self._platform = platform
     self._validation_mode = validation_mode
 
   @property
-  def runner(self) -> Runner:
-    return self._runner
+  def platform(self) -> Platform:
+    return self._platform
+
+  @property
+  def repetitions(self) -> int:
+    return self._repetitions
+
+  @property
+  def browsers(self) -> Tuple[Browser, ...]:
+    return self._browsers
 
   @property
   def config(self) -> HostEnvironmentConfig:
@@ -295,7 +311,7 @@ class HostEnvironment:
     if limit is HostEnvironmentConfig.IGNORE:
       return
     # Check the remaining disk space on the FS where we write the results.
-    usage = self._platform.disk_usage(self._runner.out_dir)
+    usage = self._platform.disk_usage(self._out_dir)
     free_gib = round(usage.free / 1024 / 1024 / 1024, 2)
     if free_gib < limit:
       self.handle_validation_warning(
@@ -307,7 +323,7 @@ class HostEnvironment:
       return
     battery_probes = []
     # Certain probes may require battery power:
-    for probe in self._runner.probes:
+    for probe in self._probes:
       if probe.BATTERY_ONLY:
         battery_probes.append(probe)
     if not use_battery and battery_probes:
@@ -372,7 +388,7 @@ class HostEnvironment:
     if self._config.browser_allow_existing_process:
       return
     grouped_browsers: Dict[plt.Platform, List[Browser]] = helper.group_by(
-        self._runner.browsers, key=lambda browser: browser.platform)
+        self.browsers, key=lambda browser: browser.platform)
     for platform, browsers in grouped_browsers.items():
       self._check_running_binaries_on_platform(platform, browsers)
 
@@ -432,7 +448,7 @@ class HostEnvironment:
             "Requested browser_is_headless=False, "
             "but no DISPLAY is available to run with a UI.")
     # Check that browsers are running in the requested display mode:
-    for browser in self._runner.browsers:
+    for browser in self.browsers:
       if browser.viewport.is_headless != requested_headless:
         self.handle_validation_warning(
             f"Requested browser_is_headless={requested_headless},"
@@ -440,7 +456,7 @@ class HostEnvironment:
             f"headless={browser.viewport.is_headless}.")
 
   def _check_probes(self) -> None:
-    for probe in self._runner.probes:
+    for probe in self._probes:
       try:
         probe.validate_env(self)
       except Exception as e:
@@ -449,11 +465,11 @@ class HostEnvironment:
     require_probes = self._config.require_probes
     if require_probes is HostEnvironmentConfig.IGNORE:
       return
-    if self._config.require_probes and not self._runner.probes:
+    if self._config.require_probes and not self._probes:
       self.handle_validation_warning("No probes specified.")
 
   def _check_results_dir(self) -> None:
-    results_dir = self._runner.out_dir.parent
+    results_dir = self._out_dir.parent
     if not results_dir.exists():
       return
     results = [path for path in results_dir.iterdir() if path.is_dir()]
@@ -476,7 +492,7 @@ class HostEnvironment:
         self._platform.environ.get("TERM_PROGRAM") != "Apple_Terminal"):
       return
     any_not_headless = any(
-        not browser.viewport.is_headless for browser in self._runner.browsers)
+        not browser.viewport.is_headless for browser in self.browsers)
     if any_not_headless:
       self.handle_validation_warning(
           "Terminal.app does not launch apps in the foreground.\n"

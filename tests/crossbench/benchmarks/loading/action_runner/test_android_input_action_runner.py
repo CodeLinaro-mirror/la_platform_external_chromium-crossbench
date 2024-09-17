@@ -18,6 +18,7 @@ from crossbench.benchmarks.loading.action_runner.element_not_found_error import 
     ElementNotFoundError
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.browsers.settings import Settings
+from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -144,10 +145,10 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
         "mock browser", settings=Settings(platform=self.platform))
     self.runner = MockRunner()
     self.root_dir = pathlib.Path()
-    self.run = MockRun(
-        self.runner,
-        BrowserSessionRunGroup(self.runner, self.browser, 1, self.root_dir,
-                               True), "run 1")
+    self.session = BrowserSessionRunGroup(self.runner.env,
+                                          self.runner.probes, self.browser,
+                                          Flags(), 1, self.root_dir, True, True)
+    self.mock_run = MockRun(self.runner, self.session, "run 1")
     self.action_runner = AndroidInputActionRunner()
 
   def tearDown(self):
@@ -162,7 +163,7 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
                            "Got additional unused JS side effects.")
 
   def run_action(self, action: Action) -> None:
-    action.run_with(self.run, self.action_runner)
+    action.run_with(self.mock_run, self.action_runner)
     return
 
   def expect_action_setup(

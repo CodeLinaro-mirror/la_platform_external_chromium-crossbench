@@ -10,9 +10,6 @@ from crossbench.browsers.applescript import AppleScriptBrowser
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari
 
-if TYPE_CHECKING:
-  from crossbench.runner.runner import Runner
-
 
 class SafariAppleScript(Safari, AppleScriptBrowser):
   APPLE_SCRIPT_ALLOW_JS_MENU: str = (
@@ -46,8 +43,8 @@ class SafariAppleScript(Safari, AppleScriptBrowser):
       self._exec_apple_script("set the bounds of the first window to {%s}" %
                               bounds)
 
-  def quit(self, runner: Runner) -> None:
-    super().quit(runner)
+  def quit(self) -> None:
+    super().quit()
     # Safari doesn't react to "quit" when using the full app path.
     self.platform.exec_apple_script(f"""
         tell application "{self.bundle_name}"

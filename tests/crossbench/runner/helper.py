@@ -95,7 +95,10 @@ class MockRun:
     assert self.is_dry_run is is_dry_run
     assert not self.did_teardown_browser
     self.did_teardown_browser = True
-    self.browser.quit(self.runner)
+    self.browser.quit()
+
+  def __repr__(self):
+    return f"MockRun({self.name}, id={hex(id(self))})"
 
   def __str__(self):
     return self.name
@@ -115,11 +118,15 @@ class MockRunner:
   def __init__(self) -> None:
     self.benchmark = MockBenchmark(stories=[MockStory("mock_story")])
     self.runs = tuple()
-    self._timing = Timing()
-
-  @property
-  def timing(self) -> Timing:
-    return self._timing
+    self.platform = MockPlatform("test-platform")
+    self.repetitions = 1
+    self.create_symlinks = True
+    self.probes = []
+    self.browsers = []
+    self.out_dir = pathlib.Path("results/out")
+    self.timing = Timing()
+    self.env = HostEnvironment(self.platform, self.out_dir, self.browsers,
+                               self.probes, self.repetitions)
 
 
 class MockNetwork:

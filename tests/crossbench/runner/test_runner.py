@@ -8,6 +8,7 @@ import unittest
 
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
+from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.probes import all as all_probes
 from crossbench.probes.probe import ProbeIncompatibleBrowser
@@ -29,6 +30,17 @@ class TestThreadModeTestCase(unittest.TestCase):
   # pylint has some issues with enums.
   # pylint: disable=no-member
 
+  def create_session(self, browser, index) -> BrowserSessionRunGroup:
+    return BrowserSessionRunGroup(
+        self.env,
+        self.probes,
+        browser,
+        Flags(),
+        index,
+        self.root_dir,
+        create_symlinks=True,
+        throw=True)
+
   def setUp(self) -> None:
     self.platform_a = MockPlatform("platform a")
     self.platform_b = MockPlatform("platform b")
@@ -38,49 +50,23 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.browser_b_2 = MockBrowser("mock browser b 2", self.platform_b)
     self.runner = MockRunner()
     self.root_dir = pathlib.Path()
+    self.env = self.runner.env
+    self.probes = []
     self.runs = (
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_a_1, 1, self.root_dir, throw=True),
-            "run 1"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_a_2, 2, self.root_dir, throw=True),
-            "run 2"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_a_1, 3, self.root_dir, throw=True),
-            "run 3"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_a_2, 4, self.root_dir, throw=True),
-            "run 4"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_b_1, 5, self.root_dir, throw=True),
-            "run 5"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_b_2, 6, self.root_dir, throw=True),
-            "run 6"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_b_1, 7, self.root_dir, throw=True),
-            "run 7"),
-        MockRun(
-            self.runner,
-            BrowserSessionRunGroup(
-                self.runner, self.browser_b_2, 8, self.root_dir, throw=True),
-            "run 8"),
+        MockRun(self.runner, self.create_session(self.browser_a_1, 1), "run 1"),
+        MockRun(self.runner, self.create_session(self.browser_a_2, 2), "run 2"),
+        MockRun(self.runner, self.create_session(self.browser_a_1, 3), "run 3"),
+        MockRun(self.runner, self.create_session(self.browser_a_2, 4), "run 4"),
+        MockRun(self.runner, self.create_session(self.browser_b_1, 5), "run 5"),
+        MockRun(self.runner, self.create_session(self.browser_b_2, 6), "run 6"),
+        MockRun(self.runner, self.create_session(self.browser_b_1, 7), "run 7"),
+        MockRun(self.runner, self.create_session(self.browser_b_2, 8), "run 8"),
     )
     self.runner.runs = self.runs
+
+  def test_default_runs(self):
+    session_ids = {run.browser_session.index for run in self.runs}
+    self.assertEqual(len(session_ids), len(self.runs))
 
   def test_group_none(self):
     groups = ThreadMode.NONE.group(self.runs)
@@ -116,10 +102,8 @@ class TestThreadModeTestCase(unittest.TestCase):
       self.assertEqual(group.index, index)
 
   def test_group_session_2(self):
-    session_1 = BrowserSessionRunGroup(self.runner, self.browser_a_1, 1,
-                                       self.root_dir, True)
-    session_2 = BrowserSessionRunGroup(self.runner, self.browser_a_2, 2,
-                                       self.root_dir, True)
+    session_1 = self.create_session(self.browser_a_1, 1)
+    session_2 = self.create_session(self.browser_a_2, 2)
     runs = (
         MockRun(self.runner, session_1, "run 1"),
         MockRun(self.runner, session_2, "run 2"),

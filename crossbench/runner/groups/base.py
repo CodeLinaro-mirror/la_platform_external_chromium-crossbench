@@ -80,10 +80,10 @@ class RunGroup(abc.ABC):
           f"Merged file {new_file} for {self.__class__} exists already.")
     return new_file
 
-  def merge(self, runner: Runner) -> None:
+  def merge(self, probes: Iterable[Probe]) -> None:
     assert self._merged_probe_results is not None
     with self._exceptions.info(*self.info_stack):
-      for probe in reversed(tuple(runner.probes)):
+      for probe in reversed(tuple(probes)):
         with self._exceptions.capture(f"Probe {probe.name} merge results"):
           results = self._merge_probe_results(probe)
           if results is None:

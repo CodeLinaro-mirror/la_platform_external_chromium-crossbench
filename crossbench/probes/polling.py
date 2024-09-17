@@ -66,9 +66,9 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
 
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
-    if env.runner.repetitions != 1:
+    if env.repetitions != 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
-                         f"repetitions={env.runner.repetitions}.")
+                         f"repetitions={env.repetitions}.")
 
   def get_context(self, run: Run) -> PollingProbeContext:
     return PollingProbeContext(self, run)

@@ -82,10 +82,10 @@ class VideoProbe(Probe):
 
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
-    if env.runner.repetitions > 10:
+    if env.repetitions > 10:
       env.handle_warning(
           f"Probe={self.NAME} might not be able to merge so many "
-          f"repetitions={env.runner.repetitions}.")
+          f"repetitions={env.repetitions}.")
     env.check_installed(
         binaries=("ffmpeg",), message="Missing binaries for video probe: {}")
     # Check that ffmpeg can be executed
@@ -98,8 +98,8 @@ class VideoProbe(Probe):
     self._pre_check_viewport_size(env)
 
   def _pre_check_viewport_size(self, env: HostEnvironment) -> None:
-    first_viewport: Viewport = env.runner.browsers[0].viewport
-    for browser in env.runner.browsers:
+    first_viewport: Viewport = env.browsers[0].viewport
+    for browser in env.browsers:
       viewport: Viewport = browser.viewport
       if viewport.is_headless:
         env.handle_warning(

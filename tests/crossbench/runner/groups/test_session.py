@@ -7,6 +7,7 @@ from typing import Optional
 from unittest import mock
 
 from crossbench.browsers.browser import Browser
+from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
@@ -25,11 +26,12 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
                       browser: Optional[Browser] = None,
                       throw: bool = True):
     browser = browser or self.browsers[0]
-    return BrowserSessionRunGroup(self.runner, browser, 0, self.root_dir, throw)
+    return BrowserSessionRunGroup(self.runner.env, self.runner.probes, browser,
+                                  Flags(), 0, self.root_dir,
+                                  self.runner.create_symlinks, throw)
 
   def test_basic_properties(self):
     session = self.default_session()
-    self.assertIs(session.runner, self.runner)
     self.assertEqual(session.index, 0)
     self.assertIs(session.browser, self.browsers[0])
     self.assertFalse(session.is_single_run)

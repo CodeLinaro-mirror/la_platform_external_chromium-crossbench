@@ -378,7 +378,7 @@ class Run(ResultOrigin):
     with self.measure("browser-teardown"), self._exceptions.capture(
         "Quit browser"):
       try:
-        self._browser.quit(self._runner)  # pytype: disable=wrong-arg-types
+        self._browser.quit()
       except Exception as e:  # pylint: disable=broad-except
         logging.warning("Error quitting browser: %s", e)
         return

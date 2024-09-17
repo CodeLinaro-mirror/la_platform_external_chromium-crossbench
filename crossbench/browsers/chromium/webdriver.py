@@ -42,7 +42,6 @@ if TYPE_CHECKING:
   from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
 
 
 class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
@@ -302,8 +301,8 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                                     self.platform.adb.serial_id)
     return options
 
-  def setup_binary(self, runner: Runner) -> None:
-    super().setup_binary(runner)
+  def setup_binary(self) -> None:
+    super().setup_binary()
     self.platform.adb.grant_notification_permissions(self.android_package)
 
 

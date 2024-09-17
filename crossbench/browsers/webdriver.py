@@ -27,7 +27,6 @@ if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
 
 
 class DriverException(RuntimeError):
@@ -78,7 +77,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     assert log_file
     return log_file.with_suffix(".driver.log")
 
-  def setup_binary(self, runner: Runner) -> None:
+  def setup_binary(self) -> None:
     self._driver_path = self.platform.absolute(self._find_driver())
     # TODO: support remote chromedriver as well
     assert self.platform.host_platform.exists(self._driver_path), (
@@ -173,10 +172,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       log["driver"] = str(self.driver_log_file)
     return details
 
-  def show_url(self,
-               runner: Runner,
-               url: str,
-               target: Optional[str] = None) -> None:
+  def show_url(self, url: str, target: Optional[str] = None) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     handles = self._driver.window_handles
     assert handles, "Browser has no more opened windows."
@@ -210,7 +206,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   def js(
       self,
-      runner: Runner,
       script: str,
       timeout: Optional[dt.timedelta] = None,
       arguments: Sequence[object] = ()
@@ -234,7 +229,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         self._driver.switch_to.window(handle)
         self._driver.close()
 
-  def quit(self, runner: Runner) -> None:
+  def quit(self) -> None:
     assert self._is_running
     self.close_all_tabs()
     self.force_quit()
@@ -302,7 +297,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
                     driver_path: RemotePath) -> webdriver.Remote:
     raise NotImplementedError()
 
-  def setup_binary(self, runner: Runner) -> None:
+  def setup_binary(self) -> None:
     pass
 
   def start(self, session: BrowserSessionRunGroup) -> None:
@@ -316,6 +311,6 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
       self._driver.set_window_position(self.viewport.x, self.viewport.y)
       self._driver.set_window_size(self.viewport.width, self.viewport.height)
 
-  def quit(self, runner: Runner) -> None:
+  def quit(self) -> None:
     # External code that started the driver is responsible for shutting it down.
     self._is_running = False

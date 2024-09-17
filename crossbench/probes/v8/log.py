@@ -131,9 +131,9 @@ class V8LogProbe(ChromiumProbe):
 
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
-    if env.runner.repetitions != 1:
+    if env.repetitions != 1:
       env.handle_warning(f"Probe({self.NAME}) cannot merge data over multiple "
-                         f"repetitions={env.runner.repetitions}.")
+                         f"repetitions={env.repetitions}.")
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)

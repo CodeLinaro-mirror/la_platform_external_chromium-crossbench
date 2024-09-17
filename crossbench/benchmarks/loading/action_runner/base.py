@@ -178,11 +178,11 @@ class ActionRunner:
 
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
-      run.browser.show_url(run.runner, "about:blank")
+      run.browser.show_url("about:blank")
       run.runner.wait(duration)
 
   def run_page_once(self, run: Run, page: LivePage):
-    run.browser.show_url(run.runner, page.url)
+    run.browser.show_url(page.url)
     run.runner.wait(page.duration)
     self._maybe_navigate_to_about_blank(run, page)
 

@@ -15,7 +15,6 @@ from crossbench.browsers.browser import Browser
 if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.settings import Settings
-  from crossbench.runner.runner import Runner
 
 
 SAFARIDRIVER_PATH = pth.RemotePath("/usr/bin/safaridriver")
@@ -71,7 +70,7 @@ class Safari(Browser):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.SAFARI
 
-  def clear_cache(self, runner: Runner) -> None:
+  def clear_cache(self) -> None:
     self._clear_cache()
 
   def _clear_cache(self) -> None:

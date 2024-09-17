@@ -60,13 +60,13 @@ class ResultOrigin(abc.ABC):
     pass
 
   @property
-  @abc.abstractmethod
   def runner(self) -> Runner:
-    pass
+    raise NotImplementedError(
+        f"Cannot access on runner on {type(self).__name__}")
 
   @property
   def runner_platform(self) -> plt.Platform:
-    return self.runner.platform
+    return self.browser_platform.host_platform
 
   @property
   def browser_platform(self) -> plt.Platform:
@@ -74,6 +74,7 @@ class ResultOrigin(abc.ABC):
 
   @property
   def probes(self) -> Iterable[Probe]:
+    # TODO: migrate away from using runner
     return self.runner.probes
 
   @contextlib.contextmanager

@@ -98,9 +98,8 @@ class PresetPageLoadBenchmarkProbeContext(
 
   def start_story_run(self) -> None:
     self.browser.performance_mark(
-        self.runner,
-        f"PresetPageLoadBenchmark/{self.probe.benchmark.NAME}/{self.run.story.name}"
-    )
+        f"PresetPageLoadBenchmark/{self.probe.benchmark.NAME}"
+        f"/{self.run.story.name}")
 
   def stop(self) -> None:
     pass

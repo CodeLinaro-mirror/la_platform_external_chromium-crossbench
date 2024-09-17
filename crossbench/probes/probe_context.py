@@ -86,7 +86,7 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   def runner_platform(self) -> plt.Platform:
-    return self.runner.platform
+    return self.browser_platform.host_platform
 
   @property
   @abc.abstractmethod
@@ -287,11 +287,6 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   @property
   def browser(self) -> Browser:
     return self._session.browser
-
-  @property
-  @abc.abstractmethod
-  def runner(self) -> Runner:
-    return self._session.runner
 
   @property
   def result_path(self) -> RemotePath:

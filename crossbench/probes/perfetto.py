@@ -179,11 +179,10 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
                                           proc.stdout, proc.stderr)
 
     self._pid = int(proc.stdout.decode("utf-8").rstrip())
-    self.browser.performance_mark(self.runner,
-                                  "crossbench-probe-perfetto-start")
+    self.browser.performance_mark("crossbench-probe-perfetto-start")
 
   def stop(self) -> None:
-    self.browser.performance_mark(self.runner, "crossbench-probe-perfetto-stop")
+    self.browser.performance_mark("crossbench-probe-perfetto-stop")
     logging.info("PERFETTO: stopping")
     if not self._pid:
       raise RuntimeError("Perfetto was not started")

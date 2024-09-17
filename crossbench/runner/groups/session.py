@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
+from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
 from crossbench.exception import TInfoStack
 from crossbench.flags.base import Flags
@@ -24,12 +24,12 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
   from crossbench.browsers.browser import Browser
+  from crossbench.env import HostEnvironment
   from crossbench.network.base import Network
   from crossbench.path import LocalPath, RemotePath
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
-  from crossbench.runner.runner import Runner
   from crossbench.runner.timing import Timing
   from crossbench.types import JsonDict
 
@@ -52,11 +52,14 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   browser is (re-)started.
   """
 
-  def __init__(self, runner: Runner, browser: Browser, index: int,
-               root_dir: LocalPath, throw: bool) -> None:
+  def __init__(self, env: HostEnvironment, probes: Iterable[Probe],
+               browser: Browser, extra_flags: Flags, index: int,
+               root_dir: LocalPath, create_symlinks: bool, throw: bool) -> None:
     super().__init__(throw)
     self._state: StateMachine[State] = StateMachine(State.BUILDING)
-    self._runner = runner
+    self._env = env
+    self._create_symlinks = create_symlinks
+    self._probes: Tuple[Probe, ...] = tuple(probes)
     self._durations = Durations()
     self._browser = browser
     self._network: Network = browser.network
@@ -65,7 +68,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._root_dir: LocalPath = root_dir
     self._browser_tmp_dir: Optional[RemotePath] = None
     self._extra_js_flags = JSFlags()
-    self._extra_flags = runner.benchmark.extra_flags(browser)
+    self._extra_flags = extra_flags
     # Temporary objects, reset after all runs are ready (see set_ready).
     self._probe_results = ProbeResultDict(root_dir)
     self._probe_context_manager = ProbeSessionContextManager(
@@ -91,9 +94,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def _validate(self) -> None:
     if not self._runs:
       raise ValueError("BrowserSessionRunGroup must be non-empty.")
-    self.browser.validate_env(self.runner.env)
+    self.browser.validate_env(self.env)
     for run in self.runs:
-      run.validate_env(self.runner.env)
+      run.validate_env(self.env)
     self._validate_same_browser_probes()
 
   def _validate_same_browser_probes(self) -> None:
@@ -139,8 +142,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._durations
 
   @property
-  def runner(self) -> Runner:
-    return self._runner
+  def env(self) -> HostEnvironment:
+    return self._env
+
+  @property
+  def probes(self) -> Iterable[Probe]:
+    return iter(self._probes)
 
   @property
   def network(self) -> Network:
@@ -211,7 +218,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       self._browser_tmp_dir = self.browser_platform.mkdtemp(prefix)
     return self._browser_tmp_dir
 
-  def merge(self, runner: Runner) -> None:
+  def merge(self, probes: Iterable[Probe]) -> None:
     # TODO: implement merging of session probes
     pass
 
@@ -268,7 +275,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   def _setup_session_dir(self):
     with self.measure("browser-session-setup-dir"):
       self.path.mkdir(parents=True, exist_ok=True)
-      if not self.runner.create_symlinks:
+      if not self._create_symlinks:
         logging.debug("Symlink disabled by command line option")
         return
       if self.runner_platform.is_win:

@@ -93,11 +93,7 @@ class Actions(helper.TimeScope):
     if kwargs:
       js_code = js_code.format(**kwargs)
     delta = self.timing.timeout_timedelta(timeout)
-    return self._browser.js(
-        self._runner,  # pytype: disable=wrong-arg-types
-        js_code,
-        delta,
-        arguments=arguments)
+    return self._browser.js(js_code, delta, arguments=arguments)
 
   def wait_js_condition(self, js_code: str, min_wait: Union[dt.timedelta,
                                                             float],
@@ -121,10 +117,7 @@ class Actions(helper.TimeScope):
       # TODO: use target in the driver instead.
       self.js(f"window.open('{url}','{target}');")
     else:
-      self._browser.show_url(
-          self._runner,  # pytype: disable=wrong-arg-types
-          url,
-          target=None)
+      self._browser.show_url(url, target=None)
 
   def wait(
       self, seconds: Union[dt.timedelta,

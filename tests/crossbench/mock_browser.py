@@ -118,7 +118,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
         invoked_js.script for invoked_js in self.invoked_js
     ]
 
-  def clear_cache(self, runner: Runner) -> None:
+  def clear_cache(self) -> None:
     pass
 
   def start(self, session: BrowserSessionRunGroup) -> None:
@@ -134,17 +134,13 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def _extract_version(self) -> str:
     return self.VERSION
 
-  def user_agent(self, runner: Runner) -> str:
+  def user_agent(self) -> str:
     return f"Mock Browser {self.type_name}, {self.VERSION}"
 
-  def show_url(self, runner: Runner, url, target: Optional[str] = None) -> None:
+  def show_url(self, url, target: Optional[str] = None) -> None:
     self.url_list.append(url)
 
-  def js(self,
-         runner: Runner,
-         script,
-         timeout: Optional[dt.timedelta] = None,
-         arguments=()):
+  def js(self, script, timeout: Optional[dt.timedelta] = None, arguments=()):
     self.invoked_js.append(
         JsInvocation(
             result=None, script=script, arguments=arguments, timeout=timeout))

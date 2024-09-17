@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
   from crossbench.path import RemotePath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
 
 
 class AppleScript:
@@ -133,7 +132,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     self.platform.sleep(3)
     self._exec_apple_script("activate")
     self._setup_window()
-    self._check_js_from_apple_script_allowed(session.runner)
+    self._check_js_from_apple_script_allowed(session.env)
 
   def _check_system_events_allowed(self, env: HostEnvironment) -> None:
     try:
@@ -151,16 +150,16 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
       raise ValidationError(
           " Not allowed to run AppleScript and send System Events!") from e
 
-  def _check_js_from_apple_script_allowed(self, runner: Runner) -> None:
+  def _check_js_from_apple_script_allowed(self, env: HostEnvironment) -> None:
     try:
-      self.js(runner, "return 1")
+      self.js("return 1")
     except plt.SubprocessError as e:
       logging.error("Browser does not allow JS from AppleScript!")
       logging.debug("    SubprocessError: %s", e)
-      runner.env.handle_warning("Enable JavaScript from Apple Script Events: "
-                                f"'{self.APPLE_SCRIPT_ALLOW_JS_MENU}'")
+      env.handle_warning("Enable JavaScript from Apple Script Events: "
+                         f"'{self.APPLE_SCRIPT_ALLOW_JS_MENU}'")
     try:
-      self.js(runner, "return 1;")
+      self.js("return 1;")
     except plt.SubprocessError as e:
       raise ValidationError(
           " JavaScript from Apple Script Events was not enabled") from e
@@ -172,12 +171,11 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
 
   def js(
       self,
-      runner: Runner,
       script: str,
       timeout: Optional[dt.timedelta] = None,
       arguments: Sequence[object] = ()
   ) -> Any:
-    del runner, timeout
+    del timeout
     js_script = AppleScript.js_script_with_args(script, arguments)
     json_result: str = self._exec_apple_script(
         self.APPLE_SCRIPT_JS_COMMAND.strip(), js_script=js_script).rstrip()
@@ -186,15 +184,10 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
       raise AppleScript.JavaScriptFromAppleScriptException(result)
     return result
 
-  def show_url(self,
-               runner: Runner,
-               url: str,
-               target: Optional[str] = None) -> None:
-    del runner
+  def show_url(self, url: str, target: Optional[str] = None) -> None:
     self._exec_apple_script(self.APPLE_SCRIPT_SET_URL, url=url)
     self.platform.sleep(0.5)
 
-  def quit(self, runner: Runner) -> None:
-    del runner
+  def quit(self) -> None:
     self._exec_apple_script("quit")
     helper.wait_and_kill(self._browser_process)

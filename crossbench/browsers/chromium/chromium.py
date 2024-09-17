@@ -23,7 +23,6 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
 
 
 class Chromium(Browser):
@@ -251,8 +250,8 @@ class Chromium(Browser):
   def get_label_from_flags(self) -> str:
     return convert_flags_to_label(*self.flags, *self.js_flags)
 
-  def quit(self, runner: Runner) -> None:
-    super().quit(runner)
+  def quit(self) -> None:
+    super().quit()
     if self._stdout_log_file:
       self._stdout_log_file.close()
       self._stdout_log_file = None

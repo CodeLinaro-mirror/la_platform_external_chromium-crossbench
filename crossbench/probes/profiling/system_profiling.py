@@ -380,9 +380,9 @@ class ProfilingProbe(Probe):
     assert browser.platform.which(
         "xctrace"), "Please install Xcode to use xctrace"
     # Only Linux-perf and Android-simpleperf results can be merged
-    if env.runner.repetitions > 1:
+    if env.repetitions > 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
-                         f"repetitions={env.runner.repetitions}.")
+                         f"repetitions={env.repetitions}.")
 
   def _assert_is_chrome_with_extension(self, browser: Browser) -> None:
     assert (
@@ -858,8 +858,7 @@ class AndroidProfilingContext(ProfilingContext):
           logging.error(error_msg)
       raise ValueError(f"Unable to start simpleperf. {error_msg}")
     atexit.register(self.stop_process)
-    self.browser.performance_mark(self.runner,
-                                  "crossbench-probe-profiling-start")
+    self.browser.performance_mark("crossbench-probe-profiling-start")
 
   def _get_simpleperf_pids(self) -> List[int]:
     simpleperf_pids = []
@@ -922,8 +921,7 @@ class AndroidProfilingContext(ProfilingContext):
       helper.wait_and_kill(
           self._simpleperf_process, timeout=30, signal=signal.SIGINT)
       self._simpleperf_process = None
-      self.browser.performance_mark(self.runner,
-                                    "crossbench-probe-profiling-stop")
+      self.browser.performance_mark("crossbench-probe-profiling-stop")
 
   def teardown(self) -> ProbeResult:
     return self.browser_result(trace=[self.result_path])

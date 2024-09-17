@@ -21,7 +21,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.path import RemotePath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
 
 
 class SafariWebDriver(WebDriverBrowser, Safari):
@@ -39,7 +38,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
 
-  def clear_cache(self, runner: Runner) -> None:
+  def clear_cache(self) -> None:
     # skip the default caching, and only do it after launching the browser
     # via selenium.
     pass
@@ -155,8 +154,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           activate
         end tell""")
 
-  def quit(self, runner: Runner) -> None:
-    super().quit(runner)
+  def quit(self) -> None:
+    super().quit()
     # Safari needs some additional push to quit properly
     self.platform.exec_apple_script(f"""
         tell application "{self.app_name}"
@@ -191,7 +190,7 @@ class SafariWebdriverIOS(SafariWebDriver):
   def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
     pass
 
-  def quit(self, runner: Runner) -> None:
+  def quit(self) -> None:
     self._driver.close()
     self.platform.sleep(1.0)
     self._driver.quit()

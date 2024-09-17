@@ -75,7 +75,7 @@ class NetworkSpeedConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     if value == "default":
       return cls.default()
-    preset = NetworkSpeedPreset.parse(value)  # pytype: disable=wrong-arg-types
+    preset = NetworkSpeedPreset.parse(value)
     return cls.parse_preset(preset)
 
   @classmethod
