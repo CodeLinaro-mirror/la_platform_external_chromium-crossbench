@@ -147,15 +147,11 @@ class AndroidInputActionRunner(BasicActionRunner):
       r" (?P<bottom>\d+)\)")
 
   _GET_JS_VALUES = """
-    let found_element = false
+    const found_element = arguments[0] && element;
 
-    if (arguments[0] && element) found_element = true;
+    if(found_element && arguments[1]) element.scrollIntoView();
 
-    if(arguments[1]) element.scrollIntoView();
-
-    rect = new DOMRect();
-    
-    if (arguments[0]) rect = element.getBoundingClientRect();
+    rect = found_element ? element.getBoundingClientRect() : new DOMRect();
 
     return [
       found_element, 
