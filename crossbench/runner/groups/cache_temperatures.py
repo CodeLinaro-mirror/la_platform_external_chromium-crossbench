@@ -20,16 +20,16 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
-class CacheTemperatureRunGroup(RunGroup):
+class CacheTemperaturesRunGroup(RunGroup):
   """
   A group of Run objects with different cache temperatures for the same Story
-  with same browser and same iteration.
+  with same browser and same repetition.
   """
 
   @classmethod
   def groups(cls,
              runs: Iterable[Run],
-             throw: bool = False) -> Tuple[CacheTemperatureRunGroup, ...]:
+             throw: bool = False) -> Tuple[CacheTemperaturesRunGroup, ...]:
     return tuple(
         helper.group_by(
             runs,
@@ -43,6 +43,7 @@ class CacheTemperatureRunGroup(RunGroup):
     self._story: Optional[Story] = None
     self._browser: Optional[Browser] = None
     self._repetition = -1
+    self._cache_temperature = ""
 
   def append(self, run: Run) -> None:
     if self._path is None:

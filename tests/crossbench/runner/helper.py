@@ -38,21 +38,33 @@ class MockBrowser:
 
 class MockRun:
 
-  def __init__(self, runner, browser_session, name, index=0) -> None:
+  def __init__(self,
+               runner,
+               browser_session,
+               story="story",
+               repetition=0,
+               is_warmup=False,
+               temperature="default",
+               index=0,
+               name="run 0") -> None:
     self.runner = runner
     self.browser_session = browser_session
     self.browser = browser_session.browser
     self.browser_platform = self.browser.platform
     self._exceptions = Annotator(False)
+    self.repetition = repetition
+    self.is_warmup = is_warmup
+    self.temperature = temperature
     self.name = name
     self.probes = []
-    self.is_warmup = False
     self.timing = Timing()
     self.is_success = True
     self.index = index
+    self.story = story
     self.out_dir = (
         browser_session.root_dir / safe_filename(self.browser.unique_name) /
-        "stories" / name / "repetition=0" / "temperature-cold")
+        "stories" / name / f"repetition={self.repetition}" / self.temperature)
+    self.group_dir = self.out_dir.parent
     self.did_setup = False
     self.did_run = False
     self.did_teardown = False

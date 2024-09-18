@@ -25,7 +25,8 @@ from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.runner.groups.browsers import BrowsersRunGroup
-from crossbench.runner.groups.cache_temperature import CacheTemperatureRunGroup
+from crossbench.runner.groups.cache_temperatures import \
+    CacheTemperaturesRunGroup
 from crossbench.runner.groups.repetitions import RepetitionsRunGroup
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.stories import StoriesRunGroup
@@ -227,7 +228,7 @@ class Runner:
                                 env_validation_mode)
     self._attach_default_probes(additional_probes)
     self._prepare_benchmark()
-    self._cache_temperature_groups: Tuple[CacheTemperatureRunGroup, ...] = ()
+    self._cache_temperatures_groups: Tuple[CacheTemperaturesRunGroup, ...] = ()
     self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
     self._browser_group: Optional[BrowsersRunGroup] = None
@@ -361,10 +362,10 @@ class Runner:
     return tuple(self._measured_runs)
 
   @property
-  def cache_temperature_groups(self) -> Tuple[CacheTemperatureRunGroup, ...]:
-    assert self._cache_temperature_groups, (
+  def cache_temperatures_groups(self) -> Tuple[CacheTemperaturesRunGroup, ...]:
+    assert self._cache_temperatures_groups, (
         f"No CacheTemperatureRunGroup in {self}")
-    return self._cache_temperature_groups
+    return self._cache_temperatures_groups
 
   @property
   def repetitions_groups(self) -> Tuple[RepetitionsRunGroup, ...]:
@@ -543,15 +544,15 @@ class Runner:
     throw = self._exceptions.throw
 
     logging.debug("MERGING PROBE DATA: cache temperatures")
-    self._cache_temperature_groups = CacheTemperatureRunGroup.groups(
+    self._cache_temperatures_groups = CacheTemperaturesRunGroup.groups(
         self._measured_runs, throw)
-    for cache_temp_group in self._cache_temperature_groups:
+    for cache_temp_group in self._cache_temperatures_groups:
       cache_temp_group.merge(self.probes)
       self._exceptions.extend(cache_temp_group.exceptions, is_nested=True)
 
     logging.debug("MERGING PROBE DATA: repetitions")
     self._repetitions_groups = RepetitionsRunGroup.groups(
-        self._cache_temperature_groups, throw)
+        self._cache_temperatures_groups, throw)
     for repetition_group in self._repetitions_groups:
       repetition_group.merge(self.probes)
       self._exceptions.extend(repetition_group.exceptions, is_nested=True)

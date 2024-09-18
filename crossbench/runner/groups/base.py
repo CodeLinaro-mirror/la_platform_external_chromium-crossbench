@@ -41,6 +41,10 @@ class RunGroup(abc.ABC):
     return self._path
 
   @property
+  def throw(self) -> bool:
+    return self._exceptions.throw
+
+  @property
   def exceptions(self) -> exception.Annotator:
     return self._exceptions
 
@@ -79,6 +83,13 @@ class RunGroup(abc.ABC):
       assert not new_file.exists(), (
           f"Merged file {new_file} for {self.__class__} exists already.")
     return new_file
+
+  def get_local_probe_result_dir(self,
+                                 probe: Probe,
+                                 exists_ok: bool = True) -> LocalPath:
+    path = self.get_local_probe_result_path(probe, exists_ok)
+    path.mkdir(parents=True, exist_ok=exists_ok)
+    return path
 
   def merge(self, probes: Iterable[Probe]) -> None:
     assert self._merged_probe_results is not None

@@ -19,8 +19,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.cache_temperature import \
-      CacheTemperatureRunGroup
+  from crossbench.runner.groups.cache_temperatures import \
+      CacheTemperaturesRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
@@ -202,7 +202,7 @@ class Probe(abc.ABC):
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on macOS")
 
   def merge_cache_temperatures(self,
-                               group: CacheTemperatureRunGroup) -> ProbeResult:
+                               group: CacheTemperaturesRunGroup) -> ProbeResult:
     """
     For merging probe data from multiple browser cache temperatures with the
     same repetition, story and browser.

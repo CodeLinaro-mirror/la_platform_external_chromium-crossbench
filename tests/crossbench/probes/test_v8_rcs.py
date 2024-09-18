@@ -43,14 +43,18 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     for run in runner.runs:
       self.assertIn("--runtime-call-stats", run.browser.js_flags)
 
-    js_result_files = list(runner.out_dir.glob(f"**/{probe.name}.txt"))
     # One file per story repetition
     result_count = len(self.browsers) * len(stories) * repetitions
     # One merged result per story
     result_count += len(self.browsers) * len(stories)
     # One merged results per browser
     result_count += len(self.browsers)
-    self.assertEqual(len(js_result_files), result_count)
+    # Symlinked summary files:
+    rcs_result_files = list(runner.out_dir.glob(f"**/{probe.name}.txt"))
+    self.assertEqual(len(rcs_result_files), result_count)
+    # Cache-temperatures files
+    rcs_result_files = list(runner.out_dir.glob(f"**/{probe.name}/*.rcs.txt"))
+    self.assertEqual(len(rcs_result_files), result_count)
 
     (story_data, repetitions_data, stories_data, _) = self.get_non_empty_results_str(
         runner, probe, "txt", has_browsers_data=False)
@@ -65,6 +69,51 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     self.assertEqual(repetitions_data.count("== Page: "), 1)
     self.assertEqual(stories_data.count("== Page: "), len(stories))
 
+  def validate_cache_temperatures_files(self, probe, group, cache_temperatures):
+    rcs_result_files = list(group.path.glob(f"{probe.name}/*.rcs.txt"))
+    self.assertEqual(len(rcs_result_files), len(cache_temperatures) + 1)
+    self.assertTrue((group.path / f"{probe.name}.txt").is_file())
+    for index, cache_temperature in enumerate(cache_temperatures):
+      path = group.path / probe.name / f"{index}_{cache_temperature}.rcs.txt"
+      self.assertTrue(path.is_file(), f"{path} does not exist")
+
+  def test_simple_loading_case_cache_temperatures(self):
+    probe = V8RCSProbe()
+    stories = [
+        LivePage("google", "https://google.com"),
+        LivePage("amazon", "https://amazon.com")
+    ]
+    repetitions = 2
+    cache_temperatures = ("cold", "warm")
+    runner = self.create_runner(
+        stories,
+        js_side_effects=[EXAMPLE_RCS_DATA, EXAMPLE_RCS_DATA],
+        repetitions=repetitions,
+        cache_temperatures=cache_temperatures,
+        separate=True,
+        throw=True)
+    runner.attach_probe(probe)
+    runner.run()
+    self.assertTrue(runner.is_success)
+
+    repetition_group = runner.repetitions_groups[0]
+    self.validate_cache_temperatures_files(probe, repetition_group,
+                                           cache_temperatures)
+    story_group = runner.story_groups[0]
+    self.validate_cache_temperatures_files(probe, story_group,
+                                           cache_temperatures)
+
+    rcs_result_files = list(runner.out_dir.glob(f"**/{probe.name}.txt"))
+    # One merged file for each story and cache temp + all.rcs.txt:
+    result_count = len(self.browsers) * len(stories) * (
+        len(cache_temperatures) + 1)
+    # One merged results per browser and cache temp + all.rcs.txt
+    result_count += len(self.browsers) * (len(cache_temperatures) + 1)
+    # One merged results per browser
+    result_count += len(self.browsers)
+    # Without symlinked summary files:
+    rcs_result_files = list(runner.out_dir.glob(f"**/{probe.name}/*.rcs.txt"))
+    self.assertEqual(len(rcs_result_files), result_count)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

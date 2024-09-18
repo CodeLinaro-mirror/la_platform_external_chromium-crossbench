@@ -19,12 +19,14 @@ if TYPE_CHECKING:
 
 
 class BrowsersRunGroup(RunGroup):
-  _story_groups: Iterable[StoriesRunGroup]
 
-  def __init__(self, story_groups, throw: bool) -> None:
+  def __init__(self, story_groups: Iterable[StoriesRunGroup],
+               throw: bool) -> None:
     super().__init__(throw)
-    self._story_groups = story_groups
-    self._set_path(story_groups[0].path.parents[1])
+    self._story_groups = tuple(story_groups)
+    if not story_groups:
+      raise ValueError("No story groups provided")
+    self._set_path(self._story_groups[0].path.parents[1])
 
   @property
   def story_groups(self) -> Iterable[StoriesRunGroup]:

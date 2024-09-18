@@ -4,7 +4,7 @@
 
 import copy
 import json
-from typing import Any, Callable, List, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
 
 from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
 from crossbench.benchmarks.loading.page import CombinedPage, Page
@@ -23,6 +23,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
                     separate: bool = False,
                     repetitions: int = 3,
                     warmup_repetitions: int = 0,
+                    cache_temperatures: Iterable[str] = ("default",),
                     throw: bool = True) -> Runner:
     self.assertTrue(stories)
     if not separate and len(stories) > 1:
@@ -53,6 +54,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
         platform=self.platform,
         repetitions=repetitions,
         warmup_repetitions=warmup_repetitions,
+        cache_temperatures=cache_temperatures,
         throw=throw)
     return runner
 
@@ -86,20 +88,21 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
       probe: Probe,
       suffix: str,
       has_browsers_data: bool = True) -> Tuple[str, str, str, str]:
-    story_file = runner.runs[0].results[probe].get(suffix)
+    story_file = runner.runs[0].results[probe].get_all(suffix)[0]
     story_data = story_file.read_text()
     self.assertTrue(story_data)
 
-    repetitions_file = runner.repetitions_groups[0].results[probe].get(suffix)
+    repetitions_file = runner.repetitions_groups[0].results[probe].get_all(
+        suffix)[0]
     repetitions_data = repetitions_file.read_text()
     self.assertTrue(repetitions_data)
 
-    stories_file = runner.story_groups[0].results[probe].get(suffix)
+    stories_file = runner.story_groups[0].results[probe].get_all(suffix)[0]
     stories_data = stories_file.read_text()
     self.assertTrue(stories_data)
 
     if has_browsers_data:
-      browsers_file = runner.browser_group.results[probe].get(suffix)
+      browsers_file = runner.browser_group.results[probe].get_all(suffix)[0]
       browsers_data = browsers_file.read_text()
       self.assertTrue(browsers_data)
     else:

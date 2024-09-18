@@ -2,33 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import unittest
-from typing import Optional
 from unittest import mock
 
-from crossbench.browsers.browser import Browser
-from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
-from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockProbe,
-                                            MockRun)
+from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
+from tests.crossbench.runner.helper import MockProbe, MockRun
 
 
-class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
-
-  def setUp(self):
-    super().setUp()
-    self.root_dir = self.out_dir / "custom"
-    self.runner = self.default_runner()
-
-  def default_session(self,
-                      browser: Optional[Browser] = None,
-                      throw: bool = True):
-    browser = browser or self.browsers[0]
-    return BrowserSessionRunGroup(self.runner.env, self.runner.probes, browser,
-                                  Flags(), 0, self.root_dir,
-                                  self.runner.create_symlinks, throw)
+class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
 
   def test_basic_properties(self):
     session = self.default_session()
@@ -53,7 +35,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     session = self.default_session()
     with self.assertRaises(UnexpectedStateError):
       _ = session.out_dir
-    run_1 = MockRun(self.runner, session, "run 1")
+    run_1 = MockRun(self.runner, session, "story 1")
     session.append(run_1)
     with self.assertRaises(UnexpectedStateError):
       _ = session.out_dir
@@ -63,8 +45,8 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_out_dir_mulitple_runs(self):
     session = self.default_session()
-    run_1 = MockRun(self.runner, session, "run 1")
-    run_2 = MockRun(self.runner, session, "run 2")
+    run_1 = MockRun(self.runner, session, "story 1")
+    run_2 = MockRun(self.runner, session, "story 2")
     session.append(run_1)
     session.append(run_2)
     session.set_ready()
@@ -73,7 +55,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_append(self):
     session = self.default_session()
-    run_1 = MockRun(self.runner, session, "run 1")
+    run_1 = MockRun(self.runner, session, "story 1")
     session.append(run_1)
     self.assertListEqual(list(session.runs), [run_1])
     self.assertEqual(session.info["runs"], 1)
@@ -82,7 +64,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
     self.assertIs(session.first_run, run_1)
     self.assertIs(session.timing, run_1.timing)
 
-    run_2 = MockRun(self.runner, session, "run 2")
+    run_2 = MockRun(self.runner, session, "story 2")
     session.append(run_2)
     self.assertListEqual(list(session.runs), [run_1, run_2])
     self.assertEqual(session.info["runs"], 2)
@@ -99,11 +81,11 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_append_after_ready(self):
     session = self.default_session()
-    run_1 = MockRun(self.runner, session, "run 1")
+    run_1 = MockRun(self.runner, session, "story 1")
     session.append(run_1)
     session.set_ready()
     with self.assertRaises(UnexpectedStateError):
-      session.append(MockRun(self.runner, session, "run 3"))
+      session.append(MockRun(self.runner, session, "story 3"))
 
   def test_append_wrong_session(self):
     session_1 = self.default_session()
@@ -120,9 +102,9 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_append_different_probes(self):
     session = self.default_session()
-    run_1 = MockRun(self.runner, session, "run 0")
+    run_1 = MockRun(self.runner, session, "story 0")
     run_1.probes = []
-    run_2 = MockRun(self.runner, session, "run 0")
+    run_2 = MockRun(self.runner, session, "story 0")
     run_2.probes = [MockProbe()]
     session.append(run_1)
     session.append(run_2)
@@ -134,7 +116,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
       session = self.default_session()
       session.set_ready()
     session = self.default_session()
-    session.append(MockRun(self.runner, session, "run 0"))
+    session.append(MockRun(self.runner, session, "story 0"))
     session.set_ready()
     self.assertFalse(session.extra_flags)
     self.assertFalse(session.extra_js_flags)
@@ -151,7 +133,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open_not_ready_with_run(self):
     session = self.default_session()
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     self.assertFalse(session.is_running)
     did_run = False
@@ -166,7 +148,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open(self):
     session = self.default_session()
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     self.assertFalse(session.is_running)
@@ -194,7 +176,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open_dry_run(self):
     session = self.default_session()
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     self.assertFalse(session.is_running)
@@ -215,7 +197,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open_inner_throw(self):
     session = self.default_session(throw=True)
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     did_run = False
@@ -242,7 +224,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open_inner_throw_capture(self):
     session = self.default_session(throw=False)
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     did_run = False
@@ -260,7 +242,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open_network_error(self):
     session = self.default_session(throw=False)
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     did_run = False
@@ -279,7 +261,7 @@ class BrowserSessionRunGroupTestCase(BaseRunnerTestCase):
 
   def test_open_network_error_throw(self):
     session = self.default_session(throw=True)
-    run = MockRun(self.runner, session, "run 0")
+    run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     did_run = False

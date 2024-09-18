@@ -105,10 +105,10 @@ class TestThreadModeTestCase(unittest.TestCase):
     session_1 = self.create_session(self.browser_a_1, 1)
     session_2 = self.create_session(self.browser_a_2, 2)
     runs = (
-        MockRun(self.runner, session_1, "run 1"),
-        MockRun(self.runner, session_2, "run 2"),
-        MockRun(self.runner, session_1, "run 3"),
-        MockRun(self.runner, session_2, "run 4"),
+        MockRun(self.runner, session_1, "story 1"),
+        MockRun(self.runner, session_2, "story 2"),
+        MockRun(self.runner, session_1, "story 3"),
+        MockRun(self.runner, session_2, "story 4"),
     )
     groups = ThreadMode.SESSION.group(runs)
     group_a, group_b = groups
