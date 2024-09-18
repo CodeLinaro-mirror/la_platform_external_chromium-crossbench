@@ -44,6 +44,7 @@ class Benchmark(abc.ABC):
   NAME: str = ""
   DEFAULT_STORY_CLS: Type[Story] = Story
   PROBES: Tuple[Type[BenchmarkProbeMixin], ...] = ()
+  DEFAULT_REPETITIONS: int = 1
 
   @classmethod
   def cli_help(cls) -> str:

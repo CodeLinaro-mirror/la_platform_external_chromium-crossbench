@@ -111,10 +111,10 @@ class Runner:
         "--repeat",
         "--invocations",
         "-r",
-        default=1,
+        default=benchmark_cls.DEFAULT_REPETITIONS,
         type=cli_helper.parse_positive_int,
         help=("Number of times each benchmark story is repeated. "
-              "Defaults to 1. "
+              f"Defaults to {benchmark_cls.DEFAULT_REPETITIONS}. "
               "Metrics are aggregated over multiple repetitions"))
     parser.add_argument(
         "--warmup-repetitions",

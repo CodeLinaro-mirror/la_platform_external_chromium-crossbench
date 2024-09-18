@@ -112,6 +112,7 @@ class PresetPageLoadBenchmarkProbeContext(
 class PresetPageLoadBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS = PresetLoadingPageFilter
   PROBES = (PresetPageLoadBenchmarkProbe,)
+  DEFAULT_REPETITIONS = 100
 
   @classmethod
   def cli_description(cls) -> str:
