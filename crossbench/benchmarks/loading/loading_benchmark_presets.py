@@ -83,7 +83,8 @@ class PresetPageLoadBenchmarkProbe(BenchmarkProbeMixin, Probe):
                          index=["cb_browser"],
                          values=["score"])
     df = df.droplevel(0, axis=1)
-    df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
+    # Make the score a bit higher by multiplying by 60 (~runs per minute)
+    df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1)) * 60
     df.index.rename("browser", inplace=True)
     return df.reindex(
         columns=(['TOTAL_SCORE'] +
