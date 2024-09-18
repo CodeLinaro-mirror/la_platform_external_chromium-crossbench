@@ -389,6 +389,8 @@ class Runner:
   def wait(self,
            time: Union[int, float, dt.timedelta],
            absolute_time: bool = False) -> None:
+    if not time:
+      return
     if not absolute_time:
       delta = self.timing.timedelta(time)
     else:

@@ -445,6 +445,20 @@ class CrossBenchCLI:
         help=("Sets the same timeout per run on all browsers. "
               "Runs will be aborted after the given timeout. "
               f"Format: {cli_helper.Duration.help()}"))
+    runner_group.add_argument(
+        "--start-delay",
+        type=cli_helper.Duration.parse_zero,
+        default=dt.timedelta(),
+        help=("Delay before running the core workload, "
+              "after a story's/workload's setup, "
+              "and after starting the browser."))
+    runner_group.add_argument(
+        "--stop-delay",
+        type=cli_helper.Duration.parse_zero,
+        default=dt.timedelta(),
+        help=("Delay after running the core workload, "
+              "before story's/workload's teardown, "
+              "and before quitting the browser."))
 
     network_group = subparser.add_argument_group("Network Options", "")
     network_settings_group = network_group.add_mutually_exclusive_group()
@@ -1005,7 +1019,7 @@ class CrossBenchCLI:
   def _get_timing(self, args: argparse.Namespace) -> Timing:
     timeout_unit: dt.timedelta = args.timeout_unit or args.time_unit
     return Timing(args.cool_down_time, args.time_unit, timeout_unit,
-                  args.run_timeout)
+                  args.run_timeout, args.start_delay, args.stop_delay)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
                   env_config: HostEnvironmentConfig,
