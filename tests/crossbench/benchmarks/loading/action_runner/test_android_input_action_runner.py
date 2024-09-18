@@ -10,13 +10,17 @@ from typing import Optional, Tuple
 from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   ScrollAction, SwipeAction,
                                                   TextInputAction)
-from crossbench.benchmarks.loading.action_runner.android_input_action_runner import (
-    AndroidInputActionRunner, DisplayRectangle, Point, ViewportInfo)
+from crossbench.benchmarks.loading.action_runner.android_input_action_runner \
+  import (AndroidInputActionRunner, ViewportInfo)
 from crossbench.benchmarks.loading.action_runner.base import \
     InputSourceNotImplementedError
+from crossbench.benchmarks.loading.point import Point
+from crossbench.benchmarks.loading.action_runner.display_rectangle \
+  import DisplayRectangle
 from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -29,27 +33,6 @@ from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
 class ViewportInfoTestCase(unittest.TestCase):
-
-  def test_display_rectangle_mul(self):
-    rect: DisplayRectangle = DisplayRectangle(Point(1, 2), 3, 4)
-
-    rect = rect * 5
-
-    self.assertEqual(rect.origin.x, 5)
-    self.assertEqual(rect.origin.y, 10)
-    self.assertEqual(rect.width, 15)
-    self.assertEqual(rect.height, 20)
-
-  def test_display_rectangle_shift_by(self):
-    rect: DisplayRectangle = DisplayRectangle(Point(1, 2), 3, 4)
-    rect2: DisplayRectangle = DisplayRectangle(Point(10, 20), 30, 40)
-
-    rect = rect.shift_by(rect2)
-
-    self.assertEqual(rect.origin.x, 11)
-    self.assertEqual(rect.origin.y, 22)
-    self.assertEqual(rect.width, 3)
-    self.assertEqual(rect.height, 4)
 
   def test_calculate_coordinates_no_element_still_returns_chrome_window(self):
     config: ViewportInfo = ViewportInfo(
