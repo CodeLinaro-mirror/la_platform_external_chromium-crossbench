@@ -41,3 +41,8 @@ class DisplayRectangleTestCase(unittest.TestCase):
     rect: DisplayRectangle = DisplayRectangle(Point(1, 2), 6, 8)
 
     self.assertEqual(rect.mid_y, 6)
+
+  def test_display_rectangle_middle(self):
+    rect: DisplayRectangle = DisplayRectangle(Point(1, 2), 6, 8)
+
+    self.assertEqual(rect.middle, Point(4, 6))

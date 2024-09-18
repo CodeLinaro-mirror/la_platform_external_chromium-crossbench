@@ -55,3 +55,7 @@ class DisplayRectangle:
   @property
   def mid_y(self) -> int:
     return round(self.origin.y + (self.height / 2))
+
+  @property
+  def middle(self) -> Point:
+    return Point(self.mid_x, self.mid_y)

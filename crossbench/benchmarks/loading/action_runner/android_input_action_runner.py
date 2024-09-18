@@ -78,7 +78,7 @@ class ViewportInfo:
   def element_center(self) -> Optional[Point]:
     if not self._element_rect:
       return None
-    return Point(self._element_rect.mid_x, self._element_rect.mid_y)
+    return self._element_rect.middle
 
   def css_to_native_distance(self, distance: float) -> float:
     return distance * self.actual_pixel_ratio
