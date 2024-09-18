@@ -132,6 +132,18 @@ class TraceProcessorProbe(Probe):
     return self._queries
 
   @property
+  def has_work(self) -> bool:
+    return len(self._queries) != 0 or len(self._metrics) != 0
+
+  @property
+  def needs_tp_run(self) -> bool:
+    return (not self.batch) and self.has_work
+
+  @property
+  def needs_btp_run(self) -> bool:
+    return self._batch and self.has_work
+
+  @property
   def tp_config(self) -> TraceProcessorConfig:
     extra_flags = [
         "--add-sql-module",
@@ -197,23 +209,30 @@ class TraceProcessorProbe(Probe):
     }
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    if self.needs_btp_run:
+      return self._run_btp(group)
+
+    return self._merge_browser_files(group)
+
+  def _merge_browser_files(self, group: BrowsersRunGroup) -> LocalProbeResult:
     group_dir = group.get_local_probe_result_path(self)
     group_dir.mkdir()
+    csv_files = []
+    json_files = []
+    for query, df in self._aggregate_results_by_query(group.runs).items():
+      csv_file = group_dir / f"{pth.safe_filename(query)}.csv"
+      df.to_csv(path_or_buf=csv_file, index=False)
+      csv_files.append(csv_file)
+    for metric, data in self._merge_json(group.runs).items():
+      json_file = group_dir / f"{pth.safe_filename(metric)}.json"
+      with json_file.open("x") as f:
+        json.dump(data, f, indent=4)
+      json_files.append(json_file)
+    return LocalProbeResult(csv=csv_files, json=json_files)
 
-    if not self.batch:
-      csv_files = []
-      json_files = []
-      for query, df in self._aggregate_results_by_query(group.runs).items():
-        csv_file = group_dir / f"{pth.safe_filename(query)}.csv"
-        df.to_csv(path_or_buf=csv_file, index=False)
-        csv_files.append(csv_file)
-      for metric, data in self._merge_json(group.runs).items():
-        json_file = group_dir / f"{pth.safe_filename(metric)}.json"
-        with json_file.open("x") as f:
-          json.dump(data, f, indent=4)
-        json_files.append(json_file)
-      return LocalProbeResult(csv=csv_files, json=json_files)
-
+  def _run_btp(self, group: BrowsersRunGroup) -> LocalProbeResult:
+    group_dir = group.get_local_probe_result_path(self)
+    group_dir.mkdir()
     btp_config = BatchTraceProcessorConfig(tp_config=self.tp_config)
 
     with BatchTraceProcessor(
@@ -267,25 +286,25 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
     pass
 
   def teardown(self) -> ProbeResult:
+    return self._merge_trace_files().merge(self._maybe_run_tp())
+
+  def _merge_trace_files(self) -> LocalProbeResult:
     with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
       with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
         for f in self.run.results.all_traces():
           zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
+    return LocalProbeResult(trace=(self.merged_trace_path,))
 
-    if self.probe.batch:
-      return LocalProbeResult(
-          trace=[self.merged_trace_path], file=[self.merged_trace_path])
+  def _maybe_run_tp(self):
+    if not self.probe.needs_tp_run:
+      return LocalProbeResult()
 
     with TraceProcessor(
         trace=CrossbenchTraceUriResolver(self),
         config=self.probe.tp_config) as tp:
-      csv_files = self._run_queries(tp)
-      json_files = self._run_metrics(tp)
+      return self._run_queries(tp).merge(self._run_metrics(tp))
 
-    return LocalProbeResult(
-        trace=[self.merged_trace_path], csv=csv_files, json=json_files)
-
-  def _run_queries(self, tp: TraceProcessor) -> List[pth.LocalPath]:
+  def _run_queries(self, tp: TraceProcessor) -> LocalProbeResult:
 
     def run_query(query: str):
       query_path = _QUERIES_DIR / f"{query}.sql"
@@ -295,9 +314,10 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       return csv_file
 
     with self.run.actions("TRACE_PROCESSOR: Running queries", verbose=True):
-      return list(map(run_query, self.probe.queries))
+      files = tuple(map(run_query, self.probe.queries))
+      return LocalProbeResult(csv=files)
 
-  def _run_metrics(self, tp: TraceProcessor) -> List[pth.LocalPath]:
+  def _run_metrics(self, tp: TraceProcessor) -> LocalProbeResult:
 
     def run_metric(metric: str):
       json_file = self.local_result_path / f"{pth.safe_filename(metric)}.json"
@@ -307,7 +327,8 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       return json_file
 
     with self.run.actions("TRACE_PROCESSOR: Running metrics", verbose=True):
-      return list(map(run_metric, self.probe.metrics))
+      files = tuple(map(run_metric, self.probe.metrics))
+      return LocalProbeResult(json=files)
 
   @property
   def merged_trace_path(self):
