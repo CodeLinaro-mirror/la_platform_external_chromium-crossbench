@@ -24,7 +24,6 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertEqual("TEXTPROTO", probe.textproto)
     self.assertEqual(pth.RemotePath("perfetto"), probe.perfetto_bin)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_config(self):
     config_file = (test_helper.config_dir() / "doc/probe/perfetto.config.hjson")
     self.assertTrue(config_file.is_file())

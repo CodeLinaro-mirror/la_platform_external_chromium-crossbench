@@ -152,15 +152,15 @@ def parse_enum(label: str, enum_cls: Type[EnumT], data: Any,
 
 
 def parse_inline_hjson(value: Any) -> Any:
-  value_str = parse_non_empty_str(value, hjson.__name__)
+  value_str = parse_non_empty_str(value, "hjson")
   if value_str[0] != "{" or value_str[-1] != "}":
     raise argparse.ArgumentTypeError(
-        f"Invalid inline {hjson.__name__}, missing braces: '{value_str}'")
+        "Invalid inline hjson, missing braces: '{value_str}'")
   try:
     return hjson.loads(value_str)
   except ValueError as e:
-    message = _extract_decoding_error(
-        f"Could not decode inline {hjson.__name__}", value_str, e)
+    message = _extract_decoding_error("Could not decode inline hjson",
+                                      value_str, e)
     if "eof" in message:
       message += "\n   Likely missing quotes."
     raise argparse.ArgumentTypeError(message) from e
@@ -224,8 +224,7 @@ def parse_hjson_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
     try:
       hjson.load(f)
     except ValueError as e:
-      message = _extract_decoding_error(
-          f"Invalid {hjson.__name__} file '{path}':", path, e)
+      message = _extract_decoding_error("Invalid hjson file '{path}':", path, e)
       raise argparse.ArgumentTypeError(message) from e
   return path
 
@@ -246,17 +245,15 @@ def parse_hjson_file(value: pth.RemotePathLike) -> Any:
     try:
       return hjson.load(f)
     except ValueError as e:
-      message = _extract_decoding_error(
-          f"Invalid {hjson.__name__} file '{path}':", path, e)
+      message = _extract_decoding_error("Invalid hjson file '{path}':", path, e)
       raise argparse.ArgumentTypeError(message) from e
 
 
 def parse_non_empty_hjson_file(value: pth.RemotePathLike) -> Any:
   data = parse_hjson_file(value)
   if not data:
-    raise argparse.ArgumentTypeError(
-        f"Expected {hjson.__name__} file with non-empty data, "
-        f"but got: {hjson.dumps(data)}")
+    raise argparse.ArgumentTypeError("Expected hjson file with non-empty data, "
+                                     f"but got: {hjson.dumps(data)}")
   return data
 
 
@@ -264,7 +261,7 @@ def parse_dict_hjson_file(value: pth.RemotePathLike) -> Any:
   data = parse_non_empty_hjson_file(value)
   if not isinstance(data, dict):
     raise argparse.ArgumentTypeError(
-        f"Expected object in {hjson.__name__} config '{value}', "
+        "Expected object in hjson config '{value}', "
         f"but got {type_str(data)}: {repr(data)}")
   return data
 

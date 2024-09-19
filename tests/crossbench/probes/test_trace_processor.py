@@ -18,7 +18,6 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 class TraceProcessorProbeTestCase(unittest.TestCase):
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
                    "trace_processor not available")
   def test_parse_example_config(self):

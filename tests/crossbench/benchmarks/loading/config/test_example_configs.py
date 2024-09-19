@@ -25,7 +25,6 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
   YT_JS_INSTRUMENTATION_PATH = (
       test_helper.config_dir() / "benchmark/loading/youtube_instrumentation.js")
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/page.config.hjson"
     self.fs.add_real_file(example_config_file)
@@ -39,7 +38,6 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
       self.assertEqual(len(page.blocks), 1)
       self.assertGreater(len(page.blocks[0].actions), 1)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_android_page_config_file(self):
     example_config_file = (
         test_helper.config_dir() / "team/woa/android_input_page_config.hjson")
@@ -54,7 +52,6 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
       self.assertEqual(len(page.blocks), 1)
       self.assertGreater(len(page.blocks[0].actions), 1)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_phone(self):
     self.fs.add_real_file(self.CNN_JS_INSTRUMENTATION_PATH)
     self.fs.add_real_file(self.GLOBO_JS_INSTRUMENTATION_PATH)
@@ -73,7 +70,6 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
       self.assertEqual(len(page.blocks), 1)
       self.assertGreater(len(page.blocks[0].actions), 1)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_loading_page_config_tablet(self):
     self.fs.add_real_file(self.CNN_JS_INSTRUMENTATION_PATH)
     self.fs.add_real_file(self.YT_JS_INSTRUMENTATION_PATH)

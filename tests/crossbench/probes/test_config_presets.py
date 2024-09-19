@@ -71,19 +71,16 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
       self.assertFalse(probe.is_attached)
     return probes
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_configs(self):
     probe_config_presets = self.real_config_dir / "probe"
     probes = self._test_parse_config_dir(probe_config_presets)
     self.assertTrue(probes)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_doc_configs(self):
     probe_config_doc = self.real_config_dir / "doc/probe"
     probes = self._test_parse_config_dir(probe_config_doc)
     self.assertTrue(probes)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_pageload_configs(self):
     probe_config = PageLoadTabletBenchmark.default_probe_config_path()
     self.fs.add_real_file(probe_config)

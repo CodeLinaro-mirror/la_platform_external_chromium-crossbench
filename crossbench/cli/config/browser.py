@@ -281,7 +281,7 @@ class BrowserConfig(ConfigObject):
   def parse_text_io(cls, f: TextIO) -> BrowserConfig:
     with exception.annotate(f"Loading browser config file: {f.name}"):
       config = {}
-      with exception.annotate(f"Parsing {hjson.__name__}"):
+      with exception.annotate("Parsing hjson"):
         config = hjson.load(f)
       with exception.annotate(f"Parsing config file: {f.name}"):
         return cls.parse_dict(config)

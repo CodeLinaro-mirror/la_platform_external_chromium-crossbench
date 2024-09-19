@@ -15,7 +15,6 @@ from tests.crossbench.probes.helper import GenericProbeTestCase
 
 class TestJSProbe(GenericProbeTestCase):
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_config(self):
     config_file = (test_helper.config_dir() / "doc/probe/js.config.hjson")
     self.fs.add_real_file(config_file)

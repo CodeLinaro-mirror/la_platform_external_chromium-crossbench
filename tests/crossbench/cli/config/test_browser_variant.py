@@ -66,7 +66,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     return self.platform.expect_sh("ssh", "-p", "22",
                                    "root@my-chromeos-machine", cmd, **kwargs)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_browser_config_template(self):
     if not self.EXAMPLE_CONFIG_PATH.exists():
       raise unittest.SkipTest(
@@ -80,7 +79,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertGreaterEqual(len(config.flags_config), 1)
     self.assertGreaterEqual(len(config.variants), 1)
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_remote_browser_config_template(self):
     if not self.EXAMPLE_REMOTE_CONFIG_PATH.exists():
       raise unittest.SkipTest(

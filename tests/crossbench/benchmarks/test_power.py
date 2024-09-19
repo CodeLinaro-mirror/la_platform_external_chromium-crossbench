@@ -15,7 +15,6 @@ from tests import test_helper
 
 class TestExamplePageConfig(unittest.TestCase):
 
-  @unittest.skipIf(hjson.__name__ != "hjson", "hjson not available")
   def test_parse_example_page_config_file(self):
     for config_file_name in [
       'browsing_story.hjson',
