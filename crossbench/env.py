@@ -408,6 +408,11 @@ class HostEnvironment:
       exe = proc_info.get("exe") or proc_info.get("name")
       if not exe:
         continue
+      # Windows uses some intermediate processes that contains the binary name
+      # on the command line.
+      if (platform.is_win and
+          proc_info.get("name") in ("cmd.exe", "vpython3.exe")):
+        continue
       for binary, browsers in list(browser_binaries.items()):
         # Add a white-space to get less false-positives
         if f"{binary} " not in cmdline and binary != exe:
