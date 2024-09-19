@@ -93,6 +93,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         viewport=None,
         splash_screen=None,
         secrets=None,
+        wipe_system_user_data=False,
         cache_dir=pathlib.Path("test_cache_dir"),
         enable_features=None,
         disable_features=None,

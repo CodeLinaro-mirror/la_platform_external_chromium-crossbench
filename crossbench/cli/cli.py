@@ -589,6 +589,15 @@ class CrossBenchCLI:
         type=SecretsConfig.parse,
         help="Path to file containing login secrets")
 
+    browser_group.add_argument(
+        "--wipe-system-user-data",
+        dest="wipe_system_user_data",
+        default=False,
+        action="store_true",
+        help="Clear user data at the beginning of the test "
+             "(be careful using it)."
+    )
+
     splashscreen_group = browser_group.add_mutually_exclusive_group()
     splashscreen_group.add_argument(
         "--splash-screen",
@@ -841,7 +850,6 @@ class CrossBenchCLI:
     if not found_any_config:
       raise argparse.ArgumentTypeError(
           f"--config: config file has no config properties {config_file}")
-
 
   def _log_benchmark_subcommand_failure(self, benchmark: Optional[Benchmark],
                                         runner: Optional[Runner],

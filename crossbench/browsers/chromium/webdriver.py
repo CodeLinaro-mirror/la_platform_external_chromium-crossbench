@@ -205,6 +205,7 @@ FLAGS_WEBVIEW: pth.RemotePath = _FLAG_ROOT / "webview-command-line"
 FLAGS_CONTENT_SHELL: pth.RemotePath = _FLAG_ROOT / "content-shell-command-line"
 FLAGS_CHROME: pth.RemotePath = _FLAG_ROOT / "chrome-command-line"
 
+
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def __init__(self, *args, **kwargs):
@@ -252,6 +253,8 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.RemotePath) -> webdriver.Remote:
     self.adb_force_stop()
+    if session.browser.wipe_system_user_data:
+      self.adb_force_clear()
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
     return self._start_chromedriver(session, driver_path)
@@ -267,6 +270,9 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def adb_force_stop(self) -> None:
     self.platform.adb.force_stop(self.android_package)
+
+  def adb_force_clear(self) -> None:
+    self.platform.adb.force_clear(self.android_package)
 
   def force_quit(self) -> None:
     try:
@@ -360,6 +366,7 @@ class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
 class DriverNotFoundError(ValueError):
   pass
 
+
 def build_chromedriver_instructions(build_dir: pth.RemotePath) -> str:
   return ("Please build 'chromedriver' manually for local builds:\n"
           f"    autoninja -C {build_dir} chromedriver")
@@ -367,6 +374,7 @@ def build_chromedriver_instructions(build_dir: pth.RemotePath) -> str:
 
 def is_build_dir(path: pth.LocalPath) -> bool:
   return (path / "args.gn").is_file()
+
 
 class ChromeDriverFinder:
   driver_path: pth.LocalPath

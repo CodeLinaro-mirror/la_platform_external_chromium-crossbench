@@ -125,6 +125,10 @@ class Browser(abc.ABC):
   def viewport(self) -> Viewport:
     return self._settings.viewport
 
+  @property
+  def wipe_system_user_data(self) -> bool:
+    return self._settings.wipe_system_user_data
+
   @viewport.setter
   def viewport(self, value: Viewport) -> None:
     self._settings.viewport = value

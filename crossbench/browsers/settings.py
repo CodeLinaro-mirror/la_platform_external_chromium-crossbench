@@ -32,7 +32,8 @@ class Settings:
                splash_screen: Optional[SplashScreen] = None,
                platform: Optional[plt.Platform] = None,
                secrets: Optional[SecretsConfig] = None,
-               driver_logging: bool = False):
+               driver_logging: bool = False,
+               wipe_system_user_data: Optional[bool] = False):
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)
     self._cache_dir = cache_dir
@@ -44,6 +45,7 @@ class Settings:
     self._secrets: Dict[
         SecretType, Secret] = secrets.secrets if secrets is not None else {}
     self._driver_logging = driver_logging
+    self._wipe_system_user_data = wipe_system_user_data
 
   def _extract_js_flags(self, flags: Flags,
                         js_flags: Optional[Flags.InitialDataType]) -> Flags:
@@ -102,6 +104,10 @@ class Settings:
   @property
   def splash_screen(self) -> SplashScreen:
     return self._splash_screen
+
+  @property
+  def wipe_system_user_data(self) -> bool:
+    return self._wipe_system_user_data
 
   @property
   def viewport(self) -> Viewport:

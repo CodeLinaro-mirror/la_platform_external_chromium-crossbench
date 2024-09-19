@@ -299,6 +299,12 @@ class Adb:
       raise ValueError("Got empty package name")
     self.shell("am", "force-stop", package_name)
 
+  def force_clear(self, package_name: str) -> None:
+    if not package_name:
+      raise ValueError("Got empty package name")
+    user = self.cmd("user", "get-main-user").strip()
+    self.shell("pm", "clear", f"--user {user}", package_name)
+
   def install(self,
               bundle: pth.LocalPath,
               allow_downgrade: bool = False,

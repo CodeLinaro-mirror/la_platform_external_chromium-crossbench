@@ -47,6 +47,7 @@ FlagVariantsDictT = Dict[str, List[str]]
 
 DEFAULT_LABEL: Final[str] = "default"
 
+
 @dataclasses.dataclass(frozen=True)
 class FlagsVariantConfig:
   label: str
@@ -415,7 +416,8 @@ class BrowserVariantsConfig:
           splash_screen=args.splash_screen,
           platform=browser_platform,
           secrets=args.secrets,
-          driver_logging=args.driver_logging)
+          driver_logging=args.driver_logging,
+          wipe_system_user_data=args.wipe_system_user_data)
       browser_instance = browser_cls(
           label=label, path=browser_config.path, settings=settings)
       # pytype: enable=not-instantiable
@@ -700,7 +702,8 @@ class BrowserVariantsConfig:
           splash_screen=args.splash_screen,
           platform=browser_platform,
           secrets=args.secrets,
-          driver_logging=args.driver_logging)
+          driver_logging=args.driver_logging,
+          wipe_system_user_data=args.wipe_system_user_data)
       browser_instance = browser_cls(  # pytype: disable=not-instantiable
           label=label,
           path=path,
