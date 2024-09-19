@@ -245,6 +245,7 @@ class Browser(abc.ABC):
   def clear_cache(self) -> None:
     if self.clear_cache_dir and self.cache_dir:
       self.platform.rm(self.cache_dir, missing_ok=True, dir=True)
+      self.platform.mkdir(self.cache_dir, parents=True)
 
   @abc.abstractmethod
   def start(self, session: BrowserSessionRunGroup) -> None:

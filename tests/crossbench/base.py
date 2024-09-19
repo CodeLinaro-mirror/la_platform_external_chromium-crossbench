@@ -100,7 +100,8 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         enable_field_trial_config=False,
         network=NetworkConfig.default(),
         probe=[],
-        other_browser_args=[])
+        other_browser_args=[],
+        driver_logging=False)
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)

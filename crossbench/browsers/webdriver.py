@@ -60,10 +60,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._driver_path = self._settings.driver_path
 
   @property
-  def type_name(self) -> str:
-    return "webdriver"
-
-  @property
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER
 

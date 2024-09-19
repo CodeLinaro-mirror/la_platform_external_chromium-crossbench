@@ -129,8 +129,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     for arg in args:
       options.add_argument(arg)
 
-    # TODO: Conditionally enable detailed browser logging
-    # options.set_capability("safari:diagnose", "true")
+    if self._settings.driver_logging:
+      options.set_capability("safari:diagnose", "true")
     if "Technology Preview" in self.app_name:
       options.set_capability("browserName", "Safari Technology Preview")
       options.use_technology_preview = True

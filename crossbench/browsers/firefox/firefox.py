@@ -75,8 +75,6 @@ class Firefox(Browser):
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self))
     self._handle_viewport_flags(flags_copy)
-    if self.cache_dir and self.cache_dir:
-      flags_copy["--profile"] = str(self.cache_dir)
     if self.log_file:
       flags_copy["--MOZ_LOG_FILE"] = str(self.log_file)
     return tuple(flags_copy)

@@ -10,9 +10,10 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from selenium import webdriver
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
@@ -54,15 +55,21 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
       options.add_argument(arg)
     options.binary_location = str(self.path)
     session.setup_selenium_options(options)
-
+    if self.cache_dir:
+      # TODO: support remote platforms
+      options.profile = FirefoxProfile(self.cache_dir)
     self._log_browser_start(args, driver_path)
-
+    service_args: List[str] = []
+    log_path: Optional[str] = None
+    if self._settings.driver_logging:
+      service_args += ["--log", "debug"]
+      log_path = os.fspath(self.driver_log_file)
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(
         executable_path=str(driver_path),
-        log_path=str(self.driver_log_file),
-        service_args=[],
+        log_path=log_path,
+        service_args=service_args,
         env=env_copy)
     # TODO support remote platforms:
     service.log_file = self.platform.host_platform.local_path(

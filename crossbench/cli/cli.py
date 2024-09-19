@@ -83,6 +83,7 @@ class EnableDebuggingAction(argparse.Action):
                option_string: Optional[str] = None) -> None:
     setattr(namespace, "throw", True)
     setattr(namespace, "verbosity", 3)
+    setattr(namespace, "driver_logging", True)
 
 
 class EnableFastAction(argparse.Action):
@@ -216,6 +217,13 @@ class CrossBenchCLI:
         default=0,
         help=("Increase output verbosity. "
               "Repeat for more verbose output (0..2)."))
+    debug_group.add_argument(
+        "--driver-logging",
+        "--verbose-driver",
+        action="store_true",
+        default=False,
+        help=("Enable verbose webdriver logging. "
+              "Disabled by default, automatically enable with --debug"))
     debug_group.add_argument(
         "--throw",
         action="store_true",

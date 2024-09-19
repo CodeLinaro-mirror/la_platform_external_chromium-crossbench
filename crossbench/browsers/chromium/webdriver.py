@@ -93,13 +93,16 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     options = self._create_options(session, args)
 
     self._log_browser_start(args, driver_path)
-
+    service_args: List[str] = []
+    log_path: Optional[str] = None
+    if self._settings.driver_logging:
+      service_args += ["--verbose"]
+      log_path = os.fspath(self.driver_log_file)
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=str(driver_path),
-        log_path=str(self.driver_log_file),
-        # TODO: support clean logging of chrome stdout / stderr
-        service_args=["--verbose"])
+        log_path=log_path,
+        service_args=service_args)
     # TODO: support remote platforms
     service.log_file = pth.LocalPath(self.stdout_log_file).open(  # pylint: disable=consider-using-with
         "w", encoding="utf-8")
