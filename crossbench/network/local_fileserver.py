@@ -9,6 +9,7 @@ import email.parser
 import http.server
 import json
 import logging
+import os
 import threading
 from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
                     Type)
@@ -48,7 +49,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
       def __init__(self, *args, **kwargs):
         super().__init__(
             *args,
-            directory=str(server_dir),
+            directory=os.fspath(server_dir),
             extra_headers=extra_headers,
             **kwargs)
 

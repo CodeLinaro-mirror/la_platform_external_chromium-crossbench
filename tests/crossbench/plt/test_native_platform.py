@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 import pathlib
+import sys
 import tempfile
 import unittest
 
@@ -168,10 +170,39 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertFalse(tmp_file.exists())
       self.assertTrue(tmp_file_renamed.exists())
 
+  def test_default_tmp_dir(self):
+    self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
+
+  def test_NamedTemporaryFile(self):
+    with self.platform.NamedTemporaryFile("custom_prefix") as path:
+      self.assertIn("custom_prefix", str(path))
+      self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+  def test_copy(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      src_file = pathlib.Path(tmp_dirname) / "src.txt"
+      dst_file = pathlib.Path(tmp_dirname) / "dst.txt"
+      with self.assertRaises(ValueError) as cm:
+        self.assertFalse(self.platform.exists(src_file))
+        self.platform.copy(src_file, dst_file)
+      self.assertIn(str(src_file), str(cm.exception))
+      self.assertFalse(self.platform.exists(src_file))
+      self.assertFalse(self.platform.exists(dst_file))
+
+      src_file.write_text("some data")
+      self.assertTrue(self.platform.exists(src_file))
+      self.platform.copy(src_file, dst_file)
+      self.assertTrue(self.platform.exists(src_file))
+      self.assertTrue(self.platform.exists(dst_file))
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
+
   def test_home(self):
     self.assertEqual(self.platform.home(), pathlib.Path.home())
 
-  def test_absolute_absolut(self):
+  def test_absolute_absolute(self):
     absolute_path = pathlib.Path("/foo")
     self.assertTrue(absolute_path.is_absolute())
     self.assertEqual(self.platform.absolute(absolute_path), absolute_path)
@@ -210,6 +241,15 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(tmp_file))
       self.assertEqual(self.platform.cat(tmp_file), "custom data")
 
+  def test_set_file_contents_dir(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      self.assertTrue(self.platform.is_dir(tmp_dirname))
+      with self.assertRaises(Exception) as cm:
+        self.platform.set_file_contents(tmp_dirname, "data")
+      self.assertIn(str(tmp_dirname), str(cm.exception))
+
   def test_path_tests(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       tmp_dir = pathlib.Path(tmp_dirname)
@@ -234,6 +274,39 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(bar_file))
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
+
+  def test_has_display(self):
+    self.assertIn(self.platform.has_display, (True, False))
+
+  def test_processes(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    self.assertTrue(self.platform.processes())
+    for process_info in self.platform.processes(["name"]):
+      self.assertIn("name", process_info)
+
+  def test_process_running(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    self.assertFalse(self.platform.process_running([]))
+    self.assertFalse(
+        self.platform.process_running(["crossbench_invalid_test_bin"]))
+    executable = pathlib.Path(sys.executable)
+    self.assertTrue(self.platform.process_running([executable.name]))
+
+  def test_process_info(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    process_info = self.platform.process_info(os.getpid())
+    self.assertIn("python", process_info["name"].lower())
+
+  def test_process_children(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    process_info = self.platform.process_children(os.getpid())
+    self.assertIsInstance(process_info, list)
+    process_info = self.platform.process_children(os.getpid(), recursive=True)
+    self.assertIsInstance(process_info, list)
 
   @unittest.skipIf(
       not plt.PLATFORM.which("python3"), reason="python3 not installed")
@@ -308,7 +381,7 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     self.assertIn("PATH", env)
     self.assertTrue(list(env))
 
-  def test_environ_set_proprty(self):
+  def test_environ_set_property(self):
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
@@ -320,11 +393,25 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     del env[custom_key]
     self.assertNotIn(custom_key, env)
 
+  def test_app_version(self):
+    python_path = sys.executable
+    with self.assertRaises(ValueError):
+      self.platform.app_version("path/to/invalid/test/crossbench/bin")
+    version = self.platform.app_version(python_path)
+    self.assertTrue(version)
 
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
+  @property
+  def host_platform(self):
+    return plt.PLATFORM
+
   def is_remote(self) -> bool:
     return True
+
+  def local_path(self, path):
+    # override to bypass is_local checks
+    return pathlib.Path(path)
 
   def sh(self, *args, **kwargs):
     return plt.PLATFORM.sh(*args, **kwargs)
@@ -336,18 +423,21 @@ class MockRemotePosixPlatform(type(plt.PLATFORM)):
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   """All Posix operations should also work on a remote platform (e.g. via SSH).
-  This test fakes this by temporarily moving the current PLATFORM's is_remove
+  This test fakes this by temporarily changing the current PLATFORM's is_remote
   getter to return True"""
 
   def setUp(self):
     super().setUp()
     self.platform = MockRemotePosixPlatform()
 
+  def test_is_remote(self):
+    self.assertTrue(self.platform.is_remote)
+
   def tests_default_tmp_dir(self):
     self.assertEqual(self.platform.default_tmp_dir,
                      plt.PLATFORM.default_tmp_dir)
 
-  def test_environ_set_proprty(self):
+  def test_environ_set_property(self):
     raise self.skipTest("Not supported on remote platforms")
 
   def test_cpu_usage(self):

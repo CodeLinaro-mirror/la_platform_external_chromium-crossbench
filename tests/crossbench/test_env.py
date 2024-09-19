@@ -218,7 +218,8 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     env.validate()
 
   def test_request_is_headless_true(self):
-    mock_browser = mock.Mock(platform=self.mock_platform)
+    mock_browser = mock.Mock(
+        platform=self.mock_platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
         HostEnvironmentConfig(browser_is_headless=True), ValidationMode.THROW)
@@ -241,7 +242,8 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     env.validate()
 
   def test_request_is_headless_false(self):
-    mock_browser = mock.Mock(platform=self.mock_platform)
+    mock_browser = mock.Mock(
+        platform=self.mock_platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
         HostEnvironmentConfig(browser_is_headless=False), ValidationMode.THROW)

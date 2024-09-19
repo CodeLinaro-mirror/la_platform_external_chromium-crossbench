@@ -5,20 +5,21 @@
 
 import argparse
 import logging
-from perfetto.batch_trace_processor.api import (
-    BatchTraceProcessor, BatchTraceProcessorConfig, FailureHandling)
-from perfetto.trace_processor.api import TraceProcessorConfig
-from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type, Union)
+
+from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
+                                                BatchTraceProcessorConfig,
+                                                FailureHandling)
+from perfetto.trace_processor.api import TraceProcessorConfig
+from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 
 from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.probes.trace_processor.trace_processor import (
-    _QUERIES_DIR, _MODULES_DIR, TraceProcessorProbe)
-
+    _MODULES_DIR, _QUERIES_DIR, TraceProcessorProbe)
 
 ROOT_DIR = pth.LocalPath(__file__).parents[2]
 DEFAULT_RESULT_DIR = ROOT_DIR / "results" / "latest"

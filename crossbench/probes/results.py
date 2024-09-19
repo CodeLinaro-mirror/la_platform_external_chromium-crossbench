@@ -272,7 +272,7 @@ class BrowserProbeResult(ProbeResult):
         relative_path = result_origin.runner_platform.local_path(
             remote_path.name)
       local_result_path = out_dir / relative_path
-      browser_platform.rsync(remote_path, local_result_path)
+      browser_platform.pull(remote_path, local_result_path)
       assert local_result_path.exists(), "Failed to copy result file."
       local_result_paths.append(local_result_path)
     return local_result_paths

@@ -22,8 +22,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
-                    Iterator, List, Mapping, Optional, Sequence, Tuple, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generator,
+                    Iterable, Iterator, List, Mapping, Optional, Sequence,
+                    Tuple, Union)
 
 import psutil
 
@@ -79,6 +80,10 @@ class SubprocessError(subprocess.CalledProcessError):
     if not self.stderr:
       return f"{self.platform}: {super_str}"
     return f"{self.platform}: {super_str}\nstderr:{self.stderr.decode()}"
+
+
+_IGNORED_PROCESS_EXCEPTIONS: Final = (psutil.NoSuchProcess, psutil.AccessDenied,
+                                      psutil.ZombieProcess)
 
 
 class Platform(abc.ABC):
@@ -278,17 +283,17 @@ class Platform(abc.ABC):
     assert self.is_local, "Unsupported operation on remote platform"
     if override := self.lookup_binary_override(binary_name):
       return override
-    if result := shutil.which(binary_name):
+    if result := shutil.which(os.fspath(binary_name)):
       return self.path(result)
     return None
 
   def lookup_binary_override(
       self, binary_name: pth.RemotePathLike) -> Optional[pth.RemotePath]:
-    return self._binary_lookup_override.get(str(binary_name))
+    return self._binary_lookup_override.get(os.fspath(binary_name))
 
   def set_binary_lookup_override(self, binary_name: pth.RemotePathLike,
                                  new_path: Optional[pth.RemotePath]):
-    name = str(binary_name)
+    name = os.fspath(binary_name)
     if new_path is None:
       prev_result = self._binary_lookup_override.pop(name, None)
       if prev_result is None:
@@ -324,19 +329,16 @@ class Platform(abc.ABC):
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     # TODO(cbruni): support remote platforms
     assert self.is_local, "Only local platform supported"
-    return [
-        p.info  # pytype: disable=attribute-error
-        for p in psutil.process_iter(attrs=attrs)
-    ]
+    return self._collect_process_dict(psutil.process_iter(attrs=attrs))
 
   def process_running(self, process_name_list: List[str]) -> Optional[str]:
     assert self.is_local, "Unsupported operation on remote platform"
     # TODO(cbruni): support remote platforms
-    for proc in psutil.process_iter():
+    for proc in psutil.process_iter(attrs=["name"]):
       try:
         if proc.name().lower() in process_name_list:
           return proc.name()
-      except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+      except _IGNORED_PROCESS_EXCEPTIONS:
         pass
     return None
 
@@ -347,16 +349,26 @@ class Platform(abc.ABC):
     # TODO(cbruni): support remote platforms
     try:
       process = psutil.Process(parent_pid)
-    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+    except _IGNORED_PROCESS_EXCEPTIONS:
       return []
-    return [p.as_dict() for p in process.children(recursive=recursive)]
+    return self._collect_process_dict(process.children(recursive=recursive))
+
+  def _collect_process_dict(
+      self, process_iterator: Iterable[psutil.Process]) -> List[Dict[str, Any]]:
+    process_info_list: List[Dict[str, Any]] = []
+    for process in process_iterator:
+      try:
+        process_info_list.append(process.as_dict())
+      except _IGNORED_PROCESS_EXCEPTIONS:
+        pass
+    return process_info_list
 
   def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
     assert self.is_local, "Unsupported operation on remote platform"
     # TODO(cbruni): support remote platforms
     try:
       return psutil.Process(pid).as_dict()
-    except psutil.NoSuchProcess:
+    except _IGNORED_PROCESS_EXCEPTIONS:
       return None
 
   def foreground_process(self) -> Optional[Dict[str, Any]]:
@@ -396,17 +408,45 @@ class Platform(abc.ABC):
     with self.local_path(file).open("w", encoding=encoding) as f:
       f.write(data)
 
-  def rsync(self, from_path: pth.RemotePath,
-            to_path: pth.LocalPath) -> pth.LocalPath:
-    """ Convenience implementation that works for copying local dirs """
+  def pull(self, from_path: pth.RemotePath,
+           to_path: pth.LocalPath) -> pth.LocalPath:
+    """ Download / Copy a (remote) file to the local filesystem.
+    By default this is just a copy operation on the local filesystem.
+    """
     assert self.is_local, "Unsupported operation on remote platform"
+    return self.local_path(self.copy_file(from_path, to_path))
+
+  def push(self, from_path: pth.LocalPath,
+           to_path: pth.RemotePath) -> pth.RemotePath:
+    """ Copy a local file to this (remote) platform.
+    By default this is just a copy operation on the local filesystem.
+    """
+    assert self.is_local, "Unsupported operation on remote platform"
+    return self.copy_file(from_path, to_path)
+
+  def copy(self, from_path: pth.RemotePath,
+           to_path: pth.RemotePath) -> pth.RemotePath:
+    """ Convenience implementation for copying local files and dirs """
     if not self.exists(from_path):
       raise ValueError(f"Cannot copy non-existing source path: {from_path}")
-    to_path.parent.mkdir(parents=True, exist_ok=True)
     if self.is_dir(from_path):
-      shutil.copytree(from_path, to_path)
-    else:
-      shutil.copy2(from_path, to_path)
+      return self.copy_dir(from_path, to_path)
+    return self.copy_file(from_path, to_path)
+
+  def copy_dir(self, from_path: pth.RemotePathLike,
+               to_path: pth.RemotePathLike) -> pth.RemotePath:
+    from_path = self.local_path(from_path)
+    to_path = self.local_path(to_path)
+    self.mkdir(to_path.parent, parents=True, exist_ok=True)
+    shutil.copytree(os.fspath(from_path), os.fspath(to_path))
+    return to_path
+
+  def copy_file(self, from_path: pth.RemotePathLike,
+                to_path: pth.RemotePathLike) -> pth.RemotePath:
+    from_path = self.local_path(from_path)
+    to_path = self.local_path(to_path)
+    self.mkdir(to_path.parent, parents=True, exist_ok=True)
+    shutil.copy2(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
   def rm(self,
@@ -418,7 +458,7 @@ class Platform(abc.ABC):
     if dir:
       if missing_ok and not self.exists(path):
         return
-      shutil.rmtree(path)
+      shutil.rmtree(os.fspath(path))
     else:
       path.unlink(missing_ok)
 
@@ -485,6 +525,16 @@ class Platform(abc.ABC):
     fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
     os.close(fd)
     return self.path(name)
+
+  @contextlib.contextmanager
+  def NamedTemporaryFile(self,
+                         prefix: Optional[str] = None,
+                         dir: Optional[pth.RemotePathLike] = None):
+    tmp_file = self.mktemp(prefix, dir)
+    try:
+      yield tmp_file
+    finally:
+      self.rm(tmp_file, missing_ok=True)
 
   def exists(self, path: pth.RemotePathLike) -> bool:
     return self.local_path(path).exists()

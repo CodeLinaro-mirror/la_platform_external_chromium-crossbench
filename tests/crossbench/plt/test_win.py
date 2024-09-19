@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 from unittest import mock
 
@@ -44,7 +45,7 @@ class WinMockPlatformTestCase(BaseMockPlatformTestCase):
     self.assertIsNone(self.platform.which(bin_path))
     with mock.patch("shutil.which", return_value=bin_path) as cm:
       self.assertEqual(self.platform.which(bin_path), bin_path)
-    cm.assert_called_once_with(bin_path)
+    cm.assert_called_once_with(os.fspath(bin_path))
 
   def test_which_invalid(self):
     with self.assertRaises(ValueError) as cm:
@@ -66,7 +67,7 @@ class WinMockPlatformTestCase(BaseMockPlatformTestCase):
       with self.assertRaises(AssertionError) as search_cm:
         self.assertEqual(self.platform.search_app(bin_path), bin_path)
       self.assertIn("exist", str(search_cm.exception))
-    cm.assert_called_once_with(bin_path)
+    cm.assert_called_once_with(os.fspath(bin_path))
 
   def test_search_binary(self):
     bin_path = self.path("foo/bar/default/crossbench_mock_binary.exe")
@@ -74,7 +75,7 @@ class WinMockPlatformTestCase(BaseMockPlatformTestCase):
     self.fs.create_file(bin_path, st_size=100)
     with mock.patch("shutil.which", return_value=bin_path) as cm:
       self.assertEqual(self.platform.search_app(bin_path), bin_path)
-    cm.assert_called_once_with(bin_path)
+    cm.assert_called_once_with(os.fspath(bin_path))
 
 
 if __name__ == "__main__":

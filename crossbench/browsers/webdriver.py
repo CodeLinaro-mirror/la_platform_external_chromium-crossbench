@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import atexit
 import logging
+import os
 import time
 import traceback
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
@@ -165,7 +166,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     details: JsonDict = super().details_json()
     log = cast(JsonDict, details["log"])
     if self.log_file:
-      log["driver"] = str(self.driver_log_file)
+      log["driver"] = os.fspath(self.driver_log_file)
     return details
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:

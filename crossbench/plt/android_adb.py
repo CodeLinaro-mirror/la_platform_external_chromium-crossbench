@@ -554,15 +554,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     self.adb.reverse_remove(remote_port, protocol="tcp")
 
-  def rsync(self, from_path: pth.RemotePath,
-            to_path: pth.LocalPath) -> pth.LocalPath:
-    return self.pull(from_path, to_path)
-
   def pull(self, from_path: pth.RemotePath,
            to_path: pth.LocalPath) -> pth.LocalPath:
     device_path = self.path(from_path)
-    assert self.exists(device_path), (
-        f"Source file '{from_path}' does not exist on {self}")
+    if not self.exists(device_path):
+      raise ValueError(f"Source file '{from_path}' does not exist on {self}")
     local_host_path = self.host_path(to_path)
     local_host_path.parent.mkdir(parents=True, exist_ok=True)
     self.adb.pull(device_path, local_host_path)
@@ -570,22 +566,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def push(self, from_path: pth.LocalPath,
            to_path: pth.RemotePath) -> pth.RemotePath:
-    self.adb.push(from_path, self.path(to_path))
+    to_path = self.path(to_path)
+    self.adb.push(self.host_path(from_path), to_path)
     return to_path
-
-  def set_file_contents(self,
-                        file: pth.RemotePathLike,
-                        data: str,
-                        encoding: str = "utf-8") -> None:
-    # self.push a tmp file with the given contents
-    tmp_dir: pth.LocalPath = self.host_path(self.host_platform.mkdtemp())
-    try:
-      tmp_file = tmp_dir / "push.data"
-      with tmp_file.open("w", encoding=encoding) as f:
-        f.write(data)
-      self.push(tmp_file, self.path(file))
-    finally:
-      self.host_platform.rm(tmp_dir, dir=True, missing_ok=True)
 
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:

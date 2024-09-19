@@ -53,7 +53,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     args = self._get_browser_flags_for_session(session)
     for arg in args:
       options.add_argument(arg)
-    options.binary_location = str(self.path)
+    options.binary_location = os.fspath(self.path)
     session.setup_selenium_options(options)
     if self.cache_dir:
       # TODO: support remote platforms
@@ -67,7 +67,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(
-        executable_path=str(driver_path),
+        executable_path=os.fspath(driver_path),
         log_path=log_path,
         service_args=service_args,
         env=env_copy)
@@ -111,11 +111,11 @@ class FirefoxDriverFinder:
       tar_file = pth.LocalPath(tmp_dir) / f"download.{archive_type}"
       self.platform.download_to(url, tar_file)
       unpack_dir = pth.LocalPath(tmp_dir) / "extracted"
-      shutil.unpack_archive(tar_file, unpack_dir)
+      shutil.unpack_archive(os.fspath(tar_file), os.fspath(unpack_dir))
       driver = unpack_dir / f"geckodriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
       self.driver_path.parent.mkdir(parents=True, exist_ok=True)
-      shutil.move(os.fspath(driver), self.driver_path)
+      shutil.move(os.fspath(driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
   def _find_driver_download_url(self) -> Tuple[str, str]:

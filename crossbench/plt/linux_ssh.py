@@ -114,12 +114,3 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     ]
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
-
-  def rsync(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
-    to_path.parent.mkdir(parents=True, exist_ok=True)
-    scp_cmd: CmdArgs = [
-        "scp", "-P", f"{self._ssh_port}", "-r",
-        f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"
-    ]
-    self._host_platform.sh_stdout(*scp_cmd)
-    return to_path

@@ -83,11 +83,11 @@ class EdgeWebDriverDownloader:
       archive_file = pth.LocalPath(tmp_dir) / archive_name
       self.platform.download_to(url, archive_file)
       unpack_dir = pth.LocalPath(tmp_dir) / "extracted"
-      shutil.unpack_archive(archive_file, unpack_dir)
+      shutil.unpack_archive(os.fspath(archive_file), os.fspath(unpack_dir))
       driver = unpack_dir / f"msedgedriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
       BROWSERS_CACHE.mkdir(parents=True, exist_ok=True)
-      shutil.move(os.fspath(driver), self.driver_path)
+      shutil.move(os.fspath(driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
   def _arch_identifier(self) -> str:

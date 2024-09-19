@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
+import os
 import plistlib
 import re
 import shutil
@@ -84,9 +85,9 @@ class Downloader(abc.ABC):
   def find(
       self, archive_path_or_version_identifier: Union[str, pth.LocalPath]
   ) -> pth.LocalPath:
-    if self.is_valid_version(str(archive_path_or_version_identifier)):
-      self._requested_version = self._parse_version(
-          str(archive_path_or_version_identifier))
+    version_value = os.fspath(archive_path_or_version_identifier)
+    if self.is_valid_version(version_value):
+      self._requested_version = self._parse_version(version_value)
       self._pre_check()
       sys.stdout.write(f"   BROWSER: Looking for {self._requested_version}\r")
       return self._load_from_version()
@@ -320,7 +321,11 @@ class DMGArchiveHelper:
     app = apps[0]
     try:
       logging.info("COPYING BROWSER src=%s dst=%s", app, dest_path)
-      shutil.copytree(app, dest_path, symlinks=True, dirs_exist_ok=False)
+      shutil.copytree(
+          os.fspath(app),
+          os.fspath(dest_path),
+          symlinks=True,
+          dirs_exist_ok=False)
     finally:
       platform.sh("hdiutil", "detach", dmg_path)
     if not dest_path.exists():

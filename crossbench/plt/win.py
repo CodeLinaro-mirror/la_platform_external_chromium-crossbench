@@ -66,7 +66,8 @@ class WinPlatform(Platform):
 
   def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
     app_or_bin = self.path(app_or_bin)
-    assert self.exists(app_or_bin), f"Binary {app_or_bin} does not exist."
+    if not self.exists(app_or_bin):
+      raise ValueError(f"Binary {app_or_bin} does not exist.")
     return self.sh_stdout(
         "powershell", "-command",
         f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion")
@@ -77,5 +78,5 @@ class WinPlatform(Platform):
     Copy files on windows but symlink everywhere else (see base Platform)."""
     assert self.is_local, "Unsupported operation on remote platform"
     dst_path = self.path(dst)
-    shutil.copy(self.path(src), dst_path)
+    shutil.copy(os.fspath(self.path(src)), os.fspath(dst_path))
     return dst_path

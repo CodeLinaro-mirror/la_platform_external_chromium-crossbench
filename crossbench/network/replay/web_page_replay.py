@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import atexit
 import logging
+import os
 import re
 import shlex
 import subprocess
@@ -148,7 +149,8 @@ class WprBase(abc.ABC):
         f"--https_cert_file={self._cert_file}",
     )
     if self._inject_scripts is not None:
-      injected_scripts = ",".join(str(path) for path in self._inject_scripts)
+      injected_scripts = ",".join(
+          os.fspath(path) for path in self._inject_scripts)
       cmd += (f"--inject_scripts={injected_scripts}",)
     return cmd
 

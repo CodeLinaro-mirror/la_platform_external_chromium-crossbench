@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import os
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Type
 
 from selenium import webdriver
@@ -63,7 +64,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     session.setup_selenium_options(options)
     self._force_clear_cache(session)
 
-    service = SafariService(executable_path=str(driver_path))
+    service = SafariService(executable_path=os.fspath(driver_path))
     driver_kwargs = {"service": service, "options": options}
 
     if webdriver.__version__ == "4.1.0":

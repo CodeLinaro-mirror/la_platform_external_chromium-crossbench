@@ -395,7 +395,7 @@ class HostEnvironment:
   def _check_running_binaries_on_platform(
       self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
     browser_binaries: Dict[str, List[Browser]] = helper.group_by(
-        platform_browsers, key=lambda browser: str(browser.path))
+        platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):
       if not browser_binaries:

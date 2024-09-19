@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import logging
+import os
 import re
 from typing import Any, Dict, Optional, TextIO, Tuple, cast
 
@@ -243,7 +244,7 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def is_supported_browser_path(cls, path: pth.RemotePath) -> bool:
-    path_str = str(path).lower()
+    path_str = os.fspath(path).lower()
     for short_name in SUPPORTED_BROWSER:
       if short_name in path_str:
         return True

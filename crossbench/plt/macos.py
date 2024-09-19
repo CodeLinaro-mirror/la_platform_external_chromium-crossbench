@@ -145,7 +145,8 @@ class MacOSPlatform(PosixPlatform):
 
   def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
     app_or_bin = self.path(app_or_bin)
-    assert self.exists(app_or_bin), f"Binary {app_or_bin} does not exist."
+    if not self.exists(app_or_bin):
+      raise ValueError(f"Binary {app_or_bin} does not exist.")
 
     app_path = None
     for current in (app_or_bin, *app_or_bin.parents):

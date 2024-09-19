@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
+import os
 import shlex
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence,
                     Tuple)
@@ -222,7 +223,7 @@ class Browser(abc.ABC):
         "version": self.version,
         "flags": tuple(self.flags),
         "js_flags": tuple(),
-        "path": str(self.path),
+        "path": os.fspath(self.path),
         "clear_cache_dir": self.clear_cache_dir,
         "major_version": self.major_version,
         "log": {}

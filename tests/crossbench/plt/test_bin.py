@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 from unittest import mock
 
@@ -73,7 +74,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
       with platform.override_binary(binary, path):
         self.assertEqual(binary.resolve(platform), path)
         self.assertEqual(binary.resolve_cached(platform), path)
-    cm.assert_called_once_with(path)
+    cm.assert_called_once_with(os.fspath(path))
 
     # Still cached
     self.assertEqual(binary.resolve_cached(platform), path)

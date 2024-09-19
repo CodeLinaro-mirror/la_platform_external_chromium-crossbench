@@ -86,7 +86,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
     app_or_bin = self.path(app_or_bin)
-    assert self.exists(app_or_bin), f"Binary {app_or_bin} does not exist."
+    if not self.exists(app_or_bin):
+      raise ValueError(f"Binary {app_or_bin} does not exist.")
     return self.sh_stdout(app_or_bin, "--version")
 
   @property
@@ -120,7 +121,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().which(binary_name)
     if not binary_name:
       raise ValueError("Got empty path")
-    if override := self.lookup_binary_override(str(binary_name)):
+    if override := self.lookup_binary_override(binary_name):
       return override
     try:
       if maybe_path := self.sh_stdout("which", self.path(binary_name)).strip():
@@ -205,6 +206,43 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     args.append(str(template))
     result = self.sh_stdout(*args)
     return self.path(result.strip())
+
+  def copy_dir(self, from_path: pth.RemotePathLike,
+               to_path: pth.RemotePathLike) -> pth.RemotePath:
+    if self.is_local:
+      return super().copy_dir(from_path, to_path)
+    from_path = self.path(from_path)
+    to_path = self.path(to_path)
+    if not self.exists(from_path):
+      raise ValueError(f"Cannot copy non-existing source path: {from_path}")
+    self.mkdir(to_path.parent, parents=True, exist_ok=True)
+    self.sh("cp", "-R", from_path, to_path)
+    return to_path
+
+  def copy_file(self, from_path: pth.RemotePathLike,
+                to_path: pth.RemotePathLike) -> pth.RemotePath:
+    if self.is_local:
+      return super().copy_file(from_path, to_path)
+    from_path = self.path(from_path)
+    to_path = self.path(to_path)
+    if not self.exists(from_path):
+      raise ValueError(f"Cannot copy non-existing source path: {from_path}")
+    self.mkdir(to_path.parent, parents=True, exist_ok=True)
+    self.sh("cp", from_path, to_path)
+    return to_path
+
+  def set_file_contents(self,
+                        file: pth.RemotePathLike,
+                        data: str,
+                        encoding: str = "utf-8") -> None:
+    if self.is_local:
+      super().set_file_contents(file, data, encoding)
+      return
+    # TODO: implement stdin bypass for small content
+    dest_file = self.path(file)
+    with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
+      self.host_platform.set_file_contents(tmp_file, data, encoding=encoding)
+      self.push(tmp_file, dest_file)
 
   def exists(self, path: pth.RemotePathLike) -> bool:
     if self.is_local:

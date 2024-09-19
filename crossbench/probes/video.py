@@ -7,7 +7,6 @@ from __future__ import annotations
 import atexit
 import logging
 import os
-import shutil
 import signal
 import subprocess
 import tempfile
@@ -130,8 +129,7 @@ class VideoProbe(Probe):
       run_files = runs[0].results[self].file_list
       group_files = [group.path / f.name for f in run_files]
       for src, dest in zip(run_files, group_files):
-        # TODO migrate to platform
-        shutil.copy(src, dest)
+        self.runner_platform.copy(src, dest)
       return LocalProbeResult(file=group_files)
 
     video_file = group.get_local_probe_result_path(self)
@@ -187,30 +185,29 @@ class VideoProbe(Probe):
       self, result_dir: LocalPath, story: Story,
       repetitions_groups: List[RepetitionsRunGroup]) -> LocalPath:
     story = repetitions_groups[0].story
-    result_file = result_dir / f"{story.name}_combined.mp4"
+    result_path = result_dir / f"{story.name}_combined.mp4"
 
     if len(repetitions_groups) == 1:
       # In the simple case just copy files
       input_file = repetitions_groups[0].results[self].file_list[0]
-      # TODO migrate to platform
-      shutil.copy(input_file, result_file)
-      return result_file
+      self.runner_platform.copy(input_file, result_path)
+      return result_path
 
     input_files: List[str] = []
     for repetitions_group in repetitions_groups:
       result_files = repetitions_group.results[self].file_list
-      input_files += ["-i", str(result_files[0])]
+      input_files += ["-i", os.fspath(result_files[0])]
     try:
       self.runner_platform.sh("ffmpeg", "-hide_banner", *input_files,
                               "-filter_complex",
                               f"vstack=inputs={len(repetitions_groups)}",
-                              *self.VIDEO_QUALITY, result_file)
+                              *self.VIDEO_QUALITY, result_path)
     except Exception as e:
       logging.error("Merging multiple browser video failed. "
                     "Different screen orientations are not supported yet.")
       logging.debug("Browser video merging failed: %e", e)
       raise e
-    return result_file
+    return result_path
 
 
 class VideoProbeContext(ProbeContext[VideoProbe]):
