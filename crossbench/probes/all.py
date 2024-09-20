@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Tuple, Type
 
 from crossbench.probes.android_logcat import AndroidLogcatProbe
+from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
@@ -60,6 +61,7 @@ assert INTERNAL_PROBES[1] == DurationsProbe
 GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     AndroidLogcatProbe,
     BrowserProfilingProbe,
+    ChromeHistogramsProbe,
     DTraceProbe,
     DebuggerProbe,
     JSProbe,
