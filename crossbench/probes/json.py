@@ -101,11 +101,9 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
     csv_file_list: List[LocalPath] = []
-    headers: List[str] = []
     for story_group in group.story_groups:
       csv_file_list.append(story_group.results[self].csv)
-      headers.append(story_group.browser.unique_name)
-    merged_table = helper.merge_csv(csv_file_list, row_header_len=2)
+    merged_table = helper.merge_csv(csv_file_list, row_header_len=-1)
     merged_json_path = group.get_local_probe_result_path(self, exists_ok=True)
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
@@ -144,17 +142,17 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     assert not merged_csv_path.exists(), (
         f"Cannot override existing CSV result: {merged_csv_path}")
     # Create a CSV table:
-    # header 0: label 0,            label 0,             info_value 0
-    # ...                                                ...
-    # header N: label 0,            label N,             info_value N
-    # data 0:   metric 0 full path, metric 0 short name, metric 0 value
-    # ...
-    # data N:   ...
+    # 0 | info label 0,                                          info_value 0
+    #     ...                                                    ...
+    # N | info label N,                                          info_value N
+    # 0 | metric 0 full path, metric path[0] ... metric path[N], metric 0 value
+    #     ...                                                    ...
+    # M | metric M full path, ...                                metric M value
     headers = []
     for label, info_value in group.info.items():
-      headers.append((label, label, info_value))
-    csv_data = merged_data.to_csv(
-        value_fn, headers=headers, sort=self.SORT_KEYS)
+      headers.append((label, info_value))
+    csv_data = metric.CSVFormatter(
+        merged_data, value_fn, headers=headers, sort=self.SORT_KEYS).table
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       writer = csv.writer(f, delimiter="\t")
       writer.writerows(csv_data)

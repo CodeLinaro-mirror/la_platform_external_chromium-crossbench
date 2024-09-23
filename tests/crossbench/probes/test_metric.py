@@ -101,7 +101,7 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
   def test_empty(self):
     merger = metric.MetricsMerger()
     self.assertDictEqual(merger.to_json(), {})
-    self.assertListEqual(merger.to_csv(), [])
+    self.assertListEqual(metric.CSVFormatter(merger).table, [])
 
   def test_add_flat(self):
     input_data = {"a": 1, "b": 2}
@@ -230,41 +230,42 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
   def test_to_csv_no_path(self) -> None:
     merger = metric.MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
-    csv = merger.to_csv(lambda metric: metric.geomean, include_path=False)
+    csv = metric.CSVFormatter(
+        merger, lambda metric: metric.geomean, include_parts=False).table
     self.assertListEqual(csv, [
-        ["a"],
-        ["a"],
-        ["a", 1.0],
-        ["b", 2.0],
-        ["b", 3.0],
+        ("a/a/a", 1.0),
+        ("a/a/b", 2.0),
+        ("b", 3.0),
     ])
 
   def test_to_csv_path(self) -> None:
     merger = metric.MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
-    csv = merger.to_csv(lambda metric: metric.geomean, include_path=True)
+    csv = metric.CSVFormatter(
+        merger, lambda metric: metric.geomean, include_parts=True).table
     self.assertListEqual(csv, [
-        ["a", "a"],
-        ["a/a", "a"],
-        ["a/a/a", "a", 1.0],
-        ["a/a/b", "b", 2.0],
-        ["b", "b", 3.0],
+        ("a/a/a", "a", "a", "a", 1.0),
+        ("a/a/b", "a", "a", "b", 2.0),
+        ("b", "b", "", "", 3.0),
     ])
 
   def test_to_csv_header(self) -> None:
     merger = metric.MetricsMerger()
-    merger.add({"a": 1, "b": 2})
+    merger.add({"a/b/c": 1, "d": 2})
     headers = [
-        ["a", "custom", "header", "line"],
-        [1, 2, 3, 4, 5],
+        ("a", "custom", "header", "line"),
+        (1, 2, 3, 4, 5),
     ]
-    csv = merger.to_csv(
-        lambda metric: metric.geomean, headers=headers, include_path=True)
+    csv = metric.CSVFormatter(
+        merger,
+        lambda metric: metric.geomean,
+        headers=headers,
+        include_parts=True).table
     self.assertListEqual(csv, [
-        ["a", "custom", "header", "line"],
-        [1, 2, 3, 4, 5],
-        ["a", "a", 1.0],
-        ["b", "b", 2.0],
+        ("a", "", "", "", "custom", "header", "line"),
+        (1, "", "", "", 2, 3, 4, 5),
+        ("a/b/c", "a", "b", "c", 1.0),
+        ("d", "d", "", "", 2.0),
     ])
 
 

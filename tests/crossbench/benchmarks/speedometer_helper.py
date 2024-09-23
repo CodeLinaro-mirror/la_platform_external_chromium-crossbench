@@ -225,12 +225,16 @@ class SpeedometerBaseTestCase(
     with csv_file.open(encoding="utf-8") as f:
       reader = csv.DictReader(f, delimiter="\t")
       rows = list(reader)
-    self.assertListEqual(list(rows[0].keys()), ["label", "dev", "stable"])
-    self.assertDictEqual(rows[1], {
-        "label": "version",
-        "dev": "102.22.33.44",
-        "stable": "100.22.33.44",
-    })
+    self.assertListEqual(list(rows[0].keys()), ["label", "", "dev", "stable"])
+    self.assertDictEqual(
+        rows[1],
+        {
+            "label": "version",
+            "dev": "102.22.33.44",
+            "stable": "100.22.33.44",
+            # Padding element after "label":
+            "": ""
+        })
     return rows
 
   def test_run_throw(self):
@@ -273,22 +277,22 @@ class SpeedometerBaseTestCase(
       self.assertNotIn(f"{self.story_cls.URL_LOCAL}?iterationCount=7", urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
-  def _verify_results_stories(self, rows, story_names):
+  def _verify_results_stories(self, rows, story_names, label_suffix):
     labels = [row['label'] for row in rows]
     self.assertNotIn(f"{self.benchmark_cls.NAME}_{'_'.join(story_names)}",
                      labels)
     for story_name in story_names:
-      self.assertIn(story_name, labels)
+      self.assertIn(f"{story_name}{label_suffix}", labels)
 
-  def _run_combined(self, story_names: Sequence[str]):
+  def _run_combined(self, story_names: Sequence[str], label_suffix: str = ""):
     runner = self._test_run(story_names=story_names, separate=False)
     rows = self._verify_results(runner, expected_num_urls=3)
-    self._verify_results_stories(rows, story_names)
+    self._verify_results_stories(rows, story_names, label_suffix)
 
-  def _run_separate(self, story_names: Sequence[str]):
+  def _run_separate(self, story_names: Sequence[str], label_suffix: str = ""):
     runner = self._test_run(story_names=story_names, separate=True)
     rows = self._verify_results(runner, expected_num_urls=6)
-    self._verify_results_stories(rows, story_names)
+    self._verify_results_stories(rows, story_names, label_suffix)
 
   def test_run_combined(self):
     self._run_combined(["VanillaJS-TodoMVC", "Elm-TodoMVC"])
@@ -358,3 +362,11 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
     with (runner.story_groups[0].path / probe_file).open() as f:
       stories_data = json.load(f)
     self.assertTupleEqual(tuple(stories_data.keys())[-2:], ("Geomean", "Score"))
+
+  def test_run_combined(self):
+    self._run_combined(["VanillaJS-TodoMVC", "Elm-TodoMVC"],
+                       label_suffix="/total")
+
+  def test_run_separate(self):
+    self._run_separate(["VanillaJS-TodoMVC", "Elm-TodoMVC"],
+                       label_suffix="/total")

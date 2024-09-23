@@ -159,12 +159,17 @@ class MotionMark1BaseTestCase(
     with (self.out_dir /
           f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
-    self.assertListEqual(list(csv_data[0].keys()), ["label", "dev", "stable"])
-    self.assertDictEqual(csv_data[1], {
-        "label": "version",
-        "dev": "102.22.33.44",
-        "stable": "100.22.33.44",
-    })
+    self.assertListEqual(
+        list(csv_data[0].keys()), ["label", "", "dev", "stable"])
+    self.assertDictEqual(
+        csv_data[1],
+        {
+            "label": "version",
+            "dev": "102.22.33.44",
+            "stable": "100.22.33.44",
+            # One padding element (after "label"):
+            "": "",
+        })
 
 
 class MotionMark12TestCase(MotionMark1BaseTestCase):

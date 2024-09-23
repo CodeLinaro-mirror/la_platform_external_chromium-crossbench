@@ -8,8 +8,8 @@ import json
 import logging
 import math
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Optional, Sequence, Set, Tuple, Union, Hashable)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Hashable, Iterable,
+                    List, Optional, Sequence, Set, Tuple, Union)
 
 from ordered_set import OrderedSet
 
@@ -278,71 +278,64 @@ class MetricsMerger:
       items.sort()
     return dict(items)
 
-  def to_csv(self,
-             value_fn: Optional[Callable[[Any], Any]] = None,
-             headers: Sequence[Sequence[Any]] = (),
-             include_path: bool = True,
-             sort: bool = True) -> List[Sequence[Any]]:
-    """
-    Input: {
-        "VanillaJS-TodoMVC/Adding100Items/Async": 1
-        "VanillaJS-TodoMVC/Adding100Items/Sync": 2
-        "VanillaJS-TodoMVC/Total": 3
-        "Total": 3
-      }
-    output: [
-      ["VanillaJS-TodoMVC",                      "VanillaJS-TodoMVC"],
-      ["VanillaJS-TodoMVC/Adding100Items",       "Adding100Items"],
-      ["VanillaJS-TodoMVC/Adding100Items/Async", "Async", 1]
-      ["VanillaJS-TodoMVC/Adding100Items/Sync",  "Sync",  2]
-      ["VanillaJS-TodoMVC/Total",                "Total", 3]
-      ["Total"                                   "Total", 3]
-    ]
-    """
-    converted = self.to_json(value_fn, sort)
-    lookup: Dict[str, Any] = {}
-    toplevel: OrderedSet[str] = OrderedSet()
-    items = converted.items()
+
+class CSVFormatter:
+  """
+  Headers: [
+    ["label_1", "value_1"],
+    ["label_2", "value_2"],
+  ]
+  Input: {
+      "A_1/B_1/Async": 1,
+      "A_1/B_2/Sync": 2,
+      "A_1/Total": 3,
+      "Total": 3,
+    }
+  Output: [
+    ["label_1",      "",      "",      "",      "value_1],
+    ["label_2",      "",      "",      "",      "value_2],
+    ["A_1/B1/Async", "A1",    "B1",    "Async", 1],
+    ["A_1/B2/Sync",  "A1",    "B2",    "Sync",  2],
+    ["A_1/Total",    "A1",    "Total", "",      3],
+    ["Total"         "Total", "",      "",      3],
+  ]
+  """
+
+  def __init__(self,
+               metrics: MetricsMerger,
+               value_fn: Optional[Callable[[Any], Any]] = None,
+               headers: Sequence[Tuple[Any, ...]] = (),
+               include_parts: bool = True,
+               sort: bool = True):
+    self._table: List[Sequence[Any]] = []
+    converted = metrics.to_json(value_fn, sort)
+    items = tuple(converted.items())
     if sort:
       items = sorted(items)
-    for key, value in items:
-      path = None
-      segments = key.split("/")
-      for segment in segments:
-        if path:
-          path += "/" + segment
-        else:
-          path = segment
-        if path not in lookup:
-          lookup[path] = None
-      if len(segments) == 1:
-        toplevel.add(key)
-      lookup[key] = value
-    csv_data: List[Sequence[Any]] = []
-    for header in headers:
-      assert isinstance(header, Sequence), (
-          f"Additional CSV headers must be Sequences, got {type(header)}: "
-          f"{header}")
-      csv_data.append(header)
-    for path, value in lookup.items():
-      if path in toplevel:
-        continue
-      name = path.split("/")[-1]
-      if value is None:
-        if include_path:
-          csv_data.append([path, name])
-        else:
-          csv_data.append([name])
-      else:
-        if include_path:
-          csv_data.append([path, name, value])
-        else:
-          csv_data.append([name, value])
-    # Write toplevel entries last
-    for key in toplevel:
-      if include_path:
-        csv_data.append([key, key, lookup[key]])
-      else:
-        csv_data.append([key, lookup[key]])
 
-    return csv_data
+    max_path_depth = 0
+    if include_parts:
+      for path, _ in items:
+        max_path_depth = max(max_path_depth, path.count("/"))
+
+    max_path_depth += 1
+    header_padding = ("",) * max_path_depth
+    for header in headers:
+      assert isinstance(header, tuple), (
+          f"Additional CSV headers must be tuples, got {type(header)}: "
+          f"{header}")
+      row = header[:1] + header_padding + header[1:]
+      self.table.append(row)
+
+    for path, value in items:
+      if include_parts:
+        parts = tuple(path.split("/"))
+        buffer = ("",) * (max_path_depth - len(parts))
+        row = (path,) + parts + buffer + (value,)
+      else:
+        row = (path, value)
+      self.table.append(row)
+
+  @property
+  def table(self) -> List[Sequence[Any]]:
+    return self._table
