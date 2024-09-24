@@ -266,5 +266,23 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     ])
 
 
+class CSVFormatterTestCase(unittest.TestCase):
+
+  def test_format(self):
+    metrics = MetricsMerger({
+        "Total/average": 10,
+        "Total/score": 20,
+        "cdjs/average": 30,
+        "cdjs/score": 40,
+    })
+    table = CSVFormatter(metrics, lambda metric: metric.geomean).table
+    self.assertSequenceEqual(table, [
+        ("Total/average", "Total", "average", 10.0),
+        ("Total/score", "Total", "score", 20.0),
+        ("cdjs/average", "cdjs", "average", 30.0),
+        ("cdjs/score", "cdjs", "score", 40.0),
+    ])
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

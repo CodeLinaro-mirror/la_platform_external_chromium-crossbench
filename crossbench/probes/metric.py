@@ -311,9 +311,7 @@ class CSVFormatter:
                sort: bool = True):
     self._table: List[Sequence[Any]] = []
     converted = metrics.to_json(value_fn, sort)
-    items: Sequence[Tuple[str, Json]] = tuple(converted.items())
-    items = self.format_items(items, sort=sort)
-
+    items = self.format_items(converted, sort=sort)
     max_path_depth: int = self.extract_max_depth(items, include_parts)
     self.append_headers(headers, max_path_depth)
     self.append_body(items, include_parts, max_path_depth)
@@ -347,8 +345,9 @@ class CSVFormatter:
         row = (path, value)
       self._table.append(row)
 
-  def format_items(self, items: Sequence[Tuple[str, Json]],
+  def format_items(self, data: Dict[str, Json],
                    sort: bool) -> Sequence[Tuple[str, Json]]:
+    items = tuple(data.items())
     if not sort:
       return items
     return sorted(items)

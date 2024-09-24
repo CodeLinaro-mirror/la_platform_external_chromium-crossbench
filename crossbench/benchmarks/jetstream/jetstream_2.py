@@ -9,14 +9,16 @@ import datetime as dt
 import json
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Type
 
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.jetstream.jetstream import JetStreamBenchmark
-from crossbench.probes import metric as cb_metric
 from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
+                                      format_metric, geomean)
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
+from crossbench.types import Json
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
@@ -69,7 +71,7 @@ class JetStream2Probe(
         accumulated_metrics[metric].append(value)
     total: Dict[str, float] = {}
     for metric, values in accumulated_metrics.items():
-      total[metric] = cb_metric.geomean(values)
+      total[metric] = geomean(values)
     return total
 
   def log_run_result(self, run: Run) -> None:
@@ -103,24 +105,40 @@ class JetStream2Probe(
       if len(parts) != 2 or parts[0] == "Total" or parts[1] != "score":
         continue
       table[metric_key].append(
-          cb_metric.format_metric(metric_value["average"],
-                                  metric_value["stddev"]))
+          format_metric(metric_value["average"], metric_value["stddev"]))
       # Separate runs don't produce a score
     if "Total/score" in metrics:
       metric_value = metrics["Total/score"]
       table["Score"].append(
-          cb_metric.format_metric(metric_value["average"],
-                                  metric_value["stddev"]))
+          format_metric(metric_value["average"], metric_value["stddev"]))
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = cb_metric.MetricsMerger.merge_json_list(
+    merged = MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
-    return self.write_group_result(group, merged)
+    return self.write_group_result(group, merged, JetStream2CSVFormatter)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
         self.merge_browsers_csv_list(group))
+
+
+class JetStream2CSVFormatter(CSVFormatter):
+
+  def format_items(self, data: Dict[str, Json],
+                   sort: bool) -> Sequence[Tuple[str, Json]]:
+    items = list(data.items())
+    if sort:
+      items.sort()
+    # Copy all /score items to the top:
+    total_key = "Total/score"
+    score_items = []
+    for key, value in items:
+      if key != total_key and key.endswith("/score"):
+        score_items.append((key, value))
+    total_item = [(total_key, data[total_key])]
+    return total_item + score_items + items
+
 
 class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
   URL_LOCAL: str = "http://localhost:8000/"
