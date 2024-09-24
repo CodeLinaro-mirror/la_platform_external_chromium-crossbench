@@ -203,10 +203,11 @@ class BasicActionRunner(ActionRunner):
               });
             });
           """,
-          arguments=[action.selector, timeout_ms])
+          arguments=[action.selector, timeout_ms],
+          timeout=action.timeout + dt.timedelta(seconds=1))
 
       if not result:
-        logging.warning("Timed out waiting for '%s'", action.selector)
+        raise ElementNotFoundError(action.selector)
 
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
