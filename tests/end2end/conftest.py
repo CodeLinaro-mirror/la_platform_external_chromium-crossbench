@@ -37,6 +37,18 @@ def pytest_addoption(parser):
       "--gustilpath",
       default=None,
       type=cli_helper.parse_path)
+  parser.addoption(
+      "--adb-device-id",
+      default=None,
+      type=str)
+  parser.addoption(
+      "--adb-path",
+      default=None,
+      type=str)
+  parser.addoption(
+      "--ignore-tests",
+      default=None,
+      type=str)
 
 
 def pytest_xdist_auto_num_workers(config):
@@ -57,7 +69,7 @@ def driver_path(request) -> Optional[pathlib.Path]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def browser_path(request) -> pathlib.Path:
+def browser_path(request) -> Optional[pathlib.Path]:
   maybe_browser_path: Optional[pathlib.Path] = request.config.getoption(
       "--test-browser-path")
   if maybe_browser_path:
@@ -65,7 +77,12 @@ def browser_path(request) -> pathlib.Path:
     assert maybe_browser_path.exists()
     return maybe_browser_path
   logging.info("Trying default browser path for local runs.")
-  return pathlib.Path(browsers.Chrome.stable_path(plt.PLATFORM))
+  try:
+    return pathlib.Path(browsers.Chrome.stable_path(plt.PLATFORM))
+  except ValueError as e:
+    logging.warning("Unable to find Chrome Stable on %s, error=%s",
+                    plt.PLATFORM, e)
+    return None
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -114,3 +131,25 @@ def archive_dir(output_dir) -> pathlib.Path:
   path = output_dir / "archive"
   assert not path.exists()
   return path
+
+
+@pytest.fixture(scope="session", autouse=True)
+def device_id(request) -> Optional[str]:
+  maybe_device_id: Optional[str] = request.config.getoption(
+      "--adb-device-id")
+  if maybe_device_id:
+    logging.info("adb device id: %s", maybe_device_id)
+    return maybe_device_id
+  logging.info("No Android device detected.")
+  return None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def adb_path(request) -> Optional[str]:
+  maybe_adb_path: Optional[str] = request.config.getoption(
+      "--adb-path")
+  if maybe_adb_path:
+    logging.info("adb path: %s", maybe_adb_path)
+    return maybe_adb_path
+  logging.info("No custom adb path.")
+  return None
