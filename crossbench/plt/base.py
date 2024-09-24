@@ -590,6 +590,7 @@ class Platform(abc.ABC):
 
   def popen(self,
             *args: CmdArg,
+            bufsize=-1,
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -602,6 +603,7 @@ class Platform(abc.ABC):
       logging.debug("CWD: %s", os.getcwd())
     return subprocess.Popen(
         args=args,
+        bufsize=bufsize,
         shell=shell,
         stdin=stdin,
         stderr=stderr,

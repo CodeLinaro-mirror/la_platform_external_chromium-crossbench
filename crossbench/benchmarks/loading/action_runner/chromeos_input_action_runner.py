@@ -244,6 +244,23 @@ class ChromeOSInputActionRunner(BasicActionRunner):
           ChromeOSTouchEvent(
               self._touch_device, rect_to_click, duration=action.duration))
 
+  def text_input_keyboard(self, run: Run,
+                          action: i_action.TextInputAction) -> None:
+    browser_platform = run.browser.platform
+    self._remote_tmp_file = browser_platform.mktemp()
+    script = (SCRIPTS_DIR / "text_input.py").read_text()
+    browser_platform.set_file_contents(self._remote_tmp_file, script)
+
+    try:
+      typing_process = browser_platform.popen(
+          "python3", self._remote_tmp_file, bufsize=0, stdin=subprocess.PIPE)
+
+      self._rate_limit_keystrokes(
+          run, action, lambda run, actions, text: typing_process.stdin.write(
+              text.encode("utf-8")))
+    finally:
+      typing_process.kill()
+
   def _get_viewport_info(self,
                          actions: Actions,
                          selector: Optional[str],

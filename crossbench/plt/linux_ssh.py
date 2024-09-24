@@ -91,6 +91,26 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
         quiet=quiet,
         check=check)
 
+  def popen(self,
+            *args: CmdArg,
+            bufsize=-1,
+            shell: bool = False,
+            stdout=None,
+            stderr=None,
+            stdin=None,
+            env: Optional[Mapping[str, str]] = None,
+            quiet: bool = False) -> subprocess.Popen:
+    ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
+    return self._host_platform.popen(
+        *ssh_cmd,
+        bufsize=bufsize,
+        shell=shell,
+        stdout=stdout,
+        stderr=stderr,
+        stdin=stdin,
+        env=env,
+        quiet=quiet)
+
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     # TODO: Define a more generic method in PosixPlatform, possibly with

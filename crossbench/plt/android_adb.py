@@ -132,6 +132,7 @@ class Adb:
 
   def popen(self,
             *args: CmdArg,
+            bufsize=-1,
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -145,7 +146,7 @@ class Adb:
     adb_cmd: ListCmdArgs = [self._adb_bin, "-s", self._serial_id, "shell"]
     adb_cmd.extend(args)
     return self._host_platform.popen(
-        *adb_cmd, stdout=stdout, stderr=stderr, stdin=stdin)
+        *adb_cmd, bufsize=bufsize, stdout=stdout, stderr=stderr, stdin=stdin)
 
   def _adb(self,
            *args: CmdArg,
@@ -556,6 +557,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def popen(self,
             *args: CmdArg,
+            bufsize=-1,
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -564,6 +566,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
             quiet: bool = False) -> subprocess.Popen:
     return self.adb.popen(
         *args,
+        bufsize=bufsize,
         shell=shell,
         stdout=stdout,
         stderr=stderr,
