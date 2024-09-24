@@ -131,7 +131,7 @@ class CombinedPage(Page):
                logins: Optional[Iterable[SecretType]] = None):
     self._pages = tuple(pages)
     assert self._pages, "No sub-pages provided for CombinedPage"
-    assert len(self._pages) > 1, "Combined Page needs more than one page"
+    assert len(self._pages) >= 1, "Combined Page needs at least one page"
     self._tabs = tabs
     self._logins = logins or []
 
