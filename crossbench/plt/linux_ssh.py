@@ -58,11 +58,17 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
+                stdin=None,
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
     ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.sh_stdout(
-        *ssh_cmd, env=env, quiet=quiet, encoding=encoding, check=check)
+        *ssh_cmd,
+        stdin=stdin,
+        env=env,
+        quiet=quiet,
+        encoding=encoding,
+        check=check)
 
   def sh(self,
          *args: CmdArg,

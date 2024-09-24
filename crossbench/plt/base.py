@@ -33,6 +33,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
 
 if TYPE_CHECKING:
+  from crossbench.path import LocalPath
   from crossbench.types import JsonDict
 
 
@@ -512,6 +513,17 @@ class Platform(abc.ABC):
             exist_ok: bool = True) -> None:
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
+  @contextlib.contextmanager
+  def NamedTemporaryFile(self,
+                         prefix: Optional[str] = None,
+                         dir: Optional[pth.RemotePathLike] = None):
+    tmp_file: LocalPath = self.host_platform.local_path(
+        self.host_platform.mktemp(prefix, dir))
+    try:
+      yield tmp_file
+    finally:
+      self.rm(tmp_file, missing_ok=True)
+
   def mkdtemp(self,
               prefix: Optional[str] = None,
               dir: Optional[pth.RemotePathLike] = None) -> pth.RemotePath:
@@ -563,6 +575,7 @@ class Platform(abc.ABC):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
+                stdin=None,
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
     completed_process = self.sh(
@@ -570,6 +583,7 @@ class Platform(abc.ABC):
         shell=shell,
         capture_output=True,
         quiet=quiet,
+        stdin=stdin,
         env=env,
         check=check)
     return completed_process.stdout.decode(encoding)

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import collections
 import os
 import pathlib
 import shlex
@@ -45,6 +46,9 @@ class MockPlatformMixin:
     self.sh_cmds: List[ShellArgsT] = []
     self.expected_sh_cmds: Optional[List[ShellArgsT]] = None
     self.sh_results: List[str] = []
+    self.file_contents: Dict[pth.RemotePath, List[str]] = (
+        collections.defaultdict(list))
+    self.sleeps: List[dt.duration] = []
     super().__init__(*args, **kwargs)
 
   def expect_sh(self,
@@ -95,11 +99,20 @@ class MockPlatformMixin:
   def cpu_details(self) -> Dict[str, Any]:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
+  def set_file_contents(self,
+                        file: pth.RemotePathLike,
+                        data: str,
+                        encoding: str = "utf-8") -> None:
+    del encoding
+    file_path = self.path(file)
+    self.file_contents[file_path].append(data)
+    return
+
   def system_details(self):
     return {"CPU": "20-core 3.1 GHz"}
 
   def sleep(self, duration):
-    del duration
+    self.sleeps.append(duration)
 
   def processes(self, attrs=()):
     del attrs
@@ -127,9 +140,10 @@ class MockPlatformMixin:
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
+                stdin=None,
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
-    del shell, quiet, encoding, env, check
+    del shell, quiet, encoding, stdin, env, check
     if self.expected_sh_cmds is not None:
       assert self.expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
       # Convert all args to str first, sh accepts both str and Paths.

@@ -3,12 +3,13 @@
 # found in the LICENSE file.
 
 import dataclasses
+from typing import Optional
 from typing_extensions import Self
 
 from crossbench.benchmarks.loading.point import Point
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=False)
 # Represents a rectangular section of the device's display.
 class DisplayRectangle:
   # The top left corner of the rectangle.
@@ -17,6 +18,10 @@ class DisplayRectangle:
   width: int
   # The height in pixels of the rectangle.
   height: int
+  # The total width of the display
+  max_width: Optional[int] = None
+  # The total height of the display
+  max_height: Optional[int] = None
 
   # Stretches or squishes the rectangle by |factor|
   def __mul__(self, factor: float) -> Self:

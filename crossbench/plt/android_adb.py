@@ -178,6 +178,7 @@ class Adb:
   def _adb_stdout(self,
                   *args: CmdArg,
                   quiet: bool = False,
+                  stdin=None,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
@@ -188,12 +189,13 @@ class Adb:
       adb_cmd = [self._adb_bin]
     adb_cmd.extend(args)
     return self._host_platform.sh_stdout(
-        *adb_cmd, quiet=quiet, encoding=encoding, check=check)
+        *adb_cmd, quiet=quiet, encoding=encoding, check=check, stdin=stdin)
 
   def shell_stdout(self,
                    *args: CmdArg,
                    quiet: bool = False,
                    encoding: str = "utf-8",
+                   stdin=None,
                    env: Optional[Mapping[str, str]] = None,
                    check: bool = True) -> str:
     # -e: choose escape character, or "none"; default '~'
@@ -206,7 +208,12 @@ class Adb:
     # Need to escape spaces in args for adb shell
     args = map(lambda x: str(x).replace(" ", "\\ "), args)
     return self._adb_stdout(
-        "shell", *args, quiet=quiet, encoding=encoding, check=check)
+        "shell",
+        *args,
+        stdin=stdin,
+        quiet=quiet,
+        encoding=encoding,
+        check=check)
 
   def shell(self,
             *args: CmdArg,
@@ -534,12 +541,18 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
+                stdin=None,
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
     # The shell option is not supported on adb.
     del shell
     return self.adb.shell_stdout(
-        *args, env=env, quiet=quiet, encoding=encoding, check=check)
+        *args,
+        stdin=stdin,
+        env=env,
+        quiet=quiet,
+        encoding=encoding,
+        check=check)
 
   def popen(self,
             *args: CmdArg,
