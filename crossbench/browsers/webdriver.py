@@ -11,9 +11,11 @@ import os
 import time
 import traceback
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
+import urllib3
 
 import selenium.common.exceptions
 from selenium import webdriver
+from selenium.webdriver.remote.remote_connection import RemoteConnection
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
@@ -94,6 +96,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   def start(self, session: BrowserSessionRunGroup) -> None:
     assert self._driver_path
+    # set http request timeout as 15 seconds
+    RemoteConnection.set_timeout(15)
     try:
       self._driver = self._start_driver(session, self._driver_path)
     except selenium.common.exceptions.SessionNotCreatedException as e:
@@ -171,10 +175,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
-    handles = self._driver.window_handles
-    assert handles, "Browser has no more opened windows."
-    self._driver.switch_to.window(handles[-1])
     try:
+      handles = self._driver.window_handles
+      assert handles, "Browser has no more opened windows."
+      self._driver.switch_to.window(handles[-1])
       self._driver.get(url)
     except selenium.common.exceptions.WebDriverException as e:
       if msg := e.msg:
@@ -221,10 +225,14 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       raise ValueError(f"Could not execute JS: {e.msg}")
 
   def close_all_tabs(self) -> None:
-    if len(self._driver.window_handles) > 1:
-      for handle in self._driver.window_handles:
+    try:
+      all_handles = self._driver.window_handles
+      for handle in all_handles:
         self._driver.switch_to.window(handle)
         self._driver.close()
+    except (selenium.common.exceptions.InvalidSessionIdException,
+            urllib3.exceptions.MaxRetryError) as e:
+      logging.debug("%s: Got errors while closing all tabs: {%s}", self, e)
 
   def quit(self) -> None:
     assert self._is_running
