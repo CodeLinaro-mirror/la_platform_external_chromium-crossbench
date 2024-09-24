@@ -59,7 +59,7 @@ class SpeedometerProbe(
     merged = cb_metric.MetricsMerger.merge_json_list(
         repetitions_group.results[self].json
         for repetitions_group in group.repetitions_groups)
-    return self.write_group_result(group, merged, write_csv=True)
+    return self.write_group_result(group, merged)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(

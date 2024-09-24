@@ -25,7 +25,6 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
 
-
 class JetStream2Probe(
     BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
   """
@@ -73,16 +72,6 @@ class JetStream2Probe(
       total[metric] = cb_metric.geomean(values)
     return total
 
-  def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = cb_metric.MetricsMerger.merge_json_list(
-        story_group.results[self].json
-        for story_group in group.repetitions_groups)
-    return self.write_group_result(group, merged, write_csv=True)
-
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
-
   def log_run_result(self, run: Run) -> None:
     self._log_result(run.results, single_result=True)
 
@@ -123,6 +112,15 @@ class JetStream2Probe(
           cb_metric.format_metric(metric_value["average"],
                                   metric_value["stddev"]))
 
+  def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
+    merged = cb_metric.MetricsMerger.merge_json_list(
+        story_group.results[self].json
+        for story_group in group.repetitions_groups)
+    return self.write_group_result(group, merged)
+
+  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    return self.merge_browsers_json_list(group).merge(
+        self.merge_browsers_csv_list(group))
 
 class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
   URL_LOCAL: str = "http://localhost:8000/"

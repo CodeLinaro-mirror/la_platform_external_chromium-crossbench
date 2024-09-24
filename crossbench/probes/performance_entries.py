@@ -71,7 +71,7 @@ class PerformanceEntriesProbe(JsonResultProbe):
         (story_group.results[self].json
          for story_group in group.repetitions_groups),
         merge_duplicate_paths=True)
-    return self.write_group_result(group, merged, write_csv=True)
+    return self.write_group_result(group, merged)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     # TODO: recreate the CSV from the merged JSON files since we might not

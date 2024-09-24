@@ -11,8 +11,6 @@ from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Hashable, Iterable,
                     List, Optional, Sequence, Set, Tuple, Union)
 
-from ordered_set import OrderedSet
-
 from crossbench.probes import helper
 
 if TYPE_CHECKING:
@@ -135,11 +133,15 @@ class Metric:
 
 def geomean(values: Iterable[Union[int, float]]) -> float:
   product: float = 1
-  length = 0
+  length: int = 0
   for value in values:
     product *= value
     length += 1
   return product**(1 / length)
+
+
+def metric_geomean(metric: Metric) -> float:
+  return metric.geomean
 
 
 class MetricsMerger:
@@ -309,24 +311,33 @@ class CSVFormatter:
                sort: bool = True):
     self._table: List[Sequence[Any]] = []
     converted = metrics.to_json(value_fn, sort)
-    items = tuple(converted.items())
-    if sort:
-      items = sorted(items)
+    items: Sequence[Tuple[str, Json]] = tuple(converted.items())
+    items = self.format_items(items, sort=sort)
 
+    max_path_depth: int = self.extract_max_depth(items, include_parts)
+    self.append_headers(headers, max_path_depth)
+    self.append_body(items, include_parts, max_path_depth)
+
+  def extract_max_depth(self, items: Sequence[Tuple[str, Json]],
+                        include_parts: bool) -> int:
     max_path_depth = 0
     if include_parts:
       for path, _ in items:
         max_path_depth = max(max_path_depth, path.count("/"))
-
     max_path_depth += 1
+    return max_path_depth
+
+  def append_headers(self, headers, max_path_depth: int) -> None:
     header_padding = ("",) * max_path_depth
     for header in headers:
       assert isinstance(header, tuple), (
           f"Additional CSV headers must be tuples, got {type(header)}: "
           f"{header}")
       row = header[:1] + header_padding + header[1:]
-      self.table.append(row)
+      self._table.append(row)
 
+  def append_body(self, items: Sequence[Tuple[str, Json]], include_parts: bool,
+                  max_path_depth: int) -> None:
     for path, value in items:
       if include_parts:
         parts = tuple(path.split("/"))
@@ -334,7 +345,13 @@ class CSVFormatter:
         row = (path,) + parts + buffer + (value,)
       else:
         row = (path, value)
-      self.table.append(row)
+      self._table.append(row)
+
+  def format_items(self, items: Sequence[Tuple[str, Json]],
+                   sort: bool) -> Sequence[Tuple[str, Json]]:
+    if not sort:
+      return items
+    return sorted(items)
 
   @property
   def table(self) -> List[Sequence[Any]]:

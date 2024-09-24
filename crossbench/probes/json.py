@@ -10,11 +10,13 @@ import json
 import logging
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
-                    TypeVar, Union)
+                    Type, TypeVar, Union)
 
 from tabulate import tabulate
 
-from crossbench.probes import helper, metric
+from crossbench.probes import helper
+from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
+                                      metric_geomean)
 from crossbench.probes.probe import Probe, ProbeContext, ProbeMissingDataError
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
@@ -27,7 +29,6 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
-
 
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
@@ -68,7 +69,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       self,
       group: RepetitionsRunGroup,
   ) -> ProbeResult:
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     for run in group.runs:
       if self not in run.results:
         raise ProbeMissingDataError(
@@ -78,7 +79,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
           f"{source_file} from {run} is not a file or doesn't exist.")
       with source_file.open(encoding="utf-8") as f:
         merger.add(json.load(f))
-    return self.write_group_result(group, merger, write_csv=True)
+    return self.write_group_result(group, merger, csv_formatter=CSVFormatter)
 
   def merge_browsers_json_list(self, group: BrowsersRunGroup) -> ProbeResult:
     merged_json: Dict[str, Dict[str, Any]] = {}
@@ -115,28 +116,26 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def write_group_result(
       self,
       group: RunGroup,
-      merged_data: Union[Dict, List, metric.MetricsMerger],
-      write_csv: bool = False,
-      value_fn: Optional[Callable[[Any], Any]] = None) -> ProbeResult:
+      merged_data: Union[Dict, List, MetricsMerger],
+      csv_formatter: Optional[Type[CSVFormatter]] = CSVFormatter,
+      value_fn: Callable[[Any], Any] = metric_geomean) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)
     with merged_json_path.open("w", encoding="utf-8") as f:
       if isinstance(merged_data, (dict, list)):
         json.dump(merged_data, f, indent=2)
       else:
         json.dump(merged_data.to_json(sort=self.SORT_KEYS), f, indent=2)
-    if not write_csv:
+    if not csv_formatter:
       return LocalProbeResult(json=(merged_json_path,))
-    if not isinstance(merged_data, metric.MetricsMerger):
+    if not isinstance(merged_data, MetricsMerger):
       raise ValueError("write_csv is only supported for MetricsMerger, "
                        f"but found {type(merged_data)}'.")
-    if not value_fn:
-      value_fn = value_geomean
     return self.write_group_csv_result(group, merged_data, merged_json_path,
-                                       value_fn)
+                                       csv_formatter, value_fn)
 
-  def write_group_csv_result(self, group: RunGroup,
-                             merged_data: metric.MetricsMerger,
+  def write_group_csv_result(self, group: RunGroup, merged_data: MetricsMerger,
                              merged_json_path: LocalPath,
+                             csv_formatter: Type[CSVFormatter],
                              value_fn: Callable[[Any], Any]) -> ProbeResult:
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
@@ -151,7 +150,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     headers = []
     for label, info_value in group.info.items():
       headers.append((label, info_value))
-    csv_data = metric.CSVFormatter(
+    csv_data = csv_formatter(
         merged_data, value_fn, headers=headers, sort=self.SORT_KEYS).table
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       writer = csv.writer(f, delimiter="\t")
@@ -240,7 +239,3 @@ class JsonResultProbeContext(ProbeContext[JsonResultProbeT],
 
   def flatten_json_data(self, json_data: Any) -> Json:
     return self.probe.flatten_json_data(json_data)
-
-
-def value_geomean(value):
-  return value.geomean

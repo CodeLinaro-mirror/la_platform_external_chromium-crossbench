@@ -6,7 +6,8 @@ import json
 import pathlib
 import unittest
 
-from crossbench.probes import metric
+from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
+                                      format_metric, geomean)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -14,71 +15,67 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 class FormatMetricTestCase(unittest.TestCase):
 
   def test_no_stdev(self):
-    self.assertEqual(metric.format_metric(100), "100")
-    self.assertEqual(metric.format_metric(0), "0")
-    self.assertEqual(metric.format_metric(1.5), "1.5")
-    self.assertEqual(metric.format_metric(100, 0), "100")
-    self.assertEqual(metric.format_metric(0, 0), "0")
-    self.assertEqual(metric.format_metric(1.5, 0), "1.5")
+    self.assertEqual(format_metric(100), "100")
+    self.assertEqual(format_metric(0), "0")
+    self.assertEqual(format_metric(1.5), "1.5")
+    self.assertEqual(format_metric(100, 0), "100")
+    self.assertEqual(format_metric(0, 0), "0")
+    self.assertEqual(format_metric(1.5, 0), "1.5")
 
   def test_stdev(self):
-    self.assertEqual(metric.format_metric(100, 10), "100 ± 10%")
-    self.assertEqual(metric.format_metric(100, 1), "100.0 ± 1.0%")
-    self.assertEqual(metric.format_metric(100, 1.5), "100.0 ± 1.5%")
-    self.assertEqual(metric.format_metric(100, 0.1), "100.00 ± 0.10%")
-    self.assertEqual(metric.format_metric(100, 0.12), "100.00 ± 0.12%")
-    self.assertEqual(metric.format_metric(100, 0.125), "100.00 ± 0.12%")
+    self.assertEqual(format_metric(100, 10), "100 ± 10%")
+    self.assertEqual(format_metric(100, 1), "100.0 ± 1.0%")
+    self.assertEqual(format_metric(100, 1.5), "100.0 ± 1.5%")
+    self.assertEqual(format_metric(100, 0.1), "100.00 ± 0.10%")
+    self.assertEqual(format_metric(100, 0.12), "100.00 ± 0.12%")
+    self.assertEqual(format_metric(100, 0.125), "100.00 ± 0.12%")
 
   def test_round_stdev(self):
     value = 100.123456789
     percent = value / 100
+    self.assertEqual(format_metric(value, percent * 10.1234), "100 ± 10%")
+    self.assertEqual(format_metric(value, percent * 1.2345), "100.1 ± 1.2%")
+    self.assertEqual(format_metric(value, percent * 0.12345), "100.12 ± 0.12%")
     self.assertEqual(
-        metric.format_metric(value, percent * 10.1234), "100 ± 10%")
+        format_metric(value, percent * 0.012345), "100.123 ± 0.012%")
     self.assertEqual(
-        metric.format_metric(value, percent * 1.2345), "100.1 ± 1.2%")
+        format_metric(value, percent * 0.0012345), "100.1235 ± 0.0012%")
     self.assertEqual(
-        metric.format_metric(value, percent * 0.12345), "100.12 ± 0.12%")
-    self.assertEqual(
-        metric.format_metric(value, percent * 0.012345), "100.123 ± 0.012%")
-    self.assertEqual(
-        metric.format_metric(value, percent * 0.0012345), "100.1235 ± 0.0012%")
-    self.assertEqual(
-        metric.format_metric(value, percent * 0.00012345),
-        "100.12346 ± 0.00012%")
+        format_metric(value, percent * 0.00012345), "100.12346 ± 0.00012%")
 
 
 class MetricTestCase(unittest.TestCase):
 
   def test_empty(self):
-    values = metric.Metric()
+    values = Metric()
     self.assertTrue(values.is_numeric)
     self.assertEqual(len(values), 0)
 
   def test_is_numeric(self):
-    values = metric.Metric([1, 2, 3, 4])
+    values = Metric([1, 2, 3, 4])
     self.assertTrue(values.is_numeric)
     values.append(5)
     self.assertTrue(values.is_numeric)
     values.append("6")
     self.assertFalse(values.is_numeric)
 
-    values = metric.Metric([1, 2, 3, "4"])
+    values = Metric([1, 2, 3, "4"])
     self.assertFalse(values.is_numeric)
 
   def test_to_json_empty(self):
-    json_data = metric.Metric().to_json()
+    json_data = Metric().to_json()
     self.assertDictEqual(json_data, {"values": []})
 
   def test_to_json_any(self):
-    json_data = metric.Metric(["a", "b", "c"]).to_json()
+    json_data = Metric(["a", "b", "c"]).to_json()
     self.assertDictEqual(json_data, {"values": ["a", "b", "c"]})
 
   def test_to_json_repeated(self):
-    json_data = metric.Metric(["a", "a", "a"]).to_json()
+    json_data = Metric(["a", "a", "a"]).to_json()
     self.assertEqual(json_data, "a")
 
   def test_to_json_numeric_repeated(self):
-    json_data = metric.Metric([1, 1, 1]).to_json()
+    json_data = Metric([1, 1, 1]).to_json()
     self.assertListEqual(json_data["values"], [1, 1, 1])
     self.assertEqual(json_data["min"], 1)
     self.assertEqual(json_data["max"], 1)
@@ -87,7 +84,7 @@ class MetricTestCase(unittest.TestCase):
     self.assertEqual(json_data["stddevPercent"], 0)
 
   def test_to_json_numeric_average_0(self):
-    json_data = metric.Metric([-1, 0, 1]).to_json()
+    json_data = Metric([-1, 0, 1]).to_json()
     self.assertListEqual(json_data["values"], [-1, 0, 1])
     self.assertEqual(json_data["min"], -1)
     self.assertEqual(json_data["max"], 1)
@@ -99,18 +96,18 @@ class MetricTestCase(unittest.TestCase):
 class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
 
   def test_empty(self):
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     self.assertDictEqual(merger.to_json(), {})
-    self.assertListEqual(metric.CSVFormatter(merger).table, [])
+    self.assertListEqual(CSVFormatter(merger).table, [])
 
   def test_add_flat(self):
     input_data = {"a": 1, "b": 2}
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     merger.add(input_data)
     data = merger.data
     self.assertEqual(len(data), 2)
-    self.assertIsInstance(data["a"], metric.Metric)
-    self.assertIsInstance(data["b"], metric.Metric)
+    self.assertIsInstance(data["a"], Metric)
+    self.assertIsInstance(data["b"], Metric)
     self.assertListEqual(data["a"].values, [1])
     self.assertListEqual(data["b"].values, [2])
 
@@ -130,16 +127,16 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
         },
         "b": 2,
     }
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     merger.add(input_data)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
-    self.assertIsInstance(data["a/a/a"], metric.Metric)
-    self.assertIsInstance(data["a/a/b"], metric.Metric)
-    self.assertIsInstance(data["b"], metric.Metric)
+    self.assertIsInstance(data["a/a/a"], Metric)
+    self.assertIsInstance(data["a/a/b"], Metric)
+    self.assertIsInstance(data["b"], Metric)
 
   def test_repeated_numeric(self):
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     input_data = {
         "a": {
             "aa": 1,
@@ -176,13 +173,13 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     def under_join(segments):
       return "_".join(segments)
 
-    merger = metric.MetricsMerger(key_fn=under_join)
+    merger = MetricsMerger(key_fn=under_join)
     merger.add(self.BASIC_NESTED_DATA)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a_a_a", "a_a_b", "b"])
 
   def test_merge_serialized_same(self):
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
     self.assertListEqual(list(merger.data.keys()), ["a/a/a", "a/a/b", "b"])
     path_a = pathlib.Path("merged_a.json")
@@ -192,8 +189,8 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     with path_b.open("w", encoding="utf-8") as f:
       json.dump(merger.to_json(), f)
 
-    merger = metric.MetricsMerger.merge_json_list([path_a, path_b],
-                                                  merge_duplicate_paths=True)
+    merger = MetricsMerger.merge_json_list([path_a, path_b],
+                                           merge_duplicate_paths=True)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
     self.assertListEqual(data["a/a/a"].values, [1, 1])
@@ -201,13 +198,13 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertListEqual(data["b"].values, [3, 3])
 
     # All duplicate entries are ignored
-    merger = metric.MetricsMerger.merge_json_list([path_a, path_b],
-                                                  merge_duplicate_paths=False)
+    merger = MetricsMerger.merge_json_list([path_a, path_b],
+                                           merge_duplicate_paths=False)
     self.assertListEqual(list(merger.data.keys()), [])
 
   def test_merge_serialized_different_data(self):
-    merger_a = metric.MetricsMerger({"a": {"a": 1}})
-    merger_b = metric.MetricsMerger({"a": {"b": 2}})
+    merger_a = MetricsMerger({"a": {"a": 1}})
+    merger_b = MetricsMerger({"a": {"b": 2}})
     path_a = pathlib.Path("merged_a.json")
     path_b = pathlib.Path("merged_b.json")
     with path_a.open("w", encoding="utf-8") as f:
@@ -215,22 +212,22 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     with path_b.open("w", encoding="utf-8") as f:
       json.dump(merger_b.to_json(), f)
 
-    merger = metric.MetricsMerger.merge_json_list([path_a, path_b],
-                                                  merge_duplicate_paths=True)
+    merger = MetricsMerger.merge_json_list([path_a, path_b],
+                                           merge_duplicate_paths=True)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a/a", "a/b"])
     self.assertListEqual(data["a/a"].values, [1])
     self.assertListEqual(data["a/b"].values, [2])
 
-    merger = metric.MetricsMerger.merge_json_list([path_a, path_b],
-                                                  merge_duplicate_paths=False)
+    merger = MetricsMerger.merge_json_list([path_a, path_b],
+                                           merge_duplicate_paths=False)
     data = merger.data
     self.assertListEqual(list(data.keys()), ["a/a", "a/b"])
 
   def test_to_csv_no_path(self) -> None:
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
-    csv = metric.CSVFormatter(
+    csv = CSVFormatter(
         merger, lambda metric: metric.geomean, include_parts=False).table
     self.assertListEqual(csv, [
         ("a/a/a", 1.0),
@@ -239,9 +236,9 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     ])
 
   def test_to_csv_path(self) -> None:
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
-    csv = metric.CSVFormatter(
+    csv = CSVFormatter(
         merger, lambda metric: metric.geomean, include_parts=True).table
     self.assertListEqual(csv, [
         ("a/a/a", "a", "a", "a", 1.0),
@@ -250,13 +247,13 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     ])
 
   def test_to_csv_header(self) -> None:
-    merger = metric.MetricsMerger()
+    merger = MetricsMerger()
     merger.add({"a/b/c": 1, "d": 2})
     headers = [
         ("a", "custom", "header", "line"),
         (1, 2, 3, 4, 5),
     ]
-    csv = metric.CSVFormatter(
+    csv = CSVFormatter(
         merger,
         lambda metric: metric.geomean,
         headers=headers,
