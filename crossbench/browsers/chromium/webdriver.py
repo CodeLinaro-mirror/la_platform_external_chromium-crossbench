@@ -285,11 +285,11 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def _restore_chrome_flags(self) -> None:
     atexit.unregister(self._restore_chrome_flags)
-    if self._previous_command_line_contents is None:
-      return
     current_flags = self._read_device_flags()
     if current_flags != self._previous_command_line_contents:
       logging.warning("%s: flags file changed during run", self)
+      logging.debug("before: %s", self._previous_command_line_contents)
+      logging.debug("current: %s", current_flags)
     if self._previous_command_line_contents is None:
       logging.debug("%s: deleting chrome flags file: %s", self,
                     self._chrome_command_line_path)
@@ -299,7 +299,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
                     self._chrome_command_line_path)
       self.platform.set_file_contents(self._chrome_command_line_path,
                                       self._previous_command_line_contents)
-      self._previous_command_line_contents = None
+    self._previous_command_line_contents = None
 
   def _create_options(self, session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromiumOptions:
