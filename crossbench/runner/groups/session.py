@@ -138,6 +138,10 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._get_session_dir()
 
   @property
+  def browser_dir(self) -> LocalPath:
+    return self.root_dir / self.browser.unique_name
+
+  @property
   def durations(self) -> Durations:
     return self._durations
 

@@ -48,11 +48,6 @@ class WprReplayNetwork(ReplayNetwork):
     self._server: Optional[WprReplayServer] = None
     self._persist_server = persist_server
 
-  def __del__(self):
-    if self._persist_server:
-      logging.debug("Stopping WPR server")
-      self._server.stop()
-
   def extra_flags(self, browser: Browser) -> Flags:
     assert self.is_running, "Extra network flags are not valid"
     assert self._server
@@ -82,7 +77,7 @@ class WprReplayNetwork(ReplayNetwork):
         yield self
 
   def _ensure_server_started(self, session: BrowserSessionRunGroup):
-    log_dir = session.root_dir if self._persist_server else session.out_dir
+    log_dir = session.browser_dir if self._persist_server else session.out_dir
     if not self._server or not self._persist_server:
       self._server = WprReplayServer(
           self.archive_path,

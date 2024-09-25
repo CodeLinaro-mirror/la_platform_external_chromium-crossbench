@@ -269,8 +269,10 @@ class WprBase(abc.ABC):
     try:
       with self._open_wpr_cmd_url("command-exit"):
         pass
-    except IOError as e:
-      logging.debug("WPR: clean shut down failed: %s", e)
+    except IOError:
+      # The above request always fails because WPR closes the connection
+      # without response.
+      pass
 
 
 class WprRecorder(WprBase):
