@@ -453,10 +453,10 @@ class Runner:
           "Use Runner.attach_probe()")
 
   def has_any_live_network(self) -> bool:
-    for browser in self.browsers:
-      if browser.network.is_live:
-        return True
-    return False
+    return any(browser.network.is_live for browser in self.browsers)
+
+  def has_all_live_network(self) -> bool:
+    return all(browser.network.is_live for browser in self.browsers)
 
   def get_runs(self) -> Iterable[Run]:
     index = 0

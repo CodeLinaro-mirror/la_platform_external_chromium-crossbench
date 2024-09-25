@@ -71,9 +71,6 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
             **kwargs)
     ]
 
-  _substories: Sequence[str]
-  _url: str
-
   def __init__(self,
                *args,
                substories: Sequence[str] = (),
@@ -87,16 +84,14 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     self._verify_url(self.URL_OFFICIAL, "URL_OFFICIAL")
     self._verify_url(self.URL_LOCAL, "URL_LOCAL")
     assert substories, f"No substories provided for {cls}"
-    self._substories = substories
+    self._substories: Sequence[str] = substories
     self._verify_substories()
     kwargs["name"] = self._get_unique_name()
     kwargs["duration"] = duration or self._get_initial_duration()
     super().__init__(*args, **kwargs)
-    if not url:
-      self._url = self.URL
-    else:
-      self._url = url
-    assert self._url, f"Invalid URL for '{self.NAME}' in {type(self)}"
+    # If the _custom_url is empty, we generate a matching URL when the
+    # local file server is used.
+    self._custom_url: Optional[str] = url
 
   def _get_unique_name(self) -> str:
     substories_set = set(self._substories)
@@ -117,6 +112,17 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     # Add some slack due to different story lengths
     story_factor = 0.5 + 1.1 * len(self._substories)
     return startup_delay + (story_factor * self.substory_duration)
+
+  def get_run_url(self, run: Run) -> str:
+    if self._custom_url:
+      # TODO: check that we have a live network / url host matches network host
+      return self._custom_url
+    network = run.browser_session.network
+    # Create a matching URL for a local file server.
+    if http_port := network.http_port:
+      return f"http://{network.host}:{http_port}"
+    # Return default URL in case of live network.
+    return self.url
 
   @property
   def substories(self) -> List[str]:
@@ -150,7 +156,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
 
   @property
   def url(self) -> str:
-    return self._url
+    return self._custom_url or self.URL
 
   def _verify_url(self, url: str, property_name: str) -> None:
     cls = self.__class__

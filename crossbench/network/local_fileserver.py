@@ -94,17 +94,15 @@ class LocalFileNetwork(Network):
     return self._path
 
   def _parse_url(self, url: Optional[str]) -> Tuple[str, int]:
-    host = DEFAULT_HOST
-    port = DEFAULT_PORT
+    host: str = DEFAULT_HOST
+    port: int = DEFAULT_PORT
     if not url:
-      logging.info("Using default host=%s, port=%s", host, port)
       return host, port
     parsed_url = parse_url(url)
     if parsed_url.hostname:
       host = parsed_url.hostname
-    if parsed_url.port:
+    if parsed_url.port is not None:
       port = parsed_url.port
-    logging.info("Using custom host=%s, port=%s", host, port)
     return host, port
 
   def _try_parse_headers(self) -> immutabledict[str, str]:
@@ -146,6 +144,8 @@ class LocalFileNetwork(Network):
     server = http.server.ThreadingHTTPServer((self._host, self._port),
                                              request_handler_cls)
     with self._server_thread(server):
+      logging.info("%s custom host=%s, port=%s",
+                   type(self).__name__, self.host, self.http_port)
       yield
 
   @contextlib.contextmanager
@@ -154,6 +154,7 @@ class LocalFileNetwork(Network):
       server_thread = threading.Thread(target=server.serve_forever)
       server_thread.daemon = True
       server_thread.start()
+      self._port = server.server_port
       try:
         yield
       finally:

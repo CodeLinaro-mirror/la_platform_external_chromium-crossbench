@@ -23,6 +23,10 @@ from crossbench.plt.base import Platform
 if TYPE_CHECKING:
   from crossbench.network.traffic_shaping.base import TrafficShaper
 
+# We're using 'type' here a lot, let's skip the warnings from pylint.
+# pylint: disable=redefined-builtin
+
+
 @enum.unique
 class NetworkType(ConfigEnum):
   LIVE = ("live", "Live network.")
@@ -137,8 +141,8 @@ class NetworkConfig(ConfigObject):
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
 
   @classmethod
-  def default(cls) -> NetworkConfig:
-    return NetworkConfig()
+  def default(cls, type: Optional[NetworkType] = None) -> NetworkConfig:
+    return NetworkConfig(type=type or NetworkType.LIVE)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[NetworkConfig]:
@@ -173,24 +177,32 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def parse_local(cls, value: Any) -> NetworkConfig:
-    local_server_dir: pth.LocalPath = cli_helper.parse_dir_path(value)
-    config: NetworkConfig = cls.parse_path(local_server_dir)
+    config = cls.parse(value, type=NetworkType.LOCAL)
     if config.type != NetworkType.LOCAL:
       raise argparse.ArgumentTypeError(
           f"Expected local file server, but got {config.type}. ")
     return config
 
   @classmethod
-  def parse_str(cls, value: str) -> NetworkConfig:
+  def parse_str(  # pylint: disable=arguments-differ
+      cls,
+      value: str,
+      type: Optional[NetworkType] = None) -> NetworkConfig:
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
-      return cls.default()
+      return cls.default(type)
     if value[0] == "{":
-      return cls.parse_inline_hjson(value)
+      return cls.parse_inline_hjson(value, type=type)
     # TODO(346197734): Move to load_url once available.
     if value.startswith(GS_PREFIX):
+      if type and type is not NetworkType.WPR:
+        raise argparse.ArgumentTypeError(
+            f"Network type mismatch, expected WPR, got {type}")
       return cls.parse_wpr_archive_url(value)
+    if type and type is not NetworkType.LIVE:
+      raise argparse.ArgumentTypeError(
+          f"Network type mismatch expected LIVE, got {type}")
     return cls.parse_live(value)
 
   @classmethod
@@ -227,8 +239,8 @@ class NetworkConfig(ConfigObject):
     return NetworkConfig(type=NetworkType.WPR, url=url)
 
   @classmethod
-  def parse_dict(cls, config: Dict[str, Any]) -> NetworkConfig:
-    return cls.config_parser().parse(config)
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> NetworkConfig:
+    return cls.config_parser().parse(config, **kwargs)
 
   def validate(self) -> None:
     if not self.type:
@@ -258,7 +270,7 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError(
           "wpr_go_bin can only be used for the WPR replay network")
     if self.persist_server and self.type is not NetworkType.WPR:
-      # TODO: support fileserver as well
+      # TODO: support file server as well
       raise argparse.ArgumentTypeError(
           "persist_server can only be used for the WPR replay network")
 

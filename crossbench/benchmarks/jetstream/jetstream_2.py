@@ -215,7 +215,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
-      actions.show_url(self._url)
+      actions.show_url(self.get_run_url(run))
       if self._substories != self.SUBSTORIES:
         actions.wait_js_condition(("return JetStream && JetStream.benchmarks "
                                    "&& JetStream.benchmarks.length > 0;"), 0.1,

@@ -485,6 +485,9 @@ class PressBenchmark(SubStoryBenchmark):
       return
     first_story = cast(PressBenchmarkStory, self.stories[0])
     url = first_story.url
+    if not runner.has_all_live_network() and not url:
+      # For non-live networks we create a matching URL
+      return
     if not url:
       raise ValueError("Invalid empty url")
     if all(runner.env.validate_url(url, p) for p in runner.platforms):

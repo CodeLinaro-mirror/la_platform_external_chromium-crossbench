@@ -182,6 +182,11 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     config = NetworkConfig.parse({})
     self.assertEqual(config, NetworkConfig.default())
 
+  def test_parse_local_dict_default(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      # Missing path
+      NetworkConfig.parse_local({})
+
   def test_parse_dict_speed(self):
     config_dict = {"speed": "4G"}
     config: NetworkConfig = NetworkConfig.parse(dict(config_dict))
@@ -223,6 +228,29 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertTrue(config_dict)
     config_1 = NetworkConfig.parse(json.dumps(config_dict))
     self.assertEqual(config, config_1)
+    local_config_dict = dict(config_dict)
+    del local_config_dict["type"]
+    config_local = NetworkConfig.parse_local(dict(local_config_dict))
+    self.assertEqual(config, config_local)
+    config_local = NetworkConfig.parse_local(json.dumps(local_config_dict))
+    self.assertEqual(config, config_local)
+
+  def test_parse_local_file(self):
+    benchmark_folder = pth.LocalPath("third_party/speedometer/v3.0")
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse(benchmark_folder)
+    self.assertIn(str(benchmark_folder), str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse_local(benchmark_folder)
+    self.assertIn(str(benchmark_folder), str(cm.exception))
+    self.fs.create_file(benchmark_folder / "index.html", st_size=100)
+    config = NetworkConfig.parse(str(benchmark_folder))
+    self.assertEqual(config.type, NetworkType.LOCAL)
+    self.assertEqual(config.path, benchmark_folder)
+    self.assertIsNone(config.url)
+    self.assertEqual(config, NetworkConfig.parse(benchmark_folder))
+    self.assertEqual(config, NetworkConfig.parse_local(str(benchmark_folder)))
+    self.assertEqual(config, NetworkConfig.parse_local(benchmark_folder))
 
 
 if __name__ == "__main__":
