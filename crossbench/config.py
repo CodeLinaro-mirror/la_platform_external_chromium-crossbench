@@ -11,7 +11,6 @@ import collections.abc
 import enum
 import inspect
 import logging
-import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable,
                     List, Optional, Set, Tuple, Type, TypeVar, Union, cast)
@@ -607,8 +606,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       if extra_key in config_data and extra_data is not config_data[extra_key]:
         raise ValueError(
             f"Extra config data {repr(extra_key)}={repr(extra_data)} "
-            f"was already present in config_data[..]={repr(config_data[extra_key])}"
-        )
+            "was already present in "
+            f"config_data[..]={repr(config_data[extra_key])}")
       config_data[extra_key] = extra_data
     return config_data
 
@@ -620,7 +619,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
                                                                 Any]) -> None:
     logging.debug("Got unused properties: %s", unused_config_data.keys())
     if not self._allow_unused_config_data:
-      unused_keys = ', '.join(map(repr, unused_config_data.keys()))
+      unused_keys = ", ".join(map(repr, unused_config_data.keys()))
       raise argparse.ArgumentTypeError(
           f"Config for {self._cls.__name__} contains unused properties: "
           f"{unused_keys}")

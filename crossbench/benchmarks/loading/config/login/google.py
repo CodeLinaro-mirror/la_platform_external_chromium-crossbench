@@ -8,6 +8,4 @@ from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 
 
 class GoogleLogin(LoginBlock):
-  """
-  Google-specific login steps.
-  """
+  """Google-specific login steps."""

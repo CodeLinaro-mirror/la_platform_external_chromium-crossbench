@@ -47,7 +47,8 @@ class ChromeFlags(Flags):
       return self._features.disabled_str()
     if key == ChromeBlinkFeatures.ENABLE_FLAG and self._blink_features.enabled:
       return self._blink_features.enabled_str()
-    if key == ChromeBlinkFeatures.DISABLE_FLAG and self._blink_features.disabled:
+    if (key == ChromeBlinkFeatures.DISABLE_FLAG and
+        self._blink_features.disabled):
       return self._blink_features.disabled_str()
     return super().__getitem__(key)
 

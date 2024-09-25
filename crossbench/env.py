@@ -212,8 +212,7 @@ class HostEnvironment:
 
   def _add_min_delay(self, seconds: float) -> None:
     end_time = dt.datetime.now() + dt.timedelta(seconds=seconds)
-    if end_time > self._wait_until:
-      self._wait_until = end_time
+    self._wait_until = max(self._wait_until, end_time)
 
   def _wait_min_time(self) -> None:
     delta = self._wait_until - dt.datetime.now()

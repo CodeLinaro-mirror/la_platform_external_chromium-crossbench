@@ -64,17 +64,17 @@ class LoadingPageFilter(StoryFilter[Page]):
     tab_group.add_argument(
         "--multiple-tab",
         dest="tabs",
-        nargs='?',
+        nargs="?",
         type=TabController.parse,
         const=TabController.multiple(),
-        help="Open given urls in separate tabs (optional value for number of tabs for each url)."
-    )
+        help="Open given urls in separate tabs "
+        "(optional value for number of tabs for each url).")
     tab_group.add_argument(
         "--infinite-tab",
         dest="tabs",
         const=TabController.forever(),
         action="store_const",
-        help="Open given urls in seperate tabs infinitely.")
+        help="Open given urls in separate tabs infinitely.")
 
     playback_group = parser.add_mutually_exclusive_group()
     playback_group.add_argument(
@@ -131,9 +131,9 @@ class LoadingPageFilter(StoryFilter[Page]):
         "--devtools-recorder",
         dest="pages_config",
         type=DevToolsRecorderPagesConfig.parse,
-        help=("Run a single story from a serialized DevTools recorder session. "
-              "See https://developer.chrome.com/docs/devtools/recorder/ "
-              "for more details."))
+        help="Run a single story from a serialized DevTools recorder session. "
+        "See https://developer.chrome.com/docs/devtools/recorder/ "
+        "for more details.")
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:

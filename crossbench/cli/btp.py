@@ -5,8 +5,7 @@
 
 import argparse
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type, Union)
+from typing import Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
@@ -23,7 +22,8 @@ from crossbench.probes.trace_processor.trace_processor import (
 
 ROOT_DIR = pth.LocalPath(__file__).parents[2]
 DEFAULT_RESULT_DIR = ROOT_DIR / "results" / "latest"
-DEFAULT_CONFIG_PATH = ROOT_DIR / "config" / "benchmark" / "loading" / "probe_config.hjson"
+DEFAULT_CONFIG_PATH = (
+    ROOT_DIR / "config" / "benchmark" / "loading" / "probe_config.hjson")
 
 class MergedTraceUriResolver(TraceUriResolver):
   def __init__(self, result_path: pth.LocalPath):
@@ -57,17 +57,17 @@ class BTPUtil:
         "--result-dir",
         type=cli_helper.parse_existing_path,
         default=DEFAULT_RESULT_DIR,
-        help=("Path to the benchmark result directory."))
+        help="Path to the benchmark result directory.")
     self.parser.add_argument(
         "--probe-config",
         type=cli_helper.parse_existing_file_path,
         default=DEFAULT_CONFIG_PATH,
-        help=("Path to the trace_processor probe config."))
+        help="Path to the trace_processor probe config.")
     self.parser.add_argument(
         "--output-dir",
         type=pth.LocalPath,
         default=ROOT_DIR,
-        help=("Path to the directory where output files will be placed."))
+        help="Path to the directory where output files will be placed.")
     self.parser.add_argument(
         "--extra-query",
         type=str,

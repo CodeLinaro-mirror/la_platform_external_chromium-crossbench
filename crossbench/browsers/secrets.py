@@ -77,7 +77,7 @@ class GoogleSecret(Secret):
         f"""
         return document.querySelector("[aria-label='{aria_label}']") != null
           && document.querySelector("[id={button_name}]") != null;
-        """, .2, 10)
+        """, 0.2, 10)
     action.js(f"""
         var inputField = document.querySelector("[aria-label='{aria_label}']");
         inputField.value = '{input_val}';
@@ -93,8 +93,8 @@ class GoogleSecret(Secret):
       self._submit_login_field(action, "Enter your password", self._password,
                                "passwordNext")
       action.wait_js_condition(
-          """return document.URL.startsWith('https://myaccount.google.com'); """,
-          .2, 10)
+          "return document.URL.startsWith('https://myaccount.google.com'); ",
+          0.2, 10)
 
 
 SECRETS: Dict[SecretType, Type] = {

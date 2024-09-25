@@ -6,6 +6,12 @@ from __future__ import annotations
 
 import abc
 import argparse
+import dataclasses
+import functools
+import logging
+import re
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.cli_helper import (parse_dict, parse_non_empty_sequence,
@@ -14,12 +20,6 @@ from crossbench.env import HostEnvironment
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
-from dataclasses import dataclass
-from functools import reduce
-import logging
-import re
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional,
-                    Sequence, Union)
 
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
@@ -146,13 +146,13 @@ class ChromeHistogramsProbe(JsonResultProbe):
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
 
   def to_json(self, actions: Actions) -> Json:
-    raise Exception("should not be called, data comes from context")
+    raise NotImplementedError("should not be called, data comes from context")
 
   def get_context(self, run: Run) -> ChromeHistogramsProbeContext:
     return ChromeHistogramsProbeContext(self, run)
 
 
-@dataclass
+@dataclasses.dataclass
 class ChromeHistogramBucket:
   min: int
   max: int
@@ -240,8 +240,8 @@ class ChromeHistogramSample:
     self._bucket_maxes = bucket_maxes or {}
     bucket_sum = sum(self._bucket_counts.values())
     if count != bucket_sum:
-      raise Exception(f"Histogram {name} has {count} total samples, "
-                      f"but buckets add to {bucket_sum}")
+      raise ValueError(f"Histogram {name} has {count} total samples, "
+                       f"but buckets add to {bucket_sum}")
 
   def bucket_max(self, bucket_min: int) -> Optional[int]:
     return self._bucket_maxes.get(bucket_min)
@@ -262,11 +262,11 @@ class ChromeHistogramSample:
   def diff_percentile(self, baseline: ChromeHistogramSample,
                       percentile: int) -> float:
     if percentile < 0 or percentile > 100:
-      raise Exception(f"{percentile} is not a valid percentile")
+      raise ValueError(f"{percentile} is not a valid percentile")
     buckets = self.diff_buckets(baseline)
-    count = reduce(lambda s, b: b.count + s, buckets, 0)
+    count = functools.reduce(lambda s, b: b.count + s, buckets, 0)
     if count == 0:
-      raise Exception(
+      raise ValueError(
           f"{self._name} can not compute percentile without any samples")
     target = count * percentile / 100
     for bucket in buckets:
@@ -278,14 +278,14 @@ class ChromeHistogramSample:
         t = target / (bucket.count + 1)
         return bucket.min * (1 - t) + bucket.max * t
       target -= bucket.count
-    raise Exception("overflowed histogram buckets looking for percentile")
+    raise ValueError("overflowed histogram buckets looking for percentile")
 
   def diff_mean(self, baseline: ChromeHistogramSample) -> float:
     count = self._count - baseline._count
     if count <= 0:
-      raise Exception(f"{self._name} can not compute mean without any samples")
+      raise ValueError(f"{self._name} can not compute mean without any samples")
     if self._mean is None or baseline._mean is None:
-      raise Exception(
+      raise ValueError(
           f"{self._name} has no mean reported, is it an enum histogram?")
 
     return (self._mean * self._count - baseline._mean * baseline._count) / count
@@ -346,7 +346,8 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
     self._delta = self.dump_histograms("stop")
     super().stop()
 
-  def to_json(self, _actions: Actions) -> Json:
+  def to_json(self, actions: Actions) -> Json:
+    del actions
     assert self._baseline, "Did not extract start histograms"
     assert self._delta, "Did not extract end histograms"
     json = {}

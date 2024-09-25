@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import datetime as dt
 import re
 from typing import List, Optional
@@ -15,9 +14,9 @@ from crossbench.benchmarks.loading.action_runner.base import \
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.display_rectangle import \
-  DisplayRectangle
-from crossbench.benchmarks.loading.action_runner.element_not_found_error \
-  import ElementNotFoundError
+    DisplayRectangle
+from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
@@ -100,22 +99,18 @@ class AndroidInputActionRunner(BasicActionRunner):
       r" (?P<bottom>\d+)\)")
 
   _GET_JS_VALUES = """
-    const found_element = arguments[0] && element;
-
-    if(found_element && arguments[1]) element.scrollIntoView();
-
-    rect = found_element ? element.getBoundingClientRect() : new DOMRect();
-
-    return [
-      found_element, 
-      window.innerHeight, 
-      window.innerWidth, 
-      rect.left, 
-      rect.top, 
-      rect.width, 
-      rect.height
-    ];
-"""
+const found_element = arguments[0] && element;
+if(found_element && arguments[1]) element.scrollIntoView();
+rect = found_element ? element.getBoundingClientRect() : new DOMRect();
+return [
+  found_element,
+  window.innerHeight,
+  window.innerWidth,
+  rect.left,
+  rect.top,
+  rect.width,
+  rect.height
+];"""
 
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:

@@ -276,20 +276,6 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     except SubprocessError:
       return None
 
-  def set_file_contents(self,
-                        file: pth.RemotePathLike,
-                        data: str,
-                        encoding: str = "utf-8") -> None:
-    if self.is_local:
-      super().set_file_contents(file, data, encoding)
-      return
-
-    with self.NamedTemporaryFile("push.data") as tmp_file:
-      tmp_file = self.host_platform.local_path(tmp_file)
-      with tmp_file.open("w", encoding=encoding) as f:
-        f.write(data)
-      self.push(tmp_file, self.path(file))
-
   @property
   def environ(self) -> Environ:
     if self.is_local:

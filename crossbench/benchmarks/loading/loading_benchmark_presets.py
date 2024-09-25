@@ -87,8 +87,8 @@ class PresetPageLoadBenchmarkProbe(BenchmarkProbeMixin, Probe):
     df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1)) * 60
     df.index.rename("browser", inplace=True)
     return df.reindex(
-        columns=(['TOTAL_SCORE'] +
-                 sorted(list(c for c in df.columns if c != 'TOTAL_SCORE'))))
+        columns=(["TOTAL_SCORE"] +
+                 sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
 
 
 class PresetPageLoadBenchmarkProbeContext(

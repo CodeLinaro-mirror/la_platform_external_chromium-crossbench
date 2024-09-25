@@ -93,7 +93,7 @@ class V8RCSProbe(ChromiumProbe):
         logging.info("Probe %s: skipping non-existing results file: %s",
                      self.NAME, story_group_file)
         continue
-      dest_file = (result_dir / f"{story_group.browser.unique_name}.rcs.txt")
+      dest_file = result_dir / f"{story_group.browser.unique_name}.rcs.txt"
       self.runner_platform.symlink_or_copy(story_group_file, dest_file)
       files.append(dest_file)
     return LocalProbeResult(file=files)

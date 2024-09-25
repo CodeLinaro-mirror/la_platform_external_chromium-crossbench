@@ -6,24 +6,24 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-import os
-import tempfile
-from typing import TYPE_CHECKING
 import shlex
 import subprocess
+from typing import TYPE_CHECKING
 
-from crossbench.cli_helper import parse_positive_zero_int
 import crossbench.path as pth
 from crossbench.benchmarks.loading import action as i_action
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.display_rectangle import \
-  DisplayRectangle
-from crossbench.benchmarks.loading.action_runner.element_not_found_error \
-  import ElementNotFoundError
+    DisplayRectangle
+from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
+from crossbench.cli_helper import parse_positive_zero_int
+
 if TYPE_CHECKING:
   from typing import Optional, Type
+
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -125,7 +125,7 @@ class TouchDevice:
   def parse_str(cls: Type[TouchDevice], config: str) -> TouchDevice:
     # The first line of output is always 'Performing autotest_lib import'
     # Followed by the output we care about.
-    touch_device_values = config.splitlines()[1].split(' ')
+    touch_device_values = config.splitlines()[1].split(" ")
 
     return TouchDevice(touch_device_values[0],
                        parse_positive_zero_int(touch_device_values[1]),

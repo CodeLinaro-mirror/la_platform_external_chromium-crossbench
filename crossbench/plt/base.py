@@ -538,16 +538,6 @@ class Platform(abc.ABC):
     os.close(fd)
     return self.path(name)
 
-  @contextlib.contextmanager
-  def NamedTemporaryFile(self,
-                         prefix: Optional[str] = None,
-                         dir: Optional[pth.RemotePathLike] = None):
-    tmp_file = self.mktemp(prefix, dir)
-    try:
-      yield tmp_file
-    finally:
-      self.rm(tmp_file, missing_ok=True)
-
   def exists(self, path: pth.RemotePathLike) -> bool:
     return self.local_path(path).exists()
 

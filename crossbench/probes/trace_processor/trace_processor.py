@@ -37,7 +37,7 @@ _MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
 
 
 class CrossbenchTraceUriResolver(TraceUriResolver):
-  PREFIX = 'crossbench'
+  PREFIX = "crossbench"
 
   def __init__(self, traces: Union[Iterable[Run], TraceProcessorProbeContext]):
 
@@ -64,7 +64,7 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
               metadata=metadata(run)) for run in traces
       ]
 
-  def resolve(self) -> List['TraceUriResolver.Result']:
+  def resolve(self) -> List["TraceUriResolver.Result"]:
     return self._resolved
 
 class TraceProcessorProbe(Probe):
@@ -168,7 +168,7 @@ class TraceProcessorProbe(Probe):
     Runs all metrics and queries on an empty trace. This will ensure that they
     are correctly defined in trace processor.
     """
-    with TraceProcessor(trace='/dev/null', config=self.tp_config) as tp:
+    with TraceProcessor(trace="/dev/null", config=self.tp_config) as tp:
       for metric in self.metrics:
         tp.metric([metric])
       for query in self.queries:
