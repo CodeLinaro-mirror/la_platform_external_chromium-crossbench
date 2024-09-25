@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import Tuple
 
 from crossbench.benchmarks.motionmark.motionmark_1 import (MotionMark1Benchmark,
@@ -20,6 +21,7 @@ class MotionMark13Story(MotionMark1Story):
   NAME = "motionmark_1.3"
   URL: str = "https://chromium-workloads.web.app/motionmark/v1.3/"
   URL_OFFICIAL: str = "https://browserbench.org/MotionMark1.3/"
+  READY_TIMEOUT: dt.timedelta = dt.timedelta(seconds=12)
   DEVELOPER_READY_JS: str = (
       "return !(document.querySelector('#frame-rate-detection span'));")
   READY_JS: str = (

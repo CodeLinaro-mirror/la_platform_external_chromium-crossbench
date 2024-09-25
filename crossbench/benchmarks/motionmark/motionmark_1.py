@@ -205,10 +205,11 @@ class MotionMark1Story(PressBenchmarkStory):
       )
   }
   SUBSTORIES = tuple(itertools.chain.from_iterable(ALL_STORIES.values()))
+  READY_TIMEOUT: dt.timedelta = dt.timedelta(seconds=10)
   DEVELOPER_READY_JS: str = (
       "return document.querySelector('tree > li') !== undefined;")
   # The default page is ready immediately.
-  READY_JS = "return true;"
+  READY_JS: str = "return true;"
 
   @classmethod
   def default_story_names(cls) -> Tuple[str, ...]:
@@ -238,14 +239,15 @@ class MotionMark1Story(PressBenchmarkStory):
       if use_developer_url:
         self._setup_filter_stories(actions)
 
-  def _setup_wait_until_ready(self, actions, use_developer_url) -> None:
+  def _setup_wait_until_ready(self, actions: Actions,
+                              use_developer_url: bool) -> None:
     if use_developer_url:
       wait_js = self.DEVELOPER_READY_JS
     else:
       wait_js = self.READY_JS
-    actions.wait_js_condition(wait_js, 0.2, 10)
+    actions.wait_js_condition(wait_js, 0.2, self.READY_TIMEOUT)
 
-  def _setup_filter_stories(self, actions) -> None:
+  def _setup_filter_stories(self, actions: Actions) -> None:
     num_enabled = actions.js(
         """
       let benchmarks = arguments[0];
