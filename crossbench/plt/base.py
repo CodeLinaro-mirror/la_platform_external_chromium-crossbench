@@ -388,10 +388,21 @@ class Platform(abc.ABC):
     assert self.is_local, "Unsupported operation on remote platform"
     return self.path(tempfile.gettempdir())
 
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> None:
+  def port_forward(self, local_port: int, remote_port: int) -> int:
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
     assert self.is_local, "Unsupported operation on remote platform"
+    return local_port
+
+  def stop_port_forward(self, local_port: int) -> None:
+    del local_port
+    assert self.is_local, "Unsupported operation on remote platform"
+
+  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
+    if remote_port != local_port:
+      raise ValueError("Cannot forward a remote port on a local platform.")
+    assert self.is_local, "Unsupported operation on remote platform"
+    return remote_port
 
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     del remote_port
@@ -537,6 +548,16 @@ class Platform(abc.ABC):
     fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
     os.close(fd)
     return self.path(name)
+
+  @contextlib.contextmanager
+  def TemporaryDirectory(self,
+                         prefix: Optional[str] = None,
+                         dir: Optional[pth.RemotePathLike] = None):
+    tmp_dir = self.mkdtemp(prefix, dir)
+    try:
+      yield tmp_dir
+    finally:
+      self.rm(tmp_dir, dir=True, missing_ok=True)
 
   def exists(self, path: pth.RemotePathLike) -> bool:
     return self.local_path(path).exists()

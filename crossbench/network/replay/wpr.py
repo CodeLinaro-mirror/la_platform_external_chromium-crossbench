@@ -4,26 +4,44 @@
 
 from __future__ import annotations
 
+import abc
 import contextlib
+import hashlib
 import logging
-from typing import TYPE_CHECKING, Iterator, Optional, Union
+from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from crossbench import cli_helper
 from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
-from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
+from crossbench.network.replay.base import GS_PREFIX, WPR_CACHE, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.plt import PLATFORM, Platform
+from crossbench.plt.arch import MachineArch
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import TrafficShaper
-  from crossbench.path import LocalPath
+  from crossbench.path import LocalPath, RemotePath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 # use value for pylint
 assert GS_PREFIX
+
+WPR_PREBUILT_ARCH_MAP = {
+  MachineArch.ARM_64: {
+    "url": "gs://chromium-telemetry/binary_dependencies/wpr_go_129a66a1378dfcbb815596f66ca680728f77da36",
+    "file_hash": "129a66a1378dfcbb815596f66ca680728f77da36",
+  },
+  MachineArch.ARM_32: {
+    "url": "gs://chromium-telemetry/binary_dependencies/wpr_go_92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
+    "file_hash": "92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
+  },
+  MachineArch.X64: {
+    "url": "gs://chromium-telemetry/binary_dependencies/wpr_go_6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
+    "file_hash": "6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
+  },
+}
 
 
 class WprReplayNetwork(ReplayNetwork):
@@ -35,18 +53,10 @@ class WprReplayNetwork(ReplayNetwork):
                browser_platform: Platform = PLATFORM,
                persist_server: bool = False):
     super().__init__(archive, traffic_shaper, browser_platform)
-    if not wpr_go_bin:
-      if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
-        wpr_go_bin = self.runner_platform.local_path(local_wpr_go)
-    if not wpr_go_bin:
-      raise RuntimeError(
-          f"Could not find wpr.go binary on {self.runner_platform}")
-    if wpr_go_bin.suffix == ".go" and not self.runner_platform.which("go"):
-      raise ValueError(f"'go' binary not found on {self.runner_platform}")
-    self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
-        cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
     self._server: Optional[WprReplayServer] = None
+    self._tmp_dir: Optional[RemotePath] = None
     self._persist_server = persist_server
+    self._ensure_wpr_go(wpr_go_bin)
 
   def extra_flags(self, browser: Browser) -> Flags:
     assert self.is_running, "Extra network flags are not valid"
@@ -70,20 +80,23 @@ class WprReplayNetwork(ReplayNetwork):
 
     return extra_flags
 
+  @abc.abstractmethod
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
+    pass
+
+  @abc.abstractmethod
+  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+    pass
+
   @contextlib.contextmanager
   def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
     with super().open(session):
-      with self._forward_ports(session):
-        yield self
+      yield self
 
   def _ensure_server_started(self, session: BrowserSessionRunGroup):
     log_dir = session.browser_dir if self._persist_server else session.out_dir
     if not self._server or not self._persist_server:
-      self._server = WprReplayServer(
-          self.archive_path,
-          self._wpr_go_bin,
-          log_path=log_dir / "network.wpr.log",
-          platform=self.runner_platform)
+      self._server = self._create_server(log_dir)
       logging.debug("Starting WPR server")
       self._server.start()
     else:
@@ -99,6 +112,45 @@ class WprReplayNetwork(ReplayNetwork):
     finally:
       if not self._persist_server:
         self._server.stop()
+
+  @property
+  def http_port(self) -> int:
+    assert self._server, "WPR is not running"
+    return self._server.http_port
+
+  @property
+  def https_port(self) -> int:
+    assert self._server, "WPR is not running"
+    return self._server.https_port
+
+  @property
+  def host(self) -> str:
+    assert self._server, "WPR is not running"
+    return self._server.host
+
+  def __str__(self) -> str:
+    return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"
+
+
+class LocalWprReplayNetwork(WprReplayNetwork):
+
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
+    if not wpr_go_bin:
+      if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
+        wpr_go_bin = self.runner_platform.local_path(local_wpr_go)
+    if not wpr_go_bin:
+      raise RuntimeError(
+          f"Could not find wpr.go binary on {self.runner_platform}")
+    if wpr_go_bin.suffix == ".go" and not self.runner_platform.which("go"):
+      raise ValueError(f"'go' binary not found on {self.runner_platform}")
+    self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
+        cli_helper.parse_binary_path(wpr_go_bin, "wpr.go source"))
+
+  @contextlib.contextmanager
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+    with super().open(session):
+      with self._forward_ports(session):
+        yield self
 
   @contextlib.contextmanager
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
@@ -118,20 +170,82 @@ class WprReplayNetwork(ReplayNetwork):
     browser_platform.stop_reverse_port_forward(http_port)
     browser_platform.stop_reverse_port_forward(https_port)
 
-  @property
-  def http_port(self) -> int:
-    assert self._server, "WPR is not running"
-    return self._server.http_port
+  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+    return WprReplayServer(
+        self.archive_path,
+        self._wpr_go_bin,
+        log_path=log_dir / "network.wpr.log",
+        platform=self.runner_platform)
 
-  @property
-  def https_port(self) -> int:
-    assert self._server, "WPR is not running"
-    return self._server.https_port
 
-  @property
-  def host(self) -> str:
-    assert self._server, "WPR is not running"
-    return self._server.host
+class RemoteWprReplayNetwork(WprReplayNetwork):
 
-  def __str__(self) -> str:
-    return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
+    assert self.browser_platform.is_android
+    if wpr_go_bin:
+      if wpr_go_bin.suffix == ".go":
+        raise ValueError(f"Can't run .go files on {self.browser_platform}")
+    else:
+      wpr_go_bin = self._download_prebuilt_wpr()
+    self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
+        cli_helper.parse_binary_path(wpr_go_bin, "wpr.go binary"))
+
+  def _download_prebuilt_wpr(self) -> LocalPath:
+    wpr_info = WPR_PREBUILT_ARCH_MAP[self.browser_platform.machine]
+    remote_url = wpr_info["url"]
+    local_wpr_go_bin = WPR_CACHE / str(self.browser_platform.machine) / "wpr_go"
+    self.runner_platform.sh("gsutil", "cp", remote_url, local_wpr_go_bin)
+
+    sha1 = hashlib.sha1()
+    sha1.update(local_wpr_go_bin.read_bytes())
+    file_hash = sha1.hexdigest()
+    assert file_hash == wpr_info["file_hash"]
+
+    return local_wpr_go_bin
+
+  @contextlib.contextmanager
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+    with self._remote_temp_dir(session):
+      with super().open(session):
+        yield self
+
+  @contextlib.contextmanager
+  def _remote_temp_dir(self, session: BrowserSessionRunGroup) -> Iterator:
+    with session.browser_platform.TemporaryDirectory() as tmp_dir:
+      self._tmp_dir = tmp_dir
+      yield
+      self._tmp_dir = None
+
+  def _push_file(self, path: LocalPath) -> RemotePath:
+    assert self._tmp_dir is not None
+    remote_path = self._tmp_dir / path.name
+    self.browser_platform.push(path, remote_path)
+    return remote_path
+
+  def _push_required_files(self) -> List[RemotePath]:
+    runner_platform = self.browser_platform.host_platform
+    local_wpr_go = WprGoToolFinder(runner_platform).path
+    wpr_root = self.runner_platform.path(local_wpr_go.parents[1])
+
+    all_files = [self._archive_path,
+                 wpr_root / "ecdsa_key.pem",
+                 wpr_root / "ecdsa_cert.pem",
+                 wpr_root / "deterministic.js"]
+    remote_files = [self._push_file(f) for f in all_files]
+
+    remote_wpr_go_bin = self._push_file(self._wpr_go_bin)
+    self.browser_platform.sh("chmod", "+x", remote_wpr_go_bin)
+
+    return [remote_wpr_go_bin] + remote_files
+
+  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+    wpr_go_bin, archive, key_file, cert_file, inject_script =\
+        self._push_required_files()
+    return WprReplayServer(
+        archive_path=archive,
+        bin_path=wpr_go_bin,
+        key_file=key_file,
+        cert_file=cert_file,
+        inject_scripts=[inject_script],
+        log_path=log_dir / "network.wpr.log",
+        platform=self.browser_platform)

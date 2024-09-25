@@ -15,7 +15,8 @@ from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.base import Network
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_fileserver import LocalFileNetwork
-from crossbench.network.replay.wpr import GS_PREFIX, WprReplayNetwork
+from crossbench.network.replay.wpr import (
+    GS_PREFIX, LocalWprReplayNetwork, RemoteWprReplayNetwork)
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
 from crossbench.plt.base import Platform
@@ -136,6 +137,7 @@ class NetworkConfig(ConfigObject):
   url: Optional[str] = None
   wpr_go_bin: Optional[pth.LocalPath] = None
   persist_server: bool = False
+  run_on_device: bool = False
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
@@ -162,6 +164,7 @@ class NetworkConfig(ConfigObject):
               "used for WPR replay network. "
               "If not specified, a default lookup in known locations is used."))
     parser.add_argument("persist_server", type=bool, default=False)
+    parser.add_argument("run_on_device", type=bool, default=False)
     return parser
 
   @classmethod
@@ -273,22 +276,30 @@ class NetworkConfig(ConfigObject):
       # TODO: support file server as well
       raise argparse.ArgumentTypeError(
           "persist_server can only be used for the WPR replay network")
+    if self.run_on_device and self.type is not NetworkType.WPR:
+      raise argparse.ArgumentTypeError(
+          "run_on_device can only be used for the WPR replay network")
 
   def create(self, browser_platform: Platform) -> Network:
     with exception.annotate_argparsing(
         f"Setting up {self.type} network for {browser_platform}"):
-      runner_platform: Platform = browser_platform.host_platform
       traffic_shaper = self._create_traffic_shaper(browser_platform)
       if self.type is NetworkType.LIVE:
-        return LiveNetwork(traffic_shaper, runner_platform)
+        return LiveNetwork(traffic_shaper, browser_platform)
       if self.type is NetworkType.LOCAL:
         assert self.path
         return LocalFileNetwork(self.path, self.url, traffic_shaper,
-                                runner_platform)
+                                browser_platform)
       if self.type is NetworkType.WPR:
-        return WprReplayNetwork(
+        if self.run_on_device:
+          if not browser_platform.is_android:
+            raise ValueError("run_on_device only supported on Android")
+          return RemoteWprReplayNetwork(
+              self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
+              browser_platform, self.persist_server)
+        return LocalWprReplayNetwork(
             self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-            runner_platform, self.persist_server)
+            browser_platform, self.persist_server)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:

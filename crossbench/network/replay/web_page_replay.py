@@ -16,10 +16,9 @@ from typing import TYPE_CHECKING, Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper
 from crossbench.helper.path_finder import WprGoToolFinder
+from crossbench.path import LocalPath, RemotePath
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
 
-if TYPE_CHECKING:
-  from crossbench.path import LocalPath
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"
@@ -34,18 +33,18 @@ class WprStartupError(RuntimeError):
 class WprBase(abc.ABC):
   NAME: str = ""
 
-  _key_file: LocalPath
-  _cert_file: LocalPath
+  _key_file: RemotePath
+  _cert_file: RemotePath
 
   def __init__(self,
-               archive_path: LocalPath,
-               bin_path: LocalPath,
+               archive_path: RemotePath,
+               bin_path: RemotePath,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[LocalPath]] = None,
-               key_file: Optional[LocalPath] = None,
-               cert_file: Optional[LocalPath] = None,
+               inject_scripts: Optional[Iterable[RemotePath]] = None,
+               key_file: Optional[RemotePath] = None,
+               cert_file: Optional[RemotePath] = None,
                log_path: Optional[LocalPath] = None,
                platform: Platform = PLATFORM):
     self._platform: Platform = platform
@@ -54,42 +53,54 @@ class WprBase(abc.ABC):
     if log_path:
       self._log_path = cli_helper.parse_not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
-    self._bin_path = cli_helper.parse_non_empty_file_path(bin_path)
+    self._bin_path = bin_path
     self._go_cmd: TupleCmdArgs = ()
+    self._local_http_port: int = 0
+    self._local_https_port: int = 0
+
     wpr_root: LocalPath
     if self._bin_path.suffix == ".go":
       # `go` binary is required to run a Go source file (`wpr.go`).
+      assert self._platform.is_local
       if local_go := self._platform.which("go"):
         self._go_cmd = (local_go, "run", self._bin_path)
       else:
         raise ValueError(f"'go' binary not available on {self._platform}")
-      wpr_root = self._bin_path.parents[1]
+      wpr_root = self._platform.local_path(self._bin_path.parents[1])
     else:
       # Assuming the binary path is precompiled and executable.
       self._go_cmd = (self._bin_path,)
-      if local_wpr_go := WprGoToolFinder(self._platform).path:
-        wpr_root = self._platform.local_path(local_wpr_go.parents[1])
+      if self._platform.is_local:
+        if local_wpr_go := WprGoToolFinder(self._platform).path:
+          wpr_root = self._platform.local_path(local_wpr_go.parents[1])
+        else:
+          raise ValueError(
+              f"Could not find web_page_replay_go on {self._platform}")
       else:
-        raise ValueError(
-            f"Could not find web_page_replay_go on {self._platform}")
+        assert key_file is not None
+        assert cert_file is not None
+        assert inject_scripts is not None
+
     self._archive_path = self._validate_archive_path(archive_path)
     (self._http_port,
      self._https_port) = self._validate_ports(http_port, https_port)
     self._num_parsed_ports: int = 0
     self._host: str = host
+    if self._platform.is_remote:
+      assert self._host == "127.0.0.1"
 
     if key_file:
       self._key_file = key_file
     else:
       self._key_file = wpr_root / "ecdsa_key.pem"
-    if not self._key_file.is_file():
+    if not self._platform.is_file(self._key_file):
       raise ValueError(f"Could not find ecdsa_key.pem file: {self._key_file}")
 
     if cert_file:
       self._cert_file = cert_file
     else:
       self._cert_file = wpr_root / "ecdsa_cert.pem"
-    if not self._cert_file.is_file():
+    if not self._platform.is_file(self._cert_file):
       raise ValueError(f"Could not find ecdsa_cert.pem file: {self._cert_file}")
 
     if inject_scripts is None:
@@ -97,9 +108,9 @@ class WprBase(abc.ABC):
     for script in inject_scripts:
       if "," in str(script):
         raise ValueError(f"Injected script path cannot contain ',': {script}")
-      if not script.is_file():
+      if not self._platform.is_file(script):
         raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts: Tuple[LocalPath, ...] = tuple(inject_scripts)
+    self._inject_scripts: Tuple[RemotePath, ...] = tuple(inject_scripts)
 
   def _validate_ports(self, http_port: int, https_port: int) -> Tuple[int, int]:
     if http_port == 0:
@@ -116,7 +127,7 @@ class WprBase(abc.ABC):
     return (http_port, https_port)
 
   @abc.abstractmethod
-  def _validate_archive_path(self, path: LocalPath) -> LocalPath:
+  def _validate_archive_path(self, path: RemotePath) -> RemotePath:
     pass
 
   @property
@@ -132,7 +143,7 @@ class WprBase(abc.ABC):
     return self._host
 
   @property
-  def cert_file(self) -> LocalPath:
+  def cert_file(self) -> RemotePath:
     return self._cert_file
 
   @property
@@ -172,11 +183,14 @@ class WprBase(abc.ABC):
 
   def _start_wpr(self):
     go_cmd: TupleCmdArgs = self._go_cmd + self.cmd
-    logging.info("STARTING WPR %s", shlex.join(map(str, go_cmd)))
+    logging.info("STARTING WPR on %s: %s", self._platform,
+                 shlex.join(map(str, go_cmd)))
     self._num_parsed_ports = 0
     if self._log_path:
       self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
-    with helper.ChangeCWD(self._bin_path.parent):
+    work_dir = (
+        self._bin_path.parent if self._platform.is_local else LocalPath.cwd())
+    with helper.ChangeCWD(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(
           *go_cmd, stdout=self._log_file, stderr=self._log_file)
@@ -195,6 +209,16 @@ class WprBase(abc.ABC):
     except Exception as e:  # pylint: disable=broad-except
       logging.debug("Got exception while reading wpr log file: %s", e)
 
+  def _forward_ports(self) -> None:
+    if self._platform.is_remote:
+      self._local_http_port = self._platform.port_forward(0, self._http_port)
+      self._local_https_port = self._platform.port_forward(0, self._https_port)
+
+  def _stop_forward_ports(self) -> None:
+    if self._platform.is_remote:
+      self._platform.stop_port_forward(self._local_http_port)
+      self._platform.stop_port_forward(self._local_https_port)
+
   def _wait_for_startup(self) -> None:
     assert self._process, "process not started"
     assert self._log_path, "missing log_path"
@@ -210,6 +234,8 @@ class WprBase(abc.ABC):
           break
     if self._process.poll():
       self._raise_startup_failure()
+
+    self._forward_ports()
     time.sleep(0.1)
     try:
       with self._open_wpr_cmd_url("generate-200") as r:
@@ -251,7 +277,9 @@ class WprBase(abc.ABC):
     return False
 
   def _open_wpr_cmd_url(self, cmd: str):
-    test_url = f"http://{self._host}:{self._http_port}/web-page-replay-{cmd}"
+    http_port = (
+        self._local_http_port if self._platform.is_remote else self._http_port)
+    test_url = f"http://{self._host}:{http_port}/web-page-replay-{cmd}"
     return helper.urlopen(test_url, timeout=1)
 
   def stop(self, force_shutdown: bool = False) -> None:
@@ -263,6 +291,7 @@ class WprBase(abc.ABC):
     if self._process:
       helper.wait_and_kill(self._process, timeout=1)
     self._process = None
+    self._stop_forward_ports()
 
   def _shut_down(self) -> None:
     logging.info("WPR: shutting down recorder.")
@@ -279,10 +308,14 @@ class WprRecorder(WprBase):
   NAME: str = "recorder"
 
   @property
+  def cert_file(self) -> LocalPath:
+    return self._platform.local_path(self._cert_file)
+
+  @property
   def cmd(self) -> TupleCmdArgs:
     return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
 
-  def _validate_archive_path(self, path: LocalPath) -> LocalPath:
+  def _validate_archive_path(self, path: RemotePath) -> LocalPath:
     return cli_helper.parse_not_existing_path(path, "Wpr.go result archive")
 
 
@@ -290,29 +323,30 @@ class WprReplayServer(WprBase):
   NAME: str = "replay"
 
   def __init__(self,
-               archive_path: LocalPath,
-               bin_path: LocalPath,
+               archive_path: RemotePath,
+               bin_path: RemotePath,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[LocalPath]] = None,
-               key_file: Optional[LocalPath] = None,
-               cert_file: Optional[LocalPath] = None,
-               rules_file: Optional[LocalPath] = None,
+               inject_scripts: Optional[Iterable[RemotePath]] = None,
+               key_file: Optional[RemotePath] = None,
+               cert_file: Optional[RemotePath] = None,
+               rules_file: Optional[RemotePath] = None,
                log_path: Optional[LocalPath] = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
                platform: Platform = PLATFORM):
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
-    self._rules_file: Optional[LocalPath] = None
+    self._rules_file: Optional[RemotePath] = None
     if rules_file:
       self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 
-  def _validate_archive_path(self, path: LocalPath) -> LocalPath:
-    return cli_helper.parse_non_empty_file_path(path, "WPR.go replay archive")
+  def _validate_archive_path(self, path: RemotePath) -> RemotePath:
+    assert self._platform.is_file(path)
+    return path
 
   @property
   def cmd(self) -> TupleCmdArgs:

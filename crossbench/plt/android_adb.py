@@ -251,8 +251,18 @@ class Adb:
   def devices(self) -> Dict[str, Dict[str, str]]:
     return adb_devices(self._host_platform, self._adb_bin)
 
-  def reverse(self, remote: int, local: int, protocol: str = "tcp") -> None:
-    self._adb("reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
+  def forward(self, local: int, remote: int, protocol: str = "tcp") -> int:
+    stdout = self._adb_stdout(
+        "forward", f"{protocol}:{local}", f"{protocol}:{remote}")
+    return int(stdout)
+
+  def forward_remove(self, local: int, protocol: str = "tcp") -> None:
+    self._adb("forward", "--remove", f"{protocol}:{local}")
+
+  def reverse(self, remote: int, local: int, protocol: str = "tcp") -> int:
+    stdout = self._adb_stdout(
+        "reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
+    return int(stdout)
 
   def reverse_remove(self, remote: int, protocol: str = "tcp") -> None:
     self._adb("reverse", "--remove", f"{protocol}:{remote}")
@@ -574,8 +584,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         env=env,
         quiet=quiet)
 
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> None:
-    self.adb.reverse(remote_port, local_port, protocol="tcp")
+  def port_forward(self, local_port: int, remote_port: int) -> int:
+    return self.adb.forward(local_port, remote_port, protocol="tcp")
+
+  def stop_port_forward(self, local_port: int) -> None:
+    self.adb.forward_remove(local_port, protocol="tcp")
+
+  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
+    return self.adb.reverse(remote_port, local_port, protocol="tcp")
 
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     self.adb.reverse_remove(remote_port, protocol="tcp")
