@@ -26,8 +26,13 @@ from crossbench.config import ConfigObject, ConfigParser
 class PageConfig(ConfigObject):
   label: Optional[str] = None
   playback: Optional[PlaybackController] = None
-  blocks: Tuple[ActionBlock, ...] = tuple()
   login: Optional[LoginBlock] = None
+  setup: Optional[ActionBlock] = None
+  blocks: Tuple[ActionBlock, ...] = tuple()
+
+  def validate(self):
+    super().validate()
+
 
   @classmethod
   def parse_other(cls: Type[PageConfig], value: Any, **kwargs) -> PageConfig:
@@ -81,11 +86,12 @@ class PageConfig(ConfigObject):
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument("label", type=cli_helper.parse_non_empty_str)
     parser.add_argument("playback", type=PlaybackController.parse)
+    parser.add_argument("login", type=LoginBlock)
+    parser.add_argument("setup", type=ActionBlock)
     parser.add_argument(
         "blocks",
         aliases=("actions", "url", "urls"),
         type=ActionBlockListConfig)
-    parser.add_argument("login", type=LoginBlock.parse)
     return parser
 
   @classmethod

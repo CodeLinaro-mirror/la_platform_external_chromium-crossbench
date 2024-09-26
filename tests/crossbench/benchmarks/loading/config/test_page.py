@@ -125,6 +125,7 @@ class PageConfigTestsCase(unittest.TestCase):
     ]
     config = PageConfig.parse(config_urls)
     self.assertIsNone(config.login)
+    self.assertIsNone(config.setup)
     self.assertIsNone(config.label)
     self.assertEqual(config.any_label, "cnn")
     self.assertEqual(config.first_url, "https://cnn")
@@ -145,6 +146,7 @@ class PageConfigTestsCase(unittest.TestCase):
     }])
     self.assertEqual(config.first_url, "http://test.com/click")
     self.assertIsNone(config.login)
+    self.assertIsNone(config.setup)
     self.assertEqual(len(tuple(config.actions())), 2)
 
   def test_parse_actions_dict(self):
@@ -159,6 +161,7 @@ class PageConfigTestsCase(unittest.TestCase):
     }
     config_1 = PageConfig.parse(config_data)
     self.assertIsNone(config_1.login)
+    self.assertIsNone(config_1.setup)
     self.assertEqual(config_1.first_url, "http://test.com/click")
     self.assertEqual(len(tuple(config_1.actions())), 2)
 
@@ -180,6 +183,7 @@ class PageConfigTestsCase(unittest.TestCase):
     config = PageConfig.parse(config_data)
     login = config.login
     self.assertTrue(login.is_login)
+    self.assertIsNone(config.setup)
     self.assertFalse(config.blocks[0].is_login)
     self.assertEqual(config.first_url, "http://test.com/charts")
     self.assertEqual(len(config.blocks), 1)
@@ -187,6 +191,25 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(len(login), 2)
     self.assertEqual(login.actions[0].url, "http://test.com/login")
 
+  def test_parse_setup_block(self):
+    config_data = {
+        "login": ["http://test.com/login"],
+        "setup": [{
+            "action": "get",
+            "url": "http://test.com/setup"
+        }, {
+            "action": "click",
+            "selector": "#foo"
+        }],
+        "actions": ["http://test.com/charts",]
+    }
+    config = PageConfig.parse(config_data)
+    self.assertEqual(len(config.login), 1)
+    self.assertEqual(len(config.setup), 2)
+    self.assertEqual(len(config.blocks), 1)
+    self.assertEqual(config.login.first_url, "http://test.com/login")
+    self.assertEqual(config.setup.first_url, "http://test.com/setup")
+    self.assertEqual(config.blocks[0].first_url, "http://test.com/charts")
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

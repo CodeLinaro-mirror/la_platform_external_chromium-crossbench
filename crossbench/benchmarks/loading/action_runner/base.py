@@ -224,9 +224,18 @@ class ActionRunner:
       page.failure_screenshot(run)
       raise
 
+  def run_setup(self, run: Run, page: InteractivePage, setup: ActionBlock):
+    try:
+      with exception.annotate("setup"):
+        self.run_block(run, setup)
+    except Exception:
+      page.failure_screenshot(run, "setup-failure")
+      raise
+
   def run_login(self, run: Run, page: InteractivePage, login: ActionBlock):
     try:
-      self.run_block(run, login)
+      with exception.annotate("login"):
+        self.run_block(run, login)
     except Exception:
       page.failure_screenshot(run, "login-failure")
       raise

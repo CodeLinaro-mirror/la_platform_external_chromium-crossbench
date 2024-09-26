@@ -182,6 +182,7 @@ class InteractivePage(Page):
   def __init__(self,
                name: str,
                blocks: Tuple[ActionBlock, ...],
+               setup: Optional[ActionBlock] = None,
                login: Optional[LoginBlock] = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
@@ -193,17 +194,22 @@ class InteractivePage(Page):
     assert self._blocks, "Must have at least 1 valid action"
     assert not any(block.is_login for block in blocks), (
         "No login blocks allowed as normal action block")
-    self._login = login
+    self._setup_block = setup
+    self._login_block = login
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration)
 
   @property
-  def blocks(self) -> Tuple[ActionBlock, ...]:
-    return self._blocks
+  def login_block(self) -> Optional[ActionBlock]:
+    return self._login_block
 
   @property
-  def login(self) -> Optional[ActionBlock]:
-    return self._login
+  def setup_block(self) -> Optional[ActionBlock]:
+    return self._setup_block
+
+  @property
+  def blocks(self) -> Tuple[ActionBlock, ...]:
+    return self._blocks
 
   @property
   def first_url(self) -> str:
@@ -223,9 +229,11 @@ class InteractivePage(Page):
       logging.error("Failed to take a failure screenshot: %s", str(e))
 
   def setup(self, run: Run) -> None:
-    if login := self.login:
-      action_runner = get_action_runner(run)
-      action_runner.run_login(run, self, login)
+    action_runner = get_action_runner(run)
+    if login_block := self.login_block:
+      action_runner.run_login(run, self, login_block)
+    if setup_block := self.setup_block:
+      action_runner.run_setup(run, self, setup_block)
 
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)

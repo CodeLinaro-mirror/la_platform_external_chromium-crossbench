@@ -8,10 +8,10 @@ import argparse
 import dataclasses
 import datetime as dt
 from typing import (Any, Dict, Final, Iterator, List, Optional, Sequence, Tuple,
-                    Type)
+                    Type, cast)
 
 from crossbench import cli_helper, exception
-from crossbench.benchmarks.loading.action import Action, ActionType
+from crossbench.benchmarks.loading.action import Action, ActionType, GetAction
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 
 
@@ -107,6 +107,13 @@ class ActionBlock(ConfigObject):
 
   def __len__(self) -> int:
     return len(self.actions)
+
+  @property
+  def first_url(self) -> str:
+    for action in self.actions:
+      if action.TYPE == ActionType.GET:
+        return cast(GetAction, action).url
+    raise RuntimeError("No GET action with an URL found.")
 
 
 @dataclasses.dataclass(frozen=True)
