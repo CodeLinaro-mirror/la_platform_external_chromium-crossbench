@@ -16,7 +16,7 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
-from crossbench.network.local_fileserver import LocalFileNetwork
+from crossbench.network.local_file_server import LocalFileNetwork
 from crossbench.probes import internal
 from tests import test_helper
 from tests.crossbench import mock_browser
