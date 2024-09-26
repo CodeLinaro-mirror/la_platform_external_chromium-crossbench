@@ -56,7 +56,7 @@ class Chromium(Browser):
   )
 
   @classmethod
-  def default_path(cls, platform: plt.Platform) -> pth.RemotePath:
+  def default_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Chromium",
         macos=["Chromium.app"],
@@ -70,7 +70,7 @@ class Chromium(Browser):
 
   def __init__(self,
                label: str,
-               path: pth.RemotePath,
+               path: pth.AnyPath,
                settings: Optional[Settings] = None):
     super().__init__(label, path, settings=settings)
     self._stdout_log_file: Optional[TextIO] = None
@@ -128,7 +128,7 @@ class Chromium(Browser):
     if cache_dir is None:
       maybe_cache_dir = self._flags.get("--user-data-dir", None)
       if maybe_cache_dir:
-        cache_dir = pth.RemotePath(maybe_cache_dir)
+        cache_dir = pth.AnyPath(maybe_cache_dir)
     if cache_dir is None:
       self.cache_dir = self.platform.mkdtemp(prefix=self.type_name)
       self.clear_cache_dir = True
@@ -160,7 +160,7 @@ class Chromium(Browser):
     return "--headless" in self._flags
 
   @property
-  def chrome_log_file(self) -> pth.RemotePath:
+  def chrome_log_file(self) -> pth.AnyPath:
     assert self.log_file
     return self.log_file.with_suffix(f".{self.type_name}.log")
 

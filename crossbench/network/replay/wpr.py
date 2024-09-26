@@ -21,7 +21,7 @@ from crossbench.plt.arch import MachineArch
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import TrafficShaper
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -54,7 +54,7 @@ class WprReplayNetwork(ReplayNetwork):
                persist_server: bool = False):
     super().__init__(archive, traffic_shaper, browser_platform)
     self._server: Optional[WprReplayServer] = None
-    self._tmp_dir: Optional[RemotePath] = None
+    self._tmp_dir: Optional[AnyPath] = None
     self._persist_server = persist_server
     self._ensure_wpr_go(wpr_go_bin)
 
@@ -216,13 +216,13 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
       yield
       self._tmp_dir = None
 
-  def _push_file(self, path: LocalPath) -> RemotePath:
+  def _push_file(self, path: LocalPath) -> AnyPath:
     assert self._tmp_dir is not None
     remote_path = self._tmp_dir / path.name
     self.browser_platform.push(path, remote_path)
     return remote_path
 
-  def _push_required_files(self) -> List[RemotePath]:
+  def _push_required_files(self) -> List[AnyPath]:
     runner_platform = self.browser_platform.host_platform
     local_wpr_go = WprGoToolFinder(runner_platform).path
     wpr_root = self.runner_platform.path(local_wpr_go.parents[1])

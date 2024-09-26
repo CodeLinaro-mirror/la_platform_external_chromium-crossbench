@@ -22,7 +22,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
@@ -155,7 +155,7 @@ class V8LogProbe(ChromiumProbe):
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
 
-  def process_log_files(self, log_files: List[RemotePath]) -> List[RemotePath]:
+  def process_log_files(self, log_files: List[AnyPath]) -> List[AnyPath]:
     if not self._profview:
       return []
     platform = self.runner_platform
@@ -220,7 +220,7 @@ class V8LogProbe(ChromiumProbe):
 
 class V8LogProbeContext(ProbeContext[V8LogProbe]):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     log_dir = super().get_default_result_path()
     self.browser_platform.mkdir(log_dir)
     return log_dir / self.probe.result_path_name
@@ -239,7 +239,7 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     log_files = helper.sort_by_file_size(
         self.browser_platform.glob(log_dir, "*-v8.log"), self.browser_platform)
     # Only convert a v8.log file with profile ticks.
-    json_list: List[RemotePath] = []
+    json_list: List[AnyPath] = []
     maybe_js_flags = getattr(self.browser, "js_flags", {})
     if _PROF_FLAG in maybe_js_flags or _LOG_ALL_FLAG in maybe_js_flags:
       with helper.Spinner():
@@ -247,8 +247,8 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     return self.browser_result(file=tuple(log_files), json=json_list)
 
 
-def _process_profview_json(d8_binary: RemotePath, tick_processor: RemotePath,
-                           log_file: RemotePath) -> RemotePath:
+def _process_profview_json(d8_binary: AnyPath, tick_processor: AnyPath,
+                           log_file: AnyPath) -> AnyPath:
   env = os.environ.copy()
   # TODO: support remote platforms
   platform = plt.PLATFORM

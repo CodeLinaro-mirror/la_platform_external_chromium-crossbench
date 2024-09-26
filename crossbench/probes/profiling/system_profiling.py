@@ -513,7 +513,7 @@ class ProfilingContext(ProbeContext[ProfilingProbe], metaclass=abc.ABCMeta):
 class MacOSProfilingContext(ProfilingContext):
   _process: Optional[subprocess.Popen]
 
-  def get_default_result_path(self) -> pth.RemotePath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
   def start(self) -> None:
@@ -561,7 +561,7 @@ class LinuxProfilingContext(ProfilingContext):
     super().__init__(probe, run)
     self._perf_process: Optional[subprocess.Popen] = None
 
-  def get_default_result_path(self) -> pth.RemotePath:
+  def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
     self.browser_platform.mkdir(result_dir)
     return result_dir
@@ -582,7 +582,7 @@ class LinuxProfilingContext(ProfilingContext):
     if self.run.browser.pid is None:
       logging.warning("Cannot sample browser process")
       return
-    perf_data_file: pth.RemotePath = self.result_path / "browser.perf.data"
+    perf_data_file: pth.AnyPath = self.result_path / "browser.perf.data"
     # TODO: not fully working yet
     self._perf_process = self.browser_platform.popen(
         "perf", "record", "--call-graph=fp", "--freq=max", "--clockid=mono",
@@ -609,7 +609,7 @@ class LinuxProfilingContext(ProfilingContext):
                    "You might get partial profiles")
     time.sleep(2)
 
-    perf_files: List[pth.RemotePath] = helper.sort_by_file_size(
+    perf_files: List[pth.AnyPath] = helper.sort_by_file_size(
         list(self.browser_platform.glob(self.result_path, PERF_DATA_PATTERN)),
         self.browser_platform)
     raw_perf_files = perf_files
@@ -631,8 +631,8 @@ class LinuxProfilingContext(ProfilingContext):
                    " ".join(map(str, perf_files)))
     return self.browser_result(trace=perf_files)
 
-  def _inject_v8_symbols(
-      self, run: Run, perf_files: List[pth.RemotePath]) -> List[pth.RemotePath]:
+  def _inject_v8_symbols(self, run: Run,
+                         perf_files: List[pth.AnyPath]) -> List[pth.AnyPath]:
     with run.actions(
         f"Probe {self.probe.name}: "
         f"Injecting V8 symbols into {len(perf_files)} profiles",
@@ -656,7 +656,7 @@ class LinuxProfilingContext(ProfilingContext):
       return [file for file in perf_jitted_files if file is not None]
 
   def _export_to_pprof(self, run: Run,
-                       perf_files: List[pth.RemotePath]) -> List[str]:
+                       perf_files: List[pth.AnyPath]) -> List[str]:
     assert self.probe.run_pprof
     run_details_json = json.dumps(run.get_browser_details_json())
     with run.actions(
@@ -706,7 +706,7 @@ class LinuxProfilingContext(ProfilingContext):
 
 
 def prepare_linux_perf_env(platform: plt.Platform,
-                           cwd: pth.RemotePath) -> Dict[str, str]:
+                           cwd: pth.AnyPath) -> Dict[str, str]:
   env: Dict[str, str] = dict(platform.environ)
   env["JITDUMPDIR"] = str(platform.absolute(cwd))
   return env
@@ -716,8 +716,8 @@ KB = 1024
 
 
 def linux_perf_probe_inject_v8_symbols(
-    perf_data_file: pth.RemotePath,
-    platform: Optional[plt.Platform] = None) -> Optional[pth.RemotePath]:
+    perf_data_file: pth.AnyPath,
+    platform: Optional[plt.Platform] = None) -> Optional[pth.AnyPath]:
   platform = platform or plt.PLATFORM
   assert platform.is_file(perf_data_file)
   output_file = perf_data_file.with_suffix(".data.jitted")
@@ -745,7 +745,7 @@ def linux_perf_probe_inject_v8_symbols(
 
 
 def linux_perf_probe_pprof(
-    perf_data_file: pth.RemotePath,
+    perf_data_file: pth.AnyPath,
     run_details: str,
     platform: Optional[plt.Platform] = None) -> Optional[str]:
   size = helper.get_file_size(perf_data_file)
@@ -885,7 +885,7 @@ class AndroidProfilingContext(ProfilingContext):
     self.browser_platform.sh("taskset", "-p", self._cpu_mask([cpu]),
                              str(renderer_main_tid))
 
-  def get_default_result_path(self) -> pth.RemotePath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "simpleperf.perf.data"
 
   def setup(self) -> None:
@@ -939,7 +939,7 @@ def generate_simpleperf_command_line(
     events: Tuple[str, ...],
     grouped_events: Tuple[str, ...],
     add_counters: Tuple[str, ...],
-    output_path: pth.RemotePath,
+    output_path: pth.AnyPath,
 ) -> ListCmdArgs:
   command_line: ListCmdArgs = ["simpleperf", "record"]
   if target == TargetMode.RENDERER_MAIN_ONLY:

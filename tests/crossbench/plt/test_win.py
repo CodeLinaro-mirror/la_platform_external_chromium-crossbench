@@ -21,7 +21,7 @@ class WinMockPlatformTestCase(BaseMockPlatformTestCase):
     self.mock_platform = WinMockPlatform()
     self.platform = self.mock_platform
 
-  def path(self, path: pth.RemotePathLike) -> pathlib.PureWindowsPath:
+  def path(self, path: pth.AnyPathLike) -> pathlib.PureWindowsPath:
     return pathlib.PureWindowsPath(path)
 
   def test_is_win(self):

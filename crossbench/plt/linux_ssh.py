@@ -13,7 +13,7 @@ from crossbench.plt.linux import RemoteLinuxPlatform
 from crossbench.plt.ssh import SshPlatformMixin
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.plt.base import CmdArg, CmdArgs, ListCmdArgs, Platform
 
 
@@ -125,7 +125,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
       res.append({"pid": int(pid), "name": name})
     return res
 
-  def push(self, from_path: LocalPath, to_path: RemotePath) -> RemotePath:
+  def push(self, from_path: LocalPath, to_path: AnyPath) -> AnyPath:
     scp_cmd: CmdArgs = [
         "scp", "-P", f"{self._ssh_port}", f"{from_path}",
         f"{self._ssh_user}@{self._host}:{to_path}"
@@ -133,7 +133,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
 
-  def pull(self, from_path: RemotePath, to_path: LocalPath) -> LocalPath:
+  def pull(self, from_path: AnyPath, to_path: LocalPath) -> LocalPath:
     scp_cmd: CmdArgs = [
         "scp", "-P", f"{self._ssh_port}",
         f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"

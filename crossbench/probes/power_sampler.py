@@ -21,7 +21,7 @@ from crossbench.probes.result_location import ResultLocation
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -76,12 +76,12 @@ class PowerSamplerProbe(Probe):
     return parser
 
   def __init__(self,
-               bin_path: Optional[RemotePath] = None,
+               bin_path: Optional[AnyPath] = None,
                sampling_interval: dt.timedelta = dt.timedelta(),
                samplers: Sequence[SamplerType] = SAMPLERS,
                wait_for_battery: bool = True):
     super().__init__()
-    self._bin_path: Optional[RemotePath] = bin_path
+    self._bin_path: Optional[AnyPath] = bin_path
     if not self._bin_path:
       logging.debug("No default power_sampler binary provided.")
     self._sampling_interval = sampling_interval
@@ -101,7 +101,7 @@ class PowerSamplerProbe(Probe):
     )
 
   @property
-  def bin_path(self) -> Optional[RemotePath]:
+  def bin_path(self) -> Optional[AnyPath]:
     return self._bin_path
 
   @property
@@ -125,14 +125,14 @@ class PowerSamplerProbe(Probe):
     # TODO() warn about open terminals
     self.find_power_sampler_bin(browser)
 
-  def find_power_sampler_bin(self, browser: Browser) -> RemotePath:
+  def find_power_sampler_bin(self, browser: Browser) -> AnyPath:
     browser_platform = browser.platform
     maybe_path = self.bin_path
     if maybe_path and browser_platform.is_file(maybe_path):
       return maybe_path
     #  .../chrome/src/out/x64.Release/App.path
     # Don't use parents[] access to stop at the root.
-    maybe_build_dir: RemotePath = browser.app_path.parent
+    maybe_build_dir: AnyPath = browser.app_path.parent
     finder = ChromiumBuildBinaryFinder(browser_platform, "power_sampler",
                                        (maybe_build_dir,))
     if maybe_path := finder.path:
@@ -161,12 +161,12 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._bin_path: RemotePath = probe.find_power_sampler_bin(self.browser)
+    self._bin_path: AnyPath = probe.find_power_sampler_bin(self.browser)
     self._active_user_process: Optional[subprocess.Popen] = None
     self._power_process: Optional[subprocess.Popen] = None
     self._power_battery_process: Optional[subprocess.Popen] = None
-    self._power_output: RemotePath = self.result_path.with_suffix(".power.json")
-    self._power_battery_output: RemotePath = self.result_path.with_suffix(
+    self._power_output: AnyPath = self.result_path.with_suffix(".power.json")
+    self._power_battery_output: AnyPath = self.result_path.with_suffix(
         ".power_battery.json")
 
   def setup(self) -> None:

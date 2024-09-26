@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
   from crossbench.browsers.browser import Browser
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.result_origin import ResultOrigin
@@ -124,7 +124,7 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   @abc.abstractmethod
-  def result_path(self) -> RemotePath:
+  def result_path(self) -> AnyPath:
     pass
 
   @property
@@ -144,8 +144,8 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   def browser_result(self,
                      url: Optional[Iterable[str]] = None,
-                     file: Optional[Iterable[RemotePath]] = None,
-                     **kwargs: Iterable[RemotePath]) -> BrowserProbeResult:
+                     file: Optional[Iterable[AnyPath]] = None,
+                     **kwargs: Iterable[AnyPath]) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
     return BrowserProbeResult(self.result_origin, url, file, **kwargs)
@@ -178,9 +178,9 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._run: Run = run
-    self._default_result_path: RemotePath = self.get_default_result_path()
+    self._default_result_path: AnyPath = self.get_default_result_path()
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     return self._run.get_default_probe_result_path(self._probe)
 
   @property
@@ -204,7 +204,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self._run.runner
 
   @property
-  def result_path(self) -> RemotePath:
+  def result_path(self) -> AnyPath:
     return self._default_result_path
 
   @property
@@ -271,9 +271,9 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, session: BrowserSessionRunGroup) -> None:
     super().__init__(probe, session)
     self._session: BrowserSessionRunGroup = session
-    self._default_result_path: RemotePath = self.get_default_result_path()
+    self._default_result_path: AnyPath = self.get_default_result_path()
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     return self._session.get_default_probe_result_path(self._probe)
 
   @property
@@ -289,5 +289,5 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self._session.browser
 
   @property
-  def result_path(self) -> RemotePath:
+  def result_path(self) -> AnyPath:
     return self._default_result_path

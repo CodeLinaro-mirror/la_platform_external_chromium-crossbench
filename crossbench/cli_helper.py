@@ -30,7 +30,7 @@ def type_str(value: Any) -> str:
   return type(value).__name__
 
 
-def parse_path(value: pth.RemotePathLike, name: str = "value") -> pth.LocalPath:
+def parse_path(value: pth.AnyPathLike, name: str = "value") -> pth.LocalPath:
   value = parse_not_none(value, "path")
   if not value:
     raise argparse.ArgumentTypeError("Invalid empty path.")
@@ -42,7 +42,7 @@ def parse_path(value: pth.RemotePathLike, name: str = "value") -> pth.LocalPath:
   return path
 
 
-def parse_existing_file_path(value: pth.RemotePathLike,
+def parse_existing_file_path(value: pth.AnyPathLike,
                              name: str = "value") -> pth.LocalPath:
   path = parse_existing_path(value, name)
   if not path.is_file():
@@ -50,7 +50,7 @@ def parse_existing_file_path(value: pth.RemotePathLike,
   return path
 
 
-def parse_non_empty_file_path(value: pth.RemotePathLike,
+def parse_non_empty_file_path(value: pth.AnyPathLike,
                               name: str = "value") -> pth.LocalPath:
   path: pth.LocalPath = parse_existing_file_path(value, name)
   if path.stat().st_size == 0:
@@ -59,12 +59,12 @@ def parse_non_empty_file_path(value: pth.RemotePathLike,
   return path
 
 
-def parse_file_path(value: pth.RemotePathLike,
+def parse_file_path(value: pth.AnyPathLike,
                     name: str = "value") -> pth.LocalPath:
   return parse_non_empty_file_path(value, name)
 
 
-def parse_dir_path(value: pth.RemotePathLike,
+def parse_dir_path(value: pth.AnyPathLike,
                    name: str = "value") -> pth.LocalPath:
   path = parse_existing_path(value, name)
   if not path.is_dir():
@@ -73,7 +73,7 @@ def parse_dir_path(value: pth.RemotePathLike,
   return path
 
 
-def parse_non_empty_dir_path(value: pth.RemotePathLike,
+def parse_non_empty_dir_path(value: pth.AnyPathLike,
                              name: str = "value") -> pth.LocalPath:
   dir_path = parse_dir_path(value, name)
   for _ in dir_path.iterdir():
@@ -82,7 +82,7 @@ def parse_non_empty_dir_path(value: pth.RemotePathLike,
       f"{name} dir must be non empty: {repr(str(dir_path))}")
 
 
-def parse_existing_path(value: pth.RemotePathLike,
+def parse_existing_path(value: pth.AnyPathLike,
                         name: str = "value") -> pth.LocalPath:
   path = parse_path(value)
   if not path.exists():
@@ -91,7 +91,7 @@ def parse_existing_path(value: pth.RemotePathLike,
   return path
 
 
-def parse_not_existing_path(value: pth.RemotePathLike,
+def parse_not_existing_path(value: pth.AnyPathLike,
                             name: str = "value") -> pth.LocalPath:
   path = parse_path(value)
   if path.exists():
@@ -100,10 +100,9 @@ def parse_not_existing_path(value: pth.RemotePathLike,
   return path
 
 
-def parse_binary_path(
-    value: Optional[pth.RemotePathLike],
-    name: str = "binary",
-    platform: Optional[plt.Platform] = None) -> pth.RemotePath:
+def parse_binary_path(value: Optional[pth.AnyPathLike],
+                      name: str = "binary",
+                      platform: Optional[plt.Platform] = None) -> pth.AnyPath:
   platform = platform or plt.PLATFORM
   maybe_path = platform.path(parse_not_none(value, name))
   if platform.is_file(maybe_path):
@@ -114,17 +113,17 @@ def parse_binary_path(
   return maybe_bin
 
 
-def parse_remote_path(value: Optional[pth.RemotePathLike],
-                      name: str = "value") -> pth.RemotePath:
-  some_value: pth.RemotePathLike = parse_not_none(value, name)
+def parse_any_path(value: Optional[pth.AnyPathLike],
+                   name: str = "value") -> pth.AnyPath:
+  """Parse a path than can be on a local or remote file system."""
+  some_value: pth.AnyPathLike = parse_not_none(value, name)
   if not some_value:
     raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
-  return pth.RemotePath(some_value)
+  return pth.AnyPath(some_value)
 
 
-def parse_local_binary_path(
-    value: Optional[pth.RemotePathLike],
-    name: str = "binary") -> pth.LocalPath:
+def parse_local_binary_path(value: Optional[pth.AnyPathLike],
+                            name: str = "binary") -> pth.LocalPath:
   return cast(pth.LocalPath, parse_binary_path(value, name))
 
 
@@ -169,7 +168,7 @@ def parse_inline_hjson(value: Any) -> Any:
 _MAX_LEN = 70
 
 
-def _extract_decoding_error(message: str, value: pth.RemotePathLike,
+def _extract_decoding_error(message: str, value: pth.AnyPathLike,
                             e: ValueError) -> str:
   lineno = getattr(e, "lineno", -1) - 1
   colno = getattr(e, "colno", -1) - 1
@@ -177,7 +176,7 @@ def _extract_decoding_error(message: str, value: pth.RemotePathLike,
     if isinstance(value, pth.LocalPath):
       return f"{message}\n    {str(e)}"
     return f"{message}: {value}\n    {str(e)}"
-  if isinstance(value, pth.RemotePath):
+  if isinstance(value, pth.AnyPath):
     with pth.LocalPath(value).open(encoding="utf-8") as f:
       line = f.readlines()[lineno]
   else:
@@ -207,7 +206,7 @@ def _extract_decoding_error(message: str, value: pth.RemotePathLike,
   return f"{message}\n    {line}\n    {marker_space}{marker}\n({str(e)})"
 
 
-def parse_json_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
+def parse_json_file_path(value: pth.AnyPathLike) -> pth.LocalPath:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -218,7 +217,7 @@ def parse_json_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
   return path
 
 
-def parse_hjson_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
+def parse_hjson_file_path(value: pth.AnyPathLike) -> pth.LocalPath:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -229,7 +228,7 @@ def parse_hjson_file_path(value: pth.RemotePathLike) -> pth.LocalPath:
   return path
 
 
-def parse_json_file(value: pth.RemotePathLike) -> Any:
+def parse_json_file(value: pth.AnyPathLike) -> Any:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -239,7 +238,7 @@ def parse_json_file(value: pth.RemotePathLike) -> Any:
       raise argparse.ArgumentTypeError(message) from e
 
 
-def parse_hjson_file(value: pth.RemotePathLike) -> Any:
+def parse_hjson_file(value: pth.AnyPathLike) -> Any:
   path = parse_file_path(value)
   with path.open(encoding="utf-8") as f:
     try:
@@ -249,7 +248,7 @@ def parse_hjson_file(value: pth.RemotePathLike) -> Any:
       raise argparse.ArgumentTypeError(message) from e
 
 
-def parse_non_empty_hjson_file(value: pth.RemotePathLike) -> Any:
+def parse_non_empty_hjson_file(value: pth.AnyPathLike) -> Any:
   data = parse_hjson_file(value)
   if not data:
     raise argparse.ArgumentTypeError("Expected hjson file with non-empty data, "
@@ -257,7 +256,7 @@ def parse_non_empty_hjson_file(value: pth.RemotePathLike) -> Any:
   return data
 
 
-def parse_dict_hjson_file(value: pth.RemotePathLike) -> Any:
+def parse_dict_hjson_file(value: pth.AnyPathLike) -> Any:
   data = parse_non_empty_hjson_file(value)
   if not isinstance(data, dict):
     raise argparse.ArgumentTypeError(

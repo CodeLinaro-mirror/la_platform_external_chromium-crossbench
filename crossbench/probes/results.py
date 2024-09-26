@@ -232,8 +232,8 @@ class BrowserProbeResult(ProbeResult):
   def __init__(self,
                result_origin: ResultOrigin,
                url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.RemotePath]] = None,
-               **kwargs: Iterable[pth.RemotePath]):
+               file: Optional[Iterable[pth.AnyPath]] = None,
+               **kwargs: Iterable[pth.AnyPath]):
     self._browser_file = file
     local_file: Optional[Iterable[pth.LocalPath]] = None
     local_kwargs: Dict[str, Iterable[pth.LocalPath]] = {}
@@ -255,7 +255,7 @@ class BrowserProbeResult(ProbeResult):
     return self._is_remote
 
   def _copy_files(self, result_origin: ResultOrigin,
-                  paths: Iterable[pth.RemotePath]) -> Iterable[pth.LocalPath]:
+                  paths: Iterable[pth.AnyPath]) -> Iterable[pth.LocalPath]:
     assert paths, "Got no remote paths to copy."
     # Copy result files from remote tmp dir to local results dir
     browser_platform = result_origin.browser_platform
@@ -283,7 +283,7 @@ class ProbeResultDict:
   Maps Probes to their result files Paths.
   """
 
-  def __init__(self, path: pth.RemotePath) -> None:
+  def __init__(self, path: pth.AnyPath) -> None:
     self._path = path
     self._dict: Dict[str, ProbeResult] = {}
 
@@ -317,7 +317,7 @@ class ProbeResultDict:
   def to_json(self) -> JsonDict:
     data: JsonDict = {}
     for probe_name, results in self._dict.items():
-      if isinstance(results, (pth.RemotePath, str)):
+      if isinstance(results, (pth.AnyPath, str)):
         data[probe_name] = str(results)
       else:
         if results.is_empty:

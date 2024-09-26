@@ -38,7 +38,7 @@ class EdgeWebDriver(EdgePathMixin, ChromiumWebDriver):
   def type_name(self) -> str:
     return "edge"
 
-  def _find_driver(self) -> pth.RemotePath:
+  def _find_driver(self) -> pth.AnyPath:
     finder = EdgeWebDriverDownloader(self)
     return finder.download()
 

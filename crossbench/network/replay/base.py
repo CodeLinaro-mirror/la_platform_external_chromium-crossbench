@@ -59,7 +59,7 @@ class ReplayNetwork(Network):
     if md5_search := GSUTIL_LS_MD5_RE.search(metadata):
       md5 = md5_search.group(1)
       safe_md5 = pth.safe_filename(md5)
-      url_path = pth.RemotePosixPath(urlparse(url).path)
+      url_path = pth.AnyPosixPath(urlparse(url).path)
       return f"{url_path.stem}_{safe_md5}{url_path.suffix}"
     raise RuntimeError(f"Could not find md5 hash in gsutil output: {metadata}")
 

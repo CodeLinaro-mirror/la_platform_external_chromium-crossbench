@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.exception import (Annotator, ExceptionAnnotationScope,
                                     TExceptionTypes)
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
@@ -36,7 +36,7 @@ class ResultOrigin(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def browser_tmp_dir(self) -> RemotePath:
+  def browser_tmp_dir(self) -> AnyPath:
     pass
 
   @property
@@ -95,7 +95,7 @@ class ResultOrigin(abc.ABC):
   ) -> ExceptionAnnotationScope:
     return self.exceptions.capture(*stack_entries, exceptions=exceptions)
 
-  def get_default_probe_result_path(self, probe: Probe) -> RemotePath:
+  def get_default_probe_result_path(self, probe: Probe) -> AnyPath:
     """Return a local or remote/browser-based result path depending on the
     Probe default RESULT_LOCATION."""
     if probe.RESULT_LOCATION == ResultLocation.BROWSER:
@@ -109,7 +109,7 @@ class ResultOrigin(abc.ABC):
   def get_local_probe_result_path(self, probe: Probe) -> LocalPath:
     pass
 
-  def get_browser_probe_result_path(self, probe: Probe) -> RemotePath:
+  def get_browser_probe_result_path(self, probe: Probe) -> AnyPath:
     local_path = self.get_local_probe_result_path(probe)
     if self.is_local:
       return local_path

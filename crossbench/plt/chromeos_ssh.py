@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 class ChromeOsSshPlatform(LinuxSshPlatform):
 
-  AUTOLOGIN_PATH = pth.RemotePosixPath("/usr/local/autotest/bin/autologin.py")
-  DEVTOOLS_PORT_PATH = pth.RemotePosixPath("/home/chronos/DevToolsActivePort")
+  AUTOLOGIN_PATH = pth.AnyPosixPath("/usr/local/autotest/bin/autologin.py")
+  DEVTOOLS_PORT_PATH = pth.AnyPosixPath("/home/chronos/DevToolsActivePort")
 
   @property
   def name(self) -> str:

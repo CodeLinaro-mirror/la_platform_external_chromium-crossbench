@@ -16,9 +16,8 @@ from typing import TYPE_CHECKING, Iterable, Optional, TextIO, Tuple
 
 from crossbench import cli_helper, helper
 from crossbench.helper.path_finder import WprGoToolFinder
-from crossbench.path import LocalPath, RemotePath
+from crossbench.path import AnyPath, LocalPath
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
-
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"
@@ -33,18 +32,18 @@ class WprStartupError(RuntimeError):
 class WprBase(abc.ABC):
   NAME: str = ""
 
-  _key_file: RemotePath
-  _cert_file: RemotePath
+  _key_file: AnyPath
+  _cert_file: AnyPath
 
   def __init__(self,
-               archive_path: RemotePath,
-               bin_path: RemotePath,
+               archive_path: AnyPath,
+               bin_path: AnyPath,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[RemotePath]] = None,
-               key_file: Optional[RemotePath] = None,
-               cert_file: Optional[RemotePath] = None,
+               inject_scripts: Optional[Iterable[AnyPath]] = None,
+               key_file: Optional[AnyPath] = None,
+               cert_file: Optional[AnyPath] = None,
                log_path: Optional[LocalPath] = None,
                platform: Platform = PLATFORM):
     self._platform: Platform = platform
@@ -110,7 +109,7 @@ class WprBase(abc.ABC):
         raise ValueError(f"Injected script path cannot contain ',': {script}")
       if not self._platform.is_file(script):
         raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts: Tuple[RemotePath, ...] = tuple(inject_scripts)
+    self._inject_scripts: Tuple[AnyPath, ...] = tuple(inject_scripts)
 
   def _validate_ports(self, http_port: int, https_port: int) -> Tuple[int, int]:
     if http_port == 0:
@@ -127,7 +126,7 @@ class WprBase(abc.ABC):
     return (http_port, https_port)
 
   @abc.abstractmethod
-  def _validate_archive_path(self, path: RemotePath) -> RemotePath:
+  def _validate_archive_path(self, path: AnyPath) -> AnyPath:
     pass
 
   @property
@@ -143,7 +142,7 @@ class WprBase(abc.ABC):
     return self._host
 
   @property
-  def cert_file(self) -> RemotePath:
+  def cert_file(self) -> AnyPath:
     return self._cert_file
 
   @property
@@ -315,7 +314,7 @@ class WprRecorder(WprBase):
   def cmd(self) -> TupleCmdArgs:
     return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
 
-  def _validate_archive_path(self, path: RemotePath) -> LocalPath:
+  def _validate_archive_path(self, path: AnyPath) -> LocalPath:
     return cli_helper.parse_not_existing_path(path, "Wpr.go result archive")
 
 
@@ -323,28 +322,28 @@ class WprReplayServer(WprBase):
   NAME: str = "replay"
 
   def __init__(self,
-               archive_path: RemotePath,
-               bin_path: RemotePath,
+               archive_path: AnyPath,
+               bin_path: AnyPath,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[RemotePath]] = None,
-               key_file: Optional[RemotePath] = None,
-               cert_file: Optional[RemotePath] = None,
-               rules_file: Optional[RemotePath] = None,
+               inject_scripts: Optional[Iterable[AnyPath]] = None,
+               key_file: Optional[AnyPath] = None,
+               cert_file: Optional[AnyPath] = None,
+               rules_file: Optional[AnyPath] = None,
                log_path: Optional[LocalPath] = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
                platform: Platform = PLATFORM):
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
-    self._rules_file: Optional[RemotePath] = None
+    self._rules_file: Optional[AnyPath] = None
     if rules_file:
       self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 
-  def _validate_archive_path(self, path: RemotePath) -> RemotePath:
+  def _validate_archive_path(self, path: AnyPath) -> AnyPath:
     assert self._platform.is_file(path)
     return path
 

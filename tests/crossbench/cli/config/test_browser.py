@@ -43,13 +43,13 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertNotEqual(
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())),
         BrowserConfig(
-            pth.RemotePath("foo"), DriverConfig(BrowserDriverType.default())))
+            pth.AnyPath("foo"), DriverConfig(BrowserDriverType.default())))
 
   def test_hashable(self):
     _ = hash(BrowserConfig.default())
     _ = hash(
         BrowserConfig(
-            pth.RemotePath("foo"),
+            pth.AnyPath("foo"),
             DriverConfig(
                 BrowserDriverType.default(), settings=immutabledict(custom=1))))
 
@@ -70,7 +70,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("a-random-name", str(cm.exception))
 
   def test_parse_invalid_path(self):
-    path = pth.RemotePath("foo/bar")
+    path = pth.AnyPath("foo/bar")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse(str(path))
     self.assertIn(str(path), str(cm.exception))
@@ -184,7 +184,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("adb:chrome"),
         BrowserConfig(
-            pth.RemotePosixPath("com.android.chrome"),
+            pth.AnyPosixPath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -194,7 +194,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:com.chrome.beta"),
         BrowserConfig(
-            pth.RemotePosixPath("com.chrome.beta"),
+            pth.AnyPosixPath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -204,7 +204,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chrome-beta"),
         BrowserConfig(
-            pth.RemotePosixPath("com.chrome.beta"),
+            pth.AnyPosixPath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -214,7 +214,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("adb:chrome-dev"),
         BrowserConfig(
-            pth.RemotePosixPath("com.chrome.dev"),
+            pth.AnyPosixPath("com.chrome.dev"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -224,7 +224,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chrome-canary"),
         BrowserConfig(
-            pth.RemotePosixPath("com.chrome.canary"),
+            pth.AnyPosixPath("com.chrome.canary"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -234,7 +234,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chromium"),
         BrowserConfig(
-            pth.RemotePosixPath("org.chromium.chrome"),
+            pth.AnyPosixPath("org.chromium.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -251,7 +251,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse(config_dict),
         BrowserConfig(
-            pth.RemotePath("com.android.chrome"),
+            pth.AnyPath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -303,8 +303,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 3)
     self.assertEqual(
         config,
-        BrowserConfig(
-            pth.RemotePosixPath("com.android.chrome"), expected_driver))
+        BrowserConfig(pth.AnyPosixPath("com.android.chrome"), expected_driver))
 
   @unittest.skipIf(plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_adb_phone_serial_invalid_macos(self):

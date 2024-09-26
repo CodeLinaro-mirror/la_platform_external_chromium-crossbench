@@ -60,7 +60,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
   def is_locally_compiled(self) -> bool:
     return pth.LocalPath(self.app_path.parent / "args.gn").exists()
 
-  def _find_driver(self) -> pth.RemotePath:
+  def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:
       return self._driver_path
     finder = ChromeDriverFinder(self)
@@ -82,11 +82,11 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       return pth.LocalPath()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.RemotePath) -> webdriver.Remote:
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
     return self._start_chromedriver(session, driver_path)
 
   def _start_chromedriver(self, session: BrowserSessionRunGroup,
-                          driver_path: pth.RemotePath) -> ChromiumDriver:
+                          driver_path: pth.AnyPath) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file
     args = self._get_browser_flags_for_session(session)
@@ -155,7 +155,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
             build_chromedriver_instructions(driver_path.parent))
 
   def _validate_any_driver_version(
-      self, driver_path: pth.RemotePath) -> Optional[Iterable[str]]:
+      self, driver_path: pth.AnyPath) -> Optional[Iterable[str]]:
     raw_version_str = self.platform.host_platform.sh_stdout(
         driver_path, "--version")
     driver_version = ChromeDriverVersion.parse(raw_version_str)
@@ -199,18 +199,18 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
 # Android is high-tech and reads chrome flags from an app-specific file.
 # TODO: extend support to more than just chrome.
-_FLAG_ROOT: pth.RemotePosixPath = pth.RemotePosixPath("/data/local/tmp/")
-FLAGS_WEBLAYER: pth.RemotePosixPath = _FLAG_ROOT / "weblayer-command-line"
-FLAGS_WEBVIEW: pth.RemotePosixPath = _FLAG_ROOT / "webview-command-line"
-FLAGS_CONTENT_SHELL: pth.RemotePosixPath = (
+_FLAG_ROOT: pth.AnyPosixPath = pth.AnyPosixPath("/data/local/tmp/")
+FLAGS_WEBLAYER: pth.AnyPosixPath = _FLAG_ROOT / "weblayer-command-line"
+FLAGS_WEBVIEW: pth.AnyPosixPath = _FLAG_ROOT / "webview-command-line"
+FLAGS_CONTENT_SHELL: pth.AnyPosixPath = (
     _FLAG_ROOT / "content-shell-command-line")
-FLAGS_CHROME: pth.RemotePosixPath = _FLAG_ROOT / "chrome-command-line"
+FLAGS_CHROME: pth.AnyPosixPath = _FLAG_ROOT / "chrome-command-line"
 
 
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def __init__(self, *args, **kwargs):
-    self._chrome_command_line_path: pth.RemotePath = FLAGS_CHROME
+    self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
     self._previous_command_line_contents: Optional[str] = None
     super().__init__(*args, **kwargs)
     self._android_package: str = self.platform.app_path_to_package(self.path)
@@ -229,7 +229,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
         AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
     return cast(AndroidAdbPlatform, self._platform)
 
-  def _resolve_binary(self, path: pth.RemotePath) -> pth.RemotePath:
+  def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
   # TODO: implement setting a clean profile on android
@@ -252,7 +252,7 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
     return chrome_flags
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.RemotePath) -> webdriver.Remote:
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
     self.adb_force_stop()
     if session.browser.wipe_system_user_data:
       self.adb_force_clear()
@@ -325,7 +325,7 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
     return cast(LinuxSshPlatform, self._platform)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.RemotePath) -> RemoteWebDriver:
+                    driver_path: pth.AnyPath) -> RemoteWebDriver:
     del driver_path
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
@@ -346,7 +346,7 @@ class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
     return cast(ChromeOsSshPlatform, self._platform)
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.RemotePath) -> RemoteWebDriver:
+                    driver_path: pth.AnyPath) -> RemoteWebDriver:
     del driver_path
     platform = self.platform
     host = platform.host
@@ -368,7 +368,7 @@ class DriverNotFoundError(ValueError):
   pass
 
 
-def build_chromedriver_instructions(build_dir: pth.RemotePath) -> str:
+def build_chromedriver_instructions(build_dir: pth.AnyPath) -> str:
   return ("Please build 'chromedriver' manually for local builds:\n"
           f"    autoninja -C {build_dir} chromedriver")
 

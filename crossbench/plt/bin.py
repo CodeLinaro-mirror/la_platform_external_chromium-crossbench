@@ -45,12 +45,12 @@ class Binary:
 
   def __init__(self,
                name: str,
-               default: Optional[pth.RemotePathLike] = None,
-               posix: Optional[pth.RemotePathLike] = None,
-               linux: Optional[pth.RemotePathLike] = None,
-               android: Optional[pth.RemotePathLike] = None,
-               macos: Optional[pth.RemotePathLike] = None,
-               win: Optional[pth.RemotePathLike] = None) -> None:
+               default: Optional[pth.AnyPathLike] = None,
+               posix: Optional[pth.AnyPathLike] = None,
+               linux: Optional[pth.AnyPathLike] = None,
+               android: Optional[pth.AnyPathLike] = None,
+               macos: Optional[pth.AnyPathLike] = None,
+               win: Optional[pth.AnyPathLike] = None) -> None:
     self._name = name
     self._default = self._convert(default)
     self._posix = self._convert(posix)
@@ -63,13 +63,12 @@ class Binary:
     if not any((default, posix, linux, android, macos, win)):
       raise ValueError("At least one platform binary must be provided")
 
-  def _convert(self,
-               path: Optional[pth.RemotePathLike]) -> Optional[pth.RemotePath]:
+  def _convert(self, path: Optional[pth.AnyPathLike]) -> Optional[pth.AnyPath]:
     if path is None:
       return None
     if not path:
       raise ValueError("Got unexpected empty string as binary path")
-    return pth.RemotePath(path)
+    return pth.AnyPath(path)
 
   @property
   def name(self) -> str:
@@ -79,10 +78,10 @@ class Binary:
     return self._name
 
   @functools.lru_cache(maxsize=None)  # pylint: disable=method-cache-max-size-none
-  def resolve_cached(self, platform: Platform) -> pth.RemotePath:
+  def resolve_cached(self, platform: Platform) -> pth.AnyPath:
     return self.resolve(platform)
 
-  def resolve(self, platform: Platform) -> pth.RemotePath:
+  def resolve(self, platform: Platform) -> pth.AnyPath:
     self._validate_platform(platform)
     if binary := self.platform_path(platform):
       binary_path = platform.path(binary)
@@ -90,7 +89,7 @@ class Binary:
         return result
     raise BinaryNotFoundError(self, platform)
 
-  def platform_path(self, platform: Platform) -> Optional[pth.RemotePath]:
+  def platform_path(self, platform: Platform) -> Optional[pth.AnyPath]:
     if self._linux and platform.is_linux:
       return self._linux
     if self._android and platform.is_android:
@@ -115,8 +114,8 @@ class Binary:
 
 class PosixBinary(Binary):
 
-  def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePosixPath(name).name, posix=name)
+  def __init__(self, name: pth.AnyPathLike):
+    super().__init__(pth.AnyPosixPath(name).name, posix=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
@@ -125,8 +124,8 @@ class PosixBinary(Binary):
 
 class MacOsBinary(Binary):
 
-  def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePosixPath(name).name, macos=name)
+  def __init__(self, name: pth.AnyPathLike):
+    super().__init__(pth.AnyPosixPath(name).name, macos=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_macos:
@@ -135,8 +134,8 @@ class MacOsBinary(Binary):
 
 class LinuxBinary(Binary):
 
-  def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePosixPath(name).name, linux=name)
+  def __init__(self, name: pth.AnyPathLike):
+    super().__init__(pth.AnyPosixPath(name).name, linux=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
@@ -145,8 +144,8 @@ class LinuxBinary(Binary):
 
 class AndroidBinary(Binary):
 
-  def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePosixPath(name).name, android=name)
+  def __init__(self, name: pth.AnyPathLike):
+    super().__init__(pth.AnyPosixPath(name).name, android=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_android:
@@ -155,8 +154,8 @@ class AndroidBinary(Binary):
 
 class WinBinary(Binary):
 
-  def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemoteWindowsPath(name).name, win=name)
+  def __init__(self, name: pth.AnyPathLike):
+    super().__init__(pth.AnyWindowsPath(name).name, win=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_win:

@@ -21,9 +21,9 @@ from crossbench.plt.posix import PosixPlatform
 
 
 class MacOSPlatform(PosixPlatform):
-  SEARCH_PATHS: Tuple[pth.RemotePath, ...] = (
-      pth.RemotePosixPath("."),
-      pth.RemotePosixPath("/Applications"),
+  SEARCH_PATHS: Tuple[pth.AnyPath, ...] = (
+      pth.AnyPosixPath("."),
+      pth.AnyPosixPath("/Applications"),
       # TODO: support remote platforms
       pth.LocalPath.home() / "Applications",
   )
@@ -63,7 +63,7 @@ class MacOSPlatform(PosixPlatform):
       return super().is_battery_powered
     return "Battery Power" in self.sh_stdout("pmset", "-g", "batt")
 
-  def _find_app_binary_path(self, app_path: pth.RemotePath) -> pth.RemotePath:
+  def _find_app_binary_path(self, app_path: pth.AnyPath) -> pth.AnyPath:
     assert app_path.suffix == ".app", f"Expected .app but got {app_path}"
     bin_path = app_path / "Contents" / "MacOS" / app_path.stem
     if self.exists(bin_path):
@@ -88,9 +88,8 @@ class MacOSPlatform(PosixPlatform):
       return bin_path
     raise ValueError(f"Invalid number of binaries candidates found: {binaries}")
 
-  def search_binary(self,
-                    app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:
-    app_or_bin_path: pth.RemotePath = self.path(app_or_bin)
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+    app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
     is_app = app_or_bin_path.suffix == ".app"
@@ -111,8 +110,7 @@ class MacOSPlatform(PosixPlatform):
     return None
 
   def _validate_search_binary_candidate(
-      self, is_app: bool,
-      result_path: pth.RemotePath) -> Optional[pth.RemotePath]:
+      self, is_app: bool, result_path: pth.AnyPath) -> Optional[pth.AnyPath]:
     if not is_app:
       if self.is_file(result_path):
         return result_path
@@ -124,9 +122,8 @@ class MacOSPlatform(PosixPlatform):
       return result_path
     return None
 
-  def search_app(self,
-                 app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:
-    app_or_bin_path: pth.RemotePath = self.path(app_or_bin)
+  def search_app(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+    app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
     assert self.is_local, "Unsupported operation on remote platform"
@@ -143,7 +140,7 @@ class MacOSPlatform(PosixPlatform):
     assert self.is_dir(app_path)
     return app_path
 
-  def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
+  def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
@@ -165,7 +162,7 @@ class MacOSPlatform(PosixPlatform):
       # Strip quotes: '"14.1"' => '14.1'
       return version_string[1:-1]
     # Backup solution use the binary (not the .app bundle) with --version.
-    maybe_bin_path: Optional[pth.RemotePath] = app_or_bin
+    maybe_bin_path: Optional[pth.AnyPath] = app_or_bin
     if app_or_bin.suffix == ".app":
       maybe_bin_path = self.search_binary(app_or_bin)
     if not maybe_bin_path:
@@ -342,5 +339,5 @@ class MacOSPlatform(PosixPlatform):
     assert ret == 0
     return round(display_brightness.value * 100)
 
-  def screenshot(self, result_path: pth.RemotePath) -> None:
+  def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencapture", "-x", result_path)

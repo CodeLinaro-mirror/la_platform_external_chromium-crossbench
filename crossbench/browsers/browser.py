@@ -42,7 +42,7 @@ class Browser(abc.ABC):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.RemotePath] = None,
+               path: Optional[pth.AnyPath] = None,
                settings: Optional[Settings] = None):
     self._settings = settings or Settings()
     self._platform = self._settings.platform
@@ -51,19 +51,19 @@ class Browser(abc.ABC):
     self.app_name: str = self.type_name
     self.version: str = "custom"
     self.major_version: int = 0
-    self.app_path: pth.RemotePath = pth.RemotePath()
-    self.path = pth.RemotePath()
+    self.app_path: pth.AnyPath = pth.AnyPath()
+    self.path = pth.AnyPath()
     self._setup_path(path)
     self._is_running: bool = False
     self._pid: Optional[int] = None
     self._probes: OrderedSet[Probe] = OrderedSet()
     self._flags: Flags = self._setup_flags(self._settings)
-    self.log_file: Optional[pth.RemotePath] = None
-    self.cache_dir: Optional[pth.RemotePath] = self._settings.cache_dir
+    self.log_file: Optional[pth.AnyPath] = None
+    self.cache_dir: Optional[pth.AnyPath] = self._settings.cache_dir
     self.clear_cache_dir: bool = True
     self._setup_cache_dir(self._settings)
 
-  def _setup_path(self, path: Optional[pth.RemotePath] = None) -> None:
+  def _setup_path(self, path: Optional[pth.AnyPath] = None) -> None:
     if not path:
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
@@ -186,15 +186,15 @@ class Browser(abc.ABC):
   def is_remote(self) -> bool:
     return self.platform.is_remote
 
-  def set_log_file(self, path: pth.RemotePath) -> None:
+  def set_log_file(self, path: pth.AnyPath) -> None:
     self.log_file = path
 
   @property
-  def stdout_log_file(self) -> pth.RemotePath:
+  def stdout_log_file(self) -> pth.AnyPath:
     assert self.log_file
     return self.log_file.with_suffix(".stdout.log")
 
-  def _resolve_binary(self, path: pth.RemotePath) -> pth.RemotePath:
+  def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     path = self.platform.absolute(path)
     assert self.platform.exists(path), f"Binary at path={path} does not exist."
     self.app_path = path
@@ -205,7 +205,7 @@ class Browser(abc.ABC):
         f"Binary at path={path} is not a file.")
     return path
 
-  def _resolve_macos_binary(self, path: pth.RemotePath) -> pth.RemotePath:
+  def _resolve_macos_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     assert self.platform.is_macos
     candidate = self.platform.search_binary(path)
     if not candidate or not self.platform.is_file(candidate):
@@ -258,7 +258,7 @@ class Browser(abc.ABC):
 
   def _log_browser_start(self,
                          args: Tuple[str, ...],
-                         driver_path: Optional[pth.RemotePath] = None) -> None:
+                         driver_path: Optional[pth.AnyPath] = None) -> None:
     logging.info("STARTING BROWSER Binary:  %s", self.path)
     logging.info("STARTING BROWSER Version: %s", self.version)
     if driver_path:

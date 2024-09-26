@@ -34,16 +34,16 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX | BrowserAttributes.WEBDRIVER
 
-  def _find_driver(self) -> pth.RemotePath:
+  def _find_driver(self) -> pth.AnyPath:
     finder = FirefoxDriverFinder(self)
     return finder.download()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.RemotePath) -> webdriver.Remote:
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
     return self._start_firefox_driver(session, driver_path)
 
   def _start_firefox_driver(self, session: BrowserSessionRunGroup,
-                            driver_path: pth.RemotePath) -> webdriver.Firefox:
+                            driver_path: pth.AnyPath) -> webdriver.Firefox:
     assert not self._is_running
     assert self.log_file
     options = FirefoxOptions()

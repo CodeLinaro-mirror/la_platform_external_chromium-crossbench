@@ -20,14 +20,14 @@ from crossbench.env import HostEnvironment, ValidationError
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class AppleScript:
 
   @classmethod
-  def with_args(cls, app_path: RemotePath, apple_script: str,
+  def with_args(cls, app_path: AnyPath, apple_script: str,
                 **kwargs) -> Tuple[str, List[str]]:
     variables = []
     replacements = {}

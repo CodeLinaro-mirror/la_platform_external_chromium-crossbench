@@ -20,7 +20,7 @@ from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -30,7 +30,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
   def __init__(self,
                label: str,
-               path: RemotePath,
+               path: AnyPath,
                settings: Optional[Settings] = None):
     super().__init__(label, path, settings)
     assert self.platform.is_macos
@@ -44,18 +44,18 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     # via selenium.
     pass
 
-  def _find_driver(self) -> RemotePath:
+  def _find_driver(self) -> AnyPath:
     # TODO: support remote platform
     assert self.platform.is_local, "Remote platform is not supported yet"
     return self.platform.host_platform.local_path(
         find_safaridriver(self.path, self.platform))
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: AnyPath) -> webdriver.Remote:
     return self._start_safari_driver(session, driver_path)
 
   def _start_safari_driver(self, session: BrowserSessionRunGroup,
-                           driver_path: RemotePath) -> webdriver.Safari:
+                           driver_path: AnyPath) -> webdriver.Safari:
     assert not self._is_running
     logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
                  driver_path)
@@ -76,7 +76,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       driver = self._start_driver_with_retries(driver_kwargs)
 
     assert driver.session_id, "Could not start webdriver"
-    logs: RemotePath = (
+    logs: AnyPath = (
         self.platform.home() / "Library/Logs/com.apple.WebDriver" /
         driver.session_id)
     all_logs = list(self.platform.glob(logs, "safaridriver*"))

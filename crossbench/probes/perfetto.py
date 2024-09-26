@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, cast
 
 from crossbench import helper
 from crossbench import path as pth
-from crossbench.cli_helper import parse_remote_path
+from crossbench.cli_helper import parse_any_path
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeKeyT)
@@ -24,8 +24,8 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-_PERFETTO_CONFIG_REMOTE_DIR = pth.RemotePath("/data/misc/perfetto-configs/")
-_PERFETTO_TRACE_REMOTE_DIR = pth.RemotePath("/data/misc/perfetto-traces/")
+_PERFETTO_CONFIG_REMOTE_DIR = pth.AnyPath("/data/misc/perfetto-configs/")
+_PERFETTO_TRACE_REMOTE_DIR = pth.AnyPath("/data/misc/perfetto-traces/")
 
 
 class PerfettoProbe(Probe):
@@ -60,12 +60,12 @@ class PerfettoProbe(Probe):
               "See probe instructions for more details"))
     parser.add_argument(
         "perfetto_bin",
-        type=parse_remote_path,
+        type=parse_any_path,
         default="perfetto",
         help="Perfetto binary on the browser device")
     return parser
 
-  def __init__(self, textproto: str, perfetto_bin: pth.RemotePath):
+  def __init__(self, textproto: str, perfetto_bin: pth.AnyPath):
     super().__init__()
     if not textproto:
       raise ValueError("Please specify a tracing config")
@@ -86,7 +86,7 @@ class PerfettoProbe(Probe):
     return self._textproto
 
   @property
-  def perfetto_bin(self) -> pth.RemotePath:
+  def perfetto_bin(self) -> pth.AnyPath:
     return self._perfetto_bin
 
   @property
@@ -132,11 +132,11 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
     super().__init__(probe, run)
     self._host_config_file: pth.LocalPath = (
         run.out_dir / "perfetto_config.textproto")
-    self._browser_config_file: pth.RemotePath = (
+    self._browser_config_file: pth.AnyPath = (
         _PERFETTO_CONFIG_REMOTE_DIR / "perfetto_config.textproto")
     self._pid: Optional[int] = None
 
-  def get_default_result_path(self) -> pth.RemotePath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return _PERFETTO_TRACE_REMOTE_DIR / "perfetto.trace.pb"
 
   @property

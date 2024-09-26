@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.network.base import Network
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -66,7 +66,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._index: int = index
     self._runs: List[Run] = []
     self._root_dir: LocalPath = root_dir
-    self._browser_tmp_dir: Optional[RemotePath] = None
+    self._browser_tmp_dir: Optional[AnyPath] = None
     self._extra_js_flags = JSFlags()
     self._extra_flags = extra_flags
     # Temporary objects, reset after all runs are ready (see set_ready).
@@ -216,7 +216,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return f"Session({self.browser}, {self.index})"
 
   @property
-  def browser_tmp_dir(self) -> RemotePath:
+  def browser_tmp_dir(self) -> AnyPath:
     if not self._browser_tmp_dir:
       prefix = f"cb_browser_session_{self.index}"
       self._browser_tmp_dir = self.browser_platform.mkdtemp(prefix)

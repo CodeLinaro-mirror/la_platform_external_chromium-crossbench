@@ -23,7 +23,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def __init__(self) -> None:
     super().__init__()
-    self._default_tmp_dir = pth.RemotePosixPath("")
+    self._default_tmp_dir = pth.AnyPosixPath("")
 
   @functools.cached_property
   def version(self) -> str:  #pylint: disable=invalid-overridden-method
@@ -84,14 +84,14 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         "bits": int(self.sh_stdout("python3", "-c", self._PY_VERSION).strip())
     }
 
-  def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
+  def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
     return self.sh_stdout(app_or_bin, "--version")
 
   @property
-  def default_tmp_dir(self) -> pth.RemotePath:
+  def default_tmp_dir(self) -> pth.AnyPath:
     if self._default_tmp_dir.parts:
       return self._default_tmp_dir
     if self.is_local:
@@ -111,12 +111,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         f"Fallback tmp dir does not exist: {self._default_tmp_dir}")
     return self._default_tmp_dir
 
-  def path(self, path: pth.RemotePathLike) -> pth.RemotePath:
+  def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
     if self.is_local:
       return pth.LocalPosixPath(path)
-    return pth.RemotePosixPath(path)
+    return pth.AnyPosixPath(path)
 
-  def which(self, binary_name: pth.RemotePathLike) -> Optional[pth.RemotePath]:
+  def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if self.is_local:
       return super().which(binary_name)
     if not binary_name:
@@ -132,13 +132,13 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       pass
     return None
 
-  def cat(self, file: pth.RemotePathLike, encoding: str = "utf-8") -> str:
+  def cat(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     if self.is_local:
       return super().cat(file, encoding)
     return self.sh_stdout("cat", self.path(file), encoding=encoding)
 
   def rm(self,
-         path: pth.RemotePathLike,
+         path: pth.AnyPathLike,
          dir: bool = False,
          missing_ok: bool = False) -> None:
     if self.is_local:
@@ -151,27 +151,27 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     else:
       self.sh("rm", self.path(path))
 
-  def rename(self, src_path: pth.RemotePathLike,
-             dst_path: pth.RemotePathLike) -> pth.RemotePath:
+  def rename(self, src_path: pth.AnyPathLike,
+             dst_path: pth.AnyPathLike) -> pth.AnyPath:
     if self.is_local:
       return super().rename(src_path, dst_path)
     dst_path = self.path(dst_path)
     self.sh("mv", self.path(src_path), dst_path)
     return dst_path
 
-  def home(self) -> pth.RemotePath:
+  def home(self) -> pth.AnyPath:
     if self.is_local:
       return super().home()
     return self.path(self.sh_stdout("printenv", "HOME").strip())
 
-  def touch(self, path: pth.RemotePathLike) -> None:
+  def touch(self, path: pth.AnyPathLike) -> None:
     if self.is_local:
       super().touch(path)
     else:
       self.sh("touch", self.path(path))
 
   def mkdir(self,
-            path: pth.RemotePathLike,
+            path: pth.AnyPathLike,
             parents: bool = True,
             exist_ok: bool = True) -> None:
     if self.is_local:
@@ -183,20 +183,20 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def mkdtemp(self,
               prefix: Optional[str] = None,
-              dir: Optional[pth.RemotePathLike] = None) -> pth.RemotePath:
+              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
     if self.is_local:
       return super().mkdtemp(prefix, dir)
     return self._mktemp_sh(is_dir=True, prefix=prefix, dir=dir)
 
   def mktemp(self,
              prefix: Optional[str] = None,
-             dir: Optional[pth.RemotePathLike] = None) -> pth.RemotePath:
+             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
     if self.is_local:
       return super().mktemp(prefix, dir)
     return self._mktemp_sh(is_dir=False, prefix=prefix, dir=dir)
 
   def _mktemp_sh(self, is_dir: bool, prefix: Optional[str],
-                 dir: Optional[pth.RemotePathLike]) -> pth.RemotePath:
+                 dir: Optional[pth.AnyPathLike]) -> pth.AnyPath:
     if not dir:
       dir = self.default_tmp_dir
     template = self.path(dir) / f"{prefix}.XXXXXXXXXXX"
@@ -207,8 +207,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     result = self.sh_stdout(*args)
     return self.path(result.strip())
 
-  def copy_dir(self, from_path: pth.RemotePathLike,
-               to_path: pth.RemotePathLike) -> pth.RemotePath:
+  def copy_dir(self, from_path: pth.AnyPathLike,
+               to_path: pth.AnyPathLike) -> pth.AnyPath:
     if self.is_local:
       return super().copy_dir(from_path, to_path)
     from_path = self.path(from_path)
@@ -219,8 +219,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     self.sh("cp", "-R", from_path, to_path)
     return to_path
 
-  def copy_file(self, from_path: pth.RemotePathLike,
-                to_path: pth.RemotePathLike) -> pth.RemotePath:
+  def copy_file(self, from_path: pth.AnyPathLike,
+                to_path: pth.AnyPathLike) -> pth.AnyPath:
     if self.is_local:
       return super().copy_file(from_path, to_path)
     from_path = self.path(from_path)
@@ -232,7 +232,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return to_path
 
   def set_file_contents(self,
-                        file: pth.RemotePathLike,
+                        file: pth.AnyPathLike,
                         data: str,
                         encoding: str = "utf-8") -> None:
     if self.is_local:
@@ -244,17 +244,17 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       self.host_platform.set_file_contents(tmp_file, data, encoding=encoding)
       self.push(tmp_file, dest_file)
 
-  def exists(self, path: pth.RemotePathLike) -> bool:
+  def exists(self, path: pth.AnyPathLike) -> bool:
     if self.is_local:
       return super().exists(path)
     return self.sh("[", "-e", self.path(path), "]", check=False).returncode == 0
 
-  def is_file(self, path: pth.RemotePathLike) -> bool:
+  def is_file(self, path: pth.AnyPathLike) -> bool:
     if self.is_local:
       return super().is_file(path)
     return self.sh("[", "-f", self.path(path), "]", check=False).returncode == 0
 
-  def is_dir(self, path: pth.RemotePathLike) -> bool:
+  def is_dir(self, path: pth.AnyPathLike) -> bool:
     if self.is_local:
       return super().is_dir(path)
     return self.sh("[", "-d", self.path(path), "]", check=False).returncode == 0

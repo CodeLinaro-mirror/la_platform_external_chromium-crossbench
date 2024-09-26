@@ -15,7 +15,7 @@ from crossbench.probes.results import EmptyProbeResult, ProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
@@ -61,9 +61,9 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
 
   def __init__(self, probe: ScreenshotProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: List[RemotePath] = []
+    self._results: List[AnyPath] = []
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     screenshot_dir = super().get_default_result_path()
     self.browser_platform.mkdir(screenshot_dir)
     return screenshot_dir

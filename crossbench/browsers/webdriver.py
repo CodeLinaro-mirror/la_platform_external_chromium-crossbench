@@ -11,9 +11,9 @@ import os
 import time
 import traceback
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
-import urllib3
 
 import selenium.common.exceptions
+import urllib3
 from selenium import webdriver
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
   from crossbench.browsers.settings import Settings
   from crossbench.env import HostEnvironment
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -50,14 +50,14 @@ class DriverException(RuntimeError):
 
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   _driver: webdriver.Remote
-  _driver_path: Optional[RemotePath]
+  _driver_path: Optional[AnyPath]
   _driver_pid: int
   _pid: int
   log_file: Optional[LocalPath]
 
   def __init__(self,
                label: str,
-               path: Optional[RemotePath] = None,
+               path: Optional[AnyPath] = None,
                settings: Optional[Settings] = None):
     super().__init__(label, path, settings)
     self._driver_path = self._settings.driver_path
@@ -83,7 +83,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         f"Webdriver path '{self._driver_path}' does not exist")
 
   @abc.abstractmethod
-  def _find_driver(self) -> RemotePath:
+  def _find_driver(self) -> AnyPath:
     pass
 
   @abc.abstractmethod
@@ -163,7 +163,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: AnyPath) -> webdriver.Remote:
     pass
 
   def details_json(self) -> JsonDict:
@@ -299,7 +299,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     raise NotImplementedError()
 
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: RemotePath) -> webdriver.Remote:
+                    driver_path: AnyPath) -> webdriver.Remote:
     raise NotImplementedError()
 
   def setup_binary(self) -> None:

@@ -42,7 +42,7 @@ class ChromeDownloader(Downloader):
   }
 
   def __init__(self, *args, **kwargs):
-    self._gsutil: Optional[pth.RemotePath] = None
+    self._gsutil: Optional[pth.AnyPath] = None
     super().__init__(*args, **kwargs)
 
   @classmethod
@@ -50,7 +50,7 @@ class ChromeDownloader(Downloader):
     return ChromeVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
-  def _is_valid(cls, path_or_identifier: pth.RemotePathLike,
+  def _is_valid(cls, path_or_identifier: pth.AnyPathLike,
                 browser_platform: Platform) -> bool:
     if cls.is_valid_version(str(path_or_identifier)):
       return True
@@ -87,7 +87,7 @@ class ChromeDownloader(Downloader):
           "(googlers only).")
 
   @property
-  def gsutil(self) -> pth.RemotePath:
+  def gsutil(self) -> pth.AnyPath:
     assert self._gsutil, "gsutil not be found."
     return self._gsutil
 
@@ -189,7 +189,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
   ARCHIVE_SUFFIX: str = ".rpm"
 
   @classmethod
-  def is_valid(cls, path_or_identifier: pth.RemotePathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
@@ -248,7 +248,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
   MIN_MAC_ARM64_MILESTONE: Final[int] = 87
 
   @classmethod
-  def is_valid(cls, path_or_identifier: pth.RemotePathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
@@ -347,7 +347,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   }
 
   @classmethod
-  def is_valid(cls, path_or_identifier: pth.RemotePathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
@@ -496,7 +496,7 @@ class ChromeDownloaderWin(ChromeDownloader):
   STORAGE_URL: str = "gs://chrome-unsigned/desktop-5c0tCh/"
 
   @classmethod
-  def is_valid(cls, path_or_identifier: pth.RemotePathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 

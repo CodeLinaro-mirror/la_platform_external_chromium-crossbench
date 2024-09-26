@@ -22,7 +22,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
   def test_parse_config(self):
     probe: PerfettoProbe = PerfettoProbe.from_config({"textproto": "TEXTPROTO"})
     self.assertEqual("TEXTPROTO", probe.textproto)
-    self.assertEqual(pth.RemotePath("perfetto"), probe.perfetto_bin)
+    self.assertEqual(pth.AnyPath("perfetto"), probe.perfetto_bin)
 
   def test_parse_example_config(self):
     config_file = (test_helper.config_dir() / "doc/probe/perfetto.config.hjson")

@@ -46,7 +46,7 @@ class MockPlatformMixin:
     self.sh_cmds: List[ShellArgsT] = []
     self.expected_sh_cmds: Optional[List[ShellArgsT]] = None
     self.sh_results: List[str] = []
-    self.file_contents: Dict[pth.RemotePath, List[str]] = (
+    self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.duration] = []
     super().__init__(*args, **kwargs)
@@ -100,7 +100,7 @@ class MockPlatformMixin:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
   def set_file_contents(self,
-                        file: pth.RemotePathLike,
+                        file: pth.AnyPathLike,
                         data: str,
                         encoding: str = "utf-8") -> None:
     del encoding
@@ -131,7 +131,7 @@ class MockPlatformMixin:
       macos: Sequence[str] = (),
       win: Sequence[str] = (),
       linux: Sequence[str] = ()
-  ) -> pth.RemotePath:
+  ) -> pth.AnyPath:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")
 
@@ -183,7 +183,7 @@ class WinMockPlatformMixin(MockPlatformMixin):
   # TODO: use wrapper fake path to get windows-path formatting by default
   # when running on posix.
 
-  def path(self, path: pth.RemotePathLike) -> pth.RemotePath:
+  def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
     return pathlib.PureWindowsPath(path)
 
 

@@ -271,7 +271,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
   def __init__(self, probe: TraceProcessorProbe, run: Run) -> None:
     super().__init__(probe, run)
 
-  def get_default_result_path(self) -> pth.RemotePath:
+  def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
     self.runner_platform.mkdir(result_dir)
     return result_dir

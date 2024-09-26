@@ -58,7 +58,7 @@ class NetworkSpeedPreset(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class NetworkSpeedConfig(ConfigObject):
-  ts_proxy: Optional[pth.RemotePath] = None
+  ts_proxy: Optional[pth.AnyPath] = None
   rtt_ms: Optional[int] = None
   in_kbps: Optional[int] = None
   out_kbps: Optional[int] = None

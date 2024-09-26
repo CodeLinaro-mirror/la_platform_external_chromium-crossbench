@@ -55,9 +55,9 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError):
       WinBinary("custom")
     with self.assertRaises(ValueError):
-      WinBinary(pth.RemotePath("custom"))
+      WinBinary(pth.AnyPath("custom"))
     with self.assertRaises(ValueError):
-      WinBinary(pth.RemotePath("foo/bar/custom.py"))
+      WinBinary(pth.AnyPath("foo/bar/custom.py"))
 
   def test_new_windows_binary(self):
     binary = WinBinary("crossbench_mock_binary.exe")
@@ -100,20 +100,19 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def test_known_binary_default(self):
     for platform in self.all_mock_platforms():
       with self.subTest(platform=platform):
-        default = pth.RemotePath("foo/bar/default/crossbench_mock_binary")
+        default = pth.AnyPath("foo/bar/default/crossbench_mock_binary")
         result = default
         if platform.is_win:
-          result = pth.RemotePath("foo/bar/default/crossbench_mock_binary.exe")
+          result = pth.AnyPath("foo/bar/default/crossbench_mock_binary.exe")
         binary = Binary("crossbench_mock_binary", default=default)
-        self.assertEqual(binary.platform_path(platform), pth.RemotePath(result))
+        self.assertEqual(binary.platform_path(platform), pth.AnyPath(result))
         with self.assertRaises(BinaryNotFoundError):
           binary.resolve(platform)
         with self.assertRaises(BinaryNotFoundError):
           binary.resolve_cached(platform)
         self.fs.create_file(result, st_size=100)
-        self.assertEqual(pth.RemotePath(binary.resolve(platform)), result)
-        self.assertEqual(
-            pth.RemotePath(binary.resolve_cached(platform)), result)
+        self.assertEqual(pth.AnyPath(binary.resolve(platform)), result)
+        self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
         self.fs.remove(result)
 
   def test_known_binary_linux(self):

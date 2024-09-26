@@ -26,12 +26,12 @@ from crossbench import plt
 if TYPE_CHECKING:
   import signal
 
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
 
   InputT = TypeVar("InputT")
   KeyT = TypeVar("KeyT")
   GroupT = TypeVar("GroupT")
-  PathT = TypeVar("PathT", bound=RemotePath)
+  PathT = TypeVar("PathT", bound=AnyPath)
 
 assert hasattr(shlex,
                "join"), ("Please update to python v3.8 that has shlex.join")
@@ -80,7 +80,7 @@ def sort_by_file_size(files: Iterable[PathT],
 SIZE_UNITS: Final[Tuple[str, ...]] = ("B", "KiB", "MiB", "GiB", "TiB")
 
 
-def get_file_size(file: RemotePath,
+def get_file_size(file: AnyPath,
                   digits: int = 2,
                   platform: plt.Platform = plt.PLATFORM) -> str:
   size: float = float(platform.file_size(file))

@@ -14,7 +14,7 @@ from typing import (TYPE_CHECKING, List, NamedTuple, Optional, Tuple, Type,
 import tabulate
 
 if TYPE_CHECKING:
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
 
 if sys.version_info >= (3, 11):
   from enum import StrEnum  # pylint: disable=unused-import
@@ -28,11 +28,11 @@ else:
 
 if sys.version_info >= (3, 9):
 
-  def is_relative_to(path_a: RemotePath, path_b: RemotePath) -> bool:
+  def is_relative_to(path_a: AnyPath, path_b: AnyPath) -> bool:
     return path_a.is_relative_to(path_b)
 else:
 
-  def is_relative_to(path_a: RemotePath, path_b: RemotePath) -> bool:
+  def is_relative_to(path_a: AnyPath, path_b: AnyPath) -> bool:
     try:
       path_a.relative_to(path_b)
       return True

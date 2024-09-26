@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -161,7 +161,7 @@ class BrowserProfilingProbeContext(
 class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
                                                   ):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     return (super().get_default_result_path().parent /
             f"{self.browser.type_name}.profile.json")
 
@@ -185,7 +185,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
 
 class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     return super().get_default_result_path().parent / "firefox.profile.json"
 
   def setup(self) -> None:
@@ -206,7 +206,7 @@ class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
 class SafariWebdriverBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
-  def get_default_result_path(self) -> RemotePath:
+  def get_default_result_path(self) -> AnyPath:
     return super().get_default_result_path().parent / "safari.timeline.json"
 
   def setup_selenium_options(self, options: BaseOptions) -> None:

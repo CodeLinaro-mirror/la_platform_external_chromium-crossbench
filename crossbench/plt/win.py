@@ -45,10 +45,9 @@ class WinPlatform(Platform):
     return self.sh_stdout("wmic", "cpu", "get",
                           "name").strip().splitlines()[2].strip()
 
-  def search_binary(self,
-                    app_or_bin: pth.RemotePathLike) -> Optional[pth.RemotePath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     assert self.is_local, "Unsupported operation on remote platform"
-    app_or_bin_path: pth.RemotePath = self.path(app_or_bin)
+    app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
     if app_or_bin_path.suffix != ".exe":
@@ -64,7 +63,7 @@ class WinPlatform(Platform):
         return result_path
     return None
 
-  def app_version(self, app_or_bin: pth.RemotePathLike) -> str:
+  def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
@@ -72,8 +71,8 @@ class WinPlatform(Platform):
         "powershell", "-command",
         f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion")
 
-  def symlink_or_copy(self, src: pth.RemotePathLike,
-                      dst: pth.RemotePathLike) -> pth.RemotePath:
+  def symlink_or_copy(self, src: pth.AnyPathLike,
+                      dst: pth.AnyPathLike) -> pth.AnyPath:
     """Windows does not support symlinking without admin support.
     Copy files on windows but symlink everywhere else (see base Platform)."""
     assert self.is_local, "Unsupported operation on remote platform"

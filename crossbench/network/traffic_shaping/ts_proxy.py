@@ -26,7 +26,7 @@ from crossbench.network.traffic_shaping.base import TrafficShaper
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.plt.base import ListCmdArgs, Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -379,7 +379,7 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   def __init__(self,
                browser_platform: Platform,
-               ts_proxy_path: Optional[RemotePath] = None,
+               ts_proxy_path: Optional[AnyPath] = None,
                rtt_ms: Optional[int] = None,
                in_kbps: Optional[int] = None,
                out_kbps: Optional[int] = None,

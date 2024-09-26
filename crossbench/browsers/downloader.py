@@ -38,7 +38,7 @@ class Downloader(abc.ABC):
     pass
 
   @classmethod
-  def is_valid(cls, path_or_identifier: pth.RemotePathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._get_loader_cls(browser_platform).is_valid(
         path_or_identifier, browser_platform)

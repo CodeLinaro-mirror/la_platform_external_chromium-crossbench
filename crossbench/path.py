@@ -9,11 +9,11 @@ from typing import Union
 
 # A path that can refer to files on a remote platform with potentially
 # a different Path flavour (e.g. Win vs Posix).
-RemotePath = pathlib.PurePath
-RemotePosixPath = pathlib.PurePosixPath
-RemoteWindowsPath = pathlib.PureWindowsPath
+AnyPath = pathlib.PurePath
+AnyPosixPath = pathlib.PurePosixPath
+AnyWindowsPath = pathlib.PureWindowsPath
 
-RemotePathLike = Union[str, RemotePath]
+AnyPathLike = Union[str, AnyPath]
 
 # A path that only ever refers to files on the local host / runner platform.
 # Not that Path inherits from PurePath, and thus we can use a LocalPath in

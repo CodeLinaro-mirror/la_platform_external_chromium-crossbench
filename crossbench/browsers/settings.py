@@ -25,9 +25,9 @@ class Settings:
   def __init__(self,
                flags: Optional[Flags.InitialDataType] = None,
                js_flags: Optional[Flags.InitialDataType] = None,
-               cache_dir: Optional[pth.RemotePath] = None,
+               cache_dir: Optional[pth.AnyPath] = None,
                network: Optional[Network] = None,
-               driver_path: Optional[pth.RemotePath] = None,
+               driver_path: Optional[pth.AnyPath] = None,
                viewport: Optional[Viewport] = None,
                splash_screen: Optional[SplashScreen] = None,
                platform: Optional[plt.Platform] = None,
@@ -82,11 +82,11 @@ class Settings:
     return self._js_flags
 
   @property
-  def cache_dir(self) -> Optional[pth.RemotePath]:
+  def cache_dir(self) -> Optional[pth.AnyPath]:
     return self._cache_dir
 
   @property
-  def driver_path(self) -> Optional[pth.RemotePath]:
+  def driver_path(self) -> Optional[pth.AnyPath]:
     return self._driver_path
 
   @property

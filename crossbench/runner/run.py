@@ -77,7 +77,7 @@ class Run(ResultOrigin):
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
     self._timeout = timeout
     self._exceptions = Annotator(throw)
-    self._browser_tmp_dir: Optional[pth.RemotePath] = None
+    self._browser_tmp_dir: Optional[pth.AnyPath] = None
     self._probe_context_manager = ProbeRunContextManager(
         self, self._probe_results)
 
@@ -210,7 +210,7 @@ class Run(ResultOrigin):
     return self._out_dir
 
   @property
-  def browser_tmp_dir(self) -> pth.RemotePath:
+  def browser_tmp_dir(self) -> pth.AnyPath:
     """Returns a path to a tmp dir on the browser platform."""
     if not self._browser_tmp_dir:
       prefix = "cb_run_results"

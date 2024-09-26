@@ -18,7 +18,7 @@ from crossbench.probes.result_location import ResultLocation
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.path import RemotePath
+  from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -98,7 +98,7 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
   def __init__(self, probe: PowerMetricsProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._power_metrics_process: Optional[subprocess.Popen] = None
-    self._output_plist_file: RemotePath = self.result_path.with_suffix(".plist")
+    self._output_plist_file: AnyPath = self.result_path.with_suffix(".plist")
 
   def start(self) -> None:
     self._power_metrics_process = self.browser_platform.popen(

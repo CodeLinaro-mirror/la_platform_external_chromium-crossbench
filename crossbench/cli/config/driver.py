@@ -20,7 +20,7 @@ from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.ios import ios_devices
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath, RemotePath
+  from crossbench.path import AnyPath, LocalPath
 
 
 @enum.unique
@@ -82,9 +82,9 @@ IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
-  path: Optional[RemotePath] = None
+  path: Optional[AnyPath] = None
   device_id: Optional[str] = None
-  adb_bin: Optional[RemotePath] = None
+  adb_bin: Optional[AnyPath] = None
   settings: Optional[immutabledict] = None
 
   @classmethod

@@ -134,7 +134,7 @@ def parse_trace_config_file_path(value: str) -> pth.LocalPath:
   return pth.LocalPath(value)
 
 
-ANDROID_TRACE_CONFIG_PATH = pth.RemotePosixPath(
+ANDROID_TRACE_CONFIG_PATH = pth.AnyPosixPath(
     "/data/local/chrome-trace-config.json")
 
 
@@ -207,7 +207,7 @@ class TracingProbe(ChromiumProbe):
                startup_duration: int = 0,
                record_mode: RecordMode = RecordMode.CONTINUOUSLY,
                record_format: RecordFormat = RecordFormat.PROTO,
-               traceconv: Optional[pth.RemotePath] = None) -> None:
+               traceconv: Optional[pth.AnyPath] = None) -> None:
     super().__init__()
     self._trace_config: Optional[pth.LocalPath] = trace_config
     self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
@@ -224,7 +224,7 @@ class TracingProbe(ChromiumProbe):
     self._startup_duration: int = startup_duration
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
-    self._traceconv: Optional[pth.RemotePath] = traceconv
+    self._traceconv: Optional[pth.AnyPath] = traceconv
 
   @property
   def key(self) -> ProbeKeyT:
@@ -240,7 +240,7 @@ class TracingProbe(ChromiumProbe):
     return f"trace.{self._record_format.value}"  # pylint: disable=no-member
 
   @property
-  def traceconv(self) -> Optional[pth.RemotePath]:
+  def traceconv(self) -> Optional[pth.AnyPath]:
     return self._traceconv
 
   @property
@@ -271,7 +271,7 @@ class TracingProbe(ChromiumProbe):
 
 
 class TracingProbeContext(ProbeContext[TracingProbe]):
-  _traceconv: Optional[pth.RemotePath]
+  _traceconv: Optional[pth.AnyPath]
   _record_format: RecordFormat
 
   def setup(self) -> None:
