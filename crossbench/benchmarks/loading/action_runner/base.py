@@ -53,7 +53,27 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
     super().__init__(runner, action, input_source_message)
 
 
+class ActionRunnerListener:
+  """Default empty ActionRunnerListener implementation."""
+
+  def handle_error(self, e: Exception) -> None:
+    pass
+
+  def handle_page_run(self, run: Run) -> None:
+    pass
+
+  def handle_new_tab(self) -> None:
+    pass
+
+
 class ActionRunner:
+
+  def __init__(self):
+    self._listener = ActionRunnerListener()
+
+  def set_listener(self, listener):
+    self._listener = listener
+
   # TODO: Don't share state across runs
   _info_stack: Optional[exception.TInfoStack]
 
@@ -190,12 +210,19 @@ class ActionRunner:
     # TODO: refactor possible logics to TabController.
     browser = run.browser
     for _ in tabs:
-      for i, page in enumerate(pages):
-        # Create a new tab for the multiple_tab case.
-        if i > 0:
-          browser.switch_to_new_tab()
-        page.run_with(run, self, False)
-      browser.switch_to_new_tab()
+      try:
+        for i, page in enumerate(pages):
+          # Create a new tab for the multiple_tab case.
+          if i > 0:
+            browser.switch_to_new_tab()
+            self._listener.handle_new_tab()
+          page.run_with(run, self, False)
+          self._listener.handle_page_run(run)
+        browser.switch_to_new_tab()
+        self._listener.handle_new_tab()
+      except Exception as e:
+        self._listener.handle_error(e)
+        raise
 
   def run_page(self, run: Run, page: LivePage, multiple_tabs: bool):
     if multiple_tabs:

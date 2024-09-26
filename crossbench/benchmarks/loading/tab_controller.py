@@ -22,6 +22,10 @@ class TabController(ConfigObject):
 
   @classmethod
   def parse_str(cls, value: str) -> TabController:
+    if not value or value == "single":
+      return cls.single()
+    if value in ("inf", "infinity"):
+      return cls.forever()
     loops = cli_helper.parse_positive_int(value, "Repeat-count")
     return cls.repeat(loops)
 
@@ -68,12 +72,10 @@ class ForeverTabController(TabController):
   Open given urls in separate tabs and repeat infinitely until
   one of the tabs gets discarded.
 
-  Example 1: if url='cnn', it keeps opening new tab for it until
-  finding a discarded tab.
+  Example 1: if url='cnn', it keeps opening new tabs loading cnn.
 
   Example 2: if urls='amazon,cnn', it keeps opening
-  amazon,cnn,amazon,cnn,amazon,cnn,.... .... until finding a
-  discarded tab.
+  amazon,cnn,amazon,cnn,amazon,cnn,.... ....
   """
   multiple_tabs = True
   is_forever = True

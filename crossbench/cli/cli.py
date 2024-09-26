@@ -168,6 +168,7 @@ class CrossBenchCLI:
       benchmarks.Speedometer20Benchmark,
       benchmarks.Speedometer21Benchmark,
       benchmarks.Speedometer30Benchmark,
+      benchmarks.MemoryBenchmark,
   )
 
   RUNNER_CLS: Type[Runner] = Runner
@@ -596,8 +597,7 @@ class CrossBenchCLI:
         default=False,
         action="store_true",
         help="Clear user data at the beginning of the test "
-             "(be careful using it)."
-    )
+        "(be careful using it).")
 
     splashscreen_group = browser_group.add_mutually_exclusive_group()
     splashscreen_group.add_argument(

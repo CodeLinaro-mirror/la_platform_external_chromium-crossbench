@@ -216,6 +216,7 @@ E: <time> 0000 0000 0
 class ChromeOSInputActionRunner(BasicActionRunner):
 
   def __init__(self):
+    super().__init__()
     self._touch_device: Optional[TouchDevice] = None
     self._remote_tmp_file = ""
 

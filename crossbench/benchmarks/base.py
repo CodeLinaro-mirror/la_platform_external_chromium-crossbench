@@ -39,7 +39,6 @@ class BenchmarkProbeMixin:
     return self._benchmark
 
 
-
 class Benchmark(abc.ABC):
   NAME: str = ""
   DEFAULT_STORY_CLS: Type[Story] = Story
@@ -180,7 +179,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
                story_cls: Type[StoryT],
                patterns: Sequence[str],
                separate: bool = False) -> None:
-    self.story_cls : Type[StoryT] = story_cls
+    self.story_cls: Type[StoryT] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
     # Using order-preserving dict instead of set

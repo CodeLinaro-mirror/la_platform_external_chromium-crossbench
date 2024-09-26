@@ -32,6 +32,8 @@ from crossbench.benchmarks.speedometer.speedometer_2_1 import \
     Speedometer21Benchmark
 from crossbench.benchmarks.speedometer.speedometer_3_0 import \
     Speedometer30Benchmark
+from crossbench.benchmarks.memory.memory_benchmark import \
+    MemoryBenchmark
 from tests import test_helper
 
 ALL = (
@@ -51,6 +53,7 @@ ALL = (
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,
+    MemoryBenchmark,
 )
 
 
@@ -73,6 +76,8 @@ class AllBenchmarksTestCase(unittest.TestCase):
   def test_story_classes(self):
     seen_story_classes = OrderedSet()
     for benchmark_cls in ALL:
+      if benchmark_cls is MemoryBenchmark:
+        continue
       if issubclass(benchmark_cls,
                     PageLoadBenchmark) and (benchmark_cls
                                             is not PageLoadBenchmark):

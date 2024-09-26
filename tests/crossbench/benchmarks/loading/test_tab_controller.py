@@ -8,6 +8,7 @@ import argparse
 import unittest
 
 from crossbench.benchmarks.loading.tab_controller import (TabController,
+                                                          SingleTabController,
                                                           RepeatTabController,
                                                           ForeverTabController)
 from tests import test_helper
@@ -29,6 +30,19 @@ class TabControllerTestCase(unittest.TestCase):
     self.assertEqual(len(list(tab)), 3)
     self.assertTrue(tab.multiple_tabs)
     self.assertFalse(tab.is_forever)
+
+  def test_parse_single(self):
+    tab = TabController.parse("single")
+    self.assertIsInstance(tab, SingleTabController)
+    self.assertFalse(tab.multiple_tabs)
+    self.assertFalse(tab.is_forever)
+    self.assertEqual(len(list(tab)), 1)
+
+  def test_parse_inf(self):
+    tab = TabController.parse("inf")
+    self.assertIsInstance(tab, ForeverTabController)
+    tab = TabController.parse("infinity")
+    self.assertIsInstance(tab, ForeverTabController)
 
   def test_repeat(self):
     iterations = sum(1 for _ in TabController.repeat(1))
