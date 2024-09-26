@@ -136,7 +136,19 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
   ) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
+    parser.add_argument(
+        '--skippable-tab-count',
+        dest="skippable_tab_count",
+        type=cli_helper.parse_positive_int,
+        default=0,
+        help='The number of tabs that can be skipped for liveness checking.')
     return parser
+
+  @classmethod
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["skippable_tab_count"] = args.skippable_tab_count
+    return kwargs
 
   @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
@@ -146,6 +158,7 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
 
   def __init__(self,
                stories: Sequence[Page],
+               skippable_tab_count: Optional[int] = 0,
                action_runner: Optional[ActionRunner] = None) -> None:
     self._action_runner = action_runner or BasicActionRunner()
     for story in stories:
@@ -154,6 +167,7 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
     # Records the navigation_starttime time for each window handle.
     self.navigation_time_ms: Dict[str, float] = {}
     self.tab_count: int = 1
+    self.skippable_tab_count = skippable_tab_count
     self._action_runner.set_listener(self)
 
   @property
@@ -219,7 +233,8 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
 
   def handle_page_run(self, run: Run) -> None:
     self._record_navigation_time(run)
-    self._check_liveness(run)
+    if self.tab_count > self.skippable_tab_count:
+      self._check_liveness(run)
 
   def handle_new_tab(self) -> None:
     self._increment_tab_count()
