@@ -664,3 +664,17 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       parts.extend(helper.wrap_lines(arg.help_text, width=width, indent="  "))
       parts.append("")
     return "\n".join(parts)
+
+
+def is_google_env() -> bool:
+  return "/google3/" in __file__
+
+
+def root_dir() -> pth.LocalPath:
+  if is_google_env():
+    return pth.LocalPath(__file__).parents[0]
+  return pth.LocalPath(__file__).parents[1]
+
+
+def config_dir() -> pth.LocalPath:
+  return root_dir() / "config"

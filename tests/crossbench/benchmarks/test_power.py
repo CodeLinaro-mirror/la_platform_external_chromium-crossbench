@@ -21,8 +21,7 @@ class TestExamplePageConfig(unittest.TestCase):
       'meet_story.hjson',
       'netflix_story.hjson'
     ]:
-      config_file = pathlib.Path(
-          __file__).parents[3] / "crossbench" / "benchmarks" \
+      config_file = test_helper.crossbench_dir() / "benchmarks" \
             / "experimental" / "power" / config_file_name
       file_config = PagesConfig.parse(config_file)
       with config_file.open(encoding="utf-8") as f:

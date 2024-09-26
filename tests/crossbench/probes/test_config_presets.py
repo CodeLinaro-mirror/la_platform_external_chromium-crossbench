@@ -36,6 +36,8 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.real_config_dir = test_helper.config_dir()
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench.path])
+    if test_helper.is_google_env():
+      self.fs.add_real_directory("/build/cas")
     self.set_up_required_paths()
 
   def set_up_required_paths(self):
@@ -51,7 +53,8 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
   def _test_parse_config_dir(self,
                              real_config_dir: pathlib.Path) -> List[Probe]:
     probes = []
-    self.fs.add_real_directory(real_config_dir)
+    self.fs.add_real_directory(
+        real_config_dir, lazy_read=(not test_helper.is_google_env()))
     for probe_config in real_config_dir.glob("**/*.config.hjson"):
       with ChangeCWD(probe_config.parent):
         probes += self._parse_config(probe_config)

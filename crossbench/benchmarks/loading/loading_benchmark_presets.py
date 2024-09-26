@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
+from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.runner import Run
 
-CONFIG_DIR = pth.LocalPath(__file__).parents[3] / "config"
+CONFIG_DIR = config.config_dir()
 LOADING_DIR = CONFIG_DIR / "benchmark" / "loading"
 
 

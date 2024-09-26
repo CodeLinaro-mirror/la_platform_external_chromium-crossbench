@@ -8,17 +8,20 @@ import pathlib
 import sys
 from typing import Union
 
+from crossbench import config
+
 import pytest
 
 
-def root_dir() -> pathlib.Path:
-  # Input:  /foo/bar/crossbench/tests/test_helper.py
-  # Output: /foo/bar/crossbench/
-  return pathlib.Path(__file__).parents[1]
+is_google_env = config.is_google_env
+root_dir = config.root_dir
+config_dir = config.config_dir
 
 
-def config_dir() -> pathlib.Path:
-  return root_dir() / "config"
+def crossbench_dir() -> pathlib.Path:
+  if is_google_env():
+    return root_dir()
+  return root_dir() / "crossbench"
 
 
 def run_pytest(path: Union[str, pathlib.Path], *args):

@@ -288,6 +288,8 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_process_running(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
+    if test_helper.is_google_env():
+      self.skipTest("Not supported yet in google environment.")
     self.assertFalse(self.platform.process_running([]))
     self.assertFalse(
         self.platform.process_running(["crossbench_invalid_test_bin"]))
@@ -297,6 +299,8 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_process_info(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
+    if test_helper.is_google_env():
+      self.skipTest("Not supported yet in google environment.")
     process_info = self.platform.process_info(os.getpid())
     self.assertIn("python", process_info["name"].lower())
 
@@ -394,6 +398,8 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     self.assertNotIn(custom_key, env)
 
   def test_app_version(self):
+    if test_helper.is_google_env():
+      self.skipTest("Not supported yet in google environment.")
     python_path = sys.executable
     with self.assertRaises(ValueError):
       self.platform.app_version("path/to/invalid/test/crossbench/bin")

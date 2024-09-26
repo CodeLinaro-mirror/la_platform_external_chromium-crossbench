@@ -25,6 +25,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
+from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
@@ -73,7 +74,10 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.fs.add_real_directory(
-        PageLoadTabletBenchmark.default_network_config_path().parent)
+        PageLoadTabletBenchmark.default_network_config_path().parent,
+        lazy_read=(not test_helper.is_google_env()))
+    if test_helper.is_google_env():
+      self.fs.add_real_directory("/build/cas")
     self.browsers: List[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
