@@ -23,7 +23,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def __init__(self) -> None:
     super().__init__()
-    self._default_tmp_dir = pth.RemotePath("")
+    self._default_tmp_dir = pth.RemotePosixPath("")
 
   @functools.cached_property
   def version(self) -> str:  #pylint: disable=invalid-overridden-method

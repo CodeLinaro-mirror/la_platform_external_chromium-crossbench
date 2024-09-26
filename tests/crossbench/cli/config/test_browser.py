@@ -184,7 +184,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("adb:chrome"),
         BrowserConfig(
-            pth.RemotePath("com.android.chrome"),
+            pth.RemotePosixPath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -194,7 +194,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:com.chrome.beta"),
         BrowserConfig(
-            pth.RemotePath("com.chrome.beta"),
+            pth.RemotePosixPath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -204,7 +204,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chrome-beta"),
         BrowserConfig(
-            pth.RemotePath("com.chrome.beta"),
+            pth.RemotePosixPath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -214,7 +214,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("adb:chrome-dev"),
         BrowserConfig(
-            pth.RemotePath("com.chrome.dev"),
+            pth.RemotePosixPath("com.chrome.dev"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -224,7 +224,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chrome-canary"),
         BrowserConfig(
-            pth.RemotePath("com.chrome.canary"),
+            pth.RemotePosixPath("com.chrome.canary"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -234,7 +234,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse("android:chromium"),
         BrowserConfig(
-            pth.RemotePath("org.chromium.chrome"),
+            pth.RemotePosixPath("org.chromium.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
@@ -303,7 +303,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 3)
     self.assertEqual(
         config,
-        BrowserConfig(pth.RemotePath("com.android.chrome"), expected_driver))
+        BrowserConfig(
+            pth.RemotePosixPath("com.android.chrome"), expected_driver))
 
   @unittest.skipIf(plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_adb_phone_serial_invalid_macos(self):

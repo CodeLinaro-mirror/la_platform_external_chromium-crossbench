@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 class ChromeOsSshPlatform(LinuxSshPlatform):
 
-  AUTOLOGIN_PATH = pth.RemotePath("/usr/local/autotest/bin/autologin.py")
-  DEVTOOLSPORT_PATH = pth.RemotePath("/home/chronos/DevToolsActivePort")
+  AUTOLOGIN_PATH = pth.RemotePosixPath("/usr/local/autotest/bin/autologin.py")
+  DEVTOOLS_PORT_PATH = pth.RemotePosixPath("/home/chronos/DevToolsActivePort")
 
   @property
   def name(self) -> str:
@@ -38,7 +38,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     except plt.SubprocessError as e:
       raise RuntimeError("Autologin failed.") from e
     try:
-      dbg_port = self.cat(self.DEVTOOLSPORT_PATH).splitlines()[0].strip()
+      dbg_port = self.cat(self.DEVTOOLS_PORT_PATH).splitlines()[0].strip()
     except plt.SubprocessError as e:
       raise RuntimeError("Could not read remote debugging port.") from e
     return int(dbg_port)

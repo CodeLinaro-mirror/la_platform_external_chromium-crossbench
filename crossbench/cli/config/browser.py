@@ -171,7 +171,7 @@ class BrowserConfig(ConfigObject):
         return maybe_path_or_identifier
       if driver_type == BrowserDriverType.ANDROID:
         if ANDROID_PACKAGE_RE.fullmatch(maybe_path_or_identifier):
-          return pth.RemotePath(maybe_path_or_identifier)
+          return pth.RemotePosixPath(maybe_path_or_identifier)
     if not path:
       path = cli_helper.try_resolve_existing_path(maybe_path_or_identifier)
       if not path:
@@ -201,26 +201,26 @@ class BrowserConfig(ConfigObject):
     platform = plt.PLATFORM
     if identifier in ("chrome", "chrome-stable", "chr-stable", "chr"):
       if driver_type == BrowserDriverType.ANDROID:
-        return pth.RemotePath("com.android.chrome")
+        return pth.RemotePosixPath("com.android.chrome")
       return browsers.Chrome.stable_path(platform)
     if identifier in ("chrome-app"):
       if driver_type == BrowserDriverType.ANDROID:
-        return pth.RemotePath("com.google.android.apps.chrome")
+        return pth.RemotePosixPath("com.google.android.apps.chrome")
     if identifier in ("chrome-beta", "chr-beta"):
       if driver_type == BrowserDriverType.ANDROID:
-        return pth.RemotePath("com.chrome.beta")
+        return pth.RemotePosixPath("com.chrome.beta")
       return browsers.Chrome.beta_path(platform)
     if identifier in ("chrome-dev", "chr-dev"):
       if driver_type == BrowserDriverType.ANDROID:
-        return pth.RemotePath("com.chrome.dev")
+        return pth.RemotePosixPath("com.chrome.dev")
       return browsers.Chrome.dev_path(platform)
     if identifier in ("chrome-canary", "chr-canary"):
       if driver_type == BrowserDriverType.ANDROID:
-        return pth.RemotePath("com.chrome.canary")
+        return pth.RemotePosixPath("com.chrome.canary")
       return browsers.Chrome.canary_path(platform)
     if identifier == "chromium":
       if driver_type == BrowserDriverType.ANDROID:
-        return pth.RemotePath("org.chromium.chrome")
+        return pth.RemotePosixPath("org.chromium.chrome")
       return browsers.Chromium.default_path(platform)
     if identifier in ("edge", "edge-stable"):
       return browsers.Edge.stable_path(platform)

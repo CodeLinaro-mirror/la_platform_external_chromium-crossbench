@@ -16,14 +16,14 @@ from crossbench.plt.remote import RemotePlatformMixin
 
 class LinuxPlatform(PosixPlatform):
   SEARCH_PATHS: Tuple[pth.RemotePath, ...] = (
-      pth.RemotePath("."),
-      pth.RemotePath("/usr/local/sbin"),
-      pth.RemotePath("/usr/local/bin"),
-      pth.RemotePath("/usr/sbin"),
-      pth.RemotePath("/usr/bin"),
-      pth.RemotePath("/sbin"),
-      pth.RemotePath("/bin"),
-      pth.RemotePath("/opt/google"),
+      pth.RemotePosixPath("."),
+      pth.RemotePosixPath("/usr/local/sbin"),
+      pth.RemotePosixPath("/usr/local/bin"),
+      pth.RemotePosixPath("/usr/sbin"),
+      pth.RemotePosixPath("/usr/bin"),
+      pth.RemotePosixPath("/sbin"),
+      pth.RemotePosixPath("/bin"),
+      pth.RemotePosixPath("/opt/google"),
   )
 
   @property

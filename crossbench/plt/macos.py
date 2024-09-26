@@ -22,8 +22,8 @@ from crossbench.plt.posix import PosixPlatform
 
 class MacOSPlatform(PosixPlatform):
   SEARCH_PATHS: Tuple[pth.RemotePath, ...] = (
-      pth.RemotePath("."),
-      pth.RemotePath("/Applications"),
+      pth.RemotePosixPath("."),
+      pth.RemotePosixPath("/Applications"),
       # TODO: support remote platforms
       pth.LocalPath.home() / "Applications",
   )

@@ -134,7 +134,7 @@ def parse_trace_config_file_path(value: str) -> pth.LocalPath:
   return pth.LocalPath(value)
 
 
-ANDROID_TRACE_CONFIG_PATH = pth.RemotePath(
+ANDROID_TRACE_CONFIG_PATH = pth.RemotePosixPath(
     "/data/local/chrome-trace-config.json")
 
 

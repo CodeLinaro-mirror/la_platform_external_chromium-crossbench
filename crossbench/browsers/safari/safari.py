@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
 
 
-SAFARIDRIVER_PATH = pth.RemotePath("/usr/bin/safaridriver")
+SAFARIDRIVER_PATH = pth.RemotePosixPath("/usr/bin/safaridriver")
 
 
 def find_safaridriver(bin_path: pth.RemotePath,

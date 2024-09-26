@@ -116,7 +116,7 @@ class Binary:
 class PosixBinary(Binary):
 
   def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePath(name).name, posix=name)
+    super().__init__(pth.RemotePosixPath(name).name, posix=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
@@ -126,7 +126,7 @@ class PosixBinary(Binary):
 class MacOsBinary(Binary):
 
   def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePath(name).name, macos=name)
+    super().__init__(pth.RemotePosixPath(name).name, macos=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_macos:
@@ -136,7 +136,7 @@ class MacOsBinary(Binary):
 class LinuxBinary(Binary):
 
   def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePath(name).name, linux=name)
+    super().__init__(pth.RemotePosixPath(name).name, linux=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
@@ -146,7 +146,7 @@ class LinuxBinary(Binary):
 class AndroidBinary(Binary):
 
   def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePath(name).name, android=name)
+    super().__init__(pth.RemotePosixPath(name).name, android=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_android:
@@ -156,7 +156,7 @@ class AndroidBinary(Binary):
 class WinBinary(Binary):
 
   def __init__(self, name: pth.RemotePathLike):
-    super().__init__(pth.RemotePath(name).name, win=name)
+    super().__init__(pth.RemoteWindowsPath(name).name, win=name)
 
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_win:

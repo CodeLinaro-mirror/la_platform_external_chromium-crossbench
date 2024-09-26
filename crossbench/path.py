@@ -11,6 +11,7 @@ from typing import Union
 # a different Path flavour (e.g. Win vs Posix).
 RemotePath = pathlib.PurePath
 RemotePosixPath = pathlib.PurePosixPath
+RemoteWindowsPath = pathlib.PureWindowsPath
 
 RemotePathLike = Union[str, RemotePath]
 

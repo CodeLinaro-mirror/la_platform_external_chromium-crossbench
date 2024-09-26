@@ -199,11 +199,12 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
 # Android is high-tech and reads chrome flags from an app-specific file.
 # TODO: extend support to more than just chrome.
-_FLAG_ROOT: pth.RemotePath = pth.RemotePath("/data/local/tmp/")
-FLAGS_WEBLAYER: pth.RemotePath = _FLAG_ROOT / "weblayer-command-line"
-FLAGS_WEBVIEW: pth.RemotePath = _FLAG_ROOT / "webview-command-line"
-FLAGS_CONTENT_SHELL: pth.RemotePath = _FLAG_ROOT / "content-shell-command-line"
-FLAGS_CHROME: pth.RemotePath = _FLAG_ROOT / "chrome-command-line"
+_FLAG_ROOT: pth.RemotePosixPath = pth.RemotePosixPath("/data/local/tmp/")
+FLAGS_WEBLAYER: pth.RemotePosixPath = _FLAG_ROOT / "weblayer-command-line"
+FLAGS_WEBVIEW: pth.RemotePosixPath = _FLAG_ROOT / "webview-command-line"
+FLAGS_CONTENT_SHELL: pth.RemotePosixPath = (
+    _FLAG_ROOT / "content-shell-command-line")
+FLAGS_CHROME: pth.RemotePosixPath = _FLAG_ROOT / "chrome-command-line"
 
 
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
