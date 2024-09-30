@@ -1,27 +1,19 @@
-// TODO: clean up unused categories and queries after the experimenting stage
-// is over.
 {
   probes: {
     trace_processor: {
       queries: [
-        "loading/lcp_metric",
-        "loading/amazon_page_load_metric",
-        "loading/cnn_desktop_page_load_metric",
-        "loading/cnn_mobile_page_load_metric",
-        "loading/globo_page_load_metric",
-        "loading/wikipedia_page_load_metric",
-        "loading/youtube_page_load_metric",
-        "loading/experimental/cpu",
-        "loading/experimental/dom",
-        "loading/experimental/interaction_latency",
-        "loading/experimental/mojo",
-        "loading/experimental/resources",
-        "loading/experimental/sequence_manager",
-        "loading/experimental/tlp",
-        "loading/experimental/v8",
-        "loading/experimental/v8_rcs",
-        "loading/experimental/web_features",
-        "loading/experimental/worker",
+        "loadline/benchmark_score",
+        "loadline/experimental/cpu",
+        "loadline/experimental/dom",
+        "loadline/experimental/interaction_latency",
+        "loadline/experimental/mojo",
+        "loadline/experimental/resources",
+        "loadline/experimental/sequence_manager",
+        "loadline/experimental/tlp",
+        "loadline/experimental/v8",
+        "loadline/experimental/v8_rcs",
+        "loadline/experimental/web_features",
+        "loadline/experimental/worker",
       ],
     },
     perfetto: {

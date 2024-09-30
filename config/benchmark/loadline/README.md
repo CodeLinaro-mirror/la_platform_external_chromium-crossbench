@@ -32,9 +32,9 @@ Results will be located in `results/latest/`. Notable files in this directory:
 *   `trace_processor/loadline_benchmark_score.csv`: Breakdown of scores per
     page and repetition
 
-##  Benchmark Details
+## Benchmark Details
 
-###  Background
+### Background
 
 Web is one of the most important use cases on mobile devices. Page loading speed
 represents a crucial part of user experience, and is not well covered by
@@ -45,7 +45,7 @@ components and their interactions. Hence the need for a dedicated web loading
 benchmark that will enable us to compare devices, track improvements across OS
 and browser releases.
 
-###  Workload
+### Workload
 
 We aimed for two configurations:
 
@@ -72,7 +72,7 @@ The biggest challenges we faced in achieving this goal were:
     However, page load is very complex and indeterministic so naive replays are
     often not consistent.
 
-###  Site Selection
+### Site Selection
 
 We did a thorough analysis to ensure we select relevant and representative
 sites. Our aspiration was to understand the distribution of the most important
@@ -97,65 +97,27 @@ communication, input events, frame production, network requests, etc.
 In the end we selected 5 sites for each configuration which we plan to extend in
 the future.
 
-####  Mobile
+#### Mobile
 
-| Page (mobile version)      |  CUJ               | Performance                |
-:                            :                    : characteristics            :
+| Page (mobile version)      | CUJ               | Performance characteristics |
 | -------------------------- | ------------------ | -------------------------- |
-| amazon.co.uk <br> (product | Shopping           | * average page load, large |
-: page)                      :                    : workload, large DOM/JS     :
-:                            :                    : (but heavier on DOM) <br>  :
-:                            :                    : * high on OOPIFs, input,   :
-:                            :                    : http(s) resources, frame   :
-:                            :                    : production                 :
-| cnn.com <br> (article)     | News               | * slow page load, large    |
-:                            :                    : workload, large DOM/JS     :
-:                            :                    : (but heavier on JS) <br> * :
-:                            :                    : high on iframes, main      :
-:                            :                    : frame, local storage,      :
-:                            :                    : cookies, http(s) resources :
-| wikipedia.org <br>         | Reference work     |  * fast page load, small   |
-: (article)                  :                    : workload, large DOM, small :
-:                            :                    : JS <br> * high on input    :
-:                            :                    : <br> * low on iframes,     :
-:                            :                    : http(s) resources, frame   :
-:                            :                    : production                 :
-| globo.com <br> (hompage)   |  News / web portal | * slow page load, large    |
-:                            :                    : workload, small DOM, large :
-:                            :                    : JS <br> * high on iframes, :
-:                            :                    : OOPIFs, http(s) resources, :
-:                            :                    : frame production, cookies  :
-| google.com <br> (results)  | Search             |  * fast page load, average |
-:                            :                    : workload, average DOM + JS :
-:                            :                    : <br> * high on main frame, :
-:                            :                    : local storage, video       :
+| amazon.co.uk <br> (product page) | Shopping           | * average page load, large workload, large DOM/JS (but heavier on DOM) <br> * high on OOPIFs, input, http(s) resources, frame production |
+| cnn.com <br> (article)           | News               | * slow page load, large workload, large DOM/JS (but heavier on JS) <br> * high on iframes, main frame, local storage, cookies, http(s) resources |
+| wikipedia.org <br> (article)     | Reference work     | * fast page load, small workload, large DOM, small JS <br> * high on input <br> * low on iframes, http(s) resources, frame production |
+| globo.com <br> (homepage)        | News / web portal  | * slow page load, large workload, small DOM, large JS <br> * high on iframes, OOPIFs, http(s) resources, frame production, cookies |
+| google.com <br> (results)        | Search             | * fast page load, average workload, average DOM + JS <br> * high on main frame, local storage, video |
+
+#### Tablet
 
 | Page (desktop version)     | CUJ          | Performance characteristics      |
 | -------------------------- | ------------ | -------------------------------- |
-| amazon.co.uk <br> (product |  Shopping    | * average page load, large       |
-: page)                      :              : workload, large DOM, average JS  :
-:                            :              : <br> * high on OOPIFs, http(s)   :
-:                            :              : resources, frame production      :
-|  cnn.com <br> (article)    | News         |  *slow page load, large          |
-:                            :              : workload, large DOM/JS (but      :
-:                            :              : heavier on JS) <br> * high on    :
-:                            :              : iframes, local storage, video,   :
-:                            :              : frame production, cookies        :
-| docs.google.com <br>       | Productivity | * slow page load, large          |
-: (document)                 :              : workload, large DOM + JS         :
-:                            :              : (heavier on JS) <br> * high on   :
-:                            :              : main frame <br> * high on font   :
-:                            :              : resources                        :
-| google.com <br> (results)  | Search       | * fast page load, low workload,  |
-:                            :              : low DOM + JS <br> * high on main :
-:                            :              : frame, local storage <br> * low  :
-:                            :              : on video                         :
-| youtube.com <br> (video)   | Media        |  *slow page load, very high      |
-:                            :              : workload, large DOM, small JS    :
-:                            :              : heap, average JS time <br> *     :
-:                            :              : high on video                    :
+| amazon.co.uk <br> (product page) | Shopping     | * average page load, large workload, large DOM, average JS <br> * high on OOPIFs, http(s) resources, frame production |
+| cnn.com <br> (article)           | News         | * slow page load, large workload, large DOM/JS (but heavier on JS) <br> * high on iframes, local storage, video, frame production, cookies |
+| docs.google.com <br> (document)  | Productivity | * slow page load, large workload, large DOM + JS (heavier on JS) <br> * high on main frame <br> * high on font resources |
+| google.com <br> (results)        | Search       | * fast page load, low workload, low DOM + JS <br> * high on main frame, local storage <br> * low on video |
+| youtube.com<br> (video)         | Media        | * slow page load, very high workload, large DOM, small JS heap, average JS time <br> * high on video |
 
-###  Metrics
+### Metrics
 
 Measuring page load accurately in generic ways is difficult (e.g. some pages
 require significant work after LCP to become "interactive") and inaccurate
@@ -173,7 +135,7 @@ speed.
 We took various measures to try to reduce this variability, but there is still
 room to improve and we plan to do this in the next versions of this benchmark.
 
-###  Cross-device Comparisons
+### Cross-device Comparisons
 
 Workload on two different devices will differ due to variance in application
 tasks, such as the number of frames rendered during load, timers being executed
@@ -187,7 +149,7 @@ of the adaptable nature of web loading (and / or potential effort of a browser
 trying to get the best user experience from the resources available). The
 benchmark score reflects the actual user-observable loading speed.
 
-###  Web Page Replay
+### Web Page Replay
 
 To maintain reproducibility, the benchmark uses the
 [web page replay](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/README.md)
@@ -197,7 +159,7 @@ run the benchmark on recorded pages (you can still run the benchmark on live
 sites if you don't have the access, but there's no guarantee that results will
 be reproducible/comparable).
 
-###  Repetitions {#repetitions}
+### Repetitions {#repetitions}
 
 By default, the benchmark runs **100** repetitions, as we have found that this
 brings the noise to an acceptable level. You can override this setting via
@@ -219,7 +181,7 @@ thermal throttling (e.g. notify users that thermal throttling happened during
 the test or automatically waiting between repetitions until the device is in a
 good thermal state).
 
-##  Configuration
+## Configuration
 
 In its standard configuration, the benchmark will run 100 iterations. In
 addition, the WPR server will run on device, rather than on the host, to reduce
@@ -231,10 +193,7 @@ Both these settings can be overridden if needed / desirable.
 ### Run the benchmark on live sites
 
 ```
-./cb.py loadline-phone \
-  --page-config config/benchmark/loadline/page_config_phone.hjson \
-  --probe-config config/benchmark/loadline/probe_config.hjson \
-  --separate --browser <browser>
+./cb.py loadline-phone --browser <browser> --network live
 ```
 
 *Attention:* This benchmark uses various custom metrics tailored to the
@@ -251,7 +210,7 @@ sites (see the command above). The archive will be located in
 individual pages. If the pages change, it is not guaranteed that these metrics
 will keep working.
 
-###  Running WPR on the host {#host_wpr}
+### Running WPR on the host {#host_wpr}
 
 If you care about running as little overhead as possible on the device, e.g. for
 power measurements, you might consider running the WPR server on the host
@@ -264,6 +223,20 @@ Adding `run_on_device: false,` to the corresponding network config file
 Note golang must be available on the host machine. Check
 [go.mod](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/go.mod)
 for the minimum version.
+
+### Run the benchmark with full set of experimental metrics
+
+Sometimes to investigate a source of a regression, or get deeper insights,
+it may be useful to collect more detailed traces and compute additional metrics.
+This can be done with the following command:
+
+```
+./cb.py loadline-phone --browser <browser>\
+  --probe-config config/benchmark/loadline/probe_config_experimental.hjson
+```
+
+Note that collecting detailed traces incurs significant overhead, so the
+benchmark scores will likely be lower than in the default configuration.
 
 ## Common issues
 

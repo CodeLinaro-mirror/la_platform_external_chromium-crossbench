@@ -81,7 +81,15 @@ class LoadLineBenchmarkProbe(BenchmarkProbeMixin, Probe):
     return ProbeResult(csv=(csv_file,))
 
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    df = pd.read_csv(group.results.get_by_name(TraceProcessorProbe.NAME).csv)
+    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
+    loadline_result = None
+    for result in all_results:
+      if result.name == "loadline_benchmark_score.csv":
+        loadline_result = result
+        break
+    assert loadline_result is not None
+
+    df = pd.read_csv(loadline_result)
     df = df.groupby(["cb_browser",
                      "cb_story"])["score"].mean().reset_index().pivot(
                          columns=["cb_story"],

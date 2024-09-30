@@ -6,7 +6,7 @@
       queries: [
         "loadline/benchmark_score",
       ],
-      batch: true
+      batch: false,
     },
     perfetto: {
       textproto: '''

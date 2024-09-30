@@ -34,5 +34,4 @@ SELECT
   / (
     get_next_presentation_time(
       (SELECT ts FROM last_navigation_maincontent_created))
-    - last_navigation_start())
-  / 1e6;
+    - last_navigation_start());
