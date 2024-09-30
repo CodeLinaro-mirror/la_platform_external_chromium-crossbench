@@ -172,6 +172,10 @@ class ActionRunner:
                        action: i_action.WaitForElementAction) -> None:
     raise ActionNotImplementedError(self, action)
 
+  def wait_for_ready_state(self, run: Run,
+                           action: i_action.WaitForReadyStateAction) -> None:
+    raise ActionNotImplementedError(self, action)
+
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)

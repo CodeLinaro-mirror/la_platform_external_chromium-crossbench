@@ -89,6 +89,17 @@ class BasicActionRunner(ActionRunner):
 
     return selector, script
 
+  def _wait_for_ready_state(self, actions: Actions,
+                            ready_state: i_action.ReadyState,
+                            timeout: dt.timedelta) -> None:
+    # Make sure we also finish if readyState jumps directly
+    # from "loading" to "complete"
+    actions.wait_js_condition(
+        f"""
+          let state = document.readyState;
+          return state === '{ready_state}' || state === "complete";
+        """, 0.2, timeout.total_seconds())
+
   def get(self, run: Run, action: i_action.GetAction) -> None:
     # TODO: potentially refactor the timing and logging out to the base class.
     start_time = time.time()
@@ -98,13 +109,7 @@ class BasicActionRunner(ActionRunner):
       actions.show_url(action.url, str(action.target))
 
       if action.ready_state != i_action.ReadyState.ANY:
-        # Make sure we also finish if readyState jumps directly
-        # from "loading" to "complete"
-        actions.wait_js_condition(
-            f"""
-              let state = document.readyState;
-              return state === '{action.ready_state}' || state === "complete";
-            """, 0.2, action.timeout.total_seconds())
+        self._wait_for_ready_state(actions, action.ready_state, action.timeout)
         return
       # Wait for the given duration from the start of the action.
       wait_time_seconds = expected_end_time - time.time()
@@ -180,6 +185,12 @@ class BasicActionRunner(ActionRunner):
       actions.wait_js_condition(
           f"return !!document.querySelector({repr(action.selector)})", 0.2,
           action.timeout)
+
+  def wait_for_ready_state(self, run: Run,
+                           action: i_action.WaitForReadyStateAction) -> None:
+    with run.actions(
+        f"Wait for ready state {action.ready_state}", measure=False) as actions:
+      self._wait_for_ready_state(actions, action.ready_state, action.timeout)
 
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:

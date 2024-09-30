@@ -10,7 +10,7 @@ from crossbench.benchmarks.loading.action import (
     ACTION_TIMEOUT, ActionType, ClickAction, GetAction,
     InjectNewDocumentScriptAction, JsAction, ReadyState, ScrollAction,
     SwipeAction, SwitchTabAction, TextInputAction, WaitAction,
-    WaitForElementAction, WindowTarget)
+    WaitForElementAction, WaitForReadyStateAction, WindowTarget)
 from crossbench.benchmarks.loading.input_source import InputSource
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -727,6 +727,34 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
+  def test_parse_wait_for_ready_state(self):
+    config_dict = {
+        "action": "wait_for_ready_state",
+    }
+    action = WaitForReadyStateAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_READY_STATE)
+    self.assertEqual(action.ready_state, ReadyState.COMPLETE)
+    action.validate()
+
+    action_2 = WaitForReadyStateAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_wait_for_ready_state_interactive(self):
+    config_dict = {
+        "action": "wait_for_ready_state",
+        "ready_state": "interactive",
+    }
+    action = WaitForReadyStateAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_READY_STATE)
+    self.assertEqual(action.ready_state, ReadyState.INTERACTIVE)
+    action.validate()
+
+    action_2 = WaitForReadyStateAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

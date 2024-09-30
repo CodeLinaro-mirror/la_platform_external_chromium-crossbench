@@ -759,6 +759,36 @@ class SwitchTabAction(Action):
     return details
 
 
+class WaitForReadyStateAction(Action):
+  TYPE: ActionType = ActionType.WAIT_FOR_READY_STATE
+
+  @classmethod
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "ready_state", type=ReadyState.parse, default=ReadyState.COMPLETE)
+    return parser
+
+  def __init__(self,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               ready_state: ReadyState = ReadyState.COMPLETE,
+               index: int = 0):
+    self._ready_state = ready_state
+    super().__init__(timeout, index)
+
+  @property
+  def ready_state(self) -> ReadyState:
+    return self._ready_state
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.wait_for_ready_state(run, self)
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    details["ready_state"] = str(self.ready_state)
+    return details
+
+
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
     GetAction,
@@ -771,6 +801,7 @@ ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     TextInputAction,
     WaitAction,
     WaitForElementAction,
+    WaitForReadyStateAction,
 )
 
 ACTIONS: Dict[ActionType, Type] = {
