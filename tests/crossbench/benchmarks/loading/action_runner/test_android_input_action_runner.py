@@ -61,7 +61,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         window_inner_height=400,
         window_inner_width=400,
-        element_rect=DisplayRectangle(Point(200, 200), 0, 0))
+        element_rect=DisplayRectangle(Point(196, 196), 8, 8))
 
     element_center = config.element_center()
     self.assertTrue(element_center)
@@ -76,7 +76,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         raw_chrome_window_bounds=DisplayRectangle(Point(0, 0), 600, 600),
         window_inner_height=200,
         window_inner_width=200,
-        element_rect=DisplayRectangle(Point(100, 100), 0, 0))
+        element_rect=DisplayRectangle(Point(99, 99), 2, 2))
 
     element_center = config.element_center()
     self.assertTrue(element_center)
@@ -90,7 +90,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         raw_chrome_window_bounds=DisplayRectangle(Point(100, 200), 100, 100),
         window_inner_height=100,
         window_inner_width=100,
-        element_rect=DisplayRectangle(Point(50, 50), 0, 0))
+        element_rect=DisplayRectangle(Point(49, 49), 2, 2))
 
     element_center = config.element_center()
     self.assertTrue(element_center)

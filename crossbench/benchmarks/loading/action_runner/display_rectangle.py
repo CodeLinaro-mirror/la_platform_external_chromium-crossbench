@@ -31,6 +31,9 @@ class DisplayRectangle:
 
   __rmul__ = __mul__
 
+  def __bool__(self) -> bool:
+    return self.width != 0 and self.height != 0
+
   # Translates the rectangle into |other|
   def shift_by(self, other: Self) -> Self:
     return DisplayRectangle(

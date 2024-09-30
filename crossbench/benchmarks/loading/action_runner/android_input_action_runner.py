@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import logging
 import re
 from typing import List, Optional
 
@@ -193,12 +194,15 @@ return [
         viewport_info = self._get_viewport_info(run, actions, action.selector,
                                                 action.scroll_into_view)
 
-        if center := viewport_info.element_center():
-          coordinates = center
-        else:
+        rect = viewport_info.element_rect()
+        if not rect:
+          logging.warning("No clickable element_rect found for %s",
+                          action.selector)
           if action.required:
             raise ElementNotFoundError(action.selector)
           return
+
+        coordinates = Point(rect.mid_x, rect.mid_y)
 
       cmd: List[str] = ["input"]
 
