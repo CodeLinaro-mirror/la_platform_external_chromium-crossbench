@@ -57,6 +57,34 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
+  def test_parse_get_new_tab(self):
+    config_dict = {
+        "action": "get",
+        "url": "http://crossben.ch",
+        "target": "_new_tab"
+    }
+    action = GetAction.parse_dict(config_dict)
+    self.assertEqual(action.target, WindowTarget.NEW_TAB)
+    action.validate()
+
+    action_2 = GetAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_get_new_window(self):
+    config_dict = {
+        "action": "get",
+        "url": "http://crossben.ch",
+        "target": "_new_window"
+    }
+    action = GetAction.parse_dict(config_dict)
+    self.assertEqual(action.target, WindowTarget.NEW_WINDOW)
+    action.validate()
+
+    action_2 = GetAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
   def test_parse_get_invalid_url(self):
     with self.assertRaises(ValueError) as cm:
       GetAction.parse_dict({

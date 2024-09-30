@@ -176,9 +176,16 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
-      handles = self._driver.window_handles
-      assert handles, "Browser has no more opened windows."
-      self._driver.switch_to.window(handles[-1])
+      if target in ("_self", None):
+        handles = self._driver.window_handles
+        assert handles, "Browser has no more opened windows."
+        self._driver.switch_to.window(handles[-1])
+      elif target == "_new_tab":
+        self._driver.switch_to.new_window("tab")
+      elif target == "_new_window":
+        self._driver.switch_to.new_window("window")
+      else:
+        raise RuntimeError(f"unexpected target {target}")
       self._driver.get(url)
     except selenium.common.exceptions.WebDriverException as e:
       if msg := e.msg:

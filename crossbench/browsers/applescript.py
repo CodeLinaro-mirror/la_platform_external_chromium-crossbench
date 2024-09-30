@@ -185,6 +185,9 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     return result
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:
+    if target not in (None, "_self"):
+      raise NotImplementedError(
+          f"AppleScriptBrowser show_url does not support target {target}")
     self._exec_apple_script(self.APPLE_SCRIPT_SET_URL, url=url)
     self.platform.sleep(0.5)
 

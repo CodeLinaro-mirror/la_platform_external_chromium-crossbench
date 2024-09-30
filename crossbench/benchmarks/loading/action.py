@@ -145,6 +145,8 @@ class ReadyState(ConfigEnum):
 @enum.unique
 class WindowTarget(ConfigEnum):
   """See https://developer.mozilla.org/en-US/docs/Web/API/Window/open"""
+  # TODO: pull this out to the browsers and use this enum instead of the strings
+  # in the browser show_url implementations.
   SELF = ("_self", "The current browsing context. (Default)")
   BLANK = ("_blank", "Usually a new tab, but users can configure browsers "
            "to open a new window instead.")
@@ -153,6 +155,10 @@ class WindowTarget(ConfigEnum):
   TOP = ("_top", "The topmost browsing context "
          "(the 'highest' context that's an ancestor of the current one). "
          "If no ancestors, behaves as _self.")
+  # The following options are Crossbench specific and are not understoon by the
+  # underlying call to window.open() in JS.
+  NEW_TAB = ("_new_tab", "A new tab.")
+  NEW_WINDOW = ("_new_window", "A new window.")
 
 
 class BaseDurationAction(Action):

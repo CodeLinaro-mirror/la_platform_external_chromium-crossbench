@@ -113,11 +113,13 @@ class Actions(helper.TimeScope):
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     self._assert_is_active()
-    if target and target != "_self":
+    if target and target in ("_blank", "_parent", "_top"):
       # TODO: use target in the driver instead.
       self.js(f"window.open('{url}','{target}');")
     else:
-      self._browser.show_url(url, target=None)
+      if target not in (None, "_self", "_new_tab", "_new_window"):
+        raise ValueError(f"Invalid target: {target}")
+      self._browser.show_url(url, target=target)
 
   def wait(
       self, seconds: Union[dt.timedelta,
