@@ -34,6 +34,9 @@ if TYPE_CHECKING:
 CONFIG_DIR = config.config_dir()
 LOADING_DIR = CONFIG_DIR / "benchmark" / "loading"
 
+# We should increase this version number every time there are any changes that
+# might affect the benchmark score.
+VERSION_STRING = "1.0.0.0"
 
 class PresetLoadingPageFilter(LoadingPageFilter):
   """Page Load benchmark for phone/tablet."""
@@ -62,6 +65,7 @@ class PresetPageLoadBenchmarkProbe(BenchmarkProbeMixin, Probe):
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
+    logging.critical("Preset Loading Benchmark (%s)", VERSION_STRING)
     logging.critical("Loading results:")
     logging.info("- " * 40)
     logging.critical(
