@@ -32,14 +32,14 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Run
 
 CONFIG_DIR = config.config_dir()
-LOADING_DIR = CONFIG_DIR / "benchmark" / "loading"
+LOADLINE_DIR = CONFIG_DIR / "benchmark" / "loadline"
 
 # We should increase this version number every time there are any changes that
 # might affect the benchmark score.
 VERSION_STRING = "1.0.0.0"
 
-class PresetLoadingPageFilter(LoadingPageFilter):
-  """Page Load benchmark for phone/tablet."""
+class LoadLinePageFilter(LoadingPageFilter):
+  """LoadLine benchmark for phone/tablet."""
   CAN_COMBINE_STORIES: bool = False
 
   @classmethod
@@ -55,18 +55,18 @@ class PresetLoadingPageFilter(LoadingPageFilter):
     return ()
 
 
-class PresetPageLoadBenchmarkProbe(BenchmarkProbeMixin, Probe):
+class LoadLineBenchmarkProbe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE = False
-  NAME = "preset_page_load_benchmark_probe"
+  NAME = "loadline_benchmark_probe"
 
   def get_context(self,
-                  run: Run) -> Optional[PresetPageLoadBenchmarkProbeContext]:
-    return PresetPageLoadBenchmarkProbeContext(self, run)
+                  run: Run) -> Optional[LoadLineBenchmarkProbeContext]:
+    return LoadLineBenchmarkProbeContext(self, run)
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
-    logging.critical("Preset Loading Benchmark (%s)", VERSION_STRING)
-    logging.critical("Loading results:")
+    logging.critical("LoadLine Benchmark (%s)", VERSION_STRING)
+    logging.critical("LoadLine results:")
     logging.info("- " * 40)
     logging.critical(
         tabulate(
@@ -96,15 +96,14 @@ class PresetPageLoadBenchmarkProbe(BenchmarkProbeMixin, Probe):
                  sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
 
 
-class PresetPageLoadBenchmarkProbeContext(
-    ProbeContext[PresetPageLoadBenchmarkProbe]):
+class LoadLineBenchmarkProbeContext(ProbeContext[LoadLineBenchmarkProbe]):
 
   def start(self) -> None:
     pass
 
   def start_story_run(self) -> None:
     self.browser.performance_mark(
-        f"PresetPageLoadBenchmark/{self.probe.benchmark.NAME}"
+        f"LoadLineBenchmark/{self.probe.benchmark.NAME}"
         f"/{self.run.story.name}")
 
   def stop(self) -> None:
@@ -114,9 +113,9 @@ class PresetPageLoadBenchmarkProbeContext(
     return EmptyProbeResult()
 
 
-class PresetPageLoadBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS = PresetLoadingPageFilter
-  PROBES = (PresetPageLoadBenchmarkProbe,)
+class LoadLineBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
+  STORY_FILTER_CLS = LoadLinePageFilter
+  PROBES = (LoadLineBenchmarkProbe,)
   DEFAULT_REPETITIONS = 100
 
   @classmethod
@@ -131,7 +130,7 @@ class PresetPageLoadBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADING_DIR) / "probe_config.hjson"
+    return pth.LocalPath(LOADLINE_DIR) / "probe_config.hjson"
 
   @classmethod
   @abc.abstractmethod
@@ -152,22 +151,22 @@ class PresetPageLoadBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
   def all_story_names(cls) -> Sequence[str]:
     return tuple(page.label for page in cls.get_pages_config().pages)
 
-class PageLoadTabletBenchmark(PresetPageLoadBenchmark):
-  """Page Load benchmark for tablet.
+class LoadLineTabletBenchmark(LoadLineBenchmark):
+  """LoadLine benchmark for tablet.
   """
-  NAME = "loading-tablet"
+  NAME = "loadline-tablet"
 
   @classmethod
   def default_pages_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADING_DIR) / "page_config_tablet.hjson"
+    return pth.LocalPath(LOADLINE_DIR) / "page_config_tablet.hjson"
 
   @classmethod
   def default_network_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADING_DIR) / "network_config_tablet.hjson"
+    return pth.LocalPath(LOADLINE_DIR) / "network_config_tablet.hjson"
 
   @classmethod
   def aliases(cls) -> Tuple[str, ...]:
-    return ("load-tablet", "ld-tablet")
+    return ("loading-tablet", "load-tablet", "ld-tablet")
 
   @classmethod
   def extra_flags(cls, browser: Browser) -> Flags:
@@ -175,19 +174,19 @@ class PageLoadTabletBenchmark(PresetPageLoadBenchmark):
     return Flags(["--request-desktop-sites"])
 
 
-class PageLoadPhoneBenchmark(PresetPageLoadBenchmark):
-  """Page Load benchmark for phones.
+class LoadLinePhoneBenchmark(LoadLineBenchmark):
+  """LoadLine benchmark for phones.
   """
-  NAME = "loading-phone"
+  NAME = "loadline-phone"
 
   @classmethod
   def default_pages_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADING_DIR) / "page_config_phone.hjson"
+    return pth.LocalPath(LOADLINE_DIR) / "page_config_phone.hjson"
 
   @classmethod
   def default_network_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADING_DIR) / "network_config_phone.hjson"
+    return pth.LocalPath(LOADLINE_DIR) / "network_config_phone.hjson"
 
   @classmethod
   def aliases(cls) -> Tuple[str, ...]:
-    return ("load-phone", "ld-phone")
+    return ("loading-phone", "load-phone", "ld-phone")

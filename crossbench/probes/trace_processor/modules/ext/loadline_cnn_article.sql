@@ -2,7 +2,7 @@ INCLUDE PERFETTO MODULE ext.first_presentation_time;
 INCLUDE PERFETTO MODULE ext.navigation_start;
 
 -- This metric returns the time the headline text element takes to show up.
-CREATE OR REPLACE PERFETTO FUNCTION loading_benchmark_phone_cnn_article_score()
+CREATE OR REPLACE PERFETTO FUNCTION loadline_phone_cnn_article_score()
 RETURNS FLOAT
 AS
 SELECT
@@ -15,7 +15,7 @@ SELECT
 -- The first page load is "incomplete" - it shows the cookie banner and
 -- doesn't load some of the content like ads. We click on the cookie
 -- banner, triggering the second ("complete") page load.
-CREATE OR REPLACE PERFETTO FUNCTION loading_benchmark_tablet_cnn_article_score()
+CREATE OR REPLACE PERFETTO FUNCTION loadline_tablet_cnn_article_score()
 RETURNS FLOAT
 AS
 WITH

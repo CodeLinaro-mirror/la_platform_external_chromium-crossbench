@@ -3,7 +3,7 @@ INCLUDE PERFETTO MODULE ext.navigation_start;
 
 -- This metric returns the time it takes for the "main" JS script to finish the
 -- execution - this is when the page becomes interactive.
-CREATE OR REPLACE PERFETTO FUNCTION loading_benchmark_amazon_product_score()
+CREATE OR REPLACE PERFETTO FUNCTION loadline_amazon_product_score()
 RETURNS FLOAT
 AS
 WITH

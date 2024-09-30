@@ -11,8 +11,8 @@ from pyfakefs import fake_filesystem_unittest
 
 import crossbench.path
 from crossbench import plt
-from crossbench.benchmarks.loading.loading_benchmark_presets import \
-    PageLoadTabletBenchmark
+from crossbench.benchmarks.loading.loadline_presets import \
+    LoadLineTabletBenchmark
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.helper import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
@@ -84,8 +84,8 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     probes = self._test_parse_config_dir(probe_config_doc)
     self.assertTrue(probes)
 
-  def test_parse_pageload_configs(self):
-    probe_config = PageLoadTabletBenchmark.default_probe_config_path()
+  def test_parse_loadline_configs(self):
+    probe_config = LoadLineTabletBenchmark.default_probe_config_path()
     self.fs.add_real_file(probe_config)
     probes = ProbeListConfig.parse_path(probe_config).probes
     self.assertTrue(probes)

@@ -1,6 +1,6 @@
-# Loading Benchmark
+# LoadLine Benchmark
 
-This folder contains configs for the loading benchmark. The goal of the
+This folder contains configs for the LoadLine benchmark. The goal of the
 benchmark is to facilitate web performance optimization based on a realistic
 workload. The benchmark has two workload variants:
 
@@ -9,18 +9,18 @@ workload. The benchmark has two workload variants:
 
 *   Android Tablet web performance workload ("tablet").
 
-## tl;dr; Running the Benchmark
+## tl;dr: Running the Benchmark
 
 Run "phone" workload:
 
 ```
-./cb.py loading-phone --browser <browser>
+./cb.py loadline-phone --browser <browser>
 ```
 
 Run "tablet" workload:
 
 ```
-./cb.py loading-tablet --browser <browser>
+./cb.py loadline-tablet --browser <browser>
 ```
 
 The browser can be `android:chrome-canary`, `android:chrome-stable` etc. See
@@ -28,8 +28,8 @@ crossbench docs for the full list of options.
 
 Results will be located in `results/latest/`. Notable files in this directory:
 
-*   `preset_page_load_benchmark_probe.csv`: Final score for the run
-*   `trace_processor/loading_loading_benchmark.csv`: Breakdown of scores per
+*   `loadline_benchmark_probe.csv`: Final score for the run
+*   `trace_processor/loadline_benchmark_score.csv`: Breakdown of scores per
     page and repetition
 
 ##  Benchmark Details
@@ -231,9 +231,9 @@ Both these settings can be overridden if needed / desirable.
 ### Run the benchmark on live sites
 
 ```
-./cb.py loading-phone \
-  --page-config config/benchmark/loading/page_config_phone.hjson \
-  --probe-config config/benchmark/loading/probe_config.hjson \
+./cb.py loadline-phone \
+  --page-config config/benchmark/loadline/page_config_phone.hjson \
+  --probe-config config/benchmark/loadline/probe_config.hjson \
   --separate --browser <browser>
 ```
 
@@ -258,8 +258,8 @@ power measurements, you might consider running the WPR server on the host
 machine instead of the device under test. You can do this by
 
 Adding `run_on_device: false,` to the corresponding network config file
-`config/benchmark/loading/network_config_phone.hjson` or
-`config/benchmark/loading/network_config_tablet.hjson`.
+`config/benchmark/loadline/network_config_phone.hjson` or
+`config/benchmark/loadline/network_config_tablet.hjson`.
 
 Note golang must be available on the host machine. Check
 [go.mod](https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/go.mod)
@@ -289,5 +289,5 @@ case, save the archive file corresponding to the version you are running
 run the benchmark as follows:
 
 ```
-./cb.py loading-phone --network <path to archive.wprgo>
+./cb.py loadline-phone --network <path to archive.wprgo>
 ```

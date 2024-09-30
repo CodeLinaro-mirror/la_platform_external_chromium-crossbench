@@ -4,7 +4,7 @@
     // wpr: {},
     trace_processor: {
       queries: [
-        "loading/loading_benchmark",
+        "loadline/benchmark_score",
       ],
       batch: true
     },

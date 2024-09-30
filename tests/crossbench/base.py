@@ -16,8 +16,8 @@ import crossbench
 from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.benchmarks.loading.loading_benchmark_presets import \
-    PageLoadTabletBenchmark
+from crossbench.benchmarks.loading.loadline_presets import \
+    LoadLineTabletBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
@@ -74,7 +74,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.fs.add_real_directory(
-        PageLoadTabletBenchmark.default_network_config_path().parent,
+        LoadLineTabletBenchmark.default_network_config_path().parent,
         lazy_read=(not test_helper.is_google_env()))
     if test_helper.is_google_env():
       self.fs.add_real_directory("/build/cas")

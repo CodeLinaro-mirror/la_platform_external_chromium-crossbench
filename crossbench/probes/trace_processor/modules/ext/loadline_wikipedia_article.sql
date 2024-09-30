@@ -3,7 +3,7 @@ INCLUDE PERFETTO MODULE ext.navigation_start;
 
 -- This metric returns the timestamp of the last important event (including
 -- image paint, JS script runs etc.) since the beginning of the page load.
-CREATE OR REPLACE PERFETTO FUNCTION loading_benchmark_wikipedia_article_score()
+CREATE OR REPLACE PERFETTO FUNCTION loadline_wikipedia_article_score()
 RETURNS FLOAT
 AS
 WITH
