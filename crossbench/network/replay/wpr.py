@@ -44,6 +44,14 @@ WPR_PREBUILT_ARCH_MAP = {
 }
 
 
+def check_hash(file_path: LocalPath, file_hash: str) -> bool:
+  if not file_path.exists():
+    return False
+  sha1 = hashlib.sha1()
+  sha1.update(file_path.read_bytes())
+  return sha1.hexdigest() == file_hash
+
+
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
@@ -192,14 +200,10 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def _download_prebuilt_wpr(self) -> LocalPath:
     wpr_info = WPR_PREBUILT_ARCH_MAP[self.browser_platform.machine]
-    remote_url = wpr_info["url"]
     local_wpr_go_bin = WPR_CACHE / str(self.browser_platform.machine) / "wpr_go"
-    self.runner_platform.sh("gsutil", "cp", remote_url, local_wpr_go_bin)
-
-    sha1 = hashlib.sha1()
-    sha1.update(local_wpr_go_bin.read_bytes())
-    file_hash = sha1.hexdigest()
-    assert file_hash == wpr_info["file_hash"]
+    if not check_hash(local_wpr_go_bin, wpr_info["file_hash"]):
+      self.runner_platform.sh("gsutil", "cp", wpr_info["url"], local_wpr_go_bin)
+    assert check_hash(local_wpr_go_bin, wpr_info["file_hash"])
 
     return local_wpr_go_bin
 
