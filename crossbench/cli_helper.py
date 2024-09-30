@@ -519,6 +519,13 @@ def parse_unique_sequence(
   raise error_cls(f"Unexpected duplicates in {name}: {repr(duplicates)}")
 
 
+def parse_regexp(value: Any, name: str = "regexp") -> re.Pattern:
+  try:
+    return re.compile(parse_str(value, name))
+  except re.error as e:
+    raise argparse.ArgumentTypeError(f"Invalid regexp {name}: {value}") from e
+
+
 class LateArgumentError(argparse.ArgumentTypeError):
   """Signals argument parse errors after parser.parse_args().
   This is used to map errors back to the original argument, much like

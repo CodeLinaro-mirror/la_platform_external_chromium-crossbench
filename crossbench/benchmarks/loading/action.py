@@ -8,6 +8,7 @@ import abc
 import datetime as dt
 import enum
 import logging
+import re
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
 
 from crossbench import cli_helper, exception
@@ -698,6 +699,60 @@ class ScreenshotAction(Action):
     action_runner.screenshot(run, self)
 
 
+class SwitchTabAction(Action):
+  TYPE: ActionType = ActionType.SWITCH_TAB
+
+  @classmethod
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "tab_index",
+        type=cli_helper.parse_int,
+        help=(
+            "The index of the tab to switch to. Tabs are indexed in creation "
+            "order. Negative values are allowed, e.g. -1 is the most recently "
+            "opened tab."))
+    parser.add_argument("title", type=cli_helper.parse_regexp)
+    parser.add_argument("url", type=cli_helper.parse_regexp)
+    return parser
+
+  def __init__(self,
+               tab_index: Optional[int] = None,
+               title: Optional[re.Pattern] = None,
+               url: Optional[re.Pattern] = None,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
+    self._title = title
+    self._url = url
+    self._tab_index = tab_index
+    super().__init__(timeout, index)
+
+  @property
+  def title(self) -> Optional[re.Pattern]:
+    return self._title
+
+  @property
+  def url(self) -> Optional[re.Pattern]:
+    return self._url
+
+  @property
+  def tab_index(self) -> Optional[int]:
+    return self._tab_index
+
+  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+    action_runner.switch_tab(run, self)
+
+  def to_json(self) -> JsonDict:
+    details = super().to_json()
+    if self._tab_index:
+      details["tab_index"] = self._tab_index
+    if self._title:
+      details["title"] = self._title.pattern
+    if self._url:
+      details["url"] = self._url.pattern
+    return details
+
+
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
     GetAction,
@@ -706,6 +761,7 @@ ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ScreenshotAction,
     ScrollAction,
     SwipeAction,
+    SwitchTabAction,
     TextInputAction,
     WaitAction,
     WaitForElementAction,

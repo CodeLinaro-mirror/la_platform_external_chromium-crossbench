@@ -9,8 +9,8 @@ import datetime as dt
 from crossbench.benchmarks.loading.action import (
     ACTION_TIMEOUT, ActionType, ClickAction, GetAction,
     InjectNewDocumentScriptAction, JsAction, ReadyState, ScrollAction,
-    SwipeAction, TextInputAction, WaitAction, WaitForElementAction,
-    WindowTarget)
+    SwipeAction, SwitchTabAction, TextInputAction, WaitAction,
+    WaitForElementAction, WindowTarget)
 from crossbench.benchmarks.loading.input_source import InputSource
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -663,6 +663,41 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("replacements", str(cm.exception))
 
+
+  def test_parse_switch_tab_all_args(self):
+    config_dict = {
+        "action": "switch_tab",
+        "tab_index": 17,
+        "title": "^Example.*",
+        "url": "http(s)?://example.com"
+    }
+    action = SwitchTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.SWITCH_TAB)
+    self.assertEqual(action.tab_index, 17)
+    self.assertEqual(action.title.pattern, "^Example.*")
+    self.assertEqual(action.url.pattern, "http(s)?://example.com")
+    action.validate()
+
+    action_2 = SwitchTabAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_switch_tab_no_args(self):
+    config_dict = {
+        "action": "switch_tab",
+    }
+    action = SwitchTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.SWITCH_TAB)
+    self.assertEqual(action.tab_index, None)
+    self.assertEqual(action.title, None)
+    self.assertEqual(action.url, None)
+    action.validate()
+
+    action_2 = SwitchTabAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
 
 
 if __name__ == "__main__":

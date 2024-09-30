@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import atexit
+import datetime as dt
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ import re
 import shutil
 import stat
 import tempfile
+import time
 import urllib.error
 import zipfile
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
@@ -167,6 +169,45 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
   def run_script_on_new_document(self, script: str) -> None:
     self._driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
                                  {"source": script})
+
+  def switch_tab(
+      self,
+      title: Optional[re.Pattern] = None,
+      url: Optional[re.Pattern] = None,
+      tab_index: Optional[int] = None,
+      timeout: dt.timedelta = dt.timedelta(seconds=0)
+  ) -> None:
+    driver = self._driver
+    original_handle = driver.current_window_handle
+    for _ in helper.wait_with_backoff(timeout, self.platform):
+      # Search through other handles starting from current_window_handle + 1
+      try:
+        i = driver.window_handles.index(original_handle)
+      except ValueError as e:
+        raise RuntimeError("Original starting tab no longer exists") from e
+
+      if tab_index is not None:
+        handles = [driver.window_handles[tab_index]]
+      else:
+        handles = driver.window_handles[i + 1:] + driver.window_handles[:i]
+
+      for handle in handles:
+        driver.switch_to.window(handle)
+        if title is not None:
+          if title.match(driver.title) is None:
+            continue
+        if url is not None:
+          if url.match(driver.current_url) is None:
+            continue
+        return
+    error = "No new tab found"
+    if title is not None:
+      error += f" with title matching {repr(title.pattern)}"
+    if url is not None:
+      error += f" with url matching {repr(url.pattern)}"
+    if tab_index is not None:
+      error += f" with tab_index matching {tab_index}"
+    raise RuntimeError(error)
 
   def start_profiling(self) -> None:
     assert isinstance(self._driver, ChromiumDriver)

@@ -8,6 +8,7 @@ import argparse
 import datetime as dt
 import json
 import pathlib
+import re
 import unittest
 from typing import Any
 from urllib import parse as urlparse
@@ -19,8 +20,8 @@ from crossbench.cli_helper import (
     parse_json_file_path, parse_non_empty_dict, parse_non_empty_dir_path,
     parse_non_empty_file_path, parse_non_empty_sequence, parse_non_empty_str,
     parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
-    parse_positive_zero_int, parse_sequence, parse_sh_cmd, parse_str,
-    parse_unique_sequence, parse_url, parse_url_str)
+    parse_positive_zero_int, parse_regexp, parse_sequence, parse_sh_cmd,
+    parse_str, parse_unique_sequence, parse_url, parse_url_str)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -553,6 +554,13 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
             "ftp",
         ))
     self.assertEqual(urlparse.urlunparse(parsed), url)
+
+  def parse_regexp(self):
+    with self.assertRaises(re.error):
+      parse_regexp("\\")
+    pattern = parse_regexp("^abc$")
+    self.assertEqual(pattern.pattern, "^abc$")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

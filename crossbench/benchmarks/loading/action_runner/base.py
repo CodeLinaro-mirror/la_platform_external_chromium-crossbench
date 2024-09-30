@@ -266,3 +266,6 @@ class ActionRunner:
     except Exception:
       page.failure_screenshot(run, "login-failure")
       raise
+
+  def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
+    raise ActionNotImplementedError(self, action)

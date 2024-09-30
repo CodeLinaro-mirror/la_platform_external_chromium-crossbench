@@ -26,3 +26,4 @@ class ActionType(ConfigEnum):
       "(before loading frame's scripts). "
       "Only supported in chromium-based browsers."))
   SCREENSHOT = ("screenshot", "Take a screenshot")
+  SWITCH_TAB = ("switch_tab", "Switch the tab that actions are sent to")

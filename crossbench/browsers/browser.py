@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import datetime as dt
 import logging
 import os
 import shlex
@@ -19,7 +20,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags, FlagsT
 
 if TYPE_CHECKING:
-  import datetime as dt
+  import re
 
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.secrets import SecretT, SecretType
@@ -313,6 +314,19 @@ class Browser(abc.ABC):
     del script
     raise NotImplementedError(
         f"New document script injection is not supported by {self}")
+
+  def switch_tab(
+      self,
+      title: Optional[re.Pattern] = None,
+      url: Optional[re.Pattern] = None,
+      tab_index: Optional[int] = None,
+      timeout: dt.timedelta = dt.timedelta(seconds=0)
+  ) -> None:
+    del title
+    del url
+    del tab_index
+    del timeout
+    raise NotImplementedError(f"Switching tabs is not supported by {self}")
 
   @abc.abstractmethod
   def show_url(self, url: str, target: Optional[str] = None) -> None:
