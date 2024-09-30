@@ -18,14 +18,15 @@ from crossbench.benchmarks.loading.action import (Action, ClickAction,
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.input_source import InputSource
-from crossbench.browsers.secrets import SecretType
+from crossbench.cli.config.secret_type import SecretType
+from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.config import ConfigObject
 
 
 @dataclasses.dataclass(frozen=True)
 class PagesConfig(ConfigObject):
   pages: Tuple[PageConfig, ...] = ()
-  logins: Tuple[SecretType, ...] = ()
+  secrets: Optional[SecretsConfig] = None
 
   def validate(self) -> None:
     super().validate()
@@ -87,25 +88,31 @@ class PagesConfig(ConfigObject):
   def parse_dict(cls, config: Dict) -> PagesConfig:
     """
     Variant a):
-    { "pages": { "LABEL": PAGE_CONFIG }}
+      { "pages": { "LABEL": PAGE_CONFIG }, "secrets": { ... } }
     """
     with exception.annotate_argparsing("Parsing stories"):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
             "Config does not provide a 'pages' dict.")
+      secrets: Optional[SecretsConfig] = None
+      if secrets_data := config.get("secrets"):
+        secrets = SecretsConfig.parse(secrets_data)
       pages = cli_helper.parse_non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
-        logins = [SecretType.parse(login) for login in config.get("logins", [])]
-        pages = cls._parse_pages(pages)
-        return PagesConfig(pages, tuple(logins))
+        pages = cls._parse_pages(pages, secrets)
+        return PagesConfig(pages, secrets)
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_pages(cls, data: Dict[str, Any]) -> Tuple[PageConfig, ...]:
+  def _parse_pages(
+      cls,
+      data: Dict[str, Any],
+      secrets: Optional[SecretsConfig] = None) -> Tuple[PageConfig, ...]:
     pages = []
     for name, page_config in data.items():
       with exception.annotate_argparsing(f"Parsing story ...['{name}']"):
-        page = PageConfig.parse(page_config, label=name)
+        # TODO: fix secrets on the inner page and on the outer pages config
+        page = PageConfig.parse(page_config, label=name, secrets=secrets)
         pages.append(page)
     return tuple(pages)
 

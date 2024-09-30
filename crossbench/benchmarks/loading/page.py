@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.config.login.custom import LoginBlock
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
-  from crossbench.browsers.secrets import SecretType
+  from crossbench.cli.config.secrets import SecretsDict
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -127,13 +127,11 @@ class CombinedPage(Page):
                name: str = "combined",
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta(),
-               logins: Optional[Iterable[SecretType]] = None):
+               about_blank_duration: dt.timedelta = dt.timedelta()):
     self._pages = tuple(pages)
     assert self._pages, "No sub-pages provided for CombinedPage"
     assert len(self._pages) >= 1, "Combined Page needs at least one page"
     self._tabs = tabs
-    self._logins = logins or []
 
     duration = dt.timedelta()
     for page in self._pages:
@@ -159,9 +157,6 @@ class CombinedPage(Page):
     result["pages"] = list(page.details_json() for page in self._pages)
     return result
 
-  def setup(self, run: Run) -> None:
-    run.do_logins(self._logins)
-
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     multiple_tabs = self.tabs.multiple_tabs
@@ -184,6 +179,7 @@ class InteractivePage(Page):
                blocks: Tuple[ActionBlock, ...],
                setup: Optional[ActionBlock] = None,
                login: Optional[LoginBlock] = None,
+               secrets: Optional[SecretsDict] = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta()):
@@ -196,6 +192,7 @@ class InteractivePage(Page):
         "No login blocks allowed as normal action block")
     self._setup_block = setup
     self._login_block = login
+    self._secrets: SecretsDict = secrets or {}
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration)
 
@@ -210,6 +207,10 @@ class InteractivePage(Page):
   @property
   def blocks(self) -> Tuple[ActionBlock, ...]:
     return self._blocks
+
+  @property
+  def secrets(self) -> SecretsDict:
+    return self._secrets
 
   @property
   def first_url(self) -> str:

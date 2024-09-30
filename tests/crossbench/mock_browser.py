@@ -10,7 +10,7 @@ import copy
 import dataclasses
 import pathlib
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
-                    cast)
+                    Union, cast)
 
 from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
@@ -24,16 +24,16 @@ from crossbench.plt.android_adb import AndroidAdbPlatform
 
 if TYPE_CHECKING:
   import datetime as dt
+  import re
 
   from crossbench.flags.base import Flags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.runner import Runner
 
 
 @dataclasses.dataclass(frozen=True)
 class JsInvocation:
   result: Any
-  script: Optional[str] = None
+  script: Optional[Union[str, re.Pattern]] = None
   arguments: Optional[List[Any]] = None
   timeout: Optional[dt.timedelta] = None
 
@@ -109,14 +109,11 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     if not expected_js:
       self.expected_js.append(JsInvocation(result=result))
       return
-
     self.expected_js.append(expected_js)
     return
 
-  def was_js_invoked(self, expected_script: str) -> bool:
-    return expected_script in [
-        invoked_js.script for invoked_js in self.invoked_js
-    ]
+  def was_js_invoked(self, script: str) -> bool:
+    return any(script is invoked_js.script for invoked_js in self.invoked_js)
 
   def clear_cache(self) -> None:
     pass
@@ -159,10 +156,13 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
           f"JS timeout does not match. "
           f"Expected: {expectation.timeout} Got: {timeout}")
 
-    if expectation.script:
-      assert expectation.script == script, (
-          f"JS script does not match expectation. "
-          f"Expected: {expectation.script} Got: {script}")
+    if expected_script := expectation.script:
+      if isinstance(expected_script, str):
+        result = expected_script == script
+      else:
+        result = expected_script.fullmatch(script)
+      assert result, (f"JS script does not match expectation. "
+                      f"Expected: {expected_script} Got: {script}")
 
     if expectation.arguments:
       assert len(expectation.arguments) == len(arguments), (

@@ -10,28 +10,33 @@ import argparse
 import datetime as dt
 import json
 import pathlib
+import re
 import unittest
-from typing import Sequence, cast
+from typing import List, Sequence, cast
+from unittest import mock
 
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
+from crossbench.benchmarks.loading.config.login.google import (GOOGLE_LOGIN_URL,
+                                                               GoogleLogin)
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
-from crossbench.benchmarks.loading.loading_benchmark_presets import \
-    PageLoadTabletBenchmark
 from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
                                                 CombinedPage, LivePage)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.browsers.settings import Settings
+from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase
 from tests.crossbench.benchmarks import helper
+from tests.crossbench.mock_browser import JsInvocation
 
 
 class TestPageLoadBenchmark(helper.SubStoryTestCase):
@@ -337,9 +342,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.assertListEqual([url_2, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN * 2 + 2:])
 
-  def test_actions_config(self):
-    config_file = pathlib.Path("test/page_config.json")
-    self.fs.create_file(config_file)
+  def simple_pages_config(self):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     config = {
@@ -353,14 +356,107 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
             }]
         }
     }
-    with config_file.open("w") as f:
-      json.dump(config, f)
+    return url_1, url_2, config
+
+  def test_actions_config(self):
+    url_1, url_2, config = self.simple_pages_config()
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
     with self.patch_get_browser():
       self.run_cli("loading", "run", f"--page-config={config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
         self.assertListEqual([url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
+
+  def setup_expected_google_login_js(self):
+    expected_scripts: List[JsInvocation] = [
+        JsInvocation(True, re.compile(r".*Email or phone.*")),
+        JsInvocation(None, re.compile(r".*user@test.com.*")),
+        JsInvocation(True, re.compile(r".*passwordNext.*")),
+        JsInvocation(False, re.compile(r".*verifycontactNext.*")),
+        JsInvocation(True, re.compile(r".*Enter your password.*")),
+        JsInvocation(True, re.compile(r".*s3cr3t.*")),
+        JsInvocation(True, re.compile(r".*https://myaccount.google.com.*")),
+    ]
+    for browser in self.browsers:
+      for script in expected_scripts:
+        browser.expect_js(script)
+
+  def simple_pages_with_login_config(self):
+    url_1 = "http://one.test.com"
+    url_2 = "http://two.test.com"
+    config = {
+        "pages": {
+            "test_one": {
+                "login":
+                    "google",
+                "actions": [{
+                    "action": "get",
+                    "url": url_1
+                }, {
+                    "action": "get",
+                    "url": url_2
+                }]
+            }
+        }
+    }
+    return url_1, url_2, config
+
+  def test_actions_config_with_login_preset(self):
+    url_1, url_2, config = self.simple_pages_with_login_config()
+    config.update({
+        "secrets": {
+            "google": {
+                "username": "user@test.com",
+                "password": "s3cr3t"
+            }
+        },
+    })
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    self.setup_expected_google_login_js()
+    with self.patch_get_browser():
+      self.run_cli("loading", "run", f"--page-config={config_file}",
+                   "--env-validation=skip", "--throw")
+      for browser in self.browsers:
+        self.assertListEqual([GOOGLE_LOGIN_URL, url_1, url_2],
+                             browser.url_list[self.SPLASH_URLS_LEN:])
+
+  def test_actions_config_with_login_preset_global_secrets(self):
+    url_1, url_2, config = self.simple_pages_with_login_config()
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    secrets_data = {
+        "google": {
+            "username": "user@test.com",
+            "password": "s3cr3t"
+        }
+    }
+    secrets_dict = SecretsConfig.parse(secrets_data).as_dict()
+    self.setup_expected_google_login_js()
+    with self.patch_get_browser():
+      with mock.patch.object(
+          Settings, "secrets",
+          new_callable=mock.PropertyMock) as mock_get_secrets:
+        mock_get_secrets.return_value = secrets_dict
+        self.run_cli("loading", "run", f"--page-config={config_file}",
+                     "--env-validation=skip", "--throw",
+                     f"--secrets={json.dumps(secrets_data)}")
+      for browser in self.browsers:
+        self.assertListEqual([GOOGLE_LOGIN_URL, url_1, url_2],
+                             browser.url_list[self.SPLASH_URLS_LEN:])
+
+  def test_actions_config_with_login_preset_missing_secrets(self):
+    _, _, config = self.simple_pages_with_login_config()
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    self.setup_expected_google_login_js()
+    with self.patch_get_browser():
+      with self.assertRaises(Exception) as cm:
+        self.run_cli("loading", "run", f"--page-config={config_file}",
+                     "--env-validation=skip", "--throw")
+      self.assertIn("google", str(cm.exception))
 
   def test_global_config_actions_config(self):
     url_1 = "http://one.test.com"

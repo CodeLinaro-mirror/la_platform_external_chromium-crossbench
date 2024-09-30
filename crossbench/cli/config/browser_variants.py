@@ -415,7 +415,7 @@ class BrowserVariantsConfig:
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform,
-          secrets=args.secrets,
+          secrets=args.secrets.as_dict(),
           driver_logging=args.driver_logging,
           wipe_system_user_data=args.wipe_system_user_data)
       browser_instance = browser_cls(
@@ -701,7 +701,7 @@ class BrowserVariantsConfig:
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform,
-          secrets=args.secrets,
+          secrets=args.secrets.as_dict(),
           driver_logging=args.driver_logging,
           wipe_system_user_data=args.wipe_system_user_data)
       browser_instance = browser_cls(  # pytype: disable=not-instantiable

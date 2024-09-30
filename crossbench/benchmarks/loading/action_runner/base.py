@@ -85,9 +85,10 @@ class ActionRunner:
       raise RuntimeError("info_stack can not be called before run_blocks")
     return self._info_stack
 
-  def run_blocks(self, run: Run, blocks: Iterable[ActionBlock]) -> None:
+  def run_blocks(self, run: Run, page: InteractivePage,
+                 blocks: Iterable[ActionBlock]) -> None:
     for block in blocks:
-      self.run_block(run, block)
+      block.run_with(self, run, page)
 
   def run_block(self, run, block: ActionBlock) -> None:
     block_index = block.index
@@ -249,7 +250,7 @@ class ActionRunner:
       raise NotImplementedError(
           "Multiple tabs test for interactive page is not supported.")
     try:
-      self.run_blocks(run, page.blocks)
+      self.run_blocks(run, page, page.blocks)
       self._maybe_navigate_to_about_blank(run, page)
     except Exception:
       page.failure_screenshot(run)
@@ -258,7 +259,7 @@ class ActionRunner:
   def run_setup(self, run: Run, page: InteractivePage, setup: ActionBlock):
     try:
       with exception.annotate("setup"):
-        self.run_block(run, setup)
+        setup.run_with(self, run, page)
     except Exception:
       page.failure_screenshot(run, "setup-failure")
       raise
@@ -266,7 +267,7 @@ class ActionRunner:
   def run_login(self, run: Run, page: InteractivePage, login: ActionBlock):
     try:
       with exception.annotate("login"):
-        self.run_block(run, login)
+        login.run_with(self, run, page)
     except Exception:
       page.failure_screenshot(run, "login-failure")
       raise

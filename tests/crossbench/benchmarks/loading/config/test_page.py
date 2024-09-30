@@ -8,6 +8,7 @@ import argparse
 import datetime as dt
 import unittest
 
+from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
 from tests import test_helper
 
@@ -210,6 +211,19 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.login.first_url, "http://test.com/login")
     self.assertEqual(config.setup.first_url, "http://test.com/setup")
     self.assertEqual(config.blocks[0].first_url, "http://test.com/charts")
+
+  def test_parse_login_block_preset(self):
+    config_data = {"login": "google", "urls": ["http://test.com/charts",]}
+    config = PageConfig.parse(config_data)
+    login = config.login
+    self.assertTrue(login.is_login)
+    self.assertIsInstance(login, GoogleLogin)
+    self.assertIsNone(config.setup)
+    self.assertFalse(config.blocks[0].is_login)
+    self.assertEqual(config.first_url, "http://test.com/charts")
+    self.assertEqual(len(config.blocks), 1)
+    self.assertEqual(len(tuple(config.actions())), 1)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

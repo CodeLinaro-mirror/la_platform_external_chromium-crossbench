@@ -13,9 +13,12 @@ from typing import Sequence
 
 import hjson
 
+from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.config.pages import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig)
+from crossbench.cli.config.secret_type import SecretType
+from crossbench.cli.config.secrets import Secret, SecretsConfig
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -219,6 +222,63 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     block = page.blocks[0]
     self.assertListEqual([str(action.TYPE) for action in block],
                          ["get", "wait", "scroll"])
+
+  def test_example_with_login_preset(self):
+    config_data = {
+        "pages": {
+            "Google Story": {
+                "login":
+                    "google",
+                "actions": [
+                    {
+                        "action": "get",
+                        "url": "https://www.google.com"
+                    },
+                    {
+                        "action": "wait",
+                        "duration": 5
+                    },
+                    {
+                        "action": "scroll",
+                        "direction": "down",
+                        "duration": 3
+                    },
+                ]
+            },
+        }
+    }
+    config = PagesConfig.parse(config_data)
+    self.assert_single_google_story(config.pages)
+    page = config.pages[0]
+    self.assertIsInstance(page.login, GoogleLogin)
+    self.assertIsNone(page.setup)
+
+  def assert_single_google_story(self, pages: Sequence[PageConfig]):
+    self.assertTrue(len(pages), 1)
+    page = pages[0]
+    self.assertEqual(page.label, "Google Story")
+    self.assertEqual(page.first_url, "https://www.google.com")
+    self.assertEqual(len(page.blocks), 1)
+    block = page.blocks[0]
+    self.assertListEqual([str(action.TYPE) for action in block],
+                         ["get", "wait", "scroll"])
+
+  def test_secrets(self):
+    config_data = {
+        "secrets": {
+            "google": {
+                "username": "test",
+                "password": "s3cr3t"
+            }
+        },
+        "pages": {
+            "Google Story": ["http://google.com"],
+        }
+    }
+    pages = PagesConfig.parse(config_data)
+    secret = Secret(SecretType.GOOGLE, "test", "s3cr3t")
+    self.assertEqual(pages.secrets, SecretsConfig({secret.type: secret}))
+    self.assertEqual(pages.pages[0].first_url, "http://google.com")
 
   def test_no_scenarios(self):
     with self.assertRaises(argparse.ArgumentTypeError):

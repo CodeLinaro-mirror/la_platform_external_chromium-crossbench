@@ -15,7 +15,7 @@ from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
-  from crossbench.browsers.secrets import Secret, SecretsConfig, SecretType
+  from crossbench.cli.config.secrets import Secret, SecretsDict, SecretType
   from crossbench.network.base import Network
 
 
@@ -31,7 +31,7 @@ class Settings:
                viewport: Optional[Viewport] = None,
                splash_screen: Optional[SplashScreen] = None,
                platform: Optional[plt.Platform] = None,
-               secrets: Optional[SecretsConfig] = None,
+               secrets: Optional[SecretsDict] = None,
                driver_logging: bool = False,
                wipe_system_user_data: Optional[bool] = False):
     self._flags = self._convert_flags(flags, "flags")
@@ -42,8 +42,7 @@ class Settings:
     self._network: Network = network or LiveNetwork()
     self._viewport: Viewport = viewport or Viewport.DEFAULT
     self._splash_screen: SplashScreen = splash_screen or SplashScreen.DEFAULT
-    self._secrets: Dict[
-        SecretType, Secret] = secrets.secrets if secrets is not None else {}
+    self._secrets: SecretsDict = secrets or {}
     self._driver_logging = driver_logging
     self._wipe_system_user_data = wipe_system_user_data
 
@@ -98,7 +97,7 @@ class Settings:
     return self._network
 
   @property
-  def secrets(self) -> Dict[SecretType, Secret]:
+  def secrets(self) -> SecretsDict:
     return self._secrets
 
   @property

@@ -7,12 +7,17 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
-from typing import (Any, Dict, Final, Iterator, List, Optional, Sequence, Tuple,
-                    Type, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
+                    Sequence, Tuple, Type, cast)
 
 from crossbench import cli_helper, exception
 from crossbench.benchmarks.loading.action import Action, ActionType, GetAction
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
+
+if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.benchmarks.loading.page import InteractivePage
+  from crossbench.runner.run import Run
 
 
 @dataclasses.dataclass(frozen=True)
@@ -75,6 +80,9 @@ class ActionBlock(ConfigObject):
 
   def validate(self) -> None:
     super().validate()
+    self.validate_actions()
+
+  def validate_actions(self) -> None:
     cli_helper.parse_non_empty_sequence(self.actions, "actions")
     # TODO: enable validating action indices
     # for index, action in enumerate(self.actions):
@@ -83,6 +91,11 @@ class ActionBlock(ConfigObject):
     #         f"action[{index}].index should be {index}, but got {action.index}")
     if not self.actions:
       raise argparse.ArgumentTypeError("Invalid block without actions")
+
+  def run_with(self, runner: ActionRunner, run: Run,
+               page: InteractivePage) -> None:
+    del page
+    runner.run_block(run, self)
 
   def to_json(self) -> Dict[str, Any]:
     return {

@@ -12,8 +12,6 @@ import pathlib
 from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
-from pyfakefs import fake_filesystem_unittest
-
 import crossbench
 from crossbench import cli_helper
 from crossbench import path as pth
@@ -25,6 +23,8 @@ from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
+from crossbench.cli.config.secrets import SecretsConfig
+from pyfakefs import fake_filesystem_unittest
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
@@ -96,7 +96,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         browser_config=None,
         viewport=None,
         splash_screen=None,
-        secrets=None,
+        secrets=SecretsConfig(),
         wipe_system_user_data=False,
         cache_dir=pathlib.Path("test_cache_dir"),
         enable_features=None,

@@ -23,9 +23,9 @@ if TYPE_CHECKING:
   import re
 
   from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.browsers.secrets import SecretT, SecretType
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
+  from crossbench.cli.config.secrets import SecretsDict
   from crossbench.env import HostEnvironment
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
@@ -115,7 +115,7 @@ class Browser(abc.ABC):
     return self._settings.network
 
   @property
-  def secrets(self) -> Dict[SecretType, SecretT]:
+  def secrets(self) -> SecretsDict:
     return self._settings.secrets
 
   @property

@@ -24,7 +24,6 @@ from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
-from crossbench.browsers.secrets import SecretsConfig
 from crossbench.cli import ui
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
@@ -33,6 +32,7 @@ from crossbench.cli.config.env import (parse_env_config_file,
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.probe import (PROBE_LOOKUP, ProbeConfig,
                                          ProbeListConfig)
+from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
     CrossbenchDevToolsRecorderProxy
@@ -589,6 +589,7 @@ class CrossBenchCLI:
         "--secrets",
         dest="secrets",
         type=SecretsConfig.parse,
+        default=SecretsConfig(),
         help="Path to file containing login secrets")
 
     browser_group.add_argument(

@@ -211,7 +211,8 @@ class LoadingPageFilter(StoryFilter[Page]):
       return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
     return InteractivePage(label, config.blocks, config.setup, config.login,
-                           playback, tabs, args.about_blank_duration)
+                           config.secrets.as_dict(), playback, tabs,
+                           args.about_blank_duration)
 
   def create_stories(self, separate: bool) -> Sequence[Page]:
     logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
@@ -269,16 +270,11 @@ class PageLoadBenchmark(SubStoryBenchmark):
             "with any other page config option.")
       pages = LoadingPageFilter.stories_from_config(args, config)
       if cls.requires_separate(args):
-        assert len(config.logins) == 0
         return pages
-      if len(pages) == 1 and len(config.logins) == 0:
+      if len(pages) == 1:
         return pages
-      return (CombinedPage(
-          pages,
-          "Page Scenarios - Combined",
-          args.playback,
-          args.tabs,
-          logins=config.logins),)
+      return (CombinedPage(pages, "Page Scenarios - Combined", args.playback,
+                           args.tabs),)
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.

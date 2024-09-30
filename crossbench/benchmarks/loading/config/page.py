@@ -19,6 +19,7 @@ from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.page import PAGES
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
+from crossbench.cli.config.secrets import SecretsConfig, SecretsDict
 from crossbench.config import ConfigObject, ConfigParser
 
 
@@ -26,6 +27,7 @@ from crossbench.config import ConfigObject, ConfigParser
 class PageConfig(ConfigObject):
   label: Optional[str] = None
   playback: Optional[PlaybackController] = None
+  secrets: SecretsConfig = SecretsConfig()
   login: Optional[LoginBlock] = None
   setup: Optional[ActionBlock] = None
   blocks: Tuple[ActionBlock, ...] = tuple()
@@ -64,21 +66,25 @@ class PageConfig(ConfigObject):
   @classmethod
   def parse_sequence(cls: Type[PageConfig],
                      value: Sequence[Any],
-                     label: Optional[str] = None) -> PageConfig:
+                     label: Optional[str] = None,
+                     secrets: Optional[SecretsConfig] = None) -> PageConfig:
     value = cli_helper.parse_non_empty_sequence(value,
                                                 "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
     if label is not None:
       label = cli_helper.parse_non_empty_str(label, "label")
-    return cls(label, blocks=blocks.blocks)
+    secrets = secrets or SecretsConfig()
+    return cls(label, secrets=secrets, blocks=blocks.blocks)
 
   @classmethod
   def parse_dict(  # pylint: disable=arguments-differ
       cls: Type[PageConfig],
       config: Dict[str, Any],
-      label: Optional[str] = None) -> PageConfig:
+      label: Optional[str] = None,
+      secrets: Optional[SecretsConfig] = None) -> PageConfig:
     config = cli_helper.parse_non_empty_dict(config, "story actions or blocks")
-    page_config = cls.config_parser().parse(config, label=label)
+    page_config = cls.config_parser().parse(
+        config, label=label, secrets=secrets)
     return page_config
 
   @classmethod
@@ -86,6 +92,7 @@ class PageConfig(ConfigObject):
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument("label", type=cli_helper.parse_non_empty_str)
     parser.add_argument("playback", type=PlaybackController.parse)
+    parser.add_argument("secrets", type=SecretsConfig, default=SecretsConfig())
     parser.add_argument("login", type=LoginBlock)
     parser.add_argument("setup", type=ActionBlock)
     parser.add_argument(
