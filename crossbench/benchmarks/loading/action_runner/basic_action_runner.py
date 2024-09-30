@@ -177,37 +177,9 @@ class BasicActionRunner(ActionRunner):
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
     with run.actions("WaitForElementAction", measure=False) as actions:
-      timeout_ms = action.timeout // dt.timedelta(milliseconds=1)
-      result = actions.js(
-          """
-            const [selector, timeout_ms] = arguments;
-            if (document.querySelector(selector)) {
-              return true;
-            }
-            return await new Promise(resolve => {
-              const timer = setTimeout(() => {
-                resolve(false);
-              }, timeout_ms);
-
-              const observer = new MutationObserver(mutations => {
-                if (document.querySelector(selector)) {
-                  observer.disconnect();
-                  clearTimeout(timer);
-                  resolve(true);
-                }
-              });
-
-              observer.observe(document.body, {
-                  childList: true,
-                  subtree: true
-              });
-            });
-          """,
-          arguments=[action.selector, timeout_ms],
-          timeout=action.timeout + dt.timedelta(seconds=1))
-
-      if not result:
-        raise ElementNotFoundError(action.selector)
+      actions.wait_js_condition(
+          f"return !!document.querySelector({repr(action.selector)})", 0.2,
+          action.timeout)
 
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
