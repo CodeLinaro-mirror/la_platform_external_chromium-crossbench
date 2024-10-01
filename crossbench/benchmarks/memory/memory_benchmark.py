@@ -42,22 +42,34 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     parser = super().add_cli_parser(parser)
     parser.add_argument(
         '--alloc-count',
-        dest="alloc_count",
         type=cli_helper.parse_positive_int,
         default=1,
         help='The number of block to allocate.')
     parser.add_argument(
         '--block-size',
-        dest="block_size",
         type=cli_helper.parse_positive_int,
         default=128,
         help='The size of each block (MB).')
     parser.add_argument(
         '--compressibility',
-        dest="compressibility",
         type=cli_helper.parse_positive_zero_int,
         default=0,
         help='The compressibility (0-100)')
+    parser.add_argument(
+        '--prefill-constant',
+        type=cli_helper.parse_int,
+        default=1,
+        help="Prefill memory buffer with given constant (-1-127)."
+        "Default is 1."
+        "-1 represents no prefilling.")
+    parser.add_argument(
+        "--random-per-buffer",
+        dest="random_per_page",
+        action="store_false",
+        help="With the flag, it will generate the memory workload "
+        "with random per buffer level. Without the flag,"
+        "it will generate the memory workload with random"
+        "per page level.")
 
     tab_group = parser.add_mutually_exclusive_group()
     tab_group.add_argument(
@@ -108,8 +120,11 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     url_params = {
         "alloc": str(args.alloc_count),
         "blocksize": str(args.block_size),
-        "compress": str(args.compressibility)
+        "compress": str(args.compressibility),
+        "prefill": str(args.prefill_constant),
     }
+    if not args.random_per_page:
+      url_params["randomperpage"] = "false"
     url = helper.update_url_query(cls.URL, url_params)
     stories: Sequence[Page] = []
     page = LivePage("memory", url, dt.timedelta(seconds=2), tabs=args.tabs)
