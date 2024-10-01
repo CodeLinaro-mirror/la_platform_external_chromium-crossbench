@@ -34,9 +34,9 @@ if TYPE_CHECKING:
 CONFIG_DIR = config.config_dir()
 LOADLINE_DIR = CONFIG_DIR / "benchmark" / "loadline"
 
-# We should increase this version number every time there are any changes that
-# might affect the benchmark score.
-VERSION_STRING = "1.0.0.0"
+# We should increase the minor version number every time there are any changes
+# that might affect the benchmark score.
+VERSION_STRING = "1.0.0"
 
 class LoadLinePageFilter(LoadingPageFilter):
   """LoadLine benchmark for phone/tablet."""

@@ -135,6 +135,14 @@ speed.
 We took various measures to try to reduce this variability, but there is still
 room to improve and we plan to do this in the next versions of this benchmark.
 
+### Score
+
+We are still actively developing this benchmark and we will try our best to keep
+the score as stable across changes as possible. We will update the benchmark's
+minor version if we introduce changes that have a chance of affecting the score.
+This version is reported in the benchmark output and should be quoted when
+sharing scores.
+
 ### Cross-device Comparisons
 
 Workload on two different devices will differ due to variance in application
