@@ -38,6 +38,7 @@ LOADLINE_DIR = CONFIG_DIR / "benchmark" / "loadline"
 # that might affect the benchmark score.
 VERSION_STRING = "1.0.0"
 
+
 class LoadLinePageFilter(LoadingPageFilter):
   """LoadLine benchmark for phone/tablet."""
   CAN_COMBINE_STORIES: bool = False
@@ -55,13 +56,12 @@ class LoadLinePageFilter(LoadingPageFilter):
     return ()
 
 
-class LoadLineBenchmarkProbe(BenchmarkProbeMixin, Probe):
+class LoadLineProbe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE = False
-  NAME = "loadline_benchmark_probe"
+  NAME = "loadline_probe"
 
-  def get_context(self,
-                  run: Run) -> Optional[LoadLineBenchmarkProbeContext]:
-    return LoadLineBenchmarkProbeContext(self, run)
+  def get_context(self, run: Run) -> Optional[LoadLineProbeContext]:
+    return LoadLineProbeContext(self, run)
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
@@ -82,12 +82,13 @@ class LoadLineBenchmarkProbe(BenchmarkProbeMixin, Probe):
 
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    loadline_result = None
+    loadline_result: Optional[pth.LocalPath] = None
     for result in all_results:
+      # Look for the "loadline/benchmark_score" trace processor query result.
       if result.name == "loadline_benchmark_score.csv":
         loadline_result = result
         break
-    assert loadline_result is not None
+    assert loadline_result is not None, "LoadLine: query result not found"
 
     df = pd.read_csv(loadline_result)
     df = df.groupby(["cb_browser",
@@ -104,15 +105,14 @@ class LoadLineBenchmarkProbe(BenchmarkProbeMixin, Probe):
                  sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
 
 
-class LoadLineBenchmarkProbeContext(ProbeContext[LoadLineBenchmarkProbe]):
+class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
 
   def start(self) -> None:
     pass
 
   def start_story_run(self) -> None:
     self.browser.performance_mark(
-        f"LoadLineBenchmark/{self.probe.benchmark.NAME}"
-        f"/{self.run.story.name}")
+        f"LoadLine/{self.probe.benchmark.NAME}/{self.run.story.name}")
 
   def stop(self) -> None:
     pass
@@ -123,7 +123,7 @@ class LoadLineBenchmarkProbeContext(ProbeContext[LoadLineBenchmarkProbe]):
 
 class LoadLineBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS = LoadLinePageFilter
-  PROBES = (LoadLineBenchmarkProbe,)
+  PROBES = (LoadLineProbe,)
   DEFAULT_REPETITIONS = 100
 
   @classmethod
@@ -158,6 +158,7 @@ class LoadLineBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
   @classmethod
   def all_story_names(cls) -> Sequence[str]:
     return tuple(page.label for page in cls.get_pages_config().pages)
+
 
 class LoadLineTabletBenchmark(LoadLineBenchmark):
   """LoadLine benchmark for tablet.

@@ -23,7 +23,7 @@ from crossbench.probes.trace_processor.trace_processor import (
 ROOT_DIR = pth.LocalPath(__file__).parents[2]
 DEFAULT_RESULT_DIR = ROOT_DIR / "results" / "latest"
 DEFAULT_CONFIG_PATH = (
-    ROOT_DIR / "config" / "benchmark" / "loading" / "probe_config.hjson")
+    ROOT_DIR / "config" / "benchmark" / "loadline" / "probe_config.hjson")
 
 class MergedTraceUriResolver(TraceUriResolver):
   def __init__(self, result_path: pth.LocalPath):

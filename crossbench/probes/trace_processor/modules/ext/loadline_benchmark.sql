@@ -9,9 +9,9 @@ INCLUDE PERFETTO MODULE ext.loadline_youtube_video;
 CREATE OR REPLACE PERFETTO FUNCTION loadline_get_name()
 RETURNS STRING
 AS
-SELECT DISTINCT substr(name, length('LoadLineBenchmark/') + 1)
+SELECT DISTINCT substr(name, length('LoadLine/') + 1)
 FROM slice
-WHERE category = 'blink.user_timing' AND name GLOB 'LoadLineBenchmark/*'
+WHERE category = 'blink.user_timing' AND name GLOB 'LoadLine/*'
 LIMIT 1;
 
 CREATE OR REPLACE PERFETTO FUNCTION loadline_benchmark_score()
