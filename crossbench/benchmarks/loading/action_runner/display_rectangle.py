@@ -18,10 +18,6 @@ class DisplayRectangle:
   width: int
   # The height in pixels of the rectangle.
   height: int
-  # The total width of the display
-  max_width: Optional[int] = None
-  # The total height of the display
-  max_height: Optional[int] = None
 
   # Stretches or squishes the rectangle by |factor|
   def __mul__(self, factor: float) -> Self:

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+from math import floor
 import shlex
 import subprocess
 from typing import TYPE_CHECKING
@@ -72,9 +73,11 @@ class ChromeOSViewportInfo:
     visible_height = min(window_inner_height,
                          round(screen_avail_height - window_offset_y))
 
+    self._native_screen = DisplayRectangle(
+        Point(0, 0), screen_width_pixels, screen_height_pixels)
+
     self._browser_viewable = DisplayRectangle(
-        Point(window_offset_x, window_offset_y), visible_width, visible_height,
-        screen_width_pixels, screen_height_pixels)
+        Point(window_offset_x, window_offset_y), visible_width, visible_height)
 
     self._element_rect: Optional[DisplayRectangle] = None
     if element_rect:
@@ -85,6 +88,10 @@ class ChromeOSViewportInfo:
     return self._browser_viewable
 
   @property
+  def native_screen(self) -> DisplayRectangle:
+    return self._native_screen
+
+  @property
   def element_rect(self) -> Optional[DisplayRectangle]:
     return self._element_rect
 
@@ -92,20 +99,16 @@ class ChromeOSViewportInfo:
                                dom_rect: DisplayRectangle) -> DisplayRectangle:
     browser_viewable = self.browser_viewable
     correct_ratio_rect = dom_rect * self._actual_pixel_ratio
-    correct_ratio_rect.max_height = browser_viewable.max_height
-    correct_ratio_rect.max_width = browser_viewable.max_width
 
     adjusted_left = correct_ratio_rect.left + browser_viewable.left
     adjusted_top = correct_ratio_rect.top + browser_viewable.top
     adjusted_width = min(correct_ratio_rect.width,
-                         correct_ratio_rect.max_width - correct_ratio_rect.left)
-    adjusted_height = min(
-        correct_ratio_rect.height,
-        correct_ratio_rect.max_height - correct_ratio_rect.top)
+                         self._native_screen.width - correct_ratio_rect.left)
+    adjusted_height = min(correct_ratio_rect.height,
+                          self._native_screen.height - correct_ratio_rect.top)
 
     return DisplayRectangle(
-        Point(adjusted_left, adjusted_top), adjusted_width, adjusted_height,
-        self.browser_viewable.max_width, self.browser_viewable.max_height)
+        Point(adjusted_left, adjusted_top), adjusted_width, adjusted_height)
 
   def css_to_native_distance(self, distance: float) -> float:
     return distance * self._actual_pixel_ratio
@@ -143,8 +146,12 @@ class TouchDevice:
 class ChromeOSTouchEvent:
   touch_device: TouchDevice
 
-  # The position in terms of the device's sreen resolution
-  position: DisplayRectangle
+  # The viewport in which the start and end positions lie.
+  viewport: DisplayRectangle
+  # The start position in terms of the device's screen resolution
+  start_position: Point
+  # The end position in terms of the device's screen resolution
+  end_position: Optional[Point] = None
 
   duration: dt.timedelta = dt.timedelta()
 
@@ -161,10 +168,23 @@ E: <time> 0003 0001 <y>
 E: <time> 0000 0000 0
 """
 
+  _TAP_POSITION = """E: <time> 0003 0035 <x>
+E: <time> 0003 0036 <y>
+E: <time> 0003 0000 <x>
+E: <time> 0003 0001 <y>
+E: <time> 0000 0000 0
+"""
+
   _TAP_UP = """E: <time> 0003 0039 -1
 E: <time> 0001 014a 0
 E: <time> 0000 0000 0
 """
+
+  # For swipes, simulate the touch panel updating the position 60 times a
+  # second.
+  # This was chosen arbitrarily, but should balance a realistic swipe action
+  # with the size of the playback file that needs to be pushed to the device.
+  _TOUCH_UPDATE_HERTZ = 60
 
   def __str__(self) -> str:
     # Not sure why, but evemu-playback does not like it when the event time
@@ -172,43 +192,67 @@ E: <time> 0000 0000 0
     current_event_time_seconds: float = 1.0
     playback_script: str = ""
 
-    position_middle: Point = self._rereference_to_touch_coordinates(
-        self.position).middle
-
-    if not self.touch_device.is_valid_tap_position(position_middle):
-      raise ValueError("Cannot tap on out of bounds position")
+    start_position: Point = self._rereference_to_touch_coordinates(
+        self.viewport, self.start_position)
 
     playback_script += self._format_script_block(self._TAP_DOWN,
                                                  current_event_time_seconds,
-                                                 position_middle)
+                                                 start_position)
 
-    current_event_time_seconds += self.duration.total_seconds()
+    # Shortcut for long taps
+    if not self.end_position:
+      current_event_time_seconds += self.duration.total_seconds()
+      playback_script += self._format_script_block(self._TAP_UP,
+                                                   current_event_time_seconds,
+                                                   start_position)
+      return playback_script
+
+    end_position: Point = self._rereference_to_touch_coordinates(
+        self.viewport, self.end_position)
+
+    num_position_updates: int = round(self.duration.total_seconds() *
+                                      self._TOUCH_UPDATE_HERTZ)
+    assert num_position_updates > 0, "Choose a longer scroll duration."
+
+    increment_distance_x = (end_position.x -
+                            start_position.x) / num_position_updates
+    increment_distance_y = (end_position.y -
+                            start_position.y) / num_position_updates
+
+    current_position_x = start_position.x
+    current_position_y = start_position.y
+
+    for _ in range(num_position_updates):
+      current_event_time_seconds += 1.0 / self._TOUCH_UPDATE_HERTZ
+      current_position_x += increment_distance_x
+      current_position_y += increment_distance_y
+      playback_script += self._format_script_block(
+          self._TAP_POSITION, current_event_time_seconds,
+          Point(round(current_position_x), round(current_position_y)))
+
     playback_script += self._format_script_block(self._TAP_UP,
                                                  current_event_time_seconds,
-                                                 position_middle)
-
+                                                 end_position)
     return playback_script
 
   def _rereference(self, original: int, original_max: int, new_max: int) -> int:
     return round(float(original / original_max) * new_max)
 
-  def _rereference_to_touch_coordinates(
-      self, rect: DisplayRectangle) -> DisplayRectangle:
-    x = self._rereference(rect.origin.x, rect.max_width,
+  def _rereference_to_touch_coordinates(self,
+                                        original_viewport: DisplayRectangle,
+                                        point: Point) -> Point:
+    x = self._rereference(point.x, original_viewport.width,
                           self.touch_device.x_max)
-    y = self._rereference(rect.origin.y, rect.max_height,
+    y = self._rereference(point.y, original_viewport.height,
                           self.touch_device.y_max)
-    width = self._rereference(rect.width, rect.max_width,
-                              self.touch_device.x_max)
-    height = self._rereference(rect.height, rect.max_height,
-                               self.touch_device.y_max)
 
-    return DisplayRectangle(
-        Point(x, y), width, height, self.touch_device.x_max,
-        self.touch_device.y_max)
+    return Point(x, y)
 
   def _format_script_block(self, script_block: str, time: float,
                            position: Point) -> str:
+    if not self.touch_device.is_valid_tap_position(position):
+      raise ValueError(f"Cannot tap on out of bounds position: {position}")
+
     return script_block.replace("<x>", str(round(position.x))).replace(
         "<y>", str(round(position.y))).replace("<time>", "%.6f" % time)
 
@@ -234,16 +278,76 @@ class ChromeOSInputActionRunner(BasicActionRunner):
           if action.required:
             raise ElementNotFoundError(action.selector)
           return
-        rect_to_click = viewport_info.element_rect
+        click_location: Point = viewport_info.element_rect.middle
       else:
-        rect_to_click = DisplayRectangle(
-            action.coordinates, 0, 0, viewport_info.browser_viewable.max_width,
-            viewport_info.browser_viewable.max_height)
+        click_location: Point = action.coordinates
+
+      assert click_location
 
       self._execute_touch_playback(
           run,
           ChromeOSTouchEvent(
-              self._touch_device, rect_to_click, duration=action.duration))
+              self._touch_device,
+              viewport_info.native_screen,
+              click_location,
+              end_position=None,
+              duration=action.duration))
+
+  def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
+    if self._touch_device is None:
+      self._touch_device = self._setup_touch_device(run)
+
+    with run.actions("ScrollAction", measure=False) as actions:
+
+      viewport_info: ChromeOSViewportInfo = self._get_viewport_info(
+          actions, action.selector, False)
+
+      scroll_area: DisplayRectangle = viewport_info.browser_viewable
+
+      total_scroll_distance = viewport_info.css_to_native_distance(
+          action.distance)
+
+      if action.selector:
+        if not viewport_info.element_rect:
+          if action.required:
+            raise ElementNotFoundError(action.selector)
+          return
+        scroll_area = viewport_info.element_rect
+
+      max_swipe_distance = scroll_area.bottom - scroll_area.top
+
+      remaining_distance = abs(total_scroll_distance)
+
+      while remaining_distance > 0:
+
+        current_distance = min(max_swipe_distance, remaining_distance)
+
+        # The duration for this swipe should be only a fraction of the total
+        # duration since the entire distance may not be covered in one swipe.
+        current_duration = (current_distance /
+                            abs(total_scroll_distance)) * action.duration
+
+        if total_scroll_distance > 0:
+          # If scrolling down, the swipe should start at the bottom and end
+          # above.
+          y_start = scroll_area.bottom
+          y_end = scroll_area.bottom - current_distance
+
+        else:
+          # If scrolling up, the swipe should start at the top and end below.
+          y_start = scroll_area.top
+          y_end = scroll_area.top + current_distance
+
+        self._execute_touch_playback(
+            run,
+            ChromeOSTouchEvent(
+                self._touch_device,
+                viewport_info.native_screen,
+                Point(scroll_area.middle.x, y_start),
+                end_position=Point(scroll_area.middle.x, y_end),
+                duration=current_duration))
+
+        remaining_distance -= current_distance
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
