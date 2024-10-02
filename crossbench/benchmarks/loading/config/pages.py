@@ -139,38 +139,82 @@ class DevToolsRecorderPagesConfig(PagesConfig):
   def _parse_steps(cls, steps: List[Dict[str, Any]]) -> Tuple[Action, ...]:
     actions: List[Action] = []
     for step in steps:
-      maybe_actions: Optional[Action] = cls._parse_step(step)
-      if maybe_actions:
-        actions.append(maybe_actions)
+      if maybe_actions := cls.parse_step(step):
+        actions.extend(maybe_actions)
         # TODO(cbruni): make this configurable
         actions.append(WaitAction(duration=dt.timedelta(seconds=1)))
     return tuple(actions)
 
   @classmethod
-  def _parse_step(cls, step: Dict[str, Any]) -> Optional[Action]:
+  def parse_step(cls, step: Dict[str, Any]) -> List[Action]:
     step_type: str = step["type"]
     default_timeout = dt.timedelta(seconds=10)
     if step_type == "navigate":
-      return GetAction(  # type: ignore
-          step["url"], ready_state=ReadyState.COMPLETE)
+      return [cls._parse_navigate_step(step, default_timeout)]
     if step_type == "click":
-      selectors: List[List[str]] = step["selectors"]
-      xpath: Optional[str] = None
-      for selector_list in selectors:
-        for selector in selector_list:
-          if selector.startswith("xpath//"):
-            xpath = selector
-            break
-      assert xpath, "Need xpath selector for click action"
-      return ClickAction(
-          InputSource.JS,
-          selector=xpath,
-          scroll_into_view=True,
-          timeout=default_timeout)
+      return [cls._parse_click_step(step, default_timeout)]
     if step_type == "setViewport":
       # Resizing is ignored for now.
-      return None
+      return []
     raise ValueError(f"Unsupported step: {step_type}")
+
+  @classmethod
+  def _parse_navigate_step(cls, step: Dict[str, Any],
+                           default_timeout: dt.timedelta) -> Action:
+    del default_timeout
+    return GetAction(  # type: ignore
+        step["url"], ready_state=ReadyState.COMPLETE)
+
+  @classmethod
+  def _parse_click_step(cls, step: Dict[str, Any],
+                        default_timeout: dt.timedelta) -> Action:
+    selector = cls._parse_selectors(step["selectors"])
+    return ClickAction(
+        InputSource.JS,
+        selector=selector,
+        scroll_into_view=True,
+        timeout=default_timeout)
+
+  @classmethod
+  def _parse_selectors(cls, selectors: List[List[str]]) -> str:
+    xpath: Optional[str] = None
+    aria: Optional[str] = None
+    text: Optional[str] = None
+    css: Optional[str] = None
+    # Detect all single-element selectors first.
+    for selector_list in selectors:
+      if len(selector_list) != 1:
+        continue
+      selector_candidate = selector_list[0]
+      if not aria and selector_candidate.startswith("aria/"):
+        aria = selector_candidate
+      elif not xpath and selector_candidate.startswith("xpath//"):
+        xpath = selector_candidate
+      elif not text and selector_candidate.startswith("css/"):
+        css = selector_candidate
+      elif not text and selector_candidate.startswith("text/"):
+        text = selector_candidate
+      elif not text and selector_candidate.startswith("pierce/"):
+        # not supported yet.
+        pass
+      else:
+        css = f"css/{selector_candidate}"
+
+    if xpath:
+      assert xpath.startswith("xpath/")
+      return xpath
+    if css:
+      _, css = css.split("css/", maxsplit=1)
+      return css
+    if aria:
+      _, aria = aria.split("aria/", maxsplit=1)
+      return f"[aria-label={repr(aria)}]"
+    if text:
+      _, text = text.split("text/", maxsplit=1)
+      return f"xpath///*[text()={repr(text)}]"
+
+    raise ValueError("Need at least one single element xpath or aria "
+                     "selector for click action")
 
 
 class ListPagesConfig(PagesConfig):

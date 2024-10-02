@@ -13,6 +13,8 @@ from typing import Sequence
 
 import hjson
 
+from crossbench.benchmarks.loading.action import ClickAction, GetAction
+from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.config.pages import (
@@ -480,6 +482,57 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     config_file = DevToolsRecorderPagesConfig.parse(config_path)
     config_dict = DevToolsRecorderPagesConfig.parse(DEVTOOLS_RECORDER_EXAMPLE)
     self.assertEqual(config_file, config_dict)
+
+  def test_parse_click_step(self):
+    config = {
+        "type": "click",
+        "target": "main",
+        "selectors": [["aria/Search Google"],],
+    }
+    actions = DevToolsRecorderPagesConfig.parse_step(config)
+    self.assertEqual(len(actions), 1)
+    action = actions[0]
+    self.assertEqual(action.TYPE, ActionType.CLICK)
+    assert isinstance(action, ClickAction)
+    self.assertEqual(action.selector, "[aria-label='Search Google']")
+
+    config["selectors"] = [["aria/SIMPLE"], ["#rso > div:nth-of-type(3) h3"],
+                           ["xpath///*[@id=\"rso\"]"],
+                           ["pierce/#rso > div:nth-of-type(3) h3"],
+                           ["text/SIMPLE"]]
+    action = DevToolsRecorderPagesConfig.parse_step(config)[0]
+    assert isinstance(action, ClickAction)
+    self.assertEqual(action.selector, "xpath///*[@id=\"rso\"]")
+
+    config["selectors"] = [
+        ["aria/SIMPLE"],
+        ["css/#rso > div:nth-of-type(3) h3"],
+    ]
+    action = DevToolsRecorderPagesConfig.parse_step(config)[0]
+    assert isinstance(action, ClickAction)
+    self.assertEqual(action.selector, "#rso > div:nth-of-type(3) h3")
+
+    config["selectors"] = [
+        ["#rso > div:nth-of-type(3) h3"],
+    ]
+    action = DevToolsRecorderPagesConfig.parse_step(config)[0]
+    assert isinstance(action, ClickAction)
+    self.assertEqual(action.selector, "#rso > div:nth-of-type(3) h3")
+
+    config["selectors"] = [
+        ["aria/SIMPLE", "area/OTHER"],
+        ["#rso > div:nth-of-type(3) h3"],
+    ]
+    action = DevToolsRecorderPagesConfig.parse_step(config)[0]
+    assert isinstance(action, ClickAction)
+    self.assertEqual(action.selector, "#rso > div:nth-of-type(3) h3")
+
+    config["selectors"] = [
+        ["text/Content"],
+    ]
+    action = DevToolsRecorderPagesConfig.parse_step(config)[0]
+    assert isinstance(action, ClickAction)
+    self.assertEqual(action.selector, "xpath///*[text()='Content']")
 
 
 class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
