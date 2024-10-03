@@ -51,6 +51,16 @@ class Network(abc.ABC):
     return False
 
   @property
+  def is_wpr(self) -> bool:
+    """Return True if the network is the replay network."""
+    return False
+
+  @property
+  def is_local_file_server(self) -> bool:
+    """Return True if the network is the local file server network."""
+    return False
+
+  @property
   def http_port(self) -> Optional[int]:
     """HTTP port for non-live server-based networks."""
     return None

@@ -90,6 +90,10 @@ class LocalFileNetwork(Network):
       self._validate_extra_headers()
 
   @property
+  def is_local_file_server(self) -> bool:
+    return True
+
+  @property
   def path(self) -> LocalPath:
     return self._path
 

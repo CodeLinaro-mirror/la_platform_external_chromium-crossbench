@@ -39,6 +39,10 @@ class ReplayNetwork(Network):
     self._archive_path = self._ensure_archive(archive)
 
   @property
+  def is_wpr(self) -> bool:
+    return True
+
+  @property
   def archive_path(self) -> LocalPath:
     return self._archive_path
 

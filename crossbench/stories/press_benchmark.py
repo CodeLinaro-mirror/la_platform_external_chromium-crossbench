@@ -119,8 +119,8 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
       return self._custom_url
     network = run.browser_session.network
     # Create a matching URL for a local file server.
-    if http_port := network.http_port:
-      return f"http://{network.host}:{http_port}"
+    if network.is_local_file_server and network.http_port:
+      return f"http://{network.host}:{network.http_port}"
     # Return default URL in case of live network.
     return self.url
 
