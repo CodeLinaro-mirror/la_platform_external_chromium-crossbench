@@ -59,6 +59,8 @@ def default_chromium_candidates(platform: Platform) -> Tuple[pth.AnyPath, ...]:
     candidates.append(platform.path(chromium_src))
   if platform.is_local:
     candidates.append(chromium_src_relative_local_path())
+  if platform.is_android:
+    return tuple(candidates)
   home_dir = platform.home()
   candidates += [
       # Guessing default locations
@@ -144,6 +146,8 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
 class V8CheckoutFinder(BaseToolFinder):
 
   def default_candidates(self) -> Tuple[pth.AnyPath, ...]:
+    if self.platform.is_android:
+      return ()
     home_dir = self._platform.home()
     return (
         # V8 Checkouts
