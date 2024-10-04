@@ -96,8 +96,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   def start(self, session: BrowserSessionRunGroup) -> None:
     assert self._driver_path
-    # set http request timeout as 15 seconds
-    RemoteConnection.set_timeout(15)
     try:
       self._driver = self._start_driver(session, self._driver_path)
     except selenium.common.exceptions.SessionNotCreatedException as e:
