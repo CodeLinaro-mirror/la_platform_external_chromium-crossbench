@@ -135,7 +135,7 @@ speed.
 We took various measures to try to reduce this variability, but there is still
 room to improve and we plan to do this in the next versions of this benchmark.
 
-### Score
+### Score
 
 We are still actively developing this benchmark and we will try our best to keep
 the score as stable across changes as possible. We will update the benchmark's
