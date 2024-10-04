@@ -68,7 +68,7 @@ class MacOSPlatform(PosixPlatform):
     bin_path = app_path / "Contents" / "MacOS" / app_path.stem
     if self.exists(bin_path):
       return bin_path
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     binaries = [
         path for path in self.iterdir(bin_path.parent) if self.is_file(path)
     ]
@@ -126,7 +126,7 @@ class MacOSPlatform(PosixPlatform):
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     if app_or_bin_path.suffix != ".app":
       raise ValueError("Expected app name with '.app' suffix, "
                        f"but got: '{app_or_bin_path.name}'")

@@ -93,6 +93,10 @@ class Platform(abc.ABC):
   def __init__(self) -> None:
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
 
+  def assert_is_local(self) -> None:
+    caller = sys._getframe(1).f_code.co_name
+    assert self.is_local, f"Unsupported operation '{caller}' on remote platform"
+
   @property
   @abc.abstractmethod
   def name(self) -> str:
@@ -146,7 +150,7 @@ class Platform(abc.ABC):
     raise NotImplementedError(f"Unsupported machine type: {raw}")
 
   def _raw_machine_arch(self) -> str:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return py_platform.machine()
 
   @property
@@ -191,12 +195,12 @@ class Platform(abc.ABC):
 
   @property
   def environ(self) -> Environ:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return LocalEnviron()
 
   @property
   def is_battery_powered(self) -> bool:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     if not psutil.sensors_battery:
       return False
     status = psutil.sensors_battery()
@@ -280,7 +284,7 @@ class Platform(abc.ABC):
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if not binary_name:
       raise ValueError("Got empty path")
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     if override := self.lookup_binary_override(binary_name):
       return override
     if result := shutil.which(os.fspath(binary_name)):
@@ -332,7 +336,7 @@ class Platform(abc.ABC):
     return self._collect_process_dict(psutil.process_iter(attrs=attrs))
 
   def process_running(self, process_name_list: List[str]) -> Optional[str]:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     # TODO(cbruni): support remote platforms
     for proc in psutil.process_iter(attrs=["name"]):
       try:
@@ -345,7 +349,7 @@ class Platform(abc.ABC):
   def process_children(self,
                        parent_pid: int,
                        recursive: bool = False) -> List[Dict[str, Any]]:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
       process = psutil.Process(parent_pid)
@@ -364,7 +368,7 @@ class Platform(abc.ABC):
     return process_info_list
 
   def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
       return psutil.Process(pid).as_dict()
@@ -375,7 +379,7 @@ class Platform(abc.ABC):
     return None
 
   def terminate(self, proc_pid: int) -> None:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     # TODO(cbruni): support remote platforms
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
@@ -384,28 +388,28 @@ class Platform(abc.ABC):
 
   @property
   def default_tmp_dir(self) -> pth.AnyPath:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return self.path(tempfile.gettempdir())
 
   def port_forward(self, local_port: int, remote_port: int) -> int:
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return local_port
 
   def stop_port_forward(self, local_port: int) -> None:
     del local_port
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
 
   def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return remote_port
 
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     del remote_port
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
 
   def cat(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""
@@ -424,14 +428,14 @@ class Platform(abc.ABC):
     """ Download / Copy a (remote) file to the local filesystem.
     By default this is just a copy operation on the local filesystem.
     """
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return self.local_path(self.copy_file(from_path, to_path))
 
   def push(self, from_path: pth.LocalPath, to_path: pth.AnyPath) -> pth.AnyPath:
     """ Copy a local file to this (remote) platform.
     By default this is just a copy operation on the local filesystem.
     """
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return self.copy_file(from_path, to_path)
 
   def copy(self, from_path: pth.AnyPath, to_path: pth.AnyPath) -> pth.AnyPath:
@@ -480,7 +484,7 @@ class Platform(abc.ABC):
                       dst: pth.AnyPathLike) -> pth.AnyPath:
     """Windows does not support symlinking without admin support.
     Copy files on windows (see WinPlatform) but symlink everywhere else."""
-    assert not self.is_win, "Unsupported operation on windows"
+    assert not self.is_win, "Unsupported operation 'symlink_or_copy' on windows"
     dst_path = self.local_path(dst)
     dst_path.symlink_to(self.path(src))
     return dst_path
@@ -496,7 +500,7 @@ class Platform(abc.ABC):
     return self.local_path(path)
 
   def local_path(self, path: pth.AnyPathLike) -> pth.LocalPath:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return pth.LocalPath(path)
 
   def absolute(self, path: pth.AnyPathLike) -> pth.AnyPath:
@@ -535,13 +539,13 @@ class Platform(abc.ABC):
   def mkdtemp(self,
               prefix: Optional[str] = None,
               dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return self.path(tempfile.mkdtemp(prefix=prefix, dir=dir))
 
   def mktemp(self,
              prefix: Optional[str] = None,
              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
     os.close(fd)
     return self.path(name)
@@ -605,7 +609,7 @@ class Platform(abc.ABC):
             stdin=None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", os.getcwd())
@@ -628,7 +632,7 @@ class Platform(abc.ABC):
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", os.getcwd())
@@ -676,11 +680,11 @@ class Platform(abc.ABC):
     return psutil.disk_usage(str(self.local_path(path)))
 
   def cpu_usage(self) -> float:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return 1 - psutil.cpu_times_percent().idle / 100
 
   def cpu_details(self) -> Dict[str, Any]:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     details = {
         "physical cores":
             psutil.cpu_count(logical=False),
@@ -717,7 +721,7 @@ class Platform(abc.ABC):
     }
 
   def os_details(self) -> JsonDict:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return {
         "system": py_platform.system(),
         "release": py_platform.release(),
@@ -726,14 +730,14 @@ class Platform(abc.ABC):
     }
 
   def python_details(self) -> JsonDict:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     return {
         "version": py_platform.python_version(),
         "bits": 64 if sys.maxsize > 2**32 else 32,
     }
 
   def download_to(self, url: str, path: pth.LocalPath) -> pth.LocalPath:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     logging.debug("DOWNLOAD: %s\n       TO: %s", url, path)
     assert not path.exists(), f"Download destination {path} exists already."
     try:
@@ -748,7 +752,7 @@ class Platform(abc.ABC):
                    inputs: Iterable[pth.LocalPath],
                    output: pth.LocalPath,
                    prefix: str = "") -> pth.LocalPath:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     with output.open("w", encoding="utf-8") as output_f:
       if prefix:
         output_f.write(prefix)
@@ -760,17 +764,17 @@ class Platform(abc.ABC):
 
   def set_main_display_brightness(self, brightness_level: int) -> None:
     raise NotImplementedError(
-        "Implementation is only available on MacOS for now")
+        "'set_main_display_brightness' is only available on MacOS for now")
 
   def get_main_display_brightness(self) -> int:
     raise NotImplementedError(
-        "Implementation is only available on MacOS for now")
+        "'get_main_display_brightness' is only available on MacOS for now")
 
   def check_autobrightness(self) -> bool:
     raise NotImplementedError(
-        "Implementation is only available on MacOS for now")
+        "'check_autobrightness' is only available on MacOS for now")
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     # TODO: support screen coordinates
     raise NotImplementedError(
-        "Implementation is only available on MacOS for now")
+        "'screenshot' is only available on MacOS for now")

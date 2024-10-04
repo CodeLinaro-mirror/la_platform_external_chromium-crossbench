@@ -46,7 +46,7 @@ class WinPlatform(Platform):
                           "name").strip().splitlines()[2].strip()
 
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
@@ -75,7 +75,7 @@ class WinPlatform(Platform):
                       dst: pth.AnyPathLike) -> pth.AnyPath:
     """Windows does not support symlinking without admin support.
     Copy files on windows but symlink everywhere else (see base Platform)."""
-    assert self.is_local, "Unsupported operation on remote platform"
+    self.assert_is_local()
     dst_path = self.path(dst)
     shutil.copy(os.fspath(self.path(src)), os.fspath(dst_path))
     return dst_path
