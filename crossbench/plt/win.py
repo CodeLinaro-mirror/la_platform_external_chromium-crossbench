@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import functools
+import logging
 import os
 import shutil
 from typing import Optional
@@ -67,9 +68,18 @@ class WinPlatform(Platform):
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
-    return self.sh_stdout(
+    if version := self.sh_stdout(
         "powershell", "-command",
-        f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion")
+        f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion").strip():
+      return version
+    try:
+      # Fall back to command-line tools.
+      if version := self.sh_stdout(app_or_bin, "--version").strip():
+        return version
+    except Exception as e:
+      logging.debug("Failed to extract binary tool version: %s", e)
+    raise ValueError(f"Could not extract version for {app_or_bin}")
+
 
   def symlink_or_copy(self, src: pth.AnyPathLike,
                       dst: pth.AnyPathLike) -> pth.AnyPath:

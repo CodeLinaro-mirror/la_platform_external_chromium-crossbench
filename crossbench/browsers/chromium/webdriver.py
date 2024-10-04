@@ -25,7 +25,7 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
-from crossbench import exception, helper
+from crossbench import exception, helper, plt
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
@@ -415,8 +415,9 @@ def build_chromedriver_instructions(build_dir: pth.AnyPath) -> str:
           f"    autoninja -C {build_dir} chromedriver")
 
 
-def is_build_dir(path: pth.LocalPath) -> bool:
-  return (path / "args.gn").is_file()
+def is_build_dir(path: pth.LocalPath,
+                 platform: plt.Platform = plt.PLATFORM) -> bool:
+  return platform.is_file(path / "args.gn")
 
 
 class ChromeDriverFinder:
@@ -449,17 +450,19 @@ class ChromeDriverFinder:
     # assume it's a local build
     lookup_dir = pth.LocalPath(self.browser.app_path.parent)
     driver_path = lookup_dir / "chromedriver"
-    if driver_path.is_file():
+    if self.platform.is_win:
+      driver_path = driver_path.with_suffix(".exe")
+    if self.platform.is_file(driver_path):
       return driver_path
     error_message: List[str] = [f"Driver '{driver_path}' does not exist."]
-    if is_build_dir(lookup_dir):
+    if is_build_dir(lookup_dir, self.platform):
       error_message += [build_chromedriver_instructions(lookup_dir)]
     else:
       error_message += ["Please manually provide a chromedriver binary."]
     raise DriverNotFoundError("\n".join(error_message))
 
   def download(self) -> pth.LocalPath:
-    if not self.driver_path.is_file():
+    if not self.platform.is_file(self.driver_path):
       with exception.annotate(
           f"Downloading chromedriver for {self.browser.version}"):
         self._download()
