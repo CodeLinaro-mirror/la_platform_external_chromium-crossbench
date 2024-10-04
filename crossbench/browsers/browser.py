@@ -130,6 +130,10 @@ class Browser(abc.ABC):
   def wipe_system_user_data(self) -> bool:
     return self._settings.wipe_system_user_data
 
+  @property
+  def http_request_timeout(self) -> dt.timedelta:
+    return self._settings.http_request_timeout
+
   @viewport.setter
   def viewport(self, value: Viewport) -> None:
     self._settings.viewport = value

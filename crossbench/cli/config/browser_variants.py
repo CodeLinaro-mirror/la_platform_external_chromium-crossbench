@@ -430,7 +430,8 @@ class BrowserVariantsConfig:
           platform=browser_platform,
           secrets=args.secrets.as_dict(),
           driver_logging=args.driver_logging,
-          wipe_system_user_data=args.wipe_system_user_data)
+          wipe_system_user_data=args.wipe_system_user_data,
+          http_request_timeout=args.http_request_timeout)
       browser_instance = browser_cls(
           label=label, path=browser_config.path, settings=settings)
       # pytype: enable=not-instantiable
@@ -716,7 +717,8 @@ class BrowserVariantsConfig:
           platform=browser_platform,
           secrets=args.secrets.as_dict(),
           driver_logging=args.driver_logging,
-          wipe_system_user_data=args.wipe_system_user_data)
+          wipe_system_user_data=args.wipe_system_user_data,
+          http_request_timeout=args.http_request_timeout)
       browser_instance = browser_cls(  # pytype: disable=not-instantiable
           label=label,
           path=path,

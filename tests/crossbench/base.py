@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import datetime as dt
 import io
 import logging
 import pathlib
@@ -96,6 +97,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         splash_screen=None,
         secrets=SecretsConfig(),
         wipe_system_user_data=False,
+        http_request_timeout=dt.timedelta(),
         cache_dir=pathlib.Path("test_cache_dir"),
         enable_features=None,
         disable_features=None,

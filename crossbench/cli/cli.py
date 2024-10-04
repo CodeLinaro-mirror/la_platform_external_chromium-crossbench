@@ -601,6 +601,13 @@ class CrossBenchCLI:
         action="store_true",
         help="Clear user data at the beginning of the test "
         "(be careful using it).")
+    browser_group.add_argument(
+        "--http-request-timeout",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta(),
+        help=("Set the timeout of http request. "
+              f"Format: {DurationParser.help()}. "
+              "When not speficied, there will be no timeout."))
 
     splashscreen_group = browser_group.add_mutually_exclusive_group()
     splashscreen_group.add_argument(
