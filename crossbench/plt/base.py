@@ -316,7 +316,7 @@ class Platform(abc.ABC):
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):
       if override := binary.platform_path(self):
-        binary_name = override
+        binary_name = override[0]
       else:
         raise RuntimeError("Cannot override binary:"
                            f" {binary} is not supported supported on {self}")

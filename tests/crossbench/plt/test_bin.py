@@ -32,13 +32,11 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
 
   def all_mock_platforms(self):
     for platform in self._all_mock_platforms:
-      with self.subTest(platform=platform):
-        yield platform
+      yield platform
 
   def all_platforms(self):
     for platform in self._all_platforms:
-      with self.subTest(platform=platform):
-        yield platform
+      yield platform
 
   def create_binary_path(self, path: str) -> pth.LocalPath:
     result = pth.LocalPath(path)
@@ -91,6 +89,10 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     binary = Binary("test", default="foo/bar/test")
     self.assertEqual(binary.name, "test")
 
+  def test_basic_accessor_multiple(self):
+    binary = Binary("test", default=("foo/bar/test1", "foo/bar/test2"))
+    self.assertEqual(binary.name, "test")
+
   def test_unknown_binary(self):
     binary = Binary("crossbench_mock_binary", default="crossbench_mock_binary")
     for platform in self.all_platforms():
@@ -105,7 +107,32 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
         if platform.is_win:
           result = pth.AnyPath("foo/bar/default/crossbench_mock_binary.exe")
         binary = Binary("crossbench_mock_binary", default=default)
-        self.assertEqual(binary.platform_path(platform), pth.AnyPath(result))
+        self.assertEqual(binary.platform_path(platform), (pth.AnyPath(result),))
+        with self.assertRaises(BinaryNotFoundError):
+          binary.resolve(platform)
+        with self.assertRaises(BinaryNotFoundError):
+          binary.resolve_cached(platform)
+        self.fs.create_file(result, st_size=100)
+        self.assertEqual(pth.AnyPath(binary.resolve(platform)), result)
+        self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
+        self.fs.remove(result)
+
+  def test_known_binary_default_multiple(self):
+    for platform in self.all_mock_platforms():
+      with self.subTest(platform=platform):
+        default_miss = pth.AnyPath("foo/bar/default/fake")
+        default = pth.AnyPath("foo/bar/default/crossbench_mock_binary")
+        result = default
+        if platform.is_win:
+          default_miss = pth.AnyPath("foo/bar/default/fake.exe")
+          result = pth.AnyPath("foo/bar/default/crossbench_mock_binary.exe")
+        binary = Binary(
+            "crossbench_mock_binary", default=(default_miss, default))
+        self.assertEqual(
+            binary.platform_path(platform), (
+                pth.AnyPath(default_miss),
+                pth.AnyPath(result),
+            ))
         with self.assertRaises(BinaryNotFoundError):
           binary.resolve(platform)
         with self.assertRaises(BinaryNotFoundError):
@@ -130,7 +157,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_linux:
         continue
-      self.assertIsNone(binary.platform_path(platform))
+      self.assertEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -151,7 +178,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_macos:
         continue
-      self.assertIsNone(binary.platform_path(platform))
+      self.assertEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -174,7 +201,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_posix:
         continue
-      self.assertIsNone(binary.platform_path(platform))
+      self.assertEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -197,7 +224,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_win:
         continue
-      self.assertIsNone(binary.platform_path(platform))
+      self.assertEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):

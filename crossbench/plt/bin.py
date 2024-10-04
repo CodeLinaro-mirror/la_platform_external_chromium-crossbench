@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Union
 
 from crossbench import path as pth
 
@@ -38,6 +38,9 @@ class UnsupportedPlatformError(BinaryNotFoundError):
             f"Only supported on {self.expected_platform_name}")
 
 
+BinaryLookupT = Union[pth.AnyPathLike, Iterable[pth.AnyPathLike]]
+
+
 class Binary:
   """A binary abstraction for multiple platforms.
   Use this implementation to define binaries that exist on multiple platforms.
@@ -45,12 +48,12 @@ class Binary:
 
   def __init__(self,
                name: str,
-               default: Optional[pth.AnyPathLike] = None,
-               posix: Optional[pth.AnyPathLike] = None,
-               linux: Optional[pth.AnyPathLike] = None,
-               android: Optional[pth.AnyPathLike] = None,
-               macos: Optional[pth.AnyPathLike] = None,
-               win: Optional[pth.AnyPathLike] = None) -> None:
+               default: Optional[BinaryLookupT] = None,
+               posix: Optional[BinaryLookupT] = None,
+               linux: Optional[BinaryLookupT] = None,
+               android: Optional[BinaryLookupT] = None,
+               macos: Optional[BinaryLookupT] = None,
+               win: Optional[BinaryLookupT] = None) -> None:
     self._name = name
     self._default = self._convert(default)
     self._posix = self._convert(posix)
@@ -58,17 +61,27 @@ class Binary:
     self._android = self._convert(android)
     self._macos = self._convert(macos)
     self._win = self._convert(win)
-    if self._win and self._win.suffix != ".exe":
-      raise ValueError(f"Windows binary {self._win} should have '.exe' suffix")
+    self._validate_win()
     if not any((default, posix, linux, android, macos, win)):
       raise ValueError("At least one platform binary must be provided")
 
-  def _convert(self, path: Optional[pth.AnyPathLike]) -> Optional[pth.AnyPath]:
-    if path is None:
-      return None
-    if not path:
-      raise ValueError("Got unexpected empty string as binary path")
-    return pth.AnyPath(path)
+  def _convert(
+      self, paths: Optional[BinaryLookupT] = None) -> Tuple[pth.AnyPath, ...]:
+    if paths is None:
+      return tuple()
+    if isinstance(paths, str):
+      path: str = paths
+      if not path:
+        raise ValueError("Got unexpected empty string as binary path")
+      paths = [path]
+    elif isinstance(paths, pth.AnyPath):
+      paths = [paths]
+    return tuple(pth.AnyPath(path) for path in paths)
+
+  def _validate_win(self) -> None:
+    for path in self._win:
+      if path.suffix != ".exe":
+        raise ValueError(f"Windows binary {path} should have '.exe' suffix")
 
   @property
   def name(self) -> str:
@@ -83,13 +96,13 @@ class Binary:
 
   def resolve(self, platform: Platform) -> pth.AnyPath:
     self._validate_platform(platform)
-    if binary := self.platform_path(platform):
+    for binary in self.platform_path(platform):
       binary_path = platform.path(binary)
       if result := platform.search_binary(binary_path):
         return result
     raise BinaryNotFoundError(self, platform)
 
-  def platform_path(self, platform: Platform) -> Optional[pth.AnyPath]:
+  def platform_path(self, platform: Platform) -> Tuple[pth.AnyPath, ...]:
     if self._linux and platform.is_linux:
       return self._linux
     if self._android and platform.is_android:
@@ -102,11 +115,13 @@ class Binary:
       if self._win:
         return self._win
       if self._default:
-        if self._default.suffix == ".exe":
-          return self._default
-        # Auto-append default
-        return self._default.with_suffix(".exe")
+        return self._win_default()
     return self._default
+
+  def _win_default(self) -> Tuple[pth.AnyPath, ...]:
+    return tuple(
+        default if default.suffix == ".exe" else default.with_suffix(".exe")
+        for default in self._default)
 
   def _validate_platform(self, platform: Platform) -> None:
     pass
@@ -177,3 +192,23 @@ class Binaries:
   RPM2CPIO = LinuxBinary("rpm2cpio")
   SIMPLEPERF = AndroidBinary("simpleperf")
   XCTRACE = MacOsBinary("xctrace")
+
+
+class Browsers:
+  SAFARI = MacOsBinary("Safari.app")
+  SAFARI_TECH_PREVIEW = MacOsBinary("Safari Technology Preview.app")
+  FIREFOX_STABLE = Binary(
+      "firefox stable",
+      macos="Firefox.app",
+      linux="firefox",
+      win="Mozilla Firefox/firefox.exe")
+  FIREFOX_DEV = Binary(
+      "firefox developer edition",
+      macos="Firefox Developer Edition.app",
+      linux="firefox-developer-edition",
+      win="Firefox Developer Edition/firefox.exe")
+  FIREFOX_NIGHTLY = Binary(
+      "Firefox nightly",
+      macos="Firefox Nightly.app",
+      linux=["firefox-nightly", "firefox-trunk"],
+      win="Firefox Nightly/firefox.exe")
