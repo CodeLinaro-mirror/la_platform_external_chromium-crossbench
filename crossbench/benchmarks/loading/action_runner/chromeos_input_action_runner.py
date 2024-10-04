@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-from math import floor
 import shlex
 import subprocess
+from math import floor
 from typing import TYPE_CHECKING
 
 import crossbench.path as pth
@@ -274,11 +274,12 @@ class ChromeOSInputActionRunner(BasicActionRunner):
           actions, action.selector, action.scroll_into_view)
 
       if action.selector:
-        if not viewport_info.element_rect:
+        element_rect = viewport_info.element_rect
+        if not element_rect:
           if action.required:
             raise ElementNotFoundError(action.selector)
           return
-        click_location: Point = viewport_info.element_rect.middle
+        click_location: Point = element_rect.middle
       else:
         click_location: Point = action.coordinates
 
