@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from crossbench import cli_helper
+from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import ProbeConfigParser, ProbeKeyT
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 def parse_javascript(value: str) -> str:
   # TODO: maybe add more sanity checks
-  return cli_helper.parse_non_empty_str(value, name="javascript")
+  return ObjectParser.non_empty_str(value, name="javascript")
 
 
 class JSProbe(JsonResultProbe):
@@ -75,7 +75,7 @@ class JSProbe(JsonResultProbe):
 
   def to_json(self, actions: Actions) -> Json:
     data = actions.js(self._metric_js)
-    return cli_helper.parse_non_empty_dict(data, "JS metric data")
+    return ObjectParser.non_empty_dict(data, "JS metric data")
 
   def get_context(self, run: Run) -> JSProbeContext:
     return JSProbeContext(self, run)

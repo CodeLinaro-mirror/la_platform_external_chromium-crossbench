@@ -11,12 +11,13 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
-import crossbench.probes.helper as probes_helper
-from crossbench import cli_helper, helper
+from crossbench import helper
 from crossbench.benchmarks.base import (BenchmarkProbeMixin, PressBenchmark,
                                         PressBenchmarkStoryFilter)
-from crossbench.probes import metric as cb_metric
+from crossbench.parse import NumberParser
+from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.metric import MetricsMerger, format_metric
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
@@ -50,13 +51,13 @@ class SpeedometerProbe(
   def flatten_json_data(self, json_data: Any) -> Json:
     # json_data may contain multiple iterations, merge those first
     assert isinstance(json_data, list), f"Expected list got {type(json_data)}"
-    merged = cb_metric.MetricsMerger(
+    merged = MetricsMerger(
         json_data, key_fn=_probe_remove_tests_segments).to_json(
             value_fn=lambda values: values.geomean, sort=self.SORT_KEYS)
-    return probes_helper.Flatten(merged, sort=self.SORT_KEYS).data
+    return Flatten(merged, sort=self.SORT_KEYS).data
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = cb_metric.MetricsMerger.merge_json_list(
+    merged = MetricsMerger.merge_json_list(
         repetitions_group.results[self].json
         for repetitions_group in group.repetitions_groups)
     return self.write_group_result(group, merged)
@@ -96,7 +97,7 @@ class SpeedometerProbe(
       if not self._valid_metric_key(metric_key):
         continue
       table[metric_key].append(
-          cb_metric.format_metric(metric["average"], metric["stddev"]))
+          format_metric(metric["average"], metric["stddev"]))
 
   @abc.abstractmethod
   def _valid_metric_key(self, metric_key: str) -> bool:
@@ -217,7 +218,7 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
         "--iterations",
         "--iteration-count",
         default=SpeedometerStory.DEFAULT_ITERATIONS,
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         help="Number of iterations each Speedometer subtest is run "
         "within the same session. \n"
         "Note: --repetitions restarts the whole benchmark, --iterations runs "

@@ -19,9 +19,10 @@ from urllib.parse import urlparse
 import tabulate
 
 # Use indirection to support pyfakefs
-from crossbench import cli_helper, compat, exception, helper
+from crossbench import compat, exception, helper
 from crossbench import path as pth
 from crossbench.helper import ChangeCWD
+from crossbench.parse import ObjectParser, PathParser
 
 if TYPE_CHECKING:
   ArgParserType = Union[Callable[..., Any], Type]
@@ -107,7 +108,7 @@ class _ConfigArgParser:
     if self.name in unique:
       raise ValueError(f"Config name '{self.name}' cannot be part "
                        f"of the aliases='{self.aliases}'")
-    cli_helper.parse_unique_sequence(self.aliases, "aliases", ValueError)
+    ObjectParser.unique_sequence(self.aliases, "aliases", ValueError)
 
   def _validate_choices(
       self, choices: Optional[frozenset[Any]]) -> Optional[frozenset]:
@@ -351,7 +352,7 @@ class _ConfigArgParser:
     if issubclass(self.type, ConfigEnum):
       return self.type.parse(data)
     assert issubclass(self.type, enum.Enum)
-    return cli_helper.parse_enum(self.name, self.type, data, self.choices)
+    return ObjectParser.enum(self.name, self.type, data, self.choices)
 
 
 
@@ -363,7 +364,7 @@ class ConfigEnum(compat.StrEnumWithHelp):
 
   @classmethod
   def parse(cls: Type[ConfigEnumT], value: Any) -> ConfigEnumT:
-    return cli_helper.parse_enum(cls.__name__, cls, value, cls)
+    return ObjectParser.enum(cls.__name__, cls, value, cls)
 
 
 ConfigObjectT = TypeVar("ConfigObjectT", bound="ConfigObject")
@@ -379,7 +380,7 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
-    return cli_helper.PATH_PREFIX.match(value) is not None
+    return PathParser.PATH_PREFIX.match(value) is not None
 
   def __post_init__(self) -> None:
     self.validate()
@@ -458,15 +459,15 @@ class ConfigObject(abc.ABC):
   def parse_inline_hjson(cls: Type[ConfigObjectT], value: str,
                          **kwargs) -> ConfigObjectT:
     with exception.annotate(f"Parsing inline {cls.__name__}"):
-      data = cli_helper.parse_inline_hjson(value)
+      data = ObjectParser.inline_hjson(value)
       return cls.parse_dict(data, **kwargs)
 
   @classmethod
   def parse_config_path(cls: Type[ConfigObjectT], path: pth.LocalPathLike,
                         **kwargs) -> ConfigObjectT:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
-      file_path = cli_helper.parse_existing_file_path(path)
-      data = cli_helper.parse_dict_hjson_file(file_path)
+      file_path = PathParser.existing_file_path(path)
+      data = ObjectParser.dict_hjson_file(file_path)
       with ChangeCWD(file_path.parent):
         return cls.parse_dict(data, **kwargs)
 

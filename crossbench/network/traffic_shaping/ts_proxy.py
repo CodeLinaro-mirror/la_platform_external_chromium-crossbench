@@ -18,10 +18,11 @@ import subprocess
 import sys
 from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
 
-from crossbench import cli_helper, helper
+from crossbench import helper
 from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import TsProxyFinder
 from crossbench.network.traffic_shaping.base import TrafficShaper
+from crossbench.parse import NumberParser, PathParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -100,7 +101,7 @@ class TsProxyServer:
                window: Optional[int] = None,
                verbose: bool = True):
     self._proc: Optional[TsProxyProcess] = None
-    self._ts_proxy_path = cli_helper.parse_existing_file_path(ts_proxy_path)
+    self._ts_proxy_path = PathParser.existing_file_path(ts_proxy_path)
     self._socks_proxy_port = socks_proxy_port
     self._host = host
     self._http_port = http_port
@@ -122,9 +123,9 @@ class TsProxyServer:
       raise ValueError("http_port and https_port must be different, "
                        f"got {https_port} twice.")
     if http_port is not None:
-      cli_helper.parse_port(http_port, "http_port")
+      NumberParser.port_number(http_port, "http_port")
     if https_port is not None:
-      cli_helper.parse_port(https_port, "https_port")
+      NumberParser.port_number(https_port, "https_port")
 
   @property
   def is_running(self) -> bool:
@@ -306,7 +307,7 @@ class TsProxyProcess:
       return False
     logging.debug("TsProxy: output: %s", output_line)
     port = parse_ts_socks_proxy_port(output_line)
-    self._socks_proxy_port = cli_helper.parse_port(port, "socks_proxy_port")
+    self._socks_proxy_port = NumberParser.port_number(port, "socks_proxy_port")
     return True
 
   def _read_line_ts_proxy_stdout(self, timeout: Union[int, float]) -> str:

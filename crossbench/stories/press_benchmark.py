@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 from typing import List, Optional, Sequence, Tuple, Type, TypeVar
 
-from crossbench import cli_helper
+from crossbench.parse import ObjectParser
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
@@ -163,7 +163,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     assert url is not None, f"{cls}.{property_name} is not set."
 
   def _verify_substories(self) -> None:
-    cli_helper.parse_unique_sequence(self._substories, "substories", ValueError)
+    ObjectParser.unique_sequence(self._substories, "substories", ValueError)
     if self._substories == self.SUBSTORIES:
       return
     for substory in self._substories:

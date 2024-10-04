@@ -10,7 +10,8 @@ import enum
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import cli_helper, compat, helper
+from crossbench import compat, helper
+from crossbench.parse import DurationParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.result_location import ResultLocation
@@ -55,7 +56,7 @@ class PowerMetricsProbe(Probe):
     parser = super().config_parser()
     parser.add_argument(
         "sampling_interval",
-        type=cli_helper.Duration.parse_non_zero,
+        type=DurationParser.positive_duration,
         default=1000)
     parser.add_argument(
         "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)

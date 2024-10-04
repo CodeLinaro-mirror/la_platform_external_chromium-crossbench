@@ -12,10 +12,11 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, Optional, TextIO, Tuple
+from typing import Iterable, Optional, TextIO, Tuple
 
-from crossbench import cli_helper, helper
+from crossbench import helper
 from crossbench.helper.path_finder import WprGoToolFinder
+from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
 
@@ -50,7 +51,7 @@ class WprBase(abc.ABC):
     self._process: Optional[subprocess.Popen] = None
     self._log_path: Optional[LocalPath] = None
     if log_path:
-      self._log_path = cli_helper.parse_not_existing_path(log_path)
+      self._log_path = PathParser.not_existing_path(log_path)
     self._log_file: Optional[TextIO] = None
     self._bin_path = bin_path
     self._go_cmd: TupleCmdArgs = ()
@@ -115,11 +116,11 @@ class WprBase(abc.ABC):
     if http_port == 0:
       logging.debug("WPR: using auto-port for http")
     else:
-      http_port = cli_helper.parse_port(http_port, "wpr http port")
+      http_port = NumberParser.port_number(http_port, "wpr http port")
     if https_port == 0:
       logging.debug("WPR: using auto-port for https")
     else:
-      https_port = cli_helper.parse_port(https_port, "wpr https port")
+      https_port = NumberParser.port_number(https_port, "wpr https port")
     if http_port and http_port == https_port:
       raise ValueError("http_port must be different from https_port, "
                        f"but got twice: {http_port}")
@@ -315,7 +316,7 @@ class WprRecorder(WprBase):
     return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
 
   def _validate_archive_path(self, path: AnyPath) -> LocalPath:
-    return cli_helper.parse_not_existing_path(path, "Wpr.go result archive")
+    return PathParser.not_existing_path(path, "Wpr.go result archive")
 
 
 class WprReplayServer(WprBase):
@@ -339,7 +340,7 @@ class WprReplayServer(WprBase):
                      inject_scripts, key_file, cert_file, log_path, platform)
     self._rules_file: Optional[AnyPath] = None
     if rules_file:
-      self._rules_file = cli_helper.parse_non_empty_file_path(rules_file)
+      self._rules_file = PathParser.non_empty_file_path(rules_file)
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 

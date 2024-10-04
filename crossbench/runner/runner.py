@@ -12,13 +12,14 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type, Union)
 
-from crossbench import cli_helper, compat, exception, helper
+from crossbench import compat, exception, helper
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.helper.state import BaseState, StateMachine
+from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
@@ -112,7 +113,7 @@ class Runner:
         "--invocations",
         "-r",
         default=benchmark_cls.DEFAULT_REPETITIONS,
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         help=("Number of times each benchmark story is repeated. "
               f"Defaults to {benchmark_cls.DEFAULT_REPETITIONS}. "
               "Metrics are aggregated over multiple repetitions"))
@@ -120,7 +121,7 @@ class Runner:
         "--warmup-repetitions",
         "--warmups",
         default=0,
-        type=cli_helper.parse_positive_zero_int,
+        type=NumberParser.positive_zero_int,
         help=("Number of times each benchmark story is repeated for warmup. "
               "Defaults to 0. "
               "Metrics for warmup-repetitions are discarded."))
@@ -160,7 +161,7 @@ class Runner:
     out_dir_xor_group.add_argument(
         "--label",
         "--name",
-        type=cli_helper.parse_non_empty_str,
+        type=ObjectParser.non_empty_str,
         default=benchmark_cls.NAME,
         help=("Add a name to the default output directory. "
               "Defaults to the benchmark name"))
@@ -210,9 +211,8 @@ class Runner:
     self._validate_browsers()
     self._benchmark = benchmark
     self._stories = tuple(benchmark.stories)
-    self._repetitions = cli_helper.parse_positive_int(repetitions,
-                                                      "repetitions")
-    self._warmup_repetitions = cli_helper.parse_positive_zero_int(
+    self._repetitions = NumberParser.positive_int(repetitions, "repetitions")
+    self._warmup_repetitions = NumberParser.positive_zero_int(
         warmup_repetitions, "warmup repetitions")
     self._cache_temperatures: Tuple[str, ...] = tuple(cache_temperatures)
     self._probes: List[Probe] = []
@@ -253,7 +253,7 @@ class Runner:
   def _validate_browsers(self) -> None:
     assert self.browsers, "No browsers provided"
     browser_unique_names = [browser.unique_name for browser in self.browsers]
-    cli_helper.parse_unique_sequence(browser_unique_names, "browser names")
+    ObjectParser.unique_sequence(browser_unique_names, "browser names")
 
   def _attach_default_probes(self, probe_list: Iterable[Probe]) -> None:
     assert len(self._probes) == 0

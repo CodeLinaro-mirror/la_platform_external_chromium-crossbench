@@ -8,8 +8,8 @@ import abc
 import dataclasses
 from typing import Any, Dict, Iterator
 
-from crossbench import cli_helper
 from crossbench.config import ConfigObject
+from crossbench.parse import NumberParser
 
 
 class TabController(ConfigObject):
@@ -26,7 +26,7 @@ class TabController(ConfigObject):
       return cls.single()
     if value in ("inf", "infinity"):
       return cls.forever()
-    loops = cli_helper.parse_positive_int(value, "Repeat-count")
+    loops = NumberParser.positive_int(value, "Repeat-count")
     return cls.repeat(loops)
 
   @classmethod
@@ -59,8 +59,8 @@ class SingleTabController(TabController):
   """
   Open given urls in one tab sequentially.
   """
-  multiple_tabs = False
-  is_forever = False
+  multiple_tabs: bool = False
+  is_forever: bool = False
 
   def __iter__(self) -> Iterator[None]:
     yield None
@@ -77,8 +77,8 @@ class ForeverTabController(TabController):
   Example 2: if urls='amazon,cnn', it keeps opening
   amazon,cnn,amazon,cnn,amazon,cnn,.... ....
   """
-  multiple_tabs = True
-  is_forever = True
+  multiple_tabs: bool = True
+  is_forever: bool = True
 
   def __iter__(self) -> Iterator[None]:
     while True:
@@ -96,8 +96,8 @@ class RepeatTabController(TabController):
   amazon,cnn,amazon,cnn,amazon,cnn
   """
   count: int
-  multiple_tabs = True
-  is_forever = False
+  multiple_tabs: bool = True
+  is_forever: bool = False
 
   def __iter__(self) -> Iterator[None]:
     for _ in range(self.count):

@@ -11,12 +11,14 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, TypeVar
 
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from crossbench.parse import (DurationParser, NumberParser, ObjectParser,
+                              PathParser)
 
 if TYPE_CHECKING:
   import crossbench.path as pth
@@ -34,7 +36,7 @@ class ActionTypeConfigParser(ConfigParser):
     self.add_argument(
         "action",
         aliases=("type",),
-        type=cli_helper.parse_non_empty_str,
+        type=ObjectParser.non_empty_str,
         required=True)
 
   def new_instance_from_kwargs(self, kwargs: Dict[str, Any]) -> ActionType:
@@ -77,13 +79,10 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument(
-        "index",
-        type=cli_helper.parse_positive_zero_int,
-        required=False,
-        default=0)
+        "index", type=NumberParser.positive_zero_int, required=False, default=0)
     parser.add_argument(
         "timeout",
-        type=cli_helper.Duration.parse_non_zero,
+        type=DurationParser.positive_duration,
         default=ACTION_TIMEOUT)
     return parser
 
@@ -234,15 +233,17 @@ class GetAction(BaseDurationAction):
 
   @classmethod
   def parse_str(cls, value: str) -> GetAction:
-    return cls(url=cli_helper.parse_fuzzy_url_str(value))
+    return cls(url=ObjectParser.parse_fuzzy_url_str(value))
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
-        "url", type=cli_helper.parse_fuzzy_url_str, required=True)
+        "url", type=ObjectParser.parse_fuzzy_url_str, required=True)
     parser.add_argument(
-        "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
+        "duration",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta())
     parser.add_argument(
         "ready_state", type=ReadyState.parse, default=ReadyState.ANY)
     parser.add_argument(
@@ -305,7 +306,7 @@ class DurationAction(BaseDurationAction):
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
-        "duration", type=cli_helper.Duration.parse_non_zero, required=True)
+        "duration", type=DurationParser.positive_duration, required=True)
     return parser
 
 
@@ -322,13 +323,13 @@ class ScrollAction(InputSourceAction):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument("distance", type=cli_helper.parse_float, default=500)
+    parser.add_argument("distance", type=NumberParser.any_float, default=500)
     parser.add_argument(
         "duration",
-        type=cli_helper.Duration.parse_non_zero,
+        type=DurationParser.positive_duration,
         default=dt.timedelta(seconds=1))
-    parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
-    parser.add_argument("required", type=cli_helper.parse_bool, default=False)
+    parser.add_argument("selector", type=ObjectParser.non_empty_str)
+    parser.add_argument("required", type=ObjectParser.bool, default=False)
     return parser
 
   def __init__(self,
@@ -385,14 +386,16 @@ class ClickAction(InputSourceAction):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument("selector", type=cli_helper.parse_non_empty_str)
-    parser.add_argument("required", type=cli_helper.parse_bool, default=False)
+    parser.add_argument("selector", type=ObjectParser.non_empty_str)
+    parser.add_argument("required", type=ObjectParser.bool, default=False)
     parser.add_argument(
-        "scroll_into_view", type=cli_helper.parse_bool, default=False)
-    parser.add_argument("x", type=cli_helper.parse_positive_zero_int)
-    parser.add_argument("y", type=cli_helper.parse_positive_zero_int)
+        "scroll_into_view", type=ObjectParser.bool, default=False)
+    parser.add_argument("x", type=NumberParser.positive_zero_int)
+    parser.add_argument("y", type=NumberParser.positive_zero_int)
     parser.add_argument(
-        "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
+        "duration",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta())
     return parser
 
   def __init__(self,
@@ -481,17 +484,17 @@ class SwipeAction(DurationAction):
     parser.add_argument(
         "start_x",
         aliases=("startx",),
-        type=cli_helper.parse_int,
+        type=NumberParser.any_int,
         required=True)
     parser.add_argument(
         "start_y",
         aliases=("starty",),
-        type=cli_helper.parse_int,
+        type=NumberParser.any_int,
         required=True)
     parser.add_argument(
-        "end_x", aliases=("endx",), type=cli_helper.parse_int, required=True)
+        "end_x", aliases=("endx",), type=NumberParser.any_int, required=True)
     parser.add_argument(
-        "end_y", aliases=("endy",), type=cli_helper.parse_int, required=True)
+        "end_y", aliases=("endy",), type=NumberParser.any_int, required=True)
     return parser
 
   def __init__(self,
@@ -542,10 +545,11 @@ class TextInputAction(InputSourceAction):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
+    parser.add_argument("text", type=ObjectParser.non_empty_str, required=True)
     parser.add_argument(
-        "text", type=cli_helper.parse_non_empty_str, required=True)
-    parser.add_argument(
-        "duration", type=cli_helper.Duration.parse_zero, default=dt.timedelta())
+        "duration",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta())
     return parser
 
   def __init__(self,
@@ -589,7 +593,7 @@ class WaitForElementAction(Action):
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
-        "selector", type=cli_helper.parse_non_empty_str, required=True)
+        "selector", type=ObjectParser.non_empty_str, required=True)
     return parser
 
   def __init__(self,
@@ -618,12 +622,12 @@ class WaitForElementAction(Action):
 
 
 def parse_replacement_dict(value: Any) -> Dict[str, str]:
-  dict_value = cli_helper.parse_dict(value)
+  dict_value = ObjectParser.dict(value)
   for replace_key, replace_value in dict_value.items():
     with exception.annotate_argparsing(
         f"Parsing ...[{repr(replace_key)}] = {repr(value)}"):
-      cli_helper.parse_non_empty_str(replace_key, "replacement key")
-      cli_helper.parse_str(replace_value, "replacement value")
+      ObjectParser.non_empty_str(replace_key, "replacement key")
+      ObjectParser.any_str(replace_value, "replacement value")
   return dict_value
 
 
@@ -633,11 +637,9 @@ class JsAction(Action):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument("script", type=cli_helper.parse_non_empty_str)
+    parser.add_argument("script", type=ObjectParser.non_empty_str)
     parser.add_argument(
-        "script_path",
-        aliases=("path",),
-        type=cli_helper.parse_existing_file_path)
+        "script_path", aliases=("path",), type=PathParser.existing_file_path)
     parser.add_argument(
         "replacements", aliases=("replace",), type=parse_replacement_dict)
     return parser
@@ -713,13 +715,13 @@ class SwitchTabAction(Action):
     parser = super().config_parser()
     parser.add_argument(
         "tab_index",
-        type=cli_helper.parse_int,
+        type=NumberParser.any_int,
         help=(
             "The index of the tab to switch to. Tabs are indexed in creation "
             "order. Negative values are allowed, e.g. -1 is the most recently "
             "opened tab."))
-    parser.add_argument("title", type=cli_helper.parse_regexp)
-    parser.add_argument("url", type=cli_helper.parse_regexp)
+    parser.add_argument("title", type=ObjectParser.regexp)
+    parser.add_argument("url", type=ObjectParser.regexp)
     return parser
 
   def __init__(self,

@@ -11,12 +11,12 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-import crossbench.probes.helper as probes_helper
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.helper import update_url_query
-from crossbench.probes import metric as cb_metric
+from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.metric import MetricsMerger, format_metric
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
@@ -53,11 +53,10 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   def flatten_json_data(self, json_data: List) -> Json:
     assert isinstance(json_data, list) and len(json_data) == 1, (
         "Motion12MarkProbe requires a results list.")
-    return probes_helper.Flatten(
-        json_data[0], key_fn=_clean_up_path_segments).data
+    return Flatten(json_data[0], key_fn=_clean_up_path_segments).data
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = cb_metric.MetricsMerger.merge_json_list(
+    merged = MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
     return self.write_group_result(group, merged)
@@ -97,12 +96,11 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
       if not self._valid_metric_key(metric_key):
         continue
       table[metric_key].append(
-          cb_metric.format_metric(metric["average"], metric["stddev"]))
+          format_metric(metric["average"], metric["stddev"]))
     # Separate runs don't produce a score
     if total_metric := metrics.get("score") or metrics.get("Score"):
       table["Score"].append(
-          cb_metric.format_metric(total_metric["average"],
-                                  total_metric["stddev"]))
+          format_metric(total_metric["average"], total_metric["stddev"]))
 
   def _valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")

@@ -12,8 +12,9 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import cli_helper, compat, helper
+from crossbench import compat, helper
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
+from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT, ProbeValidationError)
 from crossbench.probes.result_location import ResultLocation
@@ -60,10 +61,10 @@ class PowerSamplerProbe(Probe):
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
-    parser.add_argument("bin_path", type=cli_helper.parse_binary_path)
+    parser.add_argument("bin_path", type=PathParser.binary_path)
     parser.add_argument(
         "sampling_interval",
-        type=cli_helper.Duration.parse_non_zero,
+        type=DurationParser.positive_duration,
         default=dt.timedelta(seconds=10))
     parser.add_argument(
         "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)

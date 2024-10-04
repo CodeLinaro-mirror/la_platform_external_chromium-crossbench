@@ -10,7 +10,7 @@ import datetime as dt
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench.benchmarks.loading.action import (Action, ClickAction,
                                                   GetAction, ReadyState,
@@ -18,9 +18,9 @@ from crossbench.benchmarks.loading.action import (Action, ClickAction,
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.input_source import InputSource
-from crossbench.cli.config.secret_type import SecretType
 from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.config import ConfigObject
+from crossbench.parse import DurationParseError, DurationParser, ObjectParser
 
 
 @dataclasses.dataclass(frozen=True)
@@ -43,16 +43,16 @@ class PagesConfig(ConfigObject):
     values: List[str] = []
     previous_part: Optional[str] = None
     for part in value.strip().split(","):
-      part = cli_helper.parse_non_empty_str(part, "url or duration")
+      part = ObjectParser.non_empty_str(part, "url or duration")
       try:
-        cli_helper.Duration.parse_non_zero(part)
+        DurationParser.positive_duration(part)
         if not previous_part:
           raise argparse.ArgumentTypeError(
               "Duration can only follow after url. "
               f"Current value: {repr(part)}")
         values[-1] = f"{previous_part},{part}"
         previous_part = None
-      except cli_helper.DurationParseError:
+      except DurationParseError:
         previous_part = part
         values.append(part)
     return cls.parse_sequence(values)
@@ -97,7 +97,7 @@ class PagesConfig(ConfigObject):
       secrets: Optional[SecretsConfig] = None
       if secrets_data := config.get("secrets"):
         secrets = SecretsConfig.parse(secrets_data)
-      pages = cli_helper.parse_non_empty_dict(config["pages"], "pages")
+      pages = ObjectParser.non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
         pages = cls._parse_pages(pages, secrets)
         return PagesConfig(pages, secrets)
@@ -125,9 +125,9 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
   def parse_dict(cls, config: Dict[str, Any]) -> DevToolsRecorderPagesConfig:
-    config = cli_helper.parse_non_empty_dict(config)
+    config = ObjectParser.non_empty_dict(config)
     with exception.annotate_argparsing("Loading DevTools recording file"):
-      title = cli_helper.parse_non_empty_str(config["title"], "title")
+      title = ObjectParser.non_empty_str(config["title"], "title")
       actions = cls._parse_steps(config["steps"])
       # Use default block
       blocks = (ActionBlock(actions=actions),)
@@ -245,7 +245,7 @@ class ListPagesConfig(PagesConfig):
 
   @classmethod
   def parse_dict(cls, config: Dict) -> PagesConfig:
-    config = cli_helper.parse_non_empty_dict(config, "pages")
+    config = ObjectParser.non_empty_dict(config, "pages")
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(

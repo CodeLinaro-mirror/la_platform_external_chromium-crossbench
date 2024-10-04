@@ -13,10 +13,10 @@ from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
 from perfetto.trace_processor.api import TraceProcessorConfig
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 
-from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.parse import PathParser
 from crossbench.probes.trace_processor.trace_processor import (
     _MODULES_DIR, _QUERIES_DIR, TraceProcessorProbe)
 
@@ -55,12 +55,12 @@ class BTPUtil:
       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     self.parser.add_argument(
         "--result-dir",
-        type=cli_helper.parse_existing_path,
+        type=PathParser.existing_path,
         default=DEFAULT_RESULT_DIR,
         help="Path to the benchmark result directory.")
     self.parser.add_argument(
         "--probe-config",
-        type=cli_helper.parse_existing_file_path,
+        type=PathParser.existing_file_path,
         default=DEFAULT_CONFIG_PATH,
         help="Path to the trace_processor probe config.")
     self.parser.add_argument(

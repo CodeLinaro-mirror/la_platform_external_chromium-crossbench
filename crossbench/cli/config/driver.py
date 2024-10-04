@@ -13,8 +13,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from immutabledict import immutabledict
 
-from crossbench import cli_helper, compat, plt
+from crossbench import compat
+from crossbench import path as pth
+from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.ios import ios_devices
@@ -45,7 +48,7 @@ class BrowserDriverType(compat.StrEnumWithHelp):
       return value
     if value == "":
       return BrowserDriverType.default()
-    value = cli_helper.parse_non_empty_str(value, "driver_type")
+    value = ObjectParser.non_empty_str(value, "driver_type")
     identifier = value.lower()
     if identifier in ("selenium", "webdriver"):
       return BrowserDriverType.WEB_DRIVER
@@ -96,7 +99,7 @@ class DriverConfig(ConfigObject):
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     # Variant 1: $PATH
-    path: Optional[LocalPath] = cli_helper.try_resolve_existing_path(value)
+    path: Optional[LocalPath] = pth.try_resolve_existing_path(value)
     driver_type: BrowserDriverType = BrowserDriverType.default()
     if path:
       if path.stat().st_size == 0:
@@ -207,7 +210,7 @@ class DriverConfig(ConfigObject):
     # TODO: likely distinguish between local and remote driver path
     parser.add_argument(
         "path",
-        type=cli_helper.parse_binary_path,
+        type=PathParser.binary_path,
         required=False,
         help="Path to the driver executable")
     parser.add_argument(
@@ -221,7 +224,7 @@ class DriverConfig(ConfigObject):
         help="Device ID / Serial ID / Unique device name")
     parser.add_argument(
         "adb_bin",
-        type=cli_helper.parse_binary_path,
+        type=PathParser.binary_path,
         required=False,
         help="Path to the adb binary, only valid for Android.")
     return parser
@@ -276,7 +279,7 @@ class DriverConfig(ConfigObject):
           f"Could not find ADB device with device_id={repr(self.device_id)}. "
           f"Choices are {names}.")
     if self.adb_bin:
-      cli_helper.parse_binary_path(self.adb_bin, platform=platform)
+      PathParser.binary_path(self.adb_bin, platform=platform)
 
   def validate_chromeos(self) -> None:
     platform = self.get_platform()
@@ -320,10 +323,11 @@ class DriverConfig(ConfigObject):
 
   def get_ssh_platform(self) -> plt.Platform:
     assert self.settings
-    host = cli_helper.parse_non_empty_str(self.settings.get("host"), "host")
-    port = cli_helper.parse_port(self.settings.get("port"), "port")
-    ssh_port = cli_helper.parse_port(self.settings.get("ssh_port"), "ssh port")
-    ssh_user = cli_helper.parse_non_empty_str(
+    host = ObjectParser.non_empty_str(self.settings.get("host"), "host")
+    port = NumberParser.port_number(self.settings.get("port"), "port")
+    ssh_port = NumberParser.port_number(
+        self.settings.get("ssh_port"), "ssh port")
+    ssh_user = ObjectParser.non_empty_str(
         self.settings.get("ssh_user"), "ssh user")
     if self.type == BrowserDriverType.CHROMEOS_SSH:
       return ChromeOsSshPlatform(

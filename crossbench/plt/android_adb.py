@@ -11,8 +11,8 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
-from crossbench import cli_helper
 from crossbench import path as pth
+from crossbench.parse import PathParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import RemotePosixPlatform
 
@@ -65,8 +65,7 @@ class Adb:
                adb_bin: Optional[pth.AnyPath] = None) -> None:
     self._host_platform = host_platform
     if adb_bin:
-      self._adb_bin = cli_helper.parse_binary_path(
-          adb_bin, platform=host_platform)
+      self._adb_bin = PathParser.binary_path(adb_bin, platform=host_platform)
     else:
       self._adb_bin = _find_adb_bin(host_platform)
     self.start_server()

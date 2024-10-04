@@ -9,9 +9,10 @@ from typing import Dict, Type
 
 from immutabledict import immutabledict
 
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench.cli.config.secret_type import SecretType
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.parse import ObjectParser
 
 SecretsDict = immutabledict[SecretType, "Secret"]
 
@@ -57,12 +58,12 @@ class Secret(ConfigObject):
     parser.add_argument(
         "username",
         aliases=("user", "usr", "account"),
-        type=cli_helper.parse_non_empty_str,
+        type=ObjectParser.non_empty_str,
         required=True)
     parser.add_argument(
         "password",
         aliases=("pass", "pw"),
-        type=cli_helper.parse_str,
+        type=ObjectParser.any_str,
         required=True)
     return parser
 

@@ -17,8 +17,8 @@ from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
 from immutabledict import immutabledict
 
 from crossbench import plt
-from crossbench.cli_helper import parse_url
 from crossbench.network.base import Network
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.network.traffic_shaping.base import TrafficShaper
@@ -102,7 +102,7 @@ class LocalFileNetwork(Network):
     port: int = DEFAULT_PORT
     if not url:
       return host, port
-    parsed_url = parse_url(url)
+    parsed_url = ObjectParser.url(url)
     if parsed_url.hostname:
       host = parsed_url.hostname
     if parsed_url.port is not None:

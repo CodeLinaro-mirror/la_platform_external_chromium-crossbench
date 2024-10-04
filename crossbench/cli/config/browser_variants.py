@@ -5,18 +5,19 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import dataclasses
 import functools
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Set, TextIO, Tuple, Type, Union, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
+                    Sequence, Set, TextIO, Tuple, Type, Union, cast)
 
 import hjson
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
 
 import crossbench.browsers.all as browsers
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
@@ -31,11 +32,23 @@ from crossbench.config import ConfigError, ConfigObject
 from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.base import Network
+from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   FlagGroupItemT = Optional[Tuple[str, Optional[str]]]
   BrowserLookupTableT = Dict[str, Tuple[Type[Browser], "BrowserConfig"]]
+
+
+@contextlib.contextmanager
+def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
+  """Converts raised ValueError and ArgumentTypeError to LateArgumentError
+  that are associated with the given flag.
+  """
+  try:
+    yield
+  except Exception as e:
+    raise LateArgumentError(flag, str(e)) from e
 
 
 def _flags_to_label(flags: Flags) -> str:
@@ -168,7 +181,7 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
               f"Invalid flag variant value (None, str or sequence): "
               f"{flag_name}={repr(flag_value)}")
         if isinstance(flag_value, (list, tuple)):
-          cli_helper.parse_unique_sequence(
+          ObjectParser.unique_sequence(
               flag_value, f"flag {repr(flag_name)} variant values", ConfigError)
 
   @classmethod
@@ -292,12 +305,12 @@ class BrowserVariantsConfig:
   def from_cli_args(cls, args: argparse.Namespace) -> BrowserVariantsConfig:
     browser_config = BrowserVariantsConfig()
     if args.browser_config:
-      with cli_helper.late_argument_type_error_wrapper("--browser-config"):
+      with late_argument_type_error_wrapper("--browser-config"):
         path = args.browser_config.expanduser()
         with path.open(encoding="utf-8") as f:
           browser_config.parse_text_io(f, args)
     else:
-      with cli_helper.late_argument_type_error_wrapper("--browser"):
+      with late_argument_type_error_wrapper("--browser"):
         browser_config.parse_args(args)
     return browser_config
 
@@ -347,8 +360,8 @@ class BrowserVariantsConfig:
         BrowserConfig.default()
     ]
     assert isinstance(browser_list, list)
-    browser_list = cli_helper.parse_unique_sequence(browser_list,
-                                                    "--browser arguments")
+    browser_list = ObjectParser.unique_sequence(browser_list,
+                                                "--browser arguments")
     for i, browser in enumerate(browser_list):
       with exception.annotate(f"Append browser {i}"):
         self._append_browser(args, browser)

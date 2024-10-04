@@ -13,213 +13,233 @@ import unittest
 from typing import Any
 from urllib import parse as urlparse
 
-from crossbench.cli_helper import (
-    Duration, parse_bool, parse_dict, parse_dir_path, parse_existing_file_path,
-    parse_float, parse_fuzzy_url, parse_fuzzy_url_str, parse_hjson_file_path,
-    parse_httpx_url_str, parse_inline_hjson, parse_int, parse_json_file,
-    parse_json_file_path, parse_non_empty_dict, parse_non_empty_dir_path,
-    parse_non_empty_file_path, parse_non_empty_sequence, parse_non_empty_str,
-    parse_path, parse_port, parse_positive_int, parse_positive_zero_float,
-    parse_positive_zero_int, parse_regexp, parse_sequence, parse_sh_cmd,
-    parse_str, parse_unique_sequence, parse_url, parse_url_str)
+from crossbench.parse import (DurationParser, NumberParser, ObjectParser,
+                              PathParser)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
-class DurationTestCase(unittest.TestCase):
+class DurationParserTestCase(unittest.TestCase):
 
   def test_parse_negative(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse(-1)
+      DurationParser.positive_duration(-1)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      Duration.parse("-1")
+      DurationParser.positive_duration("-1")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      Duration.parse_zero("-1")
+      DurationParser.positive_or_zero_duration("-1")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      Duration.parse_zero(dt.timedelta(seconds=-1))
+      DurationParser.positive_or_zero_duration(dt.timedelta(seconds=-1))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      Duration.parse_non_zero("-1")
+      DurationParser.positive_duration("-1")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      Duration.parse_non_zero(dt.timedelta(seconds=-1))
+      DurationParser.positive_duration(dt.timedelta(seconds=-1))
     self.assertIn("-1", str(cm.exception))
-    self.assertEqual(Duration.parse_any("-1.5").total_seconds(), -1.5)
+    self.assertEqual(DurationParser.any_duration("-1.5").total_seconds(), -1.5)
 
   def test_parse_zero(self):
-    self.assertEqual(Duration.parse_any("0").total_seconds(), 0)
-    self.assertEqual(Duration.parse_any("0s").total_seconds(), 0)
-    self.assertEqual(Duration.parse_any("0.0").total_seconds(), 0)
-    self.assertEqual(Duration.parse_zero("0.0").total_seconds(), 0)
+    self.assertEqual(DurationParser.any_duration("0").total_seconds(), 0)
+    self.assertEqual(DurationParser.any_duration("0s").total_seconds(), 0)
+    self.assertEqual(DurationParser.any_duration("0.0").total_seconds(), 0)
+    self.assertEqual(
+        DurationParser.positive_or_zero_duration("0.0").total_seconds(), 0)
     for invalid in (-1, 0, "-1", "0", "invalid", dt.timedelta(0),
                     dt.timedelta(seconds=-1)):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
-        Duration.parse(invalid)
+        DurationParser.positive_duration(invalid)
       self.assertIn(str(invalid), str(cm.exception))
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
-        Duration.parse_non_zero(invalid)
+        DurationParser.positive_duration(invalid)
       self.assertIn(str(invalid), str(cm.exception))
 
   def test_parse_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse("")
+      DurationParser.positive_duration("")
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse_any("")
+      DurationParser.any_duration("")
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse_zero("")
+      DurationParser.positive_or_zero_duration("")
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse_non_zero("")
+      DurationParser.positive_duration("")
 
   def test_invalid_suffix(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      Duration.parse("100XXX")
+      DurationParser.positive_duration("100XXX")
     self.assertIn("Unknown duration format", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse("X0XX")
+      DurationParser.positive_duration("X0XX")
     with self.assertRaises(argparse.ArgumentTypeError):
-      Duration.parse("100X0XX")
+      DurationParser.positive_duration("100X0XX")
 
   def test_no_unit(self):
-    self.assertEqual(Duration.parse("200"), dt.timedelta(seconds=200))
-    self.assertEqual(Duration.parse(200), dt.timedelta(seconds=200))
+    self.assertEqual(
+        DurationParser.positive_duration("200"), dt.timedelta(seconds=200))
+    self.assertEqual(
+        DurationParser.positive_duration(200), dt.timedelta(seconds=200))
 
   def test_milliseconds(self):
-    self.assertEqual(Duration.parse("27.5ms"), dt.timedelta(milliseconds=27.5))
     self.assertEqual(
-        Duration.parse(dt.timedelta(milliseconds=27.5)),
+        DurationParser.positive_duration("27.5ms"),
         dt.timedelta(milliseconds=27.5))
     self.assertEqual(
-        Duration.parse("27.5 millis"), dt.timedelta(milliseconds=27.5))
+        DurationParser.positive_duration(dt.timedelta(milliseconds=27.5)),
+        dt.timedelta(milliseconds=27.5))
     self.assertEqual(
-        Duration.parse("27.5 milliseconds"), dt.timedelta(milliseconds=27.5))
+        DurationParser.positive_duration("27.5 millis"),
+        dt.timedelta(milliseconds=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 milliseconds"),
+        dt.timedelta(milliseconds=27.5))
 
   def test_seconds(self):
-    self.assertEqual(Duration.parse("27.5s"), dt.timedelta(seconds=27.5))
-    self.assertEqual(Duration.parse("1 sec"), dt.timedelta(seconds=1))
-    self.assertEqual(Duration.parse("27.5 secs"), dt.timedelta(seconds=27.5))
-    self.assertEqual(Duration.parse("1 second"), dt.timedelta(seconds=1))
-    self.assertEqual(Duration.parse("27.5 seconds"), dt.timedelta(seconds=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5s"), dt.timedelta(seconds=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("1 sec"), dt.timedelta(seconds=1))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 secs"),
+        dt.timedelta(seconds=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("1 second"), dt.timedelta(seconds=1))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 seconds"),
+        dt.timedelta(seconds=27.5))
 
   def test_minutes(self):
-    self.assertEqual(Duration.parse("27.5m"), dt.timedelta(minutes=27.5))
-    self.assertEqual(Duration.parse("1 min"), dt.timedelta(minutes=1))
-    self.assertEqual(Duration.parse("27.5 mins"), dt.timedelta(minutes=27.5))
-    self.assertEqual(Duration.parse("1 minute"), dt.timedelta(minutes=1))
-    self.assertEqual(Duration.parse("27.5 minutes"), dt.timedelta(minutes=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5m"), dt.timedelta(minutes=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("1 min"), dt.timedelta(minutes=1))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 mins"),
+        dt.timedelta(minutes=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("1 minute"), dt.timedelta(minutes=1))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 minutes"),
+        dt.timedelta(minutes=27.5))
 
   def test_hours(self):
-    self.assertEqual(Duration.parse("27.5h"), dt.timedelta(hours=27.5))
-    self.assertEqual(Duration.parse("0.1 h"), dt.timedelta(hours=0.1))
-    self.assertEqual(Duration.parse("27.5 hrs"), dt.timedelta(hours=27.5))
-    self.assertEqual(Duration.parse("1 hour"), dt.timedelta(hours=1))
-    self.assertEqual(Duration.parse("27.5 hours"), dt.timedelta(hours=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5h"), dt.timedelta(hours=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("0.1 h"), dt.timedelta(hours=0.1))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 hrs"), dt.timedelta(hours=27.5))
+    self.assertEqual(
+        DurationParser.positive_duration("1 hour"), dt.timedelta(hours=1))
+    self.assertEqual(
+        DurationParser.positive_duration("27.5 hours"),
+        dt.timedelta(hours=27.5))
 
 
-class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
+class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
     super().setUp()
     self._json_test_data = {"int": 1, "array": [1, "2"]}
 
-  def test_parse_str(self):
-    self.assertEqual(parse_str(""), "")
-    self.assertEqual(parse_str("1234"), "1234")
+  def test_parse_any_str(self):
+    self.assertEqual(ObjectParser.any_str(""), "")
+    self.assertEqual(ObjectParser.any_str("1234"), "1234")
 
-  def test_parse_str_invalid(self):
+  def test_parse_any_str_invalid(self):
     for invalid in (None, 1, [], {}, [1], ["a"], {"a": "a"}):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
-        parse_str(invalid)
+        ObjectParser.any_str(invalid)
       self.assertIn(str(invalid), str(cm.exception))
 
   def test_parse_non_empty_str(self):
-    self.assertEqual(parse_non_empty_str("a string"), "a string")
+    self.assertEqual(ObjectParser.non_empty_str("a string"), "a string")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_non_empty_str("")
+      ObjectParser.non_empty_str("")
     self.assertIn("empty", str(cm.exception))
 
   def test_parse_httpx_url_str(self):
     for valid in ("http://foo.com", "https://foo.com", "http://localhost:800"):
-      self.assertEqual(parse_httpx_url_str(valid), valid)
+      self.assertEqual(ObjectParser.httpx_url_str(valid), valid)
     for invalid in ("", "ftp://localhost:32", "http://///"):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
-        _ = parse_httpx_url_str(invalid)
+        _ = ObjectParser.httpx_url_str(invalid)
       self.assertIn(invalid, str(cm.exception))
 
-  def test_parse_int(self):
-    self.assertEqual(parse_int("-123456"), -123456)
-    self.assertEqual(parse_int(-123456), -123456)
-    self.assertEqual(parse_int("-1"), -1)
-    self.assertEqual(parse_int(-1), -1)
-    self.assertEqual(parse_int("0"), 0)
-    self.assertEqual(parse_int(0), 0)
-    self.assertEqual(parse_int("1"), 1)
-    self.assertEqual(parse_int(1), 1)
-    self.assertEqual(parse_int("123456"), 123456)
-    self.assertEqual(parse_int(123456), 123456)
+  def test_parse_any_int(self):
+    self.assertEqual(NumberParser.any_int("-123456"), -123456)
+    self.assertEqual(NumberParser.any_int(-123456), -123456)
+    self.assertEqual(NumberParser.any_int("-1"), -1)
+    self.assertEqual(NumberParser.any_int(-1), -1)
+    self.assertEqual(NumberParser.any_int("0"), 0)
+    self.assertEqual(NumberParser.any_int(0), 0)
+    self.assertEqual(NumberParser.any_int("1"), 1)
+    self.assertEqual(NumberParser.any_int(1), 1)
+    self.assertEqual(NumberParser.any_int("123456"), 123456)
+    self.assertEqual(NumberParser.any_int(123456), 123456)
 
-  def test_parse_int_invalid(self):
+  def test_parse_any_int_invalid(self):
     for invalid in ("", "-1.2", "1.2", "100.001", "Nan", "inf", "-inf",
                     "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
-        _ = parse_int(invalid)
+        _ = NumberParser.any_int(invalid)
 
   def test_parse_positive_int(self):
-    self.assertEqual(parse_positive_int("1"), 1)
-    self.assertEqual(parse_positive_int("123"), 123)
+    self.assertEqual(NumberParser.positive_int("1"), 1)
+    self.assertEqual(NumberParser.positive_int("123"), 123)
 
   def test_parse_positive_int_ivalid(self):
     for invalid in ("", "0", "-1", "-1.2", "1.2", "Nan", "inf", "-inf",
                     "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
-        _ = parse_positive_int(invalid)
+        _ = NumberParser.positive_int(invalid)
 
   def test_parse_positive_zero_int(self):
-    self.assertEqual(parse_positive_zero_int("1"), 1)
-    self.assertEqual(parse_positive_zero_int("0"), 0)
+    self.assertEqual(NumberParser.positive_zero_int("1"), 1)
+    self.assertEqual(NumberParser.positive_zero_int("0"), 0)
 
   def test_parse_positive_zero_int_invalid(self):
     for invalid in ("", "-1", "-1.2", "1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
-        _ = parse_positive_zero_int(invalid)
+        _ = NumberParser.positive_zero_int(invalid)
 
-  def test_parse_float(self):
-    self.assertEqual(parse_float("-1.2"), -1.2)
-    self.assertEqual(parse_float(-1.2), -1.2)
-    self.assertEqual(parse_float("-1"), -1.0)
-    self.assertEqual(parse_float(-1), -1.0)
-    self.assertEqual(parse_float("0"), 0.0)
-    self.assertEqual(parse_float(0), 0.0)
-    self.assertEqual(parse_float("0.0"), 0.0)
-    self.assertEqual(parse_float(0.0), 0.0)
-    self.assertEqual(parse_float("0.1"), 0.1)
-    self.assertEqual(parse_float(0.1), 0.1)
+  def test_parse_any_float(self):
+    self.assertEqual(NumberParser.any_float("-1.2"), -1.2)
+    self.assertEqual(NumberParser.any_float(-1.2), -1.2)
+    self.assertEqual(NumberParser.any_float("-1"), -1.0)
+    self.assertEqual(NumberParser.any_float(-1), -1.0)
+    self.assertEqual(NumberParser.any_float("0"), 0.0)
+    self.assertEqual(NumberParser.any_float(0), 0.0)
+    self.assertEqual(NumberParser.any_float("0.0"), 0.0)
+    self.assertEqual(NumberParser.any_float(0.0), 0.0)
+    self.assertEqual(NumberParser.any_float("0.1"), 0.1)
+    self.assertEqual(NumberParser.any_float(0.1), 0.1)
 
   def test_parse_float_invalid(self):
     for invalid in ("", "abc", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
-        _ = parse_positive_zero_float(invalid)
+        _ = NumberParser.positive_zero_float(invalid)
 
   def test_parse_positive_zero_float(self):
-    self.assertEqual(parse_positive_zero_float("1"), 1.0)
-    self.assertEqual(parse_positive_zero_float("0"), 0.0)
-    self.assertEqual(parse_positive_zero_float("0.0"), 0.0)
-    self.assertEqual(parse_positive_zero_float("1.23"), 1.23)
+    self.assertEqual(NumberParser.positive_zero_float("1"), 1.0)
+    self.assertEqual(NumberParser.positive_zero_float("0"), 0.0)
+    self.assertEqual(NumberParser.positive_zero_float("0.0"), 0.0)
+    self.assertEqual(NumberParser.positive_zero_float("1.23"), 1.23)
 
   def test_parse_positive_zero_float_invlid(self):
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
-        _ = parse_positive_zero_float(invalid)
+        _ = NumberParser.positive_zero_float(invalid)
 
-  def test_parse_port(self):
-    self.assertEqual(parse_port(1), 1)
-    self.assertEqual(parse_port("1"), 1)
-    self.assertEqual(parse_port(440), 440)
-    self.assertEqual(parse_port("440"), 440)
-    self.assertEqual(parse_port(65535), 65535)
-    self.assertEqual(parse_port("65535"), 65535)
+  def test_parse_port_number(self):
+    self.assertEqual(NumberParser.port_number(1), 1)
+    self.assertEqual(NumberParser.port_number("1"), 1)
+    self.assertEqual(NumberParser.port_number(440), 440)
+    self.assertEqual(NumberParser.port_number("440"), 440)
+    self.assertEqual(NumberParser.port_number(65535), 65535)
+    self.assertEqual(NumberParser.port_number("65535"), 65535)
 
-  def test_parse_port_invalid(self):
+  def test_parse_port_number_invalid(self):
     for invalid in ("", "-1", "-1.2", "6553500", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
-        _ = parse_port(invalid)
+        _ = NumberParser.port_number(invalid)
 
   def _json_file_test_helper(self, parser) -> Any:
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -260,150 +280,153 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     return str_result
 
   def test_parse_json_file(self):
-    result = self._json_file_test_helper(parse_json_file)
+    result = self._json_file_test_helper(ObjectParser.json_file)
     self.assertDictEqual(self._json_test_data, result)
 
   def test_parse_json_file_path(self):
-    result = self._json_file_test_helper(parse_json_file_path)
+    result = self._json_file_test_helper(PathParser.json_file_path)
     self.assertEqual(pathlib.Path("file.json"), result)
 
   def test_parse_hjson_file_path(self):
-    result = self._json_file_test_helper(parse_hjson_file_path)
+    result = self._json_file_test_helper(PathParser.hjson_file_path)
     self.assertEqual(pathlib.Path("file.json"), result)
 
   def test_parse_inline_hjson(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_inline_hjson("")
+      ObjectParser.inline_hjson("")
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_inline_hjson("{invalid json}")
+      ObjectParser.inline_hjson("{invalid json}")
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_inline_hjson("{'asdfas':'asdf}")
-    self.assertDictEqual(self._json_test_data,
-                         parse_inline_hjson(json.dumps(self._json_test_data)))
+      ObjectParser.inline_hjson("{'asdfas':'asdf}")
+    self.assertDictEqual(
+        self._json_test_data,
+        ObjectParser.inline_hjson(json.dumps(self._json_test_data)))
 
   def test_parse_dir_path(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_dir_path("")
+      PathParser.dir_path("")
     file = pathlib.Path("file")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_dir_path(file)
+      PathParser.dir_path(file)
     self.assertIn("does not exist", str(cm.exception))
     file.touch()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_dir_path(file)
+      PathParser.dir_path(file)
     self.assertIn("not a folder", str(cm.exception))
     folder = pathlib.Path("folder")
     folder.mkdir()
-    self.assertEqual(folder, parse_dir_path(folder))
-    self.assertEqual(folder, parse_dir_path(str(folder)))
+    self.assertEqual(folder, PathParser.dir_path(folder))
+    self.assertEqual(folder, PathParser.dir_path(str(folder)))
 
   def test_parse_non_empty_dir_path(self):
     folder = pathlib.Path("folder")
     folder.mkdir()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_non_empty_dir_path(folder)
+      PathParser.non_empty_dir_path(folder)
     self.assertIn("empty", str(cm.exception))
     (folder / "foo").touch()
-    self.assertEqual(folder, parse_non_empty_dir_path(folder))
-    self.assertEqual(folder, parse_non_empty_dir_path(str(folder)))
+    self.assertEqual(folder, PathParser.non_empty_dir_path(folder))
+    self.assertEqual(folder, PathParser.non_empty_dir_path(str(folder)))
 
   def test_parse_non_empty_file_path(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_non_empty_file_path("")
+      PathParser.non_empty_file_path("")
     folder = pathlib.Path("folder")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_non_empty_file_path(folder)
+      PathParser.non_empty_file_path(folder)
     self.assertIn("does not exist", str(cm.exception))
     folder.mkdir()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_non_empty_file_path(folder)
+      PathParser.non_empty_file_path(folder)
     self.assertIn("not a file", str(cm.exception))
     file = pathlib.Path("file")
     file.touch()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      self.assertEqual(file, parse_non_empty_file_path(file))
+      self.assertEqual(file, PathParser.non_empty_file_path(file))
     self.assertIn("is an empty file", str(cm.exception))
 
     with file.open("w") as f:
       f.write("fooo")
-    self.assertEqual(file, parse_non_empty_file_path(file))
+    self.assertEqual(file, PathParser.non_empty_file_path(file))
 
   def test_parse_existing_file_path(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_existing_file_path("")
+      PathParser.existing_file_path("")
     folder = pathlib.Path("folder")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_existing_file_path(folder)
+      PathParser.existing_file_path(folder)
     self.assertIn("does not exist", str(cm.exception))
     folder.mkdir()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_existing_file_path(folder)
+      PathParser.existing_file_path(folder)
     self.assertIn("not a file", str(cm.exception))
     file = pathlib.Path("file")
     file.touch()
-    self.assertEqual(file, parse_existing_file_path(file))
+    self.assertEqual(file, PathParser.existing_file_path(file))
 
   def test_parse_path(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      parse_path("")
+      PathParser.path("")
     folder = pathlib.Path("folder")
     folder.mkdir()
-    self.assertEqual(folder, parse_path(folder))
+    self.assertEqual(folder, PathParser.path(folder))
     file = pathlib.Path("file")
     file.touch()
-    self.assertEqual(file, parse_path(file))
+    self.assertEqual(file, PathParser.path(file))
 
-  def test_bool_success(self):
-    self.assertIs(parse_bool("true"), True)
-    self.assertIs(parse_bool("True"), True)
-    self.assertIs(parse_bool(True), True)
-    self.assertIs(parse_bool("false"), False)
-    self.assertIs(parse_bool("False"), False)
-    self.assertIs(parse_bool(False), False)
+  def test_parse_bool_success(self):
+    self.assertIs(ObjectParser.bool("true"), True)
+    self.assertIs(ObjectParser.bool("True"), True)
+    self.assertIs(ObjectParser.bool(True), True)
+    self.assertIs(ObjectParser.bool("false"), False)
+    self.assertIs(ObjectParser.bool("False"), False)
+    self.assertIs(ObjectParser.bool(False), False)
 
-  def test_bool_invalid(self):
+  def test_parse_bool_invalid(self):
     for invalid in (1, 0, "1", "0", "", None, [], tuple()):
       with self.assertRaises(argparse.ArgumentTypeError):
-        parse_bool(invalid)
+        ObjectParser.bool(invalid)
 
   def test_parse_sh_cmd(self):
-    self.assertListEqual(parse_sh_cmd("ls -al ."), ["ls", "-al", "."])
-    self.assertListEqual(parse_sh_cmd("ls -al '.'"), ["ls", "-al", "."])
-    self.assertListEqual(parse_sh_cmd(";ls -al '.'"), [";ls", "-al", "."])
-    self.assertListEqual(parse_sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."])
+    self.assertListEqual(ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])
+    self.assertListEqual(ObjectParser.sh_cmd("ls -al '.'"), ["ls", "-al", "."])
+    self.assertListEqual(
+        ObjectParser.sh_cmd(";ls -al '.'"), [";ls", "-al", "."])
+    self.assertListEqual(
+        ObjectParser.sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."])
 
   def test_parse_sh_cmd_invalid(self):
     for invalid in (1, "", None, [], "ls -al \"."):
       with self.assertRaises(argparse.ArgumentTypeError):
-        parse_sh_cmd(invalid)
+        ObjectParser.sh_cmd(invalid)
 
   def test_parse_dict_invalid(self):
     for invalid in (1, 0, "1", "0", "", None, [], tuple()):
       with self.assertRaises(argparse.ArgumentTypeError):
-        parse_dict(invalid)
+        ObjectParser.dict(invalid)
 
   def test_parse_dict(self):
-    self.assertDictEqual(parse_dict({}), {})
-    self.assertDictEqual(parse_dict({"A": 2}), {"A": 2})
+    self.assertDictEqual(ObjectParser.dict({}), {})
+    self.assertDictEqual(ObjectParser.dict({"A": 2}), {"A": 2})
 
   def test_parse_non_empty_dict_invalid(self):
     for invalid in (1, 0, "1", "0", "", None, [], tuple(), dict()):
       with self.assertRaises(argparse.ArgumentTypeError):
-        parse_non_empty_dict(invalid)
+        ObjectParser.non_empty_dict(invalid)
 
   def test_parse_non_empty_dict(self):
-    result = parse_non_empty_dict({"a": 1})
+    result = ObjectParser.non_empty_dict({"a": 1})
     self.assertDictEqual(result, {"a": 1})
 
   def test_parse_unique_sequence(self):
-    self.assertListEqual(parse_unique_sequence([]), [])
-    self.assertTupleEqual(parse_unique_sequence(tuple()), tuple())
-    self.assertListEqual(parse_unique_sequence([1, 2, 3]), [1, 2, 3])
-    self.assertTupleEqual(parse_unique_sequence((1, 2, 3)), (1, 2, 3))
+    self.assertListEqual(ObjectParser.unique_sequence([]), [])
+    self.assertTupleEqual(ObjectParser.unique_sequence(tuple()), tuple())
+    self.assertListEqual(ObjectParser.unique_sequence([1, 2, 3]), [1, 2, 3])
+    self.assertTupleEqual(ObjectParser.unique_sequence((1, 2, 3)), (1, 2, 3))
 
   def test_parse_unique_sequence_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_unique_sequence([1, 1, 2, 2, 2, 3, 5, 5])
+      ObjectParser.unique_sequence([1, 1, 2, 2, 2, 3, 5, 5])
     self.assertIn("duplicates", str(cm.exception))
     self.assertIn("1, 2, 5", str(cm.exception))
 
@@ -413,38 +436,38 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
       pass
 
     with self.assertRaises(CustomException):
-      parse_unique_sequence([1, 1], error_cls=CustomException)
+      ObjectParser.unique_sequence([1, 1], error_cls=CustomException)
 
   def test_parse_unique_sequence_custom_name(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      parse_unique_sequence([1, 1], name="custom test name")
+      ObjectParser.unique_sequence([1, 1], name="custom test name")
     self.assertIn("custom test name", str(cm.exception))
 
   def test_parse_sequence(self):
-    self.assertListEqual(parse_sequence([]), [])
-    self.assertListEqual(parse_sequence([1, 2]), [1, 2])
-    self.assertTupleEqual(parse_sequence(tuple()), tuple())
-    self.assertTupleEqual(parse_sequence((1, 2)), (1, 2))
+    self.assertListEqual(ObjectParser.sequence([]), [])
+    self.assertListEqual(ObjectParser.sequence([1, 2]), [1, 2])
+    self.assertTupleEqual(ObjectParser.sequence(tuple()), tuple())
+    self.assertTupleEqual(ObjectParser.sequence((1, 2)), (1, 2))
 
   def test_parse_sequence_invalid(self):
     for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2))):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
-          parse_sequence(invalid)
+          ObjectParser.sequence(invalid)
 
   def test_parse_non_empty_sequence(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = parse_non_empty_sequence([])
-    self.assertListEqual(parse_non_empty_sequence([1, 2]), [1, 2])
+      _ = ObjectParser.non_empty_sequence([])
+    self.assertListEqual(ObjectParser.non_empty_sequence([1, 2]), [1, 2])
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = parse_non_empty_sequence(tuple())
-    self.assertTupleEqual(parse_non_empty_sequence((1, 2)), (1, 2))
+      _ = ObjectParser.non_empty_sequence(tuple())
+    self.assertTupleEqual(ObjectParser.non_empty_sequence((1, 2)), (1, 2))
 
   def test_parse_non_empty_sequence_invalid(self):
     for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2)), (), []):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
-          parse_non_empty_sequence(invalid)
+          ObjectParser.non_empty_sequence(invalid)
 
   def test_parse_fuzzy_url(self):
     expected = (
@@ -472,8 +495,8 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     )
     for url, result in expected:
       with self.subTest(url=url):
-        self.assertEqual(parse_fuzzy_url_str(url), result)
-        parsed = parse_fuzzy_url(url)
+        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result)
+        parsed = ObjectParser.parse_fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result)
 
   def test_parse_fuzzy_url_default_scheme(self):
@@ -484,13 +507,14 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     for url in expected:
       with self.subTest(url=url):
         result_default = f"https://{url}"
-        self.assertEqual(parse_fuzzy_url_str(url), result_default)
-        parsed = parse_fuzzy_url(url)
+        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result_default)
+        parsed = ObjectParser.parse_fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result_default)
         result_custom = f"ftp://{url}"
         self.assertEqual(
-            parse_fuzzy_url_str(url, default_scheme="ftp"), result_custom)
-        parsed = parse_fuzzy_url(url, default_scheme="ftp")
+            ObjectParser.parse_fuzzy_url_str(url, default_scheme="ftp"),
+            result_custom)
+        parsed = ObjectParser.parse_fuzzy_url(url, default_scheme="ftp")
         self.assertEqual(urlparse.urlunparse(parsed), result_custom)
 
   def test_parse_url(self):
@@ -514,11 +538,11 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
     )
     for url, result in expected:
       with self.subTest(url=url):
-        self.assertEqual(parse_url_str(url), result)
-        self.assertEqual(parse_fuzzy_url_str(url), result)
-        parsed = parse_url(url)
+        self.assertEqual(ObjectParser.url_str(url), result)
+        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result)
+        parsed = ObjectParser.url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result)
-        parsed_fuzzy = parse_fuzzy_url(url)
+        parsed_fuzzy = ObjectParser.parse_fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed_fuzzy), result)
 
   def test_parse_url_invalid(self):
@@ -526,39 +550,39 @@ class ArgParserHelperTestCase(CrossbenchFakeFsTestCase):
                     "http://foo.com:-123/bar"):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = parse_url(invalid)
+          _ = ObjectParser.url(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = parse_url_str(invalid)
+          _ = ObjectParser.url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = parse_httpx_url_str(invalid)
+          _ = ObjectParser.httpx_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = parse_fuzzy_url_str(invalid)
+          _ = ObjectParser.parse_fuzzy_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = parse_fuzzy_url(invalid)
+          _ = ObjectParser.parse_fuzzy_url(invalid)
 
   def test_parse_httpx_url_str_invalid(self):
     for invalid in ("ftp://foo.com:123/bar", "ssh://test.com"):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = parse_httpx_url_str(invalid)
+          _ = ObjectParser.httpx_url_str(invalid)
 
   def test_parse_url_scheme(self):
     url = "ftp://foo.com"
-    parsed = parse_url(url)
+    parsed = ObjectParser.url(url)
     self.assertEqual(urlparse.urlunparse(parsed), url)
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = parse_url(url, schemes=("https",))
-    parsed = parse_url(
+      _ = ObjectParser.url(url, schemes=("https",))
+    parsed = ObjectParser.url(
         url, schemes=(
             "https",
             "ftp",
         ))
     self.assertEqual(urlparse.urlunparse(parsed), url)
 
-  def parse_regexp(self):
-    with self.assertRaises(re.error):
-      parse_regexp("\\")
-    pattern = parse_regexp("^abc$")
+  def test_parse_regexp(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.regexp("\\")
+    pattern = ObjectParser.regexp("^abc$")
     self.assertEqual(pattern.pattern, "^abc$")
 
 

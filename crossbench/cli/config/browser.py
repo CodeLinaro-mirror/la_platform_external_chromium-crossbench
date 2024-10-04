@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional, TextIO, Tuple, cast
 import hjson
 
 import crossbench.browsers.all as browsers
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
@@ -22,6 +22,7 @@ from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.cli.config.network import NetworkConfig, NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.parse import NumberParser, PathParser
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 
@@ -116,9 +117,9 @@ class BrowserConfig(ConfigObject):
           f"Browser version range start prefix {repr(start_prefix)} must match "
           f"limit prefix {repr(limit_prefix)}: {repr(value)}")
 
-    start_milestone: int = cli_helper.parse_positive_int(
+    start_milestone: int = NumberParser.positive_int(
         start_match["milestone"], "browser version range start milestone")
-    limit_milestone: int = cli_helper.parse_positive_int(
+    limit_milestone: int = NumberParser.positive_int(
         limit_match["milestone"], "browser version range limit milestone")
     if start_milestone > limit_milestone:
       raise argparse.ArgumentTypeError(
@@ -153,9 +154,9 @@ class BrowserConfig(ConfigObject):
         return maybe_path_or_identifier
       # Assume a path since short-names never contain back-/slashes.
       if driver_type.is_remote:
-        path = cli_helper.parse_path(maybe_path_or_identifier)
+        path = PathParser.path(maybe_path_or_identifier)
       else:
-        path = cli_helper.parse_existing_path(maybe_path_or_identifier)
+        path = PathParser.existing_path(maybe_path_or_identifier)
     else:
       if ":" in maybe_path_or_identifier:
         raise argparse.ArgumentTypeError(
@@ -173,7 +174,7 @@ class BrowserConfig(ConfigObject):
         if ANDROID_PACKAGE_RE.fullmatch(maybe_path_or_identifier):
           return pth.AnyPosixPath(maybe_path_or_identifier)
     if not path:
-      path = cli_helper.try_resolve_existing_path(maybe_path_or_identifier)
+      path = pth.try_resolve_existing_path(maybe_path_or_identifier)
       if not path:
         raise argparse.ArgumentTypeError(
             f"Unknown browser path or short name: '{maybe_path_or_identifier}'")

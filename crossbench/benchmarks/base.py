@@ -13,9 +13,10 @@ from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
 
 from ordered_set import OrderedSet
 
-from crossbench import cli_helper, helper
+from crossbench import helper
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.flags.base import Flags
+from crossbench.parse import ObjectParser
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from crossbench.stories.story import Story
 
@@ -439,7 +440,7 @@ class PressBenchmark(SubStoryBenchmark):
         "--local-url",
         "--url",
         "--custom-benchmark-url",
-        type=cli_helper.parse_httpx_url_str,
+        type=ObjectParser.httpx_url_str,
         nargs="?",
         dest="custom_benchmark_url",
         const=local_url,

@@ -2,9 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import contextlib
+import datetime as dt
 import logging
+import sys
 
 import colorama
+
+from crossbench import helper
 
 colorama.init()
 
@@ -38,3 +43,16 @@ class ColoredLogFormatter(logging.Formatter):
 
   def formatStack(self, stack_info):
     return ""
+
+
+@contextlib.contextmanager
+def timer(msg: str = "Elapsed Time"):
+  start_time = dt.datetime.now()
+
+  def print_timer():
+    delta = dt.datetime.now() - start_time
+    indent = colorama.Cursor.FORWARD() * 3
+    sys.stdout.write(f"{indent}{msg}: {delta}\r")
+
+  with helper.RepeatTimer(interval=0.25, function=print_timer):
+    yield

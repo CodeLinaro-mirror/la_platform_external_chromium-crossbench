@@ -9,7 +9,6 @@ import datetime as dt
 from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, Type, cast
 from urllib import parse as urlparse
 
-from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench.benchmarks.loading.action import Action, GetAction
 from crossbench.benchmarks.loading.action_type import ActionType
@@ -21,6 +20,7 @@ from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.cli.config.secrets import SecretsConfig, SecretsDict
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.parse import DurationParser, ObjectParser
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,9 +58,9 @@ class PageConfig(ConfigObject):
       url = PAGES[raw_url].url
       label = label or raw_url
     else:
-      url = cli_helper.parse_fuzzy_url_str(raw_url)
+      url = ObjectParser.parse_fuzzy_url_str(raw_url)
     if len(parts) == 2:
-      duration = cli_helper.Duration.parse_non_zero(parts[1])
+      duration = DurationParser.positive_duration(parts[1])
     return cls.from_url(label, url, duration)
 
   @classmethod
@@ -68,11 +68,10 @@ class PageConfig(ConfigObject):
                      value: Sequence[Any],
                      label: Optional[str] = None,
                      secrets: Optional[SecretsConfig] = None) -> PageConfig:
-    value = cli_helper.parse_non_empty_sequence(value,
-                                                "story actions or blocks")
+    value = ObjectParser.non_empty_sequence(value, "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
     if label is not None:
-      label = cli_helper.parse_non_empty_str(label, "label")
+      label = ObjectParser.non_empty_str(label, "label")
     secrets = secrets or SecretsConfig()
     return cls(label, secrets=secrets, blocks=blocks.blocks)
 
@@ -82,7 +81,7 @@ class PageConfig(ConfigObject):
       config: Dict[str, Any],
       label: Optional[str] = None,
       secrets: Optional[SecretsConfig] = None) -> PageConfig:
-    config = cli_helper.parse_non_empty_dict(config, "story actions or blocks")
+    config = ObjectParser.non_empty_dict(config, "story actions or blocks")
     page_config = cls.config_parser().parse(
         config, label=label, secrets=secrets)
     return page_config
@@ -90,7 +89,7 @@ class PageConfig(ConfigObject):
   @classmethod
   def config_parser(cls: Type[PageConfig]) -> ConfigParser[PageConfig]:
     parser = ConfigParser(f"{cls.__name__} parser", cls)
-    parser.add_argument("label", type=cli_helper.parse_non_empty_str)
+    parser.add_argument("label", type=ObjectParser.non_empty_str)
     parser.add_argument("playback", type=PlaybackController.parse)
     parser.add_argument("secrets", type=SecretsConfig, default=SecretsConfig())
     parser.add_argument("login", type=LoginBlock)

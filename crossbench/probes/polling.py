@@ -11,7 +11,7 @@ import threading
 import time
 from typing import TYPE_CHECKING, Iterable
 
-from crossbench import cli_helper
+from crossbench.parse import DurationParser, ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -35,7 +35,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
     parser = super().config_parser()
     parser.add_argument(
         "interval",
-        type=cli_helper.Duration.parse_non_zero,
+        type=DurationParser.positive_duration,
         default=dt.timedelta(seconds=1),
         help="Run the cmd at this interval and produce separate results.")
     return parser
@@ -87,7 +87,7 @@ class ShellPollingProbe(PollingProbe):
     parser = super().config_parser()
     parser.add_argument(
         "cmd",
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         required=True,
         help="Write stdout of this CMD as a result.")
     return parser

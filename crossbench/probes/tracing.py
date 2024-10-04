@@ -9,10 +9,10 @@ import enum
 import logging
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
 
-from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
 from crossbench.helper.path_finder import TraceconvFinder
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
@@ -115,10 +115,10 @@ class RecordFormat(ConfigEnum):
 
 
 def parse_trace_config_file_path(value: str) -> pth.LocalPath:
-  data = cli_helper.parse_json_file(value)
+  data = ObjectParser.json_file(value)
   if "trace_config" not in data:
     raise argparse.ArgumentTypeError("Missing 'trace_config' property.")
-  cli_helper.parse_positive_int(
+  NumberParser.positive_int(
       data.get("startup_duration", "0"), "for 'startup_duration'")
   if "result_file" in data:
     raise argparse.ArgumentTypeError(
@@ -175,7 +175,7 @@ class TracingProbe(ChromiumProbe):
     parser.add_argument(
         "startup_duration",
         default=0,
-        type=cli_helper.parse_positive_zero_int,
+        type=NumberParser.positive_zero_int,
         help=("Stop recording tracing after a given number of seconds. "
               "Use 0 (default) for unlimited recording time."))
     parser.add_argument(
@@ -193,7 +193,7 @@ class TracingProbe(ChromiumProbe):
     parser.add_argument(
         "traceconv",
         default=None,
-        type=cli_helper.parse_file_path,
+        type=PathParser.file_path,
         help=(
             "Path to the 'traceconv.py' helper to convert "
             "'.proto' traces to legacy '.json'. "

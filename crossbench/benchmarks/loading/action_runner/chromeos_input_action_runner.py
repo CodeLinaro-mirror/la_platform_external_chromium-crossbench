@@ -20,7 +20,7 @@ from crossbench.benchmarks.loading.action_runner.display_rectangle import \
 from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
-from crossbench.cli_helper import parse_positive_zero_int
+from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
   from typing import Optional, Type
@@ -131,8 +131,8 @@ class TouchDevice:
     touch_device_values = config.splitlines()[1].split(" ")
 
     return TouchDevice(touch_device_values[0],
-                       parse_positive_zero_int(touch_device_values[1]),
-                       parse_positive_zero_int(touch_device_values[2]))
+                       NumberParser.positive_zero_int(touch_device_values[1]),
+                       NumberParser.positive_zero_int(touch_device_values[2]))
 
   def __str__(self) -> str:
     return f"{self.device_path} {self.x_max} {self.y_max}"

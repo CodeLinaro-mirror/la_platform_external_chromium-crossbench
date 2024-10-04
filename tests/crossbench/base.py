@@ -13,7 +13,6 @@ from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
 import crossbench
-from crossbench import cli_helper
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.loading.loadline_presets import \
@@ -35,8 +34,7 @@ class CrossbenchFakeFsTestCase(
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpPyfakefs(
-        modules_to_reload=[crossbench, mock_browser, cli_helper, pth])
+    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser, pth])
     # gettext is used extensively in argparse
     gettext_patcher = mock.patch(
         "gettext.dgettext", side_effect=lambda domain, message: message)

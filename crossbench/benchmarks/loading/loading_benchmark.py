@@ -10,7 +10,6 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
-from crossbench import cli_helper
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
@@ -25,6 +24,7 @@ from crossbench.benchmarks.loading.page import (DEFAULT_DURATION, PAGE_LIST,
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.parse import DurationParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
@@ -97,7 +97,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     parser.add_argument(
         "--about-blank-duration",
         "--about-blank",
-        type=cli_helper.Duration.parse_zero,
+        type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(),
         help="If non-zero, navigate to about:blank after every page.")
 
@@ -291,7 +291,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
     if global_config := args.config:
       # TODO: migrate --config to an already parsed hjson/json dict
       config_file = global_config
-      config_data = cli_helper.parse_hjson_file(config_file)
+      config_data = ObjectParser.hjson_file(config_file)
       if pages_config_dict := config_data.get("pages"):
         if args.pages_config:
           raise argparse.ArgumentTypeError(

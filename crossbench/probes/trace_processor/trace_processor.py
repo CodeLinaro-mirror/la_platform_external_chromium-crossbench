@@ -19,9 +19,9 @@ from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 
-from crossbench import cli_helper
 from crossbench import path as pth
-from crossbench.probes import metric as cb_metric
+from crossbench.parse import PathParser
+from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
@@ -100,7 +100,7 @@ class TraceProcessorProbe(Probe):
         help="Name of query to be run (under probes/trace_processor/queries)")
     parser.add_argument(
         "trace_processor_bin",
-        type=cli_helper.parse_local_binary_path,
+        type=PathParser.local_binary_path,
         required=False,
         help="Path to the trace_processor binary")
     return parser
@@ -116,7 +116,7 @@ class TraceProcessorProbe(Probe):
     self._queries = tuple(queries)
     self._trace_processor_bin: Optional[pth.LocalPath] = None
     if trace_processor_bin:
-      self._trace_processor_bin = cli_helper.parse_local_binary_path(
+      self._trace_processor_bin = PathParser.local_binary_path(
           trace_processor_bin, "trace_processor")
 
   @property
@@ -197,7 +197,7 @@ class TraceProcessorProbe(Probe):
     return res
 
   def _merge_json(self, runs: Iterable[Run]) -> Dict[str, JsonDict]:
-    merged_metrics = collections.defaultdict(cb_metric.MetricsMerger)
+    merged_metrics = collections.defaultdict(MetricsMerger)
     for run in runs:
       for file_path in run.results[self].json_list:
         with file_path.open() as json_file:

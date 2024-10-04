@@ -12,8 +12,8 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
 
-from crossbench import cli_helper
 from crossbench import path as pth
+from crossbench.parse import ObjectParser
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 
 if TYPE_CHECKING:
@@ -42,11 +42,11 @@ class ProbeResult(abc.ABC):
                **kwargs: Iterable[pth.LocalPath]):
     self._url_list: Tuple[str, ...] = ()
     if url:
-      self._url_list = cli_helper.parse_unique_sequence(
+      self._url_list = ObjectParser.unique_sequence(
           tuple(url), "urls", DuplicateProbeResult)
     self._trace_list: Tuple[pth.LocalPath, ...] = ()
     if trace:
-      self._trace_list = cli_helper.parse_unique_sequence(
+      self._trace_list = ObjectParser.unique_sequence(
           tuple(trace), "traces", DuplicateProbeResult)
     tmp_files: Dict[str, OrderedSet[pth.LocalPath]] = {}
     if file:

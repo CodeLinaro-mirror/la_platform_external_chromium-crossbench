@@ -14,8 +14,9 @@ from typing import Any, Dict, List, Optional
 
 from immutabledict import immutabledict
 
-from crossbench import cli_helper, compat
+from crossbench import compat
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from crossbench.parse import NumberParser, ObjectParser
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -104,8 +105,8 @@ class CustomConfigObject(ConfigObject):
     if not value:
       return None
     return {
-        "value": cli_helper.parse_non_empty_str(value),
-        "nested": cli_helper.parse_not_none(nested, "nested")
+        "value": ObjectParser.non_empty_str(value),
+        "nested": ObjectParser.not_none(nested, "nested")
     }
 
   @classmethod
@@ -115,10 +116,10 @@ class CustomConfigObject(ConfigObject):
     if not value:
       return None
     return {
-        "value": cli_helper.parse_non_empty_str(value),
-        "nested": cli_helper.parse_not_none(nested, "nested"),
-        "array": cli_helper.parse_not_none(array, "array"),
-        "integer": cli_helper.parse_positive_int(integer, "integer"),
+        "value": ObjectParser.non_empty_str(value),
+        "nested": ObjectParser.not_none(nested, "nested"),
+        "array": ObjectParser.not_none(array, "array"),
+        "integer": NumberParser.positive_int(integer, "integer"),
     }
 
 
@@ -132,7 +133,7 @@ class CustomConfigObject(ConfigObject):
     parser.add_argument(
         "name", aliases=("name_alias", "name_alias2"), type=str, required=True)
     parser.add_argument("array", type=list)
-    parser.add_argument("integer", type=cli_helper.parse_positive_int)
+    parser.add_argument("integer", type=NumberParser.positive_int)
     parser.add_argument("nested", type=CustomNestedConfigObject)
     parser.add_argument("generic_enum", type=GenericEnum)
     parser.add_argument("config_enum", type=CustomConfigEnum)

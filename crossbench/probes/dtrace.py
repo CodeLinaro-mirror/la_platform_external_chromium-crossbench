@@ -8,7 +8,7 @@ import atexit
 import subprocess
 from typing import TYPE_CHECKING, Optional, TextIO
 
-from crossbench import cli_helper
+from crossbench.parse import PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT, ProbeValidationError)
 from crossbench.probes.result_location import ResultLocation
@@ -32,8 +32,7 @@ class DTraceProbe(Probe):
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
-    parser.add_argument(
-        "script_path", type=cli_helper.parse_non_empty_file_path)
+    parser.add_argument("script_path", type=PathParser.non_empty_file_path)
     return parser
 
   def __init__(self, script_path: LocalPath):

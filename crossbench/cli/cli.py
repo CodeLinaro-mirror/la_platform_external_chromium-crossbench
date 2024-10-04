@@ -18,7 +18,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 import tabulate as tbl
 
 import crossbench.benchmarks.all as benchmarks
-from crossbench import __version__, cli_helper
+from crossbench import __version__
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
@@ -38,6 +38,8 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
     CrossbenchDevToolsRecorderProxy
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
+from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
+                              PathParser)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
 from crossbench.probes.internal import ErrorsProbe
 from crossbench.runner.runner import Runner
@@ -412,11 +414,11 @@ class CrossBenchCLI:
     cooldown_group.add_argument(
         "--cool-down-time",
         "--cool-down",
-        type=cli_helper.Duration.parse_zero,
+        type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(seconds=2),
         help=("Time the runner waits between different runs or repetitions. "
               "Increase this to let the CPU cool down between runs. "
-              f"Format: {cli_helper.Duration.help()}"))
+              f"Format: {DurationParser.help()}"))
     cooldown_group.add_argument(
         "--no-cool-down",
         action="store_const",
@@ -434,36 +436,36 @@ class CrossBenchCLI:
 
     runner_group.add_argument(
         "--time-unit",
-        type=cli_helper.Duration.parse,
+        type=DurationParser.any_duration,
         default=dt.timedelta(seconds=1),
         help=("Absolute duration of 1 time unit in the runner. "
               "Increase this for slow builds or machines. "
-              f"Format: {cli_helper.Duration.help()}"))
+              f"Format: {DurationParser.help()}"))
     runner_group.add_argument(
         "--timeout-unit",
-        type=cli_helper.Duration.parse,
+        type=DurationParser.any_duration,
         default=dt.timedelta(),
         help=("Absolute duration of 1 time unit for timeouts in the runner. "
               "Unlike --time-unit, this does only apply for timeouts, "
               "as opposed to say initial wait times or sleeps."
-              f"Format: {cli_helper.Duration.help()}"))
+              f"Format: {DurationParser.help()}"))
     runner_group.add_argument(
         "--run-timeout",
-        type=cli_helper.Duration.parse_zero,
+        type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(),
         help=("Sets the same timeout per run on all browsers. "
               "Runs will be aborted after the given timeout. "
-              f"Format: {cli_helper.Duration.help()}"))
+              f"Format: {DurationParser.help()}"))
     runner_group.add_argument(
         "--start-delay",
-        type=cli_helper.Duration.parse_zero,
+        type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(),
         help=("Delay before running the core workload, "
               "after a story's/workload's setup, "
               "and after starting the browser."))
     runner_group.add_argument(
         "--stop-delay",
-        type=cli_helper.Duration.parse_zero,
+        type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(),
         help=("Delay after running the core workload, "
               "before story's/workload's teardown, "
@@ -568,7 +570,7 @@ class CrossBenchCLI:
             "Cannot be used together with --browser-config"))
     browser_config_group.add_argument(
         "--browser-config",
-        type=cli_helper.parse_hjson_file_path,
+        type=PathParser.hjson_file_path,
         help=("Browser configuration.json file. "
               "Use this to run multiple browsers and/or multiple "
               "flag configurations. "
@@ -577,12 +579,12 @@ class CrossBenchCLI:
               "Cannot be used together with --browser."))
     browser_group.add_argument(
         "--driver-path",
-        type=cli_helper.parse_file_path,
+        type=PathParser.file_path,
         help=("Use the same custom driver path for all specified browsers. "
               "Version mismatches might cause crashes."))
     browser_group.add_argument(
         "--config",
-        type=cli_helper.parse_hjson_file_path,
+        type=PathParser.hjson_file_path,
         help=("Specify a common config for --probe-config, --browser-config, "
               "--network-config and --env-config."))
     browser_group.add_argument(
@@ -692,7 +694,7 @@ class CrossBenchCLI:
             f"\n\nChoices: {', '.join(PROBE_LOOKUP.keys())}"))
     probe_config_group.add_argument(
         "--probe-config",
-        type=cli_helper.parse_hjson_file_path,
+        type=PathParser.hjson_file_path,
         default=benchmark_cls.default_probe_config_path(),
         help=("Browser configuration.json file. "
               "Use this config file to specify more complex Probe settings."
@@ -742,7 +744,7 @@ class CrossBenchCLI:
         self._run_benchmark(args, runner)
     except KeyboardInterrupt:
       sys.exit(2)
-    except cli_helper.LateArgumentError as e:
+    except LateArgumentError as e:
       if args.throw:
         raise
       self.handle_late_argument_error(e)
@@ -815,7 +817,7 @@ class CrossBenchCLI:
           "--config cannot be used together with --probe-config")
 
     config_file = args.config
-    config_data = cli_helper.parse_hjson_file(config_file)
+    config_data = ObjectParser.hjson_file(config_file)
     found_any_config = False
 
     if config_data.get("env"):
@@ -1074,7 +1076,7 @@ class CrossBenchCLI:
     finally:
       self._teardown_logging()
 
-  def handle_late_argument_error(self, e: cli_helper.LateArgumentError) -> None:
+  def handle_late_argument_error(self, e: LateArgumentError) -> None:
     self.error(f"error argument {e.flag}: {e.message}")
 
   def error(self, message: str) -> None:

@@ -9,9 +9,10 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
 
 from immutabledict import immutabledict
 
-from crossbench import cli_helper, helper, plt
+from crossbench import helper, plt
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
+from crossbench.parse import PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
@@ -44,15 +45,15 @@ class WebPageReplayProbe(Probe):
     parser.add_argument("http_port", type=int, default=8080, required=False)
     parser.add_argument("https_port", type=int, default=8081, required=False)
     parser.add_argument(
-        "wpr_go_bin", type=cli_helper.parse_binary_path, required=False)
+        "wpr_go_bin", type=PathParser.binary_path, required=False)
     parser.add_argument(
-        "key_file", type=cli_helper.parse_existing_file_path, required=False)
+        "key_file", type=PathParser.existing_file_path, required=False)
     parser.add_argument(
-        "cert_file", type=cli_helper.parse_existing_file_path, required=False)
+        "cert_file", type=PathParser.existing_file_path, required=False)
     parser.add_argument(
         "inject_scripts",
         is_list=True,
-        type=cli_helper.parse_existing_file_path,
+        type=PathParser.existing_file_path,
         required=False)
     parser.add_argument(
         "use_test_root_certificate", type=bool, default=False, required=False)
@@ -74,7 +75,7 @@ class WebPageReplayProbe(Probe):
     if not wpr_go_bin:
       raise RuntimeError(f"Could not find wpr.go on {runner_platform}")
     self._wpr_go_bin: LocalPath = runner_platform.local_path(
-        cli_helper.parse_binary_path(wpr_go_bin, "wpr.go"))
+        PathParser.binary_path(wpr_go_bin, "wpr.go"))
 
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
         bin_path=wpr_go_bin,

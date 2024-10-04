@@ -10,11 +10,12 @@ import re
 from typing import TYPE_CHECKING, Iterator, Optional, Union
 from urllib.parse import urlparse
 
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.helper import Spinner
 from crossbench.network.base import Network
+from crossbench.parse import PathParser
 
 if TYPE_CHECKING:
   from crossbench.network.traffic_shaping.base import TrafficShaper
@@ -81,4 +82,4 @@ class ReplayNetwork(Network):
   def _ensure_archive(self, archive: Union[pth.LocalPath, str]) -> LocalPath:
     if isinstance(archive, str) and archive.startswith(GS_PREFIX):
       return self._download_gcloud_archive(url=archive)
-    return cli_helper.parse_existing_file_path(archive).resolve()
+    return PathParser.existing_file_path(archive).resolve()

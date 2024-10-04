@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, cast
 
 from crossbench import helper
 from crossbench import path as pth
-from crossbench.cli_helper import parse_any_path
+from crossbench.parse import PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeKeyT)
@@ -60,7 +60,7 @@ class PerfettoProbe(Probe):
               "See probe instructions for more details"))
     parser.add_argument(
         "perfetto_bin",
-        type=parse_any_path,
+        type=PathParser.any_path,
         default="perfetto",
         help="Perfetto binary on the browser device")
     return parser

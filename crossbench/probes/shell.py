@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, List, Optional
 
-from crossbench import cli_helper
+from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
@@ -34,12 +34,12 @@ class ShellProbe(Probe):
     parser.add_argument(
         "setup_cmd",
         aliases=("setup",),
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         required=False,
         help="CMD is run before the browser is started.")
     parser.add_argument(
         "start_cmd",
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         aliases=("start",),
         required=False,
         help=("CMD is run right before each story is started "
@@ -47,28 +47,28 @@ class ShellProbe(Probe):
     parser.add_argument(
         "start_story_run_cmd",
         aliases=("start-story",),
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         required=False,
         help=("CMD is run right before the measurement phase "
               "of a story is started."))
     parser.add_argument(
         "stop_story_run_cmd",
         aliases=("stop-story",),
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         required=False,
         help=("CMD is run right after the measurement phase "
               "of a story has ended."))
     parser.add_argument(
         "stop_cmd",
         aliases=("cmd", "stop"),
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         required=True,
         help=("CMD is run right after the workload ended and the browser "
-             "is still running."))
+              "is still running."))
     parser.add_argument(
         "teardown_cmd",
         aliases=("teardown",),
-        type=cli_helper.parse_sh_cmd,
+        type=ObjectParser.sh_cmd,
         required=False,
         help="CMD is run after the browser is stopped.")
     return parser

@@ -14,9 +14,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
-from crossbench.cli_helper import (parse_dict, parse_non_empty_sequence,
-                                   parse_sequence, parse_str)
 from crossbench.env import HostEnvironment
+from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
@@ -90,12 +89,13 @@ def parse_histogram_metrics(value: Any,
                             name: str = "value"
                            ) -> Sequence[ChromeHistogramMetric]:
   result: List[ChromeHistogramMetric] = []
-  d = parse_dict(value, name)
+  d = ObjectParser.dict(value, name)
   for k, v in d.items():
-    histogram_name = parse_str(k, f"{name} name")
-    metrics = parse_non_empty_sequence(v, f"{name} {histogram_name} metrics")
+    histogram_name = ObjectParser.any_str(k, f"{name} name")
+    metrics = ObjectParser.non_empty_sequence(
+        v, f"{name} {histogram_name} metrics")
     for x in metrics:
-      metric = parse_str(x)
+      metric = ObjectParser.any_str(x)
       if metric == "count":
         result.append(ChromeHistogramCountMetric(histogram_name))
       elif metric == "mean":
@@ -190,9 +190,9 @@ class ChromeHistogramSample:
 
   @classmethod
   def from_json(cls, histogram_dict: Dict) -> ChromeHistogramSample:
-    name = parse_str(histogram_dict["name"], "histogram name")
-    header = parse_str(histogram_dict["header"], "histogram header")
-    body = parse_str(histogram_dict["body"], "histogram body")
+    name = ObjectParser.any_str(histogram_dict["name"], "histogram name")
+    header = ObjectParser.any_str(histogram_dict["header"], "histogram header")
+    body = ObjectParser.any_str(histogram_dict["body"], "histogram body")
 
     m = re.match(cls._HEADER_RE, header)
     if not m:
@@ -331,10 +331,11 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
       actions.js(self.HISTOGRAM_SEND)
       actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, 10.0)
       data = actions.js(self.HISTOGRAM_DATA)
-      histogram_list = parse_sequence(data)
+      histogram_list = ObjectParser.sequence(data)
       histograms: Dict[str, ChromeHistogramSample] = {}
       for histogram_dict in histogram_list:
-        histogram = ChromeHistogramSample.from_json(parse_dict(histogram_dict))
+        histogram = ChromeHistogramSample.from_json(
+            ObjectParser.dict(histogram_dict))
         histograms[histogram.name] = histogram
       return histograms
 

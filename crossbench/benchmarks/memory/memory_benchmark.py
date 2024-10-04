@@ -8,25 +8,28 @@ import datetime as dt
 import logging
 import sys
 import time
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type
 
-from selenium import webdriver
 import selenium.common.exceptions
 import urllib3.exceptions
+from selenium import webdriver
 
-from crossbench import cli_helper, helper
-from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench import helper
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
-from crossbench.benchmarks.loading.page import LivePage, Page
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner, ActionRunnerListener
+from crossbench.benchmarks.loading.action_runner.base import (
+    ActionRunner, ActionRunnerListener)
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
+from crossbench.benchmarks.loading.page import LivePage, Page
+from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
   import argparse
-  from crossbench.runner.run import Run
+
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.runner.run import Run
 
 
 class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
@@ -42,22 +45,22 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     parser = super().add_cli_parser(parser)
     parser.add_argument(
         '--alloc-count',
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         default=1,
         help='The number of block to allocate.')
     parser.add_argument(
         '--block-size',
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         default=128,
         help='The size of each block (MB).')
     parser.add_argument(
         '--compressibility',
-        type=cli_helper.parse_positive_zero_int,
+        type=NumberParser.positive_zero_int,
         default=0,
         help='The compressibility (0-100)')
     parser.add_argument(
         '--prefill-constant',
-        type=cli_helper.parse_int,
+        type=NumberParser.any_int,
         default=1,
         help="Prefill memory buffer with given constant (-1-127)."
         "Default is 1."
@@ -154,7 +157,7 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
     parser.add_argument(
         '--skippable-tab-count',
         dest="skippable_tab_count",
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         default=0,
         help='The number of tabs that can be skipped for liveness checking.')
     return parser

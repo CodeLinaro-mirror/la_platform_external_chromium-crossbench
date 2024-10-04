@@ -10,9 +10,10 @@ import datetime as dt
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
                     Sequence, Tuple, Type, cast)
 
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench.benchmarks.loading.action import Action, ActionType, GetAction
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
+from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
@@ -51,10 +52,7 @@ class ActionBlock(ConfigObject):
     parser = ConfigParser(f"{cls.__name__} parser", cls)
     parser.add_argument("label", type=cls._parse_block_label, default="default")
     parser.add_argument(
-        "index",
-        type=cli_helper.parse_positive_zero_int,
-        default=0,
-        required=False)
+        "index", type=NumberParser.positive_zero_int, default=0, required=False)
     # TODO: enable passing index
     parser.add_argument("actions", type=Action, required=True, is_list=True)
     return parser
@@ -72,7 +70,7 @@ class ActionBlock(ConfigObject):
   def _parse_block_label(cls, value: Any) -> Optional[str]:
     if not value:
       return None
-    label = cli_helper.parse_non_empty_str(value)
+    label = ObjectParser.non_empty_str(value)
     if label == cls.LOGIN_LABEL:
       raise ConfigError(
           f"Block label {repr(label)} is reserved for login blocks")
@@ -83,7 +81,7 @@ class ActionBlock(ConfigObject):
     self.validate_actions()
 
   def validate_actions(self) -> None:
-    cli_helper.parse_non_empty_sequence(self.actions, "actions")
+    ObjectParser.non_empty_sequence(self.actions, "actions")
     # TODO: enable validating action indices
     # for index, action in enumerate(self.actions):
     #   if index != action.index:
@@ -156,7 +154,7 @@ class ActionBlockListConfig(ConfigObject):
     Default block actions:
     [{ "action": "get", ...}, { "action": ...}, ...]
     """
-    config = cli_helper.parse_non_empty_sequence(config, "actions")
+    config = ObjectParser.non_empty_sequence(config, "actions")
     info = "action block"
     if cls._is_default_block_actions(config):
       info = "default actions"
@@ -168,7 +166,7 @@ class ActionBlockListConfig(ConfigObject):
     def block_config_data_gen():
       for index, block_config in enumerate(config):
         with exception.annotate_argparsing(f"Parsing {info} ...[{index}]"):
-          block_config = cli_helper.parse_dict(block_config, f"blocks[{index}]")
+          block_config = ObjectParser.dict(block_config, f"blocks[{index}]")
           label = block_config.get("label")
           yield index, label, block_config
 
@@ -186,7 +184,7 @@ class ActionBlockListConfig(ConfigObject):
   @classmethod
   def parse_dict(cls: Type[ActionBlockListConfig],
                  config: Dict[str, Any]) -> ActionBlockListConfig:
-    config = cli_helper.parse_non_empty_dict(config, "blocks")
+    config = ObjectParser.non_empty_dict(config, "blocks")
 
     def block_config_data_gen():
       for index, (label, block_data) in enumerate(config.items()):
@@ -223,7 +221,7 @@ class ActionBlockListConfig(ConfigObject):
     super().validate()
     if not self.blocks:
       raise ValueError("Missing action blocks.")
-    cli_helper.parse_non_empty_sequence(self.blocks, "blocks")
+    ObjectParser.non_empty_sequence(self.blocks, "blocks")
     found_get = False
     for index, block in enumerate(self.blocks):
       if index != block.index:

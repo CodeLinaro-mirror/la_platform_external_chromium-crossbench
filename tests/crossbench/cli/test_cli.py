@@ -13,13 +13,14 @@ from unittest import mock
 
 import hjson
 
-from crossbench import __version__, cli_helper, plt
+from crossbench import __version__, plt
 from crossbench.browsers import splash_screen, viewport
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.parse import LateArgumentError
 from crossbench.path import AnyPath
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
@@ -726,7 +727,7 @@ class FastCliTestCase(BaseCliTestCase):
 
     driver_path = self.out_dir / "driver"
     self.fs.create_file(driver_path, st_size=1024)
-    with self.assertRaises(cli_helper.LateArgumentError) as cm:
+    with self.assertRaises(LateArgumentError) as cm:
       with mock.patch.object(
           BrowserVariantsConfig,
           "_get_browser_cls",

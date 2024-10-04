@@ -12,8 +12,9 @@ from typing import Optional
 
 import pytest
 
-from crossbench import cli_helper, plt
+from crossbench import plt
 from crossbench.browsers import all as browsers
+from crossbench.parse import PathParser
 from crossbench.path import LocalPath
 from tests import test_helper
 
@@ -26,29 +27,14 @@ def pytest_addoption(parser):
       "--test-browser-path",
       "--browserpath",
       default=None,
-      type=cli_helper.parse_path)
+      type=PathParser.path)
   parser.addoption(
-      "--test-driver-path",
-      "--driverpath",
-      default=None,
-      type=cli_helper.parse_path)
+      "--test-driver-path", "--driverpath", default=None, type=PathParser.path)
   parser.addoption(
-      "--test-gsutil-path",
-      "--gustilpath",
-      default=None,
-      type=cli_helper.parse_path)
-  parser.addoption(
-      "--adb-device-id",
-      default=None,
-      type=str)
-  parser.addoption(
-      "--adb-path",
-      default=None,
-      type=str)
-  parser.addoption(
-      "--ignore-tests",
-      default=None,
-      type=str)
+      "--test-gsutil-path", "--gustilpath", default=None, type=PathParser.path)
+  parser.addoption("--adb-device-id", default=None, type=str)
+  parser.addoption("--adb-path", default=None, type=str)
+  parser.addoption("--ignore-tests", default=None, type=str)
 
 
 def pytest_xdist_auto_num_workers(config):

@@ -5,7 +5,7 @@
 import pathlib
 import re
 import unicodedata
-from typing import Union
+from typing import Optional, Union
 
 # A path that can refer to files on a remote platform with potentially
 # a different Path flavour (e.g. Win vs Posix).
@@ -30,3 +30,15 @@ def safe_filename(name: str) -> str:
   normalized_name = unicodedata.normalize("NFKD", name)
   ascii_name = normalized_name.encode("ascii", "ignore").decode("ascii")
   return _UNSAFE_FILENAME_CHARS_RE.sub("_", ascii_name)
+
+
+def try_resolve_existing_path(value: str) -> Optional[LocalPath]:
+  if not value:
+    return None
+  maybe_path = LocalPath(value)
+  if maybe_path.exists():
+    return maybe_path
+  maybe_path = maybe_path.expanduser()
+  if maybe_path.exists():
+    return maybe_path
+  return None

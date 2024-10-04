@@ -11,11 +11,12 @@ import re
 import subprocess
 from typing import TYPE_CHECKING, Iterable, List, Optional, cast
 
-from crossbench import cli_helper, compat, helper, plt
+from crossbench import compat, helper, plt
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper.path_finder import V8ToolsFinder
+from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
@@ -72,13 +73,13 @@ class V8LogProbe(ChromiumProbe):
         help="Manually pass --log-.* flags to V8")
     parser.add_argument(
         "d8_binary",
-        type=cli_helper.parse_file_path,
+        type=PathParser.file_path,
         help="Path to a D8 binary for extended log processing."
         "If not specified the $D8_PATH env variable is used and/or "
         "default build locations are tried.")
     parser.add_argument(
         "v8_checkout",
-        type=cli_helper.parse_dir_path,
+        type=PathParser.dir_path,
         help="Path to a V8 checkout for extended log processing."
         "If not specified it is auto inferred from either the provided"
         "d8_binary or standard installation locations.")

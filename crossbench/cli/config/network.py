@@ -9,7 +9,7 @@ import dataclasses
 import enum
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from crossbench import cli_helper, exception
+from crossbench import exception
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_file_server import LocalFileNetwork
@@ -17,6 +17,7 @@ from crossbench.network.replay.wpr import (GS_PREFIX, LocalWprReplayNetwork,
                                            RemoteWprReplayNetwork)
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
+from crossbench.parse import NumberParser, PathParser
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -99,24 +100,24 @@ class NetworkSpeedConfig(ConfigObject):
     parser = ConfigParser(
         "NetworkSpeedConfig parser", cls, default=NetworkSpeedConfig.default())
     parser.add_argument(
-        "ts_proxy", type=cli_helper.parse_existing_file_path, required=False)
+        "ts_proxy", type=PathParser.existing_file_path, required=False)
     # See tsproxy.py --help
     parser.add_argument(
         "rtt_ms",
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         help="Round Trip Time Latency (in ms).")
     parser.add_argument(
         "in_kbps",
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         help="Download Bandwidth (in 1000 bits/s - Kbps).")
     parser.add_argument(
         "out_kbps",
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         help="Upload Bandwidth (in 1000 bits/s - Kbps).")
     parser.add_argument(
         "window",
         default=10,
-        type=cli_helper.parse_positive_int,
+        type=NumberParser.positive_int,
         help="Emulated TCP initial congestion window (defaults to 10).")
     return parser
 
@@ -153,12 +154,11 @@ class NetworkConfig(ConfigObject):
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
     parser.add_argument(
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
-    parser.add_argument(
-        "path", type=cli_helper.parse_existing_path, required=False)
+    parser.add_argument("path", type=PathParser.existing_path, required=False)
     parser.add_argument("url", type=str, required=False)
     parser.add_argument(
         "wpr_go_bin",
-        type=cli_helper.parse_existing_file_path,
+        type=PathParser.existing_file_path,
         required=False,
         help=("Location of the wpr.go binary or source, "
               "used for WPR replay network. "
@@ -234,7 +234,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def parse_wpr_archive_path(cls, path: pth.LocalPath) -> NetworkConfig:
-    path = cli_helper.parse_non_empty_file_path(path, "wpr.go archive")
+    path = PathParser.non_empty_file_path(path, "wpr.go archive")
     return NetworkConfig(type=NetworkType.WPR, path=path)
 
   @classmethod
@@ -268,7 +268,7 @@ class NetworkConfig(ConfigObject):
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=local requires "
             "a valid local dir path to serve files.")
-      cli_helper.parse_non_empty_dir_path(self.path, "local-serve dir")
+      PathParser.non_empty_dir_path(self.path, "local-serve dir")
     if self.wpr_go_bin and self.type is not NetworkType.WPR:
       raise argparse.ArgumentTypeError(
           "wpr_go_bin can only be used for the WPR replay network")
