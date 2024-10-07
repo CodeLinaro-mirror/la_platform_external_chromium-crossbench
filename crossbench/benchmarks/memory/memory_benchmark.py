@@ -8,7 +8,7 @@ import datetime as dt
 import logging
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Tuple
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -35,6 +35,9 @@ if TYPE_CHECKING:
 class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
   """
   Create memory story
+  Specify alloc-count, block-size, compressiblity,
+  prefill-constnat, random style to decide the
+  memory workload.
   """
   stories: Sequence[Page]
   URL = "https://chromium-workloads.web.app/web-tests/main/synthetic/memory"
@@ -174,6 +177,10 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
     stories = MemoryBenchmarkStoryFilter.stories_from_cli_args(args)
     return stories
 
+  @classmethod
+  def all_story_names(cls) -> Tuple[str, ...]:
+    return ()
+
   def __init__(self,
                stories: Sequence[Page],
                skippable_tab_count: Optional[int] = 0,
@@ -187,6 +194,12 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
     self.tab_count: int = 1
     self.skippable_tab_count = skippable_tab_count
     self._action_runner.set_listener(self)
+
+  @classmethod
+  def describe(cls) -> Dict[str, Any]:
+    data = super().describe()
+    data["url"] = cls.STORY_FILTER_CLS.URL
+    return data
 
   @property
   def action_runner(self) -> ActionRunner:
