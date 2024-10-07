@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-import sys
 import time
+
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type, Tuple
 
 import selenium.common.exceptions
@@ -24,6 +24,7 @@ from crossbench.benchmarks.loading.page import LivePage, Page
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.parse import NumberParser
+from crossbench.runner.exception import StopStoryException
 
 if TYPE_CHECKING:
   import argparse
@@ -241,11 +242,10 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
           "return window.performance.timing.navigationStart")
 
       if navigation_starttime != self.navigation_time_ms[handle]:
-        logging.debug("Found a page that has been reloaded!")
         logging.info(
             "The max num of tabs we can keep alive concurrently is: %s ",
             self.tab_count - 1)
-        sys.exit()
+        raise StopStoryException("Found a page that has been reloaded.")
 
   def handle_error(self, e: Exception) -> None:
     """
@@ -256,11 +256,9 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
     if isinstance(e, selenium.common.exceptions.WebDriverException
                  ) and "page crash" in str(e) or isinstance(
                      e, urllib3.exceptions.ReadTimeoutError):
-      logging.debug("Crash/Timeout found: %s ", e)
       logging.info("The max num of tabs we can keep alive concurrently is: %s ",
                    self.tab_count - 1)
-      # TODO: Check if there is a better way to exit the benchmark.
-      sys.exit()
+      raise StopStoryException(f"Found a Tab Crash/Timeout: {e}")
 
   def handle_page_run(self, run: Run) -> None:
     self._record_navigation_time(run)

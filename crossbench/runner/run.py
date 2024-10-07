@@ -17,6 +17,7 @@ from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import ProbeResultDict
 from crossbench.runner.actions import Actions
+from crossbench.runner.exception import StopStoryException
 from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
 from crossbench.runner.timing import Timing
@@ -337,8 +338,12 @@ class Run(ResultOrigin):
 
   def _run_story(self) -> None:
     self._run_story_setup()
-    self._story.run(self)
-    self._run_story_teardown()
+    try:
+      self._story.run(self)
+    except StopStoryException as e:
+      logging.debug("Stop story: %s", e)
+    finally:
+      self._run_story_teardown()
 
   def _run_story_setup(self) -> None:
     with self.measure("story-setup"):
