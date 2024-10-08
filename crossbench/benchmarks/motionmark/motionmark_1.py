@@ -16,7 +16,7 @@ from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.helper import update_url_query
 from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe
-from crossbench.probes.metric import MetricsMerger, format_metric
+from crossbench.probes.metric import Metric, MetricsMerger
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
@@ -96,11 +96,11 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
       if not self._valid_metric_key(metric_key):
         continue
       table[metric_key].append(
-          format_metric(metric["average"], metric["stddev"]))
+          Metric.format(metric["average"], metric["stddev"]))
     # Separate runs don't produce a score
     if total_metric := metrics.get("score") or metrics.get("Score"):
       table["Score"].append(
-          format_metric(total_metric["average"], total_metric["stddev"]))
+          Metric.format(total_metric["average"], total_metric["stddev"]))
 
   def _valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")

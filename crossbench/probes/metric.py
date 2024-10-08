@@ -18,26 +18,6 @@ if TYPE_CHECKING:
   from crossbench.types import Json, JsonDict
 
 
-def format_metric(value: Union[float, int],
-                  stddev: Optional[float] = None) -> str:
-  """Format value and stdev to only expose significant + 1 digits.
-  Example outputs:
-    100 ± 10%
-    100.1 ± 1.2%
-    100.12 ± 0.12%
-    100.123 ± 0.012%
-    100.1235 ± 0.0012%
-  """
-  if not stddev:
-    return str(value)
-  stddev = float(stddev)
-  stddev_significant_digit = int(floor(log10(abs(stddev))))
-  value_width = max(0, 1 - stddev_significant_digit)
-  percent = stddev / value * 100
-  percent_significant_digit = int(floor(log10(abs(percent))))
-  percent_width = max(0, 1 - percent_significant_digit)
-  return f"{value:.{value_width}f} ± {percent:.{percent_width}f}%"
-
 
 def is_number(value: Any) -> bool:
   return isinstance(value, (int, float))
@@ -48,6 +28,28 @@ class Metric:
   Metric provides simple statistical getters if the collected values are
   ints or floats only.
   """
+
+  @classmethod
+  def format(cls,
+             value: Union[float, int],
+             stddev: Optional[float] = None) -> str:
+    """Format value and stdev to only expose significant + 1 digits.
+    Example outputs:
+      100 ± 10%
+      100.1 ± 1.2%
+      100.12 ± 0.12%
+      100.123 ± 0.012%
+      100.1235 ± 0.0012%
+    """
+    if not stddev:
+      return str(value)
+    stddev = float(stddev)
+    stddev_significant_digit = int(floor(log10(abs(stddev))))
+    value_width = max(0, 1 - stddev_significant_digit)
+    percent = stddev / value * 100
+    percent_significant_digit = int(floor(log10(abs(percent))))
+    percent_width = max(0, 1 - percent_significant_digit)
+    return f"{value:.{value_width}f} ± {percent:.{percent_width}f}%"
 
   @classmethod
   def from_json(cls, json_data: JsonDict) -> Metric:

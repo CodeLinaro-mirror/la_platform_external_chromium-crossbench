@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Type
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.jetstream.jetstream import JetStreamBenchmark
 from crossbench.probes.json import JsonResultProbe
-from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
-                                      format_metric, geomean)
+from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
+                                      geomean)
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from crossbench.types import Json
@@ -105,12 +105,12 @@ class JetStream2Probe(
       if len(parts) != 2 or parts[0] == "Total" or parts[1] != "score":
         continue
       table[metric_key].append(
-          format_metric(metric_value["average"], metric_value["stddev"]))
+          Metric.format(metric_value["average"], metric_value["stddev"]))
       # Separate runs don't produce a score
     if "Total/score" in metrics:
       metric_value = metrics["Total/score"]
       table["Score"].append(
-          format_metric(metric_value["average"], metric_value["stddev"]))
+          Metric.format(metric_value["average"], metric_value["stddev"]))
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(

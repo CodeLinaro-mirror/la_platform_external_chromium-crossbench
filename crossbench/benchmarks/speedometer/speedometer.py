@@ -17,7 +17,7 @@ from crossbench.benchmarks.base import (BenchmarkProbeMixin, PressBenchmark,
 from crossbench.parse import NumberParser
 from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe
-from crossbench.probes.metric import MetricsMerger, format_metric
+from crossbench.probes.metric import Metric, MetricsMerger
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
@@ -97,7 +97,7 @@ class SpeedometerProbe(
       if not self._valid_metric_key(metric_key):
         continue
       table[metric_key].append(
-          format_metric(metric["average"], metric["stddev"]))
+          Metric.format(metric["average"], metric["stddev"]))
 
   @abc.abstractmethod
   def _valid_metric_key(self, metric_key: str) -> bool:

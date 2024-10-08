@@ -7,7 +7,7 @@ import pathlib
 import unittest
 
 from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
-                                      format_metric, geomean)
+                                      geomean)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -15,33 +15,33 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 class FormatMetricTestCase(unittest.TestCase):
 
   def test_no_stdev(self):
-    self.assertEqual(format_metric(100), "100")
-    self.assertEqual(format_metric(0), "0")
-    self.assertEqual(format_metric(1.5), "1.5")
-    self.assertEqual(format_metric(100, 0), "100")
-    self.assertEqual(format_metric(0, 0), "0")
-    self.assertEqual(format_metric(1.5, 0), "1.5")
+    self.assertEqual(Metric.format(100), "100")
+    self.assertEqual(Metric.format(0), "0")
+    self.assertEqual(Metric.format(1.5), "1.5")
+    self.assertEqual(Metric.format(100, 0), "100")
+    self.assertEqual(Metric.format(0, 0), "0")
+    self.assertEqual(Metric.format(1.5, 0), "1.5")
 
   def test_stdev(self):
-    self.assertEqual(format_metric(100, 10), "100 ± 10%")
-    self.assertEqual(format_metric(100, 1), "100.0 ± 1.0%")
-    self.assertEqual(format_metric(100, 1.5), "100.0 ± 1.5%")
-    self.assertEqual(format_metric(100, 0.1), "100.00 ± 0.10%")
-    self.assertEqual(format_metric(100, 0.12), "100.00 ± 0.12%")
-    self.assertEqual(format_metric(100, 0.125), "100.00 ± 0.12%")
+    self.assertEqual(Metric.format(100, 10), "100 ± 10%")
+    self.assertEqual(Metric.format(100, 1), "100.0 ± 1.0%")
+    self.assertEqual(Metric.format(100, 1.5), "100.0 ± 1.5%")
+    self.assertEqual(Metric.format(100, 0.1), "100.00 ± 0.10%")
+    self.assertEqual(Metric.format(100, 0.12), "100.00 ± 0.12%")
+    self.assertEqual(Metric.format(100, 0.125), "100.00 ± 0.12%")
 
   def test_round_stdev(self):
     value = 100.123456789
     percent = value / 100
-    self.assertEqual(format_metric(value, percent * 10.1234), "100 ± 10%")
-    self.assertEqual(format_metric(value, percent * 1.2345), "100.1 ± 1.2%")
-    self.assertEqual(format_metric(value, percent * 0.12345), "100.12 ± 0.12%")
+    self.assertEqual(Metric.format(value, percent * 10.1234), "100 ± 10%")
+    self.assertEqual(Metric.format(value, percent * 1.2345), "100.1 ± 1.2%")
+    self.assertEqual(Metric.format(value, percent * 0.12345), "100.12 ± 0.12%")
     self.assertEqual(
-        format_metric(value, percent * 0.012345), "100.123 ± 0.012%")
+        Metric.format(value, percent * 0.012345), "100.123 ± 0.012%")
     self.assertEqual(
-        format_metric(value, percent * 0.0012345), "100.1235 ± 0.0012%")
+        Metric.format(value, percent * 0.0012345), "100.1235 ± 0.0012%")
     self.assertEqual(
-        format_metric(value, percent * 0.00012345), "100.12346 ± 0.00012%")
+        Metric.format(value, percent * 0.00012345), "100.12346 ± 0.00012%")
 
 
 class MetricTestCase(unittest.TestCase):
