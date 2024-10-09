@@ -8,8 +8,6 @@ import unittest
 
 from ordered_set import OrderedSet
 
-from crossbench.benchmarks.experimental.power.power_benchmark import \
-    PowerBenchmark
 from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
@@ -18,6 +16,7 @@ from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
 from crossbench.benchmarks.loading.loadline_presets import (
     LoadLinePhoneBenchmark, LoadLineTabletBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
+from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
     MotionMark10Benchmark
 from crossbench.benchmarks.motionmark.motionmark_1_1 import \
@@ -32,8 +31,6 @@ from crossbench.benchmarks.speedometer.speedometer_2_1 import \
     Speedometer21Benchmark
 from crossbench.benchmarks.speedometer.speedometer_3_0 import \
     Speedometer30Benchmark
-from crossbench.benchmarks.memory.memory_benchmark import \
-    MemoryBenchmark
 from tests import test_helper
 
 ALL = (
@@ -49,7 +46,6 @@ ALL = (
     MotionMark12Benchmark,
     MotionMark13Benchmark,
     PageLoadBenchmark,
-    PowerBenchmark,
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,

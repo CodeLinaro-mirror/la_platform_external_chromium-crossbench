@@ -166,7 +166,6 @@ class CrossBenchCLI:
       benchmarks.MotionMark12Benchmark,
       benchmarks.MotionMark13Benchmark,
       benchmarks.PageLoadBenchmark,
-      benchmarks.PowerBenchmark,
       benchmarks.Speedometer20Benchmark,
       benchmarks.Speedometer21Benchmark,
       benchmarks.Speedometer30Benchmark,
