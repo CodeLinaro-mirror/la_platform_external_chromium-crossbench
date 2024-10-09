@@ -25,8 +25,9 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
-from crossbench import exception, helper, plt
+from crossbench import exception, helper
 from crossbench import path as pth
+from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
@@ -167,8 +168,14 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
             f"browser={self.version} ({self})",)
 
   def run_script_on_new_document(self, script: str) -> None:
-    self._driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
-                                 {"source": script})
+    self._private_driver.execute_cdp_cmd(
+        "Page.addScriptToEvaluateOnNewDocument", {"source": script})
+
+  def current_window_id(self) -> str:
+    return str(self._private_driver.current_window_handle)
+
+  def switch_window(self, window_id: str) -> None:
+    self._private_driver.switch_to.window(window_id)
 
   def switch_tab(
       self,
@@ -177,7 +184,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
       tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> None:
-    driver = self._driver
+    driver = self._private_driver
     original_handle = driver.current_window_handle
     for _ in helper.wait_with_backoff(timeout, self.platform):
       # Search through other handles starting from current_window_handle + 1
@@ -210,9 +217,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     raise RuntimeError(error)
 
   def start_profiling(self) -> None:
-    assert isinstance(self._driver, ChromiumDriver)
+    assert isinstance(self._private_driver, ChromiumDriver)
     # TODO: reuse the TraceProbe categories,
-    self._driver.execute_cdp_cmd(
+    self._private_driver.execute_cdp_cmd(
         "Tracing.start", {
             "transferMode":
                 "ReturnAsStream",
@@ -231,8 +238,8 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
         })
 
   def stop_profiling(self) -> Any:
-    assert isinstance(self._driver, ChromiumDriver)
-    data = self._driver.execute_cdp_cmd("Tracing.tracingComplete", {})
+    assert isinstance(self._private_driver, ChromiumDriver)
+    data = self._private_driver.execute_cdp_cmd("Tracing.tracingComplete", {})
     # TODO: use webdriver bidi to get the async Tracing.end event.
     # self._driver.execute_cdp_cmd("Tracing.end", {})
     return data

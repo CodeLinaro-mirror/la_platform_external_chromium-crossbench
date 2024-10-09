@@ -192,7 +192,7 @@ class SafariWebdriverIOS(SafariWebDriver):
     pass
 
   def quit(self) -> None:
-    self._driver.close()
+    self._private_driver.close()
     self.platform.sleep(1.0)
-    self._driver.quit()
+    self._private_driver.quit()
     self.force_quit()

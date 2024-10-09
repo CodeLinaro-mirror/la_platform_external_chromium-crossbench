@@ -319,6 +319,13 @@ class Browser(abc.ABC):
     raise NotImplementedError(
         f"New document script injection is not supported by {self}")
 
+  def current_window_id(self) -> str:
+    raise NotImplementedError(f"current_window_id is not implemented by {self}")
+
+  def switch_window(self, window_id: str) -> None:
+    del window_id
+    raise NotImplementedError(f"switch_window is not implemented by {self}")
+
   def switch_tab(
       self,
       title: Optional[re.Pattern] = None,

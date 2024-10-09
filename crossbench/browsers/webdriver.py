@@ -49,7 +49,7 @@ class DriverException(RuntimeError):
 
 
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
-  _driver: webdriver.Remote
+  _private_driver: webdriver.Remote
   _driver_path: Optional[AnyPath]
   _driver_pid: int
   _pid: int
@@ -65,10 +65,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   @property
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER
-
-  @property
-  def driver(self) -> webdriver.Remote:
-    return self._driver
 
   @property
   def driver_log_file(self) -> LocalPath:
@@ -100,7 +96,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       logging.debug("Setting http request timeout to %s", timeout)
       RemoteConnection.set_timeout(timeout.total_seconds())
     try:
-      self._driver = self._start_driver(session, self._driver_path)
+      self._private_driver = self._start_driver(session, self._driver_path)
     except selenium.common.exceptions.SessionNotCreatedException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e
@@ -111,7 +107,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._setup_window()
 
   def _find_driver_pid(self) -> None:
-    service = getattr(self._driver, "service", None)
+    service = getattr(self._private_driver, "service", None)
     if not service:
       return
     self._driver_pid = service.process.pid
@@ -139,7 +135,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       factor = timing.timeout_unit.total_seconds()
       if factor != 1.0:
         logging.info("Increasing webdriver timeouts by %fx", factor)
-    timeouts: Timeouts = self.driver.timeouts
+    timeouts: Timeouts = self._private_driver.timeouts
     if implicit_wait := getattr(timeouts, "implicit_wait", None):
       timeouts.implicit_wait = timing.timeout_timedelta(
           implicit_wait).total_seconds()
@@ -147,20 +143,22 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       timeouts.script = timing.timeout_timedelta(script).total_seconds()
     if page_load := getattr(timeouts, "page_load", None):
       timeouts.page_load = timing.timeout_timedelta(page_load).total_seconds()
-    self.driver.timeouts = timeouts
+    self._private_driver.timeouts = timeouts
 
   def _setup_window(self) -> None:
     # Force main window to foreground.
-    self._driver.switch_to.window(self._driver.current_window_handle)
+    self._private_driver.switch_to.window(
+        self._private_driver.current_window_handle)
     if self.viewport.is_headless:
       return
     if self.viewport.is_fullscreen:
-      self._driver.fullscreen_window()
+      self._private_driver.fullscreen_window()
     elif self.viewport.is_maximized:
-      self._driver.maximize_window()
+      self._private_driver.maximize_window()
     else:
-      self._driver.set_window_position(self.viewport.x, self.viewport.y)
-      self._driver.set_window_size(self.viewport.width, self.viewport.height)
+      self._private_driver.set_window_position(self.viewport.x, self.viewport.y)
+      self._private_driver.set_window_size(self.viewport.width,
+                                           self.viewport.height)
 
   @abc.abstractmethod
   def _start_driver(self, session: BrowserSessionRunGroup,
@@ -178,26 +176,26 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
       if target in ("_self", None):
-        handles = self._driver.window_handles
+        handles = self._private_driver.window_handles
         assert handles, "Browser has no more opened windows."
-        self._driver.switch_to.window(handles[-1])
+        self._private_driver.switch_to.window(handles[-1])
       elif target == "_new_tab":
-        self._driver.switch_to.new_window("tab")
+        self._private_driver.switch_to.new_window("tab")
       elif target == "_new_window":
-        self._driver.switch_to.new_window("window")
+        self._private_driver.switch_to.new_window("window")
       else:
         raise RuntimeError(f"unexpected target {target}")
-      self._driver.get(url)
+      self._private_driver.get(url)
     except selenium.common.exceptions.WebDriverException as e:
       if msg := e.msg:
         self._wrap_webdriver_exception(e, msg, url)
       raise
 
   def switch_to_new_tab(self) -> None:
-    self._driver.switch_to.new_window("tab")
+    self._private_driver.switch_to.new_window("tab")
 
   def screenshot(self, path: LocalPath) -> None:
-    if not self._driver.get_screenshot_as_file(path.as_posix()):
+    if not self._private_driver.get_screenshot_as_file(path.as_posix()):
       raise DriverException(
           f"Browser failed to get_screenshot_as_file to file '{path}'", self)
 
@@ -226,18 +224,18 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       if timeout is not None:
         assert timeout.total_seconds() > 0, (
             f"timeout must be a positive number, got: {timeout}")
-        self._driver.set_script_timeout(timeout.total_seconds())
-      return self._driver.execute_script(script, *arguments)
+        self._private_driver.set_script_timeout(timeout.total_seconds())
+      return self._private_driver.execute_script(script, *arguments)
     except selenium.common.exceptions.WebDriverException as e:
       # pylint: disable=raise-missing-from
       raise ValueError(f"Could not execute JS: {e.msg}")
 
   def close_all_tabs(self) -> None:
     try:
-      all_handles = self._driver.window_handles
+      all_handles = self._private_driver.window_handles
       for handle in all_handles:
-        self._driver.switch_to.window(handle)
-        self._driver.close()
+        self._private_driver.switch_to.window(handle)
+        self._private_driver.close()
     except (selenium.common.exceptions.InvalidSessionIdException,
             urllib3.exceptions.MaxRetryError) as e:
       logging.debug("%s: Got errors while closing all tabs: {%s}", self, e)
@@ -255,7 +253,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     try:
       try:
         # Close the current window.
-        self._driver.close()
+        self._private_driver.close()
         time.sleep(0.1)
       except selenium.common.exceptions.NoSuchWindowException:
         # No window is good.
@@ -264,12 +262,12 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         # Closing the last tab will close the session as well.
         return
       try:
-        self._driver.quit()
+        self._private_driver.quit()
       except selenium.common.exceptions.InvalidSessionIdException:
         return
       # Sometimes a second quit is needed, ignore any warnings there
       try:
-        self._driver.quit()
+        self._private_driver.quit()
       except Exception as e:  # pylint: disable=broad-except
         logging.debug("Driver raised exception on quit: %s\n%s", e,
                       traceback.format_exc())
@@ -285,7 +283,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
 
   def __init__(self, label: str, driver: webdriver.Remote) -> None:
     super().__init__(label=label, path=None)
-    self._driver = driver
+    self._private_driver = driver
     self.version: str = driver.capabilities["browserVersion"]
     self.major_version: int = int(self.version.split(".")[0])
 
@@ -317,12 +315,13 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     # Driver has already been started. We just need to mark it as running.
     self._is_running = True
     if self.viewport.is_fullscreen:
-      self._driver.fullscreen_window()
+      self._private_driver.fullscreen_window()
     elif self.viewport.is_maximized:
-      self._driver.maximize_window()
+      self._private_driver.maximize_window()
     else:
-      self._driver.set_window_position(self.viewport.x, self.viewport.y)
-      self._driver.set_window_size(self.viewport.width, self.viewport.height)
+      self._private_driver.set_window_position(self.viewport.x, self.viewport.y)
+      self._private_driver.set_window_size(self.viewport.width,
+                                           self.viewport.height)
 
   def quit(self) -> None:
     # External code that started the driver is responsible for shutting it down.

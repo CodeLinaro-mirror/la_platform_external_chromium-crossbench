@@ -83,6 +83,12 @@ class Actions(helper.TimeScope):
   def _assert_is_active(self) -> None:
     assert self._is_active, "Actions have to be used in a with scope"
 
+  def current_window_id(self) -> str:
+    return self._browser.current_window_id()
+
+  def switch_window(self, window_id: str) -> None:
+    self._browser.switch_window(window_id)
+
   def js(self,
          js_code: str,
          timeout: Union[int, float, dt.timedelta] = 10,

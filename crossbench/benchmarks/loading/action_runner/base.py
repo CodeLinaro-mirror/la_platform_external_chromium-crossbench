@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench import exception
+from crossbench.benchmarks.loading.action_runner.action_runner_listener import \
+    ActionRunnerListener
 from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
@@ -52,18 +54,6 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
 
     super().__init__(runner, action, input_source_message)
 
-
-class ActionRunnerListener:
-  """Default empty ActionRunnerListener implementation."""
-
-  def handle_error(self, e: Exception) -> None:
-    pass
-
-  def handle_page_run(self, run: Run) -> None:
-    pass
-
-  def handle_new_tab(self) -> None:
-    pass
 
 
 class ActionRunner:
