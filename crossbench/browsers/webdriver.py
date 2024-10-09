@@ -246,7 +246,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self.force_quit()
 
   def force_quit(self) -> None:
-    if getattr(self, "_driver", None) is None or not self._is_running:
+    if getattr(self, "_private_driver", None) is None or not self._is_running:
       return
     atexit.unregister(self.force_quit)
     logging.debug("WebDriverBrowser.force_quit()")
