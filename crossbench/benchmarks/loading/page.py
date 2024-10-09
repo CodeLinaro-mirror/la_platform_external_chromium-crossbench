@@ -182,7 +182,9 @@ class InteractivePage(Page):
                secrets: Optional[SecretsDict] = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta()):
+               about_blank_duration: dt.timedelta = dt.timedelta(),
+               run_login: bool = True,
+               run_setup: bool = True):
     assert name, "missing name"
     self._name: str = name
     assert isinstance(blocks, tuple)
@@ -193,6 +195,8 @@ class InteractivePage(Page):
     self._setup_block = setup
     self._login_block = login
     self._secrets: SecretsDict = secrets or {}
+    self._run_login = run_login
+    self._run_setup = run_setup
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration)
 
@@ -231,9 +235,9 @@ class InteractivePage(Page):
 
   def setup(self, run: Run) -> None:
     action_runner = get_action_runner(run)
-    if login_block := self.login_block:
+    if self._run_login and (login_block := self.login_block):
       action_runner.run_login(run, self, login_block)
-    if setup_block := self.setup_block:
+    if self._run_setup and (setup_block := self.setup_block):
       action_runner.run_setup(run, self, setup_block)
 
   def run(self, run: Run) -> None:

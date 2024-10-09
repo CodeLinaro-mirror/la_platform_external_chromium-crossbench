@@ -101,6 +101,28 @@ class LoadingPageFilter(StoryFilter[Page]):
         default=dt.timedelta(),
         help="If non-zero, navigate to about:blank after every page.")
 
+    block_modifier_group = parser.add_argument_group("Action Block Options")
+    block_modifier_group.add_argument(
+        "--skip-login",
+        dest="run_login",
+        default=True,
+        action="store_const",
+        const=False,
+        help="Skip the login block, useful for replaying "
+        "archive that filtered already all login requests "
+        "to hide potential secrets. "
+        "The login block is run by default.")
+    block_modifier_group.add_argument(
+        "--skip-setup",
+        dest="run_setup",
+        default=True,
+        action="store_const",
+        const=False,
+        help="Skip the setup block, useful for replaying "
+        "archive that filtered already all login requests "
+        "to hide potential secrets. "
+        "The setup block is run by default.")
+
     return parser
 
   @classmethod
@@ -212,7 +234,8 @@ class LoadingPageFilter(StoryFilter[Page]):
                       args.about_blank_duration)
     return InteractivePage(label, config.blocks, config.setup, config.login,
                            config.secrets.as_dict(), playback, tabs,
-                           args.about_blank_duration)
+                           args.about_blank_duration, args.run_login,
+                           args.run_setup)
 
   def create_stories(self, separate: bool) -> Sequence[Page]:
     logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))

@@ -52,12 +52,16 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
       playback: PlaybackController = PlaybackController.default(),
       tabs: TabController = TabController.default(),
       action_runner: ActionRunner = BasicActionRunner(),
-      about_blank_duration: dt.timedelta = dt.timedelta()) -> LoadingPageFilter:
+      about_blank_duration: dt.timedelta = dt.timedelta(),
+      run_login: bool = True,
+      run_setup: bool = True) -> LoadingPageFilter:
     args = argparse.Namespace(
         about_blank_duration=about_blank_duration,
         playback=playback,
         tabs=tabs,
-        action_runner=action_runner)
+        action_runner=action_runner,
+        run_login=run_login,
+        run_setup=run_setup)
     return cast(LoadingPageFilter,
                 super().story_filter(patterns, args=args, separate=separate))
 

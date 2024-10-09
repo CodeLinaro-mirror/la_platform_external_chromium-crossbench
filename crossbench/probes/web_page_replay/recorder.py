@@ -57,6 +57,13 @@ class WebPageReplayProbe(Probe):
         required=False)
     parser.add_argument(
         "use_test_root_certificate", type=bool, default=False, required=False)
+    parser.add_argument(
+        "record_setup",
+        type=bool,
+        default=True,
+        help="Also include the requests that are part of "
+        "the setup / login steps, "
+        "which might include passwords.")
     return parser
 
   def __init__(self,
@@ -66,7 +73,8 @@ class WebPageReplayProbe(Probe):
                inject_scripts: Optional[Iterable[LocalPath]] = None,
                key_file: Optional[LocalPath] = None,
                cert_file: Optional[LocalPath] = None,
-               use_test_root_certificate: bool = False):
+               use_test_root_certificate: bool = False,
+               record_setup: bool = True):
     super().__init__()
     runner_platform = plt.PLATFORM
     if not wpr_go_bin:
@@ -89,6 +97,7 @@ class WebPageReplayProbe(Probe):
     self._https_port = https_port
     self._http_port = http_port
     self._use_test_root_certificate = use_test_root_certificate
+    self._record_setup = record_setup
 
   @property
   def https_port(self) -> int:
@@ -105,6 +114,10 @@ class WebPageReplayProbe(Probe):
   @property
   def use_test_root_certificate(self) -> bool:
     return self._use_test_root_certificate
+
+  @property
+  def record_setup(self) -> bool:
+    return self._record_setup
 
   @property
   def result_path_name(self) -> str:
@@ -206,7 +219,9 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
                                                   self._recorder.https_port)
 
   def start(self) -> None:
-    pass
+    if not self.probe.record_setup:
+      assert self._recorder
+      self._recorder.clear()
 
   def stop(self) -> None:
     pass
