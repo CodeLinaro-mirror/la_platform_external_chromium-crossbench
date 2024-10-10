@@ -51,8 +51,8 @@ class WinPlatform(Platform):
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
-    if app_or_bin_path.suffix != ".exe":
-      raise ValueError("Expected executable path with '.exe' suffix, "
+    if app_or_bin_path.suffix.lower() not in (".exe", ".bat"):
+      raise ValueError("Expected executable path with '.exe' or '.bat' suffix, "
                        f"but got: '{app_or_bin_path.name}'")
     if result_path := self.which(app_or_bin):
       assert self.exists(result_path), f"{result_path} does not exist."

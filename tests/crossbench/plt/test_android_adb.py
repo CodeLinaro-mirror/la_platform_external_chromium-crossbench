@@ -208,7 +208,10 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         "shell", "getprop", "dalvik.vm.isa.arm.variant", result="cortex-a999")
     self.expect_adb("shell", "getprop", "ro.board.platform", result="msmnile")
     self.expect_adb(
-        "shell", "cat", "/sys/devices/system/cpu/possible", result="0-998")
+        "shell",
+        "cat",
+        self.platform.path("/sys/devices/system/cpu/possible"),
+        result="0-998")
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 999 cores")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 999 cores")
@@ -332,11 +335,12 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertIn("empty path", str(cm.exception))
 
   def test_search_binary(self):
+    ls_path = self.platform.path("/system/bin/ls")
     self.expect_adb(
-        "shell", "which", self.platform.path("ls"), result="/system/bin/ls")
-    self.expect_adb("shell", "[", "-e", "/system/bin/ls", "]", result="")
+        "shell", "which", self.platform.path("ls"), result=str(ls_path))
+    self.expect_adb("shell", "[", "-e", ls_path, "]", result="")
     path = self.platform.search_binary("ls")
-    self.assertEqual(path, self.platform.path("/system/bin/ls"))
+    self.assertEqual(str(path), str(ls_path))
 
   def test_binary_lookup_override(self):
     # Overriding the default test for android.
@@ -344,7 +348,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     override_path = self.platform.path("/root/sbin/ls")
     # override_binary checks if the result binary exists.
     self.expect_adb("shell", "which", override_path, result=str(override_path))
-    self.expect_adb("shell", "[", "-e", "/root/sbin/ls", "]", result="")
+    self.expect_adb("shell", "[", "-e", override_path, "]", result="")
     with self.platform.override_binary(ls_path, override_path):
       path = self.platform.search_binary("ls")
       self.assertEqual(path, override_path)

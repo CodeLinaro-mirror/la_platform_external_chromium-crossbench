@@ -45,7 +45,8 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
     self._add_v8_checkout_files(candidate_dir)
     with mock.patch.dict(os.environ, {"D8_PATH": str(d8_path)}, clear=True):
-      self.assertEqual(V8CheckoutFinder(self.platform).path, candidate_dir)
+      self.assertEqual(
+          pathlib.Path(V8CheckoutFinder(self.platform).path), candidate_dir)
     # Still NONE without custom D8_PATH env var.
     self.assertIsNone(V8CheckoutFinder(self.platform).path)
 
@@ -71,7 +72,8 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
       self._add_chrome_checkout_files(fake_chrome_root)
       self.assertIsNotNone(ChromiumCheckoutFinder(self.platform).path)
-      self.assertEqual(V8CheckoutFinder(self.platform).path, checkout_dir)
+      self.assertEqual(
+          pathlib.Path(V8CheckoutFinder(self.platform).path), checkout_dir)
 
 
 class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):

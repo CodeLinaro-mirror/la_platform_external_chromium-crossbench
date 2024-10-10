@@ -203,7 +203,10 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertEqual(self.platform.home(), pathlib.Path.home())
 
   def test_absolute_absolute(self):
-    absolute_path = pathlib.Path("/foo")
+    if self.platform.is_win:
+      absolute_path = pathlib.Path("C:/foo")
+    else:
+      absolute_path = pathlib.Path("/foo")
     self.assertTrue(absolute_path.is_absolute())
     self.assertEqual(self.platform.absolute(absolute_path), absolute_path)
 
@@ -246,9 +249,11 @@ class NativePlatformTestCase(unittest.TestCase):
       self.skipTest("Not supported yet on remote platforms.")
     with tempfile.TemporaryDirectory() as tmp_dirname:
       self.assertTrue(self.platform.is_dir(tmp_dirname))
+      tmp_dir_path = self.platform.path(tmp_dirname)
+      self.assertTrue(self.platform.is_dir(tmp_dir_path))
       with self.assertRaises(Exception) as cm:
         self.platform.set_file_contents(tmp_dirname, "data")
-      self.assertIn(str(tmp_dirname), str(cm.exception))
+      self.assertIn(tmp_dir_path.name, str(cm.exception))
 
   def test_path_tests(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
@@ -281,13 +286,16 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_processes(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    self.assertTrue(self.platform.processes())
-    for process_info in self.platform.processes(["name"]):
+    processes = self.platform.processes(["name"])
+    self.assertTrue(processes)
+    for process_info in processes:
       self.assertIn("name", process_info)
 
   def test_process_running(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
+    if self.platform.is_win:
+      self.skipTest("Too Slow on windows")
     if test_helper.is_google_env():
       self.skipTest("Not supported yet in google environment.")
     self.assertFalse(self.platform.process_running([]))

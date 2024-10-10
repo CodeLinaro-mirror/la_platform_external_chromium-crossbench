@@ -31,7 +31,7 @@ if TYPE_CHECKING:
   from crossbench.plt.base import ListCmdArgs, Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
-fnctl = None
+fcntl = None
 try:
   import fcntl
 except ModuleNotFoundError as not_found:

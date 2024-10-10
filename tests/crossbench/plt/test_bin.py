@@ -7,7 +7,9 @@ from __future__ import annotations
 import os
 import pathlib
 from unittest import mock
+import unittest
 
+from crossbench import plt
 import crossbench.path as pth
 from crossbench.plt import PLATFORM
 from crossbench.plt.bin import (Binary, BinaryNotFoundError, LinuxBinary,
@@ -38,7 +40,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self._all_platforms:
       yield platform
 
-  def create_binary_path(self, path: str) -> pth.LocalPath:
+  def create_binary_path(self, path: pth.AnyPathLike) -> pth.LocalPath:
     result = pth.LocalPath(path)
     self.fs.create_file(result, st_size=100)
     return result
@@ -142,17 +144,20 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
         self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
         self.fs.remove(result)
 
+  @unittest.skipUnless(plt.PLATFORM.is_posix, "Only supported on posix")
   def test_known_binary_linux(self):
-    result = self.create_binary_path("foo/bar/default/crossbench_mock_binary")
+    result = self.create_binary_path(
+        pth.AnyPosixPath("foo/bar/default/crossbench_mock_binary"))
     binary = Binary("crossbench_mock_binary", linux=result)
     self.validate_known_binary_linux(result, binary)
     binary = LinuxBinary(result)
     self.validate_known_binary_linux(result, binary)
 
   def validate_known_binary_linux(self, result, binary):
+    result = pth.AnyPosixPath(result)
     platform = LinuxMockPlatform()
-    self.assertEqual(binary.resolve(platform), result)
-    self.assertEqual(binary.resolve_cached(platform), result)
+    self.assertEqual(str(binary.resolve(platform)), str(result))
+    self.assertEqual(str(binary.resolve_cached(platform)), str(result))
 
     for platform in self.all_mock_platforms():
       if platform.is_linux:
@@ -163,6 +168,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve_cached(platform)
 
+  @unittest.skipUnless(plt.PLATFORM.is_posix, "Only supported on posix")
   def test_known_binary_macos(self):
     result = self.create_binary_path("foo/bar/default/crossbench_mock_binary")
     binary = Binary("crossbench_mock_binary", macos=result)
@@ -184,6 +190,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve_cached(platform)
 
+  @unittest.skipUnless(plt.PLATFORM.is_posix, "Only supported on posix")
   def test_known_binary_posix(self):
     result = self.create_binary_path("foo/bar/default/crossbench_mock_binary")
     binary = Binary("crossbench_mock_binary", posix=result)
