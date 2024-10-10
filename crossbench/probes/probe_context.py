@@ -12,7 +12,7 @@ from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
 
 from crossbench import plt
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
-                                       ProbeResult)
+                                       LocalProbeResult, ProbeResult)
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
@@ -148,7 +148,14 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
                      **kwargs: Iterable[AnyPath]) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
-    return BrowserProbeResult(self.result_origin, url, file, **kwargs)
+    return BrowserProbeResult(self.result_origin, url=url, file=file, **kwargs)
+
+  def local_result(self,
+                   url: Optional[Iterable[str]] = None,
+                   file: Optional[Iterable[LocalPath]] = None,
+                   **kwargs: Iterable[LocalPath]) -> LocalProbeResult:
+    """Helper to create LocalProbeResult."""
+    return LocalProbeResult(url=url, file=file, **kwargs)
 
   def setup(self) -> None:
     """

@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import enum
 import logging
+import sys
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
 
 from crossbench import path as pth
@@ -19,6 +20,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.plt.base import ListCmdArgs
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -195,8 +197,8 @@ class TracingProbe(ChromiumProbe):
         default=None,
         type=PathParser.file_path,
         help=(
-            "Path to the 'traceconv.py' helper to convert "
-            "'.proto' traces to legacy '.json'. "
+            "Path to the 'traceconv.py' helper on the runner platofrm "
+            "to convert '.proto' traces to legacy '.json'. "
             "If not specified, tries to find it in a v8 or chromium checkout."))
     return parser
 
@@ -207,7 +209,7 @@ class TracingProbe(ChromiumProbe):
                startup_duration: int = 0,
                record_mode: RecordMode = RecordMode.CONTINUOUSLY,
                record_format: RecordFormat = RecordFormat.PROTO,
-               traceconv: Optional[pth.AnyPath] = None) -> None:
+               traceconv: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
     self._trace_config: Optional[pth.LocalPath] = trace_config
     self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
@@ -224,7 +226,14 @@ class TracingProbe(ChromiumProbe):
     self._startup_duration: int = startup_duration
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
-    self._traceconv: Optional[pth.AnyPath] = traceconv
+    self._traceconv: Optional[pth.LocalPath] = traceconv
+    if not traceconv and self._record_format == RecordFormat.PROTO:
+      self._find_traceconv()
+
+  def _find_traceconv(self) -> None:
+    if traceconv := TraceconvFinder(self.runner_platform).path:
+      self._traceconv = self.runner_platform.local_path(traceconv)
+      logging.debug("Using default traceconv: %s", traceconv)
 
   @property
   def key(self) -> ProbeKeyT:
@@ -240,7 +249,7 @@ class TracingProbe(ChromiumProbe):
     return f"trace.{self._record_format.value}"  # pylint: disable=no-member
 
   @property
-  def traceconv(self) -> Optional[pth.AnyPath]:
+  def traceconv(self) -> Optional[pth.LocalPath]:
     return self._traceconv
 
   @property
@@ -277,11 +286,6 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
   def setup(self) -> None:
     self.session.extra_flags["--trace-startup-file"] = str(self.result_path)
     self._record_format = self.probe.record_format
-    if self._record_format == RecordFormat.PROTO:
-      self._traceconv = self.probe.traceconv or TraceconvFinder(
-          self.browser_platform).path
-    else:
-      self._traceconv = None
 
   def start(self) -> None:
     pass
@@ -292,15 +296,28 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
   def teardown(self) -> ProbeResult:
     if self._record_format == RecordFormat.JSON:
       return self.browser_result(json=(self.result_path,))
-    if not self._traceconv:
+    traceconv: Optional[pth.LocalPath] = self.probe.traceconv
+    result = self.browser_result(proto=(self.result_path,))
+    if not traceconv:
       logging.info(
           "No traceconv binary: skipping converting proto to legacy traces")
-      return self.browser_result(file=(self.result_path,))
+      return result
+    proto_file = result.get("proto")
+    try:
+      legacy_json_file = self._convert_to_json(traceconv, proto_file)
+      return self.local_result(proto=(proto_file,), json=(legacy_json_file,))
+    except Exception as e:
+      logging.error("traceconv failure, defaulting to .proto file: %s", e)
+      return self.local_result(proto=(proto_file,))
 
+  def _convert_to_json(self, traceconv: pth.LocalPath,
+                       local_proto: pth.LocalPath) -> pth.LocalPath:
     logging.info("Converting to legacy .json trace on local machine: %s",
                  self.result_path)
-    json_trace_file = self.result_path.with_suffix(".json")
-    self.browser_platform.sh(self._traceconv, "json", self.result_path,
-                             json_trace_file)
-    return self.browser_result(
-        json=(json_trace_file,), trace=(self.result_path,))
+    json_trace_file = local_proto.with_suffix(".json")
+    cmd: ListCmdArgs = [traceconv, "json", self.result_path, json_trace_file]
+    if not self.runner_platform.is_posix:
+      python_executable = sys.argv[0]
+      cmd = [python_executable] + cmd
+    self.runner_platform.sh(*cmd)
+    return json_trace_file
