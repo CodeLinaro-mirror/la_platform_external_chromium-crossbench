@@ -15,7 +15,7 @@ from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.config.blocks import (ActionBlock,
                                                          ActionBlockListConfig)
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
-from crossbench.benchmarks.loading.page import PAGES
+from crossbench.benchmarks.loading.page.live import PAGES
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.cli.config.secrets import SecretsConfig, SecretsDict

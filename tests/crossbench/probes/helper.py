@@ -2,17 +2,22 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import copy
 import json
-from typing import Any, Callable, Iterable, List, Sequence, Tuple, Union
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Sequence,
+                    Tuple, Union)
 
 from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
-from crossbench.benchmarks.loading.page import CombinedPage, Page
+from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
 from tests.crossbench.base import BaseCrossbenchTestCase
 
+if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.page.base import Page
 
 class GenericProbeTestCase(BaseCrossbenchTestCase):
 

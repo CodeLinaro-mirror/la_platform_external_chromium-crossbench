@@ -6,7 +6,7 @@ import unittest
 
 import hjson
 
-from crossbench.benchmarks.loading.page import LivePage
+from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.js import JSProbe
 from tests import test_helper

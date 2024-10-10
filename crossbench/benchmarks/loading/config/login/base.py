@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Final
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.page import InteractivePage
+  from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.cli.config.secrets import Secret, SecretType
   from crossbench.runner.run import Run
 

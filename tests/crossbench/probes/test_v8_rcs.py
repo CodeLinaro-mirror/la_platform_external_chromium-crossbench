@@ -4,8 +4,7 @@
 
 from typing import Final
 
-from crossbench.benchmarks.loading.page import LivePage
-from crossbench.probes.js import JSProbe
+from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.probes.v8.rcs import V8RCSProbe
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase

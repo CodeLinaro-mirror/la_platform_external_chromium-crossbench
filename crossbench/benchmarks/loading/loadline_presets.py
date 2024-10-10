@@ -26,7 +26,7 @@ from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.page import Page
+  from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.browser import Browser
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.runner import Run

@@ -11,7 +11,7 @@ from crossbench.cli.config.secret_type import SecretType
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
-  from crossbench.benchmarks.loading.page import InteractivePage
+  from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.cli.config.secrets import Secret
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run

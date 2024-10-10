@@ -23,7 +23,8 @@ from crossbench.benchmarks.loading.action_runner.action_runner_listener import \
     ActionRunnerListener
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
-from crossbench.benchmarks.loading.page import LivePage, Page
+from crossbench.benchmarks.loading.page.base import Page
+from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext

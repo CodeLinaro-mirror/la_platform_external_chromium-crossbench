@@ -24,8 +24,9 @@ from crossbench.benchmarks.loading.config.login.google import (GOOGLE_LOGIN_URL,
                                                                GoogleLogin)
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
-from crossbench.benchmarks.loading.page import (PAGE_LIST, PAGE_LIST_SMALL,
-                                                CombinedPage, LivePage)
+from crossbench.benchmarks.loading.page.combined import CombinedPage
+from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
+                                                     LivePage)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController

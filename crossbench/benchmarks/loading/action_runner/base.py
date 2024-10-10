@@ -14,8 +14,9 @@ from crossbench.benchmarks.loading.input_source import InputSource
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading import action as i_action
   from crossbench.benchmarks.loading.config.pages import ActionBlock
-  from crossbench.benchmarks.loading.page import (CombinedPage, InteractivePage,
-                                                  LivePage, Page)
+  from crossbench.benchmarks.loading.page.base import Page
+  from crossbench.benchmarks.loading.page.combined import CombinedPage
+  from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.benchmarks.loading.tab_controller import TabController
   from crossbench.path import LocalPath
   from crossbench.runner.run import Run
@@ -194,11 +195,6 @@ class ActionRunner:
       run.browser.show_url("about:blank")
       run.runner.wait(duration)
 
-  def run_page_once(self, run: Run, page: LivePage):
-    run.browser.show_url(page.url)
-    run.runner.wait(page.duration)
-    self._maybe_navigate_to_about_blank(run, page)
-
   def run_page_multiple_tabs(self, run: Run, tabs: TabController,
                              pages: Iterable[Page]):
     # TODO: refactor possible logics to TabController.
@@ -217,12 +213,6 @@ class ActionRunner:
       except Exception as e:
         self._listener.handle_error(run, e)
         raise
-
-  def run_page(self, run: Run, page: LivePage, multiple_tabs: bool):
-    if multiple_tabs:
-      self.run_page_multiple_tabs(run, page.tabs, [page])
-    else:
-      self.run_page_once(run, page)
 
   def run_combined_page(self, run: Run, page: CombinedPage,
                         multiple_tabs: bool):

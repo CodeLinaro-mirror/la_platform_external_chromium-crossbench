@@ -17,7 +17,7 @@ from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
-  from crossbench.benchmarks.loading.page import InteractivePage
+  from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.runner.run import Run
 
 
