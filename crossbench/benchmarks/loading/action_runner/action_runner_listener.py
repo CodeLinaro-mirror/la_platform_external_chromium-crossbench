@@ -13,11 +13,11 @@ if TYPE_CHECKING:
 class ActionRunnerListener:
   """Default empty ActionRunnerListener implementation."""
 
-  def handle_error(self, e: Exception) -> None:
+  def handle_error(self, run: Run, e: Exception) -> None:
     pass
 
   def handle_page_run(self, run: Run) -> None:
     pass
 
-  def handle_new_tab(self) -> None:
+  def handle_new_tab(self, run: Run) -> None:
     pass

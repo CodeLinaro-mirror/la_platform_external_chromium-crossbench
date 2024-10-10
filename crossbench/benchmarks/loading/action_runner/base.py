@@ -55,7 +55,6 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
     super().__init__(runner, action, input_source_message)
 
 
-
 class ActionRunner:
 
   def __init__(self):
@@ -210,13 +209,13 @@ class ActionRunner:
           # Create a new tab for the multiple_tab case.
           if i > 0:
             browser.switch_to_new_tab()
-            self._listener.handle_new_tab()
+            self._listener.handle_new_tab(run)
           page.run_with(run, self, False)
           self._listener.handle_page_run(run)
         browser.switch_to_new_tab()
-        self._listener.handle_new_tab()
+        self._listener.handle_new_tab(run)
       except Exception as e:
-        self._listener.handle_error(e)
+        self._listener.handle_error(run, e)
         raise
 
   def run_page(self, run: Run, page: LivePage, multiple_tabs: bool):

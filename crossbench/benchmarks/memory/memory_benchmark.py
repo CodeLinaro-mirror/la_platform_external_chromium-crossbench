@@ -5,15 +5,20 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
-import time
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
 
 import selenium.common.exceptions
 import urllib3.exceptions
 
 from crossbench import helper
-from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.base import (
+    BenchmarkProbeMixin,
+    StoryFilter,
+    SubStoryBenchmark,
+)
 from crossbench.benchmarks.loading.action_runner.action_runner_listener import \
     ActionRunnerListener
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
@@ -21,6 +26,9 @@ from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
 from crossbench.benchmarks.loading.page import LivePage, Page
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.parse import NumberParser
+from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
+from crossbench.probes.metric import MetricsMerger
+from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.runner.exception import StopStoryException
 
 if TYPE_CHECKING:
@@ -28,7 +36,156 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.loading.action_runner.base import ActionRunner
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.path import LocalPath
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
+
+
+class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
+  """
+  Memory-specific Probe.
+  Extracts the number of alive tabs.
+  """
+  NAME: str = "memory_probe"
+
+  def get_context(self, run: Run) -> MemoryProbeContext:
+    return MemoryProbeContext(self, run)
+
+  def to_json(self, actions: Actions) -> Dict[str, float]:
+    raise NotImplementedError(
+        "should not be called, data comes from memory probe context")
+
+  def log_run_result(self, run: Run) -> None:
+    self._log_result(run.results, single_result=True)
+
+  def log_browsers_result(self, group: BrowsersRunGroup) -> None:
+    self._log_result(group.results, single_result=False)
+
+  def _log_result(self, result_dict: ProbeResultDict,
+                  single_result: bool) -> None:
+
+    if self not in result_dict:
+      return
+    results_json: LocalPath = result_dict[self].json
+    logging.info("-" * 80)
+    logging.critical("Memory results (num of alive tabs):")
+    if not single_result:
+      logging.critical("  %s", result_dict[self].csv)
+    logging.info("- " * 40)
+
+    with results_json.open(encoding="utf-8") as f:
+      data = json.load(f)
+      if single_result:
+        logging.critical("Score %s", data["alive_tab_count"])
+      else:
+        self._log_result_metrics(data)
+
+  def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
+    merged = MetricsMerger.merge_json_list(
+        repetitions_group.results[self].json
+        for repetitions_group in group.repetitions_groups)
+    return self.write_group_result(group, merged)
+
+  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    return self.merge_browsers_json_list(group).merge(
+        self.merge_browsers_csv_list(group))
+
+
+class MemoryProbeContext(ActionRunnerListener,
+                         JsonResultProbeContext[MemoryProbe]):
+
+  def __init__(self, probe: MemoryProbe, run: Run) -> None:
+    super().__init__(probe, run)
+    cur_benchmark = probe.benchmark
+    if not isinstance(cur_benchmark, MemoryBenchmark):
+      raise TypeError("The probe only works for MemoryBenchmark")
+    cur_benchmark.action_runner.set_listener(self)
+    self._skippable_tab_count = cur_benchmark._skippable_tab_count
+    # Records the navigation_start_time time for each window handle.
+    self._navigation_time_ms: Dict[str, float] = {}
+    self._tab_count: int = 1
+
+  def start(self) -> None:
+    pass
+
+  def stop(self) -> None:
+    super().stop()
+
+  def teardown(self) -> ProbeResult:
+    return super().teardown()
+
+  def to_json(self, actions: Actions) -> Dict[str, float]:
+    return {"alive_tab_count": self._tab_count - 1}
+
+  def _increment_tab_count(self):
+    self._tab_count += 1
+
+  def _record_navigation_time(self, run: Run) -> None:
+    """
+    Record NavigationStart time for each handle.
+    """
+    with run.actions("_record_navigation_time", measure=False) as action:
+      cur_handle: str = action.current_window_id()
+      navigation_start_time = action.js(
+          "return window.performance.timing.navigationStart")
+      logging.debug("Browser: %s. Navigation starttime for handle %s is %s.",
+                    run.browser.unique_name, cur_handle, navigation_start_time)
+      self._navigation_time_ms[cur_handle] = navigation_start_time
+
+  def _check_liveness(self, run: Run) -> None:
+    """
+    Navigate each opened tab, and check if the navigation start time
+    has changed. If so, then it means that page has been discarded
+    and reloaded.
+    """
+    with run.actions("_check_liveness", measure=False) as action:
+      for handle in self._navigation_time_ms:
+        logging.debug("Browser: %s. Liveness checking for handle: %s",
+                      run.browser, handle)
+        action.switch_window(handle)
+        action.wait(1)
+        navigation_start_time = action.js(
+            "return window.performance.timing.navigationStart")
+        if navigation_start_time != self._navigation_time_ms[handle]:
+          logging.info(
+              "Browser: %s. The max num of tabs we can keep alive concurrently "
+              "is: %s ", run.browser, self._tab_count - 1)
+          raise StopStoryException("Found a page that has been reloaded.")
+
+  def _check_error_msg(self, e: Exception):
+    if isinstance(e, selenium.common.exceptions.WebDriverException
+                 ) and "page crash" in str(e):
+      return True
+    if isinstance(e, selenium.common.exceptions.TimeoutException):
+      return True
+    if isinstance(e, urllib3.exceptions.ReadTimeoutError):
+      return True
+    # Error msg from `Could not execute JS` due to page crash.
+    if isinstance(e, ValueError) and "page crash" in str(e):
+      return True
+    return False
+
+  def handle_error(self, run: Run, e: Exception) -> None:
+    """
+    If there is a page crash error or a http request time out
+    for the stress liveness test, directly exit the benchmark
+    and report the max alive tab count.
+    """
+    if self._check_error_msg(e):
+      logging.info(
+          "Browser: %s. The max num of tabs we can keep alive concurrently "
+          "is: %s ", run.browser, self._tab_count - 1)
+      raise StopStoryException(f"Found a Tab Crash/Timeout: {e}")
+
+  def handle_page_run(self, run: Run) -> None:
+    self._record_navigation_time(run)
+    if self._tab_count > self._skippable_tab_count:
+      self._check_liveness(run)
+
+  def handle_new_tab(self, run: Run) -> None:
+    self._increment_tab_count()
 
 
 class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
@@ -141,7 +298,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     return self.stories
 
 
-class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
+class MemoryBenchmark(SubStoryBenchmark):
   """
   Benchmark runner for memory stress test.
   """
@@ -149,6 +306,7 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
   NAME = "memory"
   DEFAULT_STORY_CLS = Page
   STORY_FILTER_CLS = MemoryBenchmarkStoryFilter
+  PROBES: Tuple[Type[MemoryProbe], ...] = (MemoryProbe,)
 
   @classmethod
   def add_cli_parser(
@@ -187,11 +345,7 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)
-    # Records the navigation_start_time time for each window handle.
-    self._navigation_time_ms: Dict[str, float] = {}
-    self._tab_count: int = 1
     self._skippable_tab_count = skippable_tab_count
-    self._action_runner.set_listener(self)
 
   @classmethod
   def describe(cls) -> Dict[str, Any]:
@@ -202,59 +356,3 @@ class MemoryBenchmark(ActionRunnerListener, SubStoryBenchmark):
   @property
   def action_runner(self) -> ActionRunner:
     return self._action_runner
-
-  def _increment_tab_count(self):
-    self._tab_count += 1
-
-  def _record_navigation_time(self, run: Run) -> None:
-    """
-    Record NavigationStart time for each handle.
-    """
-    with run.actions("_record_navigation_time", measure=False) as action:
-      cur_handle: str = action.current_window_id()
-      navigation_start_time = action.js(
-          "return window.performance.timing.navigationStart")
-      logging.debug("Navigation starttime for handle %s is %s.", cur_handle,
-                    navigation_start_time)
-      self._navigation_time_ms[cur_handle] = navigation_start_time
-
-  def _check_liveness(self, run: Run) -> None:
-    """
-    Navigate each opened tab, and check if the navigation start time
-    has changed. If so, then it means that page has been discarded
-    and reloaded.
-    """
-    with run.actions("_check_liveness", measure=False) as action:
-      for handle in self._navigation_time_ms:
-        logging.debug("Liveness checking for handle: %s", handle)
-        action.switch_window(handle)
-        action.wait(1)
-        navigation_start_time = action.js(
-            "return window.performance.timing.navigationStart")
-        if navigation_start_time != self._navigation_time_ms[handle]:
-          logging.debug("Found a page that has been reloaded!")
-          logging.info(
-              "The max num of tabs we can keep alive concurrently is: %s ",
-              self._tab_count - 1)
-          raise StopStoryException("Found a page that has been reloaded.")
-
-  def handle_error(self, e: Exception) -> None:
-    """
-    If there is a page crash error or a http request time out
-    for the stress liveness test, directly exit the benchmark
-    and report the max alive tab count.
-    """
-    if isinstance(e, selenium.common.exceptions.WebDriverException
-                 ) and "page crash" in str(e) or isinstance(
-                     e, urllib3.exceptions.ReadTimeoutError):
-      logging.info("The max num of tabs we can keep alive concurrently is: %s ",
-                   self._tab_count - 1)
-      raise StopStoryException(f"Found a Tab Crash/Timeout: {e}")
-
-  def handle_page_run(self, run: Run) -> None:
-    self._record_navigation_time(run)
-    if self._tab_count > self._skippable_tab_count:
-      self._check_liveness(run)
-
-  def handle_new_tab(self) -> None:
-    self._increment_tab_count()
