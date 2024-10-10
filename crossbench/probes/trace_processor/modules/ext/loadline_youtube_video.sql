@@ -6,5 +6,6 @@ CREATE OR REPLACE PERFETTO FUNCTION loadline_youtube_video_score()
 RETURNS FLOAT
 AS
 SELECT
-  1e9
+  -- Multiply by 60 to make the score per minutes rather than per second.
+  60e9
   / (get_first_presentation_time_for_event('cookie_banner_gone') - first_navigation_start());

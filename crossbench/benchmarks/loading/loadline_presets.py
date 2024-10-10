@@ -36,7 +36,7 @@ LOADLINE_DIR = CONFIG_DIR / "benchmark" / "loadline"
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING = "1.0.0"
+VERSION_STRING = "1.1.0"
 
 
 class LoadLinePageFilter(LoadingPageFilter):
@@ -97,8 +97,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
                          index=["cb_browser"],
                          values=["score"])
     df = df.droplevel(0, axis=1)
-    # Make the score a bit higher by multiplying by 60 (~runs per minute)
-    df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1)) * 60
+    df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
     df.index.rename("browser", inplace=True)
     return df.reindex(
         columns=(["TOTAL_SCORE"] +

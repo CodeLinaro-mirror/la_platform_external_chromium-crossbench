@@ -16,7 +16,8 @@ WITH
         = 'https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM'
   )
 SELECT
-  1e9 / (
+  -- Multiply by 60 to make the score per minutes rather than per second.
+  60e9 / (
     get_next_presentation_time(
       (SELECT * FROM js_ready))
     - first_navigation_start());

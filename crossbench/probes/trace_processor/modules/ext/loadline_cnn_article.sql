@@ -6,7 +6,8 @@ CREATE OR REPLACE PERFETTO FUNCTION loadline_phone_cnn_article_score()
 RETURNS FLOAT
 AS
 SELECT
-  1e9 / (
+  -- Multiply by 60 to make the score per minutes rather than per second.
+  60e9 / (
     get_first_presentation_time_for_event('maincontent.created')
     - first_navigation_start());
 
@@ -30,7 +31,8 @@ WITH
     LIMIT 1
   )
 SELECT
-  1e9
+  -- Multiply by 60 to make the score per minutes rather than per second.
+  60e9
   / (
     get_next_presentation_time(
       (SELECT ts FROM last_navigation_maincontent_created))

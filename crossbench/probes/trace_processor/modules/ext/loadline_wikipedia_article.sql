@@ -43,5 +43,6 @@ WITH
         (SELECT * FROM img_presentation), (SELECT * FROM script_run))
   )
 SELECT
-  1e9 / (
+  -- Multiply by 60 to make the score per minutes rather than per second.
+  60e9 / (
     (SELECT * FROM last_event) - first_navigation_start());
