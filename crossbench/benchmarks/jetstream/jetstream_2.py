@@ -241,7 +241,10 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
           """
         let summaryElement = document.getElementById("result-summary");
         return (summaryElement.classList.contains("done"));
-        """, self.substory_duration, self.slow_duration)
+        """,
+          0.5,
+          self.slow_duration,
+          delay=self.substory_duration)
 
 
 ProbeClsTupleT = Tuple[Type[JetStream2Probe], ...]

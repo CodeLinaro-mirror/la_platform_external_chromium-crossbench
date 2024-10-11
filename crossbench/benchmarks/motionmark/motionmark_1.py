@@ -276,7 +276,10 @@ class MotionMark1Story(PressBenchmarkStory):
       actions.wait_js_condition(
           """
           return window.benchmarkRunnerClient.results._results != undefined
-          """, self.substory_duration / 4, self.slow_duration)
+          """,
+          0.5,
+          self.slow_duration,
+          delay=self.substory_duration / 4)
 
 
 class MotionMark1Benchmark(MotionMarkBenchmark):

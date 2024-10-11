@@ -21,11 +21,25 @@ class WaitTestCase(unittest.TestCase):
       helper.WaitRange(timeout=0)
     with self.assertRaises(AssertionError):
       helper.WaitRange(factor=0.2)
+    with self.assertRaises(AssertionError):
+      helper.WaitRange(delay=100)
 
   def test_range(self):
     durations = list(
         helper.WaitRange(min=1, max=16, factor=2, max_iterations=5))
     self.assertListEqual(durations, [
+        dt.timedelta(seconds=1),
+        dt.timedelta(seconds=2),
+        dt.timedelta(seconds=4),
+        dt.timedelta(seconds=8),
+        dt.timedelta(seconds=16)
+    ])
+
+  def test_range_with_delay(self):
+    durations = list(
+        helper.WaitRange(min=1, max=16, factor=2, max_iterations=5, delay=5.5))
+    self.assertListEqual(durations, [
+        dt.timedelta(seconds=5.5),
         dt.timedelta(seconds=1),
         dt.timedelta(seconds=2),
         dt.timedelta(seconds=4),

@@ -123,7 +123,11 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   @property
   def substory_duration(self) -> dt.timedelta:
-    return self.iterations * dt.timedelta(seconds=0.4)
+    return self.iterations * self.single_substory_duration
+
+  @property
+  def single_substory_duration(self) -> dt.timedelta:
+    return dt.timedelta(seconds=0.4)
 
   @property
   def slow_duration(self) -> dt.timedelta:
@@ -200,8 +204,11 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
           """)
       actions.wait(self.fast_duration)
     with run.actions("Waiting for completion") as actions:
-      actions.wait_js_condition("return window.testDone",
-                                self.substory_duration, self.slow_duration)
+      actions.wait_js_condition(
+          "return window.testDone",
+          0.5,
+          self.slow_duration,
+          delay=self.substory_duration)
 
 
 ProbeClsTupleT = Tuple[Type[SpeedometerProbe], ...]

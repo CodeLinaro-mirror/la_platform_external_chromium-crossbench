@@ -174,10 +174,29 @@ class TimeScope:
     logging.log(self._level, "%s duration=%s", self._message, self._duration)
 
 
+def as_timedelta(value: Union[int, float, dt.timedelta]) -> dt.timedelta:
+  if isinstance(value, dt.timedelta):
+    return value
+  return dt.timedelta(seconds=value)
+
+
 class WaitRange:
+  """
+  Create wait/sleep ranges with the given parameters:
+
+  If present we start with the initial delay, and then exponentially
+  increase the sleep/wait time by the given factor, until we reach the max
+  sleep time.
+
+  | delay | min | min * factor | ... | min * factor ** N | max | ... | max |
+  | ----------------------------- timeout ---------------------------------|
+
+  The timeout puts an upper bound to the total sleep time when using
+  wait_with_backoff().
+  """
   min: dt.timedelta
   max: dt.timedelta
-  current: dt.timedelta
+  initial_sleep: dt.timedelta
   max_iterations: Optional[int]
 
   def __init__(
@@ -186,37 +205,32 @@ class WaitRange:
       timeout: Union[int, float, dt.timedelta] = 10,
       factor: float = 1.01,
       max: Optional[Union[int, float, dt.timedelta]] = None,  # pylint: disable=redefined-builtin
-      max_iterations: Optional[int] = None
-  ) -> None:
-    if isinstance(min, dt.timedelta):
-      self.min = min
-    else:
-      self.min = dt.timedelta(seconds=min)
+      max_iterations: Optional[int] = None,
+      delay: Union[int, float, dt.timedelta] = 0) -> None:
+    self.min = as_timedelta(min)
     assert self.min.total_seconds() > 0
     if not max:
       self.max = self.min * 10
-    elif isinstance(max, dt.timedelta):
-      self.max = max
     else:
-      self.max = dt.timedelta(seconds=max)
+      self.max = as_timedelta(max)
     assert self.min <= self.max
     assert 1.0 < factor
     self.factor = factor
-    if isinstance(timeout, dt.timedelta):
-      self.timeout = timeout
-    else:
-      self.timeout = dt.timedelta(seconds=timeout)
+    self.timeout = as_timedelta(timeout)
     assert 0 < self.timeout.total_seconds()
-    self.current = self.min
+    self.delay = as_timedelta(delay)
+    assert self.delay <= self.timeout
     assert max_iterations is None or max_iterations > 0
     self.max_iterations = max_iterations
 
   def __iter__(self) -> Iterator[dt.timedelta]:
-    assert self.current
     i = 0
+    if self.delay:
+      yield self.delay
+    current_sleep = self.min
     while self.max_iterations is None or i < self.max_iterations:
-      yield self.current
-      self.current = min(self.current * self.factor, self.max)
+      yield current_sleep
+      current_sleep = min(current_sleep * self.factor, self.max)
       i += 1
 
   def wait_with_backoff(

@@ -101,11 +101,15 @@ class Actions(helper.TimeScope):
     delta = self.timing.timeout_timedelta(timeout)
     return self._browser.js(js_code, delta, arguments=arguments)
 
-  def wait_js_condition(self, js_code: str, min_wait: Union[dt.timedelta,
-                                                            float],
-                        timeout: Union[dt.timedelta, float]) -> None:
+  def wait_js_condition(self,
+                        js_code: str,
+                        min_wait: Union[dt.timedelta, float],
+                        timeout: Union[dt.timedelta, float],
+                        delay: Union[dt.timedelta, float] = 0) -> None:
     wait_range = helper.WaitRange(
-        self.timing.timedelta(min_wait), self.timing.timeout_timedelta(timeout))
+        min=self.timing.timedelta(min_wait),
+        timeout=self.timing.timeout_timedelta(timeout),
+        delay=delay)
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
     for _, time_left in wait_range.wait_with_backoff():

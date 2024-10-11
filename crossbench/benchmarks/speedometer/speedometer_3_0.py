@@ -269,6 +269,10 @@ class Speedometer30Story(SpeedometerStory):
     super().__init__(url=url, substories=substories, iterations=iterations)
 
   @property
+  def single_substory_duration(self) -> dt.timedelta:
+    return dt.timedelta(seconds=0.25)
+
+  @property
   def sync_wait(self) -> dt.timedelta:
     return self._sync_wait
 
