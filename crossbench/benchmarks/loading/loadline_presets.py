@@ -20,10 +20,10 @@ from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.flags.base import Flags
+from crossbench.probes.perfetto.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page

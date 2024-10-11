@@ -17,7 +17,7 @@ from crossbench import path as pth
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.parse import PathParser
-from crossbench.probes.trace_processor.trace_processor import (
+from crossbench.probes.perfetto.trace_processor.trace_processor import (
     _MODULES_DIR, _QUERIES_DIR, TraceProcessorProbe)
 
 ROOT_DIR = pth.LocalPath(__file__).parents[2]

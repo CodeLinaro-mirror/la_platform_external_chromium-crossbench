@@ -31,7 +31,6 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
-
 _QUERIES_DIR = pth.LocalPath(__file__).parent / "queries"
 _MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
 
@@ -66,6 +65,7 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
 
   def resolve(self) -> List["TraceUriResolver.Result"]:
     return self._resolved
+
 
 class TraceProcessorProbe(Probe):
   """
@@ -265,6 +265,7 @@ class TraceProcessorProbe(Probe):
     logging.critical("TraceProcessor merged traces:")
     for run in group.runs:
       logging.critical("  - %s", run.results[self].trace)
+
 
 class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
