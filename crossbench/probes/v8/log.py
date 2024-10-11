@@ -202,7 +202,7 @@ class V8LogProbe(ChromiumProbe):
       if not log_files:
         continue
       logging.info("Run %d: %s", i + 1, run.name)
-      largest_log_file = log_files[0]
+      largest_log_file = log_files[-1]
       logging.critical("    %s : %s", largest_log_file,
                        helper.get_file_size(largest_log_file))
       if len(log_files) > 1:
@@ -211,7 +211,7 @@ class V8LogProbe(ChromiumProbe):
       profview_files = run.results[self].json_list
       if not profview_files:
         continue
-      largest_profview_file = profview_files[0]
+      largest_profview_file = profview_files[-1]
       logging.critical("    %s : %s", largest_profview_file,
                        helper.get_file_size(largest_profview_file))
       if len(profview_files) > 1:

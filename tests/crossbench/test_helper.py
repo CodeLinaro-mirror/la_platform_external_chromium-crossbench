@@ -130,6 +130,26 @@ class FileSizeTestCase(CrossbenchFakeFsTestCase):
     size = helper.get_file_size(test_file)
     self.assertEqual(size, "2.00 KiB")
 
+  def test_kib_fraction(self):
+    test_file = pathlib.Path("test.txt")
+    self.fs.create_file(test_file, st_size=int(1024 * 2.51))
+    size = helper.get_file_size(test_file)
+    self.assertEqual(size, "2.51 KiB")
+
+  def test_sort_by_file_size(self):
+    small = pathlib.Path("smol")
+    medium = pathlib.Path("medium")
+    large = pathlib.Path("laaaarge")
+    self.fs.create_file(small, st_size=100)
+    self.fs.create_file(medium, st_size=200)
+    self.fs.create_file(large, st_size=300)
+    result = helper.sort_by_file_size([small, medium, large])
+    self.assertListEqual(result, [small, medium, large])
+    result = helper.sort_by_file_size([medium, large, small])
+    self.assertListEqual(result, [small, medium, large])
+    result = helper.sort_by_file_size([large, medium, small])
+    self.assertListEqual(result, [small, medium, large])
+
 
 class GroupByTestCase(unittest.TestCase):
 

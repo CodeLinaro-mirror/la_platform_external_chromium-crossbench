@@ -473,11 +473,10 @@ class ProfilingProbe(Probe):
       return
     logging.info("Run %d: %s", i + 1, run.name)
     if urls:
-      largest_perf_file = perf_files[0]
-      logging.critical("    %s", urls[0])
+      logging.critical("    %s", urls[-1])
     if not perf_files:
       return
-    largest_perf_file = perf_files[0]
+    largest_perf_file = perf_files[-1]
     logging.critical("    %s : %s", largest_perf_file,
                      helper.get_file_size(largest_perf_file))
     if len(perf_files) <= 1:
