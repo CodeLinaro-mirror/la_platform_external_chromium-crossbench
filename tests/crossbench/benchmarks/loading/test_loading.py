@@ -15,10 +15,10 @@ import unittest
 from typing import List, Sequence, cast
 from unittest import mock
 
+from crossbench.benchmarks.loading.action.action_type import ActionType
 from crossbench.benchmarks.loading.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
-from crossbench.benchmarks.loading.action_type import ActionType
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import (GOOGLE_LOGIN_URL,
                                                                GoogleLogin)

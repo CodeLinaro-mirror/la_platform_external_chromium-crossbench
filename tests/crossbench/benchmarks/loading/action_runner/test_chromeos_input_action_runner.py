@@ -5,19 +5,19 @@
 import datetime as dt
 import os
 import pathlib
-from typing import List, Optional, Tuple
 import unittest
+from typing import List, Optional, Tuple
 
-from crossbench.benchmarks.loading.action \
-  import Action, ClickAction, ScrollAction
-from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner \
-  import (
-    ChromeOSInputActionRunner, ChromeOSTouchEvent, ChromeOSViewportInfo,
-    SCRIPTS_DIR, TouchDevice)
+from crossbench.benchmarks.loading.action.action import Action
+from crossbench.benchmarks.loading.action.click import ClickAction
+from crossbench.benchmarks.loading.action.scroll import ScrollAction
+from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner import (
+    SCRIPTS_DIR, ChromeOSInputActionRunner, ChromeOSTouchEvent,
+    ChromeOSViewportInfo, TouchDevice)
 from crossbench.benchmarks.loading.action_runner.display_rectangle import \
-  DisplayRectangle
-from crossbench.benchmarks.loading.action_runner.element_not_found_error \
-  import ElementNotFoundError
+    DisplayRectangle
+from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
@@ -25,10 +25,10 @@ from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
                                           LinuxMockPlatform)
-from tests.crossbench.mock_browser import MockChromeStable, JsInvocation
-from tests.crossbench.runner.helper import (MockRun, MockRunner)
+from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
 class ChromeOSTouchEventTestCase(unittest.TestCase):

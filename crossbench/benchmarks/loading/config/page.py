@@ -6,21 +6,25 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, Type, cast
+from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence,
+                    Tuple, Type, cast)
 from urllib import parse as urlparse
 
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action import Action, GetAction
-from crossbench.benchmarks.loading.action_type import ActionType
+from crossbench.benchmarks.loading.action.action_type import ActionType
+from crossbench.benchmarks.loading.action.get import GetAction
 from crossbench.benchmarks.loading.config.blocks import (ActionBlock,
                                                          ActionBlockListConfig)
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.page.live import PAGES
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
-from crossbench.cli.config.secrets import SecretsConfig, SecretsDict
+from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import DurationParser, ObjectParser
+
+if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.action.action import Action
 
 
 @dataclasses.dataclass(frozen=True)

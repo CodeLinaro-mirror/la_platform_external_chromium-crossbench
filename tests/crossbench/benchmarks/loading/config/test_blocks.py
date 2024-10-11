@@ -8,7 +8,7 @@ import argparse
 import datetime as dt
 import unittest
 
-from crossbench.benchmarks.loading.action import GetAction
+from crossbench.benchmarks.loading.action.get import GetAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin

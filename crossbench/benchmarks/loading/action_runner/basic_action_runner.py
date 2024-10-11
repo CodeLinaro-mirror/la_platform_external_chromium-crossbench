@@ -9,7 +9,8 @@ import logging
 import time
 from typing import TYPE_CHECKING, Callable, Tuple
 
-from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.action import all as i_action
+from crossbench.benchmarks.loading.action.enums import ReadyState
 from crossbench.benchmarks.loading.action_runner.base import (
     ActionRunner, InputSourceNotImplementedError)
 from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
@@ -89,8 +90,7 @@ class BasicActionRunner(ActionRunner):
 
     return selector, script
 
-  def _wait_for_ready_state(self, actions: Actions,
-                            ready_state: i_action.ReadyState,
+  def _wait_for_ready_state(self, actions: Actions, ready_state: ReadyState,
                             timeout: dt.timedelta) -> None:
     # Make sure we also finish if readyState jumps directly
     # from "loading" to "complete"
@@ -108,7 +108,7 @@ class BasicActionRunner(ActionRunner):
     with run.actions(f"Get {action.url}", measure=False) as actions:
       actions.show_url(action.url, str(action.target))
 
-      if action.ready_state != i_action.ReadyState.ANY:
+      if action.ready_state != ReadyState.ANY:
         self._wait_for_ready_state(actions, action.ready_state, action.timeout)
         return
       # Wait for the given duration from the start of the action.

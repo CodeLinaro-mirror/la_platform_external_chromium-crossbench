@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Tuple
 
-from crossbench.benchmarks.loading.action import GetAction
+from crossbench.benchmarks.loading.action.get import GetAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.base import DEFAULT_DURATION
 from crossbench.benchmarks.loading.page.interactive import InteractivePage

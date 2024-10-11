@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from immutabledict import immutabledict
 
-from crossbench.benchmarks.loading.action import ActionType, GetAction
+from crossbench.benchmarks.loading.action.action_type import ActionType
+from crossbench.benchmarks.loading.action.get import GetAction
 from crossbench.benchmarks.loading.action_runner.base import \
     ActionNotImplementedError
 from crossbench.benchmarks.loading.page.base import Page, get_action_runner

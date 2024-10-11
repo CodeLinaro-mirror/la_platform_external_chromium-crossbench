@@ -8,19 +8,24 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
+                    Type)
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action import (Action, ClickAction,
-                                                  GetAction, ReadyState,
-                                                  WaitAction)
+from crossbench.benchmarks.loading.action.click import ClickAction
+from crossbench.benchmarks.loading.action.enums import ReadyState
+from crossbench.benchmarks.loading.action.get import GetAction
+from crossbench.benchmarks.loading.action.wait import WaitAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.config import ConfigObject
 from crossbench.parse import DurationParseError, DurationParser, ObjectParser
+
+if TYPE_CHECKING:
+  from crossbench.benchmarks.loading.action.action import Action
 
 
 @dataclasses.dataclass(frozen=True)

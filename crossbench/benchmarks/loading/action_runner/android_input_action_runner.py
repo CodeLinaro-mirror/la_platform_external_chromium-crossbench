@@ -9,7 +9,7 @@ import logging
 import re
 from typing import List, Optional
 
-from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.action import all as i_action
 from crossbench.benchmarks.loading.action_runner.base import \
     InputSourceNotImplementedError
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \

@@ -12,7 +12,7 @@ from math import floor
 from typing import TYPE_CHECKING
 
 import crossbench.path as pth
-from crossbench.benchmarks.loading import action as i_action
+from crossbench.benchmarks.loading.action import all as i_action
 from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
     BasicActionRunner
 from crossbench.benchmarks.loading.action_runner.display_rectangle import \
