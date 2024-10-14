@@ -6,16 +6,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.base_duration import DurationAction
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.js import JsAction
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.runner.run import Run
 
 
-class WaitAction(DurationAction):
-  TYPE: ActionType = ActionType.WAIT
+class InjectNewDocumentScriptAction(JsAction):
+  TYPE: ActionType = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.wait(run, self)
+    action_runner.inject_new_document_script(run, self)

@@ -9,11 +9,11 @@ import logging
 import time
 from typing import TYPE_CHECKING, Callable, Tuple
 
-from crossbench.benchmarks.loading.action import all as i_action
-from crossbench.benchmarks.loading.action.enums import ReadyState
-from crossbench.benchmarks.loading.action_runner.base import (
-    ActionRunner, InputSourceNotImplementedError)
-from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+from crossbench.action_runner.action import all as i_action
+from crossbench.action_runner.action.enums import ReadyState
+from crossbench.action_runner.base import (ActionRunner,
+                                           InputSourceNotImplementedError)
+from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 
 if TYPE_CHECKING:

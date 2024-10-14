@@ -6,22 +6,22 @@ from __future__ import annotations
 
 import datetime as dt
 
-from crossbench.benchmarks.loading.action.action import ACTION_TIMEOUT
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.click import ClickAction
-from crossbench.benchmarks.loading.action.enums import ReadyState, WindowTarget
-from crossbench.benchmarks.loading.action.get import GetAction
-from crossbench.benchmarks.loading.action.inject_new_document_script import \
+from crossbench.action_runner.action.action import ACTION_TIMEOUT
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.enums import ReadyState, WindowTarget
+from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
-from crossbench.benchmarks.loading.action.js import JsAction
-from crossbench.benchmarks.loading.action.scroll import ScrollAction
-from crossbench.benchmarks.loading.action.swipe import SwipeAction
-from crossbench.benchmarks.loading.action.switch_tab import SwitchTabAction
-from crossbench.benchmarks.loading.action.text_input import TextInputAction
-from crossbench.benchmarks.loading.action.wait import WaitAction
-from crossbench.benchmarks.loading.action.wait_for_element import \
+from crossbench.action_runner.action.js import JsAction
+from crossbench.action_runner.action.scroll import ScrollAction
+from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.action_runner.action.switch_tab import SwitchTabAction
+from crossbench.action_runner.action.text_input import TextInputAction
+from crossbench.action_runner.action.wait import WaitAction
+from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
-from crossbench.benchmarks.loading.action.wait_for_ready_state import \
+from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.benchmarks.loading.input_source import InputSource
 from tests import test_helper

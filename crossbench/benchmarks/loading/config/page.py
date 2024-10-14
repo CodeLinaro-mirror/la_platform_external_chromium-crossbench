@@ -11,8 +11,8 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence,
 from urllib import parse as urlparse
 
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.get import GetAction
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.get import GetAction
 from crossbench.benchmarks.loading.config.blocks import (ActionBlock,
                                                          ActionBlockListConfig)
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
@@ -24,7 +24,7 @@ from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import DurationParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action.action import Action
+  from crossbench.action_runner.action.action import Action
 
 
 @dataclasses.dataclass(frozen=True)

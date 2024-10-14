@@ -12,12 +12,10 @@ from math import floor
 from typing import TYPE_CHECKING
 
 import crossbench.path as pth
-from crossbench.benchmarks.loading.action import all as i_action
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.display_rectangle import \
-    DisplayRectangle
-from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+from crossbench.action_runner.action import all as i_action
+from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.display_rectangle import DisplayRectangle
+from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.parse import NumberParser

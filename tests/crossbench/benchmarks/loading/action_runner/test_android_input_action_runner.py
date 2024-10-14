@@ -7,18 +7,16 @@ import pathlib
 import unittest
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from crossbench.benchmarks.loading.action.action import Action
-from crossbench.benchmarks.loading.action.click import ClickAction
-from crossbench.benchmarks.loading.action.scroll import ScrollAction
-from crossbench.benchmarks.loading.action.swipe import SwipeAction
-from crossbench.benchmarks.loading.action.text_input import TextInputAction
-from crossbench.benchmarks.loading.action_runner.android_input_action_runner import (
+from crossbench.action_runner.action.action import Action
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.scroll import ScrollAction
+from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.action_runner.action.text_input import TextInputAction
+from crossbench.action_runner.android_input_action_runner import (
     AndroidInputActionRunner, ViewportInfo)
-from crossbench.benchmarks.loading.action_runner.base import \
-    InputSourceNotImplementedError
-from crossbench.benchmarks.loading.action_runner.display_rectangle import \
-    DisplayRectangle
-from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+from crossbench.action_runner.base import InputSourceNotImplementedError
+from crossbench.action_runner.display_rectangle import DisplayRectangle
+from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point

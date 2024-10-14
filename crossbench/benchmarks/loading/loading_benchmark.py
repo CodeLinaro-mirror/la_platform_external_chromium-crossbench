@@ -10,25 +10,24 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
+from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.config import \
-    ActionRunnerConfig
 from crossbench.benchmarks.loading.config.pages import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
 from crossbench.benchmarks.loading.page.base import DEFAULT_DURATION, Page
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
-                                                     PAGES, LivePage)
+from crossbench.benchmarks.loading.page.live import (PAGE_LIST,
+                                                     PAGE_LIST_SMALL, PAGES,
+                                                     LivePage)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.parse import DurationParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.stories.story import Story
 

@@ -14,15 +14,11 @@ import selenium.common.exceptions
 import urllib3.exceptions
 
 from crossbench import helper
-from crossbench.benchmarks.base import (
-    BenchmarkProbeMixin,
-    StoryFilter,
-    SubStoryBenchmark,
-)
-from crossbench.benchmarks.loading.action_runner.action_runner_listener import \
+from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
+from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.benchmarks.base import (BenchmarkProbeMixin, StoryFilter,
+                                        SubStoryBenchmark)
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -35,7 +31,7 @@ from crossbench.runner.exception import StopStoryException
 if TYPE_CHECKING:
   import argparse
 
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions

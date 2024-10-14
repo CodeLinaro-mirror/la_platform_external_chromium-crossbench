@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action.action import (ACTION_TIMEOUT, Action,
-                                                         ActionT)
-from crossbench.benchmarks.loading.action.action_type import ActionType
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
+from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import ObjectParser, PathParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict

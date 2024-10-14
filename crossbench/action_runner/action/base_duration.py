@@ -7,9 +7,9 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
-from crossbench.benchmarks.loading.action.action import (ACTION_TIMEOUT, Action,
-                                                         ActionT)
-from crossbench.benchmarks.loading.action.action_type import ActionType
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
+from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:

@@ -10,17 +10,16 @@ from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from immutabledict import immutabledict
 
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.get import GetAction
-from crossbench.benchmarks.loading.action_runner.base import \
-    ActionNotImplementedError
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.base import ActionNotImplementedError
 from crossbench.benchmarks.loading.page.base import Page, get_action_runner
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.benchmarks.loading.config.login.custom import LoginBlock
   from crossbench.cli.config.secrets import SecretsDict

@@ -7,13 +7,13 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
-from crossbench.benchmarks.loading.action.action import ACTION_TIMEOUT, ActionT
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.base_duration import DurationAction
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.base_duration import DurationAction
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict

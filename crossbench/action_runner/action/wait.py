@@ -6,16 +6,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from crossbench.benchmarks.loading.action.action import Action
-from crossbench.benchmarks.loading.action.action_type import ActionType
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.base_duration import DurationAction
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.runner.run import Run
 
 
-class ScreenshotAction(Action):
-  TYPE: ActionType = ActionType.SCREENSHOT
+class WaitAction(DurationAction):
+  TYPE: ActionType = ActionType.WAIT
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.screenshot(run, self)
+    action_runner.wait(run, self)

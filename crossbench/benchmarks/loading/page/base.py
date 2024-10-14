@@ -15,7 +15,7 @@ from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
   from crossbench.runner.run import Run
 

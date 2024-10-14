@@ -13,8 +13,8 @@ from typing import Sequence
 
 import hjson
 
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.click import ClickAction
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.click import ClickAction
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.config.pages import (

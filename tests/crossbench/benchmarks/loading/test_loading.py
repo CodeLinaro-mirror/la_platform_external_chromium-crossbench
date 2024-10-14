@@ -15,18 +15,17 @@ import unittest
 from typing import List, Sequence, cast
 from unittest import mock
 
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action_runner.base import ActionRunner
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.basic_action_runner import BasicActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
-from crossbench.benchmarks.loading.config.login.google import (GOOGLE_LOGIN_URL,
-                                                               GoogleLogin)
+from crossbench.benchmarks.loading.config.login.google import (
+    GOOGLE_LOGIN_URL, GoogleLogin)
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
-                                                     LivePage)
+from crossbench.benchmarks.loading.page.live import (PAGE_LIST,
+                                                     PAGE_LIST_SMALL, LivePage)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController

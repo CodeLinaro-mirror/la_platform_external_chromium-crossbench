@@ -8,13 +8,13 @@ import datetime as dt
 import re
 from typing import TYPE_CHECKING, Optional, Type
 
-from crossbench.benchmarks.loading.action.action import (ACTION_TIMEOUT, Action,
-                                                         ActionT)
-from crossbench.benchmarks.loading.action.action_type import ActionType
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
+from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict

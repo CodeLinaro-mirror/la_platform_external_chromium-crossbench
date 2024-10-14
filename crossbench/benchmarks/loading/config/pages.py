@@ -13,10 +13,10 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.benchmarks.loading.action.click import ClickAction
-from crossbench.benchmarks.loading.action.enums import ReadyState
-from crossbench.benchmarks.loading.action.get import GetAction
-from crossbench.benchmarks.loading.action.wait import WaitAction
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.enums import ReadyState
+from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.wait import WaitAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.input_source import InputSource
@@ -25,7 +25,7 @@ from crossbench.config import ConfigObject
 from crossbench.parse import DurationParseError, DurationParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action.action import Action
+  from crossbench.action_runner.action.action import Action
 
 
 @dataclasses.dataclass(frozen=True)

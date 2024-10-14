@@ -7,48 +7,43 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
-from crossbench.benchmarks.loading.action.action import (ACTION_TIMEOUT, Action,
-                                                         ActionT)
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.parse import ObjectParser
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.enums import ReadyState
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
-class WaitForElementAction(Action):
-  TYPE: ActionType = ActionType.WAIT_FOR_ELEMENT
+class WaitForReadyStateAction(Action):
+  TYPE: ActionType = ActionType.WAIT_FOR_READY_STATE
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
-        "selector", type=ObjectParser.non_empty_str, required=True)
+        "ready_state", type=ReadyState.parse, default=ReadyState.COMPLETE)
     return parser
 
   def __init__(self,
-               selector: str,
                timeout: dt.timedelta = ACTION_TIMEOUT,
+               ready_state: ReadyState = ReadyState.COMPLETE,
                index: int = 0):
-    self._selector = selector
+    self._ready_state = ready_state
     super().__init__(timeout, index)
 
   @property
-  def selector(self) -> str:
-    return self._selector
+  def ready_state(self) -> ReadyState:
+    return self._ready_state
 
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.wait_for_element(run, self)
-
-  def validate(self) -> None:
-    super().validate()
-    if not self.selector:
-      raise ValueError(f"{self}.selector is missing.")
+    action_runner.wait_for_ready_state(run, self)
 
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["selector"] = self.selector
+    details["ready_state"] = str(self.ready_state)
     return details

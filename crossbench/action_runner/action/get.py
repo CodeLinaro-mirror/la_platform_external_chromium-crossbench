@@ -7,15 +7,14 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
-from crossbench.benchmarks.loading.action.action import ACTION_TIMEOUT, ActionT
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.base_duration import \
-    BaseDurationAction
-from crossbench.benchmarks.loading.action.enums import ReadyState, WindowTarget
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.base_duration import BaseDurationAction
+from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.parse import DurationParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict

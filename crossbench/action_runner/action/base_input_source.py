@@ -8,9 +8,8 @@ import abc
 import datetime as dt
 from typing import TYPE_CHECKING, Tuple, Type
 
-from crossbench.benchmarks.loading.action.action import ACTION_TIMEOUT, ActionT
-from crossbench.benchmarks.loading.action.base_duration import \
-    BaseDurationAction
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.base_duration import BaseDurationAction
 from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:

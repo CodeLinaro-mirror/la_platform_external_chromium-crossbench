@@ -7,14 +7,12 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from crossbench.benchmarks.loading.action_runner.android_input_action_runner import \
+from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.chromeos_input_action_runner import \
+from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
-from crossbench.benchmarks.loading.action_runner.config import \
-    ActionRunnerConfig
+from crossbench.action_runner.config import ActionRunnerConfig
 from tests import test_helper
 
 

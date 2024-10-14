@@ -4,8 +4,7 @@
 
 import unittest
 
-from crossbench.benchmarks.loading.action_runner.display_rectangle \
-    import DisplayRectangle
+from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.benchmarks.loading.point import Point
 
 

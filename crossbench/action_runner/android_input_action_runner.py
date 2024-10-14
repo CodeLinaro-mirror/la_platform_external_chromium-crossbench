@@ -9,14 +9,11 @@ import logging
 import re
 from typing import List, Optional
 
-from crossbench.benchmarks.loading.action import all as i_action
-from crossbench.benchmarks.loading.action_runner.base import \
-    InputSourceNotImplementedError
-from crossbench.benchmarks.loading.action_runner.basic_action_runner import \
-    BasicActionRunner
-from crossbench.benchmarks.loading.action_runner.display_rectangle import \
-    DisplayRectangle
-from crossbench.benchmarks.loading.action_runner.element_not_found_error import \
+from crossbench.action_runner.action import all as i_action
+from crossbench.action_runner.base import InputSourceNotImplementedError
+from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.display_rectangle import DisplayRectangle
+from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes

@@ -11,15 +11,15 @@ from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
                     Sequence, Tuple, Type, cast)
 
 from crossbench import exception
-from crossbench.benchmarks.loading.action.action import Action
-from crossbench.benchmarks.loading.action.action_type import ActionType
-from crossbench.benchmarks.loading.action.all import ACTIONS_TUPLE
-from crossbench.benchmarks.loading.action.get import GetAction
+from crossbench.action_runner.action.action import Action
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.all import ACTIONS_TUPLE
+from crossbench.action_runner.action.get import GetAction
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action_runner.base import ActionRunner
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.runner.run import Run
 

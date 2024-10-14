@@ -7,12 +7,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench import exception
-from crossbench.benchmarks.loading.action_runner.action_runner_listener import \
+from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
 from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.action import all as i_action
+  from crossbench.action_runner.action import all as i_action
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.benchmarks.loading.page.combined import CombinedPage
