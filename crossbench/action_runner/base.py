@@ -222,18 +222,20 @@ class ActionRunner:
       for sub_page in page.pages:
         sub_page.run_with(run, self, False)
 
-  def run_interactive_page(self, run: Run, page: InteractivePage,
-                           multiple_tabs: bool):
-    # TODO(lsuhua): support multiple tabs for interactive page if needed.
-    if multiple_tabs:
-      raise NotImplementedError(
-          "Multiple tabs test for interactive page is not supported.")
+  def run_interactive_page_once(self, run: Run, page: InteractivePage):
     try:
       self.run_blocks(run, page, page.blocks)
       self._maybe_navigate_to_about_blank(run, page)
     except Exception:
       page.failure_screenshot(run)
       raise
+
+  def run_interactive_page(self, run: Run, page: InteractivePage,
+                           multiple_tabs: bool):
+    if multiple_tabs:
+      self.run_page_multiple_tabs(run, page.tabs, [page])
+    else:
+      self.run_interactive_page_once(run, page)
 
   def run_setup(self, run: Run, page: InteractivePage, setup: ActionBlock):
     try:
