@@ -291,7 +291,7 @@ class NetworkConfig(ConfigObject):
         return LocalFileNetwork(self.path, self.url, traffic_shaper,
                                 browser_platform)
       if self.type is NetworkType.WPR:
-        if self.run_on_device:
+        if self.run_on_device and browser_platform.is_remote:
           if not browser_platform.is_android:
             raise ValueError("run_on_device only supported on Android")
           return RemoteWprReplayNetwork(
