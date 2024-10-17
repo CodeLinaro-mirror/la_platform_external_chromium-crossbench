@@ -3,11 +3,13 @@
 # found in the LICENSE file.
 
 import inspect
+from immutabledict import immutabledict
 
 import crossbench.path as pth
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, INTERNAL_PROBES
 from crossbench.probes.debugger import DebuggerProbe
+from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
@@ -65,6 +67,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield BrowserProfilingProbe()
     yield DTraceProbe(pth.LocalPath("script.dtrace"))
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
+    yield FrequencyProbe(immutabledict())
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"))
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
