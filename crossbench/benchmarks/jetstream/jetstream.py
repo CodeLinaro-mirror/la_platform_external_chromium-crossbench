@@ -39,6 +39,7 @@ class JetStreamProbe(
   FLATTEN: bool = False
   JS: str = """
   let results = Object.create(null);
+  let benchmarks = []
   for (let benchmark of JetStream.benchmarks) {
     const data = { score: benchmark.score };
     if ("worst4" in benchmark) {
@@ -48,11 +49,19 @@ class JetStreamProbe(
     } else if ("runTime" in benchmark) {
       data.runTime = benchmark.runTime;
       data.startupTime = benchmark.startupTime;
+    } else if ("mainRun" in benchmark) {
+      data.mainRun = benchmark.mainRun;
+      data.stdlib = benchmark.stdlib;
     }
     results[benchmark.plan.name] = data;
+    benchmarks.push(benchmark);
   };
   return results;
 """
+
+  @property
+  def jetstream(self) -> JetStreamBenchmark:
+    return cast(JetStreamBenchmark, self.benchmark)
 
   def to_json(self, actions: Actions) -> Dict[str, float]:
     data = actions.js(self.JS)
@@ -104,8 +113,7 @@ class JetStreamProbe(
   def _extract_result_metrics_table(self, metrics: Dict[str, Any],
                                     table: Dict[str, List[str]]) -> None:
     for metric_key, metric_value in metrics.items():
-      parts = metric_key.split("/")
-      if len(parts) != 2 or parts[0] == "Total" or parts[1] != "score":
+      if not self._is_valid_metric_key(metric_key):
         continue
       table[metric_key].append(
           Metric.format(metric_value["average"], metric_value["stddev"]))
@@ -125,6 +133,13 @@ class JetStreamProbe(
     return self.merge_browsers_json_list(group).merge(
         self.merge_browsers_csv_list(group))
 
+  def _is_valid_metric_key(self, metric_key: str) -> bool:
+    parts = metric_key.split("/")
+    if len(parts) != 2:
+      return False
+    if self.jetstream.detailed_metrics:
+      return True
+    return parts[0] != "Total" and parts[1] == "score"
 
 class JetStreamCSVFormatter(CSVFormatter):
 
@@ -143,7 +158,6 @@ class JetStreamCSVFormatter(CSVFormatter):
     return total_item + score_items + items
 
 
-
 class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
@@ -153,3 +167,33 @@ class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
   @classmethod
   def base_name(cls) -> str:
     return "jetstream"
+
+  @classmethod
+  def add_cli_parser(
+      cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
+  ) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers, aliases)
+    parser.add_argument(
+        "--detailed-metrics",
+        "--details",
+        default=False,
+        action="store_true",
+        help="Report more detailed internal metrics.")
+    return parser
+
+  @classmethod
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["detailed_metrics"] = args.detailed_metrics
+    return kwargs
+
+  def __init__(self,
+               stories: Sequence[Story],
+               custom_url: Optional[str] = None,
+               detailed_metrics: bool = False):
+    self._detailed_metrics = detailed_metrics
+    super().__init__(stories, custom_url)
+
+  @property
+  def detailed_metrics(self) -> bool:
+    return self._detailed_metrics

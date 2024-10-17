@@ -94,13 +94,13 @@ class SpeedometerProbe(
   def _extract_result_metrics_table(self, metrics: Dict[str, Any],
                                     table: Dict[str, List[str]]) -> None:
     for metric_key, metric in metrics.items():
-      if not self._valid_metric_key(metric_key):
+      if not self._is_valid_metric_key(metric_key):
         continue
       table[metric_key].append(
           Metric.format(metric["average"], metric["stddev"]))
 
   @abc.abstractmethod
-  def _valid_metric_key(self, metric_key: str) -> bool:
+  def _is_valid_metric_key(self, metric_key: str) -> bool:
     pass
 
 

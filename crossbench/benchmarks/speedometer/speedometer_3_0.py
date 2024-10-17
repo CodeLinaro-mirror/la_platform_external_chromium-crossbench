@@ -60,7 +60,7 @@ class Speedometer30Probe(SpeedometerProbe):
       result[name] = metric["mean"]
     return result
 
-  def _valid_metric_key(self, metric_key: str) -> bool:
+  def _is_valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")
     if len(parts) != 1:
       return False
@@ -434,6 +434,7 @@ class Speedometer30Benchmark(SpeedometerBenchmark):
     parser = super().add_cli_parser(subparsers, aliases)
     parser.add_argument(
         "--detailed-metrics",
+        "--details",
         default=False,
         action="store_true",
         help="Report more detailed internal metrics.")
