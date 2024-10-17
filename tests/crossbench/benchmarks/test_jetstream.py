@@ -4,7 +4,7 @@
 
 import unittest
 
-from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2CSVFormatter
+from crossbench.benchmarks.jetstream.jetstream import JetStreamCSVFormatter
 from crossbench.benchmarks.jetstream.jetstream_2_0 import (JetStream20Benchmark,
                                                            JetStream20Probe,
                                                            JetStream20Story)
@@ -17,13 +17,13 @@ from crossbench.benchmarks.jetstream.jetstream_2_2 import (JetStream22Benchmark,
 from crossbench.benchmarks.jetstream.jetstream_3_0 import (JetStream30Benchmark,
                                                            JetStream30Probe,
                                                            JetStream30Story)
-from crossbench.probes.metric import CSVFormatter, MetricsMerger, geomean
+from crossbench.probes.metric import MetricsMerger
 from tests import test_helper
 # Only import module to avoid exposing the abstract test classes to the runner.
 from tests.crossbench.benchmarks import jetstream_helper
 
 
-class JetStream2CSVFormatterTestCase(unittest.TestCase):
+class JetStreamCSVFormatterTestCase(unittest.TestCase):
 
   def test_format_sorted(self):
     metrics = MetricsMerger({
@@ -32,7 +32,7 @@ class JetStream2CSVFormatterTestCase(unittest.TestCase):
         "cdjs/average": 30,
         "cdjs/score": 40,
     })
-    table = JetStream2CSVFormatter(metrics, lambda metric: metric.geomean).table
+    table = JetStreamCSVFormatter(metrics, lambda metric: metric.geomean).table
     self.assertSequenceEqual(table, [
         ("Total/score", "Total", "score", 20.0),
         ("cdjs/score", "cdjs", "score", 40.0),
@@ -49,7 +49,7 @@ class JetStream2CSVFormatterTestCase(unittest.TestCase):
         "Total/average": 10,
         "Total/score": 20,
     })
-    table = JetStream2CSVFormatter(
+    table = JetStreamCSVFormatter(
         metrics, lambda metric: metric.geomean, sort=False).table
     self.assertSequenceEqual(table, [
         ("Total/score", "Total", "score", 20.0),
