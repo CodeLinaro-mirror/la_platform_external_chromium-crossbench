@@ -9,6 +9,8 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
+import random
+import string
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
                     Union, cast)
 
@@ -100,6 +102,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.invoked_js: List[JsInvocation] = []
     self.did_run: bool = False
     self.clear_cache_dir: bool = False
+    self.tab_handler_generator = self._tab_handler_generator()
+    self.tab_list: List[int] = [next(self.tab_handler_generator)]
 
   def expect_js(
       self,
@@ -136,6 +140,18 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def show_url(self, url, target: Optional[str] = None) -> None:
     self.url_list.append(url)
+
+  def current_window_id(self) -> str:
+    return str(self.tab_list[-1])
+
+  def _tab_handler_generator(self):
+    tab_handler = 0
+    while True:
+      yield tab_handler
+      tab_handler += 1
+
+  def switch_to_new_tab(self) -> None:
+    self.tab_list.append(next(self.tab_handler_generator))
 
   def js(self, script, timeout: Optional[dt.timedelta] = None, arguments=()):
     self.invoked_js.append(
@@ -312,6 +328,7 @@ class MockEdgeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
 
+
 Edge.register(MockEdgeBrowser)
 if not TYPE_CHECKING:
   assert issubclass(MockEdgeBrowser, Chromium)
@@ -374,7 +391,6 @@ class MockSafariBrowser(MockBrowser, metaclass=abc.ABCMeta):
   @property
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.SAFARI
-
 
 
 Safari.register(MockSafariBrowser)
