@@ -10,13 +10,14 @@ import enum
 import io
 import json
 import logging
+import shlex
 import multiprocessing
 import signal
 import subprocess
 import time
 from functools import cached_property
-from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional,
-                    Sequence, Tuple, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
+                    Sequence, Tuple, Union, cast)
 
 from crossbench import helper
 from crossbench import path as pth
@@ -25,6 +26,7 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
+from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt.base import ListCmdArgs
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeKeyT)
@@ -80,6 +82,13 @@ V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 
 RENDERER_CMD_PATH: Final[pth.LocalPath] = pth.LocalPath(
     __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
+
+
+def perf_frequency(value: Any) -> Union[str, int]:
+  if value == "max":
+    return "max"
+  return NumberParser.positive_int(value, "frequency")
+
 
 class ProfilingProbe(Probe):
   """
@@ -155,48 +164,60 @@ class ProfilingProbe(Probe):
               "and the benchmark story has been setup."))
     parser.add_argument(
         "pin_renderer_main_core",
-        type=int,
+        type=NumberParser.positive_zero_int,
         default=None,
         help=("Chrome-on-Android-only: "
               "Whether to pin the renderer main thread to a given core"))
     parser.add_argument(
         "call_graph_mode",
+        aliases=("call-graph",),
         type=CallGraphMode,
         default=CallGraphMode.FRAME_POINTER,
-        help=("Android-only: Specify whether to record a call graph, "
+        help=("Android/Linux-only: Specify whether to record a call graph, "
               "and, if yes, which kind of stack unwinding to run."))
-    # Advanced Android/simpleperf-specific arguments.
+    # Advanced Android/simpleperf/linux-perf-specific arguments.
     # Generally, the defaults should suffice.
     parser.add_argument(
         "frequency",
-        type=int,
+        aliases=("freq",),
+        type=perf_frequency,
         default=None,
-        help=("Android-only: Event sampling frequency "
+        help=("Android/Linux-only: Event sampling frequency "
               "(record at most `frequency` samples every second). "
-              "Please refer to the simpleperf documentation "
-              "for `freq` for more details."))
+              "Please refer to '--freq' in the simpleperf/linux perf "
+              "documentation for more details."))
     parser.add_argument(
         "count",
-        type=int,
+        type=NumberParser.positive_int,
         default=None,
-        help=("Android-only: Event sampling period "
+        help=("Android/Linux-only: Event sampling period "
               "(record one sample every `count` events). "
-              "Please refer to simpleperf documentation for more details."))
+              "Please refer to '--count' in the simpleperf/linux perf "
+              "documentation for more details."))
+    parser.add_argument(
+        "clockid",
+        type=ObjectParser.non_empty_str,
+        default=None,
+        help=("Android/Linux-only: Defines the clock id used in perf events. "
+              "Please refer to '--clockid' in the simpleperf/linux perf "
+              "documentation for more details. Defaults to 'mono'."))
     parser.add_argument(
         "cpu",
-        type=int,
+        type=NumberParser.positive_zero_int,
         is_list=True,
         default=tuple(),
-        help=("Android-only: Sample only on the selected cpus, "
+        help=("Android/Linux-only: Sample only on the selected cpus, "
               "specified as a list of 0-indexed cpu indices. "
-              "Please refer to simpleperf documentation for more details."))
+              "Please refer to '--cpu' in the simpleperf/linux-perf "
+              "documentation for more details."))
     parser.add_argument(
         "events",
         type=str,
         is_list=True,
         default=tuple(),
-        help=("Android-only: Events to record. Please refer to simpleperf "
-              "documentation for `-e` for more details."))
+        help=("Android/Linux-only-only: Events to record. "
+              "Please refer to the '-e' simpleperf/linux-perf "
+              "documentation for more details."))
     parser.add_argument(
         "grouped_events",
         type=str,
@@ -229,7 +250,8 @@ class ProfilingProbe(Probe):
                target: TargetMode = TargetMode.BROWSER_APP_ONLY,
                pin_renderer_main_core: Optional[int] = None,
                call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
-               frequency: Optional[int] = None,
+               frequency: Optional[Union[int, str]] = None,
+               clockid: Optional[str] = None,
                count: Optional[int] = None,
                cpu: Sequence[int] = (),
                events: Sequence[str] = (),
@@ -250,7 +272,8 @@ class ProfilingProbe(Probe):
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY,
         TargetMode.RENDERER_PROCESS_ONLY) or pin_renderer_main_core is not None
-    self._frequency: Optional[int] = frequency
+    self._frequency: Optional[Union[int, str]] = frequency
+    self._clockid: Optional[str] = clockid
     self._count: Optional[int] = count
     self._cpu: Tuple[int, ...] = tuple(cpu)
     self._events: Tuple[str, ...] = tuple(events)
@@ -311,8 +334,12 @@ class ProfilingProbe(Probe):
     return self._start_profiling_after_setup
 
   @property
-  def frequency(self) -> Optional[int]:
+  def frequency(self) -> Optional[Union[int, str]]:
     return self._frequency
+
+  @property
+  def clockid(self) -> Optional[str]:
+    return self._clockid
 
   @property
   def count(self) -> Optional[int]:
@@ -359,18 +386,37 @@ class ProfilingProbe(Probe):
       self._validate_pprof(env, browser)
     # Check that certain Android-only options are
     # not provided by on other platforms.
+    if not browser_platform.is_android and not browser_platform.is_linux:
+      self._validate_perf_settings(browser)
     if not browser_platform.is_android:
-      assert self._frequency is None, (
-          "`frequency` is currently only supported on Android")
-      assert self._count is None, (
-          "`count` is currently only supported on Android")
-      assert not self._cpu, ("`cpu` is currently only supported on Android")
-      assert not self._events, (
-          "`events` is currently only supported on Android")
-      assert not self._grouped_events, (
-          "`grouped_events` is currently only supported on Android")
-      assert not self._add_counters, (
-          "`add_counters` is currently only supported on Android")
+      self._validate_non_android_perf_settings(browser)
+
+  def _validate_perf_settings(self, browser):
+    unsupported_settings = (
+        ("frequency", self._frequency),
+        ("count", self._count),
+        ("cpu", self._cpu),
+        ("events", self._events),
+    )
+    raise self.unsupported_setting_error(browser, unsupported_settings,
+                                         "Android and Linux")
+
+  def _validate_non_android_perf_settings(self, browser):
+    unsupported_settings = (
+        ("grouped_events", self._grouped_events),
+        ("add_counters", self._add_counters),
+    )
+    raise self.unsupported_setting_error(browser, unsupported_settings,
+                                         "Android")
+
+  def unsupported_setting_error(self, browser,
+                                unsupported_settings: Iterable[Tuple[str, Any]],
+                                platforms):
+    for name, value in unsupported_settings:
+      if value:
+        raise ProbeIncompatibleBrowser(
+            self, browser,
+            f"{repr(name)} is currently only supported on {platforms}")
 
   def _validate_linux(self, env: HostEnvironment, browser: Browser) -> None:
     env.check_installed(binaries=["pprof"])
@@ -398,10 +444,8 @@ class ProfilingProbe(Probe):
 
   def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
     del env
-
     if self._requires_chrome_with_extension():
       self._assert_is_chrome_with_extension(browser)
-
     assert browser.platform.which("simpleperf"), "simpleperf is not available"
 
   def _validate_pprof(self, env: HostEnvironment, browser: Browser) -> None:
@@ -430,13 +474,34 @@ class ProfilingProbe(Probe):
       if self._expose_v8_interpreted_frames:
         browser.js_flags.set(V8_INTERPRETED_FRAMES_FLAG)
     if browser.platform.is_linux and browser.platform.is_local:
-      assert not browser.platform.is_remote, (
-          "Copying renderer command prefix to remote platform is "
-          "not implemented yet")
-      assert RENDERER_CMD_PATH.is_file(), f"Didn't find {RENDERER_CMD_PATH}"
-      browser.flags["--renderer-cmd-prefix"] = str(RENDERER_CMD_PATH)
+      self._set_renderer_cmd_prefix(browser)
     # Disable sandbox to write profiling data
     browser.flags.set("--no-sandbox")
+
+  def _set_renderer_cmd_prefix(self, browser):
+    assert not browser.platform.is_remote, (
+        "Copying renderer command prefix to remote platform is "
+        "not implemented yet")
+    assert RENDERER_CMD_PATH.is_file(), f"Didn't find {RENDERER_CMD_PATH}"
+    cmd_prefix = [str(RENDERER_CMD_PATH), f"--perf-data-dir={self.NAME}"]
+    if freq := self.frequency:
+      cmd_prefix.append(f"--perf-freq={freq}")
+    if count := self.count:
+      cmd_prefix.append(f"--perf-count={count}")
+    if self.call_graph_mode != CallGraphMode.FRAME_POINTER:
+      cmd_prefix.append(f"--perf-call-graph={self.call_graph_mode}")
+    if clockid := self.clockid:
+      cmd_prefix.append(f"--perf-clockid={clockid}")
+    custom_perf_args = []
+    if cpu := self.cpu:
+      cpu_str = ",".join(map(str, cpu))
+      custom_perf_args.append(f"--cpu={cpu_str}")
+    if events := self.events:
+      events_str = ",".join(events)
+      custom_perf_args.append(f"--event={events_str}")
+    if custom_perf_args:
+      cmd_prefix.append(f"--perf-args={shlex.join(custom_perf_args)}")
+    browser.flags["--renderer-cmd-prefix"] = shlex.join(cmd_prefix)
 
   def log_run_result(self, run: Run) -> None:
     self._log_results([run])
@@ -544,7 +609,7 @@ class MacOSProfilingContext(ProfilingContext):
     atexit.unregister(self.stop_process)
 
 
-V8_PERF_RPOF_PATH_FLAG_MIN_VERSION = ChromeVersion((118, 0, 5993, 48))
+V8_PERF_PROF_PATH_FLAG_MIN_VERSION = ChromeVersion((118, 0, 5993, 48))
 PERF_DATA_PATTERN = "*.perf.data"
 JIT_DUMP_PATTERN = "jit-*.dump"
 
@@ -568,7 +633,7 @@ class LinuxProfilingContext(ProfilingContext):
   @property
   def has_perf_prof_path(self) -> bool:
     # TODO: replace with full version comparison
-    return self.browser.major_version > V8_PERF_RPOF_PATH_FLAG_MIN_VERSION.major
+    return self.browser.major_version > V8_PERF_PROF_PATH_FLAG_MIN_VERSION.major
 
   def setup(self) -> None:
     self.setup_v8_log_path()
@@ -584,7 +649,9 @@ class LinuxProfilingContext(ProfilingContext):
     perf_data_file: pth.AnyPath = self.result_path / "browser.perf.data"
     # TODO: not fully working yet
     self._perf_process = self.browser_platform.popen(
-        "perf", "record", "--call-graph=fp", "--freq=max", "--clockid=mono",
+        "perf", "record", f"--call-graph={self.probe.call_graph_mode or 'fp'}",
+        f"--freq={self.probe.frequency or 'max'}",
+        f"--clockid={self.probe.clockid or 'mono'}",
         f"--output={perf_data_file}", f"--pid={self.run.browser.pid}")
     if self._perf_process.poll():
       raise ValueError("Could not start linux profiler")
@@ -932,7 +999,7 @@ def generate_simpleperf_command_line(
     renderer_pid: Optional[int],
     renderer_main_tid: Optional[int],
     call_graph_mode: CallGraphMode,
-    frequency: Optional[int],
+    frequency: Optional[Union[int, str]],
     count: Optional[int],
     cpus: Tuple[int, ...],
     events: Tuple[str, ...],

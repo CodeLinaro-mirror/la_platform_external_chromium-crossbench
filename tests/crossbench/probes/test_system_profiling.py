@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import pathlib
 import unittest
 
@@ -239,6 +240,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
         "grouped_events": ["cache-references", "cache-misses"],
         "add_counters": ["aa", "bb"],
     })
+    self.assertTrue(probe.key)
     self.assertFalse(probe.sample_js)
     self.assertTrue(probe.sample_browser_process)
     self.assertFalse(probe.run_pprof)
@@ -253,6 +255,18 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.events, ("instructions", "cache-misses"))
     self.assertEqual(probe.grouped_events, ("cache-references", "cache-misses"))
     self.assertEqual(probe.add_counters, ("aa", "bb"))
+
+  def test_create_custom_frequency(self):
+    probe = ProfilingProbe.from_config({"freq": "max"})
+    self.assertEqual(probe.frequency, "max")
+    probe = ProfilingProbe.from_config({"freq": 333})
+    self.assertEqual(probe.frequency, 333)
+
+  def test_create_invalid_frequency(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "frequency"):
+      _ = ProfilingProbe.from_config({"freq": -100})
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "frequency"):
+      _ = ProfilingProbe.from_config({"freq": "maaaaxxx"})
 
   def test_spare_renderer(self):
     browser_a = self.browsers[0]
