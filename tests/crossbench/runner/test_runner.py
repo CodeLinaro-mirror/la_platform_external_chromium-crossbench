@@ -6,6 +6,7 @@ import json
 import pathlib
 import unittest
 
+from crossbench import compat
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
 from crossbench.flags.base import Flags
@@ -168,6 +169,17 @@ class RunnerTestCase(BaseRunnerTestCase):
       with results.json.open() as f:
         probe_data = json.load(f)
         self.assertEqual(probe_data, "custom_probe_data")
+      browser_dir = (runner.out_dir / run.browser.unique_name)
+      # Pyfakefs is having some issues with relative symlinks, thus we're
+      # manually combining the paths.
+      runs_dir = browser_dir / "runs"
+      run_symlink = runs_dir / compat.readlink(runs_dir / str(run.index))
+      self.assertEqual(run_symlink.resolve(), run.out_dir)
+    for browser in runner.browsers:
+      runs_symlinks = list(
+          (runner.out_dir / browser.unique_name / "runs").iterdir())
+      self.assertEqual(len(runs_symlinks), 2)
+
 
   def test_attach_probe_twice(self):
     runner = self.default_runner()

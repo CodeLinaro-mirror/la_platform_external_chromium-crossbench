@@ -4,6 +4,7 @@
 
 from unittest import mock
 
+from crossbench import compat
 from crossbench.helper.state import UnexpectedStateError
 from tests import test_helper
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
@@ -42,8 +43,10 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     session.set_ready()
     self.assertEqual(session.out_dir, run_1.out_dir)
     self.assertNotEqual(session.out_dir, session.raw_session_dir)
+    # session dirs are only created when opening the session.
+    self.assertFalse(session.out_dir.exists())
 
-  def test_out_dir_mulitple_runs(self):
+  def test_out_dir_multiple_runs(self):
     session = self.default_session()
     run_1 = MockRun(self.runner, session, "story 1")
     run_2 = MockRun(self.runner, session, "story 2")
@@ -169,10 +172,15 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     self.assertFalse(session._probe_context_manager.is_running)
     self.assertTrue(session.is_success)
     self.assertTrue(session.path.is_dir())
+    session_symlinks = list((session.browser_dir / "sessions").iterdir())
+    self.assertEqual(len(session_symlinks), 1)
+    self.assertEqual(compat.readlink(session_symlinks[0]), session.path)
     self.assertTrue(run.did_setup)
     self.assertFalse(run.did_run)
     self.assertTrue(run.did_teardown_browser)
     self.assertTrue(did_run)
+    # Using mock runs here... didn't create runs symlinks
+    self.assertFalse((session.browser_dir / "runs").exists())
 
   def test_open_dry_run(self):
     session = self.default_session()

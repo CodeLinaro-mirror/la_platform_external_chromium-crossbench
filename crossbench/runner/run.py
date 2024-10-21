@@ -69,7 +69,7 @@ class Run(ResultOrigin):
     assert index >= 0
     self._index = index
     self._name = name
-    self._out_dir = self._get_out_dir(browser_session.root_dir).absolute()
+    self._out_dir = self._get_out_dir().absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
     self._durations = Durations()
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
@@ -82,8 +82,8 @@ class Run(ResultOrigin):
   def __str__(self) -> str:
     return f"Run({self.name}, {self._state}, {self.browser})"
 
-  def _get_out_dir(self, root_dir: pth.LocalPath) -> pth.LocalPath:
-    return (root_dir / pth.safe_filename(self.browser.unique_name) / "stories" /
+  def _get_out_dir(self) -> pth.LocalPath:
+    return (self._browser_session.browser_dir / "stories" /
             pth.safe_filename(self.story.name) / str(self.repetition_name) /
             str(self._temperature))
 
@@ -269,15 +269,27 @@ class Run(ResultOrigin):
     self._start_datetime = dt.datetime.now()
     logging.debug("Creating Run(%s) out dir: %s", self, self._out_dir)
     self._out_dir.mkdir(parents=True, exist_ok=True)
+    if not self.runner.create_symlinks:
+      logging.debug("Symlinks disabled by command line option")
+      return
+    self._create_runs_dir()
     self._create_session_dir()
+
+  def _create_runs_dir(self) -> None:
+    browser_dir = self.browser_session.browser_dir
+    runs_dir = browser_dir / "runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    # Source: BROWSER / "runs" / RUN
+    # Target: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP
+    run_dir = runs_dir / str(self.index)
+    relative_out_dir = (
+        pth.LocalPath("../") / self.out_dir.relative_to(browser_dir))
+    run_dir.symlink_to(relative_out_dir, target_is_directory=True)
 
   def _create_session_dir(self) -> None:
     session_run_dir = self._out_dir / "session"
     assert not session_run_dir.exists(), (
         f"Cannot setup session dir twice: {session_run_dir}")
-    if not self.runner.create_symlinks:
-      logging.debug("Symlink disabled by command line option")
-      return
     if self.runner_platform.is_win:
       logging.debug("Skipping session_dir symlink on windows.")
       return
@@ -286,7 +298,7 @@ class Run(ResultOrigin):
     relative_session_dir = (
         pth.LocalPath("../../../..") /
         self.browser_session.path.relative_to(self.out_dir.parents[3]))
-    session_run_dir.symlink_to(relative_session_dir)
+    session_run_dir.symlink_to(relative_session_dir, target_is_directory=True)
 
   def _log_setup(self) -> None:
     logging.debug("SETUP")

@@ -203,7 +203,7 @@ class Runner:
                throw: bool = False,
                create_symlinks: bool = True):
     self._state = StateMachine(RunnerState.INITIAL)
-    self.out_dir = out_dir
+    self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._timing = timing
