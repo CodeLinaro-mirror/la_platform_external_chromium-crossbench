@@ -21,7 +21,7 @@ from crossbench.benchmarks.loading.point import Point
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
-  from typing import Optional, Type
+  from typing import Optional, Tuple, Type
 
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
@@ -268,29 +268,38 @@ class ChromeOSInputActionRunner(BasicActionRunner):
 
     with run.actions("ClickAction", measure=False) as actions:
 
-      viewport_info: ChromeOSViewportInfo = self._get_viewport_info(
-          actions, action.selector, action.scroll_into_view)
+      click_location, viewport = self._get_click_location(actions, action)
 
-      if action.selector:
-        element_rect = viewport_info.element_rect
-        if not element_rect:
-          if action.required:
-            raise ElementNotFoundError(action.selector)
-          return
-        click_location: Point = element_rect.middle
-      else:
-        click_location: Point = action.coordinates
-
-      assert click_location
+      if not click_location:
+        return
 
       self._execute_touch_playback(
           run,
           ChromeOSTouchEvent(
               self._touch_device,
-              viewport_info.native_screen,
+              viewport.native_screen,
               click_location,
               end_position=None,
               duration=action.duration))
+
+  def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
+    with run.actions("ClickAction", measure=False) as actions:
+
+      click_location, viewport = self._get_click_location(actions, action)
+
+      if not click_location:
+        return
+
+      browser_platform = run.browser.platform
+      self._remote_tmp_file = browser_platform.mktemp()
+      script = (SCRIPTS_DIR / "mouse.py").read_text()
+      browser_platform.set_file_contents(self._remote_tmp_file, script)
+
+      run.browser.platform.sh("python3", self._remote_tmp_file,
+                              str(viewport.native_screen.width),
+                              str(viewport.native_screen.height),
+                              str(action.duration.total_seconds()),
+                              str(click_location.x), str(click_location.y))
 
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
     if self._touch_device is None:
@@ -364,6 +373,26 @@ class ChromeOSInputActionRunner(BasicActionRunner):
               text.encode("utf-8")))
     finally:
       typing_process.kill()
+
+  def _get_click_location(
+      self, actions: Actions,
+      action: i_action.ClickAction) -> Tuple[Optional[Point], ChromeOSViewportInfo]:
+    viewport_info: ChromeOSViewportInfo = self._get_viewport_info(
+        actions, action.selector, action.scroll_into_view)
+
+    if action.selector:
+      element_rect = viewport_info.element_rect
+      if not element_rect:
+        if action.required:
+          raise ElementNotFoundError(action.selector)
+        return (None, viewport_info)
+      click_location: Point = element_rect.middle
+    else:
+      click_location: Point = action.coordinates
+
+    assert click_location, "Invalid click location click action."
+
+    return (click_location, viewport_info)
 
   def _get_viewport_info(self,
                          actions: Actions,

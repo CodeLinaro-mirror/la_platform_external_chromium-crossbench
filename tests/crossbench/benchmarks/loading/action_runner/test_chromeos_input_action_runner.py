@@ -399,6 +399,28 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     for _ in range(touch_count):
       self.platform.expect_sh('evemu-play --insert-slot0 /dev/input/event0 < .')
 
+  def expect_mouse_click(
+      self,
+      expected_js: JsInvocation,
+      clicked_coordinates: Optional[Point],
+      click_duration: dt.timedelta = dt.timedelta(seconds=0)):
+
+    path = SCRIPTS_DIR / "get_window_positions.js"
+    self.fs.create_file(path, contents="get_window_positions")
+
+    self.browser.expect_js(expected_js=expected_js)
+
+    path = SCRIPTS_DIR / "mouse.py"
+    self.fs.create_file(path, contents="mouse")
+
+    if clicked_coordinates:
+      self.platform.expect_sh("env")
+      self.platform.expect_sh("[", "-d", "/tmp", "]")
+      self.platform.expect_sh("mktemp", "/tmp/None.XXXXXXXXXXX")
+      self.platform.expect_sh("python3", ".", "1920", "1080",
+                              click_duration.total_seconds(),
+                              clicked_coordinates.x, clicked_coordinates.y)
+
   def assert_coordinates_touched(
       self,
       start_coordinates: Point,
@@ -428,6 +450,15 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.assert_coordinates_touched(Point(50, 50))
 
+  def test_click_mouse_coordinates(self):
+    click_action = ClickAction(InputSource.MOUSE, x=50, y=50)
+
+    self.expect_mouse_click(
+        expected_js=self._NO_ELEMENT_JS_RESULT,
+        clicked_coordinates=Point(50, 50))
+
+    self.run_action(click_action)
+
   def test_click_touch_coordinates_duration(self):
     click_duration = dt.timedelta(seconds=100)
 
@@ -440,12 +471,36 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.assert_coordinates_touched(Point(50, 50), duration=click_duration)
 
-  def test_click_selector_non_existant_element_raises(self):
+  def test_click_mouse_coordinates_duration(self):
+    click_duration = dt.timedelta(seconds=100)
+
+    click_action = ClickAction(
+        InputSource.MOUSE, x=50, y=50, duration=click_duration)
+
+    self.expect_mouse_click(
+        expected_js=self._NO_ELEMENT_JS_RESULT,
+        clicked_coordinates=Point(50, 50),
+        click_duration=click_duration)
+
+    self.run_action(click_action)
+
+  def test_click_touch_selector_non_existant_element_raises(self):
     click_action = ClickAction(
         InputSource.TOUCH, selector="div[]", required=True)
 
     self.expect_touch_setup(
         touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
+
+    with self.assertRaises(ElementNotFoundError) as cm:
+      self.run_action(click_action)
+    self.assertIn("matching DOM", str(cm.exception))
+
+  def test_click_mouse_selector_non_existant_element_raises(self):
+    click_action = ClickAction(
+        InputSource.MOUSE, selector="div[]", required=True)
+
+    self.expect_mouse_click(
+        expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
 
     with self.assertRaises(ElementNotFoundError) as cm:
       self.run_action(click_action)
@@ -458,7 +513,16 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     self.expect_touch_setup(
         touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
 
-    self.action_runner.click_touch(self.run, click_action)
+    self.run_action(click_action)
+
+  def test_click_mouse_selector_non_required_element_success(self):
+    click_action = ClickAction(
+        InputSource.MOUSE, selector="div[]", required=False)
+
+    self.expect_mouse_click(
+        expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
+
+    self.run_action(click_action)
 
   def test_click_touch_selector_success(self):
 
@@ -487,6 +551,33 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     self.run_action(click_action)
 
     self.assert_coordinates_touched(Point(8, 10))
+
+  def test_click_mouse_selector_success(self):
+
+    click_action = ClickAction(
+        InputSource.MOUSE, selector="div[]", required=True)
+
+    self.expect_mouse_click(
+        expected_js=JsInvocation(result=[
+            True,  # Found element
+            1,  # pixel ratio
+            1920,  # window outer width
+            1920,  # window inner width
+            1080,  # window inner height
+            1920,  # screen width
+            1080,  # screen height
+            1920,  # screen avail width
+            1080,  # screen avail height
+            0,  # screenX
+            0,  # screenY
+            5,  # element left
+            6,  # element top
+            7,  # element width
+            8,  # element height
+        ]),
+        clicked_coordinates=Point(8, 10))
+
+    self.run_action(click_action)
 
   def test_scroll_touch_window_success(self):
 
