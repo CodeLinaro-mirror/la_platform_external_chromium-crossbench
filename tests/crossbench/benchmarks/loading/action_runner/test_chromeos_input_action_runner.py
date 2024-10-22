@@ -81,9 +81,8 @@ E: 5.000000 0000 0000 0
         self._FAKE_TOUCH_DEVICE, DisplayRectangle(Point(0, 0), 200, 100),
         Point(201, 101))
 
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegexp(ValueError, "out of bounds"):
       str(tap_event)
-    self.assertIn("out of bounds", str(cm.exception))
 
   def test_rereference_coordinates(self):
     tap_event: ChromeOSTouchEvent = ChromeOSTouchEvent(
@@ -491,9 +490,8 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     self.expect_touch_setup(
         touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
 
-    with self.assertRaises(ElementNotFoundError) as cm:
+    with self.assertRaisesRegexp(ElementNotFoundError, "matching DOM"):
       self.run_action(click_action)
-    self.assertIn("matching DOM", str(cm.exception))
 
   def test_click_mouse_selector_non_existant_element_raises(self):
     click_action = ClickAction(
@@ -502,9 +500,8 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     self.expect_mouse_click(
         expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
 
-    with self.assertRaises(ElementNotFoundError) as cm:
+    with self.assertRaisesRegexp(ElementNotFoundError, "matching DOM"):
       self.run_action(click_action)
-    self.assertIn("matching DOM", str(cm.exception))
 
   def test_click_touch_selector_non_required_element_success(self):
     click_action = ClickAction(
@@ -672,9 +669,8 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
         ]),
         touch_count=0)
 
-    with self.assertRaises(ElementNotFoundError) as cm:
+    with self.assertRaisesRegexp(ElementNotFoundError, "matching DOM"):
       self.run_action(scroll_action)
-    self.assertIn("matching DOM", str(cm.exception))
 
   def test_scroll_touch_selector_not_found_does_nothing(self):
     scroll_action = ScrollAction(
