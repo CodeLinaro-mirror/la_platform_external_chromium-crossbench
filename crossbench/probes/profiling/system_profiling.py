@@ -524,9 +524,9 @@ class ProfilingProbe(Probe):
   def _log_results_overview(self, filtered_runs):
     if len(filtered_runs) <= 1:
       return
-    if any(run.browser.platform.is_macos for run in filtered_runs):
+    if any(run.browser_platform.is_macos for run in filtered_runs):
       logging.info("  *.trace:     'open $FILE'")
-    if any(run.browser.platform.is_linux or run.browser.platform.is_android
+    if any(run.browser_platform.is_linux or run.browser_platform.is_android
            for run in filtered_runs):
       logging.info("  *.perf.data: 'perf report -i $FILE'")
 
@@ -548,7 +548,7 @@ class ProfilingProbe(Probe):
     if len(perf_files) <= 1:
       return
     glob = "*.perf.data"
-    if run.browser.platform.is_macos:
+    if run.browser_platform.is_macos:
       glob = "*.trace"
     logging.info("    %s/%s: %d more files", largest_perf_file.parent, glob,
                  len(perf_files))

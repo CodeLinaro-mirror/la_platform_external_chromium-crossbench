@@ -208,14 +208,14 @@ return [
 
       cmd.extend(["tap", str(coordinates.x), str(coordinates.y)])
 
-      run.browser.platform.sh(*cmd)
+      run.browser_platform.sh(*cmd)
 
   def _swipe_impl(self, run: Run, start_x: int, start_y: int, end_x: int,
                   end_y: int, duration: dt.timedelta) -> None:
 
     duration_millis = round(duration // dt.timedelta(milliseconds=1))
 
-    run.browser.platform.sh("input", "swipe", str(start_x), str(start_y),
+    run.browser_platform.sh("input", "swipe", str(start_x), str(start_y),
                             str(end_x), str(end_y), str(duration_millis))
 
   def _get_viewport_info(self,
@@ -274,7 +274,7 @@ return [
     browser_main_window_name = self._get_browser_window_name(
         run.browser.attributes)
 
-    raw_window_config = run.browser.platform.sh_stdout(
+    raw_window_config = run.browser_platform.sh_stdout(
         "dumpsys",
         "window",
         "windows",
@@ -300,10 +300,10 @@ return [
     # The 'input text' command cannot handle spaces directly. Replace space
     # characters with the encoding '%s'.
     characters = characters.replace(" ", "%s")
-    run.browser.platform.sh("input", "keyboard", "text", characters)
+    run.browser_platform.sh("input", "keyboard", "text", characters)
 
   # TODO: Move this to a probe. See ActionRunner.
   def screenshot_impl(self, run: Run, suffix: str) -> None:
     with self.screenshot_path(run.out_dir, suffix).open(
         "w", encoding="utf-8") as file:
-      run.browser.platform.sh("screencap", "-p", stdout=file)
+      run.browser_platform.sh("screencap", "-p", stdout=file)

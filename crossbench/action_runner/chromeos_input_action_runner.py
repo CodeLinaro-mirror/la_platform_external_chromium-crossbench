@@ -290,12 +290,12 @@ class ChromeOSInputActionRunner(BasicActionRunner):
       if not click_location:
         return
 
-      browser_platform = run.browser.platform
+      browser_platform = run.browser_platform
       self._remote_tmp_file = browser_platform.mktemp()
       script = (SCRIPTS_DIR / "mouse.py").read_text()
       browser_platform.set_file_contents(self._remote_tmp_file, script)
 
-      run.browser.platform.sh("python3", self._remote_tmp_file,
+      run.browser_platform.sh("python3", self._remote_tmp_file,
                               str(viewport.native_screen.width),
                               str(viewport.native_screen.height),
                               str(action.duration.total_seconds()),
@@ -359,7 +359,7 @@ class ChromeOSInputActionRunner(BasicActionRunner):
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
-    browser_platform = run.browser.platform
+    browser_platform = run.browser_platform
     self._remote_tmp_file = browser_platform.mktemp()
     script = (SCRIPTS_DIR / "text_input.py").read_text()
     browser_platform.set_file_contents(self._remote_tmp_file, script)
@@ -434,13 +434,13 @@ class ChromeOSInputActionRunner(BasicActionRunner):
   def _query_touch_device(self, run: Run) -> str:
     try:
       with (SCRIPTS_DIR / "query_touch_device.py").open() as file:
-        return run.browser.platform.sh_stdout("python3", "-", stdin=file)
+        return run.browser_platform.sh_stdout("python3", "-", stdin=file)
     except Exception as e:
       raise RuntimeError(
           "Failed to query touchscreen information from device.") from e
 
   def _setup_touch_device(self, run: Run) -> TouchDevice:
-    self._remote_tmp_file = run.browser.platform.mktemp()
+    self._remote_tmp_file = run.browser_platform.mktemp()
 
     touch_device_output = self._query_touch_device(run)
 
@@ -460,11 +460,11 @@ class ChromeOSInputActionRunner(BasicActionRunner):
 
     touch_event_cmds = str(touch_event)
 
-    run.browser.platform.set_file_contents(self._remote_tmp_file,
+    run.browser_platform.set_file_contents(self._remote_tmp_file,
                                            touch_event_cmds)
 
     # Then run evemu-play with the input redirected from the temp file.
-    run.browser.platform.sh(
+    run.browser_platform.sh(
         f"evemu-play --insert-slot0 "
         f"{shlex.quote(self._touch_device.device_path)} < "
         f"{self._remote_tmp_file}",
