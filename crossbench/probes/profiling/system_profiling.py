@@ -10,8 +10,8 @@ import enum
 import io
 import json
 import logging
-import shlex
 import multiprocessing
+import shlex
 import signal
 import subprocess
 import time
@@ -391,27 +391,28 @@ class ProfilingProbe(Probe):
     if not browser_platform.is_android:
       self._validate_non_android_perf_settings(browser)
 
-  def _validate_perf_settings(self, browser):
+  def _validate_perf_settings(self, browser) -> None:
     unsupported_settings = (
         ("frequency", self._frequency),
         ("count", self._count),
         ("cpu", self._cpu),
         ("events", self._events),
     )
-    raise self.unsupported_setting_error(browser, unsupported_settings,
-                                         "Android and Linux")
+    self._validate_unsupported_settings(browser, unsupported_settings,
+                                        "Android and Linux")
 
-  def _validate_non_android_perf_settings(self, browser):
+  def _validate_non_android_perf_settings(self, browser) -> None:
     unsupported_settings = (
         ("grouped_events", self._grouped_events),
         ("add_counters", self._add_counters),
     )
-    raise self.unsupported_setting_error(browser, unsupported_settings,
-                                         "Android")
+    self._validate_unsupported_settings(browser, unsupported_settings,
+                                        "Android")
 
-  def unsupported_setting_error(self, browser,
-                                unsupported_settings: Iterable[Tuple[str, Any]],
-                                platforms):
+  def _validate_unsupported_settings(self, browser,
+                                     unsupported_settings: Iterable[Tuple[str,
+                                                                          Any]],
+                                     platforms) -> None:
     for name, value in unsupported_settings:
       if value:
         raise ProbeIncompatibleBrowser(

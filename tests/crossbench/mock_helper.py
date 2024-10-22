@@ -5,12 +5,13 @@
 from __future__ import annotations
 
 import collections
+import datetime as dt
 import os
 import pathlib
 import shlex
 from subprocess import CompletedProcess
-from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
-                    Union)
+from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
+                    Tuple, Union)
 
 import psutil
 
@@ -48,7 +49,7 @@ class MockPlatformMixin:
     self.sh_results: List[str] = []
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
-    self.sleeps: List[dt.duration] = []
+    self.sleeps: List[dt.timedelta] = []
     super().__init__(*args, **kwargs)
 
   def expect_sh(self,
