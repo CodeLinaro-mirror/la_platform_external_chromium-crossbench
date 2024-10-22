@@ -193,12 +193,9 @@ class ChromeDownloaderLinux(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self,
-               version_identifier: Union[str, pth.LocalPath],
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               cache_dir: Optional[pth.LocalPath] = None):
+  def __init__(self, version_identifier: Union[str, pth.LocalPath],
+               browser_type: str, platform_name: str,
+               browser_platform: Platform):
     assert not browser_type
     if browser_platform.is_linux and browser_platform.is_x64:
       platform_name = "linux64"
@@ -206,7 +203,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
       raise ValueError("Unsupported linux architecture for downloading chrome: "
                        f"got={browser_platform.machine} supported=linux.x64")
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform, cache_dir)
+                     browser_platform)
 
   def _installed_app_path(self) -> pth.LocalPath:
     dir_name = "chrome-unstable"
@@ -252,17 +249,14 @@ class ChromeDownloaderMacOS(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self,
-               version_identifier: Union[str, pth.LocalPath],
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               cache_dir: Optional[pth.LocalPath] = None):
+  def __init__(self, version_identifier: Union[str, pth.LocalPath],
+               browser_type: str, platform_name: str,
+               browser_platform: Platform):
     assert not browser_type
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
     platform_name = "mac-universal"
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform, cache_dir)
+                     browser_platform)
 
   def _requested_version_validation(self) -> None:
     assert self._browser_platform.is_macos
@@ -351,12 +345,9 @@ class ChromeDownloaderAndroid(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self,
-               version_identifier: Union[str, pth.LocalPath],
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               cache_dir: Optional[pth.LocalPath] = None):
+  def __init__(self, version_identifier: Union[str, pth.LocalPath],
+               browser_type: str, platform_name: str,
+               browser_platform: Platform):
     assert not browser_type
     assert browser_platform.is_android, (
         f"{type(self)} can only be used on Android")
@@ -365,7 +356,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     # TODO: support low-end arm_64 and high-arm_64 at the same time.
     platform_name = "high-arm_64"
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform, cache_dir)
+                     browser_platform)
 
   @property
   def adb(self) -> Adb:
@@ -500,17 +491,14 @@ class ChromeDownloaderWin(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self,
-               version_identifier: Union[str, pth.LocalPath],
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               cache_dir: Optional[pth.LocalPath] = None):
+  def __init__(self, version_identifier: Union[str, pth.LocalPath],
+               browser_type: str, platform_name: str,
+               browser_platform: Platform):
     assert not browser_type
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
     platform_name = "win64-clang"
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform, cache_dir)
+                     browser_platform)
 
   def _archive_urls(
       self, folder_url: str,

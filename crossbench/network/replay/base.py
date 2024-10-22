@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
 
 GS_PREFIX = "gs://"
-WPR_CACHE = pth.LocalPath(__file__).parents[3] / "wpr_cache"
 GSUTIL_LS_MD5_RE = re.compile(r"Hash \(md5\):\s*([A-Za-z0-9+/]+)=*")
 
 
@@ -70,8 +69,9 @@ class ReplayNetwork(Network):
 
   def _download_gcloud_archive(self, url: str) -> LocalPath:
     with exception.annotate(f"Downloading {url}"), Spinner():
-      WPR_CACHE.mkdir(parents=True, exist_ok=True)
-      local_path = WPR_CACHE / self._generate_filename(url)
+      local_path = (
+          self.runner_platform.local_cache_dir("wpr") /
+          self._generate_filename(url))
       if local_path.is_file():
         logging.info("Found cached WPR archive: %s", local_path)
         return local_path

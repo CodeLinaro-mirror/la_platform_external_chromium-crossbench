@@ -86,12 +86,16 @@ class SubprocessError(subprocess.CalledProcessError):
 _IGNORED_PROCESS_EXCEPTIONS: Final = (psutil.NoSuchProcess, psutil.AccessDenied,
                                       psutil.ZombieProcess)
 
+DEFAULT_CACHE_DIR = pth.LocalPath(__file__).parents[2] / "cache"
 
 class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
+    self._cache_dir: Optional[pth.AnyPath] = None
+    if self.is_local:
+      self._cache_dir = DEFAULT_CACHE_DIR
 
   def assert_is_local(self) -> None:
     caller = sys._getframe(1).f_code.co_name
@@ -410,6 +414,22 @@ class Platform(abc.ABC):
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     del remote_port
     self.assert_is_local()
+
+  def local_cache_dir(self, name: Optional[str] = None) -> pth.LocalPath:
+    return self.local_path(self.cache_dir(name))
+
+  def cache_dir(self, name: Optional[str] = None) -> pth.AnyPath:
+    assert self._cache_dir, "missing cache dir"
+    if not name:
+      dir = self._cache_dir
+    else:
+      dir = self._cache_dir / pth.safe_filename(name)
+    self.mkdir(dir, parents=True, exist_ok=True)
+    return dir
+
+  def set_cache_dir(self, path: pth.AnyPath) -> None:
+    self._cache_dir = path
+    self.mkdir(path, parents=True, exist_ok=True)
 
   def cat(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""

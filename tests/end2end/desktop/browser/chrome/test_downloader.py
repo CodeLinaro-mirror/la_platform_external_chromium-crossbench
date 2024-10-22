@@ -18,6 +18,7 @@ from crossbench.browsers.chromium.webdriver import (ChromeDriverFinder,
                                                     DriverNotFoundError)
 from crossbench.browsers.settings import Settings
 from tests import test_helper
+from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
 
 
 def check_gsutil_access(gsutil_path: pathlib.Path):
@@ -40,9 +41,10 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
                             version_or_archive: Union[str, pathlib.Path],
                             version_str: str) -> pathlib.Path:
   check_gsutil_access(gsutil_path)
-  with plt.PLATFORM.override_binary("gsutil", gsutil_path):
+  with plt.PLATFORM.override_binary(
+      "gsutil", gsutil_path), tmp_platform_cache_dir(output_dir):
     app_path: pathlib.Path = ChromeDownloader.load(version_or_archive,
-                                                   plt.PLATFORM, output_dir)
+                                                   plt.PLATFORM)
     assert compat.is_relative_to(app_path, output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
@@ -61,20 +63,21 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
 
 def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
   driver_dir = output_dir / "chromedriver-binaries"
-  driver_dir.mkdir()
-  finder = ChromeDriverFinder(chrome, cache_dir=driver_dir)
-  assert not list(driver_dir.iterdir())
-  with pytest.raises(DriverNotFoundError):
-    finder.find_local_build()
-  driver_path: pathlib.Path = finder.download()
-  assert list(driver_dir.iterdir()) == [driver_path]
-  assert driver_path.is_file()
-  # Downloading again should use the cache-version
-  driver_path: pathlib.Path = finder.download()
-  assert list(driver_dir.iterdir()) == [driver_path]
-  assert driver_path.is_file()
-  # Restore output dir state.
-  driver_path.unlink()
+  assert not driver_dir.exists()
+  with tmp_platform_cache_dir(driver_dir):
+    finder = ChromeDriverFinder(chrome)
+    assert not list(driver_dir.iterdir())
+    with pytest.raises(DriverNotFoundError):
+      finder.find_local_build()
+    driver_path: pathlib.Path = finder.download()
+    assert list(driver_dir.iterdir()) == [driver_path]
+    assert driver_path.is_file()
+    # Downloading again should use the cache-version
+    driver_path: pathlib.Path = finder.download()
+    assert list(driver_dir.iterdir()) == [driver_path]
+    assert driver_path.is_file()
+    # Restore output dir state.
+    driver_path.unlink()
   driver_dir.rmdir()
 
 

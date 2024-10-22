@@ -20,8 +20,7 @@ import crossbench.browsers.all as browsers
 from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.browsers.browser_helper import (BROWSERS_CACHE,
-                                                convert_flags_to_label)
+from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
@@ -322,7 +321,6 @@ class BrowserVariantsConfig:
     self._variants: List[Browser] = []
     self._unique_names: Set[str] = set()
     self._browser_lookup_override = browser_lookup_override or {}
-    self._cache_dir: pth.LocalPath = BROWSERS_CACHE
     if raw_config_data:
       assert args, "args object needed when loading from dict."
       self.parse_dict(raw_config_data, args)
@@ -355,7 +353,6 @@ class BrowserVariantsConfig:
         self._parse_browsers(config["browsers"], args)
 
   def parse_args(self, args: argparse.Namespace) -> None:
-    self._cache_dir = args.cache_dir
     browser_list: List[BrowserConfig] = args.browser or [
         BrowserConfig.default()
     ]
@@ -661,11 +658,9 @@ class BrowserVariantsConfig:
       return browser_config
     browser_platform = self._get_browser_platform(browser_config)
     if ChromeDownloader.is_valid(path_or_identifier, browser_platform):
-      downloaded = ChromeDownloader.load(
-          path_or_identifier, browser_platform, cache_dir=self._cache_dir)
+      downloaded = ChromeDownloader.load(path_or_identifier, browser_platform)
     elif FirefoxDownloader.is_valid(path_or_identifier, browser_platform):
-      downloaded = FirefoxDownloader.load(
-          path_or_identifier, browser_platform, cache_dir=self._cache_dir)
+      downloaded = FirefoxDownloader.load(path_or_identifier, browser_platform)
     else:
       raise ValueError(
           f"No version-download support for browser: {path_or_identifier}")

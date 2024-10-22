@@ -15,7 +15,6 @@ import tempfile
 from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type, Union
 
 from crossbench import path as pth
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.helper import Spinner
 
@@ -49,23 +48,19 @@ class Downloader(abc.ABC):
     pass
 
   @classmethod
-  def load(cls,
-           archive_path_or_version_identifier: Union[str, pth.LocalPath],
-           browser_platform: Platform,
-           cache_dir: Optional[pth.LocalPath] = None) -> pth.LocalPath:
+  def load(cls, archive_path_or_version_identifier: Union[str, pth.LocalPath],
+           browser_platform: Platform) -> pth.LocalPath:
     logging.debug("Downloading chrome %s binary for %s",
                   archive_path_or_version_identifier, browser_platform)
     loader_cls: Type[Downloader] = cls._get_loader_cls(browser_platform)
     loader: Downloader = loader_cls(archive_path_or_version_identifier, "", "",
-                                    browser_platform, cache_dir)
+                                    browser_platform)
     return loader.app_path
 
-  def __init__(self,
-               archive_path_or_version_identifier: Union[str, pth.LocalPath],
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               cache_dir: Optional[pth.LocalPath] = None):
+  def __init__(self, archive_path_or_version_identifier: Union[str,
+                                                               pth.LocalPath],
+               browser_type: str, platform_name: str,
+               browser_platform: Platform):
     assert browser_type, "Missing browser_type"
     self._browser_type = browser_type
     self._browser_platform = browser_platform
@@ -73,8 +68,10 @@ class Downloader(abc.ABC):
     assert platform_name, "Missing platform_name"
     self._archive_url: str = ""
     self._archive_path: pth.LocalPath = pth.LocalPath()
-    self._out_dir: pth.LocalPath = cache_dir or BROWSERS_CACHE
-    self._archive_dir: pth.LocalPath = self._out_dir / "archive"
+    self._out_dir: pth.LocalPath = (
+        self.host_platform.local_cache_dir("browser_bin"))
+    self._archive_dir: pth.LocalPath = (
+        self.host_platform.local_cache_dir("browser_archive"))
     self._archive_dir.mkdir(parents=True, exist_ok=True)
     self._app_path: pth.LocalPath = pth.LocalPath()
     self._requested_version: BrowserVersion = UnknownBrowserVersion()

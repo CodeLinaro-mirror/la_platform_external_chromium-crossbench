@@ -20,7 +20,6 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from crossbench import exception, helper
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.firefox.firefox import Firefox
 from crossbench.browsers.webdriver import WebDriverBrowser
 
@@ -87,14 +86,13 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
 class FirefoxDriverFinder:
   RELEASES_URL = "https://api.github.com/repos/mozilla/geckodriver/releases"
 
-  def __init__(self,
-               browser: FirefoxWebDriver,
-               cache_dir: pth.LocalPath = BROWSERS_CACHE):
+  def __init__(self, browser: FirefoxWebDriver):
     self.browser = browser
     self.platform = browser.platform
     self.extension = ""
     if self.platform.is_win:
       self.extension = ".exe"
+    cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path = (
         cache_dir / f"geckodriver-{self.browser.major_version}{self.extension}")
 

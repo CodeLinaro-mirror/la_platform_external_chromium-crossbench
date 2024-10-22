@@ -15,6 +15,7 @@ from crossbench.browsers.firefox.webdriver import (FirefoxDriverFinder,
                                                    FirefoxWebDriver)
 from crossbench.browsers.settings import Settings
 from tests import test_helper
+from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Only supported on macOS")
@@ -26,8 +27,9 @@ class FirefoxDownloaderTestCase():
                               version_or_archive: Union[str, pathlib.Path],
                               version_str: str,
                               expect_archive: bool = True) -> pathlib.Path:
-    app_path: pathlib.Path = FirefoxDownloader.load(version_or_archive,
-                                                    plt.PLATFORM, output_dir)
+    app_path: pathlib.Path
+    with tmp_platform_cache_dir(output_dir):
+      app_path = FirefoxDownloader.load(version_or_archive, plt.PLATFORM)
     assert compat.is_relative_to(app_path, output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
@@ -51,18 +53,19 @@ class FirefoxDownloaderTestCase():
   def _load_and_check_webdriver(self, output_dir,
                                 browser: FirefoxWebDriver) -> None:
     driver_dir = output_dir / "chromedriver-binaries"
-    driver_dir.mkdir()
-    finder = FirefoxDriverFinder(browser, cache_dir=driver_dir)
-    assert not list(driver_dir.iterdir())
-    driver_path: pathlib.Path = finder.download()
-    assert list(driver_dir.iterdir()) == [driver_path]
-    assert driver_path.is_file()
-    # Downloading again should use the cache-version
-    driver_path: pathlib.Path = finder.download()
-    assert list(driver_dir.iterdir()) == [driver_path]
-    assert driver_path.is_file()
-    # Restore output dir state.
-    driver_path.unlink()
+    assert not driver_dir.exists()
+    with tmp_platform_cache_dir(driver_dir):
+      finder = FirefoxDriverFinder(browser)
+      assert not list(driver_dir.iterdir())
+      driver_path: pathlib.Path = finder.download()
+      assert list(driver_dir.iterdir()) == [driver_path]
+      assert driver_path.is_file()
+      # Downloading again should use the cache-version
+      driver_path: pathlib.Path = finder.download()
+      assert list(driver_dir.iterdir()) == [driver_path]
+      assert driver_path.is_file()
+      # Restore output dir state.
+      driver_path.unlink()
     driver_dir.rmdir()
 
   def test_download_specific_version(self, output_dir, archive_dir) -> None:

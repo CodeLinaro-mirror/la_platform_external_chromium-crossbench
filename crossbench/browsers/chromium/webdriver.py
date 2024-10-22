@@ -29,7 +29,6 @@ from crossbench import exception, helper
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
@@ -430,15 +429,14 @@ def is_build_dir(path: pth.LocalPath,
 class ChromeDriverFinder:
   driver_path: pth.LocalPath
 
-  def __init__(self,
-               browser: ChromiumWebDriver,
-               cache_dir: pth.LocalPath = BROWSERS_CACHE):
+  def __init__(self, browser: ChromiumWebDriver):
     self.browser = browser
     self.platform: Platform = browser.platform
     self.host_platform: Platform = browser.platform.host_platform
     extension: str = ""
     if self.host_platform.is_win:
       extension = ".exe"
+    cache_dir = self.host_platform.local_cache_dir("driver")
     self.driver_path: pth.LocalPath = (
         cache_dir / f"chromedriver-{self.browser.major_version}{extension}")
     self._validate_browser()

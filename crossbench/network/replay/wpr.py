@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
-from crossbench.network.replay.base import GS_PREFIX, WPR_CACHE, ReplayNetwork
+from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.parse import PathParser
 from crossbench.plt import PLATFORM, Platform
@@ -200,7 +200,9 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def _download_prebuilt_wpr(self) -> LocalPath:
     wpr_info = WPR_PREBUILT_ARCH_MAP[self.browser_platform.machine]
-    local_wpr_go_bin = WPR_CACHE / str(self.browser_platform.machine) / "wpr_go"
+    local_wpr_go_bin = (
+        self.runner_platform.local_cache_dir("wpr") /
+        str(self.browser_platform.machine) / "wpr_go")
     if not check_hash(local_wpr_go_bin, wpr_info["file_hash"]):
       self.runner_platform.sh("gsutil", "cp", wpr_info["url"], local_wpr_go_bin)
     assert check_hash(local_wpr_go_bin, wpr_info["file_hash"])

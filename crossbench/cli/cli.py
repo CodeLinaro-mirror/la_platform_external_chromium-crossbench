@@ -9,7 +9,6 @@ import datetime as dt
 import json
 import logging
 import sys
-import tempfile
 import textwrap
 import traceback
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
@@ -23,7 +22,6 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import splash_screen, viewport
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.cli import ui
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
@@ -405,7 +403,7 @@ class CrossBenchCLI:
     runner_group.add_argument(
         "--cache-dir",
         type=pth.LocalPath,
-        default=BROWSERS_CACHE,
+        default=None,
         help=("Used for caching browser binaries and archives. "
               "Defaults to binary_cache"))
 
@@ -715,11 +713,13 @@ class CrossBenchCLI:
   def benchmark_subcommand(self, args: argparse.Namespace) -> None:
     benchmark = None
     runner = None
+    if args.cache_dir:
+      plt.PLATFORM.set_cache_dir(args.cache_dir)
     self._benchmark_subcommand_helper(args)
     try:
       self._benchmark_subcommand_process_args(args)
       benchmark = self._get_benchmark(args)
-      with tempfile.TemporaryDirectory(prefix="crossbench") as tmp_dirname:
+      with plt.PLATFORM.TemporaryDirectory(prefix="crossbench") as tmp_dirname:
         if args.dry_run:
           args.out_dir = pth.LocalPath(tmp_dirname) / "results"
         args.browser = self._get_browsers(args)

@@ -12,6 +12,7 @@ import tempfile
 import unittest
 
 from crossbench import compat, plt
+from crossbench.plt.base import DEFAULT_CACHE_DIR
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 
@@ -279,6 +280,38 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(bar_file))
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
+
+  def test_cache_dir(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      try:
+        self.platform.set_cache_dir(tmp_dir)
+        cache_dir = self.platform.local_cache_dir("test")
+        self.assertTrue(self.platform.is_dir(cache_dir))
+        self.assertEqual(cache_dir.parent, tmp_dir)
+      finally:
+        self.platform.rm(cache_dir, dir=True, missing_ok=True)
+        if self.platform.is_local:
+          self.platform.set_cache_dir(DEFAULT_CACHE_DIR)
+
+  def test_default_local_cache_dir(self):
+    if self.platform.is_remote:
+      return
+    cache_dir = self.platform.local_cache_dir()
+    try:
+      self.assertTrue(self.platform.is_dir(cache_dir))
+      self.assertEqual(cache_dir, DEFAULT_CACHE_DIR)
+    finally:
+      self.platform.rm(cache_dir, dir=True, missing_ok=True)
+
+  def test_local_cache_dir(self):
+    if self.platform.is_remote:
+      return
+    cache_dir = self.platform.local_cache_dir("test")
+    try:
+      self.assertTrue(self.platform.is_dir(cache_dir))
+      self.assertEqual(cache_dir.parent, DEFAULT_CACHE_DIR)
+    finally:
+      self.platform.rm(cache_dir, dir=True, missing_ok=True)
 
   def test_has_display(self):
     self.assertIn(self.platform.has_display, (True, False))

@@ -19,7 +19,6 @@ import crossbench
 import crossbench.exception
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.browser_helper import BROWSERS_CACHE
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
 from crossbench.browsers.edge.edge import EdgePathMixin
 
@@ -63,9 +62,9 @@ class EdgeWebDriverDownloader:
     self.extension: str = ""
     if self.platform.is_win:
       self.extension = ".exe"
+    cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path: pth.LocalPath = (
-        BROWSERS_CACHE /
-        f"edgedriver-{self.browser.major_version}{self.extension}")
+        cache_dir / f"edgedriver-{self.browser.major_version}{self.extension}")
 
   def download(self) -> pth.LocalPath:
     if not self.driver_path.exists():
@@ -86,7 +85,6 @@ class EdgeWebDriverDownloader:
       shutil.unpack_archive(os.fspath(archive_file), os.fspath(unpack_dir))
       driver = unpack_dir / f"msedgedriver{self.extension}"
       assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
-      BROWSERS_CACHE.mkdir(parents=True, exist_ok=True)
       shutil.move(os.fspath(driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 

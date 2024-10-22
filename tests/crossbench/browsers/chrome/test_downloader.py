@@ -22,26 +22,24 @@ class AbstractChromeDownloaderTestCase(
 
   def test_wrong_versions(self) -> None:
     with self.assertRaises(ValueError):
-      ChromeDownloader.load("", self.platform, self.cache_dir)
+      ChromeDownloader.load("", self.platform)
     with self.assertRaises(ValueError):
-      ChromeDownloader.load("M", self.platform, self.cache_dir)
+      ChromeDownloader.load("M", self.platform)
     with self.assertRaises(ValueError):
-      ChromeDownloader.load("M-100", self.platform, self.cache_dir)
+      ChromeDownloader.load("M-100", self.platform)
     with self.assertRaises(ValueError):
-      ChromeDownloader.load("M100.1.2.3.4.5", self.platform, self.cache_dir)
+      ChromeDownloader.load("M100.1.2.3.4.5", self.platform)
     with self.assertRaises(ValueError):
-      ChromeDownloader.load("100.1.2.3.4.5", self.platform, self.cache_dir)
+      ChromeDownloader.load("100.1.2.3.4.5", self.platform)
 
   def test_empty_path(self) -> None:
     with self.assertRaises(ValueError):
-      ChromeDownloader.load(
-          pathlib.Path("custom"), self.platform, self.cache_dir)
+      ChromeDownloader.load(pathlib.Path("custom"), self.platform)
 
   def test_load_valid_non_googler(self) -> None:
     self.platform.which = lambda x: None
     with self.assertRaises(ValueError):
-      ChromeDownloader.load("chrome-111.0.5563.110", self.platform,
-                            self.cache_dir)
+      ChromeDownloader.load("chrome-111.0.5563.110", self.platform)
 
   def test_is_valid_strings(self) -> None:
     self.assertFalse(ChromeDownloader.is_valid("", self.platform))

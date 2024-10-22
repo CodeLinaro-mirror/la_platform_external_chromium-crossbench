@@ -22,19 +22,19 @@ class AbstractFirefoxDownloaderTestCase(
 
   def test_wrong_versions(self) -> None:
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("", self.platform, self.cache_dir)
+      FirefoxDownloader.load("", self.platform)
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("ff", self.platform, self.cache_dir)
+      FirefoxDownloader.load("ff", self.platform)
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("firefox", self.platform, self.cache_dir)
+      FirefoxDownloader.load("firefox", self.platform)
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("124-0.2", self.platform, self.cache_dir)
+      FirefoxDownloader.load("124-0.2", self.platform)
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("124-0.2", self.platform, self.cache_dir)
+      FirefoxDownloader.load("124-0.2", self.platform)
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("124.0ab2", self.platform, self.cache_dir)
+      FirefoxDownloader.load("124.0ab2", self.platform)
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load("124.0.2.3.5", self.platform, self.cache_dir)
+      FirefoxDownloader.load("124.0.2.3.5", self.platform)
 
   def test_valid_versions_stable(self):
     self.assertFalse(FirefoxDownloader.is_valid("124.0.2", self.platform))
@@ -66,8 +66,7 @@ class AbstractFirefoxDownloaderTestCase(
 
   def test_empty_path(self) -> None:
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load(
-          pathlib.Path("custom"), self.platform, self.cache_dir)
+      FirefoxDownloader.load(pathlib.Path("custom"), self.platform)
 
 
 class BasicFirefoxDownloaderLinuxTestCase(AbstractFirefoxDownloaderTestCase):
