@@ -9,6 +9,7 @@ import collections.abc
 import contextlib
 import datetime as dt
 import functools
+import inspect
 import logging
 import os
 import pathlib
@@ -98,8 +99,12 @@ class Platform(abc.ABC):
       self._cache_dir = DEFAULT_CACHE_DIR
 
   def assert_is_local(self) -> None:
-    caller = sys._getframe(1).f_code.co_name
-    assert self.is_local, f"Unsupported operation '{caller}' on remote platform"
+    if self.is_local:
+      return
+    caller = "assert_is_local"
+    caller = inspect.stack()[1].function
+    raise RuntimeError(f"{type(self).__name__}.{caller}(...) is not supported "
+                       "on remote platform")
 
   @property
   @abc.abstractmethod
