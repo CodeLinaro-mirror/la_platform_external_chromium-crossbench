@@ -551,9 +551,10 @@ class Platform(abc.ABC):
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
   @contextlib.contextmanager
-  def NamedTemporaryFile(self,
-                         prefix: Optional[str] = None,
-                         dir: Optional[pth.AnyPathLike] = None):
+  def NamedTemporaryFile(  # pylint: disable=invalid-name
+      self,
+      prefix: Optional[str] = None,
+      dir: Optional[pth.AnyPathLike] = None):
     tmp_file: LocalPath = self.host_platform.local_path(
         self.host_platform.mktemp(prefix, dir))
     try:
@@ -576,9 +577,10 @@ class Platform(abc.ABC):
     return self.path(name)
 
   @contextlib.contextmanager
-  def TemporaryDirectory(self,
-                         prefix: Optional[str] = None,
-                         dir: Optional[pth.AnyPathLike] = None):
+  def TemporaryDirectory(  # pylint: disable=invalid-name
+      self,
+      prefix: Optional[str] = None,
+      dir: Optional[pth.AnyPathLike] = None):
     tmp_dir = self.mkdtemp(prefix, dir)
     try:
       yield tmp_dir

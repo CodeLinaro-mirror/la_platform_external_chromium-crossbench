@@ -9,15 +9,14 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence,
-                    Tuple)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.settings import Settings
-from crossbench.flags.base import Flags, FlagsT
+from crossbench.flags.base import Flags, FlagsData, FlagsT
 
 if TYPE_CHECKING:
   import re
@@ -38,7 +37,7 @@ if TYPE_CHECKING:
 class Browser(abc.ABC):
 
   @classmethod
-  def default_flags(cls, initial_data: Flags.InitialDataType = None) -> Flags:
+  def default_flags(cls, initial_data: FlagsData = None) -> Flags:
     return Flags(initial_data)
 
   def __init__(self,

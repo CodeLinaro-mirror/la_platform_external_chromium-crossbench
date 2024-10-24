@@ -34,10 +34,10 @@ class GoogleLogin(PresetLoginBlock):
         ("return "
          f"document.querySelector(\"[aria-label='{aria_label}']\") != null &&"
          f"document.getElementById({repr(button_name)}) != null;"), 0.2, 10)
-    action.js(
-        f"const inputField = document.querySelector(\"[aria-label='{aria_label}']\");"
-        f"inputField.value = {repr(input_val)};"
-        f"document.getElementById({repr(button_name)}).click();")
+    action.js("const inputField ="
+              f" document.querySelector(\"[aria-label='{aria_label}']\");"
+              f"inputField.value = {repr(input_val)};"
+              f"document.getElementById({repr(button_name)}).click();")
 
   def run_with(self, runner: ActionRunner, run: Run,
                page: InteractivePage) -> None:

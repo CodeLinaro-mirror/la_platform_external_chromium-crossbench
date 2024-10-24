@@ -28,19 +28,21 @@ if TYPE_CHECKING:
 # use value for pylint
 assert GS_PREFIX
 
+BASE_URL = "gs://chromium-telemetry/binary_dependencies"
+
 WPR_PREBUILT_ARCH_MAP = {
-  MachineArch.ARM_64: {
-    "url": "gs://chromium-telemetry/binary_dependencies/wpr_go_129a66a1378dfcbb815596f66ca680728f77da36",
-    "file_hash": "129a66a1378dfcbb815596f66ca680728f77da36",
-  },
-  MachineArch.ARM_32: {
-    "url": "gs://chromium-telemetry/binary_dependencies/wpr_go_92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
-    "file_hash": "92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
-  },
-  MachineArch.X64: {
-    "url": "gs://chromium-telemetry/binary_dependencies/wpr_go_6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
-    "file_hash": "6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
-  },
+    MachineArch.ARM_64: {
+        "url": f"{BASE_URL}/wpr_go_129a66a1378dfcbb815596f66ca680728f77da36",
+        "file_hash": "129a66a1378dfcbb815596f66ca680728f77da36",
+    },
+    MachineArch.ARM_32: {
+        "url": f"{BASE_URL}/wpr_go_92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
+        "file_hash": "92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
+    },
+    MachineArch.X64: {
+        "url": f"{BASE_URL}/wpr_go_6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
+        "file_hash": "6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
+    },
 }
 
 

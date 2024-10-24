@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
-from crossbench.flags.base import Flags
+from crossbench.flags.base import Flags, FlagsData
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.live import LiveNetwork
 
@@ -24,8 +24,8 @@ class Settings:
   """Container object for browser agnostic settings."""
 
   def __init__(self,
-               flags: Optional[Flags.InitialDataType] = None,
-               js_flags: Optional[Flags.InitialDataType] = None,
+               flags: Optional[FlagsData] = None,
+               js_flags: Optional[FlagsData] = None,
                cache_dir: Optional[pth.AnyPath] = None,
                network: Optional[Network] = None,
                driver_path: Optional[pth.AnyPath] = None,
@@ -50,7 +50,7 @@ class Settings:
     self._http_request_timeout = http_request_timeout
 
   def _extract_js_flags(self, flags: Flags,
-                        js_flags: Optional[Flags.InitialDataType]) -> Flags:
+                        js_flags: Optional[FlagsData]) -> Flags:
     if isinstance(flags, ChromeFlags):
       chrome_js_flags = flags.js_flags
       if not js_flags:
@@ -61,8 +61,7 @@ class Settings:
             f"js_flags={repr(js_flags)}")
     return self._convert_flags(js_flags, "--js-flags")
 
-  def _convert_flags(self, flags: Optional[Flags.InitialDataType],
-                     label: str) -> Flags:
+  def _convert_flags(self, flags: Optional[FlagsData], label: str) -> Flags:
     if isinstance(flags, str):
       raise ValueError(f"{label} should be a list, but got: {repr(flags)}")
     if not flags:

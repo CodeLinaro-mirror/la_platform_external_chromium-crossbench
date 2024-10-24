@@ -36,10 +36,6 @@ class PageConfig(ConfigObject):
   setup: Optional[ActionBlock] = None
   blocks: Tuple[ActionBlock, ...] = tuple()
 
-  def validate(self):
-    super().validate()
-
-
   @classmethod
   def parse_other(cls: Type[PageConfig], value: Any, **kwargs) -> PageConfig:
     if isinstance(value, (list, tuple)):

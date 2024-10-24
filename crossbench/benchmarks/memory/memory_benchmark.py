@@ -7,7 +7,6 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
 
 import selenium.common.exceptions
@@ -107,12 +106,6 @@ class MemoryProbeContext(ActionRunnerListener,
   def start(self) -> None:
     pass
 
-  def stop(self) -> None:
-    super().stop()
-
-  def teardown(self) -> ProbeResult:
-    return super().teardown()
-
   def to_json(self, actions: Actions) -> Dict[str, float]:
     return {"alive_tab_count": self._tab_count - 1}
 
@@ -138,14 +131,14 @@ class MemoryProbeContext(ActionRunnerListener,
     and reloaded.
     """
     with run.actions("_check_liveness", measure=False) as action:
-      for handle in self._navigation_time_ms:
+      for handle, handle_navigation_time_ms in self._navigation_time_ms.items():
         logging.debug("Browser: %s. Liveness checking for handle: %s",
                       run.browser, handle)
         action.switch_window(handle)
         action.wait(1)
         navigation_start_time = action.js(
             "return window.performance.timing.navigationStart")
-        if navigation_start_time != self._navigation_time_ms[handle]:
+        if navigation_start_time != handle_navigation_time_ms:
           logging.info(
               "Browser: %s. The max num of tabs we can keep alive concurrently "
               "is: %s ", run.browser, self._tab_count - 1)

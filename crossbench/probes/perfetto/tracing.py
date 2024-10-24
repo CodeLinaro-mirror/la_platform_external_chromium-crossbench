@@ -306,7 +306,7 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
     try:
       legacy_json_file = self._convert_to_json(traceconv, proto_file)
       return self.local_result(proto=(proto_file,), json=(legacy_json_file,))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
       logging.error("traceconv failure, defaulting to .proto file: %s", e)
       return self.local_result(proto=(proto_file,))
 

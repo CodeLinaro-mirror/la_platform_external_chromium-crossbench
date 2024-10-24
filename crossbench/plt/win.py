@@ -76,7 +76,7 @@ class WinPlatform(Platform):
       # Fall back to command-line tools.
       if version := self.sh_stdout(app_or_bin, "--version").strip():
         return version
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
       logging.debug("Failed to extract binary tool version: %s", e)
     raise ValueError(f"Could not extract version for {app_or_bin}")
 

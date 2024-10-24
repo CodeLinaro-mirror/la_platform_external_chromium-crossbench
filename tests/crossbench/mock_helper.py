@@ -6,12 +6,11 @@ from __future__ import annotations
 
 import collections
 import datetime as dt
-import os
 import pathlib
 import shlex
 from subprocess import CompletedProcess
 from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Union)
+                    Union)
 
 import psutil
 
@@ -30,13 +29,12 @@ from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  from crossbench.plt.base import CmdArg, TupleCmdArgs
   from crossbench.runner.runner import Runner
 
 
 GIB = 1014**3
 
-
-ShellArgsT = Tuple[Union[str, pathlib.Path]]
 
 
 class MockPlatformMixin:
@@ -44,20 +42,23 @@ class MockPlatformMixin:
   def __init__(self, *args, is_battery_powered=False, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self.sh_cmds: List[ShellArgsT] = []
-    self.expected_sh_cmds: Optional[List[ShellArgsT]] = None
+    self.sh_cmds: List[TupleCmdArgs] = []
+    self.expected_sh_cmds: Optional[List[TupleCmdArgs]] = None
     self.sh_results: List[str] = []
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
     super().__init__(*args, **kwargs)
 
-  def expect_sh(self,
-                *args: Union[str, pathlib.Path],
-                result: str = "") -> None:
+  def expect_sh(self, *args: Any, result: str = "") -> None:
     if self.expected_sh_cmds is None:
       self.expected_sh_cmds = []
-    self.expected_sh_cmds.append(args)
+    converted_args = []
+    for arg in args:
+      if not isinstance(arg, (str, pathlib.PurePath)):
+        arg = str(arg)
+      converted_args.append(arg)
+    self.expected_sh_cmds.append(tuple(converted_args))
     self.sh_results.append(result)
     assert isinstance(result, str)
 

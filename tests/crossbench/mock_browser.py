@@ -9,8 +9,6 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
-import random
-import string
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
                     Union, cast)
 
@@ -28,7 +26,7 @@ if TYPE_CHECKING:
   import datetime as dt
   import re
 
-  from crossbench.flags.base import Flags
+  from crossbench.flags.base import FlagsData
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -82,8 +80,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
       fs.create_file(bin_path)
 
   @classmethod
-  def default_flags(cls,
-                    initial_data: Flags.InitialDataType = None) -> ChromeFlags:
+  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
     return ChromeFlags(initial_data)
 
   def __init__(self,

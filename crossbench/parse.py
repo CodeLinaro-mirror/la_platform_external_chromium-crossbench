@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import contextlib
 import datetime as dt
 import enum
 import json
@@ -13,8 +12,8 @@ import logging
 import math
 import re
 import shlex
-from typing import (Any, Dict, Final, Iterable, Iterator, List, Optional,
-                    Sequence, Type, TypeVar, Union, cast)
+from typing import (Any, Dict, Final, Iterable, List, Optional, Sequence, Type,
+                    TypeVar, Union, cast)
 from urllib import parse as urlparse
 
 import hjson
@@ -168,6 +167,8 @@ class PathParser:
 
 
 EnumT = TypeVar("EnumT", bound=enum.Enum)
+NotNoneT = TypeVar("NotNoneT")
+SequenceT = TypeVar("SequenceT", bound=Sequence)
 
 
 class ObjectParser:
@@ -397,7 +398,6 @@ class ObjectParser:
     raise argparse.ArgumentTypeError(
         f"Expected bool {name} but got {type_str(value)}: {repr(value)}")
 
-  NotNoneT = TypeVar("NotNoneT")
 
   @classmethod
   def not_none(cls, value: Optional[NotNoneT], name: str = "value") -> NotNoneT:
@@ -422,8 +422,6 @@ class ObjectParser:
       return shlex.split(value)
     except ValueError as e:
       raise argparse.ArgumentTypeError(f"Invalid shell cmd: {value} ") from e
-
-  SequenceT = TypeVar("SequenceT", bound=Sequence)
 
   @classmethod
   def unique_sequence(

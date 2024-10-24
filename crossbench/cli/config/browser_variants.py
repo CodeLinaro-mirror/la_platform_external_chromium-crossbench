@@ -239,9 +239,9 @@ class FlagsGroupConfig(FlagsGroupConfigTuple):
     return FlagsGroupConfig(variants)
 
   def product(self, *args: FlagsGroupConfig) -> FlagsGroupConfig:
-    return functools.reduce(lambda a, b: a._product(b), args, self)
+    return functools.reduce(lambda a, b: a.inner_product(b), args, self)
 
-  def _product(self, other: FlagsGroupConfig) -> FlagsGroupConfig:
+  def inner_product(self, other: FlagsGroupConfig) -> FlagsGroupConfig:
     """Create a new FlagsGroupConfig as the combination of
     self.variants x other.variants"""
     new_variants: List[FlagsVariantConfig] = []
@@ -714,7 +714,8 @@ class BrowserVariantsConfig:
           driver_logging=args.driver_logging,
           wipe_system_user_data=args.wipe_system_user_data,
           http_request_timeout=args.http_request_timeout)
-      browser_instance = browser_cls(  # pytype: disable=not-instantiable
+
+      browser_instance = browser_cls(  # pytype: disable=not-instantiable; pylint: disable=abstract-class-instantiated
           label=label,
           path=path,
           settings=settings)

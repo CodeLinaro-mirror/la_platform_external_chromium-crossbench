@@ -4,12 +4,11 @@
 
 import abc
 import argparse
-import json
-from enum import IntEnum
-from immutabledict import immutabledict
 from typing import Any, Dict, Union
 
-import crossbench.exception as exception
+from immutabledict import immutabledict
+
+from crossbench import exception
 from crossbench.browsers.browser import Browser
 from crossbench.compat import StrEnum
 from crossbench.env import HostEnvironment

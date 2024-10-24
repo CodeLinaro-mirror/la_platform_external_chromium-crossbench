@@ -25,10 +25,11 @@ if TYPE_CHECKING:
 
 assert ACTIONS_TUPLE, "import failed"
 
+LOGIN_LABEL: Final[str] = "login"
+
+
 @dataclasses.dataclass(frozen=True)
 class ActionBlock(ConfigObject):
-  LOGIN_LABEL: Final[str] = "login"
-
   label: str = "default"
   index: int = 0
   actions: Tuple[Action, ...] = tuple()
@@ -75,7 +76,7 @@ class ActionBlock(ConfigObject):
     if not value:
       return None
     label = ObjectParser.non_empty_str(value)
-    if label == cls.LOGIN_LABEL:
+    if label == LOGIN_LABEL:
       raise ConfigError(
           f"Block label {repr(label)} is reserved for login blocks")
     return value
@@ -90,7 +91,8 @@ class ActionBlock(ConfigObject):
     # for index, action in enumerate(self.actions):
     #   if index != action.index:
     #     raise ValueError(
-    #         f"action[{index}].index should be {index}, but got {action.index}")
+    #         f"action[{index}].index should be {index}, "
+    #         f"but got {action.index}")
     if not self.actions:
       raise argparse.ArgumentTypeError("Invalid block without actions")
 

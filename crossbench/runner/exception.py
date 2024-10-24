@@ -3,4 +3,4 @@
 # found in the LICENSE file.
 
 class StopStoryException(Exception):
-    """Exceptions thrown that resulted in the termination of the story."""
+  """Exceptions thrown that resulted in the termination of the story."""

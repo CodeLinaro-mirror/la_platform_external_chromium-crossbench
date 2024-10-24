@@ -7,8 +7,6 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from crossbench import path as pth
-
 _FLAG_TO_PATH_RE = re.compile(r"[-/\\:.]")
 
 

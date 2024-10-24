@@ -38,7 +38,7 @@ class UnsupportedPlatformError(BinaryNotFoundError):
             f"Only supported on {self.expected_platform_name}")
 
 
-BinaryLookupT = Union[pth.AnyPathLike, Iterable[pth.AnyPathLike]]
+BinaryLookup = Union[pth.AnyPathLike, Iterable[pth.AnyPathLike]]
 
 
 class Binary:
@@ -48,12 +48,12 @@ class Binary:
 
   def __init__(self,
                name: str,
-               default: Optional[BinaryLookupT] = None,
-               posix: Optional[BinaryLookupT] = None,
-               linux: Optional[BinaryLookupT] = None,
-               android: Optional[BinaryLookupT] = None,
-               macos: Optional[BinaryLookupT] = None,
-               win: Optional[BinaryLookupT] = None) -> None:
+               default: Optional[BinaryLookup] = None,
+               posix: Optional[BinaryLookup] = None,
+               linux: Optional[BinaryLookup] = None,
+               android: Optional[BinaryLookup] = None,
+               macos: Optional[BinaryLookup] = None,
+               win: Optional[BinaryLookup] = None) -> None:
     self._name = name
     self._default = self._convert(default)
     self._posix = self._convert(posix)
@@ -65,8 +65,8 @@ class Binary:
     if not any((default, posix, linux, android, macos, win)):
       raise ValueError("At least one platform binary must be provided")
 
-  def _convert(
-      self, paths: Optional[BinaryLookupT] = None) -> Tuple[pth.AnyPath, ...]:
+  def _convert(self,
+               paths: Optional[BinaryLookup] = None) -> Tuple[pth.AnyPath, ...]:
     if paths is None:
       return tuple()
     if isinstance(paths, str):

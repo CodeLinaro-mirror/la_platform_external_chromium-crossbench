@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import dataclasses
-from typing import Optional
+
 from typing_extensions import Self
 
 from crossbench.benchmarks.loading.point import Point

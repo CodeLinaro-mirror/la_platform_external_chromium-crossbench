@@ -20,7 +20,7 @@ from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
-  from crossbench.flags.base import Flags
+  from crossbench.flags.base import Flags, FlagsData
   from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -64,8 +64,7 @@ class Chromium(Browser):
         win=["Google/Chromium/Application/chromium.exe"])
 
   @classmethod
-  def default_flags(cls,
-                    initial_data: Flags.InitialDataType = None) -> ChromeFlags:
+  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
     return ChromeFlags(initial_data)
 
   def __init__(self,

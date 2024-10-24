@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Tuple, cast
+from typing import TYPE_CHECKING, List, Tuple, cast
 
-from crossbench.benchmarks.loading.page import live
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -22,14 +21,17 @@ if TYPE_CHECKING:
 DEFAULT_DURATION_SECONDS = 15
 DEFAULT_DURATION = dt.timedelta(seconds=DEFAULT_DURATION_SECONDS)
 
+# This is initialized in interactive.py to avoid circular dependencies
+PAGE_LIST: List[Page] = []
 
 class Page(Story, metaclass=abc.ABCMeta):
 
   @classmethod
   def all_story_names(cls) -> Tuple[str, ...]:
+    assert PAGE_LIST, "Missing predefined page list"
     # TODO: move all story names magic to the dedicated StoryFilter.
     # Use module instead of direct import to avoid import cycle
-    return tuple(page.name for page in live.PAGE_LIST)
+    return tuple(page.name for page in PAGE_LIST)
 
   def __init__(self,
                name: str,

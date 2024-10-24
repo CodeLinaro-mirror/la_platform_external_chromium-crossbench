@@ -8,7 +8,6 @@ import dataclasses
 import datetime as dt
 import shlex
 import subprocess
-from math import floor
 from typing import TYPE_CHECKING
 
 import crossbench.path as pth
@@ -252,7 +251,7 @@ E: <time> 0000 0000 0
       raise ValueError(f"Cannot tap on out of bounds position: {position}")
 
     return script_block.replace("<x>", str(round(position.x))).replace(
-        "<y>", str(round(position.y))).replace("<time>", "%.6f" % time)
+        "<y>", str(round(position.y))).replace("<time>", f"{time:.6f}")
 
 
 class ChromeOSInputActionRunner(BasicActionRunner):
@@ -376,8 +375,8 @@ class ChromeOSInputActionRunner(BasicActionRunner):
       typing_process.wait(timeout=action.timeout.total_seconds())
 
   def _get_click_location(
-      self, actions: Actions,
-      action: i_action.ClickAction) -> Tuple[Optional[Point], ChromeOSViewportInfo]:
+      self, actions: Actions, action: i_action.ClickAction
+  ) -> Tuple[Optional[Point], ChromeOSViewportInfo]:
     viewport_info: ChromeOSViewportInfo = self._get_viewport_info(
         actions, action.selector, action.scroll_into_view)
 

@@ -348,7 +348,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # This can happen if a browser / probe setup error occurs and we're
     # in a unclean state.
     if self.browser.is_running:
-      self._runs[-1]._teardown_browser(is_dry_run)
+      self._runs[-1]._teardown_browser(is_dry_run)  # pylint: disable=protected-access
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:

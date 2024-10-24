@@ -24,8 +24,9 @@ from crossbench.benchmarks.loading.config.login.google import (
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.benchmarks.loading.page.live import (PAGE_LIST,
-                                                     PAGE_LIST_SMALL, LivePage)
+from crossbench.benchmarks.loading.page.interactive import InteractivePage
+from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
+                                                     LivePage)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -64,6 +65,14 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
         run_setup=run_setup)
     return cast(LoadingPageFilter,
                 super().story_filter(patterns, args=args, separate=separate))
+
+  def test_page_list(self):
+    self.assertTrue(PAGE_LIST)
+    self.assertTrue(PAGE_LIST_SMALL)
+    for page in PAGE_LIST:
+      self.assertIsInstance(page, InteractivePage)
+    for page in PAGE_LIST_SMALL:
+      self.assertIsInstance(page, InteractivePage)
 
   def test_all_stories(self):
     stories = self.story_filter(["all"]).stories

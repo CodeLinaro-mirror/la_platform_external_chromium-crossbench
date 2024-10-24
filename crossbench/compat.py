@@ -9,8 +9,7 @@ import enum
 import os
 import sys
 import textwrap
-from typing import (TYPE_CHECKING, List, NamedTuple, Optional, Tuple, Type,
-                    TypeVar, cast)
+from typing import List, NamedTuple, Optional, Tuple, Type, TypeVar, cast
 
 import tabulate
 

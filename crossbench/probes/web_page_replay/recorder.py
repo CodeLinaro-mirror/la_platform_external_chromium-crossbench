@@ -209,7 +209,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
         f"MAP *:443 {self._host}:{self._recorder.https_port},"
         "EXCLUDE localhost")
     # TODO: add replay support, see:
-    # third_party/catapult/telemetry/telemetry/internal/backends/chrome/chrome_startup_args.py
+    # https://crsrc.org/c/third_party/catapult/telemetry/telemetry/internal/backends/chrome/chrome_startup_args.py
 
   def _setup_port_forwarding(self) -> None:
     if self._browser_platform.is_remote:

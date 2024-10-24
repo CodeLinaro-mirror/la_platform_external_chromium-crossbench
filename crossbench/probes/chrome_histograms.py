@@ -243,6 +243,14 @@ class ChromeHistogramSample:
       raise ValueError(f"Histogram {name} has {count} total samples, "
                        f"but buckets add to {bucket_sum}")
 
+  @property
+  def mean(self) -> Optional[float]:
+    return self._mean
+
+  @property
+  def count(self) -> int:
+    return self._count
+
   def bucket_max(self, bucket_min: int) -> Optional[int]:
     return self._bucket_maxes.get(bucket_min)
 
@@ -281,17 +289,17 @@ class ChromeHistogramSample:
     raise ValueError("overflowed histogram buckets looking for percentile")
 
   def diff_mean(self, baseline: ChromeHistogramSample) -> float:
-    count = self._count - baseline._count
+    count = self._count - baseline.count
     if count <= 0:
       raise ValueError(f"{self._name} can not compute mean without any samples")
-    if self._mean is None or baseline._mean is None:
+    if self._mean is None or baseline.mean is None:
       raise ValueError(
           f"{self._name} has no mean reported, is it an enum histogram?")
 
-    return (self._mean * self._count - baseline._mean * baseline._count) / count
+    return (self._mean * self._count - baseline.mean * baseline.count) / count
 
   def diff_count(self, baseline: ChromeHistogramSample) -> int:
-    return self._count - baseline._count
+    return self._count - baseline.count
 
   @property
   def name(self) -> str:
@@ -359,6 +367,6 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
                               ChromeHistogramSample(metric.histogram_name))
       try:
         json[metric.name] = metric.compute(delta, baseline)
-      except Exception as e:
+      except Exception as e:  # pylint: disable=broad-exception-caught
         logging.warning("Failed to log metric %s: %s", metric.name, e)
     return json

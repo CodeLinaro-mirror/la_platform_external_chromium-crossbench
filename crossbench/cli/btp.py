@@ -5,7 +5,7 @@
 
 import argparse
 import logging
-from typing import Sequence
+from typing import Optional, Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
@@ -80,14 +80,14 @@ class BTPUtil:
     args = self.parser.parse_args(argv)
 
     probe_config = ProbeListConfig.parse_path(args.probe_config)
-    tp = None
+    tp: Optional[TraceProcessorProbe] = None
     for probe in probe_config.probes:
       if isinstance(probe, TraceProcessorProbe):
         tp = probe
     assert tp is not None
 
     tp_config = TraceProcessorConfig(
-        bin_path=tp._trace_processor_bin,
+        bin_path=str(tp.trace_processor_bin),
         extra_flags=["--add-sql-module", _MODULES_DIR])
     btp_conf = BatchTraceProcessorConfig(
       tp_config=tp_config,

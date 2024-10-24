@@ -14,7 +14,6 @@ import re
 import shutil
 import stat
 import tempfile
-import time
 import urllib.error
 import zipfile
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,

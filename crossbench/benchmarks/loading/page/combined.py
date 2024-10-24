@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Iterable, cast
+from typing import TYPE_CHECKING, Iterable
 
 from crossbench.benchmarks.loading.page.base import Page, get_action_runner
 from crossbench.benchmarks.loading.playback_controller import \

@@ -3,10 +3,9 @@
 # found in the LICENSE file.
 
 import datetime as dt
-import os
 import pathlib
 import unittest
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
@@ -81,10 +80,10 @@ E: 5.000000 0000 0000 0
         self._FAKE_TOUCH_DEVICE, DisplayRectangle(Point(0, 0), 200, 100),
         Point(201, 101))
 
-    with self.assertRaisesRegexp(ValueError, "out of bounds"):
+    with self.assertRaisesRegex(ValueError, "out of bounds"):
       str(tap_event)
 
-  def test_rereference_coordinates(self):
+  def test_reference_coordinates(self):
     tap_event: ChromeOSTouchEvent = ChromeOSTouchEvent(
         self._FAKE_TOUCH_DEVICE, DisplayRectangle(Point(0, 0), 600, 300),
         Point(53, 53))
@@ -396,7 +395,7 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     self.browser.expect_js(expected_js=expected_js)
 
     for _ in range(touch_count):
-      self.platform.expect_sh('evemu-play --insert-slot0 /dev/input/event0 < .')
+      self.platform.expect_sh("evemu-play --insert-slot0 /dev/input/event0 < .")
 
   def expect_mouse_click(
       self,
@@ -483,24 +482,24 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
     self.run_action(click_action)
 
-  def test_click_touch_selector_non_existant_element_raises(self):
+  def test_click_touch_selector_non_existent_element_raises(self):
     click_action = ClickAction(
         InputSource.TOUCH, selector="div[]", required=True)
 
     self.expect_touch_setup(
         touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
 
-    with self.assertRaisesRegexp(ElementNotFoundError, "matching DOM"):
+    with self.assertRaisesRegex(ElementNotFoundError, "matching DOM"):
       self.run_action(click_action)
 
-  def test_click_mouse_selector_non_existant_element_raises(self):
+  def test_click_mouse_selector_non_existent_element_raises(self):
     click_action = ClickAction(
         InputSource.MOUSE, selector="div[]", required=True)
 
     self.expect_mouse_click(
         expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
 
-    with self.assertRaisesRegexp(ElementNotFoundError, "matching DOM"):
+    with self.assertRaisesRegex(ElementNotFoundError, "matching DOM"):
       self.run_action(click_action)
 
   def test_click_touch_selector_non_required_element_success(self):
@@ -669,7 +668,7 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
         ]),
         touch_count=0)
 
-    with self.assertRaisesRegexp(ElementNotFoundError, "matching DOM"):
+    with self.assertRaisesRegex(ElementNotFoundError, "matching DOM"):
       self.run_action(scroll_action)
 
   def test_scroll_touch_selector_not_found_does_nothing(self):
