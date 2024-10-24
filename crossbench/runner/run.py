@@ -256,7 +256,6 @@ class Run(ResultOrigin):
   def setup(self, is_dry_run: bool) -> None:
     self._state.transition(State.INITIAL, to=State.SETUP)
     self._setup_dirs()
-    self._cool_down(is_dry_run)
     with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
       self._probe_context_manager.setup(self.probes, is_dry_run)
     self._log_setup()
@@ -310,13 +309,6 @@ class Run(ResultOrigin):
     self.story.log_run_details(self)
     logging.info("RUN DIR: %s", self._out_dir)
     logging.debug("CWD %s", self._out_dir)
-
-  def _cool_down(self, is_dry_run: bool) -> None:
-    if is_dry_run:
-      return
-    with self.measure("runner-cooldown"):
-      self._runner.wait(self._runner.timing.cool_down_time, absolute_time=True)
-      self._runner.cool_down()
 
   def run(self, is_dry_run: bool) -> None:
     self._state.transition(State.SETUP, to=State.READY)

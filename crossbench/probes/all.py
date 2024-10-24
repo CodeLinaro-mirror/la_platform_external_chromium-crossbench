@@ -31,6 +31,7 @@ from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
+from crossbench.probes.thermal_monitor import ThermalMonitorProbe
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
@@ -52,6 +53,7 @@ INTERNAL_PROBES: Tuple[Type[InternalProbe], ...] = (
     ErrorsProbe,
     LogProbe,
     SystemDetailsProbe,
+    ThermalMonitorProbe,
 )
 # ResultsSummaryProbe should always be processed last, and thus must be the
 # first probe to be added to any browser.

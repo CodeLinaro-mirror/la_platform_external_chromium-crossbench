@@ -40,6 +40,7 @@ from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
                               PathParser)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
 from crossbench.probes.internal import ErrorsProbe
+from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
 
@@ -409,12 +410,17 @@ class CrossBenchCLI:
 
     cooldown_group = runner_group.add_mutually_exclusive_group()
     cooldown_group.add_argument(
+        "--cool-down-threshold",
+        type=ThermalStatus.parse,
+        help=("Pause execution when the device reaches this thermal status. "
+              "Exucution resumes once the status drops below the threshold. "
+              "Only available on Android."))
+    cooldown_group.add_argument(
         "--cool-down-time",
         "--cool-down",
         type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(seconds=2),
-        help=("Time the runner waits between different runs or repetitions. "
-              "Increase this to let the CPU cool down between runs. "
+        help=("Wait between repetitions for a fixed amount of time. "
               f"Format: {DurationParser.help()}"))
     cooldown_group.add_argument(
         "--no-cool-down",

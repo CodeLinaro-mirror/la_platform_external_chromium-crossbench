@@ -24,6 +24,7 @@ from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
+from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
@@ -185,6 +186,7 @@ class Runner:
         "thread_mode": args.thread_mode,
         "throw": args.throw,
         "create_symlinks": args.create_symlinks,
+        "cool_down_threshold": args.cool_down_threshold,
     }
 
   def __init__(self,
@@ -199,6 +201,7 @@ class Runner:
                warmup_repetitions: int = 0,
                cache_temperatures: Iterable[str] = ("default",),
                timing: Timing = Timing(),
+               cool_down_threshold: Optional[ThermalStatus] = None,
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
                create_symlinks: bool = True):
@@ -207,6 +210,7 @@ class Runner:
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._timing = timing
+    self._cool_down_threshold: Optional[ThermalStatus] = cool_down_threshold
     self._browsers: Tuple[Browser, ...] = tuple(browsers)
     self._validate_browsers()
     self._benchmark = benchmark
@@ -259,9 +263,15 @@ class Runner:
     assert len(self._probes) == 0
     assert len(self._default_probes) == 0
     for probe_cls in all_probes.INTERNAL_PROBES:
-      default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
-      self.attach_probe(default_probe)
-      self._default_probes.append(default_probe)
+      if probe_cls == all_probes.ThermalMonitorProbe:
+        thermal_monitor_probe = all_probes.ThermalMonitorProbe(
+            cool_down_time=self._timing.cool_down_time,
+            threshold=self._cool_down_threshold)
+        self._attach_default_probe(thermal_monitor_probe)
+      else:
+        default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
+        self._attach_default_probe(default_probe)
+
     for index, probe in enumerate(probe_list):
       assert (not isinstance(probe, TraceProcessorProbe) or index == 0), (
           f"TraceProcessorProbe must be first in the list to be able "
@@ -270,6 +280,10 @@ class Runner:
     # Results probe must be first in the list, and thus last to be processed
     # so all other probes have data by the time we write the results summary.
     assert isinstance(self._probes[0], ResultsSummaryProbe)
+
+  def _attach_default_probe(self, probe: Probe):
+    self.attach_probe(probe)
+    self._default_probes.append(probe)
 
   def attach_probe(self,
                    probe: Probe,
@@ -569,16 +583,6 @@ class Runner:
     self._browser_group = BrowsersRunGroup(self._story_groups, throw)
     self._browser_group.merge(self.probes)
     self._exceptions.extend(self._browser_group.exceptions, is_nested=True)
-
-  def cool_down(self) -> None:
-    # Cool down between runs
-    if not self._platform.is_thermal_throttled():
-      return
-    logging.info("COOLDOWN")
-    for _ in helper.WaitRange(1, 100).wait_with_backoff(self._platform):
-      if not self._platform.is_thermal_throttled():
-        break
-      logging.info("COOLDOWN: still hot, waiting some more")
 
 
 TEMPERATURE_ICONS = {
