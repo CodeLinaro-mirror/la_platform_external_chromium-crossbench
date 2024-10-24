@@ -372,7 +372,8 @@ class ChromeOSInputActionRunner(BasicActionRunner):
           run, action, lambda run, actions, text: typing_process.stdin.write(
               text.encode("utf-8")))
     finally:
-      typing_process.kill()
+      typing_process.stdin.close()
+      typing_process.wait(timeout=action.timeout.total_seconds())
 
   def _get_click_location(
       self, actions: Actions,
