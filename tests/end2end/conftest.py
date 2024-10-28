@@ -44,10 +44,17 @@ def pytest_xdist_auto_num_workers(config):
   return 4
 
 
+def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
+  app_path = request.config.getoption(option_key)
+  if app_path and plt.PLATFORM.is_win and app_path.suffix != ".exe":
+    return app_path.parent / (app_path.name + ".exe")
+  return app_path
+
+
 @pytest.fixture(scope="session", autouse=True)
 def driver_path(request) -> Optional[pathlib.Path]:
-  maybe_driver_path: Optional[LocalPath] = request.config.getoption(
-      "--test-driver-path")
+  maybe_driver_path: Optional[LocalPath] = _get_app_path(
+      request, "--test-driver-path")
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
     assert maybe_driver_path.exists()
@@ -56,8 +63,8 @@ def driver_path(request) -> Optional[pathlib.Path]:
 
 @pytest.fixture(scope="session", autouse=True)
 def browser_path(request) -> Optional[pathlib.Path]:
-  maybe_browser_path: Optional[pathlib.Path] = request.config.getoption(
-      "--test-browser-path")
+  maybe_browser_path: Optional[pathlib.Path] = _get_app_path(
+      request, "--test-browser-path")
   if maybe_browser_path:
     logging.info("browser path: %s", maybe_browser_path)
     assert maybe_browser_path.exists()
@@ -73,8 +80,8 @@ def browser_path(request) -> Optional[pathlib.Path]:
 
 @pytest.fixture(scope="session", autouse=True)
 def gsutil_path(request) -> pathlib.Path:
-  maybe_gsutil_path: Optional[pathlib.Path] = request.config.getoption(
-      "--test-gsutil-path")
+  maybe_gsutil_path: Optional[pathlib.Path] = _get_app_path(
+      request, "--test-gsutil-path")
   if maybe_gsutil_path:
     logging.info("gsutil path: %s", maybe_gsutil_path)
     assert maybe_gsutil_path.exists()
