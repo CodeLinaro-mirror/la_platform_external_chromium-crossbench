@@ -43,6 +43,9 @@ class GoogleLogin(PresetLoginBlock):
                page: InteractivePage) -> None:
     secret: Secret = self.get_secret(run, page, SecretType.GOOGLE)
 
+    if self.is_logged_in(run, secret, strict=True):
+      return
+
     with run.actions("Login") as action:
       action.show_url(GOOGLE_LOGIN_URL)
       self._submit_login_field(action, "Email or phone", secret.username,

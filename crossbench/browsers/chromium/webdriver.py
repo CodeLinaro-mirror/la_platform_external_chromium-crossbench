@@ -32,6 +32,7 @@ from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
 from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.cli.config.secret_type import SecretType
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
@@ -40,6 +41,7 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 if TYPE_CHECKING:
   from selenium import webdriver
 
+  from crossbench.cli.config.secrets import Secret
   from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -404,11 +406,26 @@ class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
     #   2. investigate irrelevant / unsupported flags on ChromeOS
     #   3. filter out and pass the chrome flags to the debugging session below
     #   4. pass the remaining flags to RemoteWebDriver options
-    dbg_port = platform.create_debugging_session()
+    google_login = session.browser.secrets.get(SecretType.GOOGLE)
+    if google_login:
+      dbg_port = platform.create_debugging_session(
+          username=google_login.username, password=google_login.password)
+    else:
+      dbg_port = platform.create_debugging_session()
     options = self._create_options(session, args)
     options.add_experimental_option("debuggerAddress", f"127.0.0.1:{dbg_port}")
     driver = RemoteWebDriver(f"http://{host}:{port}", options=options)
     return driver
+
+  # On ChromeOS, the system profile is the same as the browser profile.
+  def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:
+    if secret.type != SecretType.GOOGLE:
+      return False
+    if secret.username == self.platform.username:
+      return True
+    if not strict:
+      return False
+    raise RuntimeError("Login of non-primary Google accounts not supported")
 
 
 class DriverNotFoundError(ValueError):

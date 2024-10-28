@@ -22,19 +22,31 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   AUTOLOGIN_PATH = pth.AnyPosixPath("/usr/local/autotest/bin/autologin.py")
   DEVTOOLS_PORT_PATH = pth.AnyPosixPath("/home/chronos/DevToolsActivePort")
 
+  def __init__(self, *args, **kwargs):
+    self._username: Optional[str] = None
+    super().__init__(*args, **kwargs)
+
   @property
   def name(self) -> str:
     return "chromeos_ssh"
 
+  @property
+  def username(self) -> Optional[str]:
+    return self._username
+
   def create_debugging_session(self,
-                               browser_flags: Optional[ChromeFlags] = None
-                              ) -> int:
-    logging.info("Attempting autologin into a test session.")
+                               browser_flags: Optional[ChromeFlags] = None,
+                               username: Optional[str] = None,
+                               password: Optional[str] = None) -> int:
     try:
+      args = [self.AUTOLOGIN_PATH]
+      if username and password:
+        self._username = username
+        args.extend(("-u", username, "-p", password))
       if browser_flags:
-        self.sh(self.AUTOLOGIN_PATH, "--", *browser_flags)
-      else:
-        self.sh(self.AUTOLOGIN_PATH)
+        args.append('--')
+        args.extend(browser_flags)
+      self.sh(*args)
     except plt.SubprocessError as e:
       raise RuntimeError("Autologin failed.") from e
     try:

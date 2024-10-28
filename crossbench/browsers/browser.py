@@ -24,7 +24,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
-  from crossbench.cli.config.secrets import SecretsDict
+  from crossbench.cli.config.secrets import SecretsDict, Secret
   from crossbench.env import HostEnvironment
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
@@ -246,6 +246,25 @@ class Browser(abc.ABC):
     self.clear_cache()
     self.start(session)
     assert self._is_running
+
+  def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:
+    """Determines whether the browser is already logged in with the given
+    credentials.
+
+    Args:
+      secret: The credentials to check.
+      strict: Whether or not to raise an error if login is impossible
+
+    Returns:
+      True if and only if the browser is already logged in with the account
+
+    Raises:
+      RuntimeError: If strict, when logging in with the given cridentials is
+      not possible.
+    """
+    del secret
+    del strict
+    return False
 
   @abc.abstractmethod
   def _extract_version(self) -> str:

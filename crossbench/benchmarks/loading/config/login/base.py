@@ -41,6 +41,12 @@ class BaseLoginBlock(ActionBlock):
     raise LookupError(f"Could not find any secret for {repr(str(type))} "
                       f"on {page} or on {run.browser}")
 
+  def is_logged_in(self,
+                   run: Run,
+                   secret: Secret,
+                   strict: bool = False) -> bool:
+    return run.browser.is_logged_in(secret, strict)
+
 
 class PresetLoginBlock(BaseLoginBlock):
 
