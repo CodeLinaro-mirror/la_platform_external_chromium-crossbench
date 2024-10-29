@@ -8,7 +8,7 @@ import abc
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterator, Optional
 
 from crossbench import path as pth
 from crossbench.plt.base import Environ, ListCmdArgs, Platform, SubprocessError
@@ -258,6 +258,20 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().is_dir(path)
     return self.sh("[", "-d", self.path(path), "]", check=False).returncode == 0
+
+  def iterdir(self,
+              path: pth.AnyPathLike) -> Generator[pth.AnyPath, None, None]:
+    if self.is_local:
+      yield from super().iterdir(path)
+      return
+
+    remote_path = self.path(path)
+    if not self.is_dir(remote_path):
+      raise NotADirectoryError(f"Not a directory: {remote_path}")
+
+    for name in self.sh_stdout("ls", "-1",
+                               remote_path).rstrip("\n").split("\n"):
+      yield remote_path / name
 
   def terminate(self, proc_pid: int) -> None:
     self.sh("kill", "-s", "TERM", str(proc_pid))

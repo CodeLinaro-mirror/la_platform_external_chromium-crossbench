@@ -9,9 +9,9 @@ import unittest
 from typing import Final
 from unittest import mock
 
-import pyfakefs
 from pyfakefs.fake_filesystem import OSType
 
+from crossbench import path as pth
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.arch import MachineArch
 from tests import test_helper
@@ -408,6 +408,19 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         "shell", "dumpsys", "display", result=DUMPSYS_DISPLAY_OUTPUT)
     brightness = self.platform.get_main_display_brightness()
     self.assertEqual(brightness, 16)
+
+  def test_iterdir(self):
+    self.expect_adb("shell", "[", "-d", "parent_dir/child_dir", "]")
+    self.expect_adb(
+        "shell", "ls", "-1", "parent_dir/child_dir", result="file1\nfile2\n")
+
+    self.assertSetEqual(
+        set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
+        {
+            pth.AnyPosixPath("parent_dir/child_dir/file1"),
+            pth.AnyPosixPath("parent_dir/child_dir/file2")
+        })
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

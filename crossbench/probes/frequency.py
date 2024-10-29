@@ -4,11 +4,13 @@
 
 import abc
 import argparse
-from typing import Any, Dict, Union
+import re
+from typing import Any, Dict, Optional, Pattern, Set, Union
 
 from immutabledict import immutabledict
 
 from crossbench import exception
+from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.compat import StrEnum
 from crossbench.env import HostEnvironment
@@ -27,9 +29,9 @@ class ExtremeFrequency(StrEnum):
 
 class FrequencyProbe(EnvModifier):
   """
-  Android-only probe to pin a frequency for certain parts of the system, e.g.
-  CPUs and memory. As of 10/2024, only CPUs are supported.  The probe can be
-  configured as follows:
+  Probe to pin a frequency for certain parts of the system, e.g. CPUs and
+  memory on platforms with SysFS (Linux and Android). As of 10/2024, only CPUs
+  are supported. The probe can be configured as follows:
 
   // Probe config HJSON.
   frequency: {
@@ -67,6 +69,12 @@ class FrequencyProbe(EnvModifier):
   # all CPUs.
   _WILDCARD_CONFIG_KEY = "*"
 
+  # Directory exposing info & controls for the frequency of all CPUs.
+  _CPUS_DIR: pth.AnyPosixPath = pth.AnyPosixPath("/sys/devices/system/cpu")
+
+  # Matches the CPU names exposed by the system in _CPUS_DIR.
+  _CPU_NAME_REGEX: Pattern[str] = re.compile("cpu[0-9]+$")
+
   def __init__(self, cpus: immutabledict[str, Union[ExtremeFrequency, int]]):
     super().__init__()
     self._cpu_frequency_map: immutabledict[str, Union[ExtremeFrequency,
@@ -88,9 +96,52 @@ class FrequencyProbe(EnvModifier):
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
-    if not browser.platform.is_android:
+    if not browser.platform.is_android and not browser.platform.is_linux:
       raise ProbeIncompatibleBrowser(
-          self, browser, "FrequencyProbe is only supported on android")
+          self, browser, "FrequencyProbe is only supported on linux/android")
+
+    # Check the user-selected cpus/frequencies against the ones available on
+    # the device. Arguably this belongs better in validate_env(), but that
+    # method only has access to the host platform, not the device.
+    if not browser.platform.exists(FrequencyProbe._CPUS_DIR):
+      # TODO(crbug.com/372862708): If different devices indeed use different
+      # dirs, consider making this configurable in the jSON.
+      raise FileNotFoundError(
+          f"{FrequencyProbe._CPUS_DIR} not found. Maybe this device exposes "
+          "CPUs in a different path and needs extra support.")
+
+    available_cpu_names: Set[str] = {
+        p.name
+        for p in browser.platform.iterdir(FrequencyProbe._CPUS_DIR)
+        if FrequencyProbe._CPU_NAME_REGEX.match(p.name)
+    }
+    unknown_map_names: Set[str] = (
+        self._cpu_frequency_map.keys() - available_cpu_names -
+        {FrequencyProbe._WILDCARD_CONFIG_KEY})
+    if unknown_map_names:
+      raise ValueError(f"Invalid CPU name(s): {' '.join(unknown_map_names)}. "
+                       f"Available CPU(s): {' '.join(available_cpu_names)}.")
+
+    for cpu_name in available_cpu_names:
+      target_frequency: Optional[Union[
+          ExtremeFrequency, int]] = self._get_target_frequency(cpu_name)
+      if target_frequency is None:
+        # The user selected no frequency for this CPU, proceed.
+        continue
+
+      if target_frequency in (ExtremeFrequency.MAX, ExtremeFrequency.MIN):
+        # Extremes are always valid, proceed.
+        continue
+
+      single_cpu_dir: pth.AnyPosixPath = (
+          FrequencyProbe._CPUS_DIR / cpu_name / "cpufreq")
+      available_frequencies_file_content = browser.platform.cat(
+          single_cpu_dir / "scaling_available_frequencies")
+      if str(target_frequency) not in available_frequencies_file_content.rstrip(
+          "\n").rstrip(" ").split(" "):
+        raise ValueError(f"Target frequency {target_frequency} for {cpu_name} "
+                         "is not allowed. Available frequencies: "
+                         f"{available_frequencies_file_content}")
 
   def get_context(self, run: Run):
     return FrequencyProbeContext(self, run)
@@ -134,9 +185,16 @@ class FrequencyProbe(EnvModifier):
               f"Invalid value in CPU frequency map: {v}. Should "
               "have been one of \"max\"|\"min\"|<int>|\"<int>\"") from e
 
-    # TODO(crbug.com/372862708): Compare keys and values against the CPU names
-    # and frequencies exposed by the system. Maybe in validate_env().
     return immutabledict(typed_map)
+
+  # Returns None if the cpu_name was not configured.
+  def _get_target_frequency(
+      self, cpu_name: str) -> Optional[Union[ExtremeFrequency, int]]:
+    if FrequencyProbe._WILDCARD_CONFIG_KEY in self._cpu_frequency_map:
+      return self._cpu_frequency_map[FrequencyProbe._WILDCARD_CONFIG_KEY]
+
+    return self._cpu_frequency_map.get(cpu_name)
+
 
 
 class FrequencyProbeContext(

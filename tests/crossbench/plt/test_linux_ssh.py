@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from crossbench import path as pth
 from crossbench import plt
 from tests import test_helper
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
@@ -43,16 +44,31 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(self.platform.name, "linux_ssh")
 
   def test_version(self):
-    self.expect_sh(
-        "ssh",
-        "-p",
-        f"{self.SSH_PORT}",
-        f"{self.SSH_USER}@{self.HOST}",
-        "uname -r",
-        result="999")
+    self._expect_sh_ssh("uname -r", result="999")
     self.assertEqual(self.platform.version, "999")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.version, "999")
+
+
+  def test_iterdir(self):
+    self._expect_sh_ssh("'[' -d parent_dir/child_dir ']'")
+    self._expect_sh_ssh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
+
+    self.assertSetEqual(
+        set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
+        {
+            pth.AnyPosixPath("parent_dir/child_dir/file1"),
+            pth.AnyPosixPath("parent_dir/child_dir/file2")
+        })
+
+  def _expect_sh_ssh(self, *args, result=""):
+    self.mock_platform.expect_sh(
+        "ssh",
+        "-p",
+        str(self.SSH_PORT),
+        f"{self.SSH_USER}@{self.HOST}",
+        *args,
+        result=result)
 
 
 if __name__ == "__main__":
