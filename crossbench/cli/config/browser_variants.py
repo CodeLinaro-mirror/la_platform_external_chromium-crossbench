@@ -715,7 +715,7 @@ class BrowserVariantsConfig:
           wipe_system_user_data=args.wipe_system_user_data,
           http_request_timeout=args.http_request_timeout)
 
-      browser_instance = browser_cls(  # pytype: disable=not-instantiable; pylint: disable=abstract-class-instantiated
+      browser_instance = browser_cls(  # pytype: disable=not-instantiable # pylint: disable=abstract-class-instantiated
           label=label,
           path=path,
           settings=settings)
