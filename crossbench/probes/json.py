@@ -125,6 +125,9 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         json.dump(merged_data, f, indent=2)
       else:
         json.dump(merged_data.to_json(sort=self.SORT_KEYS), f, indent=2)
+      # TODO(375390958): figure out why files aren't fully written to
+      # pyfakefs here.
+      f.flush()
     if not csv_formatter:
       return LocalProbeResult(json=(merged_json_path,))
     if not isinstance(merged_data, MetricsMerger):
