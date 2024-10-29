@@ -13,6 +13,7 @@ from crossbench import helper
 from crossbench import path as pth
 from crossbench.parse import PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeKeyT)
 from crossbench.probes.result_location import ResultLocation
@@ -24,14 +25,16 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-_PERFETTO_CONFIG_REMOTE_DIR = pth.AnyPath("/data/misc/perfetto-configs/")
-_PERFETTO_TRACE_REMOTE_DIR = pth.AnyPath("/data/misc/perfetto-traces/")
+_PERFETTO_CONFIG_REMOTE_DIR_ANDROID = pth.AnyPath(
+    "/data/misc/perfetto-configs/")
+_PERFETTO_TRACE_REMOTE_DIR_ANDROID = pth.AnyPath("/data/misc/perfetto-traces/")
 
+_PERFETTO_REMOTE_DIR_CROS = pth.AnyPath("/usr/local/tmp")
 
 class PerfettoProbe(Probe):
   """
-  Android-only probe to collect Perfetto system traces that can be viewed on
-  https://ui.perfetto.dev/.
+  A probe to collect Perfetto system traces that can be viewed on
+  https://ui.perfetto.dev/. The probe supports Android and ChromeOS targets.
 
   Recommended way to use:
   1. Go to https://ui.perfetto.dev/, click "Record new trace" and set up your
@@ -95,8 +98,9 @@ class PerfettoProbe(Probe):
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
-    if not browser.platform.is_android:
-      raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")
+    if not (browser.platform.is_android or browser.platform.is_chromeos):
+      raise ProbeIncompatibleBrowser(self, browser,
+                                     "Only supported on android or ChromeOS")
 
   def attach(self, browser: Browser) -> None:
     assert browser.attributes.is_chromium_based
@@ -119,31 +123,18 @@ class PerfettoProbe(Probe):
 
   def get_context(self, run: Run) -> PerfettoProbeContext:
     # TODO: support more platforms
+    if run.browser_platform.is_chromeos:
+      return ChromeOsPerfettoProbeContext(self, run)
     return AndroidPerfettoProbeContext(self, run)
 
 
 class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
-  pass
-
-
-class AndroidPerfettoProbeContext(PerfettoProbeContext):
-
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._host_config_file: pth.LocalPath = (
         run.out_dir / "perfetto_config.textproto")
-    self._browser_config_file: pth.AnyPath = (
-        _PERFETTO_CONFIG_REMOTE_DIR / "perfetto_config.textproto")
     self._pid: Optional[int] = None
 
-  def get_default_result_path(self) -> pth.AnyPath:
-    return _PERFETTO_TRACE_REMOTE_DIR / "perfetto.trace.pb"
-
-  @property
-  def browser_platform(self) -> AndroidAdbPlatform:
-    browser_platform = super().browser_platform
-    assert isinstance(browser_platform, AndroidAdbPlatform)
-    return cast(AndroidAdbPlatform, browser_platform)
 
   def setup(self) -> None:
     assert self._pid is None
@@ -160,7 +151,15 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
     self.runner_platform.set_file_contents(self._host_config_file,
                                            self.probe.textproto)
     self.browser_platform.push(self._host_config_file,
-                               self._browser_config_file)
+                               self.get_browser_config_path())
+
+  @abc.abstractmethod
+  def get_browser_config_path(self) -> pth.AnyPath:
+    pass
+
+  @abc.abstractmethod
+  def get_default_result_path(self) -> pth.AnyPath:
+    pass
 
   def start(self) -> None:
     logging.info("PERFETTO: starting")
@@ -168,7 +167,7 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
         self.probe.perfetto_bin,
         "--background",
         "--config",
-        self._browser_config_file,
+        self.get_browser_config_path(),
         "--txt",
         "--out",
         self.result_path,
@@ -209,3 +208,33 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
         f"{local_result_file.suffix}.gz")
 
     return LocalProbeResult(trace=(local_result_file,))
+
+
+class AndroidPerfettoProbeContext(PerfettoProbeContext):
+
+  def get_browser_config_path(self) -> pth.AnyPath:
+    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / "perfetto_config.textproto"
+
+  def get_default_result_path(self) -> pth.AnyPath:
+    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / "perfetto.trace.pb"
+
+  @property
+  def browser_platform(self) -> AndroidAdbPlatform:
+    browser_platform = super().browser_platform
+    assert isinstance(browser_platform, AndroidAdbPlatform)
+    return cast(AndroidAdbPlatform, browser_platform)
+
+
+class ChromeOsPerfettoProbeContext(PerfettoProbeContext):
+
+  @property
+  def browser_platform(self) -> ChromeOsSshPlatform:
+    browser_platform = super().browser_platform
+    isinstance(browser_platform, ChromeOsSshPlatform)
+    return cast(ChromeOsSshPlatform, browser_platform)
+
+  def get_browser_config_path(self) -> pth.AnyPath:
+    return _PERFETTO_REMOTE_DIR_CROS / "perfetto_config.textproto"
+
+  def get_default_result_path(self) -> pth.AnyPath:
+    return _PERFETTO_REMOTE_DIR_CROS / "perfetto.trace.pb"

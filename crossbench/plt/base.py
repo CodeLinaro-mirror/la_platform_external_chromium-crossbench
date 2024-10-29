@@ -191,6 +191,10 @@ class Platform(abc.ABC):
     return False
 
   @property
+  def is_chromeos(self) -> bool:
+    return False
+
+  @property
   def is_posix(self) -> bool:
     return self.is_macos or self.is_linux or self.is_android
 

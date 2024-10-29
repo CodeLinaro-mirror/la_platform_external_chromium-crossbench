@@ -53,6 +53,9 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def test_is_remote_ssh(self):
     self.assertFalse(self.platform.is_remote_ssh)
 
+  def test_is_chromeos(self):
+    self.assertFalse(self.platform.is_chromeos)
+
 
 class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
   platform: PosixPlatform

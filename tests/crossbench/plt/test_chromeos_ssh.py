@@ -25,6 +25,8 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   def test_name(self):
     self.assertEqual(self.platform.name, "chromeos_ssh")
 
+  def test_is_chromeos(self):
+    self.assertTrue(self.platform.is_chromeos)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

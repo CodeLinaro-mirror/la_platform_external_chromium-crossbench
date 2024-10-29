@@ -34,6 +34,10 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   def username(self) -> Optional[str]:
     return self._username
 
+  @property
+  def is_chromeos(self) -> bool:
+    return True
+
   def create_debugging_session(self,
                                browser_flags: Optional[ChromeFlags] = None,
                                username: Optional[str] = None,
