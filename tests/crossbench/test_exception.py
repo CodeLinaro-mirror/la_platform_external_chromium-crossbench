@@ -36,9 +36,9 @@ class ExceptionHandlerTestCase(unittest.TestCase):
   def test_getitem(self):
     annotator = ExceptionAnnotator()
     with annotator.capture("exception"):
-      raise Exception("AAA")
+      raise CustomException("AAA")
     with annotator.capture("exception"):
-      raise Exception("BBB")
+      raise CustomException("BBB")
     self.assertEqual(len(annotator), 2)
     entry_0 = annotator[0]
     entry_1 = annotator[1]
@@ -265,7 +265,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
         yield value
 
     with context("custom value") as context_value:
-      raise Exception("custom exception")
+      raise CustomException("custom exception")
 
     self.assertEqual(context_value, "custom value")
     self.assertFalse(annotator.is_success)
@@ -282,7 +282,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     with self.assertRaises(RuntimeError) as cm:
       with context_simple("custom value 1"):
         did_run = True
-        raise Exception("custom exception 1")
+        raise CustomException("custom exception 1")
     self.assertFalse(did_run)
     self.assertIn("exception before yield", str(cm.exception))
 

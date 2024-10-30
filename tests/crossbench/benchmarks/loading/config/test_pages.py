@@ -215,16 +215,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(login.actions), 1)
     self.assertEqual(login.actions[0].url, "https://www.google.com/login")
 
-  def assert_single_google_story(self, pages: Sequence[PageConfig]):
-    self.assertTrue(len(pages), 1)
-    page = pages[0]
-    self.assertEqual(page.label, "Google Story")
-    self.assertEqual(page.first_url, "https://www.google.com")
-    self.assertEqual(len(page.blocks), 1)
-    block = page.blocks[0]
-    self.assertListEqual([str(action.TYPE) for action in block],
-                         ["get", "wait", "scroll"])
-
   def test_example_with_login_preset(self):
     config_data = {
         "pages": {
@@ -477,7 +467,7 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_basic_config_from_file(self):
     config_path = pathlib.Path("devtools.config.json")
-    with config_path.open("w") as f:
+    with config_path.open("w", encoding="utf-8") as f:
       json.dump(DEVTOOLS_RECORDER_EXAMPLE, f)
     config_file = DevToolsRecorderPagesConfig.parse(config_path)
     config_dict = DevToolsRecorderPagesConfig.parse(DEVTOOLS_RECORDER_EXAMPLE)
@@ -586,7 +576,7 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
   def test_parse_file(self):
     page_configs = ["http://a.com,12s", "http://b.com,13s"]
     config_file = pathlib.Path("page_list.txt")
-    with config_file.open("w") as f:
+    with config_file.open("w", encoding="utf-8") as f:
       f.write("\n".join(page_configs))
     config_file = ListPagesConfig.parse(config_file)
     config_list = ListPagesConfig.parse(page_configs)
@@ -595,7 +585,7 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
   def test_parse_file_empty_lines(self):
     page_configs = ["http://a.com,12s", "http://b.com,13s"]
     config_file = pathlib.Path("page_list.txt")
-    with config_file.open("w") as f:
+    with config_file.open("w", encoding="utf-8") as f:
       f.write("\n")
       f.write(page_configs[0])
       f.write("\n\n")

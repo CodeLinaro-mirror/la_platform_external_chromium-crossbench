@@ -13,7 +13,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.env import HostEnvironment
 from crossbench.exception import Annotator
 from crossbench.path import safe_filename
-from crossbench.probes.probe import Probe, ProbeContext
+from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 from crossbench.runner.actions import Actions

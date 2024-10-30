@@ -159,7 +159,7 @@ class FlagsConfigTestCase(unittest.TestCase):
 
     self.assertTupleEqual(
         tuple(v.label for v in config["a"]),
-        ('bar=1', 'bar=2', 'foo=1_bar=1', 'foo=1_bar=2'))
+        ("bar=1", "bar=2", "foo=1_bar=1", "foo=1_bar=2"))
     variants_a = config["a"]
     self.assertEqual(str(variants_a[0].flags), "--bar=1")
     self.assertEqual(str(variants_a[1].flags), "--bar=2")

@@ -3,11 +3,7 @@
 # found in the LICENSE file.
 
 import pathlib
-import unittest
 from typing import Dict, List, Type
-
-import hjson
-from pyfakefs import fake_filesystem_unittest
 
 import crossbench.path
 from crossbench import plt
@@ -18,6 +14,7 @@ from crossbench.helper import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.probe import Probe
+from pyfakefs import fake_filesystem_unittest
 from tests import test_helper
 
 PROBE_LOOKUP: Dict[str, Type[Probe]] = {
@@ -54,7 +51,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
                              real_config_dir: pathlib.Path) -> List[Probe]:
     probes = []
     self.fs.add_real_directory(
-        real_config_dir, lazy_read=(not test_helper.is_google_env()))
+        real_config_dir, lazy_read=not test_helper.is_google_env())
     for probe_config in real_config_dir.glob("**/*.config.hjson"):
       with ChangeCWD(probe_config.parent):
         probes += self._parse_config(probe_config)

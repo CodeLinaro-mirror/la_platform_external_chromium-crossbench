@@ -33,7 +33,7 @@ from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
 class TestBrowserVariantsConfig(BaseConfigTestCase):
   # pylint: disable=expression-not-assigned
 
-  EXAMPLE_CONFIG_PATH = (test_helper.config_dir() / "doc/browser.config.hjson")
+  EXAMPLE_CONFIG_PATH = test_helper.config_dir() / "doc/browser.config.hjson"
 
   EXAMPLE_REMOTE_CONFIG_PATH = (
       test_helper.config_dir() / "doc/remote_browser.config.hjson")
@@ -90,7 +90,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_linux_ssh("'[' -f /path/to/google/chrome ']'")
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
     self._expect_linux_ssh(
-        "/path/to/google/chrome --version", result='102.22.33.44')
+        "/path/to/google/chrome --version", result="102.22.33.44")
     self._expect_linux_ssh("env")
     self._expect_linux_ssh("'[' -d /tmp ']'")
     self._expect_linux_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
@@ -101,7 +101,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_chromeos_ssh("'[' -f /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh(
-        "/opt/google/chrome/chrome --version", result='125.0.6422.60')
+        "/opt/google/chrome/chrome --version", result="125.0.6422.60")
     self._expect_chromeos_ssh("env")
     self._expect_chromeos_ssh("'[' -d /tmp ']'")
     self._expect_chromeos_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
@@ -113,10 +113,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       for variant in config.variants:
         self.assertTrue(variant.platform.is_remote)
         self.assertTrue(variant.platform.is_linux)
-      self.assertEqual(config.variants[0].platform.name, 'linux_ssh')
-      self.assertEqual(config.variants[1].platform.name, 'chromeos_ssh')
-      self.assertEqual(config.variants[0].version, '102.22.33.44')
-      self.assertEqual(config.variants[1].version, '125.0.6422.60')
+      self.assertEqual(config.variants[0].platform.name, "linux_ssh")
+      self.assertEqual(config.variants[1].platform.name, "chromeos_ssh")
+      self.assertEqual(config.variants[0].version, "102.22.33.44")
+      self.assertEqual(config.variants[1].version, "125.0.6422.60")
 
   def test_browser_labels_attributes(self):
     browsers = BrowserVariantsConfig(
@@ -1028,7 +1028,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         }
     }
     config_file = pth.LocalPath("browsers.config.json")
-    with config_file.open("w") as f:
+    with config_file.open("w", encoding="utf-8") as f:
       json.dump(browser_config_dict, f)
     network_3g = NetworkConfig.parse("3G-slow")
     network_4g = NetworkConfig.parse("4G")
@@ -1059,12 +1059,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     # Browser 2: uses the default --network:
     self.assertTrue(browser_2.network.is_live)
     self.assertFalse(browser_2.network.traffic_shaper.is_live)
-    self.assertEqual(browser_2.network.traffic_shaper._ts_proxy._in_kbps,
+    self.assertEqual(browser_2.network.traffic_shaper.ts_proxy.in_kbps,
                      network_3g.speed.in_kbps)
     # Browser 3; Uses an explicit 4G override:
     self.assertTrue(browser_3.network.is_live)
     self.assertFalse(browser_3.network.traffic_shaper.is_live)
-    self.assertEqual(browser_3.network.traffic_shaper._ts_proxy._in_kbps,
+    self.assertEqual(browser_3.network.traffic_shaper.ts_proxy.in_kbps,
                      network_4g.speed.in_kbps)
 
 

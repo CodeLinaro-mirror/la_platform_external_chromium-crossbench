@@ -5,6 +5,7 @@
 import json
 import pathlib
 import unittest
+from unittest import mock
 
 from crossbench import compat
 from crossbench.browsers.browser import Browser
@@ -169,7 +170,7 @@ class RunnerTestCase(BaseRunnerTestCase):
       with results.json.open() as f:
         probe_data = json.load(f)
         self.assertEqual(probe_data, "custom_probe_data")
-      browser_dir = (runner.out_dir / run.browser.unique_name)
+      browser_dir = runner.out_dir / run.browser.unique_name
       # Pyfakefs is having some issues with relative symlinks, thus we're
       # manually combining the paths.
       runs_dir = browser_dir / "runs"
@@ -291,8 +292,9 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       run_method(is_dry_run=False)
 
     for run in runs:
-      run.run = (lambda run_method: lambda is_dry_run: test_run(run_method))(
-          run.run)
+      run.run = (  # pylint: disable=unnecessary-direct-lambda-call
+          lambda run_method: lambda is_dry_run: test_run(run_method))(
+              run.run)
 
     thread.run()
 
@@ -429,26 +431,25 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       run_fail_count += 1
       raise CustomException()
 
-    failing_run._run_story = mock_run_story_fail
+    with mock.patch.object(failing_run, "_run_story", mock_run_story_fail):
+      self.assertEqual(run_fail_count, 0)
+      thread.run()
+      self.assertEqual(run_fail_count, 1)
 
-    self.assertEqual(run_fail_count, 0)
-    thread.run()
-    self.assertEqual(run_fail_count, 1)
+      for session in thread.browser_sessions:
+        if session != failing_run.browser_session:
+          self.assertTrue(session.is_success)
+      for run in runs:
+        if run != failing_run:
+          self.assertTrue(run.is_success)
 
-    for session in thread.browser_sessions:
-      if session != failing_run.browser_session:
-        self.assertTrue(session.is_success)
-    for run in runs:
-      if run != failing_run:
-        self.assertTrue(run.is_success)
-
-    # Errors are propagate up:
-    for exceptions_holder in (runner, thread, failing_session, failing_run):
-      self.assertFalse(exceptions_holder.is_success)
-      exceptions = exceptions_holder.exceptions
-      self.assertEqual(len(exceptions), 1)
-      exception_entry = exceptions[0]
-      self.assertIsInstance(exception_entry.exception, CustomException)
+      # Errors are propagate up:
+      for exceptions_holder in (runner, thread, failing_session, failing_run):
+        self.assertFalse(exceptions_holder.is_success)
+        exceptions = exceptions_holder.exceptions
+        self.assertEqual(len(exceptions), 1)
+        exception_entry = exceptions[0]
+        self.assertIsInstance(exception_entry.exception, CustomException)
 
 # pytype: enable=wrong-arg-types
 

@@ -10,6 +10,9 @@ from tests import test_helper
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe, MockRun
 
+# Due to laziness we access internal variables in the test here.
+# Adding an accessor would wrongly hint that these variables are public.
+# pylint: disable=protected-access
 
 class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
 

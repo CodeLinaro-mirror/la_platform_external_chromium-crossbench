@@ -339,7 +339,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.parse("{path:something}")
 
   def test_parse_inline_hjson(self):
-    config_dict: JsonDict = {"browser": "chrome", "driver": {"type": 'adb',}}
+    config_dict: JsonDict = {"browser": "chrome", "driver": {"type": "adb",}}
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(MultiException) as cm:
@@ -359,7 +359,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
     short_config_dict: JsonDict = {
         "browser": "chrome",
-        "driver": 'adb',
+        "driver": "adb",
     }
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(MultiException) as cm:

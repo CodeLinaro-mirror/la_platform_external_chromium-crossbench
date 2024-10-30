@@ -8,6 +8,7 @@
 # read from stdin to be typed on an emulated keyboard device.
 
 import sys
+
 import uinput.cros_keys
 
 while True:

@@ -17,7 +17,6 @@ from crossbench.benchmarks.speedometer.speedometer import (SpeedometerBenchmark,
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
-from tests.crossbench.mock_browser import JsInvocation
 
 
 class SpeedometerBaseTestCase(
@@ -203,14 +202,14 @@ class SpeedometerBaseTestCase(
       self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
       self.assertListEqual(browser.expected_js, [])
 
-    with self.assertLogs(level='INFO') as cm:
+    with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
         for run in runner.runs:
           probe.log_run_result(run)
     output = "\n".join(cm.output)
     self.assertIn("Speedometer results", output)
 
-    with self.assertLogs(level='INFO') as cm:
+    with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
         probe.log_browsers_result(runner.browser_group)
     output = "\n".join(cm.output)
@@ -278,9 +277,9 @@ class SpeedometerBaseTestCase(
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
   def _verify_results_stories(self, rows, story_names, label_suffix):
-    labels = [row['label'] for row in rows]
-    self.assertNotIn(f"{self.benchmark_cls.NAME}_{'_'.join(story_names)}",
-                     labels)
+    labels = [row["label"] for row in rows]
+    story_name_str = "_".join(story_names)
+    self.assertNotIn(f"{self.benchmark_cls.NAME}_{story_name_str}", labels)
     for story_name in story_names:
       self.assertIn(f"{story_name}{label_suffix}", labels)
 

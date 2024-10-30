@@ -6,8 +6,7 @@ import json
 import pathlib
 import unittest
 
-from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
-                                      geomean)
+from crossbench.probes.metric import CSVFormatter, Metric, MetricsMerger
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 

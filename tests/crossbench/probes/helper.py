@@ -34,7 +34,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     if not separate and len(stories) > 1:
       stories = [CombinedPage(stories)]
     if isinstance(js_side_effects, list):
-      js_side_effects_fn = lambda story: js_side_effects
+      js_side_effects_fn = lambda story: js_side_effects  # pylint: disable=unnecessary-lambda-assignment
     else:
       js_side_effects_fn = js_side_effects
     # The order should match Runner.get_runs

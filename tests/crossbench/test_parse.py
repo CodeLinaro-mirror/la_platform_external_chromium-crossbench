@@ -8,7 +8,6 @@ import argparse
 import datetime as dt
 import json
 import pathlib
-import re
 import unittest
 from typing import Any
 from urllib import parse as urlparse
@@ -345,7 +344,7 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
       self.assertEqual(file, PathParser.non_empty_file_path(file))
     self.assertIn("is an empty file", str(cm.exception))
 
-    with file.open("w") as f:
+    with file.open("w", encoding="utf-8") as f:
       f.write("fooo")
     self.assertEqual(file, PathParser.non_empty_file_path(file))
 
@@ -410,7 +409,7 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertDictEqual(ObjectParser.dict({"A": 2}), {"A": 2})
 
   def test_parse_non_empty_dict_invalid(self):
-    for invalid in (1, 0, "1", "0", "", None, [], tuple(), dict()):
+    for invalid in (1, 0, "1", "0", "", None, [], tuple(), {}):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.non_empty_dict(invalid)
 

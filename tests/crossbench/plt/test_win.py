@@ -17,7 +17,7 @@ from tests.crossbench.plt.helper import BaseMockPlatformTestCase
 class WinMockPlatformTestCase(BaseMockPlatformTestCase):
   __test__ = True
 
-  def setUpMockPlatform(self):
+  def mock_platform_setup(self):
     self.mock_platform = WinMockPlatform()
     self.platform = self.mock_platform
 

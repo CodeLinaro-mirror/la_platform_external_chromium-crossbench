@@ -8,10 +8,9 @@ import pathlib
 import sys
 from typing import Union
 
-from crossbench import config
-
 import pytest
 
+from crossbench import config
 
 is_google_env = config.is_google_env
 root_dir = config.root_dir

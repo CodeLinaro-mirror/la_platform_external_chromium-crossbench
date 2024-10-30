@@ -5,27 +5,24 @@
 from __future__ import annotations
 
 import datetime as dt
-from enum import IntEnum
 import json
 import logging
 import re
+from enum import IntEnum
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench import helper
-from crossbench.parse import DurationParser
 from crossbench.probes.internal import (InternalJsonResultProbe,
                                         InternalJsonResultProbeContext)
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser)
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
+from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.result_location import ResultLocation
-from crossbench.runner.timing import Timing
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 
 if TYPE_CHECKING:
-  from crossbench.runner.actions import Actions
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.probes.results import (ProbeResult, ProbeResultDict)
+  from crossbench.probes.results import ProbeResult, ProbeResultDict
+  from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
@@ -131,6 +128,9 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
     merged_path = group.get_local_probe_result_path(self)
     with merged_path.open("w", encoding="utf-8") as f:
       json.dump({"max_observed_status": group_max_status}, f, indent=2)
+      # TODO(375390958): figure out why files aren't fully written to
+      # pyfakefs here.
+      f.write("\n")
 
     return LocalProbeResult(json=(merged_path,))
 

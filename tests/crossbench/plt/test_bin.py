@@ -33,12 +33,10 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     self._all_platforms = (PLATFORM,) + self._all_mock_platforms
 
   def all_mock_platforms(self):
-    for platform in self._all_mock_platforms:
-      yield platform
+    yield from self._all_mock_platforms
 
   def all_platforms(self):
-    for platform in self._all_platforms:
-      yield platform
+    yield from self._all_platforms
 
   def create_binary_path(self, path: pth.AnyPathLike) -> pth.LocalPath:
     result = pth.LocalPath(path)

@@ -277,8 +277,7 @@ class ChromeOSViewportInfoTestCase(unittest.TestCase):
     self.assertEqual(viewport_info.element_rect,
                      DisplayRectangle(Point(11, 22), 3, 4))
 
-  def test_browser_viewable_no_ratios_with_browser_window_offset_and_browser_toolbar_offset(
-      self) -> None:
+  def test_element_rect_no_ratios_with_browser_window_offset_2(self) -> None:
     viewport_info = ChromeOSViewportInfo(
         device_pixel_ratio=1,
         window_outer_width=1920,
@@ -295,8 +294,7 @@ class ChromeOSViewportInfoTestCase(unittest.TestCase):
     self.assertEqual(viewport_info.browser_viewable,
                      DisplayRectangle(Point(10, 200), 1910, 880))
 
-  def test_element_rect_no_ratios_with_browser_window_offset_and_browser_toolbar_offset(
-      self) -> None:
+  def test_element_rect_no_ratios_with_browser_window_offset_3(self) -> None:
     viewport_info = ChromeOSViewportInfo(
         device_pixel_ratio=1,
         window_outer_width=1920,
@@ -372,7 +370,6 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
   def run_action(self, action: Action) -> None:
     action.run_with(self.run, self.action_runner)
-    return
 
   def expect_touch_setup(self, expected_js: JsInvocation, touch_count: int = 1):
 

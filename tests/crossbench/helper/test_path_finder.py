@@ -65,6 +65,7 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
       if "google3" in path.parts:
         fake_chrome_root = path.parents[6]
       else:
+        # pylint: disable=line-too-long
         # In:   chromium/src/third_party/crossbench/tests/crossbench/probes/test_helper.py
         # Out:  chromium/src
         fake_chrome_root = path.parents[5]

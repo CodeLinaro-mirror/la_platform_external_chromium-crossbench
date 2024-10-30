@@ -3,17 +3,15 @@
 # found in the LICENSE file.
 
 import json
-import pathlib
 import unittest
 
 from crossbench.browsers.settings import Settings
-from crossbench.probes.thermal_monitor import ThermalMonitorProbe, ThermalStatus
+from crossbench.probes.thermal_monitor import (ThermalMonitorProbe,
+                                               ThermalStatus)
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeAndroidStable
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
-from tests.crossbench.probes.helper import GenericProbeTestCase
-from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
-                                            MockPlatform)
+from tests.crossbench.runner.helper import BaseRunnerTestCase
 
 
 class ThermalStatusTestCase(unittest.TestCase):
@@ -62,7 +60,7 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
         "/usr/bin/adb",
         "devices",
         "-l",
-        result=("List of devices attached\n123 device usb:0 product:a model:b"))
+        result="List of devices attached\n123 device usb:0 product:a model:b")
     adb_platform = AndroidAdbMockPlatform(
         self.platform, adb=MockAdb(self.platform))
     runner = self.default_runner(browsers=[
@@ -73,19 +71,19 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
     adb_platform.expect_sh(
         "dumpsys",
         "thermalservice",
-        result=("HAL Ready: true\nThermal Status: 0"))
+        result="HAL Ready: true\nThermal Status: 0")
     adb_platform.expect_sh(
         "dumpsys",
         "thermalservice",
-        result=("HAL Ready: true\nThermal Status: 1"))
+        result="HAL Ready: true\nThermal Status: 1")
     adb_platform.expect_sh(
         "dumpsys",
         "thermalservice",
-        result=("HAL Ready: true\nThermal Status: 2"))
+        result="HAL Ready: true\nThermal Status: 2")
     adb_platform.expect_sh(
         "dumpsys",
         "thermalservice",
-        result=("HAL Ready: true\nThermal Status: 0"))
+        result="HAL Ready: true\nThermal Status: 0")
 
     runner.run(is_dry_run=False)
 

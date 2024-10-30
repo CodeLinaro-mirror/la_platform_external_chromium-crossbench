@@ -28,7 +28,7 @@ if __name__ == "__main__":
   parser.add_argument("--adb-device-id", required=False)
   args, _ = parser.parse_known_args()
   if args.ignore_tests:
-    subfolders = args.ignore_tests.split(',')
+    subfolders = args.ignore_tests.split(",")
     ignore_tests = [f"--ignore={END2END_TEST_DIR / x}" for x in subfolders]
   elif not args.adb_device_id:
     ignore_tests = [f"--ignore={END2END_TEST_DIR / 'android'}"]

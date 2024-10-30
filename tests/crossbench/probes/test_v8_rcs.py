@@ -55,17 +55,17 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     rcs_result_files = list(runner.out_dir.glob(f"**/{probe.name}/*.rcs.txt"))
     self.assertEqual(len(rcs_result_files), result_count)
 
-    (story_data, repetitions_data, stories_data, _) = self.get_non_empty_results_str(
+    (story_data, reps_data, stories_data, _) = self.get_non_empty_results_str(
         runner, probe, "txt", has_browsers_data=False)
 
     self.assertEqual(story_data.count(EXAMPLE_RCS_DATA), 1)
-    self.assertEqual(repetitions_data.count(EXAMPLE_RCS_DATA), repetitions)
+    self.assertEqual(reps_data.count(EXAMPLE_RCS_DATA), repetitions)
     self.assertEqual(
         stories_data.count(EXAMPLE_RCS_DATA),
         len(stories) * repetitions)
 
     self.assertEqual(story_data.count("== Page: "), 0)
-    self.assertEqual(repetitions_data.count("== Page: "), 1)
+    self.assertEqual(reps_data.count("== Page: "), 1)
     self.assertEqual(stories_data.count("== Page: "), len(stories))
 
   def validate_cache_temperatures_files(self, probe, group, cache_temperatures):

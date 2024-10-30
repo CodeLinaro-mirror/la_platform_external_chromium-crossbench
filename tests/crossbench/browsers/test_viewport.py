@@ -99,11 +99,11 @@ class ViewportTestCase(unittest.TestCase):
     self.assertEqual(Viewport(x=100, y=200).y, 200)
 
   def test_parse_invalid(self):
-    INVALID_INPUTS = ("-", "-100x", "100x", "100xXX", "100x-100", "-100x100",
+    invalid_inputs = ("-", "-100x", "100x", "100xXX", "100x-100", "-100x100",
                       "asdf", "100x100,,", "100x100,a", "100x100,100",
                       "100x100,100x", "100x100,-100", "100x100,100x-100",
                       "100x100,-100x100")
-    for invalid in INVALID_INPUTS:
+    for invalid in invalid_inputs:
       with self.subTest(value=invalid):
         with self.assertRaises((ValueError, ArgumentTypeError)):
           Viewport.parse(invalid)

@@ -138,7 +138,6 @@ class MockPlatformMixin:
     del encoding
     file_path = self.path(file)
     self.file_contents[file_path].append(data)
-    return
 
   def system_details(self):
     return {"CPU": "20-core 3.1 GHz"}

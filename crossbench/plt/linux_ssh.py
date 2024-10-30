@@ -43,6 +43,14 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def port(self) -> int:
     return self._port
 
+  @property
+  def ssh_user(self) -> str:
+    return self._ssh_user
+
+  @property
+  def ssh_port(self) -> int:
+    return self._ssh_port
+
   def _build_ssh_cmd(self, *args: CmdArg, shell=False) -> ListCmdArgs:
     ssh_cmd: ListCmdArgs = [
         "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"

@@ -21,7 +21,7 @@ class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
     super().setUp()
     self.fs.os = OSType.MACOS
 
-  def setUpMockPlatform(self) -> None:
+  def mock_platform_setup(self) -> None:
     self.mock_platform = MacOsMockPlatform()
     self.platform = self.mock_platform
 

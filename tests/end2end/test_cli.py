@@ -13,8 +13,8 @@ from unittest import mock
 import pytest
 
 import crossbench.browsers.all as browsers
-from crossbench.cli.cli import CrossBenchCLI
 from crossbench import plt
+from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 
 
@@ -111,7 +111,8 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
       f"--cache-dir={cache_dir}",
       "--stories=.*Vanilla.*",
       # V8 --prof doesn't always work on linux, skip it.
-      "--probe=v8.log:{log_all:false, js_flags:['--log-maps'], prof:false, profview:false}",
+      "--probe=v8.log:"
+      "{log_all:false, js_flags:['--log-maps'], prof:false, profview:false}",
       "--probe=v8.turbolizer",
       "--debug")
 
@@ -175,7 +176,7 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 2
   v8_log_files = _get_v8_log_files(results_dir)
-  assert v8_log_files == []
+  assert not v8_log_files
 
 
 @pytest.mark.skipif(
@@ -373,7 +374,7 @@ def test_loading_playback_firefox(output_dir, cache_dir) -> None:
   try:
     if not platform.exists(browsers.Firefox.default_path(platform)):
       pytest.skip("Test requires Firefox.")
-  except Exception:
+  except Exception:  # pylint: disable=broad-exception-caught
     pytest.skip("Test requires Firefox.")
   results_dir = output_dir / "results"
   assert not results_dir.exists()

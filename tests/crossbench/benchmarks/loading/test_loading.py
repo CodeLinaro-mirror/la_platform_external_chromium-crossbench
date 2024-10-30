@@ -19,8 +19,7 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.basic_action_runner import BasicActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
-from crossbench.benchmarks.loading.config.login.google import (
-    GOOGLE_LOGIN_URL, GoogleLogin)
+from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)
 from crossbench.benchmarks.loading.page.combined import CombinedPage
@@ -261,7 +260,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         }
     }
     config_file = pathlib.Path("config.hjson")
-    with config_file.open("w") as f:
+    with config_file.open("w", encoding="utf-8") as f:
       json.dump(config_data, f)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       with self.patch_get_browser():
@@ -278,7 +277,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     self.fs.create_file(config)
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
-    with config.open("w") as f:
+    with config.open("w", encoding="utf-8") as f:
       f.write("\n".join((url_1, url_2)))
     with self.patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
@@ -292,7 +291,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     self.fs.create_file(config)
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
-    with config.open("w") as f:
+    with config.open("w", encoding="utf-8") as f:
       f.write("\n".join((url_1, url_2)))
     with self.patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
@@ -490,7 +489,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
             }]
         }
     }
-    with global_config_file.open("w") as f:
+    with global_config_file.open("w", encoding="utf-8") as f:
       json.dump(global_config_data, f)
     with self.patch_get_browser():
       self.run_cli("loading", "run", f"--config={global_config_file}",

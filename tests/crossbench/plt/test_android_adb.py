@@ -18,11 +18,15 @@ from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
-ADB_DEVICE_SAMPLE_OUTPUT = """List of devices attached
-emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64"""
-ADB_DEVICES_SAMPLE_OUTPUT = ADB_DEVICE_SAMPLE_OUTPUT + """
-emulator-5554 device product:sdk_google_phone_x86 model:Android_SDK_built_for_x86 device:generic_x86
-0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo"""
+ADB_DEVICE_SAMPLE_OUTPUT = (
+    "List of devices attached\n"
+    "emulator-5556 device product:sdk_google_phone_x86_64 "
+    "model:Android_SDK_built_for_x86_64 device:generic_x86_64\n")
+ADB_DEVICES_SAMPLE_OUTPUT = (
+    f"{ADB_DEVICE_SAMPLE_OUTPUT}"
+    "emulator-5554 device product:sdk_google_phone_x86 "
+    "model:Android_SDK_built_for_x86 device:generic_x86\n"
+    "0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo\n")
 
 DUMPSYS_DISPLAY_OUTPUT: Final[str] = """
   SensorObserver
@@ -42,11 +46,11 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpAdb()
+    self.adb_setup()
     self.platform = AndroidAdbPlatform(
         self.mock_platform, self.DEVICE_ID, adb=self.adb)
 
-  def setUpAdb(self):
+  def adb_setup(self):
     adb_patcher = mock.patch(
         "crossbench.plt.android_adb._find_adb_bin",
         return_value=pathlib.Path("adb"))
@@ -75,7 +79,7 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     super().setUp()
     self.fs.os = OSType.WINDOWS
 
-  def setUpMockPlatform(self):
+  def mock_platform_setup(self):
     self.mock_platform = WinMockPlatform()
 
   @unittest.skip(

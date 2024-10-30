@@ -5,7 +5,7 @@
 import datetime as dt
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Optional, Tuple
 
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
@@ -119,8 +119,8 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
         "/usr/bin/adb",
         "devices",
         "-l",
-        result="List of attached devices\n1.1.1.1 device product:mock model:mock"
-    )
+        result=("List of attached devices\n"
+                "1.1.1.1 device product:mock model:mock"))
     self.platform = AndroidAdbMockPlatform(
         self.host_platform, adb=MockAdb(self.host_platform))
     self.browser = MockChromeAndroidStable(
@@ -146,7 +146,6 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
 
   def run_action(self, action: Action) -> None:
     action.run_with(self.mock_run, self.action_runner)
-    return
 
   def expect_action_setup(
       self,

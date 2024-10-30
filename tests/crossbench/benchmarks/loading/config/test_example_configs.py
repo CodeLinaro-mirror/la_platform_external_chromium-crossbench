@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-import unittest
-
 import hjson
 
 from crossbench.benchmarks.loading.config.pages import PagesConfig

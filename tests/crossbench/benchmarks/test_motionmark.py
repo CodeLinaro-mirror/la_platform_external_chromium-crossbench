@@ -20,7 +20,6 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
-from tests.crossbench.mock_browser import JsInvocation
 
 
 class MotionMark1BaseTestCase(
@@ -119,7 +118,7 @@ class MotionMark1BaseTestCase(
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
   def _test_run(self, custom_url: Optional[str] = None, throw: bool = False):
-    stories = self.story_cls.from_names(['Multiply'], url=custom_url)
+    stories = self.story_cls.from_names(["Multiply"], url=custom_url)
     repetitions = 3
     # The order should match Runner.get_runs
     for _ in range(repetitions):

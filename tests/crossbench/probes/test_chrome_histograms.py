@@ -3,8 +3,8 @@
 # found in the LICENSE file.
 
 import argparse
-from typing import Any, Dict
 import unittest
+from typing import Dict
 
 import hjson
 import pytest

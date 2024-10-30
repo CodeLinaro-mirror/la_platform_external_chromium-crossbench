@@ -15,7 +15,6 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
-from tests.crossbench.mock_browser import JsInvocation
 
 
 class JetStream2BaseTestCase(
@@ -120,14 +119,14 @@ class JetStream2BaseTestCase(
             "": ""
         })
 
-    with self.assertLogs(level='INFO') as cm:
+    with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
         for run in runner.runs:
           probe.log_run_result(run)
     output = "\n".join(cm.output)
     self.assertIn("JetStream results", output)
 
-    with self.assertLogs(level='INFO') as cm:
+    with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
         probe.log_browsers_result(runner.browser_group)
     output = "\n".join(cm.output)

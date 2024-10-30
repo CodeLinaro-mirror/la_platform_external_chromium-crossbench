@@ -6,12 +6,14 @@
 
 # This script is to be run directly on a ChromeOS device to query and return
 # the touch device information.
+
+import logging
 import sys
 
 sys.path.append("/usr/local/autotest/bin")
 
-import common
-import logging
+# pylint: disable=wrong-import-position
+import common  # pylint: disable=unused-import
 from autotest_lib.client.bin.input import input_device
 from autotest_lib.client.cros.input_playback import input_playback
 
@@ -21,4 +23,6 @@ playback = input_playback.InputPlayback()
 playback.find_connected_inputs()
 touchscreen_node = playback.devices["touchscreen"].node
 touchscreen = input_device.InputDevice(touchscreen_node)
+
+# This output is parsed by crossbench:
 print(touchscreen_node, touchscreen.get_x_max(), touchscreen.get_y_max())

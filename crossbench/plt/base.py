@@ -701,7 +701,8 @@ class Platform(abc.ABC):
       raise SubprocessError(self, process)
     return process
 
-  def exec_apple_script(self, script: str) -> str:
+  def exec_apple_script(self, script: str, *args: str) -> str:
+    del script, args
     raise NotImplementedError("AppleScript is only available on MacOS")
 
   def log(self, *messages: Any, level: int = 2) -> None:

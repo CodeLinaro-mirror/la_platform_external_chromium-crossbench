@@ -41,7 +41,8 @@ def webdriver(driver_path, browser_path):
 
 
 def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
-  """Tests that we can execute the specified benchmark and obtain result data post execution.
+  """Tests that we can execute the specified benchmark and obtain result data
+  post execution.
   This test uses Chrome browser to run the benchmarks.
   """
   benchmark = get_benchmark(benchmark_cls)

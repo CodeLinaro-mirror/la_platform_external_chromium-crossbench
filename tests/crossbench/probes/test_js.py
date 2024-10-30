@@ -2,10 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import unittest
-
-import hjson
-
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.js import JSProbe
@@ -16,7 +12,7 @@ from tests.crossbench.probes.helper import GenericProbeTestCase
 class TestJSProbe(GenericProbeTestCase):
 
   def test_parse_example_config(self):
-    config_file = (test_helper.config_dir() / "doc/probe/js.config.hjson")
+    config_file = test_helper.config_dir() / "doc/probe/js.config.hjson"
     self.fs.add_real_file(config_file)
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.parse_path(config_file).probes

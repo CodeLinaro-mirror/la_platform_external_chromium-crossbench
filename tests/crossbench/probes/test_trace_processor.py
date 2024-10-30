@@ -5,13 +5,10 @@
 import json
 import unittest
 
-import hjson
-
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import TraceProcessorProbe
-from crossbench.probes.results import LocalProbeResult
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
@@ -43,8 +40,11 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     story.name = "story"
 
     result1 = unittest.mock.MagicMock()
-    csv1 = self.create_file("run1/query.csv", contents='foo,bar\n1,2\n')
-    json1 = self.create_file("run1/metric.json", contents='{"foo":{"bar":7}}')
+    csv1 = self.create_file("run1/query.csv", contents="foo,bar\n1,2\n")
+    json1 = self.create_file(
+        "run1/metric.json", contents=json.dumps({"foo": {
+            "bar": 7
+        }}))
     result1.csv_list = [csv1]
     result1.json_list = [json1]
 
@@ -56,8 +56,11 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     run1.temperature = "default"
 
     result2 = unittest.mock.MagicMock()
-    csv2 = self.create_file("run2/query.csv", contents='foo,bar\n3,4\n')
-    json2 = self.create_file("run2/metric.json", contents='{"foo":{"bar":9}}')
+    csv2 = self.create_file("run2/query.csv", contents="foo,bar\n3,4\n")
+    json2 = self.create_file(
+        "run2/metric.json", contents=json.dumps({"foo": {
+            "bar": 9
+        }}))
     result2.csv_list = [csv2]
     result2.json_list = [json2]
 
@@ -86,11 +89,11 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self.assertEqual(len(merged_result.csv_list), 1)
     self.assertEqual(len(merged_result.json_list), 1)
 
-    EXPECTED_CSV = ("foo,bar,cb_browser,cb_story,cb_temperature,cb_run\n"
+    expected_csv = ("foo,bar,cb_browser,cb_story,cb_temperature,cb_run\n"
                     "1,2,browser,story,default,0\n"
                     "3,4,browser,story,default,1\n")
     with merged_result.csv.open("r") as f:
-      self.assertEqual(f.read(), EXPECTED_CSV)
+      self.assertEqual(f.read(), expected_csv)
 
     with merged_result.json.open("r") as f:
       metrics = json.load(f)

@@ -38,12 +38,16 @@ iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
 iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
 """
 
-ADB_DEVICES_SINGLE_OUTPUT = """List of devices attached
-emulator-5556 device product:sdk_google_phone_x86_64 model:Android_SDK_built_for_x86_64 device:generic_x86_64"""
+ADB_DEVICES_SINGLE_OUTPUT = (
+    "List of devices attached\n"
+    "emulator-5556 device product:sdk_google_phone_x86_64 "
+    "model:Android_SDK_built_for_x86_64 device:generic_x86_64\n")
 
-ADB_DEVICES_OUTPUT = f"""{ADB_DEVICES_SINGLE_OUTPUT}
-emulator-5554 device product:sdk_google_phone_x86 model:Android_SDK_built_for_x86 device:generic_x86
-0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo"""
+ADB_DEVICES_OUTPUT = (
+    f"{ADB_DEVICES_SINGLE_OUTPUT}"
+    "emulator-5554 device product:sdk_google_phone_x86 "
+    "model:Android_SDK_built_for_x86 device:generic_x86\n"
+    "0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo\n")
 
 
 class BaseConfigTestCase(BaseCrossbenchTestCase):

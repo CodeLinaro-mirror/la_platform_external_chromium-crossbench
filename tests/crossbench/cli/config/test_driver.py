@@ -99,7 +99,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
   def test_parse_dict_device_id_conflict(self):
     self.platform.sh_results = []
     config_dict = {
-        "type": 'adb',
+        "type": "adb",
         "device_id": "1234",
         "settings": {
             "device_id": "ABCD"
@@ -120,10 +120,11 @@ class DriverConfigTestCase(BaseConfigTestCase):
             "ssh_user": "root"
         }
     }
-    self.platform.expect_sh(
-        "ssh", "-p", config_dict["settings"]["ssh_port"],
-        f"{config_dict['settings']['ssh_user']}@{config_dict['settings']['host']}",
-        f"'[' -e {ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
+    ssh_user = config_dict["settings"]["ssh_user"]
+    ssh_host = config_dict["settings"]["host"]
+    self.platform.expect_sh("ssh", "-p", config_dict["settings"]["ssh_port"],
+                            f"{ssh_user}@{ssh_host}",
+                            f"'[' -e {ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
     config = DriverConfig.parse(config_dict)
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.CHROMEOS_SSH)
@@ -133,12 +134,12 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(platform, ChromeOsSshPlatform)
     self.assertEqual(platform.host, "chromeos6-row17-rack14-host7")
     self.assertEqual(platform.port, 9515)
-    self.assertEqual(platform._ssh_port, 22)
-    self.assertEqual(platform._ssh_user, "root")
+    self.assertEqual(platform.ssh_port, 22)
+    self.assertEqual(platform.ssh_user, "root")
 
   def test_parse_inline_json_adb(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    config_dict = {"type": 'adb', "settings": {"device_id": "0a388e93"}}
+    config_dict = {"type": "adb", "settings": {"device_id": "0a388e93"}}
     config_1 = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config_1, DriverConfig)
     self.assertEqual(config_1.type, BrowserDriverType.ANDROID)
@@ -160,7 +161,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_1, config_2)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    config_dict = {"type": 'adb', "device_id": "0a388e93"}
+    config_dict = {"type": "adb", "device_id": "0a388e93"}
     config_3 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_3, DriverConfig)
     self.assertEqual(config_3.type, BrowserDriverType.ANDROID)

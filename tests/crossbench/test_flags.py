@@ -544,8 +544,10 @@ class TestChromeFlags(TestFlags):
         ])
     self.assertListEqual(
         list(flags.blink_features), [
-            "--enable-blink-features=blink_feature_1,blink_feature_2,blink_feature_x",
-            "--disable-blink-features=blink_feature_3,blink_feature_y,blink_feature_z"
+            "--enable-blink-features="
+            "blink_feature_1,blink_feature_2,blink_feature_x",
+            "--disable-blink-features="
+            "blink_feature_3,blink_feature_y,blink_feature_z"
         ])
 
   def test_flag_typos_enable_features(self):

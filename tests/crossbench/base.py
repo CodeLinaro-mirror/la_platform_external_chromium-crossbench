@@ -42,7 +42,7 @@ class CrossbenchFakeFsTestCase(
     gettext_patcher.start()
     self.addCleanup(gettext_patcher.stop)
 
-    sleep_patcher = mock.patch('time.sleep', return_value=None)
+    sleep_patcher = mock.patch("time.sleep", return_value=None)
     sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
 
@@ -74,7 +74,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.out_dir.parent.mkdir(parents=True)
     self.fs.add_real_directory(
         LoadLineTabletBenchmark.default_network_config_path().parent,
-        lazy_read=(not test_helper.is_google_env()))
+        lazy_read=not test_helper.is_google_env())
     if test_helper.is_google_env():
       self.fs.add_real_directory("/build/cas")
     self.browsers: List[mock_browser.MockBrowser] = [

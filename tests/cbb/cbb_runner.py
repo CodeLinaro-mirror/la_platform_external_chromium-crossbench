@@ -4,9 +4,10 @@
 
 # TODO: remove after landing infra change.
 
-import pytest
 import pathlib
 import sys
+
+import pytest
 
 repo_dir = pathlib.Path(__file__).absolute().parents[2]
 if repo_dir not in sys.path:

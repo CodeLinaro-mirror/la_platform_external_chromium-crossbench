@@ -9,16 +9,9 @@ import csv
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.memory.memory_benchmark import (
-    MemoryBenchmark,
-    MemoryBenchmarkStoryFilter,
-    MemoryProbe,
-)
-from crossbench.env import (
-    HostEnvironmentConfig,
-    ValidationMode,
-)
+    MemoryBenchmark, MemoryBenchmarkStoryFilter, MemoryProbe)
+from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
-
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
 
@@ -116,7 +109,7 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
             "": "",
         })
 
-    with self.assertLogs(level='INFO') as cm:
+    with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
         for run in runner.runs:
           probe.log_run_result(run)
@@ -124,7 +117,7 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
     self.assertIn("Memory results", output)
     self.assertIn(f"Score {tab_count}", output)
 
-    with self.assertLogs(level='INFO') as cm:
+    with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
         probe.log_browsers_result(runner.browser_group)
     output = "\n".join(cm.output)

@@ -178,6 +178,9 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
       local_result_path = self.local_result_path
       with local_result_path.open("w", encoding="utf-8") as f:
         json.dump(profile, f)
+        # TODO(375390958): figure out why files aren't fully written to
+        # pyfakefs here.
+        f.write("\n")
 
   def teardown(self) -> ProbeResult:
     return self.browser_result(json=[self.result_path])

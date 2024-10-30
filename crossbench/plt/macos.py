@@ -335,7 +335,7 @@ class MacOSPlatform(PosixPlatform):
     """
 
     display_services, main_display = self._get_display_service()
-    display_brightness = ctypes.c_float()
+    display_brightness = ctypes.c_float()  # pylint: disable=no-value-for-parameter
     ret = display_services.DisplayServicesGetBrightness(
         main_display, ctypes.byref(display_brightness))
     assert ret == 0

@@ -402,6 +402,10 @@ class TsProxyTrafficShaper(TrafficShaper):
     # TODO: support custom name
     self._name = "tsproxy"
 
+  @property
+  def ts_proxy(self) -> TsProxyServer:
+    return self._ts_proxy
+
   @contextlib.contextmanager
   def open(self, network: Network,
            session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:

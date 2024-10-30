@@ -20,10 +20,11 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpMockPlatform()
+    self.mock_platform_setup()
 
-  def setUpMockPlatform(self):
+  def mock_platform_setup(self):
     self.mock_platform = MockPlatform()  # pytype: disable=not-instantiable
+    self.platform = self.mock_platform
 
   def tearDown(self):
     expected_sh_cmds = self.mock_platform.expected_sh_cmds

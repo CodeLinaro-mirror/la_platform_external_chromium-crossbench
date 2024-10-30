@@ -4,8 +4,6 @@
 
 import unittest
 
-import hjson
-
 import crossbench.path as pth
 from crossbench.cli.config.probe import ProbeListConfig
 from crossbench.probes.all import PerfettoProbe
@@ -25,7 +23,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertEqual(pth.AnyPath("perfetto"), probe.perfetto_bin)
 
   def test_parse_example_config(self):
-    config_file = (test_helper.config_dir() / "doc/probe/perfetto.config.hjson")
+    config_file = test_helper.config_dir() / "doc/probe/perfetto.config.hjson"
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.parse_path(config_file).probes
     self.assertEqual(len(probes), 1)

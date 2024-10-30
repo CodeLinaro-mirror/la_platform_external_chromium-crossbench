@@ -378,7 +378,8 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   def _installed_app_version(self, app_path: pth.LocalPath) -> BrowserVersion:
     raw_version = self._browser_platform.app_version(app_path)
     channel = BrowserVersionChannel.STABLE
-    for (package_name, package_channel) in self.CHANNEL_PACKAGE_LOOKUP.values():
+    for value in self.CHANNEL_PACKAGE_LOOKUP.values():
+      (package_name, package_channel) = value
       if app_path.name == package_name:
         channel = package_channel
         break
@@ -431,7 +432,8 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     # the apk: `aapt dump badging <path-to-apk> | grep package:\ name`
     # Iterate over all chrome versions and find any matching release
     installed_packages = self.adb.packages()
-    for package_name, package_channel in self.CHANNEL_PACKAGE_LOOKUP.values():
+    for value in self.CHANNEL_PACKAGE_LOOKUP.values():
+      (package_name, package_channel) = value
       if not self._requested_version.matches_channel(package_channel):
         continue
       if package_name not in installed_packages:

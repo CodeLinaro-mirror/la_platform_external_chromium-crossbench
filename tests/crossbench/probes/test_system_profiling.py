@@ -39,8 +39,8 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=None,
             add_counters=None,
             output_path=output_path), [
-                "simpleperf", "record", "-t", "5678", "--call-graph", "dwarf", "--post-unwind=yes", "-o",
-                output_path
+                "simpleperf", "record", "-t", "5678", "--call-graph", "dwarf",
+                "--post-unwind=yes", "-o", output_path
             ])
 
   def test_simpleperf_command_line_with_pid(self):
@@ -59,8 +59,8 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=None,
             add_counters=None,
             output_path=output_path), [
-                "simpleperf", "record", "-p", "1234", "--call-graph", "dwarf", "--post-unwind=yes", "-o",
-                output_path
+                "simpleperf", "record", "-p", "1234", "--call-graph", "dwarf",
+                "--post-unwind=yes", "-o", output_path
             ])
 
   def test_simpleperf_command_line_with_app(self):
@@ -98,8 +98,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             events=None,
             grouped_events=None,
             add_counters=None,
-            output_path=output_path),
-        ["simpleperf", "record", "-a", "--call-graph", "dwarf", "--post-unwind=yes", "-o", output_path])
+            output_path=output_path), [
+                "simpleperf", "record", "-a", "--call-graph", "dwarf",
+                "--post-unwind=yes", "-o", output_path
+            ])
 
   def test_simpleperf_command_line_with_frequency(self):
     output_path = pathlib.Path("simpleperf.perf.data")
@@ -285,15 +287,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     probe = ProfilingProbe()
 
     macos_platform = MacOsMockPlatform()
-    TEST_BROWSERS = (MockSafari, MockFirefox, MockChromeStable)
-    for browser_cls in TEST_BROWSERS:
+    test_browsers = (MockSafari, MockFirefox, MockChromeStable)
+    for browser_cls in test_browsers:
       browser_cls.setup_fs(self.fs, macos_platform)
       name = browser_cls.__name__
       browser_cls(
           name, settings=Settings(platform=macos_platform)).attach_probe(probe)
 
     linux_platform = LinuxMockPlatform()
-    for browser_cls in TEST_BROWSERS:
+    for browser_cls in test_browsers:
       browser_cls.setup_fs(self.fs, linux_platform)
     with self.assertRaises(AssertionError):
       MockFirefox(

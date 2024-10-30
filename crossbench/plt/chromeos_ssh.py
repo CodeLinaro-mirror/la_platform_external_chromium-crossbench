@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
 from crossbench import path as pth
@@ -48,7 +47,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
         self._username = username
         args.extend(("-u", username, "-p", password))
       if browser_flags:
-        args.append('--')
+        args.append("--")
         args.extend(browser_flags)
       self.sh(*args)
     except plt.SubprocessError as e:
