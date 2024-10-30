@@ -71,8 +71,10 @@ class WinMockPlatformTestCase(BaseMockPlatformTestCase):
 
   def test_search_binary(self):
     bin_path = self.path("foo/bar/default/crossbench_mock_binary.exe")
+    self.assertFalse(self.platform.exists(bin_path))
     self.assertIsNone(self.platform.search_app(bin_path))
-    self.fs.create_file(bin_path, st_size=100)
+    self.fs.create_file(self.platform.local_path(bin_path), st_size=100)
+    self.assertTrue(self.platform.exists(bin_path))
     with mock.patch("shutil.which", return_value=bin_path) as cm:
       self.assertEqual(self.platform.search_app(bin_path), bin_path)
     cm.assert_called_once_with(os.fspath(bin_path))

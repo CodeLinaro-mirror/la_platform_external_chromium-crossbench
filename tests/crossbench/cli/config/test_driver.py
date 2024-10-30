@@ -192,7 +192,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
   def test_parse_adb_phone_identifier_unknown(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     if self.platform.is_macos:
-      self.platform.sh_results.append(XCTRACE_DEVICES_SINGLE_OUTPUT)
+      self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
 
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse("Unknown Device X")

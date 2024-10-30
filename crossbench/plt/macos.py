@@ -68,6 +68,8 @@ class MacOSPlatform(PosixPlatform):
     bin_path = app_path / "Contents" / "MacOS" / app_path.stem
     if self.exists(bin_path):
       return bin_path
+    if not self.exists(bin_path.parent):
+      raise ValueError(f"Binary does not exist: {bin_path}")
     self.assert_is_local()
     binaries = [
         path for path in self.iterdir(bin_path.parent) if self.is_file(path)
@@ -76,8 +78,8 @@ class MacOSPlatform(PosixPlatform):
       return binaries[0]
     # Fallback to read plist
     plist_path = app_path / "Contents" / "Info.plist"
-    assert self.is_file(plist_path), (
-        f"Could not find Info.plist in app bundle: {app_path}")
+    if not self.is_file(plist_path):
+      raise ValueError(f"Could not find Info.plist in app bundle: {app_path}")
     # TODO: support remote platform
     with self.local_path(plist_path).open("rb") as f:
       plist = plistlib.load(f)
@@ -86,7 +88,9 @@ class MacOSPlatform(PosixPlatform):
         plist.get("CFBundleExecutable", app_path.stem))
     if self.is_file(bin_path):
       return bin_path
-    raise ValueError(f"Invalid number of binaries candidates found: {binaries}")
+    if not binaries:
+      raise ValueError(f"No binaries found in {app_path}")
+    raise ValueError(f"Invalid number of binaries found: {binaries}")
 
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
@@ -153,14 +157,12 @@ class MacOSPlatform(PosixPlatform):
     if not app_path:
       # Most likely just a cli tool"
       return self.sh_stdout(app_or_bin, "--version").strip()
-    version_string = self.sh_stdout("mdls", "-name", "kMDItemVersion",
-                                    app_path).strip()
-    logging.debug("version_string = %s %s", version_string, app_path)
-    # Filter output: 'kMDItemVersion = "14.1"' => '"14.1"'
-    _, version_string = version_string.split(" = ", maxsplit=1)
-    if version_string != "(null)":
-      # Strip quotes: '"14.1"' => '14.1'
-      return version_string[1:-1]
+    info_plist = app_path / "Contents/Info.plist"
+    if self.exists(info_plist):
+      plist = plistlib.loads(self.cat_bytes(info_plist))
+      if version_string := plist.get("CFBundleShortVersionString"):
+        return version_string
+
     # Backup solution use the binary (not the .app bundle) with --version.
     maybe_bin_path: Optional[pth.AnyPath] = app_or_bin
     if app_or_bin.suffix == ".app":

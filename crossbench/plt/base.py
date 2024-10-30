@@ -445,6 +445,16 @@ class Platform(abc.ABC):
     with self.local_path(file).open(encoding=encoding) as f:
       return f.read()
 
+  def cat_bytes(self, file: pth.AnyPathLike) -> bytes:
+    """Hiss! I return the file contents as bytes."""
+    with self.local_path(file).open("rb") as f:
+      return f.read()
+
+  def get_file_contents(self,
+                        file: pth.AnyPathLike,
+                        encoding: str = "utf-8") -> str:
+    return self.cat(file, encoding)
+
   def set_file_contents(self,
                         file: pth.AnyPathLike,
                         data: str,
@@ -621,6 +631,17 @@ class Platform(abc.ABC):
                 stdin=None,
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
+    result = self.sh_stdout_bytes(
+        *args, shell=shell, quiet=quiet, stdin=stdin, env=env, check=check)
+    return result.decode(encoding)
+
+  def sh_stdout_bytes(self,
+                      *args: CmdArg,
+                      shell: bool = False,
+                      quiet: bool = False,
+                      stdin=None,
+                      env: Optional[Mapping[str, str]] = None,
+                      check: bool = True) -> bytes:
     completed_process = self.sh(
         *args,
         shell=shell,
@@ -629,7 +650,7 @@ class Platform(abc.ABC):
         stdin=stdin,
         env=env,
         check=check)
-    return completed_process.stdout.decode(encoding)
+    return completed_process.stdout
 
   def popen(self,
             *args: CmdArg,

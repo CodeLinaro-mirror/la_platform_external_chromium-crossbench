@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import os
 import pathlib
-from unittest import mock
 import unittest
+from unittest import mock
 
-from crossbench import plt
 import crossbench.path as pth
+from crossbench import plt
 from crossbench.plt import PLATFORM
 from crossbench.plt.bin import (Binary, BinaryNotFoundError, LinuxBinary,
                                 MacOsBinary, PosixBinary, WinBinary)
@@ -63,8 +63,8 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     binary = WinBinary("crossbench_mock_binary.exe")
     self.assertEqual(binary.name, "crossbench_mock_binary.exe")
     platform = WinMockPlatform()
-    path = platform.path("C:/Users/user-name/AppData/Local/Programs/"
-                         "crossbench/crossbench_mock_binary.exe")
+    path = platform.local_path("C:/Users/user-name/AppData/Local/Programs/"
+                               "crossbench/crossbench_mock_binary.exe")
     with self.assertRaises(ValueError):
       with platform.override_binary(binary, path):
         self.assertEqual(binary.resolve(platform), path)

@@ -87,6 +87,14 @@ class NativePlatformTestCase(unittest.TestCase):
       result = self.platform.cat(file)
       self.assertEqual(result, "a b c d e f 11")
 
+  def test_cat_bytes(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      file = pathlib.Path(tmp_dirname) / "test.data"
+      with file.open("wb") as f:
+        f.write(b"a b c d e f 11")
+      result = self.platform.cat_bytes(file)
+      self.assertEqual(result, b"a b c d e f 11")
+
   def test_mkdir(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       path = pathlib.Path(tmp_dirname) / "foo" / "bar"
@@ -387,6 +395,12 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     lsa = self.platform.sh_stdout("ls", "-a")
     self.assertTrue(lsa)
     self.assertNotEqual(ls, lsa)
+
+  def test_sh_bytes(self):
+    ls_bytes = self.platform.sh_stdout_bytes("ls")
+    self.assertIsInstance(ls_bytes, bytes)
+    ls_str = self.platform.sh_stdout("ls")
+    self.assertEqual(ls_str, ls_bytes.decode("utf-8"))
 
   def test_which(self):
     ls_bin = self.platform.which("ls")

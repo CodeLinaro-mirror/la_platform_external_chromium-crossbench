@@ -137,6 +137,11 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().cat(file, encoding)
     return self.sh_stdout("cat", self.path(file), encoding=encoding)
 
+  def cat_bytes(self, file: pth.AnyPathLike) -> bytes:
+    if self.is_local:
+      return super().cat_bytes(file)
+    return self.sh_stdout_bytes("cat", self.path(file))
+
   def rm(self,
          path: pth.AnyPathLike,
          dir: bool = False,

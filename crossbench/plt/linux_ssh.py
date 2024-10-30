@@ -53,22 +53,16 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
       ssh_cmd.append(shlex.join(map(str, args)))
     return ssh_cmd
 
-  def sh_stdout(self,
-                *args: CmdArg,
-                shell: bool = False,
-                quiet: bool = False,
-                encoding: str = "utf-8",
-                stdin=None,
-                env: Optional[Mapping[str, str]] = None,
-                check: bool = True) -> str:
+  def sh_stdout_bytes(self,
+                      *args: CmdArg,
+                      shell: bool = False,
+                      quiet: bool = False,
+                      stdin=None,
+                      env: Optional[Mapping[str, str]] = None,
+                      check: bool = True) -> bytes:
     ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
-    return self._host_platform.sh_stdout(
-        *ssh_cmd,
-        stdin=stdin,
-        env=env,
-        quiet=quiet,
-        encoding=encoding,
-        check=check)
+    return self._host_platform.sh_stdout_bytes(
+        *ssh_cmd, quiet=quiet, stdin=stdin, env=env, check=check)
 
   def sh(self,
          *args: CmdArg,

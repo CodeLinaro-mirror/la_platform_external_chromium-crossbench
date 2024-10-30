@@ -230,7 +230,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
                        mock_browser.MockChromeDev.mock_app_path())
       return mock_browser.MockChromeDev
 
-    self.platform.sh_results.append(XCTRACE_DEVICES_SINGLE_OUTPUT)
+    self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
     with mock.patch.object(
         BrowserVariantsConfig,
         "_get_browser_cls",

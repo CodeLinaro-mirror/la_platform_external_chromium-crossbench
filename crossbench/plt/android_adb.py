@@ -182,14 +182,28 @@ class Adb:
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
+    result = self._adb_stdout_bytes(
+        *args,
+        quiet=quiet,
+        stdin=stdin,
+        use_serial_id=use_serial_id,
+        check=check)
+    return result.decode(encoding)
+
+  def _adb_stdout_bytes(self,
+                        *args: CmdArg,
+                        quiet: bool = False,
+                        stdin=None,
+                        use_serial_id: bool = True,
+                        check: bool = True) -> bytes:
     adb_cmd: ListCmdArgs = []
     if use_serial_id:
       adb_cmd = [self._adb_bin, "-s", self._serial_id]
     else:
       adb_cmd = [self._adb_bin]
     adb_cmd.extend(args)
-    return self._host_platform.sh_stdout(
-        *adb_cmd, quiet=quiet, encoding=encoding, check=check, stdin=stdin)
+    return self._host_platform.sh_stdout_bytes(
+        *adb_cmd, quiet=quiet, check=check, stdin=stdin)
 
   def shell_stdout(self,
                    *args: CmdArg,
@@ -198,6 +212,16 @@ class Adb:
                    stdin=None,
                    env: Optional[Mapping[str, str]] = None,
                    check: bool = True) -> str:
+    result = self.shell_stdout_bytes(
+        *args, quiet=quiet, stdin=stdin, env=env, check=check)
+    return result.decode(encoding)
+
+  def shell_stdout_bytes(self,
+                         *args: CmdArg,
+                         quiet: bool = False,
+                         stdin=None,
+                         env: Optional[Mapping[str, str]] = None,
+                         check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
     # -T: disable pty allocation
@@ -207,13 +231,8 @@ class Adb:
       raise ValueError("ADB shell only supports an empty env for now.")
     # Need to escape spaces in args for adb shell
     args = map(lambda x: str(x).replace(" ", "\\ "), args)
-    return self._adb_stdout(
-        "shell",
-        *args,
-        stdin=stdin,
-        quiet=quiet,
-        encoding=encoding,
-        check=check)
+    return self._adb_stdout_bytes(
+        "shell", *args, stdin=stdin, quiet=quiet, check=check)
 
   def shell(self,
             *args: CmdArg,
@@ -545,23 +564,17 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         quiet=quiet,
         check=check)
 
-  def sh_stdout(self,
-                *args: CmdArg,
-                shell: bool = False,
-                quiet: bool = False,
-                encoding: str = "utf-8",
-                stdin=None,
-                env: Optional[Mapping[str, str]] = None,
-                check: bool = True) -> str:
+  def sh_stdout_bytes(self,
+                      *args: CmdArg,
+                      shell: bool = False,
+                      quiet: bool = False,
+                      stdin=None,
+                      env: Optional[Mapping[str, str]] = None,
+                      check: bool = True) -> bytes:
     # The shell option is not supported on adb.
     del shell
-    return self.adb.shell_stdout(
-        *args,
-        stdin=stdin,
-        env=env,
-        quiet=quiet,
-        encoding=encoding,
-        check=check)
+    return self.adb.shell_stdout_bytes(
+        *args, stdin=stdin, env=env, quiet=quiet, check=check)
 
   def popen(self,
             *args: CmdArg,

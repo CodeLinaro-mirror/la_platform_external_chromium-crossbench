@@ -9,8 +9,8 @@ import datetime as dt
 import pathlib
 import shlex
 from subprocess import CompletedProcess
-from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
-                    Union)
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping,
+                    Optional, Sequence, Union)
 
 import psutil
 
@@ -29,7 +29,7 @@ from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, TupleCmdArgs
+  from crossbench.plt.base import ListCmdArgs, TupleCmdArgs
   from crossbench.runner.runner import Runner
 
 
@@ -42,25 +42,55 @@ class MockPlatformMixin:
   def __init__(self, *args, is_battery_powered=False, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self.sh_cmds: List[TupleCmdArgs] = []
-    self.expected_sh_cmds: Optional[List[TupleCmdArgs]] = None
-    self.sh_results: List[str] = []
+    self._sh_cmds: List[TupleCmdArgs] = []
+    self._expected_sh_cmds: Optional[List[TupleCmdArgs]] = None
+    self._sh_results: List[bytes] = []
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
     super().__init__(*args, **kwargs)
 
-  def expect_sh(self, *args: Any, result: str = "") -> None:
-    if self.expected_sh_cmds is None:
-      self.expected_sh_cmds = []
-    converted_args = []
+  def expect_sh(self,
+                *args: Union[str, pathlib.Path],
+                result: Union[str, bytes] = "") -> None:
+    if args:
+      if self._expected_sh_cmds is None:
+        self._expected_sh_cmds = []
+      self._expected_sh_cmds.append(self._convert_sh_args(*args))
+    if isinstance(result, str):
+      result = result.encode("utf-8")
+    assert isinstance(result, bytes)
+    self._sh_results.append(result)
+
+  def _convert_sh_args(self, *args: Union[str, pathlib.Path]) -> TupleCmdArgs:
+    converted_args : ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
         arg = str(arg)
       converted_args.append(arg)
-    self.expected_sh_cmds.append(tuple(converted_args))
-    self.sh_results.append(result)
-    assert isinstance(result, str)
+    return tuple(converted_args)
+
+  @property
+  def sh_results(self) -> List[bytes]:
+    return list(self._sh_results)
+
+  @sh_results.setter
+  def sh_results(self, results: Iterable[Union[str, bytes]]) -> None:
+    assert not self._sh_results, "Trying to override non-consumed results"
+    assert not self._expected_sh_cmds, (
+        "expect_sh() cannot be used together with sh_results")
+    for result in results:
+      self.expect_sh(result=result)
+
+  @property
+  def sh_cmds(self) -> List[TupleCmdArgs]:
+    return list(self._sh_cmds)
+
+  @property
+  def expected_sh_cmds(self) -> Optional[List[TupleCmdArgs]]:
+    if self._expected_sh_cmds is None:
+      return None
+    return list(self._expected_sh_cmds)
 
   @property
   def name(self) -> str:
@@ -137,29 +167,29 @@ class MockPlatformMixin:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")
 
-  def sh_stdout(self,
-                *args: Union[str, pathlib.Path],
-                shell: bool = False,
-                quiet: bool = False,
-                encoding: str = "utf-8",
-                stdin=None,
-                env: Optional[Mapping[str, str]] = None,
-                check: bool = True) -> str:
-    del shell, quiet, encoding, stdin, env, check
-    if self.expected_sh_cmds is not None:
-      assert self.expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
+  def sh_stdout_bytes(self,
+                      *args: Union[str, pathlib.Path],
+                      shell: bool = False,
+                      quiet: bool = False,
+                      stdin=None,
+                      env: Optional[Mapping[str, str]] = None,
+                      check: bool = True) -> bytes:
+    del shell, quiet, stdin, env, check
+    if self._expected_sh_cmds is not None:
+      assert self._expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
       # Convert all args to str first, sh accepts both str and Paths.
-      expected = tuple(map(str, self.expected_sh_cmds.pop(0)))
+      expected = tuple(map(str, self._expected_sh_cmds[0]))
       str_args = tuple(map(str, args))
-      assert expected == str_args, (f"After {len(self.sh_cmds)} cmds: \n"
+      assert expected == str_args, (f"After {len(self._sh_cmds)} cmds: \n"
                                     f"  expected: {expected}\n"
                                     f"  got:      {str_args}")
-    self.sh_cmds.append(args)
-    if not self.sh_results:
+      self._expected_sh_cmds.pop(0)
+    self._sh_cmds.append(args)
+    if not self._sh_results:
       cmd = shlex.join(map(str, args))
-      raise ValueError(f"After {len(self.sh_cmds)} cmds: "
+      raise ValueError(f"After {len(self._sh_cmds)} cmds: "
                        f"MockPlatform has no more sh outputs for cmd: {cmd}")
-    return self.sh_results.pop(0)
+    return self._sh_results.pop(0)
 
   def sh(self,
          *args: Union[str, pathlib.Path],
