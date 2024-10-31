@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   import datetime as dt
   import re
 
+  from crossbench.cli.config.secrets import Secret
   from crossbench.flags.base import FlagsData
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -96,6 +97,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     super().__init__(label, path, settings=settings)
     self.url_list: List[str] = []
     self.expected_js: List[JsInvocation] = []
+    self.expected_is_logged_in: List[Secret] = []
     self.invoked_js: List[JsInvocation] = []
     self.did_run: bool = False
     self.clear_cache_dir: bool = False
@@ -115,6 +117,9 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def was_js_invoked(self, script: str) -> bool:
     return any(script is invoked_js.script for invoked_js in self.invoked_js)
+
+  def expect_is_logged_in(self, secret: Secret) -> None:
+    self.expected_is_logged_in.append(secret)
 
   def clear_cache(self) -> None:
     pass
@@ -190,6 +195,14 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     # Return copies to avoid leaking data between repetitions.
     return copy.deepcopy(expectation.result)
 
+  def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:
+    for login in self.expected_is_logged_in:
+      if login.type == secret.type:
+        if login.username == secret.username:
+          return True
+        if strict:
+          raise RuntimeError("Secret mismatch")
+    return False
 
 def app_root(platform: plt.Platform) -> pathlib.Path:
   if platform.is_macos:
