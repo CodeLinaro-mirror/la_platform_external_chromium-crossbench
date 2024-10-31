@@ -22,7 +22,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
                                           LinuxMockPlatform)
@@ -312,7 +312,7 @@ class ChromeOSViewportInfoTestCase(unittest.TestCase):
                      DisplayRectangle(Point(11, 202), 3, 4))
 
 
-class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
+class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   _FAKE_TOUCH_DEVICE: TouchDevice = TouchDevice("/dev/input/event0", 1920, 1080)
 
   _NO_ELEMENT_JS_RESULT: JsInvocation = JsInvocation(result=[
@@ -356,17 +356,6 @@ class ChromeOSInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
     self.run = MockRun(self.runner, self.session, "run 1")
 
     self.action_runner = ChromeOSInputActionRunner()
-
-  def tearDown(self):
-    expected_sh_cmds = self.platform.expected_sh_cmds
-    if expected_sh_cmds is not None:
-      self.assertListEqual(expected_sh_cmds, [],
-                           "Got additional unused shell cmds.")
-
-    expected_js = self.browser.expected_js
-    if expected_js is not None:
-      self.assertListEqual(expected_js, [],
-                           "Got additional unused expected JS.")
 
   def run_action(self, action: Action) -> None:
     action.run_with(self.run, self.action_runner)

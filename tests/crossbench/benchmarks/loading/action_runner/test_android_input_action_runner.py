@@ -24,7 +24,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
 from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
                                           LinuxMockPlatform, MockAdb)
@@ -109,7 +109,7 @@ class ViewportInfoTestCase(unittest.TestCase):
     self.assertEqual(element_center.y, 55)
 
 
-class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
+class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   __test__ = True
 
   def setUp(self) -> None:
@@ -132,17 +132,6 @@ class AndroidInputActionRunnerTestCase(CrossbenchFakeFsTestCase):
                                           Flags(), 1, self.root_dir, True, True)
     self.mock_run = MockRun(self.runner, self.session, "run 1")
     self.action_runner = AndroidInputActionRunner()
-
-  def tearDown(self):
-    expected_sh_cmds = self.platform.expected_sh_cmds
-    if expected_sh_cmds is not None:
-      self.assertListEqual(expected_sh_cmds, [],
-                           "Got additional unused shell cmds.")
-
-    expected_js = self.browser.expected_js
-    if expected_js is not None:
-      self.assertListEqual(expected_js, [],
-                           "Got additional unused JS side effects.")
 
   def run_action(self, action: Action) -> None:
     action.run_with(self.mock_run, self.action_runner)
