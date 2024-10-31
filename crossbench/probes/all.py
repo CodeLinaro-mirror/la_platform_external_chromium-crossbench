@@ -10,6 +10,7 @@ from crossbench.probes.android_logcat import AndroidLogcatProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.dtrace import DTraceProbe
+from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 from crossbench.probes.internal import (DurationsProbe, ErrorsProbe,
@@ -67,6 +68,7 @@ GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     ChromeHistogramsProbe,
     DTraceProbe,
     DebuggerProbe,
+    DumpHtmlProbe,
     FrequencyProbe,
     JSProbe,
     PerfettoProbe,

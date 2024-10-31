@@ -180,6 +180,15 @@ class ActionRunner:
     with run.actions("Screenshot", measure=False):
       self.screenshot_impl(run, "screenshot")
 
+  def dump_html_impl(self, run: Run, suffix: str) -> None:
+    del run, suffix
+    raise NotImplementedError("dump_html_impl not implemented")
+
+  def dump_html(self, run: Run, action: i_action.DumpHtmlAction) -> None:
+    del action
+    with run.actions("Dump HTML", measure=False):
+      self.dump_html_impl(run, "dump")
+
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
       run.browser.show_url("about:blank")
@@ -217,7 +226,7 @@ class ActionRunner:
       self.run_blocks(run, page, page.blocks)
       self._maybe_navigate_to_about_blank(run, page)
     except Exception:
-      page.failure_screenshot(run)
+      page.create_failure_artifacts(run)
       raise
 
   def run_interactive_page(self, run: Run, page: InteractivePage,
@@ -232,7 +241,7 @@ class ActionRunner:
       with exception.annotate("setup"):
         setup.run_with(self, run, page)
     except Exception:
-      page.failure_screenshot(run, "setup-failure")
+      page.create_failure_artifacts(run, "setup-failure")
       raise
 
   def run_login(self, run: Run, page: InteractivePage, login: ActionBlock):
@@ -240,7 +249,7 @@ class ActionRunner:
       with exception.annotate("login"):
         login.run_with(self, run, page)
     except Exception:
-      page.failure_screenshot(run, "login-failure")
+      page.create_failure_artifacts(run, "login-failure")
       raise
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):

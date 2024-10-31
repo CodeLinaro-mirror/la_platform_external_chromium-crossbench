@@ -78,12 +78,19 @@ class InteractivePage(Page):
           return cast(GetAction, action).url
     raise RuntimeError("No GET action with an URL found.")
 
-  def failure_screenshot(self, run: Run, message: str = "failure") -> None:
+  def create_failure_artifacts(self,
+                               run: Run,
+                               message: str = "failure") -> None:
     action_runner = get_action_runner(run)
     try:
       action_runner.screenshot_impl(run, message)
     except Exception as e:  # pylint: disable=broad-except
       logging.error("Failed to take a failure screenshot: %s", str(e))
+
+    try:
+      action_runner.dump_html_impl(run, message)
+    except Exception as e:  # pylint: disable=broad-except
+      logging.error("Failed to dump HTML on failure: %s", str(e))
 
   def setup(self, run: Run) -> None:
     action_runner = get_action_runner(run)

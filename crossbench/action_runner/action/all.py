@@ -8,6 +8,7 @@ from typing import Tuple, Type
 
 from crossbench.action_runner.action.action import ACTIONS, Action
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.dump_html import DumpHtmlAction
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
@@ -25,6 +26,7 @@ from crossbench.action_runner.action.wait_for_ready_state import \
 
 ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     ClickAction,
+    DumpHtmlAction,
     GetAction,
     InjectNewDocumentScriptAction,
     JsAction,

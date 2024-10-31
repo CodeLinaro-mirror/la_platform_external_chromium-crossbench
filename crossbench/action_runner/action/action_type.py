@@ -29,3 +29,4 @@ class ActionType(ConfigEnum):
   SWITCH_TAB = ("switch_tab", "Switch the tab that actions are sent to")
   WAIT_FOR_READY_STATE = ("wait_for_ready_state",
                           "Wait for a specific document.readyState")
+  DUMP_HTML = ("dump_html", "Dump the current document's HTML")

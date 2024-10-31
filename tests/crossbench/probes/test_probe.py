@@ -11,6 +11,7 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES, INTERNAL_PROBES
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.dtrace import DTraceProbe
+from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
@@ -67,6 +68,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield BrowserProfilingProbe()
     yield DTraceProbe(pth.LocalPath("script.dtrace"))
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
+    yield DumpHtmlProbe()
     yield FrequencyProbe(immutabledict())
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"))
     yield PerformanceEntriesProbe()
