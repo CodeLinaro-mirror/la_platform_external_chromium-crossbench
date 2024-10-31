@@ -98,6 +98,16 @@ class V8RCSProbe(ChromiumProbe):
       files.append(dest_file)
     return LocalProbeResult(file=files)
 
+  def log_browsers_result(self, group: BrowsersRunGroup) -> None:
+    if self not in group.results:
+      return
+    logging.info("-" * 80)
+    logging.critical(
+        "V8 RCS results: open on  http://v8.dev/tools/head/callstats.html")
+    for file in group.results[self].get_all("txt"):
+      logging.critical("    %s", file)
+    logging.info("- " * 40)
+
 
 class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
   _rcs_table: Optional[str] = None

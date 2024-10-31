@@ -114,5 +114,15 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     rcs_result_files = list(runner.out_dir.glob(f"**/{probe.name}/*.rcs.txt"))
     self.assertEqual(len(rcs_result_files), result_count)
 
+    top_level_rcs_files = list((runner.out_dir / probe.name).iterdir())
+    self.assertEqual(len(top_level_rcs_files), len(self.browsers))
+
+    with self.assertLogs() as cm:
+      probe.log_browsers_result(runner.browser_group)
+    log_output = "\n".join(cm.output)
+    for top_level_rcs_file in top_level_rcs_files:
+      self.assertIn(str(top_level_rcs_file), log_output)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
