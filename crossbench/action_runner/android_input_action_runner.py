@@ -301,9 +301,3 @@ return [
     # characters with the encoding '%s'.
     characters = characters.replace(" ", "%s")
     run.browser_platform.sh("input", "keyboard", "text", characters)
-
-  # TODO: Move this to a probe. See ActionRunner.
-  def screenshot_impl(self, run: Run, suffix: str) -> None:
-    with self.screenshot_path(run.out_dir, suffix).open(
-        "w", encoding="utf-8") as file:
-      run.browser_platform.sh("screencap", "-p", stdout=file)

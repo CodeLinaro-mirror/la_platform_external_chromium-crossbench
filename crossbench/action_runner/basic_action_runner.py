@@ -15,6 +15,7 @@ from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
+from crossbench.probes.screenshot import ScreenshotProbe, ScreenshotProbeContext
 
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
@@ -243,3 +244,12 @@ class BasicActionRunner(ActionRunner):
         logging.warning(
             "text_input action is behind schedule! Consider extending this "
             "action's duration otherwise the action may timeout.")
+
+  def screenshot_impl(self, run: Run, suffix: str) -> None:
+    ctx = run.find_probe_context(ScreenshotProbe)
+    if not ctx:
+      logging.warning("No screenshot probe for screenshot on %s",
+                      repr(self.info_stack))
+      return
+    assert isinstance(ctx, ScreenshotProbeContext)
+    ctx.screenshot("_".join(self.info_stack) + f"_{suffix}")

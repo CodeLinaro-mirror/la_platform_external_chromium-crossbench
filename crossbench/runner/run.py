@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Type
 
 from crossbench import compat
 from crossbench import path as pth
@@ -28,8 +28,9 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
-  from crossbench.probes.probe import Probe
+  from crossbench.probes.probe import Probe, ProbeT
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  from crossbench.runner.probe_context_manager import ProbeContextT
   from crossbench.runner.runner import Runner
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
@@ -392,6 +393,10 @@ class Run(ResultOrigin):
     for probe in self.probes:
       probe.log_run_result(self)
 
+  def find_probe_context(self,
+                         cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:
+    return self._probe_context_manager.find_probe_context(cls)
+
 
 class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
 
@@ -402,19 +407,19 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
     return probe.get_context(self._origin)
 
   def setup_selenium_options(self, options: ArgOptions):
-    for probe_context in self._probe_contexts:
+    for probe_context in self._probe_contexts.values():
       probe_context.setup_selenium_options(options)
 
   def start_story(self) -> None:
     with self.measure("probes-start_story_run"):
-      for probe_context in self._probe_contexts:
+      for probe_context in self._probe_contexts.values():
         with self._origin.exception_handler(
             f"Probe {probe_context.name} start_story_run"):
           probe_context.start_story_run()
 
   def stop_story(self) -> None:
     with self.measure("probes-stop_story_run"):
-      for probe_context in self._probe_contexts:
+      for probe_context in self._probe_contexts.values():
         with self._origin.exception_handler(
             f"Probe {probe_context.name} stop_story_run"):
           probe_context.stop_story_run()

@@ -171,24 +171,14 @@ class ActionRunner:
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)
 
-  # screenshot_path is a helper for screenshot that generates the full path of a
-  # screenshot file based on info_stack. The screenshot dir is created if
-  # necessary.
-  # TODO: the folder management should be done in a probe.
-  def screenshot_path(self, out_dir: LocalPath, suffix: str) -> LocalPath:
-    screenshot_path = out_dir / "screenshot"
-    screenshot_path.mkdir(exist_ok=True)
-    filename = "_".join(self.info_stack) + f"_{suffix}.png"
-    return screenshot_path / filename
-
-  # TODO: Move this into a probe, which can have multiple implementations for
-  # different platforms or fullscreen vs. window, etc.
   def screenshot_impl(self, run: Run, suffix: str) -> None:
-    run.browser.screenshot(self.screenshot_path(run.out_dir, suffix))
+    del run, suffix
+    raise NotImplementedError("screenshot_impl not implemented")
 
   def screenshot(self, run: Run, action: i_action.ScreenshotAction) -> None:
     del action
-    self.screenshot_impl(run, "screenshot")
+    with run.actions("Screenshot", measure=False):
+      self.screenshot_impl(run, "screenshot")
 
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:

@@ -178,7 +178,7 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   def setUp(self):
     super().setUp()
-    self.out_dir = pathlib.Path("testing/out_dir")
+    self.out_dir = pathlib.Path("/testing/out_dir")
     self.out_dir.parent.mkdir(exist_ok=False, parents=True)
     self.stories = [MockStory("story_1"), MockStory("story_2")]
     self.benchmark = MockBenchmark(self.stories)
