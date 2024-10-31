@@ -98,9 +98,9 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     if substories_set == set(self.default_story_names()):
       return self.NAME
     if substories_set == set(self.all_story_names()):
-      name = f"{self.NAME}_all"
+      name = "all"
     else:
-      name = f"{self.NAME}_" + ("_".join(self._substories))
+      name = "_".join(self._substories)
     if len(name) > 220:
       # Crop the name and add some random hash bits
       name = name[:220] + hex(hash(name))[2:10]

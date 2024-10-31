@@ -87,7 +87,7 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
 
   @property
   def name_all(self):
-    return "speedometer_3.0_all"
+    return "all"
 
   @dataclass
   class Namespace(SpeedometerBaseTestCase.Namespace):
