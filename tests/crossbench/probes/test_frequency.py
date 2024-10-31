@@ -9,6 +9,7 @@ from unittest import mock
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
+from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.probes.frequency import ExtremeFrequency, FrequencyProbe
@@ -23,6 +24,10 @@ class FrequencyProbeTest(CrossbenchFakeFsTestCase):
   def setUp(self):
     super().setUp()
     self.platform = LinuxPlatform()
+
+  def test_parse_invalid_non_dictionary(self):
+    with self.assertRaisesRegex(ArgumentTypeMultiException, "Expected dict"):
+      FrequencyProbe.from_config({"cpus": "notadict"})
 
   def test_parse_invalid_map_value(self):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid value"):
@@ -59,7 +64,9 @@ class FrequencyProbeTest(CrossbenchFakeFsTestCase):
     probe2 = FrequencyProbe.from_config({"cpus": {}})
 
     self.assertFalse(probe1.cpu_frequency_map)
+    self.assertIsNotNone(probe1.cpu_frequency_map)
     self.assertFalse(probe2.cpu_frequency_map)
+    self.assertIsNotNone(probe2.cpu_frequency_map)
 
   def test_key(self):
     key1 = FrequencyProbe.from_config({"cpus": {"cpu0": "1111",}}).key

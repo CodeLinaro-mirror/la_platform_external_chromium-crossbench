@@ -75,10 +75,11 @@ class FrequencyProbe(EnvModifier):
   # Matches the CPU names exposed by the system in _CPUS_DIR.
   _CPU_NAME_REGEX: Pattern[str] = re.compile("cpu[0-9]+$")
 
-  def __init__(self, cpus: immutabledict[str, Union[ExtremeFrequency, int]]):
+  def __init__(self, cpus: Dict[str, Union[ExtremeFrequency, int]]):
     super().__init__()
-    self._cpu_frequency_map: immutabledict[str, Union[ExtremeFrequency,
-                                                      int]] = cpus
+    self._cpu_frequency_map: immutabledict[str,
+                                           Union[ExtremeFrequency,
+                                                 int]] = immutabledict(cpus)
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -86,7 +87,7 @@ class FrequencyProbe(EnvModifier):
     parser.add_argument(
         "cpus",
         type=FrequencyProbe.cpu_frequency_map_type,
-        default=None,
+        default={},
         help="CPU frequency map, see FrequencyProbe docs")
     return parser
 
@@ -155,10 +156,7 @@ class FrequencyProbe(EnvModifier):
   # way because it's exposed by `./cb.py describe probe frequency`.
   @classmethod
   def cpu_frequency_map_type(
-      cls, value: Any) -> immutabledict[str, Union[ExtremeFrequency, int]]:
-    if value is None:
-      return immutabledict()
-
+      cls, value: Any) -> Dict[str, Union[ExtremeFrequency, int]]:
     untyped_map = ObjectParser.dict(value)
     if (FrequencyProbe._WILDCARD_CONFIG_KEY in untyped_map and
         len(untyped_map) > 1):
@@ -185,7 +183,7 @@ class FrequencyProbe(EnvModifier):
               f"Invalid value in CPU frequency map: {v}. Should "
               "have been one of \"max\"|\"min\"|<int>|\"<int>\"") from e
 
-    return immutabledict(typed_map)
+    return typed_map
 
   # Returns None if the cpu_name was not configured.
   def _get_target_frequency(
