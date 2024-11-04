@@ -85,8 +85,8 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     return self.browser.platform
 
   @property
-  def runner_platform(self) -> plt.Platform:
-    return self.browser_platform.host_platform
+  def host_platform(self) -> plt.Platform:
+    return self.browser.host_platform
 
   @property
   @abc.abstractmethod
@@ -216,7 +216,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   def local_result_path(self) -> LocalPath:
-    return self.runner_platform.local_path(self.result_path)
+    return self.host_platform.local_path(self.result_path)
 
   def setup_selenium_options(self, options: BaseOptions) -> None:
     """

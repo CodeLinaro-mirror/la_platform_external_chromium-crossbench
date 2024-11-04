@@ -46,7 +46,7 @@ class V8RCSProbe(ChromiumProbe):
                          file_name: str) -> LocalPath:
     result_dir = group.get_local_probe_result_dir(self)
     result_files = (run.results[self].file for run in group.runs)
-    result_file = self.runner_platform.concat_files(
+    result_file = self.host_platform.concat_files(
         inputs=result_files,
         output=result_dir / file_name,
         prefix=f"\n== Page: {group.story.name}\n")
@@ -61,8 +61,8 @@ class V8RCSProbe(ChromiumProbe):
                                            temperature_file_name)
       result_files.append(group_file)
     result_dir = group.get_local_probe_result_dir(self)
-    self.runner_platform.symlink_or_copy(all_file,
-                                         result_dir.with_suffix(".rcs.txt"))
+    self.host_platform.symlink_or_copy(all_file,
+                                       result_dir.with_suffix(".rcs.txt"))
     return LocalProbeResult(file=tuple(result_files))
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
@@ -75,11 +75,11 @@ class V8RCSProbe(ChromiumProbe):
     result_files = []
     for name, files in name_groups.items():
       result_files.append(
-          self.runner_platform.concat_files(
+          self.host_platform.concat_files(
               inputs=files, output=result_dir / name))
     src_file = result_dir / "all.rcs.txt"
-    self.runner_platform.symlink_or_copy(src_file,
-                                         result_dir.with_suffix(".rcs.txt"))
+    self.host_platform.symlink_or_copy(src_file,
+                                       result_dir.with_suffix(".rcs.txt"))
     return LocalProbeResult(file=(src_file,))
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
@@ -94,7 +94,7 @@ class V8RCSProbe(ChromiumProbe):
                      self.NAME, story_group_file)
         continue
       dest_file = result_dir / f"{story_group.browser.unique_name}.rcs.txt"
-      self.runner_platform.symlink_or_copy(story_group_file, dest_file)
+      self.host_platform.symlink_or_copy(story_group_file, dest_file)
       files.append(dest_file)
     return LocalProbeResult(file=files)
 

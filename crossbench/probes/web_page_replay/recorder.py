@@ -76,13 +76,13 @@ class WebPageReplayProbe(Probe):
                use_test_root_certificate: bool = False,
                record_setup: bool = True):
     super().__init__()
-    runner_platform = plt.PLATFORM
+    host_platform = plt.PLATFORM
     if not wpr_go_bin:
-      if local_wpr_path := WprGoToolFinder(runner_platform).path:
-        wpr_go_bin = runner_platform.local_path(local_wpr_path)
+      if local_wpr_path := WprGoToolFinder(host_platform).path:
+        wpr_go_bin = host_platform.local_path(local_wpr_path)
     if not wpr_go_bin:
-      raise RuntimeError(f"Could not find wpr.go on {runner_platform}")
-    self._wpr_go_bin: LocalPath = runner_platform.local_path(
+      raise RuntimeError(f"Could not find wpr.go on {host_platform}")
+    self._wpr_go_bin: LocalPath = host_platform.local_path(
         PathParser.binary_path(wpr_go_bin, "wpr.go"))
 
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
@@ -167,7 +167,7 @@ class WebPageReplayProbe(Probe):
         output_archive,
     ]
     with helper.ChangeCWD(self._wpr_go_bin.parent):
-      self.runner_platform.sh(*cmd)
+      self.host_platform.sh(*cmd)
 
 
 class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
@@ -179,7 +179,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     self._host: str = "127.0.0.1"
     kwargs = dict(self.probe.recorder_kwargs)
     kwargs.update({
-        "platform": run.runner_platform,
+        "platform": run.host_platform,
         "log_path": self._wprgo_log,
         "archive_path": self.result_path,
     })

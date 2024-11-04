@@ -75,7 +75,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def setup_binary(self) -> None:
     self._driver_path = self.platform.absolute(self._find_driver())
     # TODO: support remote chromedriver as well
-    assert self.platform.host_platform.exists(self._driver_path), (
+    assert self.host_platform.exists(self._driver_path), (
         f"Webdriver path '{self._driver_path}' does not exist")
 
   @abc.abstractmethod

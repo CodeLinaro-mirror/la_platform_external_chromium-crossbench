@@ -25,7 +25,7 @@ class Network(abc.ABC):
                browser_platform: plt.Platform = plt.PLATFORM) -> None:
     self._traffic_shaper = traffic_shaper or NoTrafficShaper(browser_platform)
     self._browser_platform = browser_platform
-    self._runner_platform = browser_platform.host_platform
+    self._host_platform = browser_platform.host_platform
     self._is_running: bool = False
 
   @property
@@ -37,8 +37,8 @@ class Network(abc.ABC):
     return self._browser_platform
 
   @property
-  def runner_platform(self) -> plt.Platform:
-    return self._runner_platform
+  def host_platform(self) -> plt.Platform:
+    return self._host_platform
 
   @property
   def is_running(self) -> bool:

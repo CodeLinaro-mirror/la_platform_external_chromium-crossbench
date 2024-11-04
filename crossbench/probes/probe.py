@@ -145,7 +145,7 @@ class Probe(abc.ABC):
     return hash(self.key)
 
   @property
-  def runner_platform(self) -> plt.Platform:
+  def host_platform(self) -> plt.Platform:
     return plt.PLATFORM
 
   @property

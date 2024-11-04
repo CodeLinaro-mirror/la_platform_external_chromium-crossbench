@@ -159,7 +159,7 @@ class V8LogProbe(ChromiumProbe):
   def process_log_files(self, log_files: List[AnyPath]) -> List[AnyPath]:
     if not self._profview:
       return []
-    platform = self.runner_platform
+    platform = self.host_platform
     finder = V8ToolsFinder(platform, self._d8_binary, self._v8_checkout)
     if not finder.d8_binary or not finder.tick_processor or not log_files:
       logging.warning("Did not find $D8_PATH for profview processing.")

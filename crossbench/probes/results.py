@@ -269,8 +269,7 @@ class BrowserProbeResult(ProbeResult):
         logging.debug(
             "Browser result is not in browser tmp dir: "
             "only using the name of '%s'", remote_path)
-        relative_path = result_origin.runner_platform.local_path(
-            remote_path.name)
+        relative_path = result_origin.host_platform.local_path(remote_path.name)
       local_result_path = out_dir / relative_path
       browser_platform.pull(remote_path, local_result_path)
       assert local_result_path.exists(), "Failed to copy result file."

@@ -169,7 +169,7 @@ class LocalFileNetwork(Network):
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
     browser_platform = session.browser_platform
     if browser_platform.is_remote:
-      logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
+      logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                    browser_platform)
       # TODO: create port-forwarder service that is shut down properly.
       # TODO: make ports configurable

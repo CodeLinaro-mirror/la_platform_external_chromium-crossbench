@@ -451,7 +451,7 @@ class ProfilingProbe(Probe):
 
   def _validate_pprof(self, env: HostEnvironment, browser: Browser) -> None:
     assert self._run_pprof
-    host_platform = browser.platform.host_platform
+    host_platform = browser.host_platform
     self._run_pprof = host_platform.which("gcert") is not None
     if not self.run_pprof:
       logging.warning(

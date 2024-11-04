@@ -65,8 +65,8 @@ class ResultOrigin(abc.ABC):
         f"Cannot access on runner on {type(self).__name__}")
 
   @property
-  def runner_platform(self) -> plt.Platform:
-    return self.browser_platform.host_platform
+  def host_platform(self) -> plt.Platform:
+    return self.browser.host_platform
 
   @property
   def browser_platform(self) -> plt.Platform:

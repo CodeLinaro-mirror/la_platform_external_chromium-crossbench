@@ -129,7 +129,7 @@ class VideoProbe(Probe):
       run_files = runs[0].results[self].file_list
       group_files = [group.path / f.name for f in run_files]
       for src, dest in zip(run_files, group_files):
-        self.runner_platform.copy(src, dest)
+        self.host_platform.copy(src, dest)
       return LocalProbeResult(file=group_files)
 
     video_file = group.get_local_probe_result_path(self)
@@ -144,7 +144,7 @@ class VideoProbe(Probe):
                  "fontsize=h/15:"
                  "y=h-line_h-10:x=10:"
                  "box=1:boxborderw=20:boxcolor=white")
-    self.runner_platform.sh(
+    self.host_platform.sh(
         "ffmpeg", "-hide_banner", \
         *video_file_inputs, \
         "-filter_complex",
@@ -156,9 +156,9 @@ class VideoProbe(Probe):
       timeline_strip_file = video_file.with_suffix(self.TIMESTRIP_FILE_SUFFIX)
       logging.info("TIMESTRIP merge page repetitions")
       timeline_strips = (run.results[self].file_list[1] for run in runs)
-      self.runner_platform.sh("montage", *timeline_strips, "-tile", "1x",
-                              "-gravity", "NorthWest", "-geometry", "x100",
-                              timeline_strip_file)
+      self.host_platform.sh("montage", *timeline_strips, "-tile", "1x",
+                            "-gravity", "NorthWest", "-geometry", "x100",
+                            timeline_strip_file)
       group_files.append(timeline_strip_file)
 
     return LocalProbeResult(file=group_files)
@@ -190,7 +190,7 @@ class VideoProbe(Probe):
     if len(repetitions_groups) == 1:
       # In the simple case just copy files
       input_file = repetitions_groups[0].results[self].file_list[0]
-      self.runner_platform.copy(input_file, result_path)
+      self.host_platform.copy(input_file, result_path)
       return result_path
 
     input_files: List[str] = []
@@ -198,10 +198,10 @@ class VideoProbe(Probe):
       result_files = repetitions_group.results[self].file_list
       input_files += ["-i", os.fspath(result_files[0])]
     try:
-      self.runner_platform.sh("ffmpeg", "-hide_banner", *input_files,
-                              "-filter_complex",
-                              f"vstack=inputs={len(repetitions_groups)}",
-                              *self.VIDEO_QUALITY, result_path)
+      self.host_platform.sh("ffmpeg", "-hide_banner", *input_files,
+                            "-filter_complex",
+                            f"vstack=inputs={len(repetitions_groups)}",
+                            *self.VIDEO_QUALITY, result_path)
     except Exception as e:
       logging.error("Merging multiple browser video failed. "
                     "Different screen orientations are not supported yet.")
@@ -244,7 +244,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       raise ValueError("Could not start screen recorder")
     atexit.register(self.stop_process)
     # TODO: Add common start-story-delay on runner for these cases.
-    self.runner_platform.sleep(1)
+    self.host_platform.sleep(1)
 
   def _record_cmd(self, viewport: Viewport) -> Tuple[str, ...]:
     if self.browser_platform.is_linux:
@@ -286,7 +286,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     # Copy files
     browser_result = self.browser_result(file=(self.result_path,))
     self._default_result_path = browser_result.file
-    assert self.runner_platform.exists(self.result_path)
+    assert self.host_platform.exists(self.result_path)
 
     if not self.probe.generate_timestrip:
       return LocalProbeResult(file=(self.local_result_path,))
@@ -294,7 +294,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     with tempfile.TemporaryDirectory() as tmp_dir:
       self._convert_to_constant_framerate()
       timestrip_file = self._create_time_strip(
-          self.runner_platform.local_path(tmp_dir))
+          self.host_platform.local_path(tmp_dir))
     return LocalProbeResult(file=(self.local_result_path, timestrip_file))
 
   def stop_process(self) -> None:
@@ -308,7 +308,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     vrf_video_result = (
         self.local_result_path.parent / f"vfr_{self.result_path.name}")
     self.local_result_path.rename(vrf_video_result)
-    self.runner_platform.sh(
+    self.host_platform.sh(
         "ffmpeg", "-hide_banner", \
         "-fflags", "+igndts", \
         "-i", vrf_video_result, \
@@ -334,7 +334,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     timeline_dir = tmpdir / "timeline"
     timeline_dir.mkdir(exist_ok=True)
     # Try detect scene changes / steps
-    self.runner_platform.sh(
+    self.host_platform.sh(
         "ffmpeg", "-hide_banner", "-i", self.result_path, \
         "-filter_complex", "scale=3000:-2,"
         "select='gt(scene\\,0.011)'," + self.FFMPEG_TIMELINE_TEXT, \
@@ -345,7 +345,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     every_nth_frame = self.probe.FRAMERATE / 20
     safe_duration = 10
     safe_duration = 2
-    self.runner_platform.sh(
+    self.host_platform.sh(
         "ffmpeg", "-hide_banner", \
         "-i", self.result_path, \
         "-filter_complex",

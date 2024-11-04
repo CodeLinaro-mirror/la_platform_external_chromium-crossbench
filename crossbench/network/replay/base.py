@@ -59,7 +59,7 @@ class ReplayNetwork(Network):
     yield
 
   def _generate_filename(self, url: str) -> str:
-    metadata = self.runner_platform.sh_stdout("gsutil", "ls", "-L", url)
+    metadata = self.host_platform.sh_stdout("gsutil", "ls", "-L", url)
     if md5_search := GSUTIL_LS_MD5_RE.search(metadata):
       md5 = md5_search.group(1)
       safe_md5 = pth.safe_filename(md5)
@@ -70,13 +70,13 @@ class ReplayNetwork(Network):
   def _download_gcloud_archive(self, url: str) -> LocalPath:
     with exception.annotate(f"Downloading {url}"), Spinner():
       local_path = (
-          self.runner_platform.local_cache_dir("wpr") /
+          self.host_platform.local_cache_dir("wpr") /
           self._generate_filename(url))
       if local_path.is_file():
         logging.info("Found cached WPR archive: %s", local_path)
         return local_path
       logging.info("Downloading WPR archive from %s to %s", url, local_path)
-      self.runner_platform.sh("gsutil", "cp", url, local_path)
+      self.host_platform.sh("gsutil", "cp", url, local_path)
     return local_path
 
   def _ensure_archive(self, archive: Union[pth.LocalPath, str]) -> LocalPath:

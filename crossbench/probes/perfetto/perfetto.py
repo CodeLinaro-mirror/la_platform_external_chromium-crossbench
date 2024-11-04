@@ -148,8 +148,8 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
           f"perfetto bin '{self.probe.perfetto_bin}' cannot be found "
           f"on {self.browser_platform}")
 
-    self.runner_platform.set_file_contents(self._host_config_file,
-                                           self.probe.textproto)
+    self.host_platform.set_file_contents(self._host_config_file,
+                                         self.probe.textproto)
     self.browser_platform.push(self._host_config_file,
                                self.get_browser_config_path())
 
@@ -203,7 +203,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     assert local_result_file.is_file(), (
         f"Could not copy perfetto results: {local_result_file}")
 
-    self.runner_platform.sh("gzip", local_result_file)
+    self.host_platform.sh("gzip", local_result_file)
     local_result_file = local_result_file.with_suffix(
         f"{local_result_file.suffix}.gz")
 

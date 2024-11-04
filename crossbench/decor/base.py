@@ -53,7 +53,7 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
     return type(self).__name__
 
   @property
-  def runner_platform(self) -> plt.Platform:
+  def host_platform(self) -> plt.Platform:
     return plt.PLATFORM
 
   @property

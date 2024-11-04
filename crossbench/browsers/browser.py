@@ -100,6 +100,10 @@ class Browser(abc.ABC):
     return self._platform
 
   @property
+  def host_platform(self) -> plt.Platform:
+    return self._platform.host_platform
+
+  @property
   def unique_name(self) -> str:
     return self._unique_name
 

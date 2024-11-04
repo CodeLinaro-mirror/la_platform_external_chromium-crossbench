@@ -159,8 +159,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
   def _validate_any_driver_version(
       self, driver_path: pth.AnyPath) -> Optional[Iterable[str]]:
-    raw_version_str = self.platform.host_platform.sh_stdout(
-        driver_path, "--version")
+    raw_version_str = self.host_platform.sh_stdout(driver_path, "--version")
     driver_version = ChromeDriverVersion.parse(raw_version_str)
     if driver_version.major == self.major_version:
       return None

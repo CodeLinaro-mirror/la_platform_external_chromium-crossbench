@@ -146,14 +146,14 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
   def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
     if not wpr_go_bin:
-      if local_wpr_go := WprGoToolFinder(self.runner_platform).path:
-        wpr_go_bin = self.runner_platform.local_path(local_wpr_go)
+      if local_wpr_go := WprGoToolFinder(self.host_platform).path:
+        wpr_go_bin = self.host_platform.local_path(local_wpr_go)
     if not wpr_go_bin:
       raise RuntimeError(
-          f"Could not find wpr.go binary on {self.runner_platform}")
-    if wpr_go_bin.suffix == ".go" and not self.runner_platform.which("go"):
-      raise ValueError(f"'go' binary not found on {self.runner_platform}")
-    self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
+          f"Could not find wpr.go binary on {self.host_platform}")
+    if wpr_go_bin.suffix == ".go" and not self.host_platform.which("go"):
+      raise ValueError(f"'go' binary not found on {self.host_platform}")
+    self._wpr_go_bin: LocalPath = self.host_platform.local_path(
         PathParser.binary_path(wpr_go_bin, "wpr.go source"))
 
   @contextlib.contextmanager
@@ -170,7 +170,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
       return
     http_port = self.http_port
     https_port = self.https_port
-    logging.info("REMOTE PORT FORWARDING: %s <= %s", self.runner_platform,
+    logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                  browser_platform)
     # TODO: create port-forwarder service that is shut down properly.
     # TODO: make ports configurable
@@ -185,7 +185,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
         self.archive_path,
         self._wpr_go_bin,
         log_path=log_dir / "network.wpr.log",
-        platform=self.runner_platform)
+        platform=self.host_platform)
 
 
 class RemoteWprReplayNetwork(WprReplayNetwork):
@@ -197,16 +197,16 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         raise ValueError(f"Can't run .go files on {self.browser_platform}")
     else:
       wpr_go_bin = self._download_prebuilt_wpr()
-    self._wpr_go_bin: LocalPath = self.runner_platform.local_path(
+    self._wpr_go_bin: LocalPath = self.host_platform.local_path(
         PathParser.binary_path(wpr_go_bin, "wpr.go binary"))
 
   def _download_prebuilt_wpr(self) -> LocalPath:
     wpr_info = WPR_PREBUILT_ARCH_MAP[self.browser_platform.machine]
     local_wpr_go_bin = (
-        self.runner_platform.local_cache_dir("wpr") /
+        self.host_platform.local_cache_dir("wpr") /
         str(self.browser_platform.machine) / "wpr_go")
     if not check_hash(local_wpr_go_bin, wpr_info["file_hash"]):
-      self.runner_platform.sh("gsutil", "cp", wpr_info["url"], local_wpr_go_bin)
+      self.host_platform.sh("gsutil", "cp", wpr_info["url"], local_wpr_go_bin)
     assert check_hash(local_wpr_go_bin, wpr_info["file_hash"])
 
     return local_wpr_go_bin
@@ -231,9 +231,9 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     return remote_path
 
   def _push_required_files(self) -> List[AnyPath]:
-    runner_platform = self.browser_platform.host_platform
-    local_wpr_go = WprGoToolFinder(runner_platform).path
-    wpr_root = self.runner_platform.path(local_wpr_go.parents[1])
+    host_platform = self.host_platform
+    local_wpr_go = WprGoToolFinder(host_platform).path
+    wpr_root = self.host_platform.path(local_wpr_go.parents[1])
 
     all_files = [self._archive_path,
                  wpr_root / "ecdsa_key.pem",

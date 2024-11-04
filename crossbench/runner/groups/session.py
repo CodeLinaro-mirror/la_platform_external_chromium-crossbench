@@ -282,7 +282,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       if not self._create_symlinks:
         logging.debug("Symlink disabled by command line option")
         return
-      if self.runner_platform.is_win:
+      if self.host_platform.is_win:
         logging.debug("Skipping session_dir symlink on windows.")
         return
       if self.is_single_run:

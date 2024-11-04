@@ -47,7 +47,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   def _find_driver(self) -> AnyPath:
     # TODO: support remote platform
     assert self.platform.is_local, "Remote platform is not supported yet"
-    return self.platform.host_platform.local_path(
+    return self.host_platform.local_path(
         find_safaridriver(self.path, self.platform))
 
   def _start_driver(self, session: BrowserSessionRunGroup,

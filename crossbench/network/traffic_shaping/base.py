@@ -28,7 +28,7 @@ class TrafficShaper(abc.ABC):
     return self._browser_platform
 
   @property
-  def runner_platform(self) -> Platform:
+  def host_platform(self) -> Platform:
     return self._browser_platform.host_platform
 
   @property

@@ -231,8 +231,8 @@ class TracingProbe(ChromiumProbe):
       self._find_traceconv()
 
   def _find_traceconv(self) -> None:
-    if traceconv := TraceconvFinder(self.runner_platform).path:
-      self._traceconv = self.runner_platform.local_path(traceconv)
+    if traceconv := TraceconvFinder(self.host_platform).path:
+      self._traceconv = self.host_platform.local_path(traceconv)
       logging.debug("Using default traceconv: %s", traceconv)
 
   @property
@@ -316,8 +316,8 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
                  self.result_path)
     json_trace_file = local_proto.with_suffix(".json")
     cmd: ListCmdArgs = [traceconv, "json", self.result_path, json_trace_file]
-    if not self.runner_platform.is_posix:
+    if not self.host_platform.is_posix:
       python_executable = sys.argv[0]
       cmd = [python_executable] + cmd
-    self.runner_platform.sh(*cmd)
+    self.host_platform.sh(*cmd)
     return json_trace_file

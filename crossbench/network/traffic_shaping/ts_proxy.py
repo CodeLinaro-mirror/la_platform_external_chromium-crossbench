@@ -387,14 +387,14 @@ class TsProxyTrafficShaper(TrafficShaper):
                window: Optional[int] = None):
     super().__init__(browser_platform)
     if not ts_proxy_path:
-      if maybe_ts_proxy_path := TsProxyFinder(self.runner_platform).path:
-        ts_proxy_path = self.runner_platform.local_path(maybe_ts_proxy_path)
+      if maybe_ts_proxy_path := TsProxyFinder(self.host_platform).path:
+        ts_proxy_path = self.host_platform.local_path(maybe_ts_proxy_path)
     if not ts_proxy_path:
       raise RuntimeError(
-          f"Could not find ts_proxy script on {self.runner_platform}")
+          f"Could not find ts_proxy script on {self.host_platform}")
     # Early instantiation to validate inputs.
     self._ts_proxy = TsProxyServer(
-        self.runner_platform.local_path(ts_proxy_path),
+        self.host_platform.local_path(ts_proxy_path),
         rtt_ms=rtt_ms,
         in_kbps=in_kbps,
         out_kbps=out_kbps,
