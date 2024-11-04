@@ -63,6 +63,13 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
   def is_locally_compiled(self) -> bool:
     return pth.LocalPath(self.app_path.parent / "args.gn").exists()
 
+  def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
+                       cmd_args: dict):
+    return driver.execute("executeCdpCommand", {
+        "cmd": cmd,
+        "params": cmd_args
+    })["value"]
+
   def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:
       return self._driver_path
@@ -109,10 +116,11 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     # TODO: support remote platforms
     service.log_file = pth.LocalPath(self.stdout_log_file).open(  # pylint: disable=consider-using-with
         "w", encoding="utf-8")
-    driver: ChromiumDriver = self._create_driver(options, service)
+    driver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.
-    driver.execute_cdp_cmd("Runtime.setMaxCallStackSizeToCapture", {"size": 0})
+    self._execute_cdp_cmd(driver, "Runtime.setMaxCallStackSizeToCapture",
+                          {"size": 0})
     return driver
 
   def _create_options(self, session: BrowserSessionRunGroup,
@@ -167,8 +175,9 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
             f"browser={self.version} ({self})",)
 
   def run_script_on_new_document(self, script: str) -> None:
-    self._private_driver.execute_cdp_cmd(
-        "Page.addScriptToEvaluateOnNewDocument", {"source": script})
+    self._execute_cdp_cmd(self._private_driver,
+                          "Page.addScriptToEvaluateOnNewDocument",
+                          {"source": script})
 
   def current_window_id(self) -> str:
     return str(self._private_driver.current_window_handle)
@@ -218,8 +227,8 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
   def start_profiling(self) -> None:
     assert isinstance(self._private_driver, ChromiumDriver)
     # TODO: reuse the TraceProbe categories,
-    self._private_driver.execute_cdp_cmd(
-        "Tracing.start", {
+    self._execute_cdp_cmd(
+        self._private_driver, "Tracing.start", {
             "transferMode":
                 "ReturnAsStream",
             "includedCategories": [
@@ -238,9 +247,10 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
 
   def stop_profiling(self) -> Any:
     assert isinstance(self._private_driver, ChromiumDriver)
-    data = self._private_driver.execute_cdp_cmd("Tracing.tracingComplete", {})
+    data = self._execute_cdp_cmd(self._private_driver,
+                                 "Tracing.tracingComplete", {})
     # TODO: use webdriver bidi to get the async Tracing.end event.
-    # self._driver.execute_cdp_cmd("Tracing.end", {})
+    # self._execute_cdp_cmd(self._driver, "Tracing.end", {})
     return data
 
 
