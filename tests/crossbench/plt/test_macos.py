@@ -71,9 +71,8 @@ class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(self.platform.app_version(app_path), "129.9.6668.103")
 
   def test_app_version_binary_inside_app(self):
-    binary_path = pth.LocalPath(
-        "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver"
-    )
+    binary_path = pth.LocalPath("/Applications/Safari Technology Preview.app/"
+                                "Contents/MacOS/safaridriver")
     self.fs.create_file(binary_path, st_size=100)
     self.expect_sh(binary_path, "--version", result="(Release 203, 19620.1.6)")
     self.assertEqual(

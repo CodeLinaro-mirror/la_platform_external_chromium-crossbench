@@ -5,6 +5,8 @@
 import pathlib
 from typing import Dict, List, Type
 
+from pyfakefs import fake_filesystem_unittest
+
 import crossbench.path
 from crossbench import plt
 from crossbench.benchmarks.loading.loadline_presets import \
@@ -14,7 +16,6 @@ from crossbench.helper import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.probe import Probe
-from pyfakefs import fake_filesystem_unittest
 from tests import test_helper
 
 PROBE_LOOKUP: Dict[str, Type[Probe]] = {

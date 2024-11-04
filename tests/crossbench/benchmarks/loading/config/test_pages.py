@@ -425,18 +425,19 @@ DEVTOOLS_RECORDER_EXAMPLE = {
         {
             "type": "click",
             "target": "main",
-            "selectors": [
-                ["aria/Opinion"],
-                [
-                    "#pageHeader > div > div > div.header__container div:nth-of-type(5) > a"
-                ],
-                [
-                    "xpath///*[@id=\"pageHeader\"]/div/div/div[1]/div[1]/nav/div/div[5]/a"
-                ],
-                [
-                    "pierce/#pageHeader > div > div > div.header__container div:nth-of-type(5) > a"
-                ]
-            ],
+            "selectors": [["aria/Opinion"],
+                          [
+                              "#pageHeader > div > div > "
+                              "div.header__container div:nth-of-type(5) > a"
+                          ],
+                          [
+                              "xpath///*[@id=\"pageHeader\"]/"
+                              "div/div/div[1]/div[1]/nav/div/div[5]/a"
+                          ],
+                          [
+                              "pierce/#pageHeader > div > div > "
+                              "div.header__container div:nth-of-type(5) > a"
+                          ]],
             "offsetY": 17,
             "offsetX": 22.515625
         },

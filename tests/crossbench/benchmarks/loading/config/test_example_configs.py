@@ -21,7 +21,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
       test_helper.config_dir() / "benchmark/loadline/globo_instrumentation.js")
 
   YT_JS_INSTRUMENTATION_PATH = (
-      test_helper.config_dir() / "benchmark/loadline/youtube_instrumentation.js")
+      test_helper.config_dir() /
+      "benchmark/loadline/youtube_instrumentation.js")
 
   def test_parse_example_page_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/page.config.hjson"
@@ -73,7 +74,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(self.YT_JS_INSTRUMENTATION_PATH)
 
     config_file = (
-        test_helper.config_dir() / "benchmark/loadline/page_config_tablet.hjson")
+        test_helper.config_dir() /
+        "benchmark/loadline/page_config_tablet.hjson")
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:

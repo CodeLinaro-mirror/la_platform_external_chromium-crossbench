@@ -175,7 +175,8 @@ class MockPlatformMixin:
                       check: bool = True) -> bytes:
     del shell, quiet, stdin, env, check
     if self._expected_sh_cmds is not None:
-      assert self._expected_sh_cmds, f"Missing expected sh_cmds, but got: {args}"
+      assert self._expected_sh_cmds, (
+          f"Missing expected sh_cmds, but got: {args}")
       # Convert all args to str first, sh accepts both str and Paths.
       expected = tuple(map(str, self._expected_sh_cmds[0]))
       str_args = tuple(map(str, args))

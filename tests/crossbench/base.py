@@ -13,6 +13,8 @@ import pathlib
 from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
+from pyfakefs import fake_filesystem_unittest
+
 import crossbench
 from crossbench import path as pth
 from crossbench import plt
@@ -24,7 +26,6 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import SecretsConfig
-from pyfakefs import fake_filesystem_unittest
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
