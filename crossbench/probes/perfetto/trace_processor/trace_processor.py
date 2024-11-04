@@ -114,12 +114,10 @@ class TraceProcessorProbe(Probe):
     self._batch = batch
     self._metrics = tuple(metrics)
     self._queries = tuple(queries)
-    self._trace_processor_bin: pth.LocalPath = pth.LocalPath()
+    self._trace_processor_bin: Optional[pth.LocalPath] = None
     if trace_processor_bin:
       self._trace_processor_bin = PathParser.local_binary_path(
           trace_processor_bin, "trace_processor")
-    if not self._trace_processor_bin:
-      raise RuntimeError("Did not find 'trace_processor' binary")
 
   @property
   def batch(self) -> bool:
@@ -146,7 +144,7 @@ class TraceProcessorProbe(Probe):
     return self._batch and self.has_work
 
   @property
-  def trace_processor_bin(self) -> pth.LocalPath:
+  def trace_processor_bin(self) -> Optional[pth.LocalPath]:
     return self._trace_processor_bin
 
   @property
@@ -157,7 +155,7 @@ class TraceProcessorProbe(Probe):
     ]
 
     return TraceProcessorConfig(
-        bin_path=str(self._trace_processor_bin),
+        bin_path=self.trace_processor_bin,
         resolver_registry=ResolverRegistry(
             resolvers=[CrossbenchTraceUriResolver, PathUriResolver]),
         extra_flags=extra_flags)
