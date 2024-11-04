@@ -12,8 +12,9 @@ import enum
 import inspect
 import logging
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable,
-                    List, Optional, Set, Tuple, Type, TypeVar, Union, cast)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
+                    Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union,
+                    cast)
 from urllib.parse import urlparse
 
 import tabulate
@@ -31,6 +32,10 @@ if TYPE_CHECKING:
 class ConfigError(argparse.ArgumentTypeError):
   pass
 
+
+NOT_SET: Final[object] = object()
+
+
 class _ConfigArgParser:
   """
   Parser for a single config arg.
@@ -41,7 +46,7 @@ class _ConfigArgParser:
       parser: ConfigParser,
       name: str,
       type: Optional[ArgParserType],
-      default: Any = None,
+      default: Any = NOT_SET,
       choices: Optional[frozenset[Any]] = None,
       aliases: Iterable[str] = tuple(),
       help: Optional[str] = None,
@@ -53,10 +58,9 @@ class _ConfigArgParser:
     self.aliases = tuple(aliases)
     self._validate_aliases()
     self.type: Optional[ArgParserType] = type
-    self.default = default
+    self.required: bool = required
     self.help: Optional[str] = help
     self.is_list: bool = is_list
-    self.required: bool = required
     type_is_class = inspect.isclass(type)
     self.type_is_class: bool = type_is_class
     self.is_enum: bool = type_is_class and issubclass(type, enum.Enum)
@@ -67,8 +71,7 @@ class _ConfigArgParser:
     self.choices: Optional[frozenset] = self._validate_choices(choices)
     if self.type:
       self._validate_callable()
-    if self.default is not None:
-      self._validate_default()
+    self.default = self._validate_default(default)
     self._validate_depends_on(depends_on)
 
   def _validate_callable(self) -> None:
@@ -136,37 +139,55 @@ class _ConfigArgParser:
           enum_type), (f"Enum choices must be {enum_type}, but got: {choice}")
     return frozenset(choices)
 
-  def _validate_default(self) -> None:
+  def _validate_default(self, default: Any) -> Any:
+    if default is NOT_SET:
+      return None
+    if default is None and self.required:
+      raise ValueError(
+          f"ConfigArg name={self.name}: use required=False without "
+          "a 'default' argument when default is None")
+    if self.required:
+      raise ValueError("Required argument should have an empty default value, "
+                       f"but got default={repr(default)}")
     if self.is_enum:
-      self._validate_enum_default()
-      return
+      return self._validate_enum_default(default)
     # TODO: Remove once pytype can handle self.type
     maybe_class: Optional[ArgParserType] = self.type
     if self.is_list:
-      assert isinstance(self.default, collections.abc.Sequence), (
-          f"List default must be a sequence, but got: {self.default}")
-      assert not isinstance(self.default, str), (
-          f"List default should not be a string, but got: {repr(self.default)}")
-      if inspect.isclass(maybe_class):
-        for default_item in self.default:
-          if not isinstance(default_item, maybe_class):
-            raise ValueError(
-                f"Expected default list item of type={self.type}, "
-                f"but got type={type(default_item)}: {default_item}")
+      self._validate_list_default(default, maybe_class)
     elif maybe_class and inspect.isclass(maybe_class):
-      if not isinstance(self.default, maybe_class):
-        raise ValueError(f"Expected default value of type={self.type}, "
-                         f"but got type={type(self.default)}: {self.default}")
+      self._validate_class_default(default, maybe_class)
+    return default
 
-  def _validate_enum_default(self) -> None:
+  def _validate_class_default(self, default: Any, class_type: Type) -> None:
+    if not isinstance(default, class_type):
+      raise ValueError(f"Expected default value of type={class_type.__name__}, "
+                       f"but got type={type(default).__name__}: {default}")
+
+  def _validate_list_default(self, default: Any,
+                             maybe_class: Optional[ArgParserType]) -> None:
+    if not isinstance(default, collections.abc.Sequence):
+      raise ValueError(f"List default must be a sequence, but got: {default}")
+    if isinstance(default, str):
+      raise ValueError(
+          f"List default should not be a string, but got: {repr(default)}")
+    if inspect.isclass(maybe_class):
+      for default_item in default:
+        if not isinstance(default_item, maybe_class):
+          raise ValueError(
+              f"Expected default list item of type={self.type}, "
+              f"but got type={type(default_item).__name__}: {default_item}")
+
+  def _validate_enum_default(self, default: Any) -> None:
     enum_type: Type[enum.Enum] = cast(Type[enum.Enum], self.type)
     if self.is_list:
-      default_list = self.default
+      default_list = default
     else:
-      default_list = [self.default]
-    for default in default_list:
-      assert isinstance(default, enum_type), (
-          f"Default must be a {enum_type} enum, but got: {self.default}")
+      default_list = (default,)
+    for default_item in default_list:
+      assert isinstance(default_item, enum_type), (
+          f"Default must be a {enum_type} enum, but got: {default}")
+    return default
 
   def _validate_depends_on(self, depends_on: Optional[Iterable[str]]) -> None:
     if not depends_on:
@@ -311,7 +332,7 @@ class _ConfigArgParser:
       data = data.split(",")
     if not isinstance(data, (list, tuple)):
       raise ValueError(f"{self.cls_name}.{self.name}: "
-                       f"Expected sequence got {type(data)}")
+                       f"Expected sequence got {type(data).__name__}")
     return [self.parse_data(value, depending_kwargs) for value in data]
 
   def parse_data(self, data: Any, depending_kwargs: Dict[str, Any]) -> Any:
@@ -429,7 +450,8 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def parse_other(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
-    raise ConfigError(f"Invalid config input type {type(value)}: {value}")
+    raise ConfigError(
+        f"Invalid config input type {type(value).__name__}: {value}")
 
   @classmethod
   @abc.abstractmethod
@@ -558,7 +580,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       self,
       name: str,
       type: Optional[ArgParserType],
-      default: Optional[Any] = None,
+      default: Optional[Any] = NOT_SET,
       choices: Optional[Iterable[Any]] = None,
       aliases: Tuple[str, ...] = tuple(),
       help: Optional[str] = None,

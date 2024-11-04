@@ -63,9 +63,9 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_config_defaults_list(self):
     parser = ProbeConfigParser(MockProbe)
-    with self.assertRaises(AssertionError):
+    with self.assertRaisesRegex(ValueError, "True"):
       parser.add_argument("bool", type=bool, is_list=True, default=True)
-    with self.assertRaises(AssertionError):
+    with self.assertRaisesRegex(ValueError, "string"):
       parser.add_argument("str", type=str, is_list=True, default="str")
     with self.assertRaises(ValueError):
       parser.add_argument("bool", type=bool, is_list=True, default=(1, 1))

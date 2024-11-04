@@ -238,6 +238,19 @@ class ConfigParserTestCase(unittest.TestCase):
       self.parser.parse({"x": 1, "y": 100})
     self.assertIn("Recursive", str(cm.exception))
 
+  def test_invalid_default_arg(self):
+    with self.assertRaisesRegex(ValueError, "default"):
+      self.parser.add_argument("name_1", type=str, default=None, required=False)
+    with self.assertRaisesRegex(ValueError, "default"):
+      self.parser.add_argument("name_1", type=str, default=None, required=True)
+    with self.assertRaisesRegex(ValueError, "default"):
+      self.parser.add_argument("name_2", type=str, default="", required=True)
+    with self.assertRaisesRegex(ValueError, "default"):
+      self.parser.add_argument("name_3", type=str, default=123, required=False)
+
+  def test_default_str_arg(self):
+    self.parser.add_argument("name_1", type=str, default="", required=False)
+
   def test_default(self):
     self.parser.add_argument("name", type=str, required=True)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
