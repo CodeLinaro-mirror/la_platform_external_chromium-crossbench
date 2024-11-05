@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Iterator
 from crossbench.flags.base import Flags
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.network.base import Network
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -39,8 +39,8 @@ class TrafficShaper(abc.ABC):
   def is_running(self) -> bool:
     return self._is_running
 
-  def extra_flags(self, browser: Browser) -> Flags:
-    del browser
+  def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
+    del browser_attributes
     assert self.is_running, "TrafficShaper is not running."
     return Flags()
 

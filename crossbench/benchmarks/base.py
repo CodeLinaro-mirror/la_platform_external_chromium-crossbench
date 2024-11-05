@@ -22,7 +22,7 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench import path as pth
-  from crossbench.browsers.browser import Browser
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.runner.runner import Runner
 
 
@@ -102,8 +102,8 @@ class Benchmark(abc.ABC):
     return None
 
   @classmethod
-  def extra_flags(cls, browser: Browser) -> Flags:
-    del browser
+  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
+    del browser_attributes
     return Flags()
 
   @classmethod

@@ -19,7 +19,7 @@ from crossbench.plt import PLATFORM, Platform
 from crossbench.plt.arch import MachineArch
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.network.base import TrafficShaper
   from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -68,14 +68,14 @@ class WprReplayNetwork(ReplayNetwork):
     self._persist_server = persist_server
     self._ensure_wpr_go(wpr_go_bin)
 
-  def extra_flags(self, browser: Browser) -> Flags:
+  def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
     assert self.is_running, "Extra network flags are not valid"
     assert self._server
-    if not browser.attributes.is_chromium_based:
+    if not browser_attributes.is_chromium_based:
       raise ValueError(
           "Only chromium-based browsers are supported for wpr replay.")
     # TODO: make ports configurable.
-    extra_flags = super().extra_flags(browser)
+    extra_flags = super().extra_flags(browser_attributes)
     # TODO: read this from wpr_public_hash.txt like in the recorder probe
     extra_flags["--ignore-certificate-errors-spki-list"] = (
         "PhrPvGIaAMmd29hj8BCZOq096yj7uMpRNHpn5PDxI6I=,"

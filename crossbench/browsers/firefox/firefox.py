@@ -73,7 +73,7 @@ class Firefox(Browser):
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy = self.flags.copy()
     flags_copy.update(session.extra_flags)
-    flags_copy.update(self.network.extra_flags(self))
+    flags_copy.update(self.network.extra_flags(self.attributes))
     self._handle_viewport_flags(flags_copy)
     if self.log_file:
       flags_copy["--MOZ_LOG_FILE"] = str(self.log_file)

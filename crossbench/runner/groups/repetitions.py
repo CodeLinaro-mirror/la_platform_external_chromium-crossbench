@@ -103,7 +103,7 @@ class RepetitionsRunGroup(RunGroup):
     return info
 
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
-    return probe.merge_repetitions(self)  # pytype: disable=wrong-arg-types
+    return probe.merge_repetitions(self)
 
 
 class CacheTemperatureRepetitionsRunGroup(RunGroup):

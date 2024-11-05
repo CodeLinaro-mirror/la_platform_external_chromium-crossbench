@@ -27,7 +27,7 @@ from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page
-  from crossbench.browsers.browser import Browser
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.runner import Run
 
@@ -173,8 +173,8 @@ class LoadLineTabletBenchmark(LoadLineBenchmark):
     return ("loading-tablet", "load-tablet", "ld-tablet")
 
   @classmethod
-  def extra_flags(cls, browser: Browser) -> Flags:
-    assert browser.attributes.is_chromium_based
+  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
+    assert browser_attributes.is_chromium_based
     return Flags(["--request-desktop-sites"])
 
 

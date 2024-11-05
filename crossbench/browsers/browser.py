@@ -304,7 +304,7 @@ class Browser(abc.ABC):
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()
     flags_copy.update(session.extra_flags)
-    flags_copy.update(self.network.extra_flags(self))
+    flags_copy.update(self.network.extra_flags(self.attributes))
     flags_copy = self._filter_flags_for_run(flags_copy)
     return tuple(flags_copy)
 

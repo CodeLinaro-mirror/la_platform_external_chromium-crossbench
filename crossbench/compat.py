@@ -58,7 +58,7 @@ class StrEnumWithHelp(StrHelpDataMixin, enum.Enum):
   def _missing_(cls: Type[StrEnumWithHelpT],
                 value) -> Optional[StrEnumWithHelpT]:
     value = str(value).lower()
-    for member in cls:  # pytype: disable=missing-parameter
+    for member in cls:
       if member.value == value:
         return member
     return None

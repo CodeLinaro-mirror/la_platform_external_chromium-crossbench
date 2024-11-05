@@ -123,8 +123,7 @@ class SpeedometerBaseTestCase(
 
   def test_story_filtering_regexp_invalid(self):
     with self.assertRaises(ValueError):
-      _ = self.story_filter(  # pytype: disable=wrong-arg-types
-          ".*", separate=True).stories
+      _ = self.story_filter(".*", separate=True).stories
 
   def test_story_filtering_regexp(self):
     stories = self.story_cls.all(separate=True)

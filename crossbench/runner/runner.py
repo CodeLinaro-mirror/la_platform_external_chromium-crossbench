@@ -449,7 +449,7 @@ class Runner:
       self._env.setup()
     with self._exceptions.annotate(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
-      self._benchmark.setup(self)  # pytype:  disable=wrong-arg-types
+      self._benchmark.setup(self)
 
   def _validate_browsers(self) -> None:
     logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
@@ -482,7 +482,7 @@ class Runner:
       for story in self.stories:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
-          extra_benchmark_flags = self.benchmark.extra_flags(browser)
+          extra_benchmark_flags = self.benchmark.extra_flags(browser.attributes)
           browser_session = BrowserSessionRunGroup(self.env, self.probes,
                                                    browser,
                                                    extra_benchmark_flags,
