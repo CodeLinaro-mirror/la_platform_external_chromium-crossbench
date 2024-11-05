@@ -396,7 +396,7 @@ class BrowserVariantsConfig:
     else:
       browser_config = self._maybe_downloaded_binary(
           cast(BrowserConfig, BrowserConfig.parse(raw_browser_data)))
-      browser_cls = self._get_browser_cls(browser_config)
+      browser_cls = self.get_browser_cls(browser_config)
     if not browser_config.driver.type.is_remote and (not pth.LocalPath(
         browser_config.path).exists()):
       raise ConfigError(
@@ -525,7 +525,7 @@ class BrowserVariantsConfig:
     for i, variant in enumerate(flag_variants):
       logging.info("   %s: %s", i, variant.flags)
 
-  def _get_browser_cls(self, browser_config: BrowserConfig) -> Type[Browser]:
+  def get_browser_cls(self, browser_config: BrowserConfig) -> Type[Browser]:
     driver = browser_config.driver.type
     path: pth.AnyPath = browser_config.path
     assert not isinstance(path, str), "Invalid path"
@@ -533,41 +533,65 @@ class BrowserVariantsConfig:
       raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
     path_str = str(browser_config.path).lower()
     if "safari" in path_str:
-      if driver == BrowserDriverType.IOS:
-        return browsers.SafariWebdriverIOS
-      if driver == BrowserDriverType.WEB_DRIVER:
-        return browsers.SafariWebDriver
-      if driver == BrowserDriverType.APPLE_SCRIPT:
-        return browsers.SafariAppleScript
+      return self._get_safari_browser_cls(browser_config)
     if "chrome" in path_str:
-      if driver == BrowserDriverType.WEB_DRIVER:
-        return browsers.ChromeWebDriver
-      if driver == BrowserDriverType.APPLE_SCRIPT:
-        return browsers.ChromeAppleScript
-      if driver == BrowserDriverType.ANDROID:
-        return browsers.ChromeWebDriverAndroid
-      if driver == BrowserDriverType.LINUX_SSH:
-        return browsers.ChromeWebDriverSsh
-      if driver == BrowserDriverType.CHROMEOS_SSH:
-        return browsers.ChromeWebDriverChromeOsSsh
+      return self._get_chrome_browser_cls(browser_config)
     if "chromium" in path_str:
-      # TODO: technically this should be ChromiumWebDriver
-      if driver == BrowserDriverType.WEB_DRIVER:
-        return browsers.ChromeWebDriver
-      if driver == BrowserDriverType.APPLE_SCRIPT:
-        return browsers.ChromeAppleScript
-      if driver == BrowserDriverType.ANDROID:
-        return browsers.ChromiumWebDriverAndroid
-      if driver == BrowserDriverType.LINUX_SSH:
-        return browsers.ChromiumWebDriverSsh
-      if driver == BrowserDriverType.CHROMEOS_SSH:
-        return browsers.ChromiumWebDriverChromeOsSsh
+      return self._get_chromium_browser_cls(browser_config)
     if "firefox" in path_str:
       if driver == BrowserDriverType.WEB_DRIVER:
         return browsers.FirefoxWebDriver
     if "edge" in path_str:
       return browsers.EdgeWebDriver
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
+
+  def _get_safari_browser_cls(self,
+                              browser_config: BrowserConfig) -> Type[Browser]:
+    driver = browser_config.driver.type
+    if driver == BrowserDriverType.IOS:
+      return browsers.SafariWebdriverIOS
+    if driver == BrowserDriverType.WEB_DRIVER:
+      return browsers.SafariWebDriver
+    if driver == BrowserDriverType.APPLE_SCRIPT:
+      return browsers.SafariAppleScript
+    raise argparse.ArgumentTypeError(f"Unsupported Safari driver: {driver}")
+
+  def _get_chrome_browser_cls(self,
+                              browser_config: BrowserConfig) -> Type[Browser]:
+    driver = browser_config.driver.type
+    if driver == BrowserDriverType.WEB_DRIVER:
+      return browsers.ChromeWebDriver
+    if driver == BrowserDriverType.APPLE_SCRIPT:
+      return browsers.ChromeAppleScript
+    if driver == BrowserDriverType.ANDROID:
+      if browsers.LocalChromeWebDriverAndroid.is_apk_helper(
+          browser_config.path):
+        return browsers.LocalChromeWebDriverAndroid
+      return browsers.ChromeWebDriverAndroid
+    if driver == BrowserDriverType.LINUX_SSH:
+      return browsers.ChromeWebDriverSsh
+    if driver == BrowserDriverType.CHROMEOS_SSH:
+      return browsers.ChromeWebDriverChromeOsSsh
+    raise argparse.ArgumentTypeError(f"Unsupported Chrome driver: {driver}")
+
+  def _get_chromium_browser_cls(self,
+                                browser_config: BrowserConfig) -> Type[Browser]:
+    driver = browser_config.driver.type
+    # TODO: technically this should be ChromiumWebDriver
+    if driver == BrowserDriverType.WEB_DRIVER:
+      return browsers.ChromiumWebDriver
+    if driver == BrowserDriverType.APPLE_SCRIPT:
+      return browsers.ChromiumAppleScript
+    if driver == BrowserDriverType.ANDROID:
+      if browsers.LocalChromiumWebDriverAndroid.is_apk_helper(
+          browser_config.path):
+        return browsers.LocalChromiumWebDriverAndroid
+      return browsers.ChromiumWebDriverAndroid
+    if driver == BrowserDriverType.LINUX_SSH:
+      return browsers.ChromiumWebDriverSsh
+    if driver == BrowserDriverType.CHROMEOS_SSH:
+      return browsers.ChromiumWebDriverChromeOsSsh
+    raise argparse.ArgumentTypeError(f"Unsupported chromium driver: {driver}")
 
   def _get_browser_platform(self,
                             browser_config: BrowserConfig) -> plt.Platform:
@@ -670,7 +694,7 @@ class BrowserVariantsConfig:
                       browser_config: BrowserConfig) -> None:
     assert browser_config, "Expected non-empty BrowserConfig."
     browser_config = self._maybe_downloaded_binary(browser_config)
-    browser_cls: Type[Browser] = self._get_browser_cls(browser_config)
+    browser_cls: Type[Browser] = self.get_browser_cls(browser_config)
     path: pth.AnyPath = browser_config.path
     flags_sets = [browser_cls.default_flags()]
 

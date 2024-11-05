@@ -438,6 +438,10 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
     return self.adb.getprop("ro.product.model")
 
+  @property
+  def serial_id(self):
+    return self._adb.serial_id
+
   @functools.cached_property
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")

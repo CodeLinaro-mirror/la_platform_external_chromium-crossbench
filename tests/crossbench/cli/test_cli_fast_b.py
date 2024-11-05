@@ -11,6 +11,10 @@ from typing import List, Optional, Type
 from unittest import mock
 
 import hjson
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
+from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 from crossbench import __version__, plt
 from crossbench.browsers import splash_screen, viewport
@@ -23,10 +27,6 @@ from crossbench.parse import LateArgumentError
 from crossbench.path import AnyPath
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.base import BaseCliTestCase, SysExitTestException
-from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 
 class FastCliTestCasePartA(BaseCliTestCase):
@@ -49,7 +49,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls",
+        BrowserVariantsConfig, "get_browser_cls",
         return_value=browser_cls) as get_browser_cls:
       self.run_cli("loading", f"--browser={browser_bin}",
                    "--urls=http://test.com", "--env-validation=skip")
@@ -68,7 +68,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls", return_value=browser_cls), mock.patch.object(
+        "get_browser_cls", return_value=browser_cls), mock.patch.object(
             CrossBenchCLI, "_run_benchmark") as run_benchmark:
       self.run_cli("loading", f"--browser={browser_bin}",
                    "--urls=http://test.com", "--env-validation=skip", "--",
@@ -102,7 +102,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-beta",
@@ -147,7 +147,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-dev", "--browser=chrome-beta",
@@ -191,7 +191,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-dev", "--browser=chrome-beta",
@@ -233,7 +233,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=ios:chrome-stable",
@@ -327,7 +327,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with self.assertRaises(LateArgumentError) as cm:
       with mock.patch.object(
           BrowserVariantsConfig,
-          "_get_browser_cls",
+          "get_browser_cls",
           side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--browser=chrome", "--browser=firefox",
                      f"--driver-path={driver_path}", "--urls=http://test.com",

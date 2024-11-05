@@ -16,7 +16,8 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.helper import ChromePathMixin
 from crossbench.browsers.chromium.webdriver import (
     ChromiumWebDriver, ChromiumWebDriverAndroid, ChromiumWebDriverChromeOsSsh,
-    ChromiumWebDriverSsh, build_chromedriver_instructions)
+    ChromiumWebDriverSsh, LocalChromiumWebDriverAndroid,
+    build_chromedriver_instructions)
 from crossbench.browsers.webdriver import DriverException
 
 if TYPE_CHECKING:
@@ -58,6 +59,11 @@ class ChromeWebDriver(ChromePathMixin, ChromiumWebDriver):
 
 
 class ChromeWebDriverAndroid(ChromiumWebDriverAndroid, ChromeWebDriver):
+  pass
+
+
+class LocalChromeWebDriverAndroid(LocalChromiumWebDriverAndroid,
+                                  ChromeWebDriver):
   pass
 
 

@@ -12,22 +12,31 @@ from typing import Dict, Tuple, Type
 from unittest import mock
 
 import hjson
-
-from crossbench import path as pth
-from crossbench import plt
-from crossbench.browsers.chrome.chrome import Chrome
-from crossbench.browsers.chrome.webdriver import ChromeWebDriver
-from crossbench.browsers.safari.safari import Safari
-from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.driver import BrowserDriverType
-from crossbench.cli.config.network import NetworkConfig
-from crossbench.config import ConfigError
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+
+from crossbench import path as pth
+from crossbench import plt
+from crossbench.browsers.chrome.applescript import ChromeAppleScript
+from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
+                                                  ChromeWebDriverAndroid,
+                                                  ChromeWebDriverChromeOsSsh,
+                                                  ChromeWebDriverSsh,
+                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.chromium.applescript import ChromiumAppleScript
+from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
+                                                    ChromiumWebDriverAndroid,
+                                                    ChromiumWebDriverSsh)
+from crossbench.browsers.safari.safari import Safari
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.cli.config.network import NetworkConfig
+from crossbench.config import ConfigError
 
 
 class TestBrowserVariantsConfig(BaseConfigTestCase):
@@ -167,7 +176,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         side_effect=mock_get_browser_cls), mock.patch(
             "crossbench.plt.android_adb.AndroidAdbPlatform.machine",
             new_callable=mock.PropertyMock,
@@ -650,7 +659,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.fs.create_file(chromedriver, st_size=100)
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         return_value=mock_browser.MockChromeStable):
       config = BrowserVariantsConfig(
           variants_config,
@@ -873,7 +882,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_config=config_file,
         driver_path=None)
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
     browser = config.variants[0]
@@ -901,7 +910,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=None,
         other_browser_args=[])
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
     browser = config.variants[0]
@@ -922,7 +931,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=None,
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
     browser = config.variants[0]
@@ -947,7 +956,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=["--max-opt=1"],
         other_browser_args=[])
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
     browser = config.variants[0]
@@ -968,7 +977,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=[],
         other_browser_args=["--js-flags=--max-opt=1,--log-all"])
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
     browser = config.variants[0]
@@ -992,7 +1001,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=["--max-opt=1", "--max-opt=2,--log-all"],
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
     with mock.patch.object(
-        BrowserVariantsConfig, "_get_browser_cls", return_value=browser_cls):
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 2)
     browser_0 = config.variants[0]
@@ -1045,7 +1054,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         return_value=mock_browser.MockChromeStable
     ), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
@@ -1066,6 +1075,98 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertFalse(browser_3.network.traffic_shaper.is_live)
     self.assertEqual(browser_3.network.traffic_shaper.ts_proxy.in_kbps,
                      network_4g.speed.in_kbps)
+
+  def test_get_browser_cls_unsupported(self):
+    variants = BrowserVariantsConfig()
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Unsupported browser"):
+      config = BrowserConfig(browser=pth.AnyPath("your/custom/browser.exe"))
+      variants.get_browser_cls(config)
+
+  def test_get_browser_cls_chrome_default(self):
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(browser=pth.AnyPath("Chrome.app"))
+    self.assertIs(variants.get_browser_cls(config), ChromeWebDriver)
+    config = BrowserConfig(browser=pth.AnyPath("Chrome.exe"))
+    self.assertIs(variants.get_browser_cls(config), ChromeWebDriver)
+
+  def test_get_browser_cls_chromium_default(self):
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(browser=pth.AnyPath("Chromium.app"))
+    self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
+    config = BrowserConfig(browser=pth.AnyPath("Chromium.exe"))
+    self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
+
+  def test_get_browser_cls_chrome_driver_types(self):
+    variants = BrowserVariantsConfig()
+    expected_classes = (
+        (BrowserDriverType.APPLE_SCRIPT, ChromeAppleScript),
+        (BrowserDriverType.WEB_DRIVER, ChromeWebDriver),
+        (BrowserDriverType.LINUX_SSH, ChromeWebDriverSsh),
+    )
+    for driver_type, browser_cls in expected_classes:
+      config = BrowserConfig(
+          browser=pth.AnyPath("Chrome.bin"),
+          driver=DriverConfig(type=driver_type))
+      self.assertIs(variants.get_browser_cls(config), browser_cls)
+
+  def test_get_browser_cls_chromium_driver_types(self):
+    variants = BrowserVariantsConfig()
+    expected_classes = (
+        (BrowserDriverType.APPLE_SCRIPT, ChromiumAppleScript),
+        (BrowserDriverType.WEB_DRIVER, ChromiumWebDriver),
+        (BrowserDriverType.LINUX_SSH, ChromiumWebDriverSsh),
+    )
+    for driver_type, browser_cls in expected_classes:
+      config = BrowserConfig(
+          browser=pth.AnyPath("Chromium.bin"),
+          driver=DriverConfig(type=driver_type))
+      self.assertIs(variants.get_browser_cls(config), browser_cls)
+
+  def test_get_browser_cls_chromium_android_default(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("chromium.apk"),
+        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+    self.assertIs(variants.get_browser_cls(config), ChromiumWebDriverAndroid)
+
+  def test_get_browser_cls_chrome_android_default(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("chrome.apk"),
+        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+    self.assertIs(variants.get_browser_cls(config), ChromeWebDriverAndroid)
+
+  def test_get_browser_cls_chrome_android_local_helper(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    apk_helper = pth.AnyPath("/home/user/Documents/chrome/src/"
+                             "out/arm64.apk/bin/chrome_public_apk")
+    config = BrowserConfig(
+        browser=apk_helper, driver=DriverConfig(type=BrowserDriverType.ANDROID))
+    self.assertIs(variants.get_browser_cls(config), LocalChromeWebDriverAndroid)
+
+  def test_get_browser_cls_chromium_android_local_helper(self):
+    """Currently there is no nice way to distinguish a local build between
+    chrome/chromium."""
+
+  def test_get_browser_cls_chromeos_ssh_default(self):
+    self.platform.sh_results = []
+    variants = BrowserVariantsConfig()
+    with mock.patch.object(
+        DriverConfig, "validate_chromeos", return_value=None) as mock_method:
+      driver = DriverConfig(type=BrowserDriverType.CHROMEOS_SSH)
+    mock_method.assert_called_once()
+    config = BrowserConfig(browser=pth.AnyPath("chrome"), driver=driver)
+    self.assertIs(variants.get_browser_cls(config), ChromeWebDriverChromeOsSsh)
 
 
 if __name__ == "__main__":

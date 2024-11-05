@@ -212,7 +212,7 @@ class Runner:
     self._timing = timing
     self._cool_down_threshold: Optional[ThermalStatus] = cool_down_threshold
     self._browsers: Tuple[Browser, ...] = tuple(browsers)
-    self._validate_browsers()
+    self._validate_browser_labels()
     self._benchmark = benchmark
     self._stories = tuple(benchmark.stories)
     self._repetitions = NumberParser.positive_int(repetitions, "repetitions")
@@ -254,7 +254,7 @@ class Runner:
           f"Expected probe.NAME for {benchmark_probe_cls}")
       self.attach_probe(benchmark_probe_cls(benchmark=self._benchmark))
 
-  def _validate_browsers(self) -> None:
+  def _validate_browser_labels(self) -> None:
     assert self.browsers, "No browsers provided"
     browser_unique_names = [browser.unique_name for browser in self.browsers]
     ObjectParser.unique_sequence(browser_unique_names, "browser names")
@@ -281,7 +281,7 @@ class Runner:
     # so all other probes have data by the time we write the results summary.
     assert isinstance(self._probes[0], ResultsSummaryProbe)
 
-  def _attach_default_probe(self, probe: Probe):
+  def _attach_default_probe(self, probe: Probe) -> None:
     self.attach_probe(probe)
     self._default_probes.append(probe)
 
@@ -438,7 +438,7 @@ class Runner:
         f"Invalid repetitions count: {self.repetitions}")
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
-    self._setup_browsers()
+    self._validate_browsers()
     self._exceptions.assert_success()
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
@@ -451,16 +451,16 @@ class Runner:
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)  # pytype:  disable=wrong-arg-types
 
-  def _setup_browsers(self) -> None:
+  def _validate_browsers(self) -> None:
     logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
     for browser in self.browsers:
       with self._exceptions.capture(
           f"Preparing browser type={browser.type_name} "
           f"unique_name={browser.unique_name}"):
-        self._setup_browser(browser)
+        self._validate_browser(browser)
 
-  def _setup_browser(self, browser: Browser) -> None:
-    browser.setup_binary()
+  def _validate_browser(self, browser: Browser) -> None:
+    browser.validate_binary()
     for probe in browser.probes:
       assert probe in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "

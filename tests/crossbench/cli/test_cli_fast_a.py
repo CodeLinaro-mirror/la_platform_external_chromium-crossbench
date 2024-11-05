@@ -9,14 +9,14 @@ import unittest
 from unittest import mock
 
 import hjson
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 from crossbench import __version__, plt
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.env import HostEnvironmentConfig
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 
 class FastCliTestCasePartA(BaseCliTestCase):
@@ -394,7 +394,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with mock.patch.object(
         BrowserVariantsConfig,
-        "_get_browser_cls",
+        "get_browser_cls",
         side_effect=mock_get_browser_cls):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",

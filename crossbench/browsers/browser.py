@@ -241,8 +241,13 @@ class Browser(abc.ABC):
         "log": {}
     }
 
+  def validate_binary(self) -> None:
+    """ Helper method is called from the Runner before any Runs / Sessions
+    have started."""
+
   def setup_binary(self) -> None:
-    pass
+    """ This helper is called in the setup steps of each Session.
+    This can be used to install a custom binary on remote devices. """
 
   def setup(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running, (

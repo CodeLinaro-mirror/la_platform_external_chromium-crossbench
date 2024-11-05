@@ -235,6 +235,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     yielded = False
     with self.exceptions.capture():
       self._setup_session_dir()
+      self._setup_browser()
       with ChangeCWD(self.path):
         with self._open(is_dry_run):
           yielded = True
@@ -276,7 +277,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
                      run.index)
         run.setup(is_dry_run)
 
-  def _setup_session_dir(self):
+  def _setup_browser(self) -> None:
+    self._state.expect(State.SETUP)
+    self.browser.setup_binary()
+
+  def _setup_session_dir(self) -> None:
+    self._state.expect(State.SETUP)
     with self.measure("browser-session-setup-dir"):
       self.path.mkdir(parents=True, exist_ok=True)
       if not self._create_symlinks:

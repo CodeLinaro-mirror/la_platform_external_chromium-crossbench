@@ -72,7 +72,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     assert log_file
     return log_file.with_suffix(".driver.log")
 
-  def setup_binary(self) -> None:
+  def validate_binary(self) -> None:
+    super().validate_binary()
     self._driver_path = self.platform.absolute(self._find_driver())
     # TODO: support remote chromedriver as well
     assert self.host_platform.exists(self._driver_path), (

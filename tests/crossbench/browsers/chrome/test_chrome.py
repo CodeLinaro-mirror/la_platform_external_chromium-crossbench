@@ -4,11 +4,14 @@
 
 import argparse
 
-from crossbench.browsers.chrome.webdriver import ChromeWebDriver
-from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
+
+from crossbench import path as pth
+from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
+                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.settings import Settings
 
 
 class ChromeWebDriverForTesting(ChromeWebDriver):
@@ -58,6 +61,19 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
       flags = browser.flags
       for no_experiment_flag in ChromeWebDriver.NO_EXPERIMENTS_FLAGS:
         self.assertNotIn(no_experiment_flag, flags)
+
+
+class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
+
+  def test_is_apk_helper(self):
+    self.assertTrue(
+        LocalChromeWebDriverAndroid.is_apk_helper(
+            pth.AnyPath("/home/user/Documents/chrome/src/"
+                        "out/arm64.apk/bin/chrome_public_apk")))
+    self.assertFalse(LocalChromeWebDriverAndroid.is_apk_helper(None))
+    self.assertFalse(
+        LocalChromeWebDriverAndroid.is_apk_helper(
+            pth.AnyPath("org.chromium.chrome")))
 
 
 if __name__ == "__main__":

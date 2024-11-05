@@ -19,6 +19,8 @@ import zipfile
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
                     Sequence, Tuple, Type, cast)
 
+import hjson
+from immutabledict import immutabledict
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
@@ -41,6 +43,7 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 if TYPE_CHECKING:
   from selenium import webdriver
 
+  from crossbench.browsers.settings import Settings
   from crossbench.cli.config.secrets import Secret
   from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
@@ -266,14 +269,21 @@ FLAGS_CHROME: pth.AnyPosixPath = _FLAG_ROOT / "chrome-command-line"
 
 class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self,
+               label: str,
+               path: Optional[pth.AnyPath] = None,
+               settings: Optional[Settings] = None):
+    assert settings, "Android browser needs custom settings and platform"
     self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
     self._previous_command_line_contents: Optional[str] = None
-    super().__init__(*args, **kwargs)
-    self._android_package: str = self.platform.app_path_to_package(self.path)
+    super().__init__(label, path, settings)
+    self._android_package: str = self._lookup_android_package(self.path)
     if not self._android_package:
       raise RuntimeError("Could not find matching adb package for "
                          f"{self.path} on {self.platform}")
+
+  def _lookup_android_package(self, path: pth.AnyPath) -> str:
+    return self.platform.app_path_to_package(path)
 
   @property
   def android_package(self) -> str:
@@ -372,6 +382,52 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
   def setup_binary(self) -> None:
     super().setup_binary()
     self.platform.adb.grant_notification_permissions(self.android_package)
+
+
+class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
+  """
+  Custom version that uses a locally built bundle wrapper.
+  https://chromium.googlesource.com/chromium/src/+/HEAD/docs/android_build_instructions.md
+  """
+
+  @classmethod
+  def is_apk_helper(cls, path: Optional[pth.AnyPath]) -> bool:
+    if not path or len(path.parts) == 1:
+      return False
+    return path.name.endswith("_apk")
+
+  def __init__(self,
+               label: str,
+               path: Optional[pth.AnyPath] = None,
+               settings: Optional[Settings] = None):
+    if self.is_apk_helper(path):
+      raise ValueError(
+          "Locally built chrome version needs package, got empty path")
+    assert settings, "Android browser needs custom settings and platform"
+    self._package_info: immutabledict[str, Any] = self._parse_package_info(
+        settings.platform, path)
+    super().__init__(label, path, settings)
+
+  def _lookup_android_package(self, path: pth.AnyPath) -> str:
+    return self._package_info["Package name"]
+
+  def _extract_version(self) -> str:
+    return self._package_info["versionName"]
+
+  def _parse_package_info(self, platform: plt.Platform,
+                          path: pth.AnyPath) -> immutabledict[str, Any]:
+    output = platform.host_platform.sh_stdout(
+        path, "package-info").rstrip().splitlines()
+    package_info = {}
+    for line in output:
+      key, value = line.split(": ")
+      package_info[key] = hjson.loads(value)
+    return immutabledict(package_info)
+
+  def setup_binary(self) -> None:
+    super().setup_binary()
+    self.host_platform.sh_stdout(self.path, "install",
+                                 f"--device={self.platform.serial_id}")
 
 
 class ChromiumWebDriverSsh(ChromiumWebDriver):

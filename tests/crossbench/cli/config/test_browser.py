@@ -238,6 +238,26 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
+  def test_parse_simple_with_local_apk(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("adb:/chrome/src/out/Release/chromium.apk"),
+        BrowserConfig(
+            pth.LocalPosixPath("/chrome/src/out/Release/chromium.apk"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+
+  def test_parse_simple_with_local_built_apk_helper(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("adb:/chrome/src/out/Release/chrome_public_apk"),
+        BrowserConfig(
+            pth.LocalPosixPath("/chrome/src/out/Release/chrome_public_apk"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+
   @unittest.skip("Non-path browser short names are not yet supported "
                  "in complex configs.")
   def test_parse_inline_hjson_android(self):
