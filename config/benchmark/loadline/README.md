@@ -14,21 +14,27 @@ workload. The benchmark has two workload variants:
 Run "phone" workload:
 
 ```
-./cb.py loadline-phone --browser <browser>
+./cb.py loadline-phone --browser <browser> --cool-down-threshold moderate
 ```
 
 Run "tablet" workload:
 
 ```
-./cb.py loadline-tablet --browser <browser>
+./cb.py loadline-tablet --browser <browser> --cool-down-threshold moderate
 ```
 
 The browser can be `android:chrome-canary`, `android:chrome-stable` etc. See
 crossbench docs for the full list of options.
 
+Cool down threshold is recommended because by default the benchmark runs 100
+repetitions, which creates a significant load on the device and can lead to
+overheating. This option will insert cooldown periods to ensure that the device
+stays below the given thermal level. Possible values include `light`,
+`moderate`, and `severe`.
+
 Results will be located in `results/latest/`. Notable files in this directory:
 
-*   `loadline_benchmark_probe.csv`: Final score for the run
+*   `loadline_probe.csv`: Final score for the run
 *   `trace_processor/loadline_benchmark_score.csv`: Breakdown of scores per
     page and repetition
 
