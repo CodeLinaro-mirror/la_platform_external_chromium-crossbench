@@ -388,7 +388,7 @@ class ChromeOSInputActionRunner(BasicActionRunner):
         return (None, viewport_info)
       click_location: Point = element_rect.middle
     else:
-      click_location: Point = action.coordinates
+      click_location = action.coordinates
 
     assert click_location, "Invalid click location click action."
 

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
   from typing import Optional
 
   from crossbench.flags.chrome import ChromeFlags
+  from crossbench.plt.base import ListCmdArgs
 
 
 class ChromeOsSshPlatform(LinuxSshPlatform):
@@ -42,7 +43,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
                                username: Optional[str] = None,
                                password: Optional[str] = None) -> int:
     try:
-      args = [self.AUTOLOGIN_PATH]
+      args: ListCmdArgs = [self.AUTOLOGIN_PATH]
       if username and password:
         self._username = username
         args.extend(("-u", username, "-p", password))

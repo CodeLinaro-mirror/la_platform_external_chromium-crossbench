@@ -30,7 +30,7 @@ class TabController(ConfigObject):
     return cls.repeat(loops)
 
   @classmethod
-  def default(cls):
+  def default(cls) -> TabController:
     return cls.single()
 
   @classmethod

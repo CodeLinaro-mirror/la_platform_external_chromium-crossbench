@@ -165,7 +165,7 @@ class WprBase(abc.ABC):
       cmd += (f"--inject_scripts={injected_scripts}",)
     return cmd
 
-  def start(self):
+  def start(self) -> None:
     try:
       self._start_wpr()
       atexit.register(self.stop)
@@ -181,7 +181,7 @@ class WprBase(abc.ABC):
       self._handle_startup_error()
       raise
 
-  def _start_wpr(self):
+  def _start_wpr(self) -> None:
     go_cmd: TupleCmdArgs = self._go_cmd + self.cmd
     logging.info("STARTING WPR on %s: %s", self._platform,
                  shlex.join(map(str, go_cmd)))
@@ -318,7 +318,7 @@ class WprRecorder(WprBase):
   def _validate_archive_path(self, path: AnyPath) -> LocalPath:
     return PathParser.not_existing_path(path, "Wpr.go result archive")
 
-  def clear(self):
+  def clear(self) -> None:
     """Start a new recording by clearing out all existing recorded requests."""
     self._open_wpr_cmd_url("command-clear")
 

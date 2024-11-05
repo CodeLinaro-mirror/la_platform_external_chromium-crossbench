@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class BaseLoginBlock(ActionBlock):
   LABEL: Final[str] = "login"
 
-  def validate(self):
+  def validate(self) -> None:
     super().validate()
     assert self.index == 0, (
         f"Login block has to be the first, but got {self.index}")

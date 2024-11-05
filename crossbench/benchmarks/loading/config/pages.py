@@ -102,9 +102,9 @@ class PagesConfig(ConfigObject):
       secrets: Optional[SecretsConfig] = None
       if secrets_data := config.get("secrets"):
         secrets = SecretsConfig.parse(secrets_data)
-      pages = ObjectParser.non_empty_dict(config["pages"], "pages")
+      pages_config = ObjectParser.non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
-        pages = cls._parse_pages(pages, secrets)
+        pages = cls._parse_pages(pages_config, secrets)
         return PagesConfig(pages, secrets)
     raise exception.UnreachableError()
 

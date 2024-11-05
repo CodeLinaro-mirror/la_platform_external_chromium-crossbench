@@ -5,7 +5,7 @@
 
 import argparse
 import logging
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
@@ -28,7 +28,7 @@ DEFAULT_CONFIG_PATH = (
 class MergedTraceUriResolver(TraceUriResolver):
   def __init__(self, result_path: pth.LocalPath):
 
-    def metadata(path):
+    def metadata(path) -> Dict[str, str]:
       parts = str(path).split("/")
       return {
           "cb_browser": parts[-7],

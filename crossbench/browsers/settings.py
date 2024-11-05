@@ -34,7 +34,7 @@ class Settings:
                platform: Optional[plt.Platform] = None,
                secrets: Optional[SecretsDict] = None,
                driver_logging: bool = False,
-               wipe_system_user_data: Optional[bool] = False,
+               wipe_system_user_data: bool = False,
                http_request_timeout: dt.timedelta = dt.timedelta()):
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)

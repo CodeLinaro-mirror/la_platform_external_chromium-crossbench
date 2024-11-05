@@ -409,7 +409,7 @@ def wait_and_terminate(process,
 
 class RepeatTimer(threading.Timer):
 
-  def run(self):
+  def run(self) -> None:
     while not self.finished.wait(self.interval):
       self.function(*self.args, **self.kwargs)
 

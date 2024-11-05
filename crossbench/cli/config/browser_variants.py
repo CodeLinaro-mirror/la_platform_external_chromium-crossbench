@@ -67,7 +67,7 @@ class FlagsVariantConfig:
   flags: Flags = dataclasses.field(default_factory=lambda: Flags().freeze())
 
   @classmethod
-  def parse(cls, name: str, index: int, data: Any):
+  def parse(cls, name: str, index: int, data: Any) -> FlagsVariantConfig:
     return cls(name, index, Flags.parse(data).freeze())
 
   def merge_copy(self,

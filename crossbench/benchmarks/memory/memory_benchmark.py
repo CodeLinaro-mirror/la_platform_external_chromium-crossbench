@@ -106,7 +106,7 @@ class MemoryProbeContext(ActionRunnerListener,
   def start(self) -> None:
     pass
 
-  def to_json(self, actions: Actions) -> Dict[str, float]:
+  def to_json(self, actions: Actions) -> Dict[str, int]:
     return {"alive_tab_count": self._tab_count - 1}
 
   def _increment_tab_count(self):
@@ -264,7 +264,6 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     super().__init__(story_cls, patterns, separate)
 
   def process_all(self, patterns: Sequence[str]) -> None:
-    super().process_all(patterns)
     self.stories = self.stories_from_cli_args(self._args)
 
   @classmethod

@@ -126,11 +126,7 @@ class LoadLineBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
   DEFAULT_REPETITIONS = 100
 
   @classmethod
-  def cli_description(cls) -> str:
-    return cls.__doc__.strip()
-
-  @classmethod
-  def requires_separate(cls, args: argparse.Namespace):
+  def requires_separate(cls, args: argparse.Namespace) -> bool:
     # Perfetto metrics used in the benchmark require a separate Perfetto
     # session for each run.
     return True
@@ -156,7 +152,7 @@ class LoadLineBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   def all_story_names(cls) -> Sequence[str]:
-    return tuple(page.label for page in cls.get_pages_config().pages)
+    return tuple(page.any_label for page in cls.get_pages_config().pages)
 
 
 class LoadLineTabletBenchmark(LoadLineBenchmark):

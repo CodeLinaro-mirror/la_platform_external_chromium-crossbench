@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import dataclasses
 
 from typing_extensions import Self
@@ -20,7 +22,7 @@ class DisplayRectangle:
   height: int
 
   # Stretches or squishes the rectangle by |factor|
-  def __mul__(self, factor: float) -> Self:
+  def __mul__(self, factor: float) -> DisplayRectangle:
     return DisplayRectangle(
         Point(round(self.origin.x * factor), round(self.origin.y * factor)),
         round(self.width * factor), round(self.height * factor))
@@ -31,7 +33,7 @@ class DisplayRectangle:
     return self.width != 0 and self.height != 0
 
   # Translates the rectangle into |other|
-  def shift_by(self, other: Self) -> Self:
+  def shift_by(self, other: Self) -> DisplayRectangle:
     return DisplayRectangle(
         Point(self.origin.x + other.origin.x, self.origin.y + other.origin.y),
         self.width, self.height)

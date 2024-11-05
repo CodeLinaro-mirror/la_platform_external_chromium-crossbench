@@ -230,9 +230,9 @@ class Adb:
     if env:
       raise ValueError("ADB shell only supports an empty env for now.")
     # Need to escape spaces in args for adb shell
-    args = map(lambda x: str(x).replace(" ", "\\ "), args)
+    str_args = map(lambda x: str(x).replace(" ", "\\ "), args)
     return self._adb_stdout_bytes(
-        "shell", *args, stdin=stdin, quiet=quiet, check=check)
+        "shell", *str_args, stdin=stdin, quiet=quiet, check=check)
 
   def shell(self,
             *args: CmdArg,

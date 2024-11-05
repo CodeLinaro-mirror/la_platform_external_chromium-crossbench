@@ -32,7 +32,7 @@ class PlaybackController(abc.ABC):
     return cls.timeout(duration)
 
   @classmethod
-  def default(cls):
+  def default(cls) -> PlaybackController:
     return cls.once()
 
   @classmethod

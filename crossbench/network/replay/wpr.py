@@ -232,8 +232,10 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def _push_required_files(self) -> List[AnyPath]:
     host_platform = self.host_platform
-    local_wpr_go = WprGoToolFinder(host_platform).path
-    wpr_root = self.host_platform.path(local_wpr_go.parents[1])
+    if local_wpr_go := WprGoToolFinder(host_platform).path:
+      wpr_root = self.host_platform.path(local_wpr_go.parents[1])
+    else:
+      raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 
     all_files = [self._archive_path,
                  wpr_root / "ecdsa_key.pem",

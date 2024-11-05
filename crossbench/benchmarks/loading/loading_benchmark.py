@@ -126,7 +126,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     return parser
 
   @classmethod
-  def add_page_config_parser(cls, parser):
+  def add_page_config_parser(cls, parser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
     # TODO: move --stories into mutually exclusive group as well
     page_config_group.add_argument(
@@ -187,7 +187,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @classmethod
   def all_stories(cls) -> Tuple[Page, ...]:
-    return PAGE_LIST
+    return tuple(PAGE_LIST)
 
   @classmethod
   def default_stories(cls) -> Tuple[Page, ...]:
@@ -279,7 +279,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
     return parser
 
   @classmethod
-  def requires_separate(cls, args: argparse.Namespace):
+  def requires_separate(cls, args: argparse.Namespace) -> bool:
     return args.separate
 
   @classmethod

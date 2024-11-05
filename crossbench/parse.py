@@ -167,7 +167,7 @@ class PathParser:
 
 
 EnumT = TypeVar("EnumT", bound=enum.Enum)
-NotNoneT = TypeVar("NotNoneT")
+NotNoneT = TypeVar("NotNoneT", bound=Any)
 SequenceT = TypeVar("SequenceT", bound=Sequence)
 
 

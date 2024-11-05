@@ -24,7 +24,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
-  from crossbench.cli.config.secrets import SecretsDict, Secret
+  from crossbench.cli.config.secrets import Secret, SecretsDict
   from crossbench.env import HostEnvironment
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
@@ -129,6 +129,10 @@ class Browser(abc.ABC):
   def viewport(self) -> Viewport:
     return self._settings.viewport
 
+  @viewport.setter
+  def viewport(self, value: Viewport) -> None:
+    self._settings.viewport = value
+
   @property
   def wipe_system_user_data(self) -> bool:
     return self._settings.wipe_system_user_data
@@ -136,10 +140,6 @@ class Browser(abc.ABC):
   @property
   def http_request_timeout(self) -> dt.timedelta:
     return self._settings.http_request_timeout
-
-  @viewport.setter
-  def viewport(self, value: Viewport) -> None:
-    self._settings.viewport = value
 
   @property
   def probes(self) -> Iterable[Probe]:

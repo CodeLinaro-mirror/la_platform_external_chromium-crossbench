@@ -199,7 +199,7 @@ class BasicFlags(Freezable, collections.UserDict):
           flag_name, flag_value = flag_name_or_items
           self.set(flag_name, flag_value, override)
 
-  def merge(self, other: FlagsData):
+  def merge(self, other: FlagsData) -> None:
     self.update(other)
 
   def copy(self: BasicFlagsT) -> BasicFlagsT:

@@ -24,8 +24,8 @@ from crossbench.probes import all as all_probes
 from crossbench.probes.internal import ResultsSummaryProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
-from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
+from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
     CacheTemperaturesRunGroup

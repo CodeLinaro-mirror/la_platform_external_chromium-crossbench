@@ -57,9 +57,8 @@ class ViewportInfo:
         raw_chrome_window_bounds.height - top_border_height)
 
     if element_rect:
-      self._element_rect: DisplayRectangle = (element_rect *
-                                              self.actual_pixel_ratio).shift_by(
-                                                  self._chrome_window)
+      self._element_rect = (element_rect * self.actual_pixel_ratio).shift_by(
+          self._chrome_window)
 
   @property
   def chrome_window(self) -> DisplayRectangle:

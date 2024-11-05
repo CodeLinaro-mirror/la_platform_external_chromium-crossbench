@@ -201,7 +201,8 @@ class TraceProcessorProbe(Probe):
     return res
 
   def _merge_json(self, runs: Iterable[Run]) -> Dict[str, JsonDict]:
-    merged_metrics = collections.defaultdict(MetricsMerger)
+    merged_metrics: Dict[str,
+                         MetricsMerger] = collections.defaultdict(MetricsMerger)
     for run in runs:
       for file_path in run.results[self].json_list:
         with file_path.open() as json_file:

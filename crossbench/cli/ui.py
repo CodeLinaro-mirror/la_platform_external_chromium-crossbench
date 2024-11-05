@@ -6,6 +6,7 @@ import contextlib
 import datetime as dt
 import logging
 import sys
+from typing import Iterator
 
 import colorama
 
@@ -38,15 +39,15 @@ class ColoredLogFormatter(logging.Formatter):
     formatter = logging.Formatter(log_fmt)
     return formatter.format(record)
 
-  def formatException(self, ei):
+  def formatException(self, ei) -> str:
     return ""
 
-  def formatStack(self, stack_info):
+  def formatStack(self, stack_info) -> str:
     return ""
 
 
 @contextlib.contextmanager
-def timer(msg: str = "Elapsed Time"):
+def timer(msg: str = "Elapsed Time") -> Iterator[None]:
   start_time = dt.datetime.now()
 
   def print_timer():

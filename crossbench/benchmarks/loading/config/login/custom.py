@@ -15,6 +15,6 @@ from crossbench.benchmarks.loading.config.login.login_type import (LOGIN_LOOKUP,
 class LoginBlock(BaseLoginBlock):
 
   @classmethod
-  def parse_str(cls, value: str) -> LoginType:
+  def parse_str(cls, value: str) -> BaseLoginBlock:
     login_type = LoginType.parse(value)
     return LOGIN_LOOKUP[login_type]()

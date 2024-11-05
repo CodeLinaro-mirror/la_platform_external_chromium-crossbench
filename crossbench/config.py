@@ -424,6 +424,7 @@ class ConfigObject(abc.ABC):
     # Make sure we wrap any exception in a argparse.ArgumentTypeError)
     with exception.annotate_argparsing(f"Parsing {cls.__name__}"):
       return cls._parse(value, **kwargs)
+    raise exception.UnreachableError()
 
   @classmethod
   def _parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
@@ -483,6 +484,7 @@ class ConfigObject(abc.ABC):
     with exception.annotate(f"Parsing inline {cls.__name__}"):
       data = ObjectParser.inline_hjson(value)
       return cls.parse_dict(data, **kwargs)
+    raise exception.UnreachableError()
 
   @classmethod
   def parse_config_path(cls: Type[ConfigObjectT], path: pth.LocalPathLike,
@@ -492,6 +494,7 @@ class ConfigObject(abc.ABC):
       data = ObjectParser.dict_hjson_file(file_path)
       with ChangeCWD(file_path.parent):
         return cls.parse_dict(data, **kwargs)
+    raise exception.UnreachableError()
 
   @classmethod
   @abc.abstractmethod
@@ -613,6 +616,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       if config_data:
         self._handle_unused_config_data(config_data)
       return kwargs.as_dict()
+    raise exception.UnreachableError()
 
   def parse(self, config_data: Dict[str, Any], **kwargs) -> ConfigResultObjectT:
     if self._default and config_data == {} and not kwargs:
@@ -648,7 +652,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
           f"{unused_keys}")
 
   @property
-  def arg_parsers(self) -> Tuple[_ConfigArgParser]:
+  def arg_parsers(self) -> Tuple[_ConfigArgParser, ...]:
     return tuple(self._args.values())
 
   @property

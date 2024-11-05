@@ -7,7 +7,8 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator, Tuple
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Iterable, Tuple
 
 from crossbench import plt
 from crossbench.helper import DurationMeasureContext, Durations
@@ -80,7 +81,8 @@ class ResultOrigin(abc.ABC):
   @contextlib.contextmanager
   def measure(
       self, label: str
-  ) -> Iterator[Tuple[ExceptionAnnotationScope, DurationMeasureContext]]:
+  ) -> Generator[Tuple[ExceptionAnnotationScope, DurationMeasureContext], None,
+                 None]:
     # Return a combined context manager that adds an named exception info
     # and measures the time during the with-scope.
     with self.exceptions.info(label) as stack, self.durations.measure(

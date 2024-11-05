@@ -610,7 +610,7 @@ class CrossBenchCLI:
         default=dt.timedelta(),
         help=("Set the timeout of http request. "
               f"Format: {DurationParser.help()}. "
-              "When not speficied, there will be no timeout."))
+              "When not specified, there will be no timeout."))
 
     splashscreen_group = browser_group.add_mutually_exclusive_group()
     splashscreen_group.add_argument(

@@ -66,7 +66,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
   RESULT_LOCATION = ResultLocation.LOCAL
 
   def __init__(self,
-               cool_down_time: Optional[dt.timedelta] = None,
+               cool_down_time: dt.timedelta = dt.timedelta(),
                threshold: Optional[ThermalStatus] = None):
     super().__init__()
     self._threshold: Optional[ThermalStatus] = threshold
@@ -83,7 +83,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
     return self._threshold
 
   @property
-  def cool_down_time(self) -> Optional[dt.timedelta]:
+  def cool_down_time(self) -> dt.timedelta:
     return self._cool_down_time
 
   def to_json(self, actions: Actions) -> Json:
@@ -197,9 +197,9 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
       return ThermalStatus(int(match["status"]))
     return ThermalStatus.UNAVAILABLE
 
-  def _wait_if_necessary(self) -> None:
+  def _wait_if_necessary(self, probe_threshold: ThermalStatus) -> None:
     current_status = self._get_thermal_status()
-    if current_status < self.probe.threshold:
+    if current_status < probe_threshold:
       return
 
     logging.info("Thermal throttling status too high: %s", current_status.name)
@@ -208,7 +208,7 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
       for _ in COOLDOWN_WAIT_RANGE.wait_with_backoff():
         current_status = self._get_thermal_status()
         logging.debug("Thermal status: %s", current_status.name)
-        if current_status < self.probe.threshold:
+        if current_status < probe_threshold:
           logging.info("COOLDOWN: complete")
           break
     except TimeoutError:
@@ -217,7 +217,7 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
 
   def setup(self) -> None:
     if self.probe.threshold is not None:
-      self._wait_if_necessary()
+      self._wait_if_necessary(self.probe.threshold)
     else:
       super().setup()
 
