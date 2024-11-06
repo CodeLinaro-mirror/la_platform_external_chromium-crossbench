@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import inspect
-from immutabledict import immutabledict
 
 import crossbench.path as pth
 from crossbench.cli.config.probe import ProbeListConfig
@@ -69,7 +68,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield DTraceProbe(pth.LocalPath("script.dtrace"))
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DumpHtmlProbe()
-    yield FrequencyProbe(immutabledict())
+    yield FrequencyProbe.from_config({})
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"))
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
