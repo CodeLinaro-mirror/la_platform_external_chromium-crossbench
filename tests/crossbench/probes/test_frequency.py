@@ -6,11 +6,15 @@ import argparse
 from typing import List
 from unittest import mock
 
+from immutabledict import immutabledict
+
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
 from crossbench.plt.linux import LinuxPlatform
-from crossbench.probes.frequency import FrequencyProbe
+from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
+from crossbench.probes.frequency import FrequencyProbe, FrequencyProbeContext
+from crossbench.runner.run import Run
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -174,6 +178,37 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
             pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 3,
             pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 3,
         })
+
+  def test_start_and_stop(self):
+    self._create_cpu_dir("cpu0", [1, 2, 3])
+    mock_map = mock.Mock(spec=CPUFrequencyMap)
+    mock_map.get_target_frequencies = mock.Mock(
+        return_value=immutabledict(
+            {pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2}))
+    mock_probe = mock.Mock(spec=FrequencyProbe)
+    type(mock_probe).cpu_frequency_map = mock.PropertyMock(
+        return_value=mock_map)
+    mock_run = mock.Mock(spec=Run)
+    mock_run.browser = self._create_mock_browser()
+    context = FrequencyProbeContext(mock_probe, mock_run)
+
+    min_file = pth.AnyPosixPath(
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq")
+    max_file = pth.AnyPosixPath(
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq")
+    self.assertEqual(self.platform.cat(min_file), "1\n")
+    self.assertEqual(self.platform.cat(max_file), "3\n")
+
+    context.start()
+
+    self.assertEqual(self.platform.cat(min_file), "2\n")
+    self.assertEqual(self.platform.cat(max_file), "2\n")
+    mock_map.get_target_frequencies.assert_called_with(self.platform)
+
+    context.stop()
+
+    self.assertEqual(self.platform.cat(min_file), "1\n")
+    self.assertEqual(self.platform.cat(max_file), "3\n")
 
   def _create_mock_browser(self):
     mock_browser = mock.Mock(spec=Browser)
