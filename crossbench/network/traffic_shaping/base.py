@@ -54,3 +54,8 @@ class TrafficShaper(abc.ABC):
       yield self
     finally:
       self._is_running = False
+
+  @contextlib.contextmanager
+  def pause(self):
+    """Temporarily pause traffic shaping if supported."""
+    yield None

@@ -247,7 +247,8 @@ class ActionRunner:
   def run_login(self, run: Run, page: InteractivePage, login: ActionBlock):
     try:
       with exception.annotate("login"):
-        login.run_with(self, run, page)
+        with run.browser.network.traffic_shaper.pause():
+          login.run_with(self, run, page)
     except Exception:
       page.create_failure_artifacts(run, "login-failure")
       raise

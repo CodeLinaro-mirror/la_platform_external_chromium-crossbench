@@ -3,12 +3,15 @@
 # found in the LICENSE file.
 
 import argparse
+import contextlib
 import pathlib
 from unittest import mock
 
+from crossbench.network.base import Network
 from crossbench.network.traffic_shaping.ts_proxy import (TsProxyProcess,
                                                          TsProxyServer,
                                                          TsProxyTrafficShaper)
+from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
@@ -25,8 +28,32 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
+  @contextlib.contextmanager
+  def startup_process_mock(self):
+    proc = mock.Mock()
+    proc.configure_mock(**{
+        "poll.return_value": None,
+        "communicate.return_value": (None, None)
+    })
+    proc.stdout = mock.Mock()
+    proc.stdout.configure_mock(**{
+        "readline.return_value":
+            "Started Socks5 proxy server on 127.0.0.1:43210"
+    })
+    proc.stderr = mock.Mock()
 
-class TsProxyTestCase(TsProxyBaseTestCase):
+    def popen_mock(cmd, *args, **kwargs):
+      self.assertEqual(cmd[1], self.ts_proxy_path)
+      self.assertEqual(cmd[2], "--port=0")
+      del args, kwargs
+      return proc
+
+    with mock.patch("subprocess.Popen", side_effect=popen_mock) as popen:
+      yield proc
+    popen.assert_called_once()
+
+
+class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
 
   def test_ts_proxy_traffic_shaper_no_tsproxy(self):
     with self.assertRaises(RuntimeError):
@@ -36,6 +63,75 @@ class TsProxyTestCase(TsProxyBaseTestCase):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
     self.assertFalse(ts_proxy.is_running)
 
+  def test_ts_proxy_open(self):
+    ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
+    network = Network(ts_proxy, self.platform)
+    session = mock.Mock(spec=BrowserSessionRunGroup)
+
+    with self.startup_process_mock() as proc:
+      with ts_proxy.open(network, session):
+        self.assertTrue(ts_proxy.is_running)
+        self.assertEqual(proc.stdout.readline.call_count, 1)
+        proc.stdout.readline.return_value = "OK"
+    proc.stdin.write.assert_called_with("exit\n")
+    self.assertEqual(proc.stdout.readline.call_count, 2)
+
+  def test_ts_proxy_pause(self):
+    ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
+    network = Network(ts_proxy, self.platform)
+    session = mock.Mock(spec=BrowserSessionRunGroup)
+
+    with self.startup_process_mock() as proc:
+      with ts_proxy.open(network, session):
+        self.assertTrue(ts_proxy.is_running)
+        self.assertEqual(proc.stdout.readline.call_count, 1)
+        # All setting updates are "OK"
+        proc.stdout.readline.return_value = "OK"
+        with ts_proxy.pause():
+          self.assertEqual(proc.stdout.readline.call_count, 4)
+          self.assertTrue(ts_proxy.is_running)
+        self.assertTrue(ts_proxy.is_running)
+        # Default settings are already set.
+        self.assertEqual(proc.stdout.readline.call_count, 4)
+    self.assertEqual(proc.stdout.readline.call_count, 5)
+    proc.stdin.write.assert_called_with("exit\n")
+
+  def test_ts_proxy_pause_custom(self):
+    ts_proxy = TsProxyTrafficShaper(
+        self.platform,
+        self.ts_proxy_path,
+        rtt_ms=101,
+        in_kbps=102,
+        out_kbps=103)
+    network = Network(ts_proxy, self.platform)
+    session = mock.Mock(spec=BrowserSessionRunGroup)
+
+    with self.startup_process_mock() as proc:
+      with ts_proxy.open(network, session):
+        stdout_readline = proc.stdout.readline
+        stdin_write = proc.stdin.write
+
+        self.assertTrue(ts_proxy.is_running)
+        self.assertEqual(stdout_readline.call_count, 1)
+        stdout_readline.reset_mock()
+        # All setting updates are "OK"
+        stdout_readline.return_value = "OK"
+
+        with ts_proxy.pause():
+          self.assertEqual(stdout_readline.call_count, 3)
+          stdin_write.assert_any_call("set rtt 0\n")
+          stdin_write.assert_any_call("set inkbps 0\n")
+          stdin_write.assert_any_call("set outkbps 0\n")
+          self.assertTrue(ts_proxy.is_running)
+
+        self.assertEqual(stdout_readline.call_count, 6)
+        stdin_write.assert_any_call("set rtt 101\n")
+        stdin_write.assert_any_call("set inkbps 102\n")
+        stdin_write.assert_any_call("set outkbps 103\n")
+        stdout_readline.reset_mock()
+        stdin_write.reset_mock()
+    stdout_readline.assert_called_once()
+    stdin_write.assert_called_once_with("exit\n")
 
 class TsProxyServerTestCase(TsProxyBaseTestCase):
 
@@ -72,26 +168,7 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
 
   def test_start_server(self):
     server = TsProxyServer(self.ts_proxy_path)
-
-    proc = mock.Mock()
-    proc.configure_mock(**{
-        "poll.return_value": None,
-        "communicate.return_value": (None, None)
-    })
-    proc.stdout = mock.Mock()
-    proc.stdout.configure_mock(**{
-        "readline.return_value":
-            "Started Socks5 proxy server on 127.0.0.1:43210"
-    })
-    proc.stderr = mock.Mock()
-
-    def popen_mock(cmd, *args, **kwargs):
-      self.assertEqual(cmd[1], self.ts_proxy_path)
-      self.assertEqual(cmd[2], "--port=0")
-      del args, kwargs
-      return proc
-
-    with mock.patch("subprocess.Popen", side_effect=popen_mock) as popen:
+    with self.startup_process_mock() as proc:
       self.assertFalse(server.is_running)
       with server:
         self.assertTrue(server.is_running)
@@ -100,8 +177,6 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
         # Set return value for exit command.
         proc.stdout.readline.return_value = "OK"
       self.assertFalse(server.is_running)
-
-    popen.assert_called_once()
     proc.stdin.write.assert_called_with("exit\n")
 
 

@@ -16,7 +16,7 @@ import shlex
 import signal
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
+from typing import IO, TYPE_CHECKING, Final, Iterator, List, Optional, Union
 
 from crossbench import helper
 from crossbench.flags.base import Flags
@@ -78,6 +78,7 @@ TRAFFIC_SETTINGS = {
         "out_kbps": 9000,
     },
 }
+DEFAULT_WINDOW_SIZE: Final[int] = 10
 
 
 class TsProxyServer:
@@ -363,10 +364,12 @@ class TsProxyProcess:
       self._send_command(f"set outkbps {out_kbps}", timeout)
       self._out_kbps = out_kbps
 
-    if window is not None and self._window != window:
-      assert window >= 0, f"Invalid window value: {window}"
-      self._send_command(f"set window {window}", timeout)
-      self._window = window
+    # TODO: implement support in tsproxy
+    del window
+    # if window is not None and self._window != window:
+    #   assert window >= 0, f"Invalid window value: {window}"
+    #   self._send_command(f"set window {window}", timeout)
+    #   self._window = window
 
   def stop(self) -> Optional[str]:
     self._send_command("exit")
@@ -417,6 +420,22 @@ class TsProxyTrafficShaper(TrafficShaper):
       with self._ts_proxy:
         with self._forward_ports(network, session):
           yield self
+
+  @contextlib.contextmanager
+  def pause(self):
+    old_settings = {
+        "rtt_ms": self._ts_proxy.rtt_ms,
+        "in_kbps": self._ts_proxy.in_kbps,
+        "out_kbps": self._ts_proxy.out_kbps,
+        "window": self._ts_proxy.window
+    }
+    try:
+      logging.info("TRAFFIC SHAPING: Pausing")
+      self._ts_proxy.set_traffic_settings(0, 0, 0, DEFAULT_WINDOW_SIZE)
+      yield None
+    finally:
+      logging.info("TRAFFIC SHAPING: Restoring settings")
+      self._ts_proxy.set_traffic_settings(**old_settings)
 
   def _create_remapping_ts_proxy(self, network) -> TsProxyServer:
     return TsProxyServer(
