@@ -12,8 +12,8 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench import helper
-from crossbench.probes.internal import (InternalJsonResultProbe,
-                                        InternalJsonResultProbeContext)
+from crossbench.probes.internal.base import (InternalJsonResultProbe,
+                                             InternalJsonResultProbeContext)
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult

@@ -17,7 +17,7 @@ from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.network.local_file_server import LocalFileNetwork
-from crossbench.probes import internal
+from crossbench.probes.internal.summary import ResultsSummaryProbe
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
@@ -108,8 +108,7 @@ class CliSlowTestCase(BaseCliTestCase):
                      "--env-validation=skip", f"--out-dir={out_dir}")
         self.assertTrue(out_dir.exists())
         get_browser_cls.assert_called_once()
-        result_files = list(
-            out_dir.glob(f"**/{internal.ResultsSummaryProbe.NAME}.json"))
+        result_files = list(out_dir.glob(f"**/{ResultsSummaryProbe.NAME}.json"))
         result_file = result_files[1]
         with result_file.open(encoding="utf-8") as f:
           results = json.load(f)

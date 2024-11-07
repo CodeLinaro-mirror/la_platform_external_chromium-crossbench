@@ -22,7 +22,7 @@ from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.env import ValidationMode
 from crossbench.parse import LateArgumentError
 from crossbench.path import AnyPath
-from crossbench.probes import internal
+from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -114,7 +114,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 3)
       versions = []
       for result_file in result_files:
@@ -158,7 +158,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 2)
       versions = []
       for result_file in result_files:
@@ -202,7 +202,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 2)
       versions = []
       for result_file in result_files:
@@ -245,7 +245,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 3)
       versions = []
       for result_file in result_files:

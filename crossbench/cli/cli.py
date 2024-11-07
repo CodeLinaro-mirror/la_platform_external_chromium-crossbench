@@ -39,7 +39,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
 from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
                               PathParser)
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
-from crossbench.probes.internal import ErrorsProbe
+from crossbench.probes.internal.errors import ErrorsProbe
 from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing

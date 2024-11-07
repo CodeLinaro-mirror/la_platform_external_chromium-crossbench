@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Type
+from typing import TYPE_CHECKING, Tuple, Type
 
 from crossbench.probes.android_logcat import AndroidLogcatProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
@@ -13,9 +13,11 @@ from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
-from crossbench.probes.internal import (DurationsProbe, ErrorsProbe,
-                                        InternalProbe, LogProbe,
-                                        ResultsSummaryProbe, SystemDetailsProbe)
+from crossbench.probes.internal.durations import DurationsProbe
+from crossbench.probes.internal.errors import ErrorsProbe
+from crossbench.probes.internal.log import LogProbe
+from crossbench.probes.internal.summary import ResultsSummaryProbe
+from crossbench.probes.internal.system_details import SystemDetailsProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
@@ -39,6 +41,9 @@ from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
+
+if TYPE_CHECKING:
+  from crossbench.probes.internal.base import InternalProbe
 
 ABSTRACT_PROBES: Tuple[Type[Probe], ...] = (Probe, JsonResultProbe)
 

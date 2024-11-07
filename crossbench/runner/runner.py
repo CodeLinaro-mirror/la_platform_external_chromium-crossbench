@@ -21,7 +21,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
-from crossbench.probes.internal import ResultsSummaryProbe
+from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
