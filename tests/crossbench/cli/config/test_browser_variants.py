@@ -12,11 +12,6 @@ from typing import Dict, Tuple, Type
 from unittest import mock
 
 import hjson
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
 
 from crossbench import path as pth
 from crossbench import plt
@@ -34,9 +29,15 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.cli.config.driver import DriverConfig
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
+                                              BaseConfigTestCase)
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
 
 
 class TestBrowserVariantsConfig(BaseConfigTestCase):

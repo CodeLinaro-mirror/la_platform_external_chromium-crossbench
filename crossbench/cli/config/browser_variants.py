@@ -25,7 +25,7 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.driver import BrowserDriverType
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.flags.base import Flags
@@ -397,11 +397,11 @@ class BrowserVariantsConfig:
       browser_config = self._maybe_downloaded_binary(
           cast(BrowserConfig, BrowserConfig.parse(raw_browser_data)))
       browser_cls = self.get_browser_cls(browser_config)
-    if not browser_config.driver.type.is_remote and (not pth.LocalPath(
-        browser_config.path).exists()):
+    if not self._is_valid_browser_path(browser_config):
       raise ConfigError(
           f"browsers[{repr(name)}].path='{browser_config.path}' does not exist."
       )
+
     flag_variants: FlagsGroupConfig = self._get_browser_variants(
         name, raw_browser_data)
     self._log_browser_variants(name, flag_variants)
@@ -433,6 +433,12 @@ class BrowserVariantsConfig:
           label=label, path=browser_config.path, settings=settings)
       # pytype: enable=not-instantiable
       self._variants.append(browser_instance)
+
+  def _is_valid_browser_path(self, browser_config: BrowserConfig) -> bool:
+    if browser_config.is_remote:
+      # TODO: add remote path validation
+      return True
+    return pth.LocalPath(browser_config.path).exists()
 
   def _flags_to_label(self, name: str, flags: Flags) -> str:
     return f"{name}_{_flags_to_label(flags)}"
@@ -697,8 +703,7 @@ class BrowserVariantsConfig:
     browser_cls: Type[Browser] = self.get_browser_cls(browser_config)
     path: pth.AnyPath = browser_config.path
     flags_sets = [browser_cls.default_flags()]
-
-    if browser_config.driver.is_local and not pth.LocalPath(path).exists():
+    if not self._is_valid_browser_path(browser_config):
       raise argparse.ArgumentTypeError(f"Browser binary does not exist: {path}")
 
     if issubclass(browser_cls, browsers.Chromium):

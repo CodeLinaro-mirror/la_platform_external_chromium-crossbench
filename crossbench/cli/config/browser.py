@@ -19,7 +19,8 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
-from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.cli.config.driver import DriverConfig
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig, NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, PathParser
@@ -153,7 +154,7 @@ class BrowserConfig(ConfigObject):
       if cls._is_downloadable_identifier(maybe_path_or_identifier):
         return maybe_path_or_identifier
       # Assume a path since short-names never contain back-/slashes.
-      if driver_type.is_remote:
+      if driver_type.is_remote_browser:
         path = PathParser.path(maybe_path_or_identifier)
       else:
         path = PathParser.existing_path(maybe_path_or_identifier)
@@ -305,6 +306,14 @@ class BrowserConfig(ConfigObject):
         "driver", type=DriverConfig, default=DriverConfig.default())
     parser.add_argument("network", required=False, type=NetworkConfig)
     return parser
+
+  @property
+  def is_remote(self) -> bool:
+    return self.driver.type.is_remote_browser
+
+  @property
+  def is_local(self) -> bool:
+    return self.driver.type.is_local_browser
 
   @property
   def path(self) -> pth.AnyPath:

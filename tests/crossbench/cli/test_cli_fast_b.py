@@ -11,22 +11,23 @@ from typing import List, Optional, Type
 from unittest import mock
 
 import hjson
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.base import BaseCliTestCase, SysExitTestException
-from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 from crossbench import __version__, plt
 from crossbench.browsers import splash_screen, viewport
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.cli.config.driver import DriverConfig
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.env import ValidationMode
 from crossbench.parse import LateArgumentError
 from crossbench.path import AnyPath
 from crossbench.probes import internal
 from crossbench.runner.runner import Runner
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
+from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 
 class FastCliTestCasePartA(BaseCliTestCase):

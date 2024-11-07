@@ -11,45 +11,14 @@ import hjson
 
 from crossbench import plt
 from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
-                                          BrowserDriverType, DriverConfig)
+                                          DriverConfig)
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
 from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
-
-
-class BrowserDriverTypeTestCase(unittest.TestCase):
-
-  def test_default(self):
-    self.assertEqual(BrowserDriverType.default(), BrowserDriverType.WEB_DRIVER)
-
-  def test_parse_invalid(self):
-    for invalid in ["invalid", None, [], (), {}]:
-      with self.assertRaises(argparse.ArgumentTypeError):
-        BrowserDriverType.parse(invalid)
-
-  def test_parse_str(self):
-    test_data = {
-        "": BrowserDriverType.default(),
-        "selenium": BrowserDriverType.WEB_DRIVER,
-        "webdriver": BrowserDriverType.WEB_DRIVER,
-        "applescript": BrowserDriverType.APPLE_SCRIPT,
-        "osa": BrowserDriverType.APPLE_SCRIPT,
-        "android": BrowserDriverType.ANDROID,
-        "adb": BrowserDriverType.ANDROID,
-        "iphone": BrowserDriverType.IOS,
-        "ios": BrowserDriverType.IOS,
-        "ssh": BrowserDriverType.LINUX_SSH,
-        "chromeos-ssh": BrowserDriverType.CHROMEOS_SSH,
-    }
-    for value, result in test_data.items():
-      self.assertEqual(BrowserDriverType.parse(value), result)
-
-  def test_parse_enum(self):
-    for driver_type in BrowserDriverType:
-      self.assertEqual(BrowserDriverType.parse(driver_type), driver_type)
 
 
 class DriverConfigTestCase(BaseConfigTestCase):
@@ -145,8 +114,10 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_1.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1.device_id, "0a388e93")
     self.assertEqual(config_1.settings["device_id"], "0a388e93")
-    self.assertTrue(config_1.is_remote)
-    self.assertFalse(config_1.is_local)
+    self.assertFalse(config_1.is_remote)
+    self.assertTrue(config_1.is_local)
+    self.assertTrue(config_1.type.is_remote_browser)
+    self.assertFalse(config_1.type.is_local_browser)
     self.assertIsNone(config_1.adb_bin)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -155,8 +126,10 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_2.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_2.device_id, "0a388e93")
     self.assertEqual(config_2.settings["device_id"], "0a388e93")
-    self.assertTrue(config_2.is_remote)
-    self.assertFalse(config_2.is_local)
+    self.assertFalse(config_2.is_remote)
+    self.assertTrue(config_2.is_local)
+    self.assertTrue(config_2.type.is_remote_browser)
+    self.assertFalse(config_2.type.is_local_browser)
     self.assertIsNone(config_2.adb_bin)
     self.assertEqual(config_1, config_2)
 
@@ -166,8 +139,10 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config_3, DriverConfig)
     self.assertEqual(config_3.type, BrowserDriverType.ANDROID)
     self.assertEqual(config_3.device_id, "0a388e93")
-    self.assertTrue(config_3.is_remote)
-    self.assertFalse(config_3.is_local)
+    self.assertFalse(config_3.is_remote)
+    self.assertTrue(config_3.is_local)
+    self.assertTrue(config_3.type.is_remote_browser)
+    self.assertFalse(config_3.type.is_local_browser)
     self.assertIsNone(config_3.settings)
     self.assertIsNone(config_2.adb_bin)
     self.assertNotEqual(config_1, config_3)
@@ -219,8 +194,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
-    self.assertTrue(config.is_remote)
-    self.assertFalse(config.is_local)
+    self.assertFalse(config.is_remote)
+    self.assertTrue(config.is_local)
 
   def test_parse_adb_phone_serial(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]

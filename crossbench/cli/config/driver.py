@@ -6,16 +6,15 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import enum
 import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from immutabledict import immutabledict
 
-from crossbench import compat
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
@@ -24,55 +23,6 @@ from crossbench.plt.ios import ios_devices
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath, LocalPath
-
-
-@enum.unique
-class BrowserDriverType(compat.StrEnumWithHelp):
-  WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
-  APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
-  ANDROID = ("Android",
-             "Use Webdriver for android. Allows to specify additional settings")
-  IOS = ("iOS", "Placeholder, unsupported at the moment")
-  LINUX_SSH = ("Remote Linux",
-               "Use remote webdriver and execute commands via SSH")
-  CHROMEOS_SSH = ("Remote ChromeOS",
-                  "Use remote ChromeDriver and execute commands via SSH")
-
-  @classmethod
-  def default(cls) -> BrowserDriverType:
-    return cls.WEB_DRIVER
-
-  @classmethod
-  def parse(cls, value: Any) -> BrowserDriverType:
-    if isinstance(value, cls):
-      return value
-    if value == "":
-      return BrowserDriverType.default()
-    value = ObjectParser.non_empty_str(value, "driver_type")
-    identifier = value.lower()
-    if identifier in ("selenium", "webdriver"):
-      return BrowserDriverType.WEB_DRIVER
-    if identifier in ("applescript", "osa"):
-      return BrowserDriverType.APPLE_SCRIPT
-    if identifier in ("android", "adb"):
-      return BrowserDriverType.ANDROID
-    if identifier in ("iphone", "ios"):
-      return BrowserDriverType.IOS
-    if identifier == "ssh":
-      return BrowserDriverType.LINUX_SSH
-    if identifier == "chromeos-ssh":
-      return BrowserDriverType.CHROMEOS_SSH
-    raise argparse.ArgumentTypeError(f"Unknown driver type: {repr(value)}")
-
-  @property
-  def is_remote(self):
-    if self.name in ("ANDROID", "CHROMEOS_SSH", "LINUX_SSH"):
-      return True
-    return False
-
-  @property
-  def is_local(self):
-    return not self.is_remote
 
 
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
@@ -241,11 +191,11 @@ class DriverConfig(ConfigObject):
 
   @property
   def is_remote(self) -> bool:
-    return self.type.is_remote
+    return self.type.is_remote_driver
 
   @property
   def is_local(self) -> bool:
-    return self.type.is_local
+    return self.type.is_local_driver
 
   def validate(self) -> None:
     if self.type == BrowserDriverType.ANDROID:

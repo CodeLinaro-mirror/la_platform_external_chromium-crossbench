@@ -9,9 +9,6 @@ from typing import Dict, List, Type
 from unittest import mock
 
 import hjson
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 from crossbench import __version__
 from crossbench.browsers.settings import Settings
@@ -21,6 +18,9 @@ from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.network.local_file_server import LocalFileNetwork
 from crossbench.probes import internal
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 
 class CliSlowTestCase(BaseCliTestCase):
