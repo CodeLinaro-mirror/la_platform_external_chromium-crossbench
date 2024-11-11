@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import abc
 import contextlib
-import hashlib
 import logging
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
@@ -15,6 +14,7 @@ from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.parse import PathParser
+from crossbench.path import check_hash
 from crossbench.plt import PLATFORM, Platform
 from crossbench.plt.arch import MachineArch
 
@@ -44,14 +44,6 @@ WPR_PREBUILT_ARCH_MAP = {
         "file_hash": "6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
     },
 }
-
-
-def check_hash(file_path: LocalPath, file_hash: str) -> bool:
-  if not file_path.exists():
-    return False
-  sha1 = hashlib.sha1()
-  sha1.update(file_path.read_bytes())
-  return sha1.hexdigest() == file_hash
 
 
 class WprReplayNetwork(ReplayNetwork):

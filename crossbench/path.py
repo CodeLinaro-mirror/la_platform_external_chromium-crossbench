@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import hashlib
 import pathlib
 import re
 import unicodedata
@@ -42,3 +43,11 @@ def try_resolve_existing_path(value: str) -> Optional[LocalPath]:
   if maybe_path.exists():
     return maybe_path
   return None
+
+
+def check_hash(file_path: LocalPath, file_hash: str) -> bool:
+  if not file_path.exists():
+    return False
+  sha1 = hashlib.sha1()
+  sha1.update(file_path.read_bytes())
+  return sha1.hexdigest() == file_hash
