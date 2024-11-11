@@ -283,6 +283,7 @@ class WprBase(abc.ABC):
     return helper.urlopen(test_url, timeout=1)
 
   def stop(self, force_shutdown: bool = False) -> None:
+    atexit.unregister(self.stop)
     if self._process and not force_shutdown:
       self._shut_down()
     if self._log_file:
