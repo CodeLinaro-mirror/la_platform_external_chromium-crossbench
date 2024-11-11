@@ -1117,6 +1117,8 @@ class CrossBenchCLI:
     self._console_handler.addFilter(logging.Filter("root"))
     self._console_handler.setLevel(logging.INFO)
     logging.getLogger().setLevel(logging.INFO)
+    # Clear existing handlers in case logging has been initialized prematurely.
+    logging.getLogger().handlers = []
     logging.getLogger().addHandler(self._console_handler)
 
     # Manually extract values to allow logging for failing arguments.
