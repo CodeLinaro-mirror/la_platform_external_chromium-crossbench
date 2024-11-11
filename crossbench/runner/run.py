@@ -343,12 +343,20 @@ class Run(ResultOrigin):
 
   def _run_story(self) -> None:
     self._run_story_setup()
+    if delay := self.timing.start_delay:
+      self._wait(delay, "Start Delay")
     try:
       self._story.run(self)
     except StopStoryException as e:
       logging.debug("Stop story: %s", e)
     finally:
+      if delay := self.timing.stop_delay:
+        self._wait(delay, "Stop Delay")
       self._run_story_teardown()
+
+  def _wait(self, delay: dt.timedelta, label: str) -> None:
+    logging.info("%s: %s", label, delay)
+    self.runner.wait(delay, absolute_time=True)
 
   def _run_story_setup(self) -> None:
     with self.measure("story-setup"):

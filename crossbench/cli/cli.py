@@ -461,6 +461,7 @@ class CrossBenchCLI:
               f"Format: {DurationParser.help()}"))
     runner_group.add_argument(
         "--start-delay",
+        "--startup-delay",
         type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta(),
         help=("Delay before running the core workload, "
