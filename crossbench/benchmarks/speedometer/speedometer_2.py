@@ -7,9 +7,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Tuple
 
-from crossbench import helper
 from crossbench.benchmarks.speedometer.speedometer import (SpeedometerProbe,
                                                            SpeedometerStory)
+from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
@@ -62,5 +62,5 @@ class Speedometer2Story(SpeedometerStory):
     if len(self.substories) == 1:
       params["suite"] = self.substories[0]
     params["startAutomatically"] = "true"
-    official_test_url = helper.update_url_query(test_url, params)
+    official_test_url = url_helper.update_url_query(test_url, params)
     logging.info("STORY PUBLIC TEST URL: %s", official_test_url)

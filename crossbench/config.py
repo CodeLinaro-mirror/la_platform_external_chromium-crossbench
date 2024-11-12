@@ -19,10 +19,10 @@ from urllib.parse import urlparse
 
 import tabulate
 
-# Use indirection to support pyfakefs
-from crossbench import compat, exception, helper
+from crossbench import compat, exception
 from crossbench import path as pth
-from crossbench.helper import ChangeCWD
+from crossbench.helper import txt_helper
+from crossbench.helper.cwd import ChangeCWD
 from crossbench.parse import ObjectParser, PathParser
 
 if TYPE_CHECKING:
@@ -691,7 +691,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     parts.append("")
     for arg in self._args.values():
       parts.append(f"{arg.name}:")
-      parts.extend(helper.wrap_lines(arg.help_text, width=width, indent="  "))
+      parts.extend(
+          txt_helper.wrap_lines(arg.help_text, width=width, indent="  "))
       parts.append("")
     return "\n".join(parts)
 

@@ -11,7 +11,7 @@ import re
 from enum import IntEnum
 from typing import TYPE_CHECKING, Iterable, Optional
 
-from crossbench import helper
+from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
                                              InternalJsonResultProbeContext)
 from crossbench.probes.probe import ProbeIncompatibleBrowser
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
   from crossbench.types import Json
 
 THERMAL_STATUS_RE = re.compile(r"Thermal Status: (?P<status>\d+)")
-COOLDOWN_WAIT_RANGE = helper.WaitRange(
+COOLDOWN_WAIT_RANGE = WaitRange(
     min=dt.timedelta(seconds=1), timeout=dt.timedelta(minutes=5))
 
 
@@ -70,7 +70,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
                threshold: Optional[ThermalStatus] = None):
     super().__init__()
     self._threshold: Optional[ThermalStatus] = threshold
-    self._cool_down_time: Optional[dt.timedelta] = cool_down_time
+    self._cool_down_time: dt.timedelta = cool_down_time
     if threshold is not None and threshold <= 0:
       raise ValueError("Threshold must be positive")
 

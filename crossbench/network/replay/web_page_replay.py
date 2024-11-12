@@ -14,7 +14,8 @@ import subprocess
 import time
 from typing import Iterable, Optional, TextIO, Tuple
 
-from crossbench import helper
+from crossbench.helper import proc_helper, url_helper
+from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
@@ -193,7 +194,7 @@ class WprBase(abc.ABC):
       self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
     work_dir = (
         self._bin_path.parent if self._platform.is_local else LocalPath.cwd())
-    with helper.ChangeCWD(work_dir):
+    with ChangeCWD(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(
           *go_cmd, stdout=self._log_file, stderr=self._log_file)
@@ -283,7 +284,7 @@ class WprBase(abc.ABC):
     http_port = (
         self._local_http_port if self._platform.is_remote else self._http_port)
     test_url = f"http://{self._host}:{http_port}/web-page-replay-{cmd}"
-    return helper.urlopen(test_url, timeout=1)
+    return url_helper.urlopen(test_url, timeout=1)
 
   def stop(self, force_shutdown: bool = False) -> None:
     atexit.unregister(self.stop)
@@ -293,7 +294,7 @@ class WprBase(abc.ABC):
       self._log_file.close()
       self._log_file = None
     if self._process:
-      helper.wait_and_kill(self._process, timeout=1)
+      proc_helper.wait_and_kill(self._process, timeout=1)
     self._process = None
     self._stop_forward_ports()
 

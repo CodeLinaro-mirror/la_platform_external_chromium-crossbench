@@ -10,7 +10,8 @@ import enum
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import compat, helper
+from crossbench import compat
+from crossbench.helper import proc_helper
 from crossbench.parse import DurationParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
@@ -127,5 +128,5 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
 
   def stop_process(self) -> None:
     if self._power_metrics_process:
-      helper.wait_and_kill(self._power_metrics_process)
+      proc_helper.wait_and_kill(self._power_metrics_process)
       self._power_metrics_process = None

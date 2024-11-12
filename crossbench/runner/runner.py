@@ -12,12 +12,14 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type, Union)
 
-from crossbench import compat, exception, helper
+from crossbench import compat, exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
+from crossbench.helper import collection_helper
+from crossbench.helper.sleep_preventer import SystemSleepPreventer
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
@@ -68,13 +70,14 @@ class ThreadMode(compat.StrEnumWithHelp):
       return [RunThreadGroup(runs)]
     groups: Dict[Any, List[Run]] = {}
     if self == ThreadMode.SESSION:
-      groups = helper.group_by(
+      groups = collection_helper.group_by(
           runs, lambda run: run.browser_session, sort_key=None)
     elif self == ThreadMode.PLATFORM:
-      groups = helper.group_by(
+      groups = collection_helper.group_by(
           runs, lambda run: run.browser_platform, sort_key=None)
     elif self == ThreadMode.BROWSER:
-      groups = helper.group_by(runs, lambda run: run.browser, sort_key=None)
+      groups = collection_helper.group_by(
+          runs, lambda run: run.browser, sort_key=None)
     else:
       raise ValueError(f"Unexpected thread mode: {self}")
     return [
@@ -416,7 +419,7 @@ class Runner:
 
   def run(self, is_dry_run: bool = False) -> None:
     self._state.expect(RunnerState.INITIAL)
-    with helper.SystemSleepPreventer():
+    with SystemSleepPreventer(self._platform):
       with self._exceptions.annotate("Preparing"):
         self._setup()
       with self._exceptions.annotate("Running"):

@@ -12,7 +12,8 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
-from crossbench import compat, helper
+from crossbench import compat
+from crossbench.helper import proc_helper
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -219,13 +220,13 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def stop_processes(self) -> None:
     if self._power_process:
-      helper.wait_and_kill(self._power_process)
+      proc_helper.wait_and_kill(self._power_process)
       self._power_process = None
     if self._power_battery_process:
-      helper.wait_and_kill(self._power_battery_process)
+      proc_helper.wait_and_kill(self._power_battery_process)
       self._power_battery_process = None
     if self._active_user_process:
-      helper.wait_and_kill(self._active_user_process)
+      proc_helper.wait_and_kill(self._active_user_process)
       self._active_user_process = None
 
   def _wait_for_battery_not_full(self, run: Run) -> None:

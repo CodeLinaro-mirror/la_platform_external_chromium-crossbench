@@ -13,10 +13,12 @@ from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
 
-from crossbench import exception, helper
+from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
+from crossbench.helper.spinner import Spinner
+from crossbench.helper.wait import WaitRange
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
@@ -72,7 +74,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       # (currently fixed version from vpython3).
       self._legacy_settings(options, driver_kwargs)
 
-    with helper.Spinner():
+    with Spinner():
       driver = self._start_driver_with_retries(driver_kwargs)
 
     assert driver.session_id, "Could not start webdriver"
@@ -92,7 +94,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     # Let's give it several chances to start up.
     seen_exceptions: Set[Type[Exception]] = set()
     retries = 0
-    for _ in helper.WaitRange(
+    for _ in WaitRange(
         min=2, timeout=self.MAX_STARTUP_TIMEOUT).wait_with_backoff():
       try:
         return webdriver.Safari(**driver_kwargs)

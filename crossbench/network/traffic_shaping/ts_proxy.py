@@ -18,8 +18,8 @@ import subprocess
 import sys
 from typing import IO, TYPE_CHECKING, Final, Iterator, List, Optional, Union
 
-from crossbench import helper
 from crossbench.flags.base import Flags
+from crossbench.helper import proc_helper, wait
 from crossbench.helper.path_finder import TsProxyFinder
 from crossbench.network.traffic_shaping.base import TrafficShaper
 from crossbench.parse import NumberParser, PathParser
@@ -290,7 +290,7 @@ class TsProxyProcess:
       logging.warning("Decoding will use %s instead of UTF-8", encoding)
 
   def _wait_for_startup(self, timeout: Union[int, float]) -> None:
-    for _ in helper.wait_with_backoff(timeout):
+    for _ in wait.wait_with_backoff(timeout):
       if self._has_started():
         logging.info("TsProxy: port=%i", self._socks_proxy_port)
         return
@@ -312,7 +312,7 @@ class TsProxyProcess:
     return True
 
   def _read_line_ts_proxy_stdout(self, timeout: Union[int, float]) -> str:
-    for _ in helper.wait_with_backoff(timeout):
+    for _ in wait.wait_with_backoff(timeout):
       try:
         return self._stdout.readline().strip()
       except IOError as io_error:
@@ -334,7 +334,7 @@ class TsProxyProcess:
   def _wait_for_status_response(self, timeout: Union[int, float]) -> List[str]:
     logging.debug("TsProxy: waiting for status response")
     command_output = []
-    for _ in helper.wait_with_backoff(timeout):
+    for _ in wait.wait_with_backoff(timeout):
       self._stdin.flush()
       self._stdout.flush()
       last_output = self._read_line_ts_proxy_stdout(timeout)
@@ -373,7 +373,7 @@ class TsProxyProcess:
 
   def stop(self) -> Optional[str]:
     self._send_command("exit")
-    helper.wait_and_kill(self._proc, signal=signal.SIGINT)
+    proc_helper.wait_and_kill(self._proc, signal=signal.SIGINT)
     _, err = self._proc.communicate()
     self._socks_proxy_port = self._initial_socks_proxy_port
     return err

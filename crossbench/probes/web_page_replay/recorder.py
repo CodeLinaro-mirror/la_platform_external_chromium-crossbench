@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
 
 from immutabledict import immutabledict
 
-from crossbench import helper, plt
+from crossbench import plt
+from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
@@ -166,7 +167,7 @@ class WebPageReplayProbe(Probe):
         input_archive,
         output_archive,
     ]
-    with helper.ChangeCWD(self._wpr_go_bin.parent):
+    with ChangeCWD(self._wpr_go_bin.parent):
       self.host_platform.sh(*cmd)
 
 

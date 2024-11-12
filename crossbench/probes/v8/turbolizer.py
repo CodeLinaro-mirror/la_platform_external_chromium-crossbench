@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from crossbench import helper
 from crossbench.browsers.chromium.chromium import Chromium
+from crossbench.helper import fs_helper
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeContext
 from crossbench.probes.result_location import ResultLocation
@@ -69,5 +69,5 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
     local_log_dir = result.file
     assert local_log_dir.is_dir()
     # Sort files locally after transferring them.
-    log_files = helper.sort_by_file_size(local_log_dir.glob("*"))
+    log_files = fs_helper.sort_by_file_size(local_log_dir.glob("*"))
     return LocalProbeResult(file=log_files)

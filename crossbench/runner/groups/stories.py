@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
-from crossbench import helper
+from crossbench.helper import collection_helper
 from crossbench.runner.groups.base import RunGroup
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ class StoriesRunGroup(RunGroup):
              run_groups: Iterable[RepetitionsRunGroup],
              throw: bool = False) -> Tuple[StoriesRunGroup, ...]:
     return tuple(
-        helper.group_by(
+        collection_helper.group_by(
             run_groups,
             key=lambda run_group: run_group.browser,
             group=lambda _: cls(throw),

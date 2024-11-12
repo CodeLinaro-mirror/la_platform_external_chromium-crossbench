@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from crossbench.benchmarks.base import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
-from crossbench.helper import update_url_query
+from crossbench.helper import url_helper
 from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.metric import Metric, MetricsMerger
@@ -223,7 +223,8 @@ class MotionMark1Story(PressBenchmarkStory):
 
   def prepare_test_url(self) -> str:
     if (url_params := self.url_params) or not self.has_default_substories:
-      updated_url = update_url_query(f"{self.url}/developer.html", url_params)
+      updated_url = url_helper.update_url_query(f"{self.url}/developer.html",
+                                                url_params)
       logging.info("CUSTOM URL: %s", updated_url)
       return updated_url
     return self.url

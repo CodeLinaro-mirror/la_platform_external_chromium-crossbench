@@ -17,11 +17,12 @@ from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
-from crossbench import exception, helper
+from crossbench import exception
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.firefox.firefox import Firefox
 from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -160,7 +161,7 @@ class FirefoxDriverFinder:
     return (9999, 9999, 9999)
 
   def _load_releases(self) -> Dict[Tuple[int, ...], Dict]:
-    with helper.urlopen(self.RELEASES_URL) as response:
+    with url_helper.urlopen(self.RELEASES_URL) as response:
       releases = json.loads(response.read().decode("utf-8"))
     assert isinstance(releases, list)
     versions = {}

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type, Union
 
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
-from crossbench.helper import Spinner
+from crossbench.helper.spinner import Spinner
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform

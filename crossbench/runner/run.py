@@ -12,7 +12,9 @@ from typing import TYPE_CHECKING, Optional, Type
 from crossbench import compat
 from crossbench import path as pth
 from crossbench.exception import Annotator, TInfoStack
-from crossbench.helper import ChangeCWD, Durations, Spinner
+from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.durations import Durations
+from crossbench.helper.spinner import Spinner
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import ProbeResultDict

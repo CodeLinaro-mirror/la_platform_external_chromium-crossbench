@@ -9,8 +9,9 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING, Iterable, Optional, cast
 
-from crossbench import helper
 from crossbench import path as pth
+from crossbench.helper import fs_helper
+from crossbench.helper.wait import WaitRange
 from crossbench.parse import PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
@@ -119,7 +120,7 @@ class PerfettoProbe(Probe):
     for run in runs:
       result_file = run.results[self].file
       logging.critical("  - %s : %s", result_file,
-                       helper.get_file_size(result_file))
+                       fs_helper.get_file_size(result_file))
 
   def get_context(self, run: Run) -> PerfettoProbeContext:
     # TODO: support more platforms
@@ -188,7 +189,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     # TODO(cbruni): replace with wait_and_terminate
     self.browser_platform.terminate(self._pid)
     try:
-      for _ in helper.WaitRange(1, 30).wait_with_backoff():
+      for _ in WaitRange(1, 30).wait_with_backoff():
         if not self.browser_platform.process_info(self._pid):
           break
     except TimeoutError:

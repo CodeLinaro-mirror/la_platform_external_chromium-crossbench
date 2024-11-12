@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
-from crossbench import helper
+from crossbench.helper import collection_helper, txt_helper
 from crossbench.types import JsonList
 
 if TYPE_CHECKING:
@@ -257,7 +257,7 @@ class ExceptionAnnotator:
       logging.debug("\n".join(entry.traceback))
       logging.debug("-" * 80)
     is_first_entry = True
-    grouped_entries: Dict[TInfoStack, List[Entry]] = helper.group_by(
+    grouped_entries: Dict[TInfoStack, List[Entry]] = collection_helper.group_by(
         self._exceptions, key=lambda entry: entry.info_stack, sort_key=None)
     for info_stack, entries in grouped_entries.items():
       logging_level = logging.ERROR if is_first_entry else logging.DEBUG
@@ -270,7 +270,7 @@ class ExceptionAnnotator:
       for entry in entries:
         logging.log(logging_level, "- " * 40)
         logging.log(logging_level, "Type: %s:",
-                    helper.type_name(type(entry.exception)))
+                    txt_helper.type_name(type(entry.exception)))
         logging.log(logging_level, "      %s", self.format_exception(entry))
         logging_level = logging.DEBUG
       logging.log(logging_level, "-" * 80)
@@ -281,7 +281,7 @@ class ExceptionAnnotator:
   def to_json(self) -> JsonList:
     return [{
         "info_stack": entry.info_stack,
-        "type": helper.type_name(type(entry.exception)),
+        "type": txt_helper.type_name(type(entry.exception)),
         "title": self.format_exception(entry),
         "trace": entry.traceback
     } for entry in self._exceptions]

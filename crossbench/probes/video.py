@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
 
-from crossbench import helper
+from crossbench.helper import collection_helper, proc_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeMissingDataError)
 from crossbench.probes.result_location import ResultLocation
@@ -170,8 +170,10 @@ class VideoProbe(Probe):
     groups = list(group.repetitions_groups)
     if len(groups) <= 1:
       return EmptyProbeResult()
-    grouped: Dict[Story, List[RepetitionsRunGroup]] = helper.group_by(
-        groups, key=lambda repetitions_group: repetitions_group.story)
+    grouped: Dict[Story,
+                  List[RepetitionsRunGroup]] = collection_helper.group_by(
+                      groups,
+                      key=lambda repetitions_group: repetitions_group.story)
 
     result_dir = group.get_local_probe_result_path(self)
     result_dir = result_dir / result_dir.stem
@@ -299,7 +301,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      helper.wait_and_kill(self._record_process, timeout=5)
+      proc_helper.wait_and_kill(self._record_process, timeout=5)
       self._record_process = None
 
   def _convert_to_constant_framerate(self):

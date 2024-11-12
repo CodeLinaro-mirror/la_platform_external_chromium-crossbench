@@ -12,13 +12,13 @@ import zipfile
 from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
                     Type, Union, cast)
 
-from crossbench import helper
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.downloader import (DMGArchiveHelper, Downloader,
                                             IncompatibleVersionError,
                                             RPMArchiveHelper)
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
+from crossbench.helper import url_helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import SubprocessError
 
@@ -123,7 +123,7 @@ class ChromeDownloader(Downloader):
     logging.debug("LIST ALL VERSIONS for M%s: %s", milestone, url)
     version_urls: List[Tuple[BrowserVersion, str]] = []
     try:
-      with helper.urlopen(url) as response:
+      with url_helper.urlopen(url) as response:
         raw_infos = json.loads(response.read().decode("utf-8"))["versions"]
         version_urls = [
             self._create_version_url(

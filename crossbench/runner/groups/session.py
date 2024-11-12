@@ -12,7 +12,8 @@ from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 from crossbench.exception import TInfoStack
 from crossbench.flags.base import Flags
 from crossbench.flags.js_flags import JSFlags
-from crossbench.helper import ChangeCWD, Durations
+from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.durations import Durations
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes.probe_context import ProbeSessionContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResultDict

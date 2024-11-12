@@ -11,9 +11,9 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
-from crossbench import helper
 from crossbench.benchmarks.base import (BenchmarkProbeMixin, PressBenchmark,
                                         PressBenchmarkStoryFilter)
+from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe
@@ -155,7 +155,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   def get_run_url(self, run: Run) -> str:
     url = super().get_run_url(run)
-    url = helper.update_url_query(url, self.url_params)
+    url = url_helper.update_url_query(url, self.url_params)
     if url != self.url:
       logging.info("CUSTOM URL: %s", url)
     return url

@@ -11,13 +11,13 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING, Iterable, Tuple
 
 from crossbench import plt
-from crossbench.helper import DurationMeasureContext, Durations
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.exception import (Annotator, ExceptionAnnotationScope,
                                     TExceptionTypes)
+  from crossbench.helper.durations import DurationMeasureContext, Durations
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner

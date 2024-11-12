@@ -9,7 +9,8 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
-from crossbench import helper
+from crossbench.helper.durations import TimeScope
+from crossbench.helper.wait import WaitRange
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
   from crossbench.runner.timing import Timing
 
 
-class Actions(helper.TimeScope):
+class Actions(TimeScope):
 
   _max_end_datetime: dt.datetime
 
@@ -106,7 +107,7 @@ class Actions(helper.TimeScope):
                         min_wait: Union[dt.timedelta, float],
                         timeout: Union[dt.timedelta, float],
                         delay: Union[dt.timedelta, float] = 0) -> None:
-    wait_range = helper.WaitRange(
+    wait_range = WaitRange(
         min=self.timing.timedelta(min_wait),
         timeout=self.timing.timeout_timedelta(timeout),
         delay=delay)

@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.helper import Spinner
+from crossbench.helper.spinner import Spinner
 from crossbench.network.base import Network
 from crossbench.parse import PathParser
 

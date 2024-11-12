@@ -16,7 +16,8 @@ from urllib.parse import urlparse
 
 import colorama
 
-from crossbench import compat, helper, plt
+from crossbench import compat, plt
+from crossbench.helper import collection_helper
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -386,14 +387,16 @@ class HostEnvironment:
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:
       return
-    grouped_browsers: Dict[plt.Platform, List[Browser]] = helper.group_by(
-        self.browsers, key=lambda browser: browser.platform)
+    grouped_browsers: Dict[plt.Platform,
+                           List[Browser]] = collection_helper.group_by(
+                               self.browsers,
+                               key=lambda browser: browser.platform)
     for platform, browsers in grouped_browsers.items():
       self._check_running_binaries_on_platform(platform, browsers)
 
   def _check_running_binaries_on_platform(
       self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
-    browser_binaries: Dict[str, List[Browser]] = helper.group_by(
+    browser_binaries: Dict[str, List[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):

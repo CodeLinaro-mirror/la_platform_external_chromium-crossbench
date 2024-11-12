@@ -26,7 +26,7 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
-from crossbench import exception, helper
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
@@ -36,6 +36,7 @@ from crossbench.browsers.chromium.version import (ChromeDriverVersion,
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.cli.config.secret_type import SecretType
 from crossbench.flags.chrome import ChromeFlags
+from crossbench.helper import url_helper, wait
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -197,7 +198,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
   ) -> None:
     driver = self._private_driver
     original_handle = driver.current_window_handle
-    for _ in helper.wait_with_backoff(timeout, self.platform):
+    for _ in wait.wait_with_backoff(timeout):
       # Search through other handles starting from current_window_handle + 1
       try:
         i = driver.window_handles.index(original_handle)
@@ -645,7 +646,7 @@ class ChromeDriverFinder:
                                     version: str) -> Tuple[str, Optional[Dict]]:
     version_url = self.CFT_VERSION_URL.format(version=version)
     try:
-      with helper.urlopen(version_url) as response:
+      with url_helper.urlopen(version_url) as response:
         version_data = json.loads(response.read().decode("utf-8"))
         return (version_url, version_data)
     except urllib.error.HTTPError as e:
@@ -657,7 +658,7 @@ class ChromeDriverFinder:
                               milestone: int) -> Tuple[str, Optional[Dict]]:
     latest_version_url = self.CFT_LATEST_URL.format(major=milestone)
     try:
-      with helper.urlopen(latest_version_url) as response:
+      with url_helper.urlopen(latest_version_url) as response:
         alternative_version = response.read().decode("utf-8").strip()
         logging.debug(
             "ChromeDriverFinder: Using alternative version %s "
@@ -715,7 +716,7 @@ class ChromeDriverFinder:
       return self._get_pre_70_driver_version(milestone)
     url = f"{self.PRE_115_STABLE_URL}/LATEST_RELEASE_{milestone}"
     try:
-      with helper.urlopen(url) as response:
+      with url_helper.urlopen(url) as response:
         return response.read().decode("utf-8")
     except urllib.error.HTTPError as e:
       if e.code != 404:
@@ -725,7 +726,7 @@ class ChromeDriverFinder:
     return None
 
   def _get_pre_70_driver_version(self, milestone) -> Optional[str]:
-    with helper.urlopen(
+    with url_helper.urlopen(
         f"{self.PRE_115_STABLE_URL}/2.46/notes.txt") as response:
       lines = response.read().decode("utf-8").splitlines()
     for i, line in enumerate(lines):
@@ -781,7 +782,7 @@ class ChromeDriverFinder:
     # Limit should be > len(canary_versions) so we also get potentially
     # the latest dev version (only beta / stable have official driver binaries).
     dash_limit = properties.get("dash_limit", 100)
-    url = helper.update_url_query(
+    url = url_helper.update_url_query(
         self.CHROMIUM_DASH_URL, {
             "platform": dash_platform,
             "channel": dash_channel,
@@ -789,7 +790,7 @@ class ChromeDriverFinder:
             "num": str(dash_limit),
         })
     chromium_base_position = 0
-    with helper.urlopen(url) as response:
+    with url_helper.urlopen(url) as response:
       version_infos = list(json.loads(response.read().decode("utf-8")))
       if not version_infos:
         raise DriverNotFoundError("Could not find latest version info for "
@@ -829,11 +830,11 @@ class ChromeDriverFinder:
       raise NotImplementedError(
           f"Unsupported chromedriver platform {self.host_platform}")
     base_prefix = str(chromium_base_position)[:4]
-    listing_url = helper.update_url_query(self.CHROMIUM_LISTING_URL, {
+    listing_url = url_helper.update_url_query(self.CHROMIUM_LISTING_URL, {
         "prefix": f"{listing_prefix}/{base_prefix}",
         "maxResults": "10000"
     })
-    with helper.urlopen(listing_url) as response:
+    with url_helper.urlopen(listing_url) as response:
       listing = json.loads(response.read().decode("utf-8"))
 
     versions = []

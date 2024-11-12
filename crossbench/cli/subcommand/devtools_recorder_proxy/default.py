@@ -19,8 +19,9 @@ from typing import TYPE_CHECKING, Any, Coroutine, Dict, Optional, Tuple
 import websockets
 from websockets.server import WebSocketServerProtocol
 
-from crossbench import compat, helper
+from crossbench import compat
 from crossbench import path as pth
+from crossbench.helper import proc_helper
 from crossbench.helper.state import BaseState, StateMachine
 
 if TYPE_CHECKING:
@@ -168,7 +169,7 @@ class CrossbenchDevToolsRecorderProxy:
   async def _stop_command(self) -> Tuple[Response, str]:
     if self._crossbench_process:
       logging.info("# CROSSBENCH COMMAND: KILL")
-      helper.wait_and_kill(self._crossbench_process)
+      proc_helper.wait_and_kill(self._crossbench_process)
     self._state.transition(State.CONNECTED, State.CONNECTED, to=State.CONNECTED)
     return await self._status_command()
 

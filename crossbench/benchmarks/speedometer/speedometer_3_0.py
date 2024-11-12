@@ -11,11 +11,12 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type, Union, cast)
 
-from crossbench import compat, helper
+from crossbench import compat
 from crossbench.benchmarks.speedometer.speedometer import (
     ProbeClsTupleT, SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter,
     SpeedometerProbe, SpeedometerStory)
 from crossbench.browsers import viewport as vp
+from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser
 from crossbench.stories.story import Story
 
@@ -313,7 +314,7 @@ class Speedometer30Story(SpeedometerStory):
     params["suites"] = ",".join(self.substories)
     params["developerMode"] = "true"
     params["startAutomatically"] = "true"
-    official_test_url = helper.update_url_query(self.URL, params)
+    official_test_url = url_helper.update_url_query(self.URL, params)
     logging.info("STORY PUBLIC TEST URL: %s", official_test_url)
 
 

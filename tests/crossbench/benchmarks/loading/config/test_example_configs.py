@@ -7,7 +7,7 @@ from __future__ import annotations
 import hjson
 
 from crossbench.benchmarks.loading.config.pages import PagesConfig
-from crossbench.helper import ChangeCWD
+from crossbench.helper.cwd import ChangeCWD
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 

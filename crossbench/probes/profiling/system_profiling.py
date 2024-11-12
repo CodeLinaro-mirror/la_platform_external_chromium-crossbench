@@ -19,13 +19,14 @@ from functools import cached_property
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
                     Sequence, Tuple, Union, cast)
 
-from crossbench import helper
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.compat import StrEnumWithHelp
+from crossbench.helper import fs_helper, proc_helper
+from crossbench.helper.spinner import Spinner
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt.base import ListCmdArgs
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -544,7 +545,7 @@ class ProfilingProbe(Probe):
       return
     largest_perf_file = perf_files[-1]
     logging.critical("    %s : %s", largest_perf_file,
-                     helper.get_file_size(largest_perf_file))
+                     fs_helper.get_file_size(largest_perf_file))
     if len(perf_files) <= 1:
       return
     glob = "*.perf.data"
@@ -604,8 +605,9 @@ class MacOSProfilingContext(ProfilingContext):
   def stop_process(self) -> None:
     if self._process:
       logging.info("  Waiting for xctrace profiles (slow)...")
-      with helper.Spinner():
-        helper.wait_and_kill(self._process, signal=signal.SIGINT, timeout=60)
+      with Spinner():
+        proc_helper.wait_and_kill(
+            self._process, signal=signal.SIGINT, timeout=60)
       self._process = None
     atexit.unregister(self.stop_process)
 
@@ -663,7 +665,7 @@ class LinuxProfilingContext(ProfilingContext):
 
   def stop_process(self) -> None:
     if self._perf_process:
-      helper.wait_and_kill(self._perf_process)
+      proc_helper.wait_and_kill(self._perf_process)
       self._perf_process = None
 
   def teardown(self) -> ProbeResult:
@@ -676,7 +678,7 @@ class LinuxProfilingContext(ProfilingContext):
                    "You might get partial profiles")
     time.sleep(2)
 
-    perf_files: List[pth.AnyPath] = helper.sort_by_file_size(
+    perf_files: List[pth.AnyPath] = fs_helper.sort_by_file_size(
         list(self.browser_platform.glob(self.result_path, PERF_DATA_PATTERN)),
         self.browser_platform)
     raw_perf_files = perf_files
@@ -703,7 +705,7 @@ class LinuxProfilingContext(ProfilingContext):
     with run.actions(
         f"Probe {self.probe.name}: "
         f"Injecting V8 symbols into {len(perf_files)} profiles",
-        verbose=True), helper.Spinner():
+        verbose=True), Spinner():
       # Filter out empty files
       perf_files = [
           file for file in perf_files
@@ -729,7 +731,7 @@ class LinuxProfilingContext(ProfilingContext):
     with run.actions(
         f"Probe {self.probe.name}: "
         f"exporting {len(perf_files)} profiles to pprof (slow)",
-        verbose=True), helper.Spinner():
+        verbose=True), Spinner():
       self.browser_platform.sh(
           "gcertstatus >&/dev/null || "
           "(echo 'Authenticating with gcert:'; gcert)",
@@ -815,7 +817,7 @@ def linux_perf_probe_pprof(
     perf_data_file: pth.AnyPath,
     run_details: str,
     platform: Optional[plt.Platform] = None) -> Optional[str]:
-  size = helper.get_file_size(perf_data_file)
+  size = fs_helper.get_file_size(perf_data_file)
   platform = platform or plt.PLATFORM
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
   url = ""
@@ -985,7 +987,7 @@ class AndroidProfilingContext(ProfilingContext):
 
   def stop_process(self) -> None:
     if self._simpleperf_process:
-      helper.wait_and_kill(
+      proc_helper.wait_and_kill(
           self._simpleperf_process, timeout=30, signal=signal.SIGINT)
       self._simpleperf_process = None
       self.browser.performance_mark("crossbench-probe-profiling-stop")

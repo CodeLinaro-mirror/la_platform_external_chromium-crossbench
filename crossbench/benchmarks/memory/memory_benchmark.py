@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
 import selenium.common.exceptions
 import urllib3.exceptions
 
-from crossbench import helper
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -21,6 +20,7 @@ from crossbench.benchmarks.base import (BenchmarkProbeMixin, StoryFilter,
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
@@ -276,7 +276,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     }
     if not args.random_per_page:
       url_params["randomperpage"] = "false"
-    url = helper.update_url_query(cls.URL, url_params)
+    url = url_helper.update_url_query(cls.URL, url_params)
     stories: Sequence[Page] = []
     page = LivePage("memory", url, dt.timedelta(seconds=2), tabs=args.tabs)
     stories = [page]
