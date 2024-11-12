@@ -81,6 +81,9 @@ class WprBase(abc.ABC):
         assert cert_file is not None
         assert inject_scripts is not None
 
+    if not wpr_root:
+      raise RuntimeError("Could not find wpr binary.")
+
     self._archive_path = self._validate_archive_path(archive_path)
     (self._http_port,
      self._https_port) = self._validate_ports(http_port, https_port)
