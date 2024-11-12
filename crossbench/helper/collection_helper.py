@@ -31,7 +31,8 @@ def group_by(
   group: a function that accepts a group_key and returns a group object that
     has an append() method.
   """
-  assert key, "No key function provided"
+  if not key:
+    raise ValueError("No key function provided")
   key_fn = key
   value_fn = value or (lambda item: item)
   group_fn: Callable[[KeyT], GroupT] = group or (lambda key: [])
