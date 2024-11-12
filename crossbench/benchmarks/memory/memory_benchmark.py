@@ -15,7 +15,7 @@ import urllib3.exceptions
 from crossbench import helper
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.base import (BenchmarkProbeMixin, StoryFilter,
                                         SubStoryBenchmark)
 from crossbench.benchmarks.loading.page.base import Page
@@ -330,7 +330,7 @@ class MemoryBenchmark(SubStoryBenchmark):
                stories: Sequence[Page],
                skippable_tab_count: int = 0,
                action_runner: Optional[ActionRunner] = None) -> None:
-    self._action_runner = action_runner or BasicActionRunner()
+    self._action_runner = action_runner or DefaultActionRunner()
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)

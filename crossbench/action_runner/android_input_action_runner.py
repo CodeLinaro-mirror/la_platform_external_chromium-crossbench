@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.base import InputSourceNotImplementedError
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
@@ -80,7 +80,7 @@ class ViewportInfo:
     return distance * self.actual_pixel_ratio
 
 
-class AndroidInputActionRunner(BasicActionRunner):
+class AndroidInputActionRunner(DefaultActionRunner):
 
   # Represents the position of the chrome main window relative to the entire
   # screen as reported by Android window manager.

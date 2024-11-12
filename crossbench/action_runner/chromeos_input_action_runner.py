@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import crossbench.path as pth
 from crossbench.action_runner.action import all as i_action
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
@@ -254,7 +254,7 @@ E: <time> 0000 0000 0
         "<y>", str(round(position.y))).replace("<time>", f"{time:.6f}")
 
 
-class ChromeOSInputActionRunner(BasicActionRunner):
+class ChromeOSInputActionRunner(DefaultActionRunner):
 
   def __init__(self):
     super().__init__()

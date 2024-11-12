@@ -5,16 +5,17 @@
 import pathlib
 from unittest import mock
 
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.secrets import Secret
 from crossbench.cli.config.secret_type import SecretType
+from crossbench.cli.config.secrets import Secret
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
+from tests.crossbench.action_runner.action_runner_test_case import \
+    ActionRunnerTestCase
 from tests.crossbench.mock_browser import MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
                                           LinuxMockPlatform)
@@ -62,7 +63,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
                                           Flags(), 1, self.root_dir, True, True)
     self.run = MockRun(self.runner, self.session, "run 1")
 
-    self.action_runner = BasicActionRunner()
+    self.action_runner = DefaultActionRunner()
     self.mock_args = mock.Mock()
 
   def expect_google_login(self):

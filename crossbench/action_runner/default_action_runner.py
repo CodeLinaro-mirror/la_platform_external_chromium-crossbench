@@ -16,14 +16,15 @@ from crossbench.action_runner.base import (ActionRunner,
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
-from crossbench.probes.screenshot import ScreenshotProbe, ScreenshotProbeContext
+from crossbench.probes.screenshot import (ScreenshotProbe,
+                                          ScreenshotProbeContext)
 
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
 
-class BasicActionRunner(ActionRunner):
+class DefaultActionRunner(ActionRunner):
   XPATH_SELECT_ELEMENT = """
       let element = document.evaluate(arguments[0], document).iterateNext();
   """

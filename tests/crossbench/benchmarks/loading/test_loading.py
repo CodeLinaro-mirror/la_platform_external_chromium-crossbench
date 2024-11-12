@@ -17,7 +17,7 @@ from unittest import mock
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.base import ActionRunner
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
@@ -51,7 +51,7 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
       separate: bool = True,
       playback: PlaybackController = PlaybackController.default(),
       tabs: TabController = TabController.default(),
-      action_runner: ActionRunner = BasicActionRunner(),
+      action_runner: ActionRunner = DefaultActionRunner(),
       about_blank_duration: dt.timedelta = dt.timedelta(),
       run_login: bool = True,
       run_setup: bool = True) -> LoadingPageFilter:
