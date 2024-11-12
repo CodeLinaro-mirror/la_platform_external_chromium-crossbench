@@ -53,7 +53,7 @@ class Secret(ConfigObject):
 
   @classmethod
   def config_parser(cls: Type[Secret]) -> ConfigParser[Secret]:
-    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument("type", type=SecretType, required=True)
     parser.add_argument(
         "username",

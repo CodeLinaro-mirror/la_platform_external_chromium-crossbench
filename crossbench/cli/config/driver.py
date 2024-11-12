@@ -152,7 +152,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[DriverConfig]:
-    parser = ConfigParser("DriverConfig parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument(
         "type",
         type=BrowserDriverType.parse,

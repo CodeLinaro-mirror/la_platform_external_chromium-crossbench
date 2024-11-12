@@ -88,7 +88,7 @@ class PageConfig(ConfigObject):
 
   @classmethod
   def config_parser(cls: Type[PageConfig]) -> ConfigParser[PageConfig]:
-    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument("label", type=ObjectParser.non_empty_str)
     parser.add_argument("playback", type=PlaybackController.parse)
     parser.add_argument("secrets", type=SecretsConfig, default=SecretsConfig())

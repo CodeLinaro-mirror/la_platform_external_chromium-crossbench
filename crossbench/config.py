@@ -559,13 +559,16 @@ ConfigResultObjectT = TypeVar("ConfigResultObjectT", bound="object")
 class ConfigParser(Generic[ConfigResultObjectT]):
 
   def __init__(self,
-               title: str,
                cls: Type[ConfigResultObjectT],
+               title: Optional[str] = None,
                default: Optional[ConfigResultObjectT] = None,
                allow_unused_config_data: bool = True) -> None:
-    self.title = title
-    assert title, "No title provided"
     self._cls = cls
+    if title is None:
+      title = f"{cls.__name__} parser"
+    if not title:
+      raise ValueError("Got empty title.")
+    self.title = title
     if default:
       if not isinstance(default, cls):
         raise TypeError(

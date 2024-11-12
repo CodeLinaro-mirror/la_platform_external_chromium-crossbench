@@ -54,7 +54,7 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   def config_parser(cls: Type[ActionBlock]) -> ConfigParser[ActionBlock]:
-    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument("label", type=cls._parse_block_label, default="default")
     parser.add_argument(
         "index", type=NumberParser.positive_zero_int, default=0, required=False)

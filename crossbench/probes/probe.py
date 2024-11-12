@@ -33,7 +33,7 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 class ProbeConfigParser(ConfigParser[ProbeT]):
 
   def __init__(self, probe_cls: Type[ProbeT]) -> None:
-    super().__init__("Probe", probe_cls, allow_unused_config_data=False)
+    super().__init__(probe_cls, allow_unused_config_data=False)
     self._probe_cls: Type[ProbeT] = probe_cls
 
   @property

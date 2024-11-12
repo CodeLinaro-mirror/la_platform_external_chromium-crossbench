@@ -25,7 +25,7 @@ class ActionTypeConfigParser(ConfigParser):
   config dict."""
 
   def __init__(self):
-    super().__init__("ActionType parser", ActionType)
+    super().__init__(ActionType)
     self.add_argument(
         "action",
         aliases=("type",),
@@ -65,7 +65,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
-    parser = ConfigParser(f"{cls.__name__} parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument(
         "index", type=NumberParser.positive_zero_int, required=False, default=0)
     parser.add_argument(

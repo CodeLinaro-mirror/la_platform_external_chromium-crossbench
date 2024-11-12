@@ -295,7 +295,7 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[BrowserConfig]:
-    parser = ConfigParser("BrowserConfig parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument(
         "browser",
         aliases=("path",),

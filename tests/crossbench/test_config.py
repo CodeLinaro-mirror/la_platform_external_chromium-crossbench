@@ -67,7 +67,7 @@ class CustomNestedConfigObject(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[CustomNestedConfigObject]:
-    parser = ConfigParser("CustomNestedConfigObject parser", cls)
+    parser = ConfigParser(cls)
     parser.add_argument("name", type=str, required=True)
     return parser
 
@@ -154,22 +154,21 @@ class CustomConfigObject(ConfigObject):
 
   @classmethod
   def base_config_parser(cls) -> ConfigParser[CustomConfigObject]:
-    return ConfigParser("CustomConfigObject parser", cls)
+    return ConfigParser(cls)
 
 
 class CustomConfigObjectStrict(CustomConfigObject):
 
   @classmethod
   def base_config_parser(cls) -> ConfigParser[CustomConfigObjectStrict]:
-    return ConfigParser(
-        "CustomConfigObjectStrict parser", cls, allow_unused_config_data=False)
+    return ConfigParser(cls, allow_unused_config_data=False)
 
 
 class CustomConfigObjectWithDefault(CustomConfigObject):
 
   @classmethod
   def base_config_parser(cls) -> ConfigParser[CustomConfigObjectWithDefault]:
-    return ConfigParser("CustomConfigObject parser", cls, default=cls.default())
+    return ConfigParser(cls, default=cls.default())
 
 
 class CustomConfigObjectToArgumentValue(CustomConfigObject):
@@ -182,8 +181,7 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.parser = ConfigParser("ConfigParserTestCase parser",
-                               CustomConfigObject)
+    self.parser = ConfigParser(CustomConfigObject)
 
   def test_invalid_type(self):
     with self.assertRaises(TypeError):
@@ -257,16 +255,25 @@ class ConfigParserTestCase(unittest.TestCase):
       self.parser.parse({})
     self.assertIn("no value", str(cm.exception).lower())
     parser = ConfigParser(
-        "ConfigParserTestCase parser",
-        CustomConfigObject,
-        default=CustomConfigObject.default())
+        CustomConfigObject, default=CustomConfigObject.default())
     config = parser.parse({})
     self.assertEqual(config, CustomConfigObject.default())
+
+  def test_empty_title(self):
+    with self.assertRaisesRegex(ValueError, "title"):
+      ConfigParser(CustomConfigObject, "")
+
+  def test_title(self):
+    parser = ConfigParser(CustomConfigObject, None)
+    self.assertEqual(parser.title, "CustomConfigObject parser")
+    parser = ConfigParser(CustomConfigObject)
+    self.assertEqual(parser.title, "CustomConfigObject parser")
+    parser = ConfigParser(CustomConfigObject, "ParsyMcParser")
+    self.assertEqual(parser.title, "ParsyMcParser")
 
   def test_invalid_default(self):
     with self.assertRaises(TypeError) as cm:
       ConfigParser(  # pytype: disable=wrong-arg-types
-          "ConfigParserTestCase parser",
           CustomConfigObject,
           default="something else")
     self.assertIn("instance", str(cm.exception))
@@ -275,7 +282,7 @@ class ConfigParserTestCase(unittest.TestCase):
     result = CustomConfigObjectToArgumentValue.config_parser().parse(
         {"name": "custom-name"})
     self.assertIsInstance(result, CustomConfigObjectToArgumentValue)
-    parser = ConfigParser("TestParser", dict)
+    parser = ConfigParser(dict)
     parser.add_argument("data", type=CustomConfigObjectToArgumentValue)
 
     result = parser.parse({})

@@ -97,8 +97,7 @@ class NetworkSpeedConfig(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[NetworkSpeedConfig]:
-    parser = ConfigParser(
-        "NetworkSpeedConfig parser", cls, default=NetworkSpeedConfig.default())
+    parser = ConfigParser(cls, default=NetworkSpeedConfig.default())
     parser.add_argument(
         "ts_proxy", type=PathParser.existing_file_path, required=False)
     # See tsproxy.py --help
@@ -149,8 +148,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[NetworkConfig]:
-    parser = ConfigParser(
-        "NetworkConfig parser", cls, default=NetworkConfig.default())
+    parser = ConfigParser(cls, default=NetworkConfig.default())
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
     parser.add_argument(
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())

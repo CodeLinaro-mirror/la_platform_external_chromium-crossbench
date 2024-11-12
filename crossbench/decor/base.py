@@ -21,8 +21,7 @@ DecoratorTargetT = TypeVar("DecoratorTargetT")
 class DecoratorConfigParser(ConfigParser[DecoratorT]):
 
   def __init__(self, probe_cls: Type[DecoratorT]) -> None:
-    super().__init__(
-        probe_cls.__name__, probe_cls, allow_unused_config_data=False)
+    super().__init__(probe_cls, allow_unused_config_data=False)
     self._probe_cls = probe_cls
 
 
