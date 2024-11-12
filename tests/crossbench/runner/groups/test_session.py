@@ -276,7 +276,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     session.append(run)
     session.set_ready()
     did_run = False
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "Network startup error"):
       with mock.patch.object(
           session.network,
           "open",
@@ -284,7 +284,6 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
         with session.open():
           did_run = True
     self.assertFalse(did_run)
-    self.assertIn("Network startup error", str(cm.exception))
     self._validate_open_network_error(session, run)
 
   def _validate_open_network_error(self, session, run):

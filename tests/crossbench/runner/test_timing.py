@@ -54,20 +54,14 @@ class TimingTestCase(unittest.TestCase):
     self.assertEqual(t.units(dt.timedelta(seconds=1)), 10)
 
   def test_invalid_params(self):
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "Timing.cool_down_time"):
       _ = Timing(cool_down_time=dt.timedelta(seconds=-1))
-    self.assertIn("Timing.cool_down_time", str(cm.exception))
-
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "Timing.unit"):
       _ = Timing(unit=dt.timedelta(seconds=-1))
-    self.assertIn("Timing.unit", str(cm.exception))
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "Timing.unit"):
       _ = Timing(unit=dt.timedelta())
-    self.assertIn("Timing.unit", str(cm.exception))
-
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "Timing.run_timeout"):
       _ = Timing(run_timeout=dt.timedelta(seconds=-1))
-    self.assertIn("Timing.run_timeout", str(cm.exception))
 
   def test_to_units(self):
     t = Timing()
