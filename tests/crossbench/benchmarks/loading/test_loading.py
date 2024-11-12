@@ -12,7 +12,7 @@ import json
 import pathlib
 import re
 import unittest
-from typing import List, Sequence, cast
+from typing import List, Sequence
 from unittest import mock
 
 from crossbench.action_runner.action.action_type import ActionType
@@ -35,11 +35,11 @@ from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase
-from tests.crossbench.benchmarks import helper
+from tests.crossbench.benchmarks.helper import SubStoryTestCase
 from tests.crossbench.mock_browser import JsInvocation
 
 
-class TestPageLoadBenchmark(helper.SubStoryTestCase):
+class TestPageLoadBenchmark(SubStoryTestCase):
 
   @property
   def benchmark_cls(self):
@@ -62,8 +62,9 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
         action_runner=action_runner,
         run_login=run_login,
         run_setup=run_setup)
-    return cast(LoadingPageFilter,
-                super().story_filter(patterns, args=args, separate=separate))
+    story_filter = super().story_filter(patterns, args=args, separate=separate)
+    assert isinstance(story_filter, LoadingPageFilter)
+    return story_filter
 
   def test_page_list(self):
     self.assertTrue(PAGE_LIST)
@@ -708,6 +709,9 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       })
     self.assertIn("login", str(cm.exception))
 
+
+# Don't expose abstract base test cases.
+del SubStoryTestCase, BaseCliTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
