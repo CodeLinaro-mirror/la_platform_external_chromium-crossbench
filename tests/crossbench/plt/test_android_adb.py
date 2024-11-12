@@ -97,8 +97,8 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   def test_mktemp(self):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
     self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
-    self.expect_adb("shell", "mktemp", "-d",
-                    "/data/local/tmp/custom_prefix.XXXXXXXXXXX")
+    self.expect_adb("shell",
+                    "mktemp -d  /data/local/tmp/custom_prefix.XXXXXXXXXXX")
     self.platform.mkdtemp("custom_prefix")
 
   @unittest.skip(
@@ -187,35 +187,31 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.adb.has_root())
 
   def test_version(self):
-    self.expect_adb(
-        "shell", "getprop", "ro.build.version.release", result="999")
+    self.expect_adb("shell", "getprop ro.build.version.release", result="999")
     self.assertEqual(self.platform.version, "999")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.version, "999")
 
   def test_device(self):
-    self.expect_adb("shell", "getprop", "ro.product.model", result="Pixel 999")
+    self.expect_adb("shell", "getprop ro.product.model", result="Pixel 999")
     self.assertEqual(self.platform.device, "Pixel 999")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.device, "Pixel 999")
 
   def test_cpu(self):
     self.expect_adb(
-        "shell", "getprop", "dalvik.vm.isa.arm.variant", result="cortex-a999")
-    self.expect_adb("shell", "getprop", "ro.board.platform", result="msmnile")
+        "shell", "getprop dalvik.vm.isa.arm.variant", result="cortex-a999")
+    self.expect_adb("shell", "getprop ro.board.platform", result="msmnile")
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile")
 
   def test_cpu_detailed(self):
     self.expect_adb(
-        "shell", "getprop", "dalvik.vm.isa.arm.variant", result="cortex-a999")
-    self.expect_adb("shell", "getprop", "ro.board.platform", result="msmnile")
+        "shell", "getprop dalvik.vm.isa.arm.variant", result="cortex-a999")
+    self.expect_adb("shell", "getprop ro.board.platform", result="msmnile")
     self.expect_adb(
-        "shell",
-        "cat",
-        self.platform.path("/sys/devices/system/cpu/possible"),
-        result="0-998")
+        "shell", "cat /sys/devices/system/cpu/possible", result="0-998")
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 999 cores")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 999 cores")
@@ -224,22 +220,19 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertIs(self.platform.adb, self.adb)
 
   def test_machine_unknown(self):
-    self.expect_adb(
-        "shell", "getprop", "ro.product.cpu.abi", result="arm37-XXX")
+    self.expect_adb("shell", "getprop ro.product.cpu.abi", result="arm37-XXX")
     with self.assertRaises(ValueError) as cm:
       self.assertEqual(self.platform.machine, MachineArch.ARM_64)
     self.assertIn("arm37-XXX", str(cm.exception))
 
   def test_machine_arm64(self):
-    self.expect_adb(
-        "shell", "getprop", "ro.product.cpu.abi", result="arm64-v8a")
+    self.expect_adb("shell", "getprop ro.product.cpu.abi", result="arm64-v8a")
     self.assertEqual(self.platform.machine, MachineArch.ARM_64)
     # Subsequent calls are cached.
     self.assertEqual(self.platform.machine, MachineArch.ARM_64)
 
   def test_machine_arm32(self):
-    self.expect_adb(
-        "shell", "getprop", "ro.product.cpu.abi", result="armeabi-v7a")
+    self.expect_adb("shell", "getprop ro.product.cpu.abi", result="armeabi-v7a")
     self.assertEqual(self.platform.machine, MachineArch.ARM_32)
     # Subsequent calls are cached.
     self.assertEqual(self.platform.machine, MachineArch.ARM_32)
@@ -254,10 +247,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertRaises(ValueError) as cm:
       self.expect_adb(
           "shell",
-          "cmd",
-          "package",
-          "list",
-          "packages",
+          "cmd package list packages",
           result=("package:com.google.android.wifi.resources\n"
                   "package:com.google.android.GoogleCamera"))
       self.platform.app_path_to_package(pathlib.Path("com.custom.app"))
@@ -268,10 +258,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     path = pathlib.Path("com.custom.app")
     self.expect_adb(
         "shell",
-        "cmd",
-        "package",
-        "list",
-        "packages",
+        "cmd package list packages",
         result=("package:com.google.android.wifi.resources\n"
                 "package:com.custom.app"))
     self.assertEqual(self.platform.app_path_to_package(path), "com.custom.app")
@@ -279,31 +266,17 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_app_version(self):
     path = pathlib.Path("com.custom.app")
     self.expect_adb(
-        "shell",
-        "cmd",
-        "package",
-        "list",
-        "packages",
-        result="package:com.custom.app")
+        "shell", "cmd package list packages", result="package:com.custom.app")
     self.expect_adb(
-        "shell",
-        "dumpsys",
-        "package",
-        "com.custom.app",
-        result="versionName=9.999")
+        "shell", "dumpsys package com.custom.app", result="versionName=9.999")
     self.assertEqual(self.platform.app_version(path), "9.999")
 
-  def test_app_version_unkown(self):
+  def test_app_version_unknown(self):
     path = pathlib.Path("com.custom.app")
     self.expect_adb(
-        "shell",
-        "cmd",
-        "package",
-        "list",
-        "packages",
-        result="package:com.custom.app")
+        "shell", "cmd package list packages", result="package:com.custom.app")
     self.expect_adb(
-        "shell", "dumpsys", "package", "com.custom.app", result="something")
+        "shell", "dumpsys package com.custom.app", result="something")
     with self.assertRaises(ValueError) as cm:
       self.platform.app_version(path)
     self.assertIn("something", str(cm.exception))
@@ -340,9 +313,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_search_binary(self):
     ls_path = self.platform.path("/system/bin/ls")
-    self.expect_adb(
-        "shell", "which", self.platform.path("ls"), result=str(ls_path))
-    self.expect_adb("shell", "[", "-e", ls_path, "]", result="")
+    self.expect_adb("shell", "which ls", result=str(ls_path))
+    self.expect_adb("shell", f"'[' -e {ls_path} ']'", result="")
     path = self.platform.search_binary("ls")
     self.assertEqual(str(path), str(ls_path))
 
@@ -351,27 +323,23 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     ls_path = self.platform.path("ls")
     override_path = self.platform.path("/root/sbin/ls")
     # override_binary checks if the result binary exists.
-    self.expect_adb("shell", "which", override_path, result=str(override_path))
-    self.expect_adb("shell", "[", "-e", override_path, "]", result="")
+    self.expect_adb(
+        "shell", f"which {override_path}", result=str(override_path))
+    self.expect_adb("shell", f"'[' -e {override_path} ']'", result="")
     with self.platform.override_binary(ls_path, override_path):
       path = self.platform.search_binary("ls")
       self.assertEqual(path, override_path)
 
   def test_search_binary_app_package_non(self):
-    self.expect_adb(
-        "shell", "which", self.platform.path("com.google.chrome"), result="")
-    self.expect_adb("shell", "cmd", "package", "list", "packages", result="")
+    self.expect_adb("shell", "which com.google.chrome", result="")
+    self.expect_adb("shell", "cmd package list packages", result="")
     path = self.platform.search_binary("com.google.chrome")
     self.assertIsNone(path)
 
-    self.expect_adb(
-        "shell", "which", self.platform.path("com.google.chrome"), result="")
+    self.expect_adb("shell", "which com.google.chrome", result="")
     self.expect_adb(
         "shell",
-        "cmd",
-        "package",
-        "list",
-        "packages",
+        "cmd package list packages",
         result="package:com.google.chrome")
     path = self.platform.search_binary("com.google.chrome")
     self.assertEqual(path, pathlib.PurePosixPath("com.google.chrome"))
@@ -379,14 +347,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_search_binary_app_package_lookup_override(self):
     chrome_package = self.platform.path("com.google.chrome")
     chrome_dev_package = self.platform.path("com.chrome.dev")
-    self.expect_adb("shell", "which", chrome_dev_package, result="")
+    self.expect_adb("shell", f"which {chrome_dev_package}", result="")
     self.expect_adb(
-        "shell",
-        "cmd",
-        "package",
-        "list",
-        "packages",
-        result="package:com.chrome.dev")
+        "shell", "cmd package list packages", result="package:com.chrome.dev")
     with self.platform.override_binary(chrome_package, chrome_dev_package):
       path = self.platform.search_binary(chrome_package)
       self.assertEqual(chrome_dev_package, path)
@@ -394,8 +357,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_override_binary_non_existing_package(self):
     chrome_package = self.platform.path("com.google.chrome")
     chrome_dev_package = self.platform.path("com.chrome.dev")
-    self.expect_adb("shell", "which", chrome_dev_package, result="")
-    self.expect_adb("shell", "cmd", "package", "list", "packages", result="")
+    self.expect_adb("shell", f"which {chrome_dev_package}", result="")
+    self.expect_adb("shell", "cmd package list packages", result="")
     with self.assertRaises(ValueError) as cm:
       with self.platform.override_binary(chrome_package, chrome_dev_package):
         pass
@@ -408,15 +371,14 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       self.platform.home()
 
   def test_get_main_display_brightness(self):
-    self.expect_adb(
-        "shell", "dumpsys", "display", result=DUMPSYS_DISPLAY_OUTPUT)
+    self.expect_adb("shell", "dumpsys display", result=DUMPSYS_DISPLAY_OUTPUT)
     brightness = self.platform.get_main_display_brightness()
     self.assertEqual(brightness, 16)
 
   def test_iterdir(self):
-    self.expect_adb("shell", "[", "-d", "parent_dir/child_dir", "]")
+    self.expect_adb("shell", "'[' -d parent_dir/child_dir ']'")
     self.expect_adb(
-        "shell", "ls", "-1", "parent_dir/child_dir", result="file1\nfile2\n")
+        "shell", "ls -1 parent_dir/child_dir", result="file1\nfile2\n")
 
     self.assertSetEqual(
         set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
@@ -424,6 +386,38 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
             pth.AnyPosixPath("parent_dir/child_dir/file1"),
             pth.AnyPosixPath("parent_dir/child_dir/file2")
         })
+
+  def test_cat_file(self):
+    self.expect_adb("shell", "cat path/to/a/file")
+    self.platform.cat(self.platform.path("path/to/a/file"))
+    self.expect_adb("shell", "cat 'path/with a space/to/a/file'")
+    self.platform.cat(self.platform.path("path/with a space/to/a/file"))
+
+  def test_sh_shell_invalid(self):
+    with self.assertRaisesRegex(ValueError, "shell=True"):
+      self.platform.sh_stdout("ls", "folder with space", shell=True)
+
+  def test_sh_shell(self):
+    self.expect_adb("shell", "ls sdcard", result="FILE1\nFILE2\n")
+    self.assertEqual(self.platform.sh_stdout("ls", "sdcard"), "FILE1\nFILE2\n")
+
+    self.expect_adb("shell", "ls 'folder with space'", result="FOLDER\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls", "folder with space"), "FOLDER\n")
+
+    self.expect_adb("shell", "'ls foo && ls bar'", result="FILE1\nFILE2\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls foo && ls bar"), "FILE1\nFILE2\n")
+
+    self.expect_adb("shell", "'ls foo && ls bar'", result="FILE1\nFILE2\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls foo && ls bar", shell=True),
+        "FILE1\nFILE2\n")
+
+    self.expect_adb("shell", "ls foo '&&' ls bar", result="FILE1\nFILE2\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
+        "FILE1\nFILE2\n")
 
 
 if __name__ == "__main__":

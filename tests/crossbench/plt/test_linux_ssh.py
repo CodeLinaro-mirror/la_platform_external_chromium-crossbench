@@ -27,6 +27,15 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         ssh_port=self.SSH_PORT,
         ssh_user=self.SSH_USER)
 
+  def _expect_sh_ssh(self, *args, result=""):
+    self.mock_platform.expect_sh(
+        "ssh",
+        "-p",
+        str(self.SSH_PORT),
+        f"{self.SSH_USER}@{self.HOST}",
+        *args,
+        result=result)
+
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
 
@@ -49,7 +58,6 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     # Subsequent calls are cached.
     self.assertEqual(self.platform.version, "999")
 
-
   def test_iterdir(self):
     self._expect_sh_ssh("'[' -d parent_dir/child_dir ']'")
     self._expect_sh_ssh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
@@ -61,15 +69,37 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
             pth.AnyPosixPath("parent_dir/child_dir/file2")
         })
 
-  def _expect_sh_ssh(self, *args, result=""):
-    self.mock_platform.expect_sh(
-        "ssh",
-        "-p",
-        str(self.SSH_PORT),
-        f"{self.SSH_USER}@{self.HOST}",
-        *args,
-        result=result)
+  def test_cat_file(self):
+    self._expect_sh_ssh("cat path/to/a/file")
+    self.platform.cat(self.platform.path("path/to/a/file"))
+    self._expect_sh_ssh("cat 'path/with a space/to/a/file'")
+    self.platform.cat(self.platform.path("path/with a space/to/a/file"))
 
+  def test_sh_shell_invalid(self):
+    with self.assertRaisesRegex(ValueError, "shell=True"):
+      self.platform.sh_stdout("ls", "folder with space", shell=True)
+
+  def test_sh_shell(self):
+    self._expect_sh_ssh("ls sdcard", result="FILE1\nFILE2\n")
+    self.assertEqual(self.platform.sh_stdout("ls", "sdcard"), "FILE1\nFILE2\n")
+
+    self._expect_sh_ssh("ls 'folder with space'", result="FOLDER\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls", "folder with space"), "FOLDER\n")
+
+    self._expect_sh_ssh("'ls foo && ls bar'", result="FILE1\nFILE2\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls foo && ls bar"), "FILE1\nFILE2\n")
+
+    self._expect_sh_ssh("'ls foo && ls bar'", result="FILE1\nFILE2\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls foo && ls bar", shell=True),
+        "FILE1\nFILE2\n")
+
+    self._expect_sh_ssh("ls foo '&&' ls bar", result="FILE1\nFILE2\n")
+    self.assertEqual(
+        self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
+        "FILE1\nFILE2\n")
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

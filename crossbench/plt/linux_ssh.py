@@ -51,14 +51,12 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def ssh_port(self) -> int:
     return self._ssh_port
 
-  def _build_ssh_cmd(self, *args: CmdArg, shell=False) -> ListCmdArgs:
+  def _build_ssh_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
+    self._validate_shell_args(shell, args)
     ssh_cmd: ListCmdArgs = [
         "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"
     ]
-    if shell:
-      ssh_cmd.append(*args)
-    else:
-      ssh_cmd.append(shlex.join(map(str, args)))
+    ssh_cmd.append(shlex.join(map(str, args)))
     return ssh_cmd
 
   def sh_stdout_bytes(self,
@@ -70,7 +68,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
                       check: bool = True) -> bytes:
     ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.sh_stdout_bytes(
-        *ssh_cmd, quiet=quiet, stdin=stdin, env=env, check=check)
+        *ssh_cmd, shell=False, quiet=quiet, stdin=stdin, env=env, check=check)
 
   def sh(self,
          *args: CmdArg,
@@ -85,6 +83,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.sh(
         *ssh_cmd,
+        shell=False,
         capture_output=capture_output,
         stdout=stdout,
         stderr=stderr,
@@ -105,8 +104,8 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.popen(
         *ssh_cmd,
+        shell=False,
         bufsize=bufsize,
-        shell=shell,
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
@@ -138,7 +137,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def pull(self, from_path: AnyPath, to_path: LocalPath) -> LocalPath:
     scp_cmd: CmdArgs = [
         "scp", "-P", f"{self._ssh_port}",
-        f"{self._ssh_user}@{self._host}:{from_path}", f"{to_path}"
+        f"{self._ssh_user}@{self._host}:{from_path}", to_path
     ]
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
