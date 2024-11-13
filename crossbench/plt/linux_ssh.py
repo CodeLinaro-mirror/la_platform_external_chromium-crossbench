@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 
 import psutil
 
+from crossbench.helper import wait
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.linux import RemoteLinuxPlatform
 from crossbench.plt.ssh import SshPlatformMixin
@@ -152,9 +153,6 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return to_path
 
   def port_forward(self, local_port: int, remote_port: int) -> int:
-    # TODO: importing this at the toplevel introduces a circular dependency
-    from crossbench.helper import wait  # pylint: disable=import-outside-toplevel
-
     if not local_port:
       local_port = self.host_platform.get_free_port()
     self._port_forward_popen_dict[local_port] = self.host_platform.popen(
@@ -175,9 +173,6 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self._port_forward_popen_dict.pop(local_port).terminate()
 
   def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
-    # TODO: importing this at the toplevel introduces a circular dependency
-    from crossbench.helper import wait  # pylint: disable=import-outside-toplevel
-
     if not local_port:
       local_port = self.host_platform.get_free_port()
     self._port_forward_popen_dict[remote_port] = self.host_platform.popen(
