@@ -1,0 +1,47 @@
+# Copyright 2024 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from crossbench.probes.internal.base import InternalProbe
+from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.results import EmptyProbeResult, ProbeResult
+
+if TYPE_CHECKING:
+  from crossbench.runner.run import Run
+
+
+class BrowserDriverLogProbe(InternalProbe):
+  """
+  Runner-internal: Collects the driver logs
+  """
+  NAME = "browser.driver.log"
+
+  def get_context(self, run: Run) -> BrowserDriverLogProbeContext:
+    return BrowserDriverLogProbeContext(self, run)
+
+
+class BrowserDriverLogProbeContext(ProbeContext[BrowserDriverLogProbe]):
+
+  def setup(self) -> None:
+    pass
+
+  def start(self) -> None:
+    pass
+
+  def stop(self) -> None:
+    pass
+
+  def teardown(self) -> ProbeResult:
+    # TODO: support remote driver log
+    driver_log_file = self.browser.driver_log_file
+    if not driver_log_file:
+      return EmptyProbeResult()
+    # safaridriver writes the log to non-configurable system-folder from which
+    # we need to copy it out.
+    if driver_log_file != self.local_result_path:
+      self.host_platform.copy_file(driver_log_file, self.local_result_path)
+    return ProbeResult(file=(self.local_result_path,))

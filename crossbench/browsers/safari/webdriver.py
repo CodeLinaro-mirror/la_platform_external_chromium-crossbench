@@ -22,7 +22,7 @@ from crossbench.helper.wait import WaitRange
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
-  from crossbench.path import AnyPath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -51,6 +51,9 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     assert self.platform.is_local, "Remote platform is not supported yet"
     return self.host_platform.local_path(
         find_safaridriver(self.path, self.platform))
+
+  def _setup_driver_log_file(self) -> LocalPath:
+    raise NotImplementedError("Cannot use custom driver log path for Safari")
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: AnyPath) -> webdriver.Remote:
@@ -83,8 +86,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         driver.session_id)
     all_logs = list(self.platform.glob(logs, "safaridriver*"))
     if all_logs:
-      self.log_file = all_logs[0]
-      assert self.platform.is_file(self.log_file)
+      self._driver_log_file = all_logs[0]
+      assert self.platform.is_file(self._driver_log_file)
     return driver
 
   # TODO(cbruni): implement iOS platform

@@ -62,8 +62,9 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     service_args: List[str] = []
     log_path: Optional[str] = None
     if self._settings.driver_logging:
+      # TODO: Separate browser from driver logging
       service_args += ["--log", "debug"]
-      log_path = os.fspath(self.driver_log_file)
+      log_path = os.fspath(self._setup_driver_log_file())
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(

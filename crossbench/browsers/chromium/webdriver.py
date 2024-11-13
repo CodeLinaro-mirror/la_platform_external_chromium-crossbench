@@ -111,7 +111,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     log_path: Optional[str] = None
     if self._settings.driver_logging:
       service_args += ["--verbose"]
-      log_path = os.fspath(self.driver_log_file)
+      log_path = os.fspath(self._setup_driver_log_file())
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),

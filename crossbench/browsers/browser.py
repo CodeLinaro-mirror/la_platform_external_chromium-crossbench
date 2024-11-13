@@ -114,6 +114,10 @@ class Browser(abc.ABC):
     self._unique_name = pth.safe_filename(name).lower()
 
   @property
+  def driver_logging(self) -> bool:
+    return self._settings.driver_logging
+
+  @property
   def network(self) -> Network:
     return self._settings.network
 
@@ -201,6 +205,10 @@ class Browser(abc.ABC):
   def stdout_log_file(self) -> pth.AnyPath:
     assert self.log_file
     return self.log_file.with_suffix(".stdout.log")
+
+  @property
+  def driver_log_file(self) -> Optional[pth.LocalPath]:
+    return None
 
   def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     path = self.platform.absolute(path)

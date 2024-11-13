@@ -19,6 +19,7 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.probes.internal.browser.driver_log import BrowserDriverLogProbe
 from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
@@ -61,16 +62,15 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                settings: Optional[Settings] = None):
     super().__init__(label, path, settings)
     self._driver_path = self._settings.driver_path
+    self._driver_log_file: Optional[LocalPath] = None
 
   @property
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER
 
   @property
-  def driver_log_file(self) -> LocalPath:
-    log_file = self.log_file
-    assert log_file
-    return log_file.with_suffix(".driver.log")
+  def driver_log_file(self) -> Optional[LocalPath]:
+    return self._driver_log_file
 
   def validate_binary(self) -> None:
     super().validate_binary()
@@ -146,6 +146,15 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       timeouts.page_load = timing.timeout_timedelta(page_load).total_seconds()
     self._private_driver.timeouts = timeouts
 
+  def _setup_driver_log_file(self) -> LocalPath:
+    log_file = self.log_file
+    assert log_file, "Missing browser log file"
+    self._driver_log_file = log_file.with_suffix(".driver.log")
+    assert self._driver_log_file.name != BrowserDriverLogProbe.NAME, (
+        f"Expected driver log file name {BrowserDriverLogProbe.NAME}, "
+        f"but got: {self._driver_log_file}")
+    return self._driver_log_file
+
   def _setup_window(self) -> None:
     # Force main window to foreground.
     self._private_driver.switch_to.window(
@@ -169,7 +178,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def details_json(self) -> JsonDict:
     details: JsonDict = super().details_json()
     log = cast(JsonDict, details["log"])
-    if self.log_file:
+    if self.driver_log_file:
       log["driver"] = os.fspath(self.driver_log_file)
     return details
 

@@ -13,6 +13,7 @@ from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
+from crossbench.probes.internal.browser.driver_log import BrowserDriverLogProbe
 from crossbench.probes.internal.durations import DurationsProbe
 from crossbench.probes.internal.errors import ErrorsProbe
 from crossbench.probes.internal.log import LogProbe
@@ -70,7 +71,7 @@ DEFAULT_INTERNAL_PROBES: InternalProbeTuple = (
     NON_CONFIGURABLE_INTERNAL_PROBES + CONFIGURABLE_INTERNAL_PROBES)
 
 # Internal probes that are configurable and only optionally installed.
-OPTIONAL_INTERNAL_PROBES: InternalProbeTuple = tuple()
+OPTIONAL_INTERNAL_PROBES: InternalProbeTuple = (BrowserDriverLogProbe,)
 
 INTERNAL_PROBES: InternalProbeTuple = (
     DEFAULT_INTERNAL_PROBES + OPTIONAL_INTERNAL_PROBES)

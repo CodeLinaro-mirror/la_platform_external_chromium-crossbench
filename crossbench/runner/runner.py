@@ -286,6 +286,13 @@ class Runner:
         threshold=self._cool_down_threshold)
     self._attach_default_probe(thermal_monitor_probe)
 
+    # TODO: pass in the flag to the runner for a cleaner setup.
+    if any(browser.driver_logging for browser in self.browsers):
+      if not all(browser.driver_logging for browser in self.browsers):
+        raise RuntimeError("Driver logging must be enabled on all browsers")
+      driver_logging_probe = all_probes.BrowserDriverLogProbe()
+      self._attach_default_probe(driver_logging_probe)
+
   def _attach_default_probe(self, probe: Probe) -> None:
     self.attach_probe(probe)
     self._default_probes.append(probe)
