@@ -397,6 +397,12 @@ class HostEnvironment:
 
   def _check_running_binaries_on_platform(
       self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
+    # On Android, an app's process lifetime is not controlled by the user or
+    # the app itself. OS can start/terminate processes in the background, so
+    # we don't check for those.
+    if platform.is_android:
+      return
+
     browser_binaries: Dict[str, List[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
