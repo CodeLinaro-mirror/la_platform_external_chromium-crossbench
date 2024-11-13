@@ -131,7 +131,8 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertTrue(runner.exceptions.is_success)
     default_probes = list(runner.default_probes)
     self.assertListEqual(list(runner.probes), default_probes)
-    self.assertEqual(len(default_probes), len(all_probes.INTERNAL_PROBES))
+    self.assertEqual(
+        len(default_probes), len(all_probes.DEFAULT_INTERNAL_PROBES))
     self.assertEqual(len(runner.runs), 0)
     # no runs => is_success == false
     self.assertFalse(runner.is_success)
@@ -151,7 +152,8 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertTrue(runner.is_success)
     for run in runner.runs:
       self.assertTrue(run.is_success)
-      self.assertEqual(len(run.results), len(all_probes.INTERNAL_PROBES))
+      self.assertEqual(
+          len(run.results), len(all_probes.DEFAULT_INTERNAL_PROBES))
       for probe in runner.probes:
         self.assertIn(probe, run.results)
 

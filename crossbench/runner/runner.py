@@ -265,15 +265,7 @@ class Runner:
   def _attach_default_probes(self, probe_list: Iterable[Probe]) -> None:
     assert len(self._probes) == 0
     assert len(self._default_probes) == 0
-    for probe_cls in all_probes.INTERNAL_PROBES:
-      if probe_cls == all_probes.ThermalMonitorProbe:
-        thermal_monitor_probe = all_probes.ThermalMonitorProbe(
-            cool_down_time=self._timing.cool_down_time,
-            threshold=self._cool_down_threshold)
-        self._attach_default_probe(thermal_monitor_probe)
-      else:
-        default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
-        self._attach_default_probe(default_probe)
+    self._attach_internal_probes()
 
     for index, probe in enumerate(probe_list):
       assert (not isinstance(probe, TraceProcessorProbe) or index == 0), (
@@ -283,6 +275,16 @@ class Runner:
     # Results probe must be first in the list, and thus last to be processed
     # so all other probes have data by the time we write the results summary.
     assert isinstance(self._probes[0], ResultsSummaryProbe)
+
+  def _attach_internal_probes(self):
+    for probe_cls in all_probes.NON_CONFIGURABLE_INTERNAL_PROBES:
+      default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
+      self._attach_default_probe(default_probe)
+
+    thermal_monitor_probe = all_probes.ThermalMonitorProbe(
+        cool_down_time=self._timing.cool_down_time,
+        threshold=self._cool_down_threshold)
+    self._attach_default_probe(thermal_monitor_probe)
 
   def _attach_default_probe(self, probe: Probe) -> None:
     self.attach_probe(probe)

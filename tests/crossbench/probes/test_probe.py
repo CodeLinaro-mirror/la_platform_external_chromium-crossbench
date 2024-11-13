@@ -6,11 +6,15 @@ import inspect
 
 import crossbench.path as pth
 from crossbench.cli.config.probe import ProbeListConfig
-from crossbench.probes.all import GENERAL_PURPOSE_PROBES, INTERNAL_PROBES
+from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
+                                   DEFAULT_INTERNAL_PROBES,
+                                   GENERAL_PURPOSE_PROBES, INTERNAL_PROBES,
+                                   NON_CONFIGURABLE_INTERNAL_PROBES,
+                                   OPTIONAL_INTERNAL_PROBES)
 from crossbench.probes.debugger import DebuggerProbe
-from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
+from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
@@ -56,12 +60,8 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield from self.general_purpose_probe_instances()
 
   def internal_probe_instances(self):
-    for probe_cls in self.internal_probe_classes():
-      with self.subTest(probe_cls=probe_cls):
-        try:
-          yield probe_cls()
-        except GeneratorExit:
-          break
+    for probe_cls in INTERNAL_PROBES:
+      yield probe_cls()
 
   def general_purpose_probe_instances(self):
     yield BrowserProfilingProbe()
@@ -86,8 +86,8 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield WebPageReplayProbe(wpr_go_bin=self.create_file("wpr.go"))
 
   def probe_classes(self):
-    yield from self.internal_probe_classes()
-    yield from self.general_purpose_probe_classes()
+    yield from INTERNAL_PROBES
+    yield from GENERAL_PURPOSE_PROBES
 
   def all_probe_subclasses(self, probe_cls=Probe):
     for probe_sub_cls in probe_cls.__subclasses__():
@@ -96,30 +96,20 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
       if not inspect.isabstract(probe_sub_cls):
         yield probe_sub_cls
       yield from self.all_probe_subclasses(probe_sub_cls)
-
-  def internal_probe_classes(self):
-    for probe_cls in INTERNAL_PROBES:
-      with self.subTest(probe_cls=probe_cls):
-        try:
-          yield probe_cls
-        except GeneratorExit:
-          break
-
-  def general_purpose_probe_classes(self):
-    for probe_cls in GENERAL_PURPOSE_PROBES:
-      with self.subTest(probe_cls=probe_cls):
-        try:
-          yield probe_cls
-        except GeneratorExit:
-          break
+    yield from OPTIONAL_INTERNAL_PROBES
 
   def test_properties(self):
-    for probe_cls in self.internal_probe_classes():
-      self.assertFalse(probe_cls.IS_GENERAL_PURPOSE)
-    for probe_cls in self.general_purpose_probe_classes():
-      self.assertTrue(probe_cls.IS_GENERAL_PURPOSE)
+    for probe_cls in INTERNAL_PROBES:
+      with self.subTest(probe_cls=str(probe_cls)):
+        self.assertFalse(probe_cls.IS_GENERAL_PURPOSE)
+
+    for probe_cls in GENERAL_PURPOSE_PROBES:
+      with self.subTest(probe_cls=str(probe_cls)):
+        self.assertTrue(probe_cls.IS_GENERAL_PURPOSE)
+
     for probe_cls in self.probe_classes():
-      self.assertTrue(probe_cls.NAME)
+      with self.subTest(probe_cls=str(probe_cls)):
+        self.assertTrue(probe_cls.NAME)
 
   def test_default_lists(self):
     count = 0
@@ -127,8 +117,18 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
       count += 1
       if probe_cls.IS_GENERAL_PURPOSE:
         self.assertIn(probe_cls, GENERAL_PURPOSE_PROBES)
-    self.assertGreater(count,
-                       len(GENERAL_PURPOSE_PROBES) + len(INTERNAL_PROBES))
+    self.assertGreater(
+        count,
+        len(GENERAL_PURPOSE_PROBES) + len(DEFAULT_INTERNAL_PROBES))
+    self.assertFalse(
+        set(NON_CONFIGURABLE_INTERNAL_PROBES).intersection(
+            set(CONFIGURABLE_INTERNAL_PROBES)))
+    self.assertFalse(
+        set(NON_CONFIGURABLE_INTERNAL_PROBES).intersection(
+            set(OPTIONAL_INTERNAL_PROBES)))
+    self.assertFalse(
+        set(CONFIGURABLE_INTERNAL_PROBES).intersection(
+            set(OPTIONAL_INTERNAL_PROBES)))
 
   def test_help(self):
     for probe_cls in self.probe_classes():
@@ -158,13 +158,17 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
 
   def test_is_internal(self):
     for probe_instance in self.internal_probe_instances():
-      self.assertTrue(probe_instance.is_internal)
+      with self.subTest(probe_cls=str(type(probe_instance))):
+        self.assertTrue(probe_instance.is_internal)
+
     for probe_instance in self.general_purpose_probe_instances():
-      self.assertFalse(probe_instance.is_internal)
+      with self.subTest(probe_cls=str(type(probe_instance))):
+        self.assertFalse(probe_instance.is_internal)
 
   def test_is_attached(self):
     for probe_instance in self.general_purpose_probe_instances():
-      self.assertFalse(probe_instance.is_attached)
+      with self.subTest(probe_cls=str(type(probe_instance))):
+        self.assertFalse(probe_instance.is_attached)
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 
 if TYPE_CHECKING:
   from crossbench.probes.internal.base import InternalProbe
+  InternalProbeTuple = Tuple[Type[InternalProbe], ...]
 
 ABSTRACT_PROBES: Tuple[Type[Probe], ...] = (Probe, JsonResultProbe)
 
@@ -53,18 +54,32 @@ ABSTRACT_PROBES: Tuple[Type[Probe], ...] = (Probe, JsonResultProbe)
 # reads the values of the other internal probes and thus needs to be the first
 # to be initialized and the last to be teared down to write out a summary
 # result of all the other probes.
-INTERNAL_PROBES: Tuple[Type[InternalProbe], ...] = (
+
+# Internal probes that are always installed and are non configurable.
+NON_CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (
     ResultsSummaryProbe,
     DurationsProbe,
     ErrorsProbe,
     LogProbe,
     SystemDetailsProbe,
-    ThermalMonitorProbe,
 )
+# Internal probes that are configurable by command line flags but always
+# installed.
+CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (ThermalMonitorProbe,)
+DEFAULT_INTERNAL_PROBES: InternalProbeTuple = (
+    NON_CONFIGURABLE_INTERNAL_PROBES + CONFIGURABLE_INTERNAL_PROBES)
+
+# Internal probes that are configurable and only optionally installed.
+OPTIONAL_INTERNAL_PROBES: InternalProbeTuple = tuple()
+
+INTERNAL_PROBES: InternalProbeTuple = (
+    DEFAULT_INTERNAL_PROBES + OPTIONAL_INTERNAL_PROBES)
+
 # ResultsSummaryProbe should always be processed last, and thus must be the
 # first probe to be added to any browser.
-assert INTERNAL_PROBES[0] == ResultsSummaryProbe
-assert INTERNAL_PROBES[1] == DurationsProbe
+assert DEFAULT_INTERNAL_PROBES[0] == ResultsSummaryProbe
+assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
+
 
 # Probes that can be used on arbitrary stories and may be user configurable.
 GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
@@ -102,7 +117,7 @@ for probe_cls in GENERAL_PURPOSE_PROBES:
   assert not probe_cls.NAME.startswith(INTERNAL_NAME_PREFIX), (
       f"General purpose {probe_cls}.NAME cannot start with 'cb.'")
 
-for probe_cls in INTERNAL_PROBES:
+for probe_cls in DEFAULT_INTERNAL_PROBES:
   assert not probe_cls.IS_GENERAL_PURPOSE, (
       f"Internal Probe {probe_cls} should not marked for GENERAL_PURPOSE")
   assert probe_cls.NAME
