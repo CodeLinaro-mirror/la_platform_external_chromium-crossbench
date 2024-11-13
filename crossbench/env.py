@@ -254,9 +254,10 @@ class HostEnvironment:
 
   def validate_url(self,
                    url: str,
-                   platform: plt.Platform = plt.PLATFORM) -> bool:
+                   platform: Optional[plt.Platform] = None) -> bool:
     if self._validation_mode == ValidationMode.SKIP:
       return True
+    platform = platform or plt.PLATFORM
     result = urlparse(url)
     if result.scheme == "file":
       return platform.exists(result.path)

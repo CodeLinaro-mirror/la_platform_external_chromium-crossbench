@@ -16,11 +16,11 @@ from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
 
 from immutabledict import immutabledict
 
-from crossbench import plt
 from crossbench.network.base import Network
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -80,7 +80,7 @@ class LocalFileNetwork(Network):
                path: LocalPath,
                url: Optional[str],
                traffic_shaper: Optional[TrafficShaper] = None,
-               browser_platform: plt.Platform = plt.PLATFORM):
+               browser_platform: Optional[plt.Platform] = None):
     super().__init__(traffic_shaper, browser_platform)
     self._path = path
     self._host, self._port = self._parse_url(url)

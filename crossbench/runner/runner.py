@@ -197,7 +197,7 @@ class Runner:
                browsers: Sequence[Browser],
                benchmark: Benchmark,
                additional_probes: Iterable[Probe] = (),
-               platform: plt.Platform = plt.PLATFORM,
+               platform: Optional[plt.Platform] = None,
                env_config: Optional[HostEnvironmentConfig] = None,
                env_validation_mode: ValidationMode = ValidationMode.THROW,
                repetitions: int = 1,
@@ -229,7 +229,7 @@ class Runner:
     self._measured_runs: List[Run] = []
     self._thread_mode = thread_mode
     self._exceptions = exception.Annotator(throw)
-    self._platform = platform
+    self._platform = platform or plt.PLATFORM
     self._env = HostEnvironment(self.platform, self.out_dir, self.browsers,
                                 self.probes, self.repetitions, env_config,
                                 env_validation_mode)

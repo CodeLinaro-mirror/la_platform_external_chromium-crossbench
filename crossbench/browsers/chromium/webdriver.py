@@ -149,7 +149,7 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
     assert self._driver_path, "No driver available"
     error_message = None
     if self.is_local and is_build_dir(
-        self.platform.local_path(self.app_path.parent)):
+        self.platform.local_path(self.app_path.parent), self.platform):
       error_message = self._validate_locally_built_driver(
           self.platform.local_path(self._driver_path))
     else:
@@ -503,8 +503,7 @@ def build_chromedriver_instructions(build_dir: pth.AnyPath) -> str:
           f"    autoninja -C {build_dir} chromedriver")
 
 
-def is_build_dir(path: pth.LocalPath,
-                 platform: plt.Platform = plt.PLATFORM) -> bool:
+def is_build_dir(path: pth.LocalPath, platform: plt.Platform) -> bool:
   return platform.is_file(path / "args.gn")
 
 

@@ -817,8 +817,8 @@ def linux_perf_probe_pprof(
     perf_data_file: pth.AnyPath,
     run_details: str,
     platform: Optional[plt.Platform] = None) -> Optional[str]:
-  size = fs_helper.get_file_size(perf_data_file)
   platform = platform or plt.PLATFORM
+  size = fs_helper.get_file_size(perf_data_file, platform=platform)
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
   url = ""
   try:

@@ -71,7 +71,8 @@ class WaitRange:
 
   def wait_with_backoff(
       self,
-      platform: plt.Platform = plt.PLATFORM) -> Iterator[Tuple[float, float]]:
+      platform: Optional[plt.Platform] = None) -> Iterator[Tuple[float, float]]:
+    platform = platform or plt.PLATFORM
     start = dt.datetime.now()
     timeout = self.timeout
     for sleep_for in self:
@@ -85,7 +86,7 @@ class WaitRange:
 
 def wait_with_backoff(
     wait_range: Union[int, float, dt.timedelta, WaitRange],
-    platform: plt.Platform = plt.PLATFORM) -> Iterator[Tuple[float, float]]:
+    platform: Optional[plt.Platform] = None) -> Iterator[Tuple[float, float]]:
   if not isinstance(wait_range, WaitRange):
     wait_range = WaitRange(timeout=wait_range)
   return wait_range.wait_with_backoff(platform)
