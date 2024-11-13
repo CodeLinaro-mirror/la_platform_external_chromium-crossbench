@@ -549,7 +549,7 @@ class ChromeDriverFinder:
     raise DriverNotFoundError("\n".join(error_message))
 
   def download(self) -> pth.LocalPath:
-    if not self.platform.is_file(self.driver_path):
+    if not self.host_platform.is_file(self.driver_path):
       with exception.annotate(
           f"Downloading chromedriver for {self.browser.version}"):
         self._download()
