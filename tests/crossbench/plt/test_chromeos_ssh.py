@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import pathlib
 
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
@@ -27,6 +28,12 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
 
   def test_is_chromeos(self):
     self.assertTrue(self.platform.is_chromeos)
+
+  def test_basic_properties(self):
+    super().test_basic_properties()
+    self.assertEqual(self.platform.default_tmp_dir,
+                     pathlib.PurePosixPath("/usr/local/tmp/"))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

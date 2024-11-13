@@ -365,9 +365,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     path = SCRIPTS_DIR / "query_touch_device.py"
     self.fs.create_file(path, contents="query_touch_device")
 
-    self.platform.expect_sh("env")
-    self.platform.expect_sh("[", "-d", "/tmp", "]")
-    self.platform.expect_sh("mktemp", "/tmp/None.XXXXXXXXXXX")
+    self.platform.expect_sh("mktemp", "/usr/local/tmp/None.XXXXXXXXXXX")
 
     path = SCRIPTS_DIR / "get_window_positions.js"
     self.fs.create_file(path, contents="get_window_positions")
@@ -398,9 +396,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.fs.create_file(path, contents="mouse")
 
     if clicked_coordinates:
-      self.platform.expect_sh("env")
-      self.platform.expect_sh("[", "-d", "/tmp", "]")
-      self.platform.expect_sh("mktemp", "/tmp/None.XXXXXXXXXXX")
+      self.platform.expect_sh("mktemp", "/usr/local/tmp/None.XXXXXXXXXXX")
       self.platform.expect_sh("python3", ".", "1920", "1080",
                               click_duration.total_seconds(),
                               clicked_coordinates.x, clicked_coordinates.y)

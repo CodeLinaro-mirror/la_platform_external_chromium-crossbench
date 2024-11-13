@@ -290,8 +290,9 @@ class NetworkConfig(ConfigObject):
                                 browser_platform)
       if self.type is NetworkType.WPR:
         if self.run_on_device and browser_platform.is_remote:
-          if not browser_platform.is_android:
-            raise ValueError("run_on_device only supported on Android")
+          if not RemoteWprReplayNetwork.is_compatible(browser_platform):
+            raise ValueError(
+                f"run_on_device is unsupported on {browser_platform}")
           return RemoteWprReplayNetwork(
               self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
               browser_platform, self.persist_server)

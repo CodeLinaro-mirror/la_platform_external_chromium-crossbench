@@ -25,6 +25,9 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   def __init__(self, *args, **kwargs):
     self._username: Optional[str] = None
     super().__init__(*args, **kwargs)
+    # `/tmp` on ChromeOS is mounted with `noexec` flag.
+    # Instead, we use `/usr/local/tmp`, which allows executions of binaries.
+    self._default_tmp_dir: pth.AnyPath = pth.AnyPosixPath("/usr/local/tmp")
 
   @property
   def name(self) -> str:

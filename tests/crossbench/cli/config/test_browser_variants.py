@@ -112,9 +112,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh(
         "/opt/google/chrome/chrome --version", result="125.0.6422.60")
-    self._expect_chromeos_ssh("env")
-    self._expect_chromeos_ssh("'[' -d /tmp ']'")
-    self._expect_chromeos_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
+    self._expect_chromeos_ssh("mktemp -d /usr/local/tmp/chrome.XXXXXXXXXXX")
 
     with self.EXAMPLE_REMOTE_CONFIG_PATH.open(encoding="utf-8") as f:
       config = BrowserVariantsConfig()

@@ -182,8 +182,12 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
 class RemoteWprReplayNetwork(WprReplayNetwork):
 
+  @classmethod
+  def is_compatible(cls, platform: Platform) -> bool:
+    return platform.is_android or platform.is_chromeos
+
   def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
-    assert self.browser_platform.is_android
+    assert RemoteWprReplayNetwork.is_compatible(self.browser_platform)
     if wpr_go_bin:
       if wpr_go_bin.suffix == ".go":
         raise ValueError(f"Can't run .go files on {self.browser_platform}")
