@@ -7,6 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import os
 import pathlib
+import socket
 import sys
 import tempfile
 import unittest
@@ -360,6 +361,14 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertIsInstance(process_info, list)
     process_info = self.platform.process_children(os.getpid(), recursive=True)
     self.assertIsInstance(process_info, list)
+
+  def test_get_free_port(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    self.assertGreater(port, 0)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.bind(("localhost", port))
 
   @unittest.skipIf(
       not plt.PLATFORM.which("python3"), reason="python3 not installed")

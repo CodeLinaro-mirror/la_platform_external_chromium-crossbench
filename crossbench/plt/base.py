@@ -16,6 +16,7 @@ import pathlib
 import platform as py_platform
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -838,3 +839,10 @@ class Platform(abc.ABC):
     # TODO: support screen coordinates
     raise NotImplementedError(
         "'screenshot' is only available on MacOS for now")
+
+  def get_free_port(self) -> int:
+    self.assert_is_local()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      s.bind(("localhost", 0))
+      return s.getsockname()[1]
