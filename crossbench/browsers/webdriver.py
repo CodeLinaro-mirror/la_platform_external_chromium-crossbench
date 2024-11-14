@@ -150,7 +150,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     log_file = self.log_file
     assert log_file, "Missing browser log file"
     self._driver_log_file = log_file.with_suffix(".driver.log")
-    assert self._driver_log_file.name != BrowserDriverLogProbe.NAME, (
+    assert self._driver_log_file.name == BrowserDriverLogProbe.NAME, (
         f"Expected driver log file name {BrowserDriverLogProbe.NAME}, "
         f"but got: {self._driver_log_file}")
     return self._driver_log_file
