@@ -178,6 +178,7 @@ class WinBinary(Binary):
 
 
 class Binaries:
+  ADB = Binary("adb", default="adb", win="adb.exe")
   CPIO = LinuxBinary("cpio")
   FFMPEG = Binary("ffmpeg", posix="ffmpeg")
   GCERTSTATUS = Binary("gcertstatus", posix="gcertstatus")

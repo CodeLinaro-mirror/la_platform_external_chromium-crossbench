@@ -16,6 +16,8 @@ from crossbench import plt
 from crossbench.browsers import all as browsers
 from crossbench.parse import PathParser
 from crossbench.path import LocalPath
+from crossbench.plt.android_adb import adb_devices
+from crossbench.plt.bin import Binaries, BinaryNotFoundError
 from tests import test_helper
 
 # pytest.fixtures rely on params having the same name as the fixture function
@@ -127,15 +129,19 @@ def archive_dir(output_dir) -> pathlib.Path:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def device_id(request) -> Optional[str]:
-  maybe_device_id: Optional[str] = request.config.getoption(
-      "--adb-device-id")
+def device_id(request, adb_path) -> Optional[str]:
+  maybe_device_id: Optional[str] = request.config.getoption("--adb-device-id")
   if maybe_device_id:
     logging.info("adb device id: %s", maybe_device_id)
     return maybe_device_id
+  if adb_path:
+    devices = adb_devices(plt.PLATFORM, adb_path)
+    if len(devices) == 1:
+      device_id, _ = devices.popitem()
+      logging.info("Auto selecting android device: %s", device_id)
+      return device_id
   logging.info("No Android device detected.")
   return None
-
 
 @pytest.fixture(scope="session", autouse=True)
 def adb_path(request) -> Optional[str]:
@@ -144,5 +150,10 @@ def adb_path(request) -> Optional[str]:
   if maybe_adb_path:
     logging.info("adb path: %s", maybe_adb_path)
     return maybe_adb_path
-  logging.info("No custom adb path.")
-  return None
+  try:
+    adb_path = Binaries.ADB.resolve(plt.PLATFORM)
+    logging.info("Using default local adb: %s", adb_path)
+    return str(adb_path)
+  except BinaryNotFoundError:
+    logging.info("No custom adb path.")
+    return None

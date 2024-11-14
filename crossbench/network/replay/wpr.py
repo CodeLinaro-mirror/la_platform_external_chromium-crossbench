@@ -6,8 +6,10 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import dataclasses
 import logging
-from typing import TYPE_CHECKING, Iterator, List, Optional, Union
+from typing import (TYPE_CHECKING, Final, Iterator, List, Mapping, Optional,
+                    Tuple, Union)
 
 from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
@@ -16,7 +18,6 @@ from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.parse import PathParser
 from crossbench.path import check_hash
 from crossbench.plt import PLATFORM, Platform
-from crossbench.plt.arch import MachineArch
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
@@ -28,21 +29,32 @@ if TYPE_CHECKING:
 # use value for pylint
 assert GS_PREFIX
 
-BASE_URL = "gs://chromium-telemetry/binary_dependencies"
+WPR_BASE_URL = "gs://chromium-telemetry/binary_dependencies"
 
-WPR_PREBUILT_ARCH_MAP = {
-    MachineArch.ARM_64: {
-        "url": f"{BASE_URL}/wpr_go_129a66a1378dfcbb815596f66ca680728f77da36",
-        "file_hash": "129a66a1378dfcbb815596f66ca680728f77da36",
-    },
-    MachineArch.ARM_32: {
-        "url": f"{BASE_URL}/wpr_go_92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
-        "file_hash": "92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39",
-    },
-    MachineArch.X64: {
-        "url": f"{BASE_URL}/wpr_go_6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
-        "file_hash": "6caa467dc6bef92e1c34256f539f8ed8f26a2fe1",
-    },
+
+@dataclasses.dataclass
+class WPRCloudBinary:
+  file_hash: str
+
+  @property
+  def url(self):
+    return f"{WPR_BASE_URL}/wpr_go_{self.file_hash}"
+
+
+# See third_party/catapult/telemetry/telemetry/binary_dependencies.json
+WPR_PREBUILT_LOOKUP: Final[Mapping[Tuple[str, str], WPRCloudBinary]] = {
+    ("android", "arm64"):
+        WPRCloudBinary("129a66a1378dfcbb815596f66ca680728f77da36"),
+    ("android", "arm32"):
+        WPRCloudBinary("92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39"),
+    ("linux", "x64"):
+        WPRCloudBinary("6caa467dc6bef92e1c34256f539f8ed8f26a2fe1"),
+    ("macos", "arm64"):
+        WPRCloudBinary("c68bd02b247e38a68a8e8ca154164fab75638e2e"),
+    ("macos", "x64"):
+        WPRCloudBinary("57443617185913f5e9af20e69a105419eb4cbea5"),
+    ("win", "x64"):
+        WPRCloudBinary("8b5310e99091991b949103b1edf39db45c7818f5"),
 }
 
 
@@ -197,13 +209,14 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         PathParser.binary_path(wpr_go_bin, "wpr.go binary"))
 
   def _download_prebuilt_wpr(self) -> LocalPath:
-    wpr_info = WPR_PREBUILT_ARCH_MAP[self.browser_platform.machine]
+    wpr_cloud_binary = WPR_PREBUILT_LOOKUP[self.browser_platform.key]
     local_wpr_go_bin = (
         self.host_platform.local_cache_dir("wpr") /
         str(self.browser_platform.machine) / "wpr_go")
-    if not check_hash(local_wpr_go_bin, wpr_info["file_hash"]):
-      self.host_platform.sh("gsutil", "cp", wpr_info["url"], local_wpr_go_bin)
-    assert check_hash(local_wpr_go_bin, wpr_info["file_hash"])
+    if not check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash):
+      self.host_platform.sh("gsutil", "cp", wpr_cloud_binary.url,
+                            local_wpr_go_bin)
+    assert check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash)
 
     return local_wpr_go_bin
 
