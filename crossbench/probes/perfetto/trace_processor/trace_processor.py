@@ -158,6 +158,7 @@ class TraceProcessorProbe(Probe):
         bin_path=self.trace_processor_bin,
         resolver_registry=ResolverRegistry(
             resolvers=[CrossbenchTraceUriResolver, PathUriResolver]),
+        load_timeout=10,
         extra_flags=extra_flags)
 
   def get_context(self, run: Run) -> TraceProcessorProbeContext:
