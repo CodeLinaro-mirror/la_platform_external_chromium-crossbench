@@ -16,7 +16,7 @@ from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
-  from crossbench.cli.config.secrets import Secret, SecretsDict, SecretType
+  from crossbench.cli.config.secrets import SecretsDict
   from crossbench.network.base import Network
 
 

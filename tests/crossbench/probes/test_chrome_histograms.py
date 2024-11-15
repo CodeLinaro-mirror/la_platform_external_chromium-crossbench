@@ -9,7 +9,7 @@ from typing import Dict
 import hjson
 import pytest
 
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.chrome_histograms import (ChromeHistogramMetric,
                                                  ChromeHistogramSample,
                                                  ChromeHistogramsProbe,

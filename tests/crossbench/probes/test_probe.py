@@ -5,7 +5,7 @@
 import inspect
 
 import crossbench.path as pth
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
                                    DEFAULT_INTERNAL_PROBES,
                                    GENERAL_PURPOSE_PROBES, INTERNAL_PROBES,

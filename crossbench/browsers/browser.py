@@ -22,7 +22,6 @@ if TYPE_CHECKING:
   import re
 
   from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.browsers.splash_screen import SplashScreen
   from crossbench.browsers.viewport import Viewport
   from crossbench.cli.config.secrets import Secret, SecretsDict
   from crossbench.env import HostEnvironment
@@ -126,8 +125,8 @@ class Browser(abc.ABC):
     return self._settings.secrets
 
   @property
-  def splash_screen(self) -> SplashScreen:
-    return self._settings.splash_screen
+  def settings(self):
+    return self._settings
 
   @property
   def viewport(self) -> Viewport:

@@ -16,7 +16,8 @@ from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
-from crossbench.cli.config.network import NetworkConfig, NetworkSpeedPreset
+from crossbench.cli.config.network import NetworkConfig
+from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
 from crossbench.types import JsonDict
 from tests import test_helper

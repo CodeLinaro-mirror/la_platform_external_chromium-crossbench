@@ -16,11 +16,12 @@ import shlex
 import signal
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Final, Iterator, List, Optional, Union
+from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
 
 from crossbench.flags.base import Flags
 from crossbench.helper import proc_helper, wait
 from crossbench.helper.path_finder import TsProxyFinder
+from crossbench.network.traffic_shaping import ts_proxy_settings
 from crossbench.network.traffic_shaping.base import TrafficShaper
 from crossbench.parse import NumberParser, PathParser
 
@@ -46,39 +47,12 @@ class TsProxyServerError(Exception):
 _PORT_RE = re.compile(r"Started Socks5 proxy server on "
                       r"(?P<host>[^:]*):"
                       r"(?P<port>\d+)")
-DEFAULT_TIMEOUT = 5
 
 
 def parse_ts_socks_proxy_port(output_line):
   if match := _PORT_RE.match(output_line):
     return int(match.group("port"))
   return None
-
-
-# TODO: improve and double check
-TRAFFIC_SETTINGS = {
-    "3G-slow": {
-        "rtt_ms": 400,
-        "in_kbps": 400,
-        "out_kbps": 400,
-    },
-    "3G-regular": {
-        "rtt_ms": 300,
-        "in_kbps": 1600,
-        "out_kbps": 768,
-    },
-    "3G-fast": {
-        "rtt_ms": 150,
-        "in_kbps": 1600,
-        "out_kbps": 768,
-    },
-    "4G": {
-        "rtt_ms": 170,
-        "in_kbps": 9000,
-        "out_kbps": 9000,
-    },
-}
-DEFAULT_WINDOW_SIZE: Final[int] = 10
 
 
 class TsProxyServer:
@@ -137,7 +111,7 @@ class TsProxyServer:
                            in_kbps: Optional[int] = None,
                            out_kbps: Optional[int] = None,
                            window: Optional[int] = None,
-                           timeout=DEFAULT_TIMEOUT) -> None:
+                           timeout=ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     assert self._proc, "ts_proxy is not running."
     self._proc.set_traffic_settings(rtt_ms, in_kbps, out_kbps, window, timeout)
 
@@ -194,18 +168,19 @@ class TsProxyServer:
 class TsProxyProcess:
   """Separate wrapper around the ts_proxy to simplify pytype testing."""
 
-  def __init__(self,
-               ts_proxy_path: LocalPath,
-               host: Optional[str] = None,
-               socks_proxy_port: Optional[int] = None,
-               http_port: Optional[int] = None,
-               https_port: Optional[int] = None,
-               rtt_ms: Optional[int] = None,
-               in_kbps: Optional[int] = None,
-               out_kbps: Optional[int] = None,
-               window: Optional[int] = None,
-               verbose: bool = False,
-               timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
+  def __init__(
+      self,
+      ts_proxy_path: LocalPath,
+      host: Optional[str] = None,
+      socks_proxy_port: Optional[int] = None,
+      http_port: Optional[int] = None,
+      https_port: Optional[int] = None,
+      rtt_ms: Optional[int] = None,
+      in_kbps: Optional[int] = None,
+      out_kbps: Optional[int] = None,
+      window: Optional[int] = None,
+      verbose: bool = False,
+      timeout: Union[int, float] = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     """Start TsProxy server and verify that it started."""
     cmd: ListCmdArgs = [
         sys.executable,
@@ -319,9 +294,10 @@ class TsProxyProcess:
         logging.debug("TsProxy: Error while reading tsproxy line: %s", io_error)
     return ""
 
-  def _send_command(self,
-                    command: str,
-                    timeout: Union[int, float] = DEFAULT_TIMEOUT) -> None:
+  def _send_command(
+      self,
+      command: str,
+      timeout: Union[int, float] = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     logging.debug("TsProxy: Sending command to ts_proxy_server: %s", command)
     self._stdin.write(f"{command}\n")
     command_output = self._wait_for_status_response(timeout)
@@ -348,7 +324,7 @@ class TsProxyProcess:
                            in_kbps: Optional[int] = None,
                            out_kbps: Optional[int] = None,
                            window: Optional[int] = None,
-                           timeout=DEFAULT_TIMEOUT) -> None:
+                           timeout=ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     if rtt_ms is not None and self._rtt_ms != rtt_ms:
       assert rtt_ms >= 0, f"Invalid rtt value: {rtt_ms}"
       self._send_command(f"set rtt {rtt_ms}", timeout)
@@ -431,7 +407,8 @@ class TsProxyTrafficShaper(TrafficShaper):
     }
     try:
       logging.info("TRAFFIC SHAPING: Pausing")
-      self._ts_proxy.set_traffic_settings(0, 0, 0, DEFAULT_WINDOW_SIZE)
+      self._ts_proxy.set_traffic_settings(0, 0, 0,
+                                          ts_proxy_settings.DEFAULT_WINDOW_SIZE)
       yield None
     finally:
       logging.info("TRAFFIC SHAPING: Restoring settings")

@@ -117,7 +117,7 @@ def test_loadline_phone(device_id, adb_path, tmp_dir) -> None:
     values = lines[1].split(",")
     assert len(values) == 7
     for value in values[1:]:
-      assert float(value) > 0
+      assert float(value) > 0, f"Expected positive number, but got {value}"
 
 
 if __name__ == "__main__":

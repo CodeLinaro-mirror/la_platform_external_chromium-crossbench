@@ -10,7 +10,8 @@ from unittest import mock
 import hjson
 
 from crossbench import path as pth
-from crossbench.cli.config.probe import ProbeConfig, ProbeListConfig
+from crossbench.cli.config.probe import ProbeConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.types import JsonDict

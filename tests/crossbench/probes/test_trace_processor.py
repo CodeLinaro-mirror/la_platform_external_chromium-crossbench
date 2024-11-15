@@ -7,7 +7,7 @@ import unittest
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import TraceProcessorProbe
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase

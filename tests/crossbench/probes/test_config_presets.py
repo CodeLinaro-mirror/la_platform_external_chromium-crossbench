@@ -11,7 +11,7 @@ import crossbench.path
 from crossbench import plt
 from crossbench.benchmarks.loading.loadline_presets import \
     LoadLineTabletBenchmark
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES

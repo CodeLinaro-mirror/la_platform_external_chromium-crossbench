@@ -13,7 +13,8 @@ from unittest import mock
 import hjson
 
 from crossbench import __version__, plt
-from crossbench.browsers import splash_screen, viewport
+from crossbench.browsers import viewport
+from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
@@ -387,7 +388,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
                          "--throw", "--splash-screen=none")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertEqual(browser.splash_screen, splash_screen.SplashScreen.NONE)
+        self.assertEqual(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual([url], browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
 
@@ -398,8 +399,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
                          "--throw", "--splash-screen=minimal")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertEqual(browser.splash_screen,
-                         splash_screen.SplashScreen.MINIMAL)
+        self.assertEqual(browser.settings.splash_screen, SplashScreen.MINIMAL)
         self.assertEqual(len(browser.url_list), 3)
         self.assertIn(url, browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
@@ -412,8 +412,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
                          "--throw", f"--splash-screen={splash_url}")
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertIsInstance(browser.splash_screen,
-                              splash_screen.URLSplashScreen)
+        self.assertIsInstance(browser.settings.splash_screen, URLSplashScreen)
         self.assertEqual(len(browser.url_list), 3)
         self.assertEqual(splash_url, browser.url_list[0])
         self.assertEqual(len(browser.js_flags), 0)
@@ -453,12 +452,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with self.mock_chrome_stable():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--throw", "--fast")
-      self.assertEqual(cli.args.splash_screen, splash_screen.SplashScreen.NONE)
+      self.assertEqual(cli.args.splash_screen, SplashScreen.NONE)
       self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
       self.assertEqual(cli.args.env_validation, ValidationMode.SKIP)
       for browser in cli.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertIs(browser.splash_screen, splash_screen.SplashScreen.NONE)
+        self.assertIs(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual(browser.url_list, [url])
         self.assertEqual(len(browser.js_flags), 0)
 

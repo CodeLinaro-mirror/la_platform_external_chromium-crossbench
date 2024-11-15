@@ -5,7 +5,7 @@
 import unittest
 
 import crossbench.path as pth
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import PerfettoProbe
 from tests import test_helper
 

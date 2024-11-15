@@ -21,7 +21,8 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
-from crossbench.cli.config.network import NetworkConfig, NetworkSpeedPreset
+from crossbench.cli.config.network import NetworkConfig
+from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, PathParser
 

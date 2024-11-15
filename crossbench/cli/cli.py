@@ -21,15 +21,16 @@ from crossbench import __version__
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
-from crossbench.browsers import splash_screen, viewport
+from crossbench.browsers.splash_screen import SplashScreen
+from crossbench.browsers.viewport import Viewport, ViewportMode
 from crossbench.cli import ui
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.env import (parse_env_config_file,
                                        parse_inline_env_config)
 from crossbench.cli.config.network import NetworkConfig
-from crossbench.cli.config.probe import (PROBE_LOOKUP, ProbeConfig,
-                                         ProbeListConfig)
+from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import SecretsConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
@@ -96,7 +97,7 @@ class EnableFastAction(argparse.Action):
                values: Union[str, Sequence[Any], None],
                option_string: Optional[str] = None) -> None:
     setattr(namespace, "cool_down_time", dt.timedelta())
-    setattr(namespace, "splash_screen", splash_screen.SplashScreen.NONE)
+    setattr(namespace, "splash_screen", SplashScreen.NONE)
     setattr(namespace, "env_validation", ValidationMode.SKIP)
 
 
@@ -618,8 +619,8 @@ class CrossBenchCLI:
         "--splash-screen",
         "--splashscreen",
         "--splash",
-        type=splash_screen.SplashScreen.parse,
-        default=splash_screen.SplashScreen.DETAILED,
+        type=SplashScreen.parse,
+        default=SplashScreen.DETAILED,
         help=("Set the splashscreen shown before each run. "
               "Choices: 'default', 'none', 'minimal', 'detailed,' or "
               "a path or a URL."))
@@ -627,7 +628,7 @@ class CrossBenchCLI:
         "--no-splash",
         "--nosplash",
         dest="splash_screen",
-        const=splash_screen.SplashScreen.NONE,
+        const=SplashScreen.NONE,
         action="store_const",
         help="Shortcut for --splash-screen=none")
 
@@ -635,18 +636,18 @@ class CrossBenchCLI:
     # pytype: disable=missing-parameter
     viewport_group.add_argument(
         "--viewport",
-        default=viewport.Viewport.DEFAULT,
-        type=viewport.Viewport.parse,
+        default=Viewport.DEFAULT,
+        type=Viewport.parse,
         help=("Set the browser window position."
               "Options: size and position, "
-              f"{', '.join(str(e) for e in viewport.ViewportMode)}. "
+              f"{', '.join(str(e) for e in ViewportMode)}. "
               "Examples: --viewport=1550x300 --viewport=fullscreen. "
-              f"Default: {viewport.Viewport.DEFAULT}"))
+              f"Default: {Viewport.DEFAULT}"))
     # pytype: enable=missing-parameter
     viewport_group.add_argument(
         "--headless",
         dest="viewport",
-        const=viewport.Viewport.HEADLESS,
+        const=Viewport.HEADLESS,
         action="store_const",
         help=("Start the browser in headless if supported. "
               "Equivalent to --viewport=headless."))
