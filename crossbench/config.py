@@ -8,9 +8,12 @@ import abc
 import argparse
 import collections
 import collections.abc
+import dataclasses
 import enum
 import inspect
+import json
 import logging
+import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
                     Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union,
@@ -429,6 +432,11 @@ class ConfigObject(abc.ABC):
   @classmethod
   def _parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
     if isinstance(value, dict):
+
+      if (cls is not _TemplatedConfigParser and
+          _TemplatedConfigParser.is_template_invocation(value)):
+        return cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
+
       return cls.parse_dict(value, **kwargs)
     if not value:
       raise ConfigError(f"{cls.__name__}: Empty config value")
@@ -493,7 +501,7 @@ class ConfigObject(abc.ABC):
       file_path = PathParser.existing_file_path(path)
       data = ObjectParser.dict_hjson_file(file_path)
       with ChangeCWD(file_path.parent):
-        return cls.parse_dict(data, **kwargs)
+        return cls.parse(data, **kwargs)
     raise exception.UnreachableError()
 
   @classmethod
@@ -501,6 +509,231 @@ class ConfigObject(abc.ABC):
   def parse_dict(cls: Type[ConfigObjectT], config: Dict[str,
                                                         Any]) -> ConfigObjectT:
     raise NotImplementedError()
+
+
+class _PrimitiveConfigObject(ConfigObject):
+  """An implementation of a ConfigObject that returns Primitive types (such as
+  strings, ints, floats) and recursively parses complex types (such as dicts).
+  This is used to allow for early loading of nested configs specified by
+  filepath.
+  """
+
+  def __init__(self, value: Any):
+    self._value = value
+
+  @property
+  def value(self) -> Any:
+    return self._value
+
+  @classmethod
+  def parse_str(cls: Type[_PrimitiveConfigObject],
+                value: str) -> _PrimitiveConfigObject:
+    return _PrimitiveConfigObject(value)
+
+  @classmethod
+  def parse_dict(cls: Type[_PrimitiveConfigObject],
+                 config: Dict[str, Any]) -> _PrimitiveConfigObject:
+    result: Dict[str, Any] = {}
+
+    for key, value in config.items():
+      result[key] = _PrimitiveConfigObject.parse(value).value
+
+    return _PrimitiveConfigObject(result)
+
+  @classmethod
+  def parse_other(cls: Type[_PrimitiveConfigObject],
+                  value: Any) -> _PrimitiveConfigObject:
+    return _PrimitiveConfigObject(value)
+
+
+@dataclasses.dataclass(frozen=False)
+class TemplateArg:
+  name: str
+  value: Any
+  used: bool = False
+
+  def __post_init__(self):
+    if not self.name:
+      raise argparse.ArgumentTypeError("name cannot be empty")
+    if not self.value:
+      raise argparse.ArgumentTypeError("value cannot be empty")
+
+  def set_used(self) -> None:
+    self.used = True
+
+
+def template_args(value: Any) -> Dict[str, TemplateArg]:
+  dict_value = ObjectParser.dict(value)
+
+  for arg_key, arg_value in dict_value.items():
+    with exception.annotate_argparsing(
+        f"Parsing ...[{repr(arg_key)}] = {repr(arg_value)}"):
+
+      if not arg_key.isupper():
+        logging.warning("Arg names should be uppercase: %s", arg_key)
+
+      dict_value[arg_key] = TemplateArg(name=arg_key, value=arg_value)
+
+  return dict_value
+
+
+class ConfigTemplateError(argparse.ArgumentTypeError):
+
+  def __init__(self, message: str) -> None:
+    super().__init__(message)
+
+
+class _TemplatedConfigParser(ConfigObject):
+
+  # Matches args of the format: $[.. arg name ..]
+  ARG_RE = re.compile(r"\$\[([^\][[^\]]*)\]")
+
+  # Matches escape sequences of the above: $[[ should not be replaced ]
+  ESCAPED_ARG_RE = re.compile(r"\$\[\[([^\]].*)\]")
+
+  def __init__(self, template: Any, args: Dict[str, TemplateArg]):
+    self._template: Any = template
+    self._args: Dict[str, TemplateArg] = args
+    self._missing_args: List[str] = []
+    with exception.annotate("Processing Templates:"):
+      self._result = self._substitute()
+
+  @classmethod
+  def is_template_invocation(cls, value: Any) -> bool:
+    return isinstance(
+        value,
+        dict) and len(value) == 2 and "template" in value and "args" in value
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[_TemplatedConfigParser]:
+    parser = ConfigParser(cls)
+    parser.add_argument("template", type=ObjectParser.not_none, required=True)
+    parser.add_argument("args", type=template_args, required=True)
+    return parser
+
+  @classmethod
+  def parse_str(cls: Type[_TemplatedConfigParser], value: str) -> Any:
+    raise NotImplementedError("Cannot create templated config from strings")
+
+  @classmethod
+  def parse_dict(cls: Type[_TemplatedConfigParser],
+                 config: Dict[str, Any]) -> _TemplatedConfigParser:
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  def parse_and_substitute(cls, value: Any) -> Any:
+    value = cls.parse(value)
+    assert isinstance(value, _TemplatedConfigParser)
+    return value.result
+
+  @property
+  def result(self) -> Any:
+    return self._result
+
+  def _substitute(self) -> Any:
+    result = self._substitute_args(self._template)
+
+    if self._missing_args:
+      raise ConfigTemplateError(f"The following arguments were not supplied"
+                                f" but are required: {self._missing_args}")
+
+    unused_args: List[str] = []
+
+    for (arg_name, arg_value) in self._args.items():
+      if not arg_value.used:
+        unused_args.append(arg_name)
+
+    if unused_args:
+      logging.warning("The following config args were supplied but unused:")
+      for unused_arg in unused_args:
+        logging.warning(unused_arg)
+
+    logging.debug(
+        "Argument substitution resulted in the following config object:")
+    logging.debug(json.dumps(result, indent=2))
+
+    return result
+
+  def _substitute_args(self, value: Any) -> Any:
+    if self.is_template_invocation(value):
+      value = _TemplatedConfigParser.parse_and_substitute(value)
+
+    # If the value is a string, first parse it in case it expands to a different
+    # form (i.e. when a filepath expands to a hjson dictionary)
+    if isinstance(value, str):
+      value = _PrimitiveConfigObject.parse(value).value
+
+    if isinstance(value, str):
+      value = self._substitute_arg(value)
+
+    if isinstance(value, str):
+      return self._fix_escape_sequence(value)
+
+    if isinstance(value, dict):
+      return self._substitute_dict(value)
+
+    if isinstance(value, list):
+      return self._substitute_list(value)
+
+    return value
+
+  def _substitute_dict(self, value: Dict[Any, Any]) -> Dict[Any, Any]:
+    result: Dict[Any, Any] = {}
+
+    for child_key, child_value in value.items():
+      with exception.annotate(f"Processing ...['{child_key}']:"):
+        result[self._substitute_args(child_key)] = self._substitute_args(
+            child_value)
+    return result
+
+  def _substitute_list(self, value: List[Any]) -> List[Any]:
+    result: List[Any] = []
+    for index, child_value in enumerate(value):
+      with exception.annotate(f"Parsing List index: {index}:"):
+        result.append(self._substitute_args(child_value))
+    return result
+
+  def _substitute_arg(self, value: str) -> Any:
+
+    while matches := list(re.finditer(self.ARG_RE, value)):
+      # Reverse matches so that string indices don't get messed up while we
+      # substitute.
+      matches.reverse()
+      for m in matches:
+        arg_name = m.group(1)
+        assert arg_name
+
+        if template_arg := self._args.get(arg_name):
+          arg_value = template_arg.value
+          template_arg.set_used()
+        else:
+          self._missing_args.append(arg_name)
+          arg_value = "NOT FOUND"
+
+        if m.group(0) == value:
+          # Arg pattern is the whole string, replace the whole value to allow
+          # non-string values to be substituted.
+          return arg_value
+        if not isinstance(arg_value, (str, int, float)):
+          raise ConfigTemplateError((
+              f"Argument {repr(arg_name)} with type {type(arg_value).__name__} "
+              f"can not be substituted into {repr(value)}, "
+              f"must be str/int/float"
+          ))
+        value = value[:m.start()] + str(arg_value) + value[m.end():]
+
+    return value
+
+  def _fix_escape_sequence(self, value: str) -> str:
+    matches = list(re.finditer(self.ESCAPED_ARG_RE, value))
+    # Reverse matches so that string indices don't get messed up while we
+    # substitute.
+    matches.reverse()
+    result: str = value
+    for m in matches:
+      escaped_value = m.group(1)
+      result = result[:m.start()] + f"$[{escaped_value}]" + result[m.end():]
+    return result
 
 
 class _ConfigKwargsParser:

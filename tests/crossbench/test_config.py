@@ -16,6 +16,7 @@ from immutabledict import immutabledict
 
 from crossbench import compat
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from crossbench.exception import MultiException
 from crossbench.parse import NumberParser, ObjectParser
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -78,6 +79,7 @@ class CustomConfigObject(ConfigObject):
   name: str
   array: Optional[List[str]] = None
   integer: Optional[int] = None
+  float_field: Optional[float] = None
   nested: Optional[CustomNestedConfigObject] = None
   choices: str = ""
   generic_enum: GenericEnum = GenericEnum.A
@@ -134,6 +136,7 @@ class CustomConfigObject(ConfigObject):
         "name", aliases=("name_alias", "name_alias2"), type=str, required=True)
     parser.add_argument("array", type=list)
     parser.add_argument("integer", type=NumberParser.positive_int)
+    parser.add_argument("float_field", type=NumberParser.any_float)
     parser.add_argument("nested", type=CustomNestedConfigObject)
     parser.add_argument("generic_enum", type=GenericEnum)
     parser.add_argument("config_enum", type=CustomConfigEnum)
@@ -635,6 +638,318 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     error_message = str(cm.exception).lower()
     self.assertIn("choices are", error_message)
     self.assertIn("config_enum", error_message)
+
+  def test_parse_templated_config_missing_arg_throws(self):
+    config = {
+        "template": {
+            "name": "$[missing_arg]"
+        },
+        "args": {
+            "arg": "arg_value"
+        }
+    }
+
+    with self.assertRaisesRegex(MultiException, "missing_arg"):
+      config = CustomConfigObject.parse(config)
+
+  def test_parse_templated_config_multiple_missing_args_throws(self):
+    config = {
+        "template": {
+            "name": "$[missing_arg] $[missing_arg2]"
+        },
+        "args": {
+            "arg": "arg_value"
+        }
+    }
+
+    with self.assertRaisesRegex(MultiException,
+                                "'missing_arg2', 'missing_arg'"):
+      config = CustomConfigObject.parse(config)
+
+  def test_parse_templated_config_unsupported_arg_throws(self):
+    config = {
+        "template": {
+            "name": "text and $[dict-arg]"
+        },
+        "args": {
+            "dict-arg": {
+                "key": "value"
+            }
+        }
+    }
+
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "can not be substituted"):
+      config = CustomConfigObject.parse(config)
+
+  def test_parse_templated_config_dict_arg(self):
+    config = {
+        "template": {
+            "name": "top level",
+            "nested": "$[arg]"
+        },
+        "args": {
+            "arg": {
+                "name": "nested"
+            }
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.nested.name, "nested")
+
+  def test_parse_templated_config_string_only(self):
+    config = {"template": {"name": "$[arg]"}, "args": {"arg": "arg_value"}}
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "arg_value")
+
+  def test_parse_templated_config_unused_arg(self):
+    config = {
+        "template": {
+            "name": "$[arg]"
+        },
+        "args": {
+            "arg": "arg_value",
+            "unused_arg": "unused"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "arg_value")
+
+  def test_parse_templated_config_string_multiple(self):
+    config = {
+        "template": {
+            "name": "$[one]$[two]$[three]$[four]",
+        },
+        "args": {
+            "one": "1",
+            "two": "2",
+            "three": "3",
+            "four": "4"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "1234")
+
+  def test_parse_templated_config_string_multiple_mixed(self):
+    config = {
+        "template": {
+            "name": "[$[one]_$[two]_$[three]_$[four]]",
+        },
+        "args": {
+            "one": "1",
+            "two": 2,
+            "three": 3.0,
+            "four": 4.56
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "[1_2_3.0_4.56]")
+
+  def test_parse_templated_config_string_nested_matches(self):
+    config = {
+        "template": {
+            "name": "$[$[$[arg]]]",
+        },
+        "args": {
+            "arg": "arg2",
+            "arg2": "arg3",
+            "arg3": "the true arg"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "the true arg")
+
+  def test_parse_templated_config_int(self):
+    config = {
+        "template": {
+            "name": "name",
+            "integer": "$[arg]"
+        },
+        "args": {
+            "arg": 4
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.integer, 4)
+
+  def test_parse_templated_config_float(self):
+    config = {
+        "template": {
+            "name": "name",
+            "float_field": "$[arg]"
+        },
+        "args": {
+            "arg": 1.3
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.float_field, 1.3)
+
+  def test_parse_templated_config_filepath(self):
+    template_path_str = "template_file.hjson"
+    template = {
+        "name": "$[arg]",
+    }
+
+    path = pathlib.Path(template_path_str)
+    with path.open("w", encoding="utf-8") as f:
+      json.dump(template, f)
+
+    args = {"template": template_path_str, "args": {"arg": "arg_value"}}
+
+    config = CustomConfigObject.parse(args)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "arg_value")
+
+  def test_parse_templated_config_two_layer_filepath(self):
+    nested_path_str = "nested.hjson"
+    nested = {"name": "$[arg]"}
+
+    path = pathlib.Path(nested_path_str)
+    with path.open("w", encoding="utf-8") as f:
+      json.dump(nested, f)
+
+    template_path_str = "template_file.hjson"
+    template = {
+        "name": "top level",
+        "nested": nested_path_str,
+    }
+
+    path = pathlib.Path(template_path_str)
+    with path.open("w", encoding="utf-8") as f:
+      json.dump(template, f)
+
+    args = {"template": template_path_str, "args": {"arg": "arg_value"}}
+
+    config = CustomConfigObject.parse(args)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.nested.name, "arg_value")
+
+  def test_parse_templated_config_two_level_template(self):
+    config = {
+        "template": {
+            "name": "$[top-level-arg]",
+            "nested": {
+                "template": {
+                    "name": "$[second-level-arg]"
+                },
+                "args": {
+                    "second-level-arg": "second-level-name"
+                }
+            }
+        },
+        "args": {
+            "top-level-arg": "top-level-name"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "top-level-name")
+    self.assertEqual(config.nested.name, "second-level-name")
+
+  def test_parse_templated_config_two_level_template_files(self):
+    nested_path_str = "nested.hjson"
+    nested = {
+        "template": {
+            "name": "$[nested-name]"
+        },
+        "args": {
+            "nested-name": "nested"
+        }
+    }
+
+    path = pathlib.Path(nested_path_str)
+    with path.open("w", encoding="utf-8") as f:
+      json.dump(nested, f)
+
+    config = {
+        "template": {
+            "name": "$[top-level-arg]",
+            "nested": nested_path_str
+        },
+        "args": {
+            "top-level-arg": "top-level-name"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "top-level-name")
+    self.assertEqual(config.nested.name, "nested")
+
+  def test_parse_templated_config_single_escaped_value(self):
+    config = {
+        "template": {
+            "name": "some text $[[arg] on either side",
+        },
+        "args": {
+            "placeholder": "nothing"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "some text $[arg] on either side")
+
+  def test_parse_templated_config_nested_escaped_value(self):
+    config = {
+        "template": {
+            "name": "$[[ $[[arg] ]",
+        },
+        "args": {
+            "placeholder": "nothing"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "$[ $[[arg] ]")
+
+  def test_parse_templated_config_escaped_value_and_non_escaped(self):
+    config = {
+        "template": {
+            "name": "$[[arg] $[arg]",
+        },
+        "args": {
+            "arg": "arg_value"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "$[arg] arg_value")
 
 
 class ConfigEnumTestCase(unittest.TestCase):

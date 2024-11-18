@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import hjson
 
 from crossbench.benchmarks.loading.config.pages import PagesConfig
@@ -36,6 +37,31 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     for page in dict_config.pages:
       self.assertEqual(len(page.blocks), 1)
       self.assertGreater(len(page.blocks[0].actions), 1)
+
+  def test_parse_example_templated_config_file(self):
+    example_config_file = (
+        test_helper.config_dir() / "doc/templated.config.hjson")
+    self.fs.add_real_file(example_config_file)
+
+    file_config = PagesConfig.parse(example_config_file)
+    self.assertEqual(len(file_config.pages), 1)
+
+    page = file_config.pages[0]
+    self.assertEqual(len(page.blocks), 1)
+
+    block = page.blocks[0]
+    self.assertEqual(len(block.actions), 3)
+
+    get_action = block.actions[0]
+    self.assertEqual(get_action.url, "https://www.google.com")
+
+    cookie_banner_action = block.actions[1]
+    self.assertEqual(cookie_banner_action.selector,
+                     "xpath///button/div[contains(text(),'akzeptieren')]")
+
+    scroll_action = block.actions[2]
+    self.assertEqual(scroll_action.distance, 500)
+    self.assertEqual(scroll_action.duration, dt.timedelta(seconds=10))
 
   def test_parse_android_page_config_file(self):
     example_config_file = (
