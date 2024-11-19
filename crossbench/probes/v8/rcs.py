@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Optional, Union, cast
 
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import ProbeContext, ProbeMissingDataError
+from crossbench.probes.probe import ProbeContext
+from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:

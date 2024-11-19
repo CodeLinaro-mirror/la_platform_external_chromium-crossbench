@@ -13,7 +13,6 @@ import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
@@ -21,6 +20,7 @@ from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
   from crossbench.types import Json

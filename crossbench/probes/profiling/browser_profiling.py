@@ -14,8 +14,9 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 from crossbench import compat
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ProbeKeyT,
-                                     ProbeValidationError)
+                                     ProbeKeyT)
+from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
+                                           ProbeValidationError)
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:

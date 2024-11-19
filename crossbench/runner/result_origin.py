@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Iterable, Tuple
 
 from crossbench import plt
 from crossbench.probes.result_location import ResultLocation
+from crossbench.runner.probe_result_origin import ProbeResultOrigin
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
-class ResultOrigin(abc.ABC):
+class ResultOrigin(ProbeResultOrigin, abc.ABC):
   """Base class for Run and BrowserSession, both places where
   probe results can be placed."""
 

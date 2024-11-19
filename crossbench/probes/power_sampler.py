@@ -17,7 +17,8 @@ from crossbench.helper import proc_helper
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT, ProbeValidationError)
+                                     ProbeKeyT)
+from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:

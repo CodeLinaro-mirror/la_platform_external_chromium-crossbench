@@ -11,7 +11,8 @@ from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.parse import PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT, ProbeValidationError)
+                                     ProbeKeyT)
+from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 

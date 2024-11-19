@@ -7,8 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, List, Optional
 
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeMissingDataError)
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
+from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 

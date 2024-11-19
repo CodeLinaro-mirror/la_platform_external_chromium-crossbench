@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Optional, Type
 
 from crossbench import compat
 from crossbench import path as pth
+from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
@@ -58,6 +59,7 @@ class Run(ResultOrigin):
                name: Optional[str] = None,
                timeout: dt.timedelta = dt.timedelta(),
                throw: bool = False):
+    super().__init__()
     self._state = StateMachine(State.INITIAL)
     self._runner = runner
     self._browser_session = browser_session
@@ -327,7 +329,10 @@ class Run(ResultOrigin):
 
   def _run(self, is_dry_run: bool) -> None:
     self._state.transition(State.READY, to=State.RUN)
-    self.browser.settings.splash_screen.run(self)
+    with self.actions("SplashScreen") as actions:
+      display_data = SplashScreenData(self.is_warmup, self.browser,
+                                      self.details_json())
+      self.browser.settings.splash_screen.run(actions, display_data)
     with self._probe_context_manager.open(is_dry_run):
       logging.info("RUNNING STORY")
       self._state.expect(State.RUN)

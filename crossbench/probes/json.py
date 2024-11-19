@@ -17,7 +17,8 @@ from tabulate import tabulate
 from crossbench.probes import helper
 from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
                                       metric_geomean)
-from crossbench.probes.probe import Probe, ProbeContext, ProbeMissingDataError
+from crossbench.probes.probe import Probe, ProbeContext
+from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
 

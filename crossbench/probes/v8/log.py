@@ -12,8 +12,6 @@ import subprocess
 from typing import TYPE_CHECKING, Iterable, List, Optional, cast
 
 from crossbench import compat, plt
-from crossbench.browsers.browser import Browser
-from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import V8ToolsFinder
@@ -24,6 +22,7 @@ from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.results import ProbeResult
@@ -152,9 +151,8 @@ class V8LogProbe(ChromiumProbe):
 
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
-    assert isinstance(browser, Chromium)
-
-    browser = cast(Chromium, browser)
+    assert browser.attributes.is_chromium_based, (
+        f"Expected chromium-based browser, but got {browser}")
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
 
