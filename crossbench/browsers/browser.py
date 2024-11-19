@@ -145,6 +145,10 @@ class Browser(abc.ABC):
     return self._settings.http_request_timeout
 
   @property
+  def driver_path(self) -> Optional[pth.AnyPath]:
+    return self._settings.driver_path
+
+  @property
   def probes(self) -> Iterable[Probe]:
     return iter(self._probes)
 

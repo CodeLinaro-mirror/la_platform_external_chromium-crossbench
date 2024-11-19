@@ -58,7 +58,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     chromedriver_path = self.out_dir / "chromedriver"
     self.fs.create_file(chromedriver_path, st_size=100)
     driver = DriverConfig.parse(str(chromedriver_path))
-    self.assertEqual(driver.path, chromedriver_path)
+    self.assertEqual(str(driver.path), str(chromedriver_path))
 
     config = {"path": str(chromedriver_path)}
     driver_2 = DriverConfig.parse(config)

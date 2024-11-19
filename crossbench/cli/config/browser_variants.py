@@ -174,7 +174,7 @@ class BrowserVariantsConfig:
       settings = Settings(
           flags=browser_flags,
           network=network,
-          driver_path=args.driver_path or browser_config.driver.path,
+          driver_path=self._driver_path(args, browser_config),
           # TODO: support all args in the browser.config file
           viewport=args.viewport,
           splash_screen=args.splash_screen,
@@ -428,6 +428,10 @@ class BrowserVariantsConfig:
       raise argparse.ArgumentTypeError(
           f"Cannot use custom --driver-path='{args.driver_path}' "
           f"for multiple browser {browser_types}.")
+    if args.remote_driver_path:
+      raise argparse.ArgumentTypeError(
+          f"Cannot use custom --remote-driver-path='{args.remote_driver_path}' "
+          f"for multiple browser {browser_types}.")
     if args.other_browser_args:
       raise argparse.ArgumentTypeError(
           f"Multiple browser types {browser_types} "
@@ -449,6 +453,12 @@ class BrowserVariantsConfig:
       raise ValueError(
           f"No version-download support for browser: {path_or_identifier}")
     return BrowserConfig(downloaded, browser_config.driver)
+
+  def _driver_path(self, args: argparse.Namespace,
+                   browser_config: BrowserConfig) -> Optional[pth.AnyPath]:
+    if browser_config.driver.is_remote:
+      return args.remote_driver_path or browser_config.driver.path
+    return args.driver_path or browser_config.driver.path
 
   def _append_browser(self, args: argparse.Namespace,
                       browser_config: BrowserConfig) -> None:
@@ -489,7 +499,7 @@ class BrowserVariantsConfig:
       settings = Settings(
           flags=flags,
           network=network,
-          driver_path=args.driver_path or browser_config.driver.path,
+          driver_path=self._driver_path(args, browser_config),
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform,

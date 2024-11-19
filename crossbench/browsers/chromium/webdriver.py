@@ -13,6 +13,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import tempfile
 import urllib.error
 import zipfile
@@ -37,7 +38,9 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.cli.config.secret_type import SecretType
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import url_helper, wait
+from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.bin import Binaries
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 
@@ -431,6 +434,83 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
                                  f"--device={self.platform.serial_id}")
 
 
+class AutoForwardingRemoteWebDriver(RemoteWebDriver):
+  """
+  Wraps RemoteWebDriver, but starts, stops, and forwards ports for chromedriver.
+  """
+
+  # Example ss output line (with whitespace shortened):
+  # LISTEN 0 5 127.0.0.1:34595 0.0.0.0:* users:(("chromedriver",pid=80388,fd=8))
+  SS_CHROMEDRIVER_LINE_RE = re.compile(
+      r"^LISTEN\s+"
+      # Recv-Q
+      r"\d+\s+"
+      # Send-Q
+      r"\d+\s+"
+      # Local Address:Port
+      r"127.0.0.1:(?P<port>\d+)\s+"
+      # Peer Address:Port
+      r"\S+\s+"
+      # Process
+      r"users:\(\("
+      r"\"chromedriver\",pid=\d+,fd=\d+"
+      r"\)\)\s*$",
+      re.MULTILINE)
+
+  _platform: LinuxSshPlatform
+  _forward_port: int
+  _chromedriver: Optional[subprocess.Popen]
+
+  def __init__(
+      self,
+      platform: LinuxSshPlatform,
+      chromedriver_path: Optional[pth.AnyPath],
+      options: ChromiumOptions,
+  ) -> None:
+    with exception.annotate("Starting chromedriver"):
+      self._platform = platform
+      self._killall_chromedriver()
+      self._chromedriver = platform.popen(
+          chromedriver_path or Binaries.CHROMEDRIVER.resolve(platform),
+          stdin=subprocess.PIPE)
+      atexit.register(self._stop_remote_driver)
+      driver_port = self._wait_for_driver_port()
+      self._forward_port = platform.port_forward(0, driver_port)
+      logging.info(
+          "Chromedriver listening on %d forwarded through local port %d",
+          driver_port, self._forward_port)
+    super().__init__(f"http://127.0.0.1:{self._forward_port}", options=options)
+
+  def close(self) -> None:
+    try:
+      super().close()
+    finally:
+      self._stop_remote_driver()
+
+  def _stop_remote_driver(self) -> None:
+    if not self._chromedriver:
+      return
+    try:
+      self._chromedriver.terminate()
+      self._chromedriver = None
+    finally:
+      # Closing the ssh connection doesn't terminate chromedriver, so kill it.
+      self._killall_chromedriver()
+      if self._forward_port:
+        self._platform.stop_port_forward(self._forward_port)
+        self._forward_port = 0
+
+  def _killall_chromedriver(self) -> None:
+    self._platform.sh("killall", "chromedriver", check=False)
+
+  def _wait_for_driver_port(self) -> int:
+    for _ in wait.wait_with_backoff(10, self._platform):
+      listening = self._platform.sh_stdout("ss", "-HOlntp")
+      if m := self.SS_CHROMEDRIVER_LINE_RE.search(listening):
+        return NumberParser.port_number(m[1], "driver port")
+    raise RuntimeError("not reached")
+
+
 class ChromiumWebDriverSsh(ChromiumWebDriver):
 
   @property
@@ -447,6 +527,9 @@ class ChromiumWebDriverSsh(ChromiumWebDriver):
     platform = self.platform
     host = platform.host
     port = platform.port
+    if port == 0:
+      return AutoForwardingRemoteWebDriver(
+          platform, self._settings.driver_path, options=options)
     driver = RemoteWebDriver(f"http://{host}:{port}", options=options)
     return driver
 
@@ -480,8 +563,11 @@ class ChromiumWebDriverChromeOsSsh(ChromiumWebDriver):
       dbg_port = platform.create_debugging_session()
     options = self._create_options(session, args)
     options.add_experimental_option("debuggerAddress", f"127.0.0.1:{dbg_port}")
-    driver = RemoteWebDriver(f"http://{host}:{port}", options=options)
-    return driver
+
+    if port == 0:
+      return AutoForwardingRemoteWebDriver(
+          platform, self._settings.driver_path, options=options)
+    return RemoteWebDriver(f"http://{host}:{port}", options=options)
 
   # On ChromeOS, the system profile is the same as the browser profile.
   def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:

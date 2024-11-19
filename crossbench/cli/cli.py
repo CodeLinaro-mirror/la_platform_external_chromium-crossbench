@@ -588,6 +588,11 @@ class CrossBenchCLI:
         help=("Use the same custom driver path for all specified browsers. "
               "Version mismatches might cause crashes."))
     browser_group.add_argument(
+        "--remote-driver-path",
+        type=PathParser.any_path,
+        help=("Use the same custom driver path for all specified remote"
+              " browsers. Version mismatches might cause crashes."))
+    browser_group.add_argument(
         "--config",
         type=PathParser.hjson_file_path,
         help=("Specify a common config for --probe-config, --browser-config, "

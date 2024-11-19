@@ -12,11 +12,13 @@ from unittest import mock
 import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt import PLATFORM
-from crossbench.plt.bin import (Binary, BinaryNotFoundError, LinuxBinary,
-                                MacOsBinary, PosixBinary, WinBinary)
+from crossbench.plt.bin import (Binary, BinaryNotFoundError, ChromeOSBinary,
+                                LinuxBinary, MacOsBinary, PosixBinary,
+                                WinBinary)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
+from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
+                                          LinuxMockPlatform, MacOsMockPlatform,
                                           WinMockPlatform)
 
 
@@ -141,6 +143,44 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
         self.assertEqual(pth.AnyPath(binary.resolve(platform)), result)
         self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
         self.fs.remove(result)
+
+  @unittest.skipUnless(plt.PLATFORM.is_posix, "Only supported on posix")
+  def test_known_binary_chromeos(self):
+    path = pth.AnyPosixPath("foo/bar/default/crossbench_mock_binary")
+    binary = Binary("crossbench_mock_binary", chromeos=path)
+    self.validate_known_binary_chromeos(path, binary)
+    binary = ChromeOSBinary(path)
+    self.validate_known_binary_chromeos(path, binary)
+
+  def validate_known_binary_chromeos(self, result, binary):
+    result = pth.AnyPosixPath(result)
+    platform = ChromeOsSshMockPlatform(
+        host_platform=LinuxMockPlatform(),
+        host="dut",
+        port=0,
+        ssh_port=22,
+        ssh_user="root")
+
+    platform.expect_sh("which", result, result=str(result))
+    platform.expect_sh("[", "-e", result, "]", result="")
+    platform.expect_sh("[", "-e", result, "]", result="")
+    self.assertEqual(str(binary.resolve(platform)), str(result))
+
+    platform.expect_sh("which", result, result=str(result))
+    platform.expect_sh("[", "-e", result, "]", result="")
+    platform.expect_sh("[", "-e", result, "]", result="")
+    self.assertEqual(str(binary.resolve_cached(platform)), str(result))
+
+    self.assertEqual(str(binary.resolve_cached(platform)), str(result))
+
+    for platform in self.all_mock_platforms():
+      if platform.is_chromeos:
+        continue
+      self.assertEqual(binary.platform_path(platform), ())
+      with self.assertRaises(BinaryNotFoundError):
+        binary.resolve(platform)
+      with self.assertRaises(BinaryNotFoundError):
+        binary.resolve_cached(platform)
 
   @unittest.skipUnless(plt.PLATFORM.is_posix, "Only supported on posix")
   def test_known_binary_linux(self):

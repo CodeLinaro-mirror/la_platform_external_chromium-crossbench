@@ -89,12 +89,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertGreaterEqual(len(config.flags_config), 1)
     self.assertGreaterEqual(len(config.variants), 1)
 
-  def test_parse_remote_browser_config_template(self):
-    if not self.EXAMPLE_REMOTE_CONFIG_PATH.exists():
-      raise unittest.SkipTest(
-          f"Test file {self.EXAMPLE_REMOTE_CONFIG_PATH} does not exist")
-    self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
-
+  def _expect_sh_linux_ssh_browser_config(self):
     self._expect_linux_ssh("uname -m", result="arm64")
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
     self._expect_linux_ssh("'[' -f /path/to/google/chrome ']'")
@@ -105,6 +100,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_linux_ssh("'[' -d /tmp ']'")
     self._expect_linux_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
 
+  def _expect_sh_chromeos_ssh_browser_config(self):
     self._expect_chromeos_ssh("'[' -e /usr/local/autotest/bin/autologin.py ']'")
     self._expect_chromeos_ssh("uname -m", result="arm64")
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
@@ -114,17 +110,80 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "/opt/google/chrome/chrome --version", result="125.0.6422.60")
     self._expect_chromeos_ssh("mktemp -d /usr/local/tmp/chrome.XXXXXXXXXXX")
 
+  def test_parse_remote_browser_config_template(self):
+    self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
+
+    self._expect_sh_linux_ssh_browser_config()
+    self._expect_sh_linux_ssh_browser_config()
+    self._expect_sh_chromeos_ssh_browser_config()
+    self._expect_sh_chromeos_ssh_browser_config()
+
     with self.EXAMPLE_REMOTE_CONFIG_PATH.open(encoding="utf-8") as f:
       config = BrowserVariantsConfig()
       config.parse_text_io(f, args=self.mock_args)
-      self.assertEqual(len(config.variants), 2)
+      self.assertEqual(len(config.variants), 4)
       for variant in config.variants:
         self.assertTrue(variant.platform.is_remote)
         self.assertTrue(variant.platform.is_linux)
+
+      self.assertIsNone(config.variants[0].driver_path)
+      self.assertEqual(
+          str(config.variants[1].driver_path), "/path/to/chromedriver")
+      self.assertIsNone(config.variants[2].driver_path)
+      self.assertEqual(
+          str(config.variants[3].driver_path), "/path/to/chromedriver")
+
       self.assertEqual(config.variants[0].platform.name, "linux_ssh")
-      self.assertEqual(config.variants[1].platform.name, "chromeos_ssh")
+      self.assertEqual(config.variants[1].platform.name, "linux_ssh")
+      self.assertEqual(config.variants[2].platform.name, "chromeos_ssh")
+      self.assertEqual(config.variants[3].platform.name, "chromeos_ssh")
       self.assertEqual(config.variants[0].version, "102.22.33.44")
-      self.assertEqual(config.variants[1].version, "125.0.6422.60")
+      self.assertEqual(config.variants[1].version, "102.22.33.44")
+      self.assertEqual(config.variants[2].version, "125.0.6422.60")
+      self.assertEqual(config.variants[3].version, "125.0.6422.60")
+
+  def test_parse_remote_browser_config_template_override_driver_path(self):
+    override_driver_path = pth.AnyPosixPath("/path/to/override/chromedriver")
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=None,
+        driver_path=None,
+        remote_driver_path=override_driver_path)
+    config = BrowserVariantsConfig()
+
+    self._expect_sh_linux_ssh_browser_config()
+    self._expect_sh_linux_ssh_browser_config()
+    config_dict = {
+        "browsers": {
+            "linux-ssh-chrome-auto-start-driver": {
+                "path": "/path/to/google/chrome",
+                "driver": {
+                    "type": "ssh",
+                    "path": "/path/to/chromedriver",
+                    "settings": {
+                        "host": "my-linux-machine",
+                        "ssh_port": 22,
+                        "ssh_user": "user"
+                    }
+                }
+            },
+            "linux-ssh-chrome-auto-start-driver-no-path": {
+                "path": "/path/to/google/chrome",
+                "driver": {
+                    "type": "ssh",
+                    "settings": {
+                        "host": "my-linux-machine",
+                        "ssh_port": 22,
+                        "ssh_user": "user"
+                    }
+                }
+            },
+        }
+    }
+    config.parse_dict(config_dict, args)
+    self.assertEqual(len(config.variants), 2)
+    self.assertEqual(config.variants[0].driver_path, override_driver_path)
+    self.assertEqual(config.variants[1].driver_path, override_driver_path)
 
   def test_browser_labels_attributes(self):
     browsers = BrowserVariantsConfig(
