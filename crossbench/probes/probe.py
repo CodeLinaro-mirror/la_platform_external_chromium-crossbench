@@ -218,10 +218,11 @@ class Probe(ProbeResultKey, abc.ABC):
   def get_context(self: ProbeT, run: Run) -> Optional[ProbeContext[ProbeT]]:
     pass
 
-  def get_session_context(
+  def get_session_context(  # pylint: disable=useless-return
       self: ProbeT,
       session: BrowserSessionRunGroup) -> Optional[ProbeSessionContext[ProbeT]]:
     del session
+    return None
 
   def log_run_result(self, run: Run) -> None:
     """

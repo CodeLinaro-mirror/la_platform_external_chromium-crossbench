@@ -42,7 +42,7 @@ class BenchmarkProbeMixin:
 
 class Benchmark(abc.ABC):
   NAME: str = ""
-  DEFAULT_STORY_CLS: Type[Story] = Story
+  DEFAULT_STORY_CLS: Type[Story] = Story  # type: ignore
   PROBES: Tuple[Type[BenchmarkProbeMixin], ...] = ()
   DEFAULT_REPETITIONS: int = 1
 
@@ -203,7 +203,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS: Type[StoryFilter] = StoryFilter
+  STORY_FILTER_CLS: Type[StoryFilter] = StoryFilter  # type: ignore
 
   @classmethod
   def add_cli_parser(
@@ -382,7 +382,8 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS = PressBenchmarkStoryFilter
-  DEFAULT_STORY_CLS: Type[PressBenchmarkStory] = PressBenchmarkStory
+  DEFAULT_STORY_CLS: Type[
+      PressBenchmarkStory] = PressBenchmarkStory  # type: ignore
 
   @classmethod
   @abc.abstractmethod

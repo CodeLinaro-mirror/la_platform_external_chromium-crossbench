@@ -416,7 +416,7 @@ class Speedometer30Benchmark(SpeedometerBenchmark):
   Benchmark runner for Speedometer 3.0
   """
   NAME: str = "speedometer_3.0"
-  DEFAULT_STORY_CLS = Speedometer30Story
+  DEFAULT_STORY_CLS = Speedometer30Story  # type: ignore
   STORY_FILTER_CLS = Speedometer3BenchmarkStoryFilter
   PROBES: ProbeClsTupleT = (Speedometer30Probe,)
 

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
-  from crossbench.types import JsonDict
+  from crossbench.types import JsonDict, JsonMapping
 
 
 class StoriesRunGroup(RunGroup):
@@ -82,8 +82,8 @@ class StoriesRunGroup(RunGroup):
     )
 
   @property
-  def info(self) -> JsonDict:
-    info = {
+  def info(self) -> JsonMapping:
+    info: JsonDict = {
         "label": self.browser.label,
         "browser": self.browser.app_name.title(),
         "version": self.browser.version,

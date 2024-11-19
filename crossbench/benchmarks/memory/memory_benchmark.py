@@ -37,6 +37,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
+  from crossbench.types import JsonDict
 
 
 class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
@@ -49,7 +50,7 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   def get_context(self, run: Run) -> MemoryProbeContext:
     return MemoryProbeContext(self, run)
 
-  def to_json(self, actions: Actions) -> Dict[str, float]:
+  def to_json(self, actions: Actions) -> JsonDict:
     raise NotImplementedError(
         "should not be called, data comes from memory probe context")
 
@@ -106,7 +107,7 @@ class MemoryProbeContext(ActionRunnerListener,
   def start(self) -> None:
     pass
 
-  def to_json(self, actions: Actions) -> Dict[str, int]:
+  def to_json(self, actions: Actions) -> JsonDict:
     return {"alive_tab_count": self._tab_count - 1}
 
   def _increment_tab_count(self):

@@ -31,11 +31,11 @@ def group_by(
   group: a function that accepts a group_key and returns a group object that
     has an append() method.
   """
-  if not key:
+  if not key:  # type: ignore
     raise ValueError("No key function provided")
   key_fn = key
   value_fn = value or (lambda item: item)
-  group_fn: Callable[[KeyT], GroupT] = group or (lambda key: [])
+  group_fn: Callable[[KeyT], GroupT] = group or (lambda key: [])  # type: ignore
   groups: Dict[KeyT, GroupT] = {}
   for input_item in collection:
     group_key: KeyT = key_fn(input_item)
@@ -43,9 +43,9 @@ def group_by(
     if group_key not in groups:
       new_group: GroupT = group_fn(group_key)
       groups[group_key] = new_group
-      new_group.append(group_item)
+      new_group.append(group_item)  # type: ignore
     else:
-      groups[group_key].append(group_item)
+      groups[group_key].append(group_item)  # type: ignore
   if sort_key:
     # sort keys as well for more predictable behavior
     return dict(sorted(groups.items(), key=sort_key))

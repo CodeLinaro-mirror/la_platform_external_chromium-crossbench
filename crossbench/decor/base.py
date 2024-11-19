@@ -7,15 +7,30 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import Dict, Generic, Optional, Set, Type, TypeVar
+from typing import (TYPE_CHECKING, Dict, Generic, Optional, Protocol, Set, Type,
+                    TypeVar)
 
 from crossbench import plt
 from crossbench.config import ConfigParser
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
+if TYPE_CHECKING:
+  from crossbench.exception import ExceptionAnnotationScope
+
+
+class DecoratorTargetProtocol(Protocol):
+
+  @abc.abstractmethod
+  def exception_handler(
+      self,
+      *stack_entries: str,
+  ) -> ExceptionAnnotationScope:
+    pass
+
+
 DecoratorT = TypeVar("DecoratorT", bound="Decorator")
-DecoratorTargetT = TypeVar("DecoratorTargetT")
+DecoratorTargetT = TypeVar("DecoratorTargetT", bound=DecoratorTargetProtocol)
 
 
 class DecoratorConfigParser(ConfigParser[DecoratorT]):
@@ -92,7 +107,7 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
 
   def __init__(self, decorator: DecoratorT, target: DecoratorTargetT) -> None:
     self._decorator = decorator
-    self._target = target
+    self._target: DecoratorTargetT = target
     self._state = StateMachine(self._State.READY)
     self._is_success: bool = False
     self._start_time: Optional[dt.datetime] = None

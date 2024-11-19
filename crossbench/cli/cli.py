@@ -72,7 +72,7 @@ class CrossBenchArgumentError(argparse.ArgumentError):
             f"{formatted}")
 
 
-argparse.ArgumentError = CrossBenchArgumentError
+argparse.ArgumentError = CrossBenchArgumentError  # type: ignore
 
 
 class EnableDebuggingAction(argparse.Action):
@@ -268,9 +268,10 @@ class CrossBenchCLI:
     self._setup_recorder_subparser()
 
   def _setup_recorder_subparser(self) -> None:
-    self.recorder_parser = CrossbenchDevToolsRecorderProxy.add_subcommand(
+    recorder_parser = CrossbenchDevToolsRecorderProxy.add_subcommand(
         self.subparsers)
-    assert isinstance(self.recorder_parser, CrossBenchArgumentParser)
+    assert isinstance(recorder_parser, CrossBenchArgumentParser)
+    self.recorder_parser = recorder_parser
     self._add_verbosity_argument(self.recorder_parser)
 
   def _setup_describe_subparser(self) -> None:
@@ -528,7 +529,7 @@ class CrossBenchCLI:
     env_group.add_argument(
         "--env-validation",
         default=ValidationMode.PROMPT,
-        type=ValidationMode,
+        type=ValidationMode,  # type: ignore
         help=(
             "Set how runner env is validated (see als --env-config/--env):\n" +
             ValidationMode.help_text(indent=2)))

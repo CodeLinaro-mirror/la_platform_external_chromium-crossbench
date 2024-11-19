@@ -8,8 +8,8 @@ import json
 import logging
 import math
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Hashable, Iterable,
-                    List, Optional, Sequence, Set, Tuple, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
+                    Optional, Sequence, Set, Tuple, Union)
 
 from crossbench.probes import helper
 
@@ -109,7 +109,7 @@ class Metric:
     self.values.append(value)
     self._is_numeric = self._is_numeric and is_number(value)
 
-  def to_json(self) -> JsonDict:
+  def to_json(self) -> Json:
     json_data: JsonDict = {"values": self.values}
     if not self.values:
       return json_data
@@ -126,10 +126,9 @@ class Metric:
         json_data["stddevPercent"] = (stddev / average) * 100
       return json_data
     # Try to simplify repeated non-numeric values
-    if not isinstance(self.values[0], Hashable):
-      return json_data
+    first_value = self.values[0]
     if len(set(self.values)) == 1:
-      return self.values[0]
+      return first_value
     return json_data
 
 

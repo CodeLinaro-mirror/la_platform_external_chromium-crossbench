@@ -204,7 +204,7 @@ return [
 
       if use_mouse:
         cmd.append("mouse")
-
+      assert coordinates, "missing coordinates"
       cmd.extend(["tap", str(coordinates.x), str(coordinates.y)])
 
       run.browser_platform.sh(*cmd)

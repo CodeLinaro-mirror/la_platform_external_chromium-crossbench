@@ -317,7 +317,7 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
     json_trace_file = local_proto.with_suffix(".json")
     cmd: ListCmdArgs = [traceconv, "json", self.result_path, json_trace_file]
     if not self.host_platform.is_posix:
-      python_executable = sys.argv[0]
-      cmd = [python_executable] + cmd
+      python_executable: ListCmdArgs = [sys.argv[0]]
+      cmd = python_executable + cmd
     self.host_platform.sh(*cmd)
     return json_trace_file

@@ -160,7 +160,8 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
     return ThermalMonitorProbeContext(self, run)
 
 
-class ThermalMonitorProbeContext(InternalJsonResultProbeContext):
+class ThermalMonitorProbeContext(
+    InternalJsonResultProbeContext[ThermalMonitorProbe]):
 
   def __init__(self, probe: ThermalMonitorProbe, run: Run) -> None:
     super().__init__(probe, run)

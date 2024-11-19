@@ -19,7 +19,7 @@ if TYPE_CHECKING:
       CacheTemperaturesRunGroup
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
-  from crossbench.types import JsonDict
+  from crossbench.types import JsonDict, JsonMapping
 
 
 class RepetitionsRunGroup(RunGroup):
@@ -97,7 +97,7 @@ class RepetitionsRunGroup(RunGroup):
             f"browser={self.browser.unique_name}", f"story={self.story}")
 
   @property
-  def info(self) -> JsonDict:
+  def info(self) -> JsonMapping:
     info: JsonDict = {"story": str(self.story)}
     info.update(super().info)
     return info
@@ -152,8 +152,8 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
     return info_stack
 
   @property
-  def info(self) -> JsonDict:
-    info = self._repetitions_group.info
+  def info(self) -> JsonMapping:
+    info: JsonMapping = self._repetitions_group.info
     return info
 
   def append(self, run: Run) -> None:

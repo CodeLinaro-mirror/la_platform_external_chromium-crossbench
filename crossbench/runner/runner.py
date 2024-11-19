@@ -141,7 +141,7 @@ class Runner:
         "--thread-mode",
         "--parallel",
         default=ThreadMode.NONE,
-        type=ThreadMode,
+        type=ThreadMode,  # type: ignore
         help=("Change how Runs are executed.\n" +
               ThreadMode.help_text(indent=2)))
 
@@ -253,9 +253,10 @@ class Runner:
       assert issubclass(benchmark_probe_cls, BenchmarkProbeMixin), (
           f"{benchmark_probe_cls} should be BenchmarkProbeMixin "
           f"for {type(self._benchmark)}.PROBES")
-      assert benchmark_probe_cls.NAME, (
+      assert benchmark_probe_cls.NAME, (  # type: ignore
           f"Expected probe.NAME for {benchmark_probe_cls}")
-      self.attach_probe(benchmark_probe_cls(benchmark=self._benchmark))
+      self.attach_probe(
+          benchmark_probe_cls(benchmark=self._benchmark))  # type: ignore
 
   def _validate_browser_labels(self) -> None:
     assert self.browsers, "No browsers provided"

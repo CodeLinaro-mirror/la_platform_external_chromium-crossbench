@@ -125,7 +125,8 @@ class PagesConfig(ConfigObject):
 class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
-  def parse_str(cls: Type[PagesConfig], value: str) -> PagesConfig:
+  def parse_str(cls: Type[DevToolsRecorderPagesConfig],
+                value: str) -> DevToolsRecorderPagesConfig:
     raise NotImplementedError()
 
   @classmethod
@@ -227,12 +228,13 @@ class ListPagesConfig(PagesConfig):
   VALID_EXTENSIONS: Tuple[str, ...] = (".txt", ".list")
 
   @classmethod
-  def parse_str(cls, value: str) -> PagesConfig:
+  def parse_str(cls, value: str) -> ListPagesConfig:
     raise argparse.ArgumentTypeError(
         f"URL list file {repr(value)} does not exist.")
 
   @classmethod
-  def parse_path(cls, path: pth.LocalPath, **kwargs) -> PagesConfig:
+  def parse_path(  # type: ignore
+      cls, path: pth.LocalPath, **kwargs) -> PagesConfig:
     assert not kwargs, f"{cls.__name__} does not support extra kwargs"
     pages: List[PageConfig] = []
     with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
@@ -249,7 +251,7 @@ class ListPagesConfig(PagesConfig):
     return PagesConfig(pages=tuple(pages))
 
   @classmethod
-  def parse_dict(cls, config: Dict) -> PagesConfig:
+  def parse_dict(cls, config: Dict) -> PagesConfig:  # type: ignore
     config = ObjectParser.non_empty_dict(config, "pages")
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:

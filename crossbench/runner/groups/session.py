@@ -32,7 +32,7 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
   from crossbench.runner.timing import Timing
-  from crossbench.types import JsonDict
+  from crossbench.types import JsonDict, JsonMapping
 
 
 @enum.unique
@@ -208,8 +208,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
             f"browser={self.browser.unique_name}", f"session={self.index}")
 
   @property
-  def info(self) -> JsonDict:
-    info_dict = super().info
+  def info(self) -> JsonMapping:
+    info_dict = dict(super().info)
     info_dict.update({"index": self.index})
     return info_dict
 

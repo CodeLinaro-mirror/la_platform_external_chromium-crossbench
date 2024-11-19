@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import logging
-from typing import Any, Dict, Final, List, Optional, Sequence, Set
+from typing import Any, Dict, Final, List, Optional, Sequence, Set, Tuple
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -49,14 +49,7 @@ class FlagsVariantConfig:
     return self.flags == other.flags
 
 
-try:
-  FlagsGroupConfigTuple = tuple[FlagsVariantConfig, ...]
-except:  # pylint: disable=bare-except
-  # Python 3.8 fallback
-  FlagsGroupConfigTuple = tuple
-
-
-class FlagsGroupConfig(FlagsGroupConfigTuple):
+class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
   """
   Config container for a list of FlagsVariantConfig:
   FlagsGroupConfig(

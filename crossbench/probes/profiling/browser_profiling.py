@@ -126,13 +126,16 @@ class BrowserProfilingProbe(Probe):
     if attributes.is_chromium_based or attributes.is_safari:
       return
     if attributes.is_firefox:
-      browser_env = browser.platform.environ
-      for env_var in list(FirefoxProfilerEnvVars):
-        if env_var.value in browser_env:
-          env.handle_warning(
-              f"Probe({self}) conflicts with existing "
-              f"env[{env_var.value}]={browser_env[env_var.value]}")
+      self._validate_firefox(env, browser)
     raise ProbeIncompatibleBrowser(self, browser)
+
+  def _validate_firefox(self, env: HostEnvironment, browser: Browser) -> None:
+    browser_env = browser.platform.environ
+    for env_var in list(FirefoxProfilerEnvVars):
+      env_var_str = str(env_var)
+      if env_var_str in browser_env:
+        env.handle_warning(f"Probe({self}) conflicts with existing "
+                           f"env[{env_var_str}]={browser_env[env_var_str]}")
 
   def get_context(self, run: Run) -> BrowserProfilingProbeContext:
     attributes = run.browser.attributes

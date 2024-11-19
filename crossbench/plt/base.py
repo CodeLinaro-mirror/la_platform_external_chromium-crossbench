@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 
 CmdArg = pth.AnyPathLike
+SequenceCmdArgs = Sequence[CmdArg]
 ListCmdArgs = List[CmdArg]
 TupleCmdArgs = Tuple[CmdArg, ...]
 CmdArgs = Union[ListCmdArgs, TupleCmdArgs]

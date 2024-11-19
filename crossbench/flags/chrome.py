@@ -163,7 +163,7 @@ class ChromeFlags(Flags):
   def base_items(self) -> Iterable[Tuple[str, Optional[str]]]:
     yield from super().items()
 
-  def items(self) -> Iterable[Tuple[str, Optional[str]]]:
+  def items(self) -> Iterable[Tuple[str, Optional[str]]]:  # type: ignore
     yield from self.base_items()
     if self._js_flags:
       yield (self._JS_FLAG, str(self.js_flags))

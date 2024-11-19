@@ -41,8 +41,10 @@ class EdgeWebDriver(EdgePathMixin, ChromiumWebDriver):
     finder = EdgeWebDriverDownloader(self)
     return finder.download()
 
-  def _create_driver(self, options: EdgeOptions,
-                     service: EdgeService) -> ChromiumDriver:
+  def _create_driver(
+      self,
+      options: EdgeOptions,  # type: ignore
+      service: EdgeService) -> ChromiumDriver:  # type: ignore
     return webdriver.Edge(options=options, service=service)
 
   @property

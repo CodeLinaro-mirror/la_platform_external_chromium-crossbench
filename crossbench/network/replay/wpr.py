@@ -124,7 +124,7 @@ class WprReplayNetwork(ReplayNetwork):
     try:
       yield self
     finally:
-      if not self._persist_server:
+      if not self._persist_server and self._server:
         self._server.stop()
 
   @property
@@ -242,15 +242,15 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
   def _push_required_files(self) -> List[AnyPath]:
     host_platform = self.host_platform
     if local_wpr_go := WprGoToolFinder(host_platform).path:
-      wpr_root = self.host_platform.path(local_wpr_go.parents[1])
+      wpr_root = self.host_platform.local_path(local_wpr_go.parents[1])
     else:
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 
-    all_files = [self._archive_path,
-                 wpr_root / "ecdsa_key.pem",
-                 wpr_root / "ecdsa_cert.pem",
-                 wpr_root / "deterministic.js"]
-    remote_files = [self._push_file(f) for f in all_files]
+    all_files: List[LocalPath] = [
+        self._archive_path, wpr_root / "ecdsa_key.pem",
+        wpr_root / "ecdsa_cert.pem", wpr_root / "deterministic.js"
+    ]
+    remote_files = [self._push_file(path) for path in all_files]
 
     remote_wpr_go_bin = self._push_file(self._wpr_go_bin)
     self.browser_platform.sh("chmod", "+x", remote_wpr_go_bin)

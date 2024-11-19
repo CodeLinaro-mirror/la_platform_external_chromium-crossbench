@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, Callable, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Tuple
 
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.action.enums import ReadyState
@@ -211,11 +211,9 @@ class DefaultActionRunner(ActionRunner):
 
   def _rate_limit_keystrokes(
       self, run: Run, action: i_action.TextInputAction,
-      do_type_function: Callable[[Run, Actions, str], None]) -> None:
+      do_type_function: Callable[[Run, Actions, str], Any]) -> None:
     character_delay_s = (action.duration / len(action.text)).total_seconds()
-
     start_time = time.time()
-
     action_expected_end_time = start_time + action.duration.total_seconds()
 
     with run.actions("TextInput", measure=False) as actions:

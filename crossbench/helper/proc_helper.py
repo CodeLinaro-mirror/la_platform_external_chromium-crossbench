@@ -5,15 +5,16 @@
 from __future__ import annotations
 
 import logging
-from subprocess import TimeoutExpired
-from typing import TYPE_CHECKING, Optional
+from subprocess import Popen, TimeoutExpired
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
   import signal
-  from subprocess import Popen
+  from asyncio.subprocess import Process
+  KillableProcess = Union[Popen, Process]
 
 
-def wait_and_kill(process: Popen,
+def wait_and_kill(process: KillableProcess,
                   timeout=1,
                   signal: Optional[signal.Signals] = None) -> None:
   """Graceful process termination:
@@ -32,16 +33,17 @@ def wait_and_kill(process: Popen,
       pass
 
 
-def wait_and_terminate(process,
+def wait_and_terminate(process: KillableProcess,
                        timeout=1,
                        signal: Optional[signal.Signals] = None) -> None:
-  if process.poll() is not None:
+  if isinstance(process, Popen) and process.poll() is not None:
     return
   logging.debug("Terminating process: %s", process)
   try:
     if signal:
       process.send_signal(signal)
-    process.wait(timeout)
+    if isinstance(process, Popen):
+      process.wait(timeout)
     return
   except TimeoutExpired as e:
     logging.debug("Got timeout while waiting "

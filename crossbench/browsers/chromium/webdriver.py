@@ -120,9 +120,6 @@ class ChromiumWebDriver(WebDriverBrowser, Chromium, metaclass=abc.ABCMeta):
         executable_path=os.fspath(driver_path),
         log_path=log_path,
         service_args=service_args)
-    # TODO: support remote platforms
-    service.log_file = pth.LocalPath(self.stdout_log_file).open(  # pylint: disable=consider-using-with
-        "w", encoding="utf-8")
     driver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.
@@ -313,14 +310,14 @@ class ChromiumWebDriverAndroid(ChromiumWebDriver):
 
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
-    chrome_flags = cast(ChromeFlags, flags)
+    chrome_flags: ChromeFlags = cast(ChromeFlags, flags)
     for flag in self._UNSUPPORTED_FLAGS:
       if flag not in chrome_flags:
         continue
       flag_value = chrome_flags.pop(flag, None)
       logging.debug("Chrome Android: Removed unsupported flag: %s=%s", flag,
                     flag_value)
-    return chrome_flags
+    return chrome_flags  # type: ignore
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
@@ -408,6 +405,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
       raise ValueError(
           "Locally built chrome version needs package, got empty path")
     assert settings, "Android browser needs custom settings and platform"
+    assert path, "Got invalid path"
     self._package_info: immutabledict[str, Any] = self._parse_package_info(
         settings.platform, path)
     super().__init__(label, path, settings)

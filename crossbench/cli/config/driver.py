@@ -290,7 +290,9 @@ class DriverConfig(ConfigObject):
     return plt.PLATFORM
 
   def _parse_ssh_platform_driver_port(self) -> int:
-    port = self.settings.get("port")
+    port = None
+    if settings := self.settings:
+      port = settings.get("port")
     if port in (None, 0):
       # The driver port is allowed to be 0 on ssh platforms. If so, we will
       # automatically start chromedriver.

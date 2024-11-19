@@ -155,7 +155,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
 @dataclasses.dataclass
 class ChromeHistogramBucket:
   min: int
-  max: int
+  max: Optional[int]
   count: int
 
 

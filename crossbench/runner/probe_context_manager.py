@@ -159,4 +159,9 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
 
   def find_probe_context(self,
                          cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:
-    return self._probe_contexts.get(cls)
+    if probe_context := self._probe_contexts.get(cls):
+      assert isinstance(
+          probe_context.probe,
+          cls), (f"Expected instance of {cls}: got {probe_context.probe}")
+      return probe_context  # type: ignore
+    return None

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import Probe
@@ -30,8 +30,12 @@ class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
     return InternalJsonResultProbeContext(self, run)
 
 
+InternalJsonResultProbeT = TypeVar(
+    "InternalJsonResultProbeT", bound="InternalJsonResultProbe")
+
+
 class InternalJsonResultProbeContext(
-    JsonResultProbeContext[InternalJsonResultProbe]):
+    JsonResultProbeContext[InternalJsonResultProbeT]):
 
   def stop(self) -> None:
     # Only extract data in the late teardown phase.

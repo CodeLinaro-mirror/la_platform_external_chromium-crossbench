@@ -216,8 +216,8 @@ E: <time> 0000 0000 0
     increment_distance_y = (end_position.y -
                             start_position.y) / num_position_updates
 
-    current_position_x = start_position.x
-    current_position_y = start_position.y
+    current_position_x: float = start_position.x
+    current_position_y: float = start_position.y
 
     for _ in range(num_position_updates):
       current_event_time_seconds += 1.0 / self._TOUCH_UPDATE_HERTZ
@@ -259,7 +259,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
   def __init__(self):
     super().__init__()
     self._touch_device: Optional[TouchDevice] = None
-    self._remote_tmp_file = ""
+    self._remote_tmp_file = pth.AnyPath()
 
   def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
     if self._touch_device is None:
@@ -337,13 +337,13 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
         if total_scroll_distance > 0:
           # If scrolling down, the swipe should start at the bottom and end
           # above.
-          y_start = scroll_area.bottom
-          y_end = scroll_area.bottom - current_distance
+          y_start: int = scroll_area.bottom
+          y_end: int = round(scroll_area.bottom - current_distance)
 
         else:
           # If scrolling up, the swipe should start at the top and end below.
           y_start = scroll_area.top
-          y_end = scroll_area.top + current_distance
+          y_end = round(scroll_area.top + current_distance)
 
         self._execute_touch_playback(
             run,
@@ -362,17 +362,21 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     self._remote_tmp_file = browser_platform.mktemp()
     script = (SCRIPTS_DIR / "text_input.py").read_text()
     browser_platform.set_file_contents(self._remote_tmp_file, script)
-
+    typing_process: Optional[subprocess.Popen] = None
     try:
       typing_process = browser_platform.popen(
           "python3", self._remote_tmp_file, bufsize=0, stdin=subprocess.PIPE)
+      typing_stdin = typing_process.stdin
+      assert typing_stdin, "Got no stdin"
 
       self._rate_limit_keystrokes(
-          run, action, lambda run, actions, text: typing_process.stdin.write(
-              text.encode("utf-8")))
+          run, action,
+          lambda run, actions, text: typing_stdin.write(text.encode("utf-8")))
     finally:
-      typing_process.stdin.close()
-      typing_process.wait(timeout=action.timeout.total_seconds())
+      if typing_stdin:
+        typing_stdin.close()
+      if typing_process:
+        typing_process.wait(timeout=action.timeout.total_seconds())
 
   def _get_click_location(
       self, actions: Actions, action: i_action.ClickAction
@@ -387,11 +391,12 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
           raise ElementNotFoundError(action.selector)
         return (None, viewport_info)
       click_location: Point = element_rect.middle
+    elif coordinates := action.coordinates:
+      click_location = coordinates
     else:
-      click_location = action.coordinates
+      raise RuntimeError("Missing coordinates")
 
     assert click_location, "Invalid click location click action."
-
     return (click_location, viewport_info)
 
   def _get_viewport_info(self,
@@ -441,9 +446,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
   def _setup_touch_device(self, run: Run) -> TouchDevice:
     self._remote_tmp_file = run.browser_platform.mktemp()
-
     touch_device_output = self._query_touch_device(run)
-
     return TouchDevice.parse_str(touch_device_output)
 
   def _execute_touch_playback(self, run: Run,
@@ -462,7 +465,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
     run.browser_platform.set_file_contents(self._remote_tmp_file,
                                            touch_event_cmds)
-
+    assert self._touch_device, "Missing touch_device"
     # Then run evemu-play with the input redirected from the temp file.
     run.browser_platform.sh(
         f"evemu-play --insert-slot0 "

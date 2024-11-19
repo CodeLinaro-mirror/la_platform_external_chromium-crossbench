@@ -189,8 +189,9 @@ class WprBase(abc.ABC):
     self._num_parsed_ports = 0
     if self._log_path:
       self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
-    work_dir = (
-        self._bin_path.parent if self._platform.is_local else LocalPath.cwd())
+    work_dir: LocalPath = LocalPath.cwd()
+    if self._platform.is_local:
+      work_dir = self._platform.local_path(self._bin_path.parent)
     with ChangeCWD(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(

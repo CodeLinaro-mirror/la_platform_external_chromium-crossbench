@@ -182,9 +182,10 @@ class BasicFlags(Freezable, collections.UserDict):
                        f"with a different previous value: {repr(old_value)}")
 
   # pylint: disable=arguments-differ
-  def update(self,
-             initial_data: FlagsData = None,
-             override: bool = False) -> None:
+  def update(  # type: ignore
+      self,
+      initial_data: FlagsData = None,
+      override: bool = False) -> None:
     # pylint: disable=arguments-differ
     if initial_data is None:
       return
@@ -216,7 +217,7 @@ class BasicFlags(Freezable, collections.UserDict):
       return flag_name
     return f"{flag_name}={value}"
 
-  def items(self) -> Iterable[Tuple[str, Optional[str]]]:
+  def items(self) -> Iterable[Tuple[str, Optional[str]]]:  # type: ignore
     return self.data.items()
 
   def to_dict(self) -> Dict[str, Optional[str]]:

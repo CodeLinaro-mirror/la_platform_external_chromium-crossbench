@@ -72,9 +72,6 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
         log_path=log_path,
         service_args=service_args,
         env=env_copy)
-    # TODO support remote platforms:
-    service.log_file = self.host_platform.local_path(self.stdout_log_file).open(
-        "w", encoding="utf-8")
     driver = webdriver.Firefox(options=options, service=service)
     return driver
 

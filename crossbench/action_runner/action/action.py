@@ -33,7 +33,7 @@ class ActionTypeConfigParser(ConfigParser):
         required=True)
 
   def new_instance_from_kwargs(self, kwargs: Dict[str, Any]) -> ActionType:
-    return ActionType(kwargs["action"])
+    return ActionType(kwargs["action"])  # type: ignore
 
 
 _ACTION_TYPE_CONFIG_PARSER = ActionTypeConfigParser()
@@ -56,7 +56,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   @classmethod
   def parse_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
-    action_cls: Type[ActionT] = ACTIONS[action_type]
+    action_cls: Type[ActionT] = ACTIONS[action_type]  # type: ignore
     with exception.annotate_argparsing(
         f"Parsing Action details  ...{{ action: \"{action_type}\", ...}}:"):
       action = action_cls.config_parser().parse(config)

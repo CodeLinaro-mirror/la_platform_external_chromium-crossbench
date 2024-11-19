@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 fcntl = None
 try:
-  import fcntl
+  import fcntl  # type: ignore
 except ModuleNotFoundError as not_found:
   logging.debug("No fcntl support %s", not_found)
 
@@ -247,6 +247,7 @@ class TsProxyProcess:
   def _setup_non_blocking_io(self) -> None:
     logging.debug("TsProxy: fcntl is supported, trying to set "
                   "non blocking I/O for the ts_proxy process")
+    assert fcntl, "Did not load fcntl module"
     fd = self._stdout.fileno()
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)  # pylint: disable=no-member

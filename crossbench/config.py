@@ -50,7 +50,7 @@ class _ConfigArgParser:
       name: str,
       type: Optional[ArgParserType],
       default: Any = NOT_SET,
-      choices: Optional[frozenset[Any]] = None,
+      choices: Optional[Iterable[Any]] = None,
       aliases: Iterable[str] = tuple(),
       help: Optional[str] = None,
       is_list: bool = False,
@@ -66,10 +66,12 @@ class _ConfigArgParser:
     self.is_list: bool = is_list
     type_is_class = inspect.isclass(type)
     self.type_is_class: bool = type_is_class
-    self.is_enum: bool = type_is_class and issubclass(type, enum.Enum)
+    self.is_enum: bool = type_is_class and issubclass(
+        type,  # type: ignore
+        enum.Enum)
     self.config_object_type: Optional[Type[ConfigObject]] = None
-    if type_is_class and issubclass(type, ConfigObject):
-      self.config_object_type = type
+    if type_is_class and issubclass(type, ConfigObject):  # type: ignore
+      self.config_object_type = type  # type: ignore
     self.depends_on = frozenset(depends_on) if depends_on else frozenset()
     self.choices: Optional[frozenset] = self._validate_choices(choices)
     if self.type:
@@ -117,7 +119,7 @@ class _ConfigArgParser:
     ObjectParser.unique_sequence(self.aliases, "aliases", ValueError)
 
   def _validate_choices(
-      self, choices: Optional[frozenset[Any]]) -> Optional[frozenset]:
+      self, choices: Optional[Iterable[Any]]) -> Optional[frozenset]:
     if self.is_enum:
       return self._validate_enum_choices(choices)
     if choices is None:
@@ -130,17 +132,18 @@ class _ConfigArgParser:
     return frozen_choices
 
   def _validate_enum_choices(
-      self, choices: Optional[frozenset[Any]]) -> Optional[frozenset]:
+      self, choices: Optional[Iterable[Any]]) -> Optional[frozenset]:
     assert self.is_enum
     assert self.type
     enum_type: Type[enum.Enum] = cast(Type[enum.Enum], self.type)
     if choices is None:
       return frozenset(enum for enum in enum_type)
-    for choice in choices:
+    frozen_choices = frozenset(choices)
+    for choice in frozen_choices:
       assert isinstance(
           choice,
           enum_type), (f"Enum choices must be {enum_type}, but got: {choice}")
-    return frozenset(choices)
+    return frozen_choices
 
   def _validate_default(self, default: Any) -> Any:
     if default is NOT_SET:
@@ -358,25 +361,27 @@ class _ConfigArgParser:
       if not isinstance(data, (float, int)):
         raise ValueError(
             f"{self.cls_name}.{self.name}: Expected number, got {data}")
-    if self.config_object_type:
+    if config_object_type := self.config_object_type:
       # TODO: support custom depending kwargs with ConfigObject
       self._validate_type_without_depending_kwargs(depending_kwargs)
-      return self.parse_config_object(data)
+      return self.parse_config_object(config_object_type, data)
     return self.type(data, **depending_kwargs)
 
-  def parse_config_object(self, data) -> Any:
-    config_object: ConfigObject = self.config_object_type.parse(data)
+  def parse_config_object(self, config_object_type: Type[ConfigObject],
+                          data) -> Any:
+    config_object: ConfigObject = config_object_type.parse(data)
     return config_object.to_argument_value()
 
   def parse_enum_data(self, data: Any) -> enum.Enum:
     assert self.is_enum
     assert self.choices
-    assert self.type
-    assert isinstance(self.type, type), "type for enum has to be a Class."
-    if issubclass(self.type, ConfigEnum):
-      return self.type.parse(data)
-    assert issubclass(self.type, enum.Enum)
-    return ObjectParser.enum(self.name, self.type, data, self.choices)
+    instance_type = self.type
+    assert instance_type
+    assert isinstance(instance_type, type), "type for enum has to be a Class."
+    if issubclass(instance_type, ConfigEnum):
+      return instance_type.parse(data)  # type: ignore
+    assert issubclass(instance_type, enum.Enum)
+    return ObjectParser.enum(self.name, instance_type, data, self.choices)
 
 
 

@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Optional
 
+from immutabledict import immutabledict
+
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.splash_screen import SplashScreen
@@ -44,7 +46,7 @@ class Settings:
     self._network: Network = network or LiveNetwork()
     self._viewport: Viewport = viewport or Viewport.DEFAULT
     self._splash_screen: SplashScreen = splash_screen or SplashScreen.DEFAULT
-    self._secrets: SecretsDict = secrets or {}
+    self._secrets: SecretsDict = secrets or immutabledict()
     self._driver_logging = driver_logging
     self._wipe_system_user_data = wipe_system_user_data
     self._http_request_timeout = http_request_timeout

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
-  from crossbench.types import JsonDict
+  from crossbench.types import JsonDict, JsonMapping
 
 
 class CacheTemperaturesRunGroup(RunGroup):
@@ -84,8 +84,8 @@ class CacheTemperaturesRunGroup(RunGroup):
     )
 
   @property
-  def info(self) -> JsonDict:
-    info = {
+  def info(self) -> JsonMapping:
+    info: JsonDict = {
         "story": str(self.story),
         "repetition": self.repetition,
     }

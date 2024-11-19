@@ -34,12 +34,15 @@ class PathParser:
                            r")(\\|/)[^\\/]")
 
   @classmethod
-  def path(cls, value: pth.AnyPathLike, name: str = "value") -> pth.LocalPath:
-    value = ObjectParser.not_none(value, "path")
-    if not value:
+  def path(cls,
+           value: Optional[pth.AnyPathLike],
+           name: str = "value") -> pth.LocalPath:
+    path_value: pth.AnyPathLike = ObjectParser.not_none(value,
+                                                        "path")  # type: ignore
+    if not path_value:
       raise argparse.ArgumentTypeError("Invalid empty path.")
     try:
-      path = pth.LocalPath(value).expanduser()
+      path = pth.LocalPath(path_value).expanduser()
     except RuntimeError as e:
       raise argparse.ArgumentTypeError(
           f"Invalid Path {name} {repr(value)}': {e}") from e
@@ -117,23 +120,23 @@ class PathParser:
                   name: str = "binary",
                   platform: Optional[plt.Platform] = None) -> pth.AnyPath:
     platform = platform or plt.PLATFORM
-    maybe_path = platform.path(ObjectParser.not_none(value, name))
+    not_none: pth.AnyPathLike = ObjectParser.not_none(value,
+                                                      name)  # type: ignore
+    maybe_path: pth.AnyPath = platform.path(not_none)
     if platform.is_file(maybe_path):
       return maybe_path
-    maybe_bin = platform.search_binary(maybe_path)
-    if not maybe_bin:
-      raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
-    return maybe_bin
+    if maybe_bin := platform.search_binary(maybe_path):
+      return maybe_bin
+    raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
 
   @classmethod
   def any_path(cls,
                value: Optional[pth.AnyPathLike],
                name: str = "value") -> pth.AnyPath:
     """Parse a path than can be on a local or remote file system."""
-    some_value: pth.AnyPathLike = ObjectParser.not_none(value, name)
-    if not some_value:
-      raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
-    return pth.AnyPath(some_value)
+    if some_value := ObjectParser.not_none(value, name):
+      return pth.AnyPath(some_value)  # type: ignore
+    raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
 
   @classmethod
   def local_binary_path(cls,
@@ -167,7 +170,7 @@ class PathParser:
 
 
 EnumT = TypeVar("EnumT", bound=enum.Enum)
-NotNoneT = TypeVar("NotNoneT", bound=Any)
+NotNoneT = TypeVar("NotNoneT")
 SequenceT = TypeVar("SequenceT", bound=Sequence)
 
 
@@ -397,7 +400,6 @@ class ObjectParser:
       return False
     raise argparse.ArgumentTypeError(
         f"Expected bool {name} but got {type_str(value)}: {repr(value)}")
-
 
   @classmethod
   def not_none(cls, value: Optional[NotNoneT], name: str = "value") -> NotNoneT:
