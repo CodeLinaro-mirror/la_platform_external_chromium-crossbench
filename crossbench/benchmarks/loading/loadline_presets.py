@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 import numpy as np
 import pandas as pd
@@ -29,7 +29,6 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.runner import Run
 
 CONFIG_DIR = config.config_dir()
 LOADLINE_DIR = CONFIG_DIR / "benchmark" / "loadline"
@@ -60,8 +59,8 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE = False
   NAME = "loadline_probe"
 
-  def get_context(self, run: Run) -> Optional[LoadLineProbeContext]:
-    return LoadLineProbeContext(self, run)
+  def get_context_cls(self,) -> Type[LoadLineProbeContext]:
+    return LoadLineProbeContext
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)

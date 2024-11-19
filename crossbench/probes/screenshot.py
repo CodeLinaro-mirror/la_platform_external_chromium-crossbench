@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Type
 
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -45,8 +45,8 @@ class ScreenshotProbe(Probe):
         env.handle_warning(
             f"Viewport for '{browser}' might include toolbar: {viewport}")
 
-  def get_context(self, run: Run) -> ScreenshotProbeContext:
-    return ScreenshotProbeContext(self, run)
+  def get_context_cls(self) -> Type[ScreenshotProbeContext]:
+    return ScreenshotProbeContext
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     # TODO: implement

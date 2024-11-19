@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import TYPE_CHECKING, Iterable, List, Optional, Type
 
 from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
@@ -132,8 +132,8 @@ class ShellProbe(Probe):
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.repetitions}.")
 
-  def get_context(self, run: Run) -> ShellProbeContext:
-    return ShellProbeContext(self, run)
+  def get_context_cls(self) -> Type[ShellProbeContext]:
+    return ShellProbeContext
 
 
 class ShellProbeContext(ProbeContext[ShellProbe]):

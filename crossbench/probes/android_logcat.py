@@ -4,9 +4,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Type, cast
 
-from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser)
 from crossbench.probes.result_location import ResultLocation
@@ -15,6 +14,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.runner.run import Run
 
 
@@ -24,7 +24,6 @@ class AndroidLogcatProbe(Probe):
   """
   NAME = "logcat"
   RESULT_LOCATION = ResultLocation.LOCAL
-
   IS_GENERAL_PURPOSE = True
 
   @classmethod
@@ -51,8 +50,8 @@ class AndroidLogcatProbe(Probe):
     if not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")
 
-  def get_context(self, run: Run) -> AndroidLogcatProbeContext:
-    return AndroidLogcatProbeContext(self, run)
+  def get_context_cls(self) -> Type[AndroidLogcatProbeContext]:
+    return AndroidLogcatProbeContext
 
 
 class AndroidLogcatProbeContext(ProbeContext[AndroidLogcatProbe]):
@@ -71,8 +70,9 @@ class AndroidLogcatProbeContext(ProbeContext[AndroidLogcatProbe]):
   @property
   def browser_platform(self) -> AndroidAdbPlatform:
     browser_platform = super().browser_platform
-    assert isinstance(browser_platform, AndroidAdbPlatform)
-    return cast(AndroidAdbPlatform, browser_platform)
+    assert browser_platform.is_android, (
+        f"Expected android platform, but got {browser_platform}")
+    return cast("AndroidAdbPlatform", browser_platform)
 
   def start(self) -> None:
     self._logcat_start_time = self._get_browser_platform_time()

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Dict, Iterable
+from typing import TYPE_CHECKING, Dict, Iterable, Type
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath
-  from crossbench.runner.run import Run
 
 _DEBUGGER_LOOKUP: Dict[str, str] = {
     "macos": "lldb",
@@ -147,8 +146,8 @@ class DebuggerProbe(Probe):
       debugger_cmd += ["--args"]
     return shlex.join(debugger_cmd)
 
-  def get_context(self, run: Run) -> DebuggerContext:
-    return DebuggerContext(self, run)
+  def get_context_cls(self) -> Type[DebuggerContext]:
+    return DebuggerContext
 
 
 class DebuggerContext(ProbeContext[DebuggerProbe]):

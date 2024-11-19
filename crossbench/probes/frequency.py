@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Type
 
 from immutabledict import immutabledict
 
@@ -94,8 +94,8 @@ class FrequencyProbe(EnvModifier):
   def cpu_frequency_map(self) -> CPUFrequencyMap:
     return self._cpu_frequency_map
 
-  def get_context(self, run: Run):
-    return FrequencyProbeContext(self, run)
+  def get_context_cls(self) -> Type[FrequencyProbeContext]:
+    return FrequencyProbeContext
 
 
 @dataclasses.dataclass(frozen=True)

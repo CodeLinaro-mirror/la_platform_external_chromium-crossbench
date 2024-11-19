@@ -8,7 +8,7 @@ import argparse
 import enum
 import logging
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Type
 
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.plt.base import ListCmdArgs
   from crossbench.probes.results import ProbeResult
-  from crossbench.runner.run import Run
 
 # TODO: go over these again and clean the categories.
 MINIMAL_CONFIG = frozenset((
@@ -275,8 +274,8 @@ class TracingProbe(ChromiumProbe):
       flags["--enable-tracing"] = ",".join(self._categories)
     super().attach(browser)
 
-  def get_context(self, run: Run) -> TracingProbeContext:
-    return TracingProbeContext(self, run)
+  def get_context_cls(self) -> Type[TracingProbeContext]:
+    return TracingProbeContext
 
 
 class TracingProbeContext(ProbeContext[TracingProbe]):

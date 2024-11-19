@@ -10,7 +10,8 @@ import os
 import signal
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
+from typing import (TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type,
+                    Union)
 
 from crossbench.helper import collection_helper, proc_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -117,8 +118,8 @@ class VideoProbe(Probe):
             f"Viewport size for {browser} is {viewport}, "
             f"which differs from first viewport {first_viewport}. ")
 
-  def get_context(self, run: Run) -> VideoProbeContext:
-    return VideoProbeContext(self, run)
+  def get_context_cls(self) -> Type[VideoProbeContext]:
+    return VideoProbeContext
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     if not self.merge_runs:

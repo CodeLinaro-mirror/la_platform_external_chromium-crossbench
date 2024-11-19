@@ -8,7 +8,7 @@ import atexit
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 from crossbench import compat
 from crossbench.helper import proc_helper
@@ -91,8 +91,8 @@ class PowerMetricsProbe(Probe):
     super().validate_browser(env, browser)
     self.expect_macos(browser)
 
-  def get_context(self, run: Run) -> PowerMetricsProbeContext:
-    return PowerMetricsProbeContext(self, run)
+  def get_context_cls(self) -> Type[PowerMetricsProbeContext]:
+    return PowerMetricsProbeContext
 
 
 class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):

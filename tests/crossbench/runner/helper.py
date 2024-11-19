@@ -17,7 +17,6 @@ from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 from crossbench.runner.actions import Actions
-from crossbench.runner.run import Run
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -156,8 +155,9 @@ class MockProbe(Probe):
   def result_path_name(self) -> str:
     return f"{self.name}.json"
 
-  def get_context(self, run: Run):
-    return MockProbeContext(self, run)
+  def get_context_cls(self):
+    return MockProbeContext
+
 
 
 class MockProbeContext(ProbeContext):

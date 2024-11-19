@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from enum import IntEnum
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, Type
 
 from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
@@ -21,6 +21,7 @@ from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.probes.probe_context import ProbeContext
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -154,10 +155,13 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
       logging.error("Significant thermal throttling detected during execution, "
                     "scores are not representative of the device performance.")
 
-  def get_context(self, run: Run) -> ThermalMonitorProbeContext:
+  def get_context(self, run: Run) -> Optional[ProbeContext]:
     if run.browser.platform.is_android:
       return AndroidThermalMonitorProbeContext(self, run)
-    return ThermalMonitorProbeContext(self, run)
+    return super().get_context(run)
+
+  def get_context_cls(self) -> Type[ThermalMonitorProbeContext]:
+    return ThermalMonitorProbeContext
 
 
 class ThermalMonitorProbeContext(

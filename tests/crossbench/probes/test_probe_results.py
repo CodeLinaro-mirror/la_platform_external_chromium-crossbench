@@ -5,10 +5,9 @@
 import pathlib
 
 from crossbench.probes.probe import Probe
-from crossbench.probes.results import (BrowserProbeResult,
-                                       DuplicateProbeResult, EmptyProbeResult,
-                                       LocalProbeResult, ProbeResultDict)
-from crossbench.runner.run import Run
+from crossbench.probes.results import (BrowserProbeResult, DuplicateProbeResult,
+                                       EmptyProbeResult, LocalProbeResult,
+                                       ProbeResultDict)
 from tests import test_helper
 from tests.crossbench.base import (BaseCrossbenchTestCase,
                                    CrossbenchFakeFsTestCase)
@@ -358,9 +357,8 @@ class MockProbe(Probe):
   """
   NAME = "mock-probe"
 
-  def get_context(self, run: Run):
+  def get_context_cls(self):
     pass
-
 
 class ProbeResultDictTestCase(CrossbenchFakeFsTestCase):
 

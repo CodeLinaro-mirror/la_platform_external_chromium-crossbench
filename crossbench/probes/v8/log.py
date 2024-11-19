@@ -9,7 +9,7 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Iterable, List, Optional, cast
+from typing import TYPE_CHECKING, Iterable, List, Optional, Type, cast
 
 from crossbench import compat, plt
 from crossbench.flags.js_flags import JSFlags
@@ -182,8 +182,8 @@ class V8LogProbe(ChromiumProbe):
                        [(finder.d8_binary, finder.tick_processor, log_file)
                         for log_file in log_files]))
 
-  def get_context(self, run: Run) -> V8LogProbeContext:
-    return V8LogProbeContext(self, run)
+  def get_context_cls(self) -> Type[V8LogProbeContext]:
+    return V8LogProbeContext
 
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     runs: List[Run] = list(run for run in group.runs if self in run.results)

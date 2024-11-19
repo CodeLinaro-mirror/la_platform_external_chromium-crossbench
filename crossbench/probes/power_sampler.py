@@ -10,7 +10,7 @@ import datetime as dt
 import enum
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 from crossbench import compat
 from crossbench.helper import proc_helper
@@ -156,8 +156,8 @@ class PowerSamplerProbe(Probe):
     ]
     return ProbeValidationError(self, "\n".join(error_message))
 
-  def get_context(self, run: Run) -> PowerSamplerProbeContext:
-    return PowerSamplerProbeContext(self, run)
+  def get_context_cls(self) -> Type[PowerSamplerProbeContext]:
+    return PowerSamplerProbeContext
 
 
 class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):

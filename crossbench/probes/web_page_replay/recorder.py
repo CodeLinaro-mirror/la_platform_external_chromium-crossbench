@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type, Union
 
 from immutabledict import immutabledict
 
@@ -127,8 +127,8 @@ class WebPageReplayProbe(Probe):
   def is_compatible(self, browser: Browser) -> bool:
     return browser.attributes.is_chromium_based and browser.platform.is_local
 
-  def get_context(self, run: Run) -> WprRecorderProbeContext:
-    return WprRecorderProbeContext(self, run)
+  def get_context_cls(self) -> Type[WprRecorderProbeContext]:
+    return WprRecorderProbeContext
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     results = [run.results[self].file for run in group.runs]

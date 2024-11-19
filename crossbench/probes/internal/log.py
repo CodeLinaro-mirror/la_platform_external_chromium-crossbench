@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Type
 
 from crossbench.probes.internal.base import InternalProbe
 from crossbench.probes.probe_context import ProbeContext
@@ -22,8 +22,8 @@ class LogProbe(InternalProbe):
   """
   NAME = "cb.log"
 
-  def get_context(self, run: Run) -> LogProbeContext:
-    return LogProbeContext(self, run)
+  def get_context_cls(self) -> Type[LogProbeContext]:
+    return LogProbeContext
 
 
 class LogProbeContext(ProbeContext[LogProbe]):

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 from crossbench.probes.internal.base import InternalProbe
 from crossbench.probes.probe_context import ProbeContext
@@ -20,8 +20,8 @@ class BrowserDriverLogProbe(InternalProbe):
   """
   NAME = "browser.driver.log"
 
-  def get_context(self, run: Run) -> BrowserDriverLogProbeContext:
-    return BrowserDriverLogProbeContext(self, run)
+  def get_context_cls(self) -> Type[BrowserDriverLogProbeContext]:
+    return BrowserDriverLogProbeContext
 
 
 class BrowserDriverLogProbeContext(ProbeContext[BrowserDriverLogProbe]):

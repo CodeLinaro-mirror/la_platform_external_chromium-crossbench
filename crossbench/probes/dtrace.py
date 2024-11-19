@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import atexit
 import subprocess
-from typing import TYPE_CHECKING, Optional, TextIO
+from typing import TYPE_CHECKING, Optional, TextIO, Type
 
 from crossbench.parse import PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -80,8 +80,8 @@ class DTraceProbe(Probe):
           self, "Cannot execute 'sudo dtrace'. "
           "This probe will fail to start.") from e
 
-  def get_context(self, run: Run) -> DTraceProbeContext:
-    return DTraceProbeContext(self, run)
+  def get_context_cls(self) -> Type[DTraceProbeContext]:
+    return DTraceProbeContext
 
 
 class DTraceProbeContext(ProbeContext[DTraceProbe]):

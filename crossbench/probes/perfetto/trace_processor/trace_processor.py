@@ -8,7 +8,8 @@ import collections
 import json
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Union
+from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Type,
+                    Union)
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -161,8 +162,8 @@ class TraceProcessorProbe(Probe):
         load_timeout=10,
         extra_flags=extra_flags)
 
-  def get_context(self, run: Run) -> TraceProcessorProbeContext:
-    return TraceProcessorProbeContext(self, run)
+  def get_context_cls(self) -> Type[TraceProcessorProbeContext]:
+    return TraceProcessorProbeContext
 
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)

@@ -10,10 +10,9 @@ import dataclasses
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.env import HostEnvironment
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import ProbeConfigParser
@@ -21,6 +20,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.env import HostEnvironment
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
   from crossbench.types import Json
@@ -148,8 +148,8 @@ class ChromeHistogramsProbe(JsonResultProbe):
   def to_json(self, actions: Actions) -> Json:
     raise NotImplementedError("should not be called, data comes from context")
 
-  def get_context(self, run: Run) -> ChromeHistogramsProbeContext:
-    return ChromeHistogramsProbeContext(self, run)
+  def get_context_cls(self) -> Type[ChromeHistogramsProbeContext]:
+    return ChromeHistogramsProbeContext
 
 
 @dataclasses.dataclass

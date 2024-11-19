@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Type, TypeVar
 
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import Probe
 
 if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
-  from crossbench.runner.run import Run
 
 
 class InternalProbe(Probe):
@@ -26,8 +25,8 @@ class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
   IS_GENERAL_PURPOSE = False
   FLATTEN = False
 
-  def get_context(self, run: Run) -> InternalJsonResultProbeContext:
-    return InternalJsonResultProbeContext(self, run)
+  def get_context_cls(self) -> Type[InternalJsonResultProbeContext]:
+    return InternalJsonResultProbeContext
 
 
 InternalJsonResultProbeT = TypeVar(

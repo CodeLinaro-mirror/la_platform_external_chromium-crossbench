@@ -63,8 +63,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def process_json_data(self, json_data) -> Any:
     return json_data
 
-  def get_context(self, run: Run) -> JsonResultProbeContext:
-    return JsonResultProbeContext(self, run)
+  def get_context_cls(self) -> Type[JsonResultProbeContext]:
+    return JsonResultProbeContext
 
   def merge_repetitions(
       self,

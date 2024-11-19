@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Optional, cast
+from typing import TYPE_CHECKING, Iterable, Optional, Type, cast
 
 from crossbench import path as pth
 from crossbench.helper import fs_helper
@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 _PERFETTO_CONFIG_REMOTE_DIR_ANDROID = pth.AnyPath(
     "/data/misc/perfetto-configs/")
 _PERFETTO_TRACE_REMOTE_DIR_ANDROID = pth.AnyPath("/data/misc/perfetto-traces/")
-
 _PERFETTO_REMOTE_DIR_CROS = pth.AnyPath("/usr/local/tmp")
+
 
 class PerfettoProbe(Probe):
   """
@@ -127,6 +127,9 @@ class PerfettoProbe(Probe):
     if run.browser_platform.is_chromeos:
       return ChromeOsPerfettoProbeContext(self, run)
     return AndroidPerfettoProbeContext(self, run)
+
+  def get_context_cls(self) -> Type[PerfettoProbeContext]:
+    raise NotImplementedError()
 
 
 class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):

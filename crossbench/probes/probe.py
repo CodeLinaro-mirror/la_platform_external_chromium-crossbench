@@ -214,9 +214,13 @@ class Probe(ProbeResultKey, abc.ABC):
     del group
     return EmptyProbeResult()
 
-  @abc.abstractmethod
   def get_context(self: ProbeT, run: Run) -> Optional[ProbeContext[ProbeT]]:
-    pass
+    probe_cls: Type[ProbeContext[ProbeT]] = self.get_context_cls()
+    return probe_cls(self, run)
+
+  @abc.abstractmethod
+  def get_context_cls(self: ProbeT) -> Type[ProbeContext[ProbeT]]:
+    raise NotImplementedError()
 
   def get_session_context(  # pylint: disable=useless-return
       self: ProbeT,

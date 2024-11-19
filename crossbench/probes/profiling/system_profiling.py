@@ -17,7 +17,7 @@ import subprocess
 import time
 from functools import cached_property
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
-                    Sequence, Tuple, Union, cast)
+                    Sequence, Tuple, Type, Union, cast)
 
 from crossbench import path as pth
 from crossbench import plt
@@ -28,7 +28,6 @@ from crossbench.compat import StrEnumWithHelp
 from crossbench.helper import fs_helper, proc_helper
 from crossbench.helper.spinner import Spinner
 from crossbench.parse import NumberParser, ObjectParser
-from crossbench.plt.base import ListCmdArgs
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser, ProbeKeyT)
 from crossbench.probes.result_location import ResultLocation
@@ -37,6 +36,7 @@ from crossbench.probes.v8.log import V8LogProbe
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.plt.base import ListCmdArgs
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
@@ -563,6 +563,8 @@ class ProfilingProbe(Probe):
       return AndroidProfilingContext(self, run)
     raise NotImplementedError("Invalid platform")
 
+  def get_context_cls(self) -> Type[ProfilingContext]:
+    raise NotImplementedError()
 
 class ProfilingContext(ProbeContext[ProfilingProbe], metaclass=abc.ABCMeta):
 
