@@ -22,6 +22,9 @@ from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
 
 
 def check_gsutil_access(gsutil_path: pathlib.Path):
+  # TODO(378896413): enable once fixed on the infra side
+  if plt.PLATFORM.is_linux:
+    pytest.skip("gsutil support broken on linux bots")
   if gsutil_path == pathlib.Path():
     pytest.skip("Could not find gsutil")
   try:
