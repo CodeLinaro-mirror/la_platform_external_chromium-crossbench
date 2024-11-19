@@ -11,8 +11,9 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
-from crossbench.benchmarks.base import (BenchmarkProbeMixin, PressBenchmark,
+from crossbench.benchmarks.base import (PressBenchmark,
                                         PressBenchmarkStoryFilter)
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 from crossbench.probes.helper import Flatten

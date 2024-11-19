@@ -15,7 +15,7 @@ from tabulate import tabulate
 
 from crossbench import config
 from crossbench import path as pth
-from crossbench.benchmarks.base import BenchmarkProbeMixin
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
                                                              PageLoadBenchmark)

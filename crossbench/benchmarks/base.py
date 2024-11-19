@@ -22,22 +22,10 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench import path as pth
+  from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.runner.runner import Runner
 
-
-class BenchmarkProbeMixin:
-  NAME: str = ""
-  IS_GENERAL_PURPOSE: bool = False
-
-  def __init__(self, *args, **kwargs):
-    self._benchmark = kwargs.pop("benchmark")
-    assert isinstance(self._benchmark, Benchmark)
-    super().__init__(*args, **kwargs)
-
-  @property
-  def benchmark(self) -> Benchmark:
-    return self._benchmark
 
 
 class Benchmark(abc.ABC):

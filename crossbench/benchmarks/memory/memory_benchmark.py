@@ -15,8 +15,8 @@ import urllib3.exceptions
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
-from crossbench.benchmarks.base import (BenchmarkProbeMixin, StoryFilter,
-                                        SubStoryBenchmark)
+from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController

@@ -29,7 +29,6 @@ from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
@@ -47,6 +46,7 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 if TYPE_CHECKING:
   from selenium import webdriver
 
+  from crossbench import plt
   from crossbench.browsers.settings import Settings
   from crossbench.cli.config.secrets import Secret
   from crossbench.flags.base import FlagsT

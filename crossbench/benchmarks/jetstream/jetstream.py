@@ -11,7 +11,8 @@ from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     cast)
 
-from crossbench.benchmarks.base import BenchmarkProbeMixin, PressBenchmark
+from crossbench.benchmarks.base import PressBenchmark
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
                                       geomean)

@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import enum
-import inspect
 import logging
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type, Union)
@@ -15,7 +14,8 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
 from crossbench import compat, exception
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.benchmarks.base import BenchmarkProbeMixin
+from crossbench.benchmarks import benchmark_validator
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.helper import collection_helper
@@ -242,21 +242,13 @@ class Runner:
     self._create_symlinks: bool = create_symlinks
 
   def _prepare_benchmark(self) -> None:
-    benchmark_probe_cls: Type[BenchmarkProbeMixin]
+    benchmark_validator.validate_cls(type(self._benchmark))
     for benchmark_probe_cls in self._benchmark.PROBES:
-      assert inspect.isclass(benchmark_probe_cls), (
-          f"{self._benchmark}.PROBES must contain classes only, "
-          f"but got {type(benchmark_probe_cls)}")
-      assert issubclass(
-          benchmark_probe_cls,
-          Probe), (f"Expected Probe class but got {type(benchmark_probe_cls)}")
-      assert issubclass(benchmark_probe_cls, BenchmarkProbeMixin), (
-          f"{benchmark_probe_cls} should be BenchmarkProbeMixin "
-          f"for {type(self._benchmark)}.PROBES")
-      assert benchmark_probe_cls.NAME, (  # type: ignore
-          f"Expected probe.NAME for {benchmark_probe_cls}")
-      self.attach_probe(
-          benchmark_probe_cls(benchmark=self._benchmark))  # type: ignore
+      probe = benchmark_probe_cls(benchmark=self._benchmark)
+      assert (isinstance(probe, Probe) and
+              isinstance(probe, BenchmarkProbeMixin)), (
+                  f"Expected BenchmarkProbe, got {probe}")
+      self.attach_probe(probe)
 
   def _validate_browser_labels(self) -> None:
     assert self.browsers, "No browsers provided"
