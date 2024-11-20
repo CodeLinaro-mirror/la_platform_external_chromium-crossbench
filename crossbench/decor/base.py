@@ -7,27 +7,13 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Dict, Generic, Optional, Protocol, Set, Type,
-                    TypeVar)
+from typing import Dict, Generic, Optional, Set, Type, TypeVar
 
 from crossbench import plt
 from crossbench.config import ConfigParser
+from crossbench.decor.target_protocol import DecoratorTargetProtocol
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
-
-if TYPE_CHECKING:
-  from crossbench.exception import ExceptionAnnotationScope
-
-
-class DecoratorTargetProtocol(Protocol):
-
-  @abc.abstractmethod
-  def exception_handler(
-      self,
-      *stack_entries: str,
-  ) -> ExceptionAnnotationScope:
-    pass
-
 
 DecoratorT = TypeVar("DecoratorT", bound="Decorator")
 DecoratorTargetT = TypeVar("DecoratorTargetT", bound=DecoratorTargetProtocol)
@@ -147,7 +133,7 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
 
   def __enter__(self) -> None:
     self._state.transition(self._State.READY, to=self._State.STARTING)
-    with self._target.exception_handler(f"{self._label} start"):
+    with self._target.exception_capture(f"{self._label} start"):
       try:
         self.start()
         self._state.transition(self._State.STARTING, to=self._State.RUNNING)
@@ -157,7 +143,7 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
 
   def __exit__(self, exc_type, exc_value, traceback) -> None:
     self._state.expect(self._State.RUNNING, self._State.FAILURE)
-    with self._target.exception_handler(f"{self._label} stop"):
+    with self._target.exception_capture(f"{self._label} stop"):
       try:
         self.stop()
         if self._state == self._State.RUNNING:

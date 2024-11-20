@@ -59,14 +59,14 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     assert not self._is_active
     assert not self._is_success
 
-    with self.result_origin.exception_handler(f"Probe {self.name} start"):
+    with self.result_origin.exception_capture(f"Probe {self.name} start"):
       self._is_active = True
       self.start()
 
     try:
       yield
     finally:
-      with self.result_origin.exception_handler(f"Probe {self.name} stop"):
+      with self.result_origin.exception_capture(f"Probe {self.name} stop"):
         self.stop()
         self._is_success = True
         assert self._stop_time is None
