@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, List, Optional, Type, cast
 from selenium.webdriver.safari.options import Options as SafariOptions
 
 from crossbench import compat
-from crossbench.browsers.chromium.webdriver import ChromiumWebDriver
+from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
@@ -173,8 +173,8 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
             f"{self.browser.type_name}.profile.json")
 
   @property
-  def chromium(self) -> ChromiumWebDriver:
-    return cast(ChromiumWebDriver, self.browser)
+  def chromium(self) -> ChromiumBasedWebDriver:
+    return cast(ChromiumBasedWebDriver, self.browser)
 
   def start(self) -> None:
     self.chromium.start_profiling()

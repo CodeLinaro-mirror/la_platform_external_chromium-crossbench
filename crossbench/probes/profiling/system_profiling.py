@@ -23,7 +23,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chromium.chromium import Chromium
+from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.compat import StrEnumWithHelp
 from crossbench.helper import fs_helper, proc_helper
 from crossbench.helper.spinner import Spinner
@@ -368,7 +368,7 @@ class ProfilingProbe(Probe):
       assert browser.attributes.is_chromium_based, (
           f"Expected Chromium-based browser, found {type(browser)}.")
     if browser.attributes.is_chromium_based:
-      chromium = cast(Chromium, browser)
+      chromium = cast(ChromiumBased, browser)
       if not self._spare_renderer_process:
         chromium.features.disable("SpareRendererForSitePerProcess")
       self._attach(chromium)
@@ -469,7 +469,7 @@ class ProfilingProbe(Probe):
     except plt.SubprocessError:
       env.handle_warning("Please run gcert for generating pprof results")
 
-  def _attach(self, browser: Chromium) -> None:
+  def _attach(self, browser: ChromiumBased) -> None:
     if self._sample_js:
       if browser.platform.is_linux:
         browser.js_flags.set("--perf-prof")
@@ -966,7 +966,7 @@ class AndroidProfilingContext(ProfilingContext):
         f"Expected Chromium-based browser, found {type(self.browser)}.")
     if (self.browser.platform.is_android and
         self.browser.attributes.is_chromium_based):
-      chromium = cast(Chromium, self.browser)
+      chromium = cast(ChromiumBased, self.browser)
       # Set `--enable-benchmarking` explicitly for
       # retrieving Renderer PID, if needed.
       chromium.flags.set("--enable-benchmarking")

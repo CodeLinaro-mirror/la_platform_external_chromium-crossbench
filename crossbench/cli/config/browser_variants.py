@@ -470,7 +470,7 @@ class BrowserVariantsConfig:
     if not self._is_valid_browser_path(browser_config):
       raise argparse.ArgumentTypeError(f"Browser binary does not exist: {path}")
 
-    if issubclass(browser_cls, browsers.Chromium):
+    if issubclass(browser_cls, browsers.ChromiumBased):
       assert all(isinstance(flags, ChromeFlags) for flags in flags_sets)
 
       extra_flag_sets = self._extract_chrome_flags(args)
