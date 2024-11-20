@@ -39,7 +39,7 @@ class MultiException(ValueError):
 
   def __init__(self, message: str, exceptions: ExceptionAnnotator):
     super().__init__(message)
-    self.exceptions = exceptions
+    self.exceptions: ExceptionAnnotator = exceptions
 
   def __len__(self) -> int:
     return len(self.exceptions)

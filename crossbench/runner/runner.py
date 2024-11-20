@@ -435,6 +435,9 @@ class Runner:
     self.assert_successful_sessions_and_runs()
 
   def _setup(self) -> None:
+    """ Mostly perform validations.
+    Unlike later phases, any exception in here will cause the runner to stop.
+    """
     self._state.transition(RunnerState.INITIAL, to=RunnerState.SETUP)
     logging.info("-" * 80)
     logging.info("SETUP")
@@ -444,13 +447,12 @@ class Runner:
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
     self._validate_browsers()
-    self._exceptions.assert_success()
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
       assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
       logging.info("DISCOVERED %d RUN(S)", len(self._all_runs))
       self._measured_runs = [run for run in self._all_runs if not run.is_warmup]
-    with self._exceptions.capture("Preparing Environment"):
+    with self._exceptions.annotate("Preparing Environment"):
       self._env.setup()
     with self._exceptions.annotate(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
@@ -458,11 +460,12 @@ class Runner:
 
   def _validate_browsers(self) -> None:
     logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
-    for browser in self.browsers:
-      with self._exceptions.capture(
-          f"Preparing browser type={browser.type_name} "
-          f"unique_name={browser.unique_name}"):
-        self._validate_browser(browser)
+    with self._exceptions.annotate("Validating all browsers"):
+      for browser in self.browsers:
+        with self._exceptions.capture(
+            f"Preparing browser type={browser.type_name} "
+            f"unique_name={browser.unique_name}"):
+          self._validate_browser(browser)
 
   def _validate_browser(self, browser: Browser) -> None:
     browser.validate_binary()

@@ -2,12 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import abc
 import datetime as dt
 import json
 import pathlib
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Type
 
+from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.env import HostEnvironment
@@ -147,16 +150,19 @@ class MockNetwork:
 class MockProbe(Probe):
   NAME = "test-probe"
 
-  def __init__(self, test_data: Any = ()) -> None:
+  def __init__(self,
+               test_data: Any = (),
+               context_cls: Optional[Type[MockProbeContext]] = None) -> None:
     super().__init__()
     self.test_data = test_data
+    self.context_cls = context_cls or MockProbeContext
 
   @property
   def result_path_name(self) -> str:
     return f"{self.name}.json"
 
   def get_context_cls(self):
-    return MockProbeContext
+    return self.context_cls
 
 
 
@@ -182,20 +188,27 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     self.out_dir.parent.mkdir(exist_ok=False, parents=True)
     self.stories = [MockStory("story_1"), MockStory("story_2")]
     self.benchmark = MockBenchmark(self.stories)
-    self.browsers: List[Browser] = [
-        MockChromeDev("chrome-dev", settings=Settings(platform=self.platform)),
-        MockFirefox(
-            "firefox-stable", settings=Settings(platform=self.platform))
-    ]
+    self.mock_chrome_dev = MockChromeDev(
+        "chrome-dev", settings=Settings(platform=self.platform))
+    self.mock_firefox = MockFirefox(
+        "firefox-stable", settings=Settings(platform=self.platform))
+    self.browsers: List[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
   def default_runner(self,
                      browsers: Optional[List[Browser]] = None,
+                     benchmark: Optional[Benchmark] = None,
                      throw: bool = True) -> Runner:
-    if browsers is None:
-      browsers = self.browsers
     return Runner(
         self.out_dir,
-        browsers,
-        self.benchmark,
+        browsers or self.browsers,
+        benchmark or self.benchmark,
         platform=self.platform,
         throw=throw)
+
+  def single_story_runner(self,
+                          browser: Optional[Browser] = None,
+                          throw: bool = True) -> Runner:
+    browsers = [browser or self.mock_chrome_dev]
+    benchmark = MockBenchmark([self.stories[0]])
+    return Runner(
+        self.out_dir, browsers, benchmark, platform=self.platform, throw=throw)

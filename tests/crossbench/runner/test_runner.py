@@ -10,6 +10,7 @@ from unittest import mock
 from crossbench import compat
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment
+from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.probes import all as all_probes
@@ -167,22 +168,79 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     runner.run()
     self.assertTrue(runner.is_success)
+    self.assertEqual(len(runner.runs), 4)
     for run in runner.runs:
-      results = run.results[probe]
-      with results.json.open() as f:
-        probe_data = json.load(f)
-        self.assertEqual(probe_data, "custom_probe_data")
-      browser_dir = runner.out_dir / run.browser.unique_name
-      # Pyfakefs is having some issues with relative symlinks, thus we're
-      # manually combining the paths.
-      runs_dir = browser_dir / "runs"
-      run_symlink = runs_dir / compat.readlink(runs_dir / str(run.index))
-      self.assertEqual(run_symlink.resolve(), run.out_dir)
+      self._validate_successful_run(run, runner, probe, "custom_probe_data")
     for browser in runner.browsers:
       runs_symlinks = list(
           (runner.out_dir / browser.unique_name / "runs").iterdir())
       self.assertEqual(len(runs_symlinks), 2)
 
+  def _validate_successful_run(self, run, runner, probe, probe_data):
+    results = run.results[probe]
+    with results.json.open() as f:
+      probe_data = json.load(f)
+      self.assertEqual(probe_data, probe_data)
+    browser_dir = runner.out_dir / run.browser.unique_name
+    # Pyfakefs is having some issues with relative symlinks, thus we're
+    # manually combining the paths.
+    runs_dir = browser_dir / "runs"
+    run_symlink = runs_dir / compat.readlink(runs_dir / str(run.index))
+    self.assertEqual(run_symlink.resolve(), run.out_dir)
+    self._validate_internal_probes(run, runner)
+
+  def _validate_internal_probes(self, run, runner):
+    for probe in runner.probes:
+      if not probe.is_internal:
+        continue
+      result = run.results[probe]
+      self.assertTrue(result)
+
+  def test_run_mock_probe_partial_setup_fail(self):
+    runner = self.default_runner(throw=False)
+    setup_count = 0
+
+    class FailingMockProbeContext(MockProbeContext):
+
+      def setup(self):
+        nonlocal setup_count
+        setup_count += 1
+        if setup_count == 3:
+          raise CustomException(f"failing setup number {setup_count}")
+        raise CustomException(f"failing setup number {setup_count}")
+
+    probe = MockProbe("custom_probe_data", FailingMockProbeContext)
+    runner.attach_probe(probe)
+    self.assertIn(probe, runner.probes)
+    for browser in runner.browsers:
+      self.assertIn(probe, browser.probes)
+
+    with self.assertRaises(MultiException) as cm:
+      runner.run()
+    # TODO(379864792): enable once we can run partially failed probes
+    # failed_merges_count = len(list(runner.runs[0].probes))
+    # self.assertEqual(len(cm.exception), 1 + failed_merges_count)
+    exception = cm.exception.exceptions[0].exception
+    self.assertIsInstance(exception, CustomException)
+
+    self.assertFalse(runner.is_success)
+    self.assertEqual(setup_count, 4)
+    self.assertEqual(len(runner.runs), 4)
+    failed_runs = list(run for run in runner.runs if not run.is_success)
+    # TODO(379864792): enable once we can run partially failed probes
+    #self.assertEqual(len(failed_runs), 1)
+    failed_run = failed_runs[0]
+
+    # TODO(379864792): enable once we can run partially failed probes
+    # for run in runner.runs:
+    #   if run is failed_run:
+    #     continue
+    #   self.assertTrue(run.is_success)
+    #   self._validate_successful_run(run, runner, probe, "custom_probe_data")
+
+    self.assertFalse(failed_run.is_success)
+    self.assertTrue(failed_run.results[probe].is_empty)
+    self._validate_internal_probes(failed_run, runner)
 
   def test_attach_probe_twice(self):
     runner = self.default_runner()
@@ -246,10 +304,6 @@ class RunnerTestCase(BaseRunnerTestCase):
 
 class CustomException(Exception):
   pass
-
-
-def run_setup_fail(is_dry_run):
-  raise CustomException()
 
 
 class RunThreadGroupTestCase(BaseRunnerTestCase):
@@ -454,6 +508,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         self.assertIsInstance(exception_entry.exception, CustomException)
 
 # pytype: enable=wrong-arg-types
+
+del BaseRunnerTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

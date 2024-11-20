@@ -418,23 +418,27 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
   def __init__(self, run: Run, probe_results: ProbeResultDict):
     super().__init__(run, probe_results)
 
+  @property
+  def run(self) -> Run:
+    return self._origin
+
   def get_probe_context(self, probe: Probe) -> Optional[ProbeContext]:
-    return probe.get_context(self._origin)
+    return probe.get_context(self.run)
 
   def setup_selenium_options(self, options: ArgOptions):
     for probe_context in self._probe_contexts.values():
       probe_context.setup_selenium_options(options)
 
   def start_story(self) -> None:
-    with self.measure("probes-start_story_run"):
+    with self._measure("probes-start_story_run"):
       for probe_context in self._probe_contexts.values():
-        with self._origin.exception_capture(
+        with self.run.exception_capture(
             f"Probe {probe_context.name} start_story_run"):
           probe_context.start_story_run()
 
   def stop_story(self) -> None:
-    with self.measure("probes-stop_story_run"):
+    with self._measure("probes-stop_story_run"):
       for probe_context in self._probe_contexts.values():
-        with self._origin.exception_capture(
+        with self.run.exception_capture(
             f"Probe {probe_context.name} stop_story_run"):
           probe_context.stop_story_run()
