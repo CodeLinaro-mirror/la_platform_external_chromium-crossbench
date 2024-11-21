@@ -8,6 +8,7 @@ import argparse
 import datetime as dt
 import json
 import logging
+import os
 import sys
 import textwrap
 import traceback
@@ -23,7 +24,7 @@ from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
-from crossbench.cli import ui
+from crossbench.cli import exception_formatter, ui
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.env import (parse_env_config_file,
@@ -1117,6 +1118,7 @@ class CrossBenchCLI:
       parser.fail(message)
 
   def _init_logging(self, argv: Sequence[str]) -> None:
+    sys.excepthook = exception_formatter.excepthook
     assert self._console_handler is None
     if not self._enable_logging:
       logging.getLogger().setLevel(logging.CRITICAL)
@@ -1134,9 +1136,16 @@ class CrossBenchCLI:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
     # TODO: move to ui helpers
-    ui.COLOR_LOGGING = "--no-color" not in argv
+    ui.COLOR_LOGGING = self._detect_terminal_color(argv)
     if ui.COLOR_LOGGING:
       self._console_handler.setFormatter(ui.ColoredLogFormatter())
+
+  def _detect_terminal_color(self, argv: Sequence[str]) -> bool:
+    if "--no-color" in argv:
+      return False
+    if os.environ.get("NO_COLOR", ""):
+      return False
+    return True
 
   def _setup_logging(self) -> None:
     if not self._enable_logging:
@@ -1149,7 +1158,8 @@ class CrossBenchCLI:
     elif self.args.verbosity >= 1:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
-    ui.COLOR_LOGGING = self.args.color
+    if not self.args.color:
+      ui.COLOR_LOGGING = False
     if ui.COLOR_LOGGING:
       self._console_handler.setFormatter(ui.ColoredLogFormatter())
     else:

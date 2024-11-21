@@ -98,7 +98,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       RemoteConnection.set_timeout(timeout.total_seconds())
     try:
       self._private_driver = self._start_driver(session, self._driver_path)
-    except selenium.common.exceptions.SessionNotCreatedException as e:
+    except selenium.common.exceptions.WebDriverException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e
     self._is_running = True
