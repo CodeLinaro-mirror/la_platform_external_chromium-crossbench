@@ -302,8 +302,15 @@ class CrossBenchCLI:
   def _setup_help_subparser(self) -> None:
     # Just for completeness we want to support "--help" and "help"
     help_parser = self.subparsers.add_parser(
-        "help", help="Print the top-level, same as --help")
+        "help",
+        help=("Print the top-level by default, same as --help. "
+              "Use `help $PROBE`, or `help $BENCHMARK` to print more details."))
+    help_parser.add_argument(
+        "probe_or_benchmark",
+        nargs="?",
+        help="Use a benchmark or probe name to display more details.")
     help_parser.set_defaults(subcommand_fn=self.help_subcommand)
+
     version_parser = self.subparsers.add_parser(
         "version",
         help="Show program's version number and exit, same as --version")
@@ -311,12 +318,25 @@ class CrossBenchCLI:
     assert isinstance(self.describe_parser, CrossBenchArgumentParser)
     self._add_verbosity_argument(self.describe_parser)
 
+  def help_subcommand(self, args: argparse.Namespace) -> None:
+    if search_str := args.probe_or_benchmark:
+      self._describe(search_str)
+    else:
+      self.parser.print_help()
+    sys.exit(0)
+
   def describe_subcommand(self, args: argparse.Namespace) -> None:
+    self._describe(args.filter, args.category, args.json)
+
+  def _describe(self,
+                search_str: Optional[str] = None,
+                category: Optional[str] = "all",
+                print_json: bool = False) -> None:
     benchmarks_data: Dict[str, Any] = {}
     for benchmark_cls in self.BENCHMARKS:
       aliases: Tuple[str, ...] = benchmark_cls.aliases()
-      if args.filter:
-        if benchmark_cls.NAME != args.filter and args.filter not in aliases:
+      if search_str:
+        if benchmark_cls.NAME != search_str and search_str not in aliases:
           continue
       benchmark_info = benchmark_cls.describe()
       benchmark_info["aliases"] = aliases or "None"
@@ -327,27 +347,27 @@ class CrossBenchCLI:
         "probes": {
             str(probe_cls.NAME): probe_cls.help_text()
             for probe_cls in GENERAL_PURPOSE_PROBES
-            if not args.filter or probe_cls.NAME == args.filter
+            if not search_str or probe_cls.NAME == search_str
         }
     }
-    if args.json:
-      if args.category in ("probe", "probes"):
+    if print_json:
+      if category in ("probe", "probes"):
         data = data["probes"]
         if not data:
-          self.error(f"No matching probe found: '{args.filter}'")
-      elif args.category in ("benchmark", "benchmarks"):
+          self.error(f"No matching probe found: '{search_str}'")
+      elif category in ("benchmark", "benchmarks"):
         data = data["benchmarks"]
         if not data:
-          self.error(f"No matching benchmark found: '{args.filter}'")
+          self.error(f"No matching benchmark found: '{search_str}'")
       else:
-        assert args.category == "all"
+        assert category == "all"
         if not data["benchmarks"] and not data["probes"]:
-          self.error(f"No matching benchmarks or probes found: '{args.filter}'")
+          self.error(f"No matching benchmarks or probes found: '{search_str}'")
       print(json.dumps(data, indent=2))
       return
     # Create tabular format
     printed_any = False
-    if args.category in ("all", "benchmark", "benchmarks"):
+    if category in ("all", "benchmark", "benchmarks"):
       table: List[List[Optional[str]]] = [["Benchmark", "Property", "Value"]]
       for benchmark_name, values in data["benchmarks"].items():
         table.append([
@@ -364,30 +384,25 @@ class CrossBenchCLI:
               value = tbl.tabulate(value.items(), tablefmt="plain", **kwargs)
           table.append([None, name, value])
       if len(table) <= 1:
-        if args.category != "all":
-          self.error(f"No matching benchmark found: '{args.filter}'")
+        if category != "all":
+          self.error(f"No matching benchmark found: '{search_str}'")
       else:
         printed_any = True
         print(tbl.tabulate(table, tablefmt="grid"))
 
-    if args.category in ("all", "probe", "probes"):
+    if category in ("all", "probe", "probes"):
       table = [["Probe", "Help"]]
       for probe_name, probe_desc in data["probes"].items():
         table.append([probe_name, probe_desc])
       if len(table) <= 1:
-        if args.category != "all":
-          self.error(f"No matching probe found: '{args.filter}'")
+        if category != "all":
+          self.error(f"No matching probe found: '{search_str}'")
       else:
         printed_any = True
         print(tbl.tabulate(table, tablefmt="grid"))
 
     if not printed_any:
-      self.error(f"No matching benchmarks or probes found: '{args.filter}'")
-
-  def help_subcommand(self, args: argparse.Namespace) -> None:
-    del args
-    self.parser.print_help()
-    sys.exit(0)
+      self.error(f"No matching benchmarks or probes found: '{search_str}'")
 
   def version_subcommand(self, args: argparse.Namespace) -> None:
     del args

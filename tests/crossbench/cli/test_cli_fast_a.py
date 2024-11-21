@@ -9,14 +9,14 @@ import unittest
 from unittest import mock
 
 import hjson
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 from crossbench import __version__, plt
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.env import HostEnvironmentConfig
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 
 class FastCliTestCasePartA(BaseCliTestCase):
@@ -167,6 +167,26 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("--no-color", stdout)
     self.assertIn("Disable colored output", stdout)
     self.assertIn("Available Probes for all Benchmarks:", stdout)
+
+  def test_help_subcommand_probe(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("help", "v8.log")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "help", "v8.log", raises=SysExitTestException)
+    self.assertFalse(stderr)
+    self.assertIn("v8.log", stdout)
+    self.assertIn("V8LogProbe", stdout)
+
+  def test_help_subcommand_benchmark(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("help", "sp3.0")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "help", "sp3.0", raises=SysExitTestException)
+    self.assertFalse(stderr)
+    self.assertIn("Speedometer 3.0", stdout)
+    self.assertIn("https://browserbench.org/Speedometer3.0/", stdout)
 
   def test_version(self):
     with self.assertRaises(SysExitTestException) as cm:
