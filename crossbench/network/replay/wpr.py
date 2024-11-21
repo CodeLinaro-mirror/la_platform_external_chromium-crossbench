@@ -47,6 +47,12 @@ WPR_PREBUILT_LOOKUP: Final[Mapping[Tuple[str, str], WPRCloudBinary]] = {
         WPRCloudBinary("129a66a1378dfcbb815596f66ca680728f77da36"),
     ("android", "arm32"):
         WPRCloudBinary("92ff5bdb9370b36d2844c2f018e2b7d9c3b8ed39"),
+    # On arm64 ChromeOS, use the same binary as arm64 Linux.
+    ("chromeos_ssh", "arm64"):
+        WPRCloudBinary("129a66a1378dfcbb815596f66ca680728f77da36"),
+    # On x64 ChromeOS, use the same binary as x64 Linux.
+    ("chromeos_ssh", "x64"):
+        WPRCloudBinary("6caa467dc6bef92e1c34256f539f8ed8f26a2fe1"),
     ("linux", "x64"):
         WPRCloudBinary("6caa467dc6bef92e1c34256f539f8ed8f26a2fe1"),
     ("macos", "arm64"):
