@@ -178,6 +178,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     super().setup_binary()
     self.platform.adb.grant_notification_permissions(self.android_package)
 
+  def _setup_window(self):
+    logging.debug("%s: Skipping viewport settings %s on %s",
+                  type(self).__name__, self.viewport, self)
+
 
 class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   """
