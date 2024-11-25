@@ -8,7 +8,7 @@ import atexit
 import datetime as dt
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import psutil
 
@@ -28,15 +28,10 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
   def __init__(self, host_platform: Platform, host: str, port: int,
                ssh_port: int, ssh_user: str) -> None:
-    super().__init__(host_platform)
+    super().__init__(host_platform, host, port, ssh_port, ssh_user)
     self._machine: Optional[MachineArch] = None
     self._system_details: Optional[Dict[str, Any]] = None
     self._cpu_details: Optional[Dict[str, Any]] = None
-    # TODO: move ssh-related code to SshPlatformMixin
-    self._host = host
-    self._port = port
-    self._ssh_port = ssh_port
-    self._ssh_user = ssh_user
     self._port_forward_popen_dict: Dict[int, subprocess.Popen] = {}
     self._reverse_port_forward_popen_dict: Dict[int, subprocess.Popen] = {}
     atexit.register(self._stop_all_port_forward)
@@ -45,22 +40,6 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def name(self) -> str:
     return "linux_ssh"
 
-  @property
-  def host(self) -> str:
-    return self._host
-
-  @property
-  def port(self) -> int:
-    return self._port
-
-  @property
-  def ssh_user(self) -> str:
-    return self._ssh_user
-
-  @property
-  def ssh_port(self) -> int:
-    return self._ssh_port
-
   def _build_ssh_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
     self._validate_shell_args(shell, args)
     ssh_cmd: ListCmdArgs = [
@@ -68,59 +47,6 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     ]
     ssh_cmd.append(shlex.join(map(str, args)))
     return ssh_cmd
-
-  def sh_stdout_bytes(self,
-                      *args: CmdArg,
-                      shell: bool = False,
-                      quiet: bool = False,
-                      stdin=None,
-                      env: Optional[Mapping[str, str]] = None,
-                      check: bool = True) -> bytes:
-    ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
-    return self._host_platform.sh_stdout_bytes(
-        *ssh_cmd, shell=False, quiet=quiet, stdin=stdin, env=env, check=check)
-
-  def sh(self,
-         *args: CmdArg,
-         shell: bool = False,
-         capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
-         env: Optional[Mapping[str, str]] = None,
-         quiet: bool = False,
-         check: bool = True) -> subprocess.CompletedProcess:
-    ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
-    return self._host_platform.sh(
-        *ssh_cmd,
-        shell=False,
-        capture_output=capture_output,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        env=env,
-        quiet=quiet,
-        check=check)
-
-  def popen(self,
-            *args: CmdArg,
-            bufsize=-1,
-            shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
-            env: Optional[Mapping[str, str]] = None,
-            quiet: bool = False) -> subprocess.Popen:
-    ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
-    return self._host_platform.popen(
-        *ssh_cmd,
-        shell=False,
-        bufsize=bufsize,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        env=env,
-        quiet=quiet)
 
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
