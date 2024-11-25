@@ -449,6 +449,10 @@ class ObjectParser:
     except re.error as e:
       raise argparse.ArgumentTypeError(f"Invalid regexp {name}: {value}") from e
 
+  @classmethod
+  def safe_filename(cls, value: Any, name: str = "safe filename") -> str:
+    return pth.safe_filename(cls.non_empty_str(value, name))
+
 
 _MAX_LEN = 70
 
