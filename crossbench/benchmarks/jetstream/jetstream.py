@@ -8,8 +8,8 @@ import abc
 import json
 import logging
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
+                    Tuple, cast)
 
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
@@ -59,6 +59,7 @@ class JetStreamProbe(
   };
   return results;
 """
+  TOTAL_METRIC_KEY: Final[str] = "Total/score"
 
   @property
   def jetstream(self) -> JetStreamBenchmark:
@@ -119,8 +120,8 @@ class JetStreamProbe(
       table[metric_key].append(
           Metric.format(metric_value["average"], metric_value["stddev"]))
       # Separate runs don't produce a score
-    if "Total/score" in metrics:
-      metric_value = metrics["Total/score"]
+    if self.TOTAL_METRIC_KEY in metrics:
+      metric_value = metrics[self.TOTAL_METRIC_KEY]
       table["Score"].append(
           Metric.format(metric_value["average"], metric_value["stddev"]))
 
@@ -128,7 +129,21 @@ class JetStreamProbe(
     merged = MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
+    # We discard the score when merging separate line item runs, recompute it!
+    if self.TOTAL_METRIC_KEY not in merged.data:
+      merged.data[self.TOTAL_METRIC_KEY] = self._compute_total_score(merged)
     return self.write_group_result(group, merged, JetStreamCSVFormatter)
+
+  def _compute_total_score(self, merged: MetricsMerger) -> Metric:
+    line_item_scores: List[List[float]] = []
+    for key, metric in merged.data.items():
+      if self._is_valid_metric_key(key):
+        line_item_scores.append(metric.values)
+    total_score = Metric()
+    for iteration_line_items_score_values in zip(*line_item_scores):
+      iteration_score = Metric(iteration_line_items_score_values).geomean
+      total_score.append(iteration_score)
+    return total_score
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
@@ -142,7 +157,9 @@ class JetStreamProbe(
       return True
     return parts[0] != "Total" and parts[1] == "score"
 
+
 class JetStreamCSVFormatter(CSVFormatter):
+  TOTAL_METRIC_KEY: Final[str] = JetStreamProbe.TOTAL_METRIC_KEY
 
   def format_items(self, data: Dict[str, Json],
                    sort: bool) -> Sequence[Tuple[str, Json]]:
@@ -150,12 +167,11 @@ class JetStreamCSVFormatter(CSVFormatter):
     if sort:
       items.sort()
     # Copy all /score items to the top:
-    total_key = "Total/score"
     score_items = []
     for key, value in items:
-      if key != total_key and key.endswith("/score"):
+      if key != self.TOTAL_METRIC_KEY and key.endswith("/score"):
         score_items.append((key, value))
-    total_item = [(total_key, data[total_key])]
+    total_item = [(self.TOTAL_METRIC_KEY, data[self.TOTAL_METRIC_KEY])]
     return total_item + score_items + items
 
 

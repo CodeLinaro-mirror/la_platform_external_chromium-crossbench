@@ -25,6 +25,15 @@ from tests.crossbench.benchmarks import jetstream_helper
 
 class JetStreamCSVFormatterTestCase(unittest.TestCase):
 
+  def test_throw_missing_score(self):
+    metrics = MetricsMerger({
+        "Total/average": 10,
+        "cdjs/average": 30,
+        "cdjs/score": 40,
+    })
+    with self.assertRaisesRegex(KeyError, "Total/score"):
+      _ = JetStreamCSVFormatter(metrics, lambda metric: metric.geomean).table
+
   def test_format_sorted(self):
     metrics = MetricsMerger({
         "Total/average": 10,

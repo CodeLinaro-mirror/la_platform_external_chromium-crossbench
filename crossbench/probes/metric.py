@@ -57,8 +57,11 @@ class Metric:
     assert isinstance(values, list)
     return cls(values)
 
-  def __init__(self, values: Optional[List] = None) -> None:
-    self.values = values or []
+  def __init__(self, values: Optional[Iterable] = None) -> None:
+    if not values:
+      self.values: List[float] = []
+    else:
+      self.values = list(values)
     self._is_numeric: bool = all(map(is_number, self.values))
 
   def __len__(self) -> int:
