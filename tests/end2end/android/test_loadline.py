@@ -8,6 +8,7 @@ import json
 import logging
 import pathlib
 import tempfile
+from enum import Enum
 from typing import Iterator
 
 import pytest
@@ -78,31 +79,40 @@ def _browser_config(device_id, adb_path) -> str:
   })
 
 
+class BenchmarkType(Enum):
+  PHONE = "loadline-phone"
+  TABLET = "loadline-tablet"
+
+
+ARCHIVE_URL = {
+    BenchmarkType.PHONE.value:
+        "gs://chrome-partner-telemetry/loading_benchmark/archive_phone.wprgo",
+    BenchmarkType.TABLET.value:
+        "gs://chrome-partner-telemetry/loading_benchmark/archive_tablet.wprgo"
+}
+
 # TODO(crbug/377290309): Remove the custom network config when the test passes
 # with on-device WPR.
-def _network_config(tmp_dir) -> str:
+def _network_config(tmp_dir, benchmark_type) -> str:
   return json.dumps({
-      "type":
-          "wpr",
-      "url":
-          "gs://chrome-partner-telemetry/loading_benchmark/archive_phone.wprgo",
-      "wpr_go_bin":
-          str(tmp_dir / "wprgo"),
-      "persist_server":
-          True,
-      "run_on_device":
-          False
+      "type": "wpr",
+      "url": ARCHIVE_URL[benchmark_type],
+      "wpr_go_bin": str(tmp_dir / "wprgo"),
+      "persist_server": False,
+      "run_on_device": False
   })
 
 
-def test_loadline_phone(device_id, adb_path, tmp_dir) -> None:
+def _run_loadline(device_id, adb_path, tmp_dir, benchmark_type) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
-  network_config = _network_config(tmp_dir)
-  out_dir = tmp_dir / "result"
-  cli.run(["loadline-phone", f"--browser={browser_config}", "--repeat=1",
-           f"--network={network_config}", "--env-validation=skip", "--throw",
-           f"--out-dir={out_dir}"])
+  network_config = _network_config(tmp_dir, benchmark_type)
+  out_dir = tmp_dir / f"result_{benchmark_type}"
+  cli.run([
+      benchmark_type, f"--browser={browser_config}", "--repeat=1",
+      f"--network={network_config}", "--env-validation=skip", "--throw",
+      f"--out-dir={out_dir}"
+  ])
 
   result_csv = out_dir / "loadline_probe.csv"
   with result_csv.open() as csv:
@@ -118,6 +128,12 @@ def test_loadline_phone(device_id, adb_path, tmp_dir) -> None:
     assert len(values) == 7
     for value in values[1:]:
       assert float(value) > 0, f"Expected positive number, but got {value}"
+
+
+@pytest.mark.xdist_group("end2end-mobile-benchmark")
+@pytest.mark.parametrize("benchmark_type", BenchmarkType)
+def test_loadline(device_id, adb_path, tmp_dir, benchmark_type) -> None:
+  _run_loadline(device_id, adb_path, tmp_dir, benchmark_type.value)
 
 
 if __name__ == "__main__":
