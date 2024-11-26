@@ -91,19 +91,18 @@ class ChromiumBasedWebDriver(
 
     self._log_browser_start(args, driver_path)
     service_args: List[str] = []
-    log_path: Optional[str] = None
+    driver_log_path: Optional[str] = None
     if self._settings.driver_logging:
       service_args += ["--verbose"]
-      log_path = os.fspath(self._setup_driver_log_file())
+      driver_log_path = os.fspath(self._setup_driver_log_file())
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
-        log_path=log_path,
+        log_output=driver_log_path,
+        # TODO: remove after upgrading the vpython selenium version.
+        log_path=driver_log_path,
         service_args=service_args)
     # TODO: support remote platforms
-    # TODO: fix stdout logging.
-    service.log_file = pth.LocalPath(self.stdout_log_file).open(  # pylint: disable=consider-using-with
-        "w", encoding="utf-8")
     driver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.

@@ -60,16 +60,18 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
       options.profile = FirefoxProfile(self.cache_dir)
     self._log_browser_start(args, driver_path)
     service_args: List[str] = []
-    log_path: Optional[str] = None
+    driver_log_path: Optional[str] = None
     if self._settings.driver_logging:
       # TODO: Separate browser from driver logging
       service_args += ["--log", "debug"]
-      log_path = os.fspath(self._setup_driver_log_file())
+      driver_log_path = os.fspath(self._setup_driver_log_file())
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(
         executable_path=os.fspath(driver_path),
-        log_path=log_path,
+        log_output=driver_log_path,
+        # TODO: remove after upgrading the vpython selenium version.
+        log_path=driver_log_path,
         service_args=service_args,
         env=env_copy)
     driver = webdriver.Firefox(options=options, service=service)
