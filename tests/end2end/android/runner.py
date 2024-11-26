@@ -20,8 +20,8 @@ if REPO_DIR not in sys.path:
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]
   return_code = pytest.main([
-      "--exitfirst", "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG",
-      "-o", "log_cli=True", "-rs",
+      "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG", "-o",
+      "log_cli=True", "-rs",
       str(TEST_DIR), *pass_through_args
   ])
   sys.exit(return_code)

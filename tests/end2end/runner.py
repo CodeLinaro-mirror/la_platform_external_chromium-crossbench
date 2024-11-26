@@ -33,8 +33,8 @@ if __name__ == "__main__":
   elif not args.adb_device_id:
     ignore_tests = [f"--ignore={END2END_TEST_DIR / 'android'}"]
   return_code = pytest.main([
-      "--exitfirst", "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG",
-      "-o", "log_cli=True", "-rs",
+      "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG", "-o",
+      "log_cli=True", "-rs",
       str(END2END_TEST_DIR), *pass_through_args
   ] + ignore_tests)
   sys.exit(return_code)
