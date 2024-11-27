@@ -8,11 +8,11 @@ import json
 import logging
 import pathlib
 import tempfile
-from enum import Enum
 from typing import Iterator
 
 import pytest
 
+from crossbench import compat
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.network.replay.wpr import WPR_PREBUILT_LOOKUP
@@ -79,15 +79,15 @@ def _browser_config(device_id, adb_path) -> str:
   })
 
 
-class BenchmarkType(Enum):
+class BenchmarkType(compat.StrEnum):
   PHONE = "loadline-phone"
   TABLET = "loadline-tablet"
 
 
 ARCHIVE_URL = {
-    BenchmarkType.PHONE.value:
+    BenchmarkType.PHONE:
         "gs://chrome-partner-telemetry/loading_benchmark/archive_phone.wprgo",
-    BenchmarkType.TABLET.value:
+    BenchmarkType.TABLET:
         "gs://chrome-partner-telemetry/loading_benchmark/archive_tablet.wprgo"
 }
 
@@ -103,7 +103,9 @@ def _network_config(tmp_dir, benchmark_type) -> str:
   })
 
 
-def _run_loadline(device_id, adb_path, tmp_dir, benchmark_type) -> None:
+@pytest.mark.xdist_group("end2end-mobile-benchmark")
+@pytest.mark.parametrize("benchmark_type", BenchmarkType)
+def test_loadline(device_id, adb_path, tmp_dir, benchmark_type) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   network_config = _network_config(tmp_dir, benchmark_type)
@@ -128,12 +130,6 @@ def _run_loadline(device_id, adb_path, tmp_dir, benchmark_type) -> None:
     assert len(values) == 7
     for value in values[1:]:
       assert float(value) > 0, f"Expected positive number, but got {value}"
-
-
-@pytest.mark.xdist_group("end2end-mobile-benchmark")
-@pytest.mark.parametrize("benchmark_type", BenchmarkType)
-def test_loadline(device_id, adb_path, tmp_dir, benchmark_type) -> None:
-  _run_loadline(device_id, adb_path, tmp_dir, benchmark_type.value)
 
 
 if __name__ == "__main__":
