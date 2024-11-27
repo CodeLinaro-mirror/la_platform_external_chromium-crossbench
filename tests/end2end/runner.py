@@ -36,7 +36,7 @@ if __name__ == "__main__":
   if args.test_gsutil_path:
     more_flags.append(f"--test-gsutil-path={args.test_gsutil_path}")
   return_code = pytest.main([
-      "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG", "-o",
+      "--verbose", "--numprocesses=1", "--log-cli-level=DEBUG", "-o",
       "log_cli=True", "-rs",
       str(END2END_TEST_DIR), *pass_through_args
   ] + more_flags)
