@@ -277,6 +277,12 @@ class Adb:
   def kill_server(self) -> None:
     self._adb_stdout("kill-server", use_serial_id=False)
 
+  def root(self) -> None:
+    self._adb("root", use_serial_id=False)
+
+  def unroot(self) -> None:
+    self._adb("unroot", use_serial_id=False)
+
   def devices(self) -> Dict[str, Dict[str, str]]:
     return adb_devices(self._host_platform, self._adb_bin)
 
