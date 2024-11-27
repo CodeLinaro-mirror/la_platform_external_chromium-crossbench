@@ -121,6 +121,12 @@ class TestThreadModeTestCase(unittest.TestCase):
       self.assertEqual(group.index, index)
 
 
+class FailingMockProbeContext(MockProbeContext):
+
+  def setup(self):
+    raise CustomException("failing setup")
+
+
 class RunnerTestCase(BaseRunnerTestCase):
 
   def test_default_instance(self):
@@ -196,18 +202,8 @@ class RunnerTestCase(BaseRunnerTestCase):
       result = run.results[probe]
       self.assertTrue(result)
 
-  def test_run_mock_probe_partial_setup_fail(self):
-    runner = self.default_runner(throw=False)
-    setup_count = 0
-
-    class FailingMockProbeContext(MockProbeContext):
-
-      def setup(self):
-        nonlocal setup_count
-        setup_count += 1
-        if setup_count == 3:
-          raise CustomException(f"failing setup number {setup_count}")
-        raise CustomException(f"failing setup number {setup_count}")
+  def test_single_story_run_mock_probe_partial_setup_fail(self):
+    runner = self.single_story_runner(throw=False)
 
     probe = MockProbe("custom_probe_data", FailingMockProbeContext)
     runner.attach_probe(probe)
@@ -217,9 +213,75 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     with self.assertRaises(MultiException) as cm:
       runner.run()
-    # TODO(379864792): enable once we can run partially failed probes
-    # failed_merges_count = len(list(runner.runs[0].probes))
-    # self.assertEqual(len(cm.exception), 1 + failed_merges_count)
+    self.assertEqual(len(cm.exception), 1)
+    exception = cm.exception.exceptions[0].exception
+    self.assertIsInstance(exception, CustomException)
+
+    self.assertFalse(runner.is_success)
+    self.assertEqual(len(runner.runs), 1)
+    failed_run = list(runner.runs)[0]
+    self.assertFalse(failed_run.is_success)
+    self.assertTrue(failed_run.results[probe].is_empty)
+    self._validate_internal_probes(failed_run, runner)
+
+  def test_single_story_run_mock_probe_calls(self):
+    # Make sure start / stop are called.
+    runner = self.single_story_runner(throw=True)
+    with mock.patch.object(FailingMockProbeContext,
+                           "setup") as setup_mock, mock.patch.object(
+                               FailingMockProbeContext,
+                               "start") as start_mock, mock.patch.object(
+                                   FailingMockProbeContext,
+                                   "stop") as stop_mock:
+      probe = MockProbe("custom_probe_data", FailingMockProbeContext)
+      runner.attach_probe(probe)
+      runner.run()
+    self.assertTrue(runner.is_success)
+    setup_mock.assert_called_once()
+    start_mock.assert_called_once()
+    stop_mock.assert_called_once()
+
+  def test_single_story_run_mock_probe_partial_setup_fail_mock(self):
+    # Make sure start / stop / teardown are not called after a setup failure
+    runner = self.single_story_runner(throw=False)
+    with mock.patch.object(FailingMockProbeContext,
+                           "start") as start_mock, mock.patch.object(
+                               FailingMockProbeContext,
+                               "stop") as stop_mock, mock.patch.object(
+                                   FailingMockProbeContext,
+                                   "teardown") as teardown_mock:
+      probe = MockProbe("custom_probe_data", FailingMockProbeContext)
+      runner.attach_probe(probe)
+      with self.assertRaises(MultiException) as cm:
+        runner.run()
+      exception = cm.exception.exceptions[0].exception
+      self.assertIsInstance(exception, CustomException)
+    self.assertFalse(runner.is_success)
+    start_mock.assert_not_called()
+    stop_mock.assert_not_called()
+    teardown_mock.assert_not_called()
+
+  def test_run_mock_probe_partial_setup_fail(self):
+    runner = self.default_runner(throw=False)
+    setup_count = 0
+
+    class PartialFailingMockProbeContext(MockProbeContext):
+
+      def setup(self):
+        nonlocal setup_count
+        setup_count += 1
+        if setup_count == 3:
+          raise CustomException(f"failing setup number {setup_count}")
+
+    probe = MockProbe("custom_probe_data", PartialFailingMockProbeContext)
+    runner.attach_probe(probe)
+    self.assertIn(probe, runner.probes)
+    for browser in runner.browsers:
+      self.assertIn(probe, browser.probes)
+
+    with self.assertRaises(MultiException) as cm:
+      runner.run()
+    self.assertEqual(len(cm.exception), 1)
     exception = cm.exception.exceptions[0].exception
     self.assertIsInstance(exception, CustomException)
 
@@ -227,17 +289,16 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(setup_count, 4)
     self.assertEqual(len(runner.runs), 4)
     failed_runs = list(run for run in runner.runs if not run.is_success)
-    # TODO(379864792): enable once we can run partially failed probes
-    #self.assertEqual(len(failed_runs), 1)
+    self.assertEqual(len(failed_runs), 1)
     failed_run = failed_runs[0]
 
-    # TODO(379864792): enable once we can run partially failed probes
-    # for run in runner.runs:
-    #   if run is failed_run:
-    #     continue
-    #   self.assertTrue(run.is_success)
-    #   self._validate_successful_run(run, runner, probe, "custom_probe_data")
+    for run in runner.runs:
+      if run is failed_run:
+        continue
+      self.assertTrue(run.is_success)
+      self._validate_successful_run(run, runner, probe, "custom_probe_data")
 
+    self.assertEqual(failed_run.index, 2)
     self.assertFalse(failed_run.is_success)
     self.assertTrue(failed_run.results[probe].is_empty)
     self._validate_internal_probes(failed_run, runner)

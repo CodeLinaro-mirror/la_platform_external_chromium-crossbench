@@ -161,6 +161,8 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     """
     Called before starting the browser, typically used to set run-specific
     browser flags.
+    If an error is thrown here, *none* of the other hooks
+    (start, stop, teardown) will be called.
     """
 
   @abc.abstractmethod
@@ -230,7 +232,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     """
     Called immediately before starting the given Run, after the browser started.
     This method should have as little overhead as possible. If possible,
-    delegate heavy computation to the "SetUp" method.
+    delegate heavy computation to the "setup" method.
     """
 
   def start_story_run(self) -> None:
@@ -259,6 +261,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def teardown(self) -> ProbeResult:
     """
     Called after stopping all probes and shutting down the browser.
+    Not called if an error was thrown in the setup method.
     Returns
     - None if no data was collected
     - If Data was collected:

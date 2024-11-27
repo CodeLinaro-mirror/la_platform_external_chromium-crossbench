@@ -276,10 +276,10 @@ class Run(ResultOrigin):
     if not self.runner.create_symlinks:
       logging.debug("Symlinks disabled by command line option")
       return
-    self._create_runs_dir()
-    self._create_session_dir()
+    self._setup_runs_dir()
+    self._setup_session_dir()
 
-  def _create_runs_dir(self) -> None:
+  def _setup_runs_dir(self) -> None:
     browser_dir = self.browser_session.browser_dir
     runs_dir = browser_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
@@ -290,7 +290,7 @@ class Run(ResultOrigin):
         pth.LocalPath("../") / self.out_dir.relative_to(browser_dir))
     run_dir.symlink_to(relative_out_dir, target_is_directory=True)
 
-  def _create_session_dir(self) -> None:
+  def _setup_session_dir(self) -> None:
     session_run_dir = self._out_dir / "session"
     assert not session_run_dir.exists(), (
         f"Cannot setup session dir twice: {session_run_dir}")
@@ -329,10 +329,7 @@ class Run(ResultOrigin):
 
   def _run(self, is_dry_run: bool) -> None:
     self._state.transition(State.READY, to=State.RUN)
-    with self.actions("SplashScreen") as actions:
-      display_data = SplashScreenData(self.is_warmup, self.browser,
-                                      self.details_json())
-      self.browser.settings.splash_screen.run(actions, display_data)
+    self._run_splashscreen()
     with self._probe_context_manager.open(is_dry_run):
       logging.info("RUNNING STORY")
       self._state.expect(State.RUN)
@@ -348,20 +345,26 @@ class Run(ResultOrigin):
         with self.exceptions.capture():
           self.environment.check_browser_focused(self.browser)
 
+  def _run_splashscreen(self):
+    with self.actions("SplashScreen") as actions:
+      display_data = SplashScreenData(self.is_warmup, self.browser,
+                                      self.details_json())
+      self.browser.settings.splash_screen.run(actions, display_data)
+
   def _run_story(self) -> None:
     self._run_story_setup()
     if delay := self.timing.start_delay:
-      self._wait(delay, "Start Delay")
+      self._run_story_wait(delay, "Start Delay")
     try:
       self._story.run(self)
     except StopStoryException as e:
       logging.debug("Stop story: %s", e)
     finally:
       if delay := self.timing.stop_delay:
-        self._wait(delay, "Stop Delay")
+        self._run_story_wait(delay, "Stop Delay")
       self._run_story_teardown()
 
-  def _wait(self, delay: dt.timedelta, label: str) -> None:
+  def _run_story_wait(self, delay: dt.timedelta, label: str) -> None:
     logging.info("%s: %s", label, delay)
     self.runner.wait(delay, absolute_time=True)
 

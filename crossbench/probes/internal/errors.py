@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List
 
 from crossbench.probes.internal.base import InternalJsonResultProbe
 from crossbench.probes.results import EmptyProbeResult
@@ -42,7 +42,7 @@ class ErrorsProbe(InternalJsonResultProbe):
 
   def _merge_group(self, group,
                    results_iter: Iterable[ProbeResultDict]) -> ProbeResult:
-    merged_errors = []
+    merged_errors: List[Dict[str, Any]] = []
 
     for results in results_iter:
       result = results[self]
@@ -62,4 +62,4 @@ class ErrorsProbe(InternalJsonResultProbe):
     if not merged_errors:
       return EmptyProbeResult()
 
-    return self.write_group_result(group, merged_errors)
+    return self.write_group_result(group, merged_errors, csv_formatter=None)

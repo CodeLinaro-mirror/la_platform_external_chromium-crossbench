@@ -424,7 +424,7 @@ class Runner:
     with SystemSleepPreventer(self._platform):
       with self._exceptions.annotate("Preparing"):
         self._setup()
-      with self._exceptions.annotate("Running"):
+      with self._exceptions.capture("Running"):
         self._run(is_dry_run)
 
     if self._exceptions.throw:
@@ -446,7 +446,7 @@ class Runner:
         f"Invalid repetitions count: {self.repetitions}")
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
-    self._validate_browsers()
+    self._setup_validate_browsers()
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
       assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
@@ -458,16 +458,16 @@ class Runner:
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)
 
-  def _validate_browsers(self) -> None:
+  def _setup_validate_browsers(self) -> None:
     logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
     with self._exceptions.annotate("Validating all browsers"):
       for browser in self.browsers:
         with self._exceptions.capture(
             f"Preparing browser type={browser.type_name} "
             f"unique_name={browser.unique_name}"):
-          self._validate_browser(browser)
+          self._setup_validate_browser(browser)
 
-  def _validate_browser(self, browser: Browser) -> None:
+  def _setup_validate_browser(self, browser: Browser) -> None:
     browser.validate_binary()
     for probe in browser.probes:
       assert probe in self._probes, (
