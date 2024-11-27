@@ -85,8 +85,7 @@ class AndroidLogcatProbeContext(ProbeContext[AndroidLogcatProbe]):
     assert self._logcat_start_time
     file = self.local_result_path.with_suffix(".txt")
     with file.open("w", encoding="utf-8") as f:
-      self.host_platform.sh(
-          "adb",
+      self.browser_platform.sh(
           "logcat",
           "-t",
           self._logcat_start_time + ".000",
