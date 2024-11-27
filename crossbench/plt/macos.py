@@ -161,7 +161,9 @@ class MacOSPlatform(PosixPlatform):
     if self.exists(info_plist):
       plist = plistlib.loads(self.cat_bytes(info_plist))
       if version_string := plist.get("CFBundleShortVersionString"):
-        return version_string
+        display_name = plist.get("CFBundleDisplayName")
+        return f"{display_name} {version_string}"
+
 
     # Backup solution use the binary (not the .app bundle) with --version.
     maybe_bin_path: Optional[pth.AnyPath] = app_or_bin

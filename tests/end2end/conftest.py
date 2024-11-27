@@ -123,7 +123,7 @@ def cache_dir(output_dir) -> pathlib.Path:
 
 @pytest.fixture
 def archive_dir(output_dir) -> pathlib.Path:
-  path = output_dir / "archive"
+  path = output_dir / "browser_archive"
   assert not path.exists()
   return path
 

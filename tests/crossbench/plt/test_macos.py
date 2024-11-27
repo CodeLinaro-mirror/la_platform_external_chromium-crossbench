@@ -67,8 +67,12 @@ class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
       self.platform.app_version(app_path)
 
     with info_plist.open("wb") as f:
-      plistlib.dump({"CFBundleShortVersionString": "129.9.6668.103"}, f)
-    self.assertEqual(self.platform.app_version(app_path), "129.9.6668.103")
+      plistlib.dump({
+          "CFBundleShortVersionString": "129.9.6668.103",
+          "CFBundleDisplayName": "Google Chrome",
+      }, f)
+    self.assertEqual(self.platform.app_version(app_path),
+                     "Google Chrome 129.9.6668.103")
 
   def test_app_version_binary_inside_app(self):
     binary_path = pth.LocalPath("/Applications/Safari Technology Preview.app/"
