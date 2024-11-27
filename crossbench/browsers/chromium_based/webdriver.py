@@ -98,7 +98,7 @@ class ChromiumBasedWebDriver(
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
-        log_output=driver_log_path,
+        log_output=driver_log_path,  # type: ignore
         # TODO: remove after upgrading the vpython selenium version.
         log_path=driver_log_path,
         service_args=service_args)
