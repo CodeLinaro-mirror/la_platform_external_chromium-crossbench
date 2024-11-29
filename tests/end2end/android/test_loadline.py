@@ -91,25 +91,6 @@ class BenchmarkType(compat.StrEnum):
   TABLET = "loadline-tablet"
 
 
-ARCHIVE_URL = {
-    BenchmarkType.PHONE:
-        "gs://chrome-partner-telemetry/loading_benchmark/archive_phone.wprgo",
-    BenchmarkType.TABLET:
-        "gs://chrome-partner-telemetry/loading_benchmark/archive_tablet.wprgo"
-}
-
-# TODO(crbug/377290309): Remove the custom network config when the test passes
-# with on-device WPR.
-def _network_config(tmp_dir, benchmark_type) -> str:
-  return json.dumps({
-      "type": "wpr",
-      "url": ARCHIVE_URL[benchmark_type],
-      "wpr_go_bin": str(tmp_dir / "wprgo"),
-      "persist_server": False,
-      "run_on_device": False
-  })
-
-
 def _verify_default_metrics(out_dir):
   result_csv = out_dir / "loadline_probe.csv"
   with result_csv.open() as csv:
@@ -161,11 +142,10 @@ def _verify_experimental_metrics(out_dir):
 def test_loadline_default(device_id, adb_path, tmp_dir, benchmark_type) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
-  network_config = _network_config(tmp_dir, benchmark_type)
   out_dir = tmp_dir / f"result_default_{benchmark_type}"
   cli.run([
-      benchmark_type, f"--browser={browser_config}", "--repeat=1",
-      f"--network={network_config}", "--throw", f"--out-dir={out_dir}"
+      benchmark_type, f"--browser={browser_config}", "--repeat=1", "--throw",
+      f"--out-dir={out_dir}"
   ])
   _verify_default_metrics(out_dir)
 
@@ -173,14 +153,12 @@ def test_loadline_default(device_id, adb_path, tmp_dir, benchmark_type) -> None:
 def test_loadline_experimental(device_id, adb_path, root_dir, tmp_dir) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
-  network_config = _network_config(tmp_dir, BenchmarkType.PHONE)
   out_dir = tmp_dir / "result_experimental"
   probe_config = (
       root_dir / "config/benchmark/loadline/probe_config_experimental.hjson")
   cli.run([
       BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=1",
-      f"--network={network_config}", "--throw", f"--out-dir={out_dir}",
-      f"--probe-config={probe_config}"
+      "--throw", f"--out-dir={out_dir}", f"--probe-config={probe_config}"
   ])
   _verify_experimental_metrics(out_dir)
 
@@ -188,11 +166,10 @@ def test_loadline_experimental(device_id, adb_path, root_dir, tmp_dir) -> None:
 def test_loadline_batch(device_id, adb_path, tmp_dir) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
-  network_config = _network_config(tmp_dir, BenchmarkType.PHONE)
   out_dir = tmp_dir / "result_batch"
   cli.run([
       BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=1",
-      f"--network={network_config}", "--throw", f"--out-dir={out_dir}",
+      "--throw", f"--out-dir={out_dir}",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ])
   _verify_default_metrics(out_dir)
