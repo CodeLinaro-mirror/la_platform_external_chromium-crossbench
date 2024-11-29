@@ -79,6 +79,13 @@ def _browser_config(device_id, adb_path) -> str:
   })
 
 
+def _batch_trace_process_config() -> str:
+  return json.dumps({
+      "queries": ["loadline/benchmark_score"],
+      "batch": True,
+  })
+
+
 class BenchmarkType(compat.StrEnum):
   PHONE = "loadline-phone"
   TABLET = "loadline-tablet"
@@ -101,6 +108,23 @@ def _network_config(tmp_dir, benchmark_type) -> str:
       "persist_server": False,
       "run_on_device": False
   })
+
+
+def _verify_default_metrics(out_dir):
+  result_csv = out_dir / "loadline_probe.csv"
+  with result_csv.open() as csv:
+    lines = csv.readlines()
+    assert len(lines) == 2
+
+    titles = lines[0].split(",")
+    assert len(titles) == 7
+    assert titles[0] == "browser"
+    assert titles[1] == "TOTAL_SCORE"
+
+    values = lines[1].split(",")
+    assert len(values) == 7
+    for value in values[1:]:
+      assert float(value) > 0, f"Expected positive number, but got {value}"
 
 
 def _verify_experimental_metrics(out_dir):
@@ -133,43 +157,45 @@ def _verify_experimental_metrics(out_dir):
     assert has_metric_values
 
 
-@pytest.mark.parametrize("benchmark_type,use_experimental_metrics",
-                         [(BenchmarkType.PHONE, False),
-                          (BenchmarkType.TABLET, False),
-                          (BenchmarkType.PHONE, True)])
-def test_loadline(device_id, adb_path, root_dir, tmp_dir, benchmark_type,
-                  use_experimental_metrics) -> None:
+@pytest.mark.parametrize("benchmark_type", BenchmarkType)
+def test_loadline_default(device_id, adb_path, tmp_dir, benchmark_type) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   network_config = _network_config(tmp_dir, benchmark_type)
-  out_dir = tmp_dir / f"result_{benchmark_type}_{use_experimental_metrics}"
-  cmd = [
+  out_dir = tmp_dir / f"result_default_{benchmark_type}"
+  cli.run([
       benchmark_type, f"--browser={browser_config}", "--repeat=1",
       f"--network={network_config}", "--throw", f"--out-dir={out_dir}"
-  ]
-  if use_experimental_metrics:
-    probe_config = (
-        root_dir / "config/benchmark/loadline/probe_config_experimental.hjson")
-    cmd.append(f"--probe-config={probe_config}")
-  cli.run(cmd)
+  ])
+  _verify_default_metrics(out_dir)
 
-  result_csv = out_dir / "loadline_probe.csv"
-  with result_csv.open() as csv:
-    lines = csv.readlines()
-    assert len(lines) == 2
 
-    titles = lines[0].split(",")
-    assert len(titles) == 7
-    assert titles[0] == "browser"
-    assert titles[1] == "TOTAL_SCORE"
+def test_loadline_experimental(device_id, adb_path, root_dir, tmp_dir) -> None:
+  cli = CrossBenchCLI()
+  browser_config = _browser_config(device_id, adb_path)
+  network_config = _network_config(tmp_dir, BenchmarkType.PHONE)
+  out_dir = tmp_dir / "result_experimental"
+  probe_config = (
+      root_dir / "config/benchmark/loadline/probe_config_experimental.hjson")
+  cli.run([
+      BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=1",
+      f"--network={network_config}", "--throw", f"--out-dir={out_dir}",
+      f"--probe-config={probe_config}"
+  ])
+  _verify_experimental_metrics(out_dir)
 
-    values = lines[1].split(",")
-    assert len(values) == 7
-    for value in values[1:]:
-      assert float(value) > 0, f"Expected positive number, but got {value}"
 
-  if use_experimental_metrics:
-    _verify_experimental_metrics(out_dir)
+def test_loadline_batch(device_id, adb_path, tmp_dir) -> None:
+  cli = CrossBenchCLI()
+  browser_config = _browser_config(device_id, adb_path)
+  network_config = _network_config(tmp_dir, BenchmarkType.PHONE)
+  out_dir = tmp_dir / "result_batch"
+  cli.run([
+      BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=1",
+      f"--network={network_config}", "--throw", f"--out-dir={out_dir}",
+      f"--probe=trace_processor:{_batch_trace_process_config()}"
+  ])
+  _verify_default_metrics(out_dir)
 
 
 if __name__ == "__main__":
