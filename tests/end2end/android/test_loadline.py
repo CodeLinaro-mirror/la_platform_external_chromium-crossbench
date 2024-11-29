@@ -133,7 +133,6 @@ def _verify_experimental_metrics(out_dir):
     assert has_metric_values
 
 
-@pytest.mark.xdist_group("end2end-mobile-benchmark")
 @pytest.mark.parametrize("benchmark_type,use_experimental_metrics",
                          [(BenchmarkType.PHONE, False),
                           (BenchmarkType.TABLET, False),

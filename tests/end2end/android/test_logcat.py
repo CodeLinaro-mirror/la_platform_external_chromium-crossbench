@@ -6,8 +6,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 
@@ -16,7 +14,6 @@ def _logcat_config() -> str:
   return json.dumps({"filterspec": "ActivityManager:V *:S"})
 
 
-@pytest.mark.xdist_group("end2end-mobile-benchmark")
 def test_logcat(browser_config, output_dir) -> None:
   cli = CrossBenchCLI()
   result_dir = output_dir / "result"

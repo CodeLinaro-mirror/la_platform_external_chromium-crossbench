@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 
 from perfetto.trace_processor.api import TraceProcessor
-import pytest
 
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
@@ -23,7 +22,6 @@ def _profiling_config() -> str:
   })
 
 
-@pytest.mark.xdist_group("end2end-mobile-benchmark")
 def test_profiling_probe(browser_config, output_dir, adb_root) -> None:
   del adb_root
   cli = CrossBenchCLI()
