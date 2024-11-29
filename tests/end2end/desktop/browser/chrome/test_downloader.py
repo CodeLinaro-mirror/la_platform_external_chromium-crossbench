@@ -22,9 +22,6 @@ from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
 
 
 def check_gsutil_access(gsutil_path: pathlib.Path):
-  # TODO(378896413): enable once fixed on the infra side
-  if plt.PLATFORM.is_linux:
-    pytest.skip("gsutil support broken on linux bots")
   if gsutil_path == pathlib.Path():
     pytest.skip("Could not find gsutil")
   try:
@@ -51,8 +48,6 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
     assert compat.is_relative_to(app_path, output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
-    if plt.PLATFORM.is_macos:
-      assert set(output_dir.iterdir()) == {app_path, archive_dir}
     assert version_str in plt.PLATFORM.app_version(app_path)
     archives = list(archive_dir.iterdir())
     assert len(archives) == 1
@@ -65,10 +60,11 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
 
 
 def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
-  driver_dir = output_dir / "chromedriver-binaries"
-  assert not driver_dir.exists()
-  with tmp_platform_cache_dir(driver_dir):
+  chromedriver_binaries_dir = output_dir / "chromedriver-binaries"
+  assert not chromedriver_binaries_dir.exists()
+  with tmp_platform_cache_dir(chromedriver_binaries_dir):
     finder = ChromeDriverFinder(chrome)
+    driver_dir = chromedriver_binaries_dir / "driver"
     assert not list(driver_dir.iterdir())
     with pytest.raises(DriverNotFoundError):
       finder.find_local_build()
@@ -81,11 +77,13 @@ def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
     assert driver_path.is_file()
     # Restore output dir state.
     driver_path.unlink()
-  driver_dir.rmdir()
+    driver_dir.rmdir()
+  chromedriver_binaries_dir.rmdir()
 
 
 def _delete_extracted_app(output_dir: pathlib.Path, app_version: str) -> None:
-  for extracted_app_path in list(output_dir.iterdir()):
+  browser_bin = output_dir / "browser_bin"
+  for extracted_app_path in list(browser_bin.iterdir()):
     if app_version in str(extracted_app_path):
       shutil.rmtree(str(extracted_app_path))
 

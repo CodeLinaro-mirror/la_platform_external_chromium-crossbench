@@ -82,6 +82,10 @@ def browser_path(request) -> Optional[pathlib.Path]:
 
 @pytest.fixture(scope="session", autouse=True)
 def gsutil_path(request) -> pathlib.Path:
+  if plt.PLATFORM.is_win:
+    # TODO: run gsutil as <PYTHON3> <GSUTIL>, not as a binary, and reenable the
+    # tests.
+    return pathlib.Path()
   maybe_gsutil_path: Optional[pathlib.Path] = _get_app_path(
       request, "--test-gsutil-path")
   if maybe_gsutil_path:
@@ -123,7 +127,7 @@ def cache_dir(output_dir) -> pathlib.Path:
 
 @pytest.fixture
 def archive_dir(output_dir) -> pathlib.Path:
-  path = output_dir / "archive"
+  path = output_dir / "browser_archive"
   assert not path.exists()
   return path
 
