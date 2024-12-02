@@ -67,7 +67,7 @@ class ExceptionAnnotationScope:
       entries: Tuple[str, ...],
       throw_cls: Optional[Type[BaseException]] = None,
   ) -> None:
-    logging.debug("ExceptionAnnotationScope: %s", entries)
+    logging.debug("EAS: %s", entries)
     self._annotator = annotator
     self._exception_types = exception_types
     self._ignore_exception_types = ignore_exception_types + (
