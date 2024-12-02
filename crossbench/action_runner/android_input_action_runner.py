@@ -273,16 +273,12 @@ return [
     browser_main_window_name = self._get_browser_window_name(
         run.browser.attributes)
 
-    raw_window_config = run.browser_platform.sh_stdout(
-        "dumpsys",
-        "window",
-        "windows",
-        "|",
-        "grep",
-        "-E",
-        "-A100",
-        browser_main_window_name,
-    )
+    raw_window_config = run.browser_platform.sh_stdout("dumpsys", "window",
+                                                       "windows")
+
+    raw_window_config = raw_window_config[raw_window_config
+                                          .find(browser_main_window_name):]
+
     match = self._BOUNDS_RE.search(raw_window_config)
     if not match:
       raise RuntimeError("Could not find chrome window bounds")

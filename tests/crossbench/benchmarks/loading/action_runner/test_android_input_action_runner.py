@@ -148,12 +148,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         "dumpsys",
         "window",
         "windows",
-        "|",
-        "grep",
-        "-E",
-        "-A100",
-        "chrome.Main",
-        result=(f"mAppBounds=Rect({app_bounds.left}, "
+        result=(f"chrome.Main\n"
+                f"mAppBounds=Rect({app_bounds.left}, "
                 f"{app_bounds.top} - {app_bounds.right}, {app_bounds.bottom})"))
 
     if not window_inner_height:
