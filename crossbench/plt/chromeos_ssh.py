@@ -61,3 +61,6 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     except plt.SubprocessError as e:
       raise RuntimeError("Could not read remote debugging port.") from e
     return int(dbg_port)
+
+  def screenshot(self, result_path: pth.AnyPath) -> None:
+    self.sh("screenshot", result_path)
