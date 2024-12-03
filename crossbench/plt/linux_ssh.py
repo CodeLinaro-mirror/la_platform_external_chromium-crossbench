@@ -48,6 +48,9 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     ssh_cmd.append(shlex.join(map(str, args)))
     return ssh_cmd
 
+  def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
+    return self._build_ssh_cmd(*args)
+
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     # TODO: Define a more generic method in PosixPlatform, possibly with

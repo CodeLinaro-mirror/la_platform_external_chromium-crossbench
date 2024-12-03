@@ -5,17 +5,36 @@
 from __future__ import annotations
 
 import abc
+from enum import IntEnum
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterator, Optional
+import shlex
+import subprocess
+from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, Mapping,
+                    Optional)
 
 from crossbench import path as pth
-from crossbench.plt.base import Environ, ListCmdArgs, Platform, SubprocessError
+from crossbench.plt.base import Environ, Platform, SubprocessError
 from crossbench.plt.remote import RemotePlatformMixin
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
+  from crossbench.plt.base import CmdArg, ListCmdArgs
+
+
+class PosixSignal(IntEnum):
+  SIGHUP = 1
+  SIGINT = 2
+  SIGQUIT = 3
+  SIGILL = 4
+  SIGABRT = 6
+  SIGFPE = 8
+  SIGKILL = 9
+  SIGSEGV = 11
+  SIGPIPE = 13
+  SIGALRM = 14
+  SIGTERM = 15
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
@@ -278,8 +297,16 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
                                remote_path).rstrip("\n").split("\n"):
       yield remote_path / name
 
+  def send_signal(self, signal: PosixSignal, proc_pid: int):
+    result = self.sh("kill", "-s", str(int(signal)), str(proc_pid), check=False)
+    if result.returncode > 0:
+      raise ProcessLookupError
+
   def terminate(self, proc_pid: int) -> None:
-    self.sh("kill", "-s", "TERM", str(proc_pid))
+    self.send_signal(PosixSignal.SIGTERM, proc_pid)
+
+  def kill(self, proc_pid: int) -> None:
+    self.send_signal(PosixSignal.SIGKILL, proc_pid)
 
   def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
     if self.is_local:
@@ -333,5 +360,68 @@ class RemotePosixEnviron(Environ):
     return self._environ.__len__()
 
 
+class RemotePopen(subprocess.Popen):
+  """
+  A wrapper class to represent a process running on a remote platform.
+
+  Allows to send signals to the remote process and gracefully wait for its
+  termination.
+  """
+
+  def __init__(self,
+               platform: RemotePosixPlatform,
+               args: ListCmdArgs,
+               bufsize=-1,
+               stdout=None,
+               stderr=None,
+               stdin=None):
+    self._platform: RemotePosixPlatform = platform
+    self._pid: Optional[int] = None
+    super().__init__(args, bufsize=bufsize, stdout=stdout, stderr=stderr,
+                     stdin=stdin)
+
+  def set_pid(self, pid: int) -> None:
+    assert self._pid is None, "Should not set PID twice"
+    self._pid = pid
+
+  def send_signal(self, signal: int) -> None:
+    assert self._pid
+    self._platform.send_signal(PosixSignal(signal), self._pid)
+
+  def terminate(self) -> None:
+    assert self._pid
+    self._platform.terminate(self._pid)
+
+  def kill(self) -> None:
+    assert self._pid
+    self._platform.kill(self._pid)
+
+
 class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
-  pass
+  def popen(self,
+            *args: CmdArg,
+            bufsize=-1,
+            shell: bool = False,
+            stdout=None,
+            stderr=None,
+            stdin=None,
+            env: Optional[Mapping[str, str]] = None,
+            quiet: bool = False) -> subprocess.Popen:
+    del shell
+    assert not (self.is_android and env), "ADB does not support env vars"
+
+    with self.NamedTemporaryFile("popen_pid_") as temp_pid_file:
+      shell_cmd = shlex.join(map(str, args))
+      shell_cmd += f" & echo $! >{temp_pid_file} && wait"
+      if not quiet:
+        logging.debug("REMOTE SHELL: %s", shell_cmd)
+
+      host_platform_cmd = self.build_shell_cmd(shell_cmd)
+
+      remote_popen = RemotePopen(
+          self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
+          stderr=stderr, stdin=stdin)
+      remote_pid = int(self.cat(temp_pid_file))
+      remote_popen.set_pid(remote_pid)
+
+    return remote_popen

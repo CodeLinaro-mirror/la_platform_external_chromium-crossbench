@@ -571,8 +571,7 @@ class Platform(abc.ABC):
       self,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_file: LocalPath = self.host_platform.local_path(
-        self.host_platform.mktemp(prefix, dir))
+    tmp_file: pth.AnyPath = self.mktemp(prefix, dir)
     try:
       yield tmp_file
     finally:

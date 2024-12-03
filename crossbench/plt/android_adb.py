@@ -133,25 +133,7 @@ class Adb:
   def device_info(self) -> Dict[str, str]:
     return self._device_info
 
-  def popen(self,
-            *args: CmdArg,
-            bufsize=-1,
-            shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
-            env: Optional[Mapping[str, str]] = None,
-            quiet: bool = False) -> subprocess.Popen:
-    del shell
-    assert not env, "ADB does not support setting env vars."
-    if not quiet:
-      logging.debug("SHELL: %s", shlex.join(map(str, args)))
-    adb_cmd: ListCmdArgs = [self._adb_bin, "-s", self._serial_id, "shell"]
-    adb_cmd.extend(args)
-    return self._host_platform.popen(
-        *adb_cmd, bufsize=bufsize, stdout=stdout, stderr=stderr, stdin=stdin)
-
-  def _build_adb_cmd(self,
+  def build_adb_cmd(self,
                      *args: CmdArg,
                      use_serial_id: bool = True) -> ListCmdArgs:
     adb_cmd: ListCmdArgs = [self._adb_bin]
@@ -180,7 +162,7 @@ class Adb:
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
     del shell
-    adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
+    adb_cmd = self.build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh(
         *adb_cmd,
         capture_output=capture_output,
@@ -212,7 +194,7 @@ class Adb:
                         stdin=None,
                         use_serial_id: bool = True,
                         check: bool = True) -> bytes:
-    adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
+    adb_cmd = self.build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh_stdout_bytes(
         *adb_cmd, quiet=quiet, check=check, stdin=stdin)
 
@@ -571,6 +553,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def default_tmp_dir(self) -> pth.AnyPath:
     return self.path("/data/local/tmp/")
 
+  def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
+    return self.adb.build_adb_cmd("shell", *args)
+
   def sh(self,
          *args: CmdArg,
          shell: bool = False,
@@ -601,25 +586,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(
         *args, shell=shell, stdin=stdin, env=env, quiet=quiet, check=check)
-
-  def popen(self,
-            *args: CmdArg,
-            bufsize=-1,
-            shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
-            env: Optional[Mapping[str, str]] = None,
-            quiet: bool = False) -> subprocess.Popen:
-    return self.adb.popen(
-        *args,
-        bufsize=bufsize,
-        shell=shell,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        env=env,
-        quiet=quiet)
 
   def port_forward(self, local_port: int, remote_port: int) -> int:
     return self.adb.forward(local_port, remote_port, protocol="tcp")

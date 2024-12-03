@@ -16,10 +16,11 @@ from crossbench.plt.android_adb import Adb
 def adb_root(device_id, adb_path):
   adb = Adb(PLATFORM, device_id, adb_path)
   if adb.has_root():
-    return
-  adb.root()
-  yield
-  adb.unroot()
+    yield
+  else:
+    adb.root()
+    yield
+    adb.unroot()
 
 
 @pytest.fixture
