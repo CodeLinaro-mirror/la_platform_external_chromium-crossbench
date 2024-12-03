@@ -43,8 +43,10 @@ class WinPlatform(Platform):
 
   @functools.cached_property
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
-    return self.sh_stdout("wmic", "cpu", "get",
-                          "name").strip().splitlines()[2].strip()
+    return self.sh_stdout(
+      "powershell", "-c",
+      "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
+    ).strip().splitlines()[2].strip()
 
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     self.assert_is_local()
