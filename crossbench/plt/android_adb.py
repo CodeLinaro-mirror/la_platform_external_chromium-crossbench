@@ -16,6 +16,10 @@ from crossbench.parse import PathParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import RemotePosixPlatform
 
+# Defines the Android permissions to be granted.
+# TODO(381985595): make this configurable.
+ANDROID_PERMISSIONS = ["POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO"]
+
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
   from crossbench.types import JsonDict
@@ -411,19 +415,22 @@ class Adb:
       else:
         raise
 
-  def grant_notification_permissions(self, package_name: str) -> None:
+  def grant_permissions(self, package_name: str) -> None:
     if self.build_version < 13:
       # Notification permission setting is needed for Android 13 and above.
       # https://developer.android.com/develop/ui/views/notifications/notification-permission  # pylint: disable=line-too-long
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    cmd: ListCmdArgs = ["pm", "grant"]
+    user: Optional[str] = None
     if self.build_version >= 14:
       user = self.cmd("user", "get-main-user").strip()
-      cmd.extend(["--user", user])
-    cmd.extend([package_name, "android.permission.POST_NOTIFICATIONS"])
-    self.shell(*cmd)
+    for perm in ANDROID_PERMISSIONS:
+      cmd: ListCmdArgs = ["pm", "grant"]
+      if user:
+        cmd.extend(["--user", user])
+      cmd.extend([package_name, f"android.permission.{perm}"])
+      self.shell(*cmd)
 
 
 class AndroidAdbPlatform(RemotePosixPlatform):

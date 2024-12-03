@@ -118,7 +118,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self.adb_force_stop()
     if session.browser.wipe_system_user_data:
       self.adb_force_clear()
-      self.platform.adb.grant_notification_permissions(self.android_package)
+      self.platform.adb.grant_permissions(self.android_package)
     self._backup_chrome_flags()
     atexit.register(self._restore_chrome_flags)
     return self._start_chromedriver(session, driver_path)
@@ -176,7 +176,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   def setup_binary(self) -> None:
     super().setup_binary()
-    self.platform.adb.grant_notification_permissions(self.android_package)
+    self.platform.adb.grant_permissions(self.android_package)
+
 
   def _setup_window(self):
     logging.debug("%s: Skipping viewport settings %s on %s",
