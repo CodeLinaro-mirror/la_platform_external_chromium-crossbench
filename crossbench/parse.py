@@ -329,7 +329,7 @@ class ObjectParser:
                           value: str,
                           name: str = "url",
                           schemes: Sequence[str] = ("http", "https", "about",
-                                                    "file"),
+                                                    "file", "data"),
                           default_scheme: str = "https") -> str:
     parsed = cls.parse_fuzzy_url(value, name, schemes, default_scheme)
     return urlparse.urlunparse(parsed)
@@ -339,7 +339,7 @@ class ObjectParser:
                       value: str,
                       name: str = "url",
                       schemes: Sequence[str] = ("http", "https", "about",
-                                                "file"),
+                                                "file", "data"),
                       default_scheme: str = "https") -> urlparse.ParseResult:
     assert default_scheme, "missing default scheme value"
     value = cls.non_empty_str(value, name)
@@ -374,7 +374,7 @@ class ObjectParser:
             f"but got {repr(parsed.scheme)} for url {repr(value)}")
       if port := parsed.port:
         _ = NumberParser.port_number(port, f"{name} port")
-      if scheme in ("file", "about"):
+      if scheme in ("file", "about", "data"):
         return parsed
       hostname = parsed.hostname
       if not hostname:

@@ -491,6 +491,8 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("localhost:8123/77/", "https://localhost:8123/77/"),
         ("localhost:8123/bar", "https://localhost:8123/bar"),
         ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+        ("data:text/html,this is some data",
+         "data:text/html,this is some data"),
     )
     for url, result in expected:
       with self.subTest(url=url):
@@ -534,6 +536,8 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("https://localhost:8123/", "https://localhost:8123/"),
         ("http://localhost:8123/bar", "http://localhost:8123/bar"),
         ("https://localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+        ("data:text/html,this is some data",
+         "data:text/html,this is some data"),
     )
     for url, result in expected:
       with self.subTest(url=url):
