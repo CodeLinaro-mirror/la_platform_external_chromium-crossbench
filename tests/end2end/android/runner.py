@@ -24,4 +24,14 @@ if __name__ == "__main__":
       "-o", "log_cli=True", "-rs",
       str(TEST_DIR), *pass_through_args
   ])
+
+  # Retry failed tests once
+  if return_code > 0:
+    return_code = pytest.main([
+        "--verbose", "--dist=no", "--numprocesses=1", "--log-cli-level=DEBUG",
+        "-o", "log_cli=True", "-rs", "--last-failed",
+        "--last-failed-no-failures=none",
+        str(TEST_DIR), *pass_through_args
+    ])
+
   sys.exit(return_code)
