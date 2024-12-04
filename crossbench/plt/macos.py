@@ -162,6 +162,9 @@ class MacOSPlatform(PosixPlatform):
       plist = plistlib.loads(self.cat_bytes(info_plist))
       if version_string := plist.get("CFBundleShortVersionString"):
         display_name = plist.get("CFBundleDisplayName")
+        if not display_name:
+          # Fallback. Apps like Firefox have no CFBundleDisplayName.
+          display_name = plist.get("CFBundleName")
         return f"{display_name} {version_string}"
 
 
