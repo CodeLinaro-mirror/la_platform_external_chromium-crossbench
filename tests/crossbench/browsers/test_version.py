@@ -8,6 +8,8 @@ import abc
 import unittest
 from typing import cast
 
+from tests import test_helper
+
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
@@ -17,7 +19,6 @@ from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
                                          BrowserVersionParseError,
                                          PartialBrowserVersionError,
                                          UnknownBrowserVersion)
-from tests import test_helper
 
 
 class BrowserVersionChannelTestCase(unittest.TestCase):
@@ -524,6 +525,8 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertFalse(chrome_version.is_canary)
     alpha_version = ChromeVersion.alpha(version.parts)
     self.assertEqual(alpha_version, version)
+    dev_version = ChromeVersion.dev(version.parts)
+    self.assertEqual(dev_version, version)
 
   def test_parse_pre_alpha_chrome(self):
     version: BrowserVersion = self._parse_helper(self.PRE_ALPHA_VERSION_STR)
@@ -537,6 +540,8 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertTrue(chrome_version.is_canary)
     pre_alpha_version = ChromeVersion.pre_alpha(version.parts)
     self.assertEqual(pre_alpha_version, version)
+    canary_version = ChromeVersion.canary(version.parts)
+    self.assertEqual(canary_version, version)
 
   def test_parse_partial_milestone(self):
     version = self.parse("Chrome 125")

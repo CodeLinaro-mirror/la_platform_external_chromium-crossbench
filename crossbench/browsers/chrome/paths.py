@@ -47,6 +47,7 @@ class ChromePathMixin:
     return platform.search_app_or_executable(
         "Chrome Canary",
         macos=["Google Chrome Canary.app"],
+        linux=["google-chrome-canary"],
         win=["Google/Chrome SxS/Application/chrome.exe"])
 
   @property

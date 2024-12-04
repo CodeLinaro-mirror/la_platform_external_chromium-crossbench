@@ -211,6 +211,10 @@ class ChromeDownloaderLinux(ChromeDownloader):
       dir_name = "chrome"
     if self._requested_version.is_beta:
       dir_name = "chrome-beta"
+    if self._requested_version.is_alpha:
+      dir_name = "chrome-unstable"
+    if self._requested_version.is_pre_alpha:
+      dir_name = "chrome-canary"
     return self._extracted_path() / "opt/google" / dir_name / "chrome"
 
   def _archive_urls(
@@ -226,13 +230,15 @@ class ChromeDownloaderLinux(ChromeDownloader):
             f"{folder_url}google-chrome-beta-{parts_str}-1.x86_64.rpm")
     if version.is_beta:
       return (beta,)
-    dev = (ChromeVersion.alpha(parts),
+    dev = (ChromeVersion.dev(parts),
            f"{folder_url}google-chrome-unstable-{parts_str}-1.x86_64.rpm")
     if version.is_alpha:
       return (dev,)
+    canary = (ChromeVersion.canary(parts),
+              f"{folder_url}google-chrome-canary-{parts_str}-1.x86_64.rpm")
     if version.is_pre_alpha:
-      raise ValueError(f"Canary not supported on linux: {version}")
-    return (stable, beta, dev)
+      return (canary,)
+    return (stable, beta, dev, canary)
 
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
@@ -290,11 +296,11 @@ class ChromeDownloaderMacOS(ChromeDownloader):
             f"{folder_url}GoogleChromeBeta-{version_str}.dmg")
     if version.is_beta:
       return (beta,)
-    dev = (ChromeVersion.alpha(parts),
+    dev = (ChromeVersion.dev(parts),
            f"{folder_url}GoogleChromeDev-{version_str}.dmg")
     if version.is_alpha:
       return (dev,)
-    canary = (ChromeVersion.pre_alpha(parts),
+    canary = (ChromeVersion.canary(parts),
               f"{folder_url}GoogleChromeCanary-{version_str}.dmg")
     if version.is_pre_alpha:
       return (canary,)
