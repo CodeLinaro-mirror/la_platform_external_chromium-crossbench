@@ -130,3 +130,4 @@ class RunThreadGroup(threading.Thread):
       run.log_results()
     else:
       browser_session.exceptions.extend(run.exceptions)
+      run.log_failure()

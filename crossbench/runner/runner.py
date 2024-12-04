@@ -41,6 +41,7 @@ from crossbench.runner.timing import Timing
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.runner.groups.base import RunGroup
   from crossbench.stories.story import Story
 
 
@@ -524,10 +525,26 @@ class Runner:
                index, name, timeout, throw)
 
   def assert_successful_sessions_and_runs(self) -> None:
-    failed_runs = list(run for run in self.runs if not run.is_success)
-    self._exceptions.assert_success(
-        f"Runs Failed: {len(failed_runs)}/{len(tuple(self.runs))} runs failed.",
-        RunnerException)
+    if self._exceptions.is_success:
+      return
+    failed_runs: int = len(list(run for run in self.runs if not run.is_success))
+    all_runs: int = len(tuple(self.runs))
+    num_exceptions = len(self._exceptions)
+    message: str = (
+        f"{failed_runs}/{all_runs} Runs had {num_exceptions} error(s).")
+    if not failed_runs:
+      # No need to log the error here, since merging probe data is the last
+      # step and errors have already been printed right before calling this
+      # helper.
+      message = f"Merged probe data with {num_exceptions} error(s)"
+    else:
+      # Print run failures, since they potentially have been printed the last
+      # time very high up.
+      logging.error("=" * 80)
+      logging.error("❗ %s", message.upper())
+      logging.error("=" * 80)
+    # Raise a RunnerException to be handled in the CLI.
+    self._exceptions.assert_success(message, RunnerException)
 
   def _get_thread_groups(self) -> List[RunThreadGroup]:
     # Also include warmup runs here.
@@ -561,36 +578,45 @@ class Runner:
   def _teardown(self) -> None:
     self._state.transition(RunnerState.RUNNING, to=RunnerState.TEARDOWN)
     logging.info("=" * 80)
-    logging.info("RUNS COMPLETED")
-    logging.info("-" * 80)
+    if self.is_success:
+      logging.info("✅ %s RUNS COMPLETED SUCCESSFULLY", len(self.runs))
+    else:
+      logging.warning("❗ %s RUNS COMPLETED WITH ERRORS", len(self.runs))
+    logging.info("=" * 80)
     logging.info("MERGING PROBE DATA")
+    self._teardown_merge_probe_data()
 
+  def _teardown_merge_probe_data(self) -> None:
     throw = self._exceptions.throw
-
-    logging.debug("MERGING PROBE DATA: cache temperatures")
     self._cache_temperatures_groups = CacheTemperaturesRunGroup.groups(
         self._measured_runs, throw)
-    for cache_temp_group in self._cache_temperatures_groups:
-      cache_temp_group.merge(self.probes)
-      self._exceptions.extend(cache_temp_group.exceptions, is_nested=True)
+    self._teardown_merge_run_group("cache temperatures",
+                                   self._cache_temperatures_groups)
 
-    logging.debug("MERGING PROBE DATA: repetitions")
     self._repetitions_groups = RepetitionsRunGroup.groups(
         self._cache_temperatures_groups, throw)
-    for repetition_group in self._repetitions_groups:
-      repetition_group.merge(self.probes)
-      self._exceptions.extend(repetition_group.exceptions, is_nested=True)
+    self._teardown_merge_run_group("repetitions", self._repetitions_groups)
 
-    logging.debug("MERGING PROBE DATA: stories")
     self._story_groups = StoriesRunGroup.groups(self._repetitions_groups, throw)
-    for story_group in self._story_groups:
-      story_group.merge(self.probes)
-      self._exceptions.extend(story_group.exceptions, is_nested=True)
+    self._teardown_merge_run_group("stories", self._story_groups)
 
-    logging.debug("MERGING PROBE DATA: browsers")
     self._browser_group = BrowsersRunGroup(self._story_groups, throw)
-    self._browser_group.merge(self.probes)
-    self._exceptions.extend(self._browser_group.exceptions, is_nested=True)
+    self._teardown_merge_run_group("browsers", [self._browser_group])
+
+  def _teardown_merge_run_group(self, group_name: str,
+                                groups: Iterable[RunGroup]) -> None:
+    logging.debug("MERGING PROBE DATA: %s", group_name)
+    group_exceptions = exception.ExceptionAnnotator(self._exceptions.throw)
+    try:
+      for group in groups:
+        group.merge(self.probes)
+        group_exceptions.extend(group.exceptions, is_nested=True)
+    finally:
+      self._exceptions.extend(group_exceptions)
+      if not group_exceptions.is_success:
+        group_exceptions.log(
+            f"❗ MERGED {group_name.upper()} PROBE DATA WITH ERRORS",
+            separator="-")
 
 
 TEMPERATURE_ICONS = {

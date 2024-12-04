@@ -85,7 +85,7 @@ class Run(ResultOrigin):
         self, self._probe_results)
 
   def __str__(self) -> str:
-    return f"Run({self.name}, {self._state}, {self.browser})"
+    return f"Run({self.name}, state={self._state}, {self.browser})"
 
   def _get_out_dir(self) -> pth.LocalPath:
     return (self._browser_session.browser_dir / "stories" /
@@ -410,6 +410,10 @@ class Run(ResultOrigin):
   def log_results(self) -> None:
     for probe in self.probes:
       probe.log_run_result(self)
+
+  def log_failure(self):
+    assert not self.is_success
+    self._exceptions.log(f"❗ RUN {self.index+1} GOT ERRORS", separator="-")
 
   def find_probe_context(self,
                          cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:

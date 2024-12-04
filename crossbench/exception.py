@@ -106,10 +106,7 @@ class ExceptionAnnotationScope:
       self._annotator.append(exception_value)
       self._annotator._info_stack = self._previous_info_stack
       if self._throw_cls:
-        self._annotator.assert_success(
-            exception_cls=self._throw_cls,
-            log=False,
-        )
+        self._annotator.assert_success(exception_cls=self._throw_cls)
       return True
     if exception_value not in self._annotator._pending_exceptions:
       self._annotator._pending_exceptions[
@@ -167,14 +164,13 @@ class ExceptionAnnotator:
         result.append(exception)
     return result
 
-  def assert_success(self,
-                     message: Optional[str] = None,
-                     exception_cls: Type[BaseException] = MultiException,
-                     log: bool = True) -> None:
+  def assert_success(
+      self,
+      message: Optional[str] = None,
+      exception_cls: Type[BaseException] = MultiException,
+  ) -> None:
     if self.is_success:
       return
-    if log:
-      self.log()
     if message is None:
       message = "{}"
     message = message.format(self)
@@ -246,12 +242,15 @@ class ExceptionAnnotator:
     if self.throw:
       raise  # pylint: disable=misplaced-bare-raise
 
-  def log(self) -> None:
+  def log(self, message: str, separator: str = "=") -> None:
     if self.is_success:
       return
-    logging.error("=" * 80)
-    logging.error("ERRORS occurred (1/%d):", len(self._exceptions))
-    logging.error("=" * 80)
+    logging.error(separator * 80)
+    if len(self._exceptions) == 1:
+      logging.error("%s:", message)
+    else:
+      logging.error("%s (1/%d):", message, len(self._exceptions))
+    logging.error(separator * 80)
     for entry in self._exceptions:
       logging.debug(entry.exception)
       logging.debug("\n".join(entry.traceback))

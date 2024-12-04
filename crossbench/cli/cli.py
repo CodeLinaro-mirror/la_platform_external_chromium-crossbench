@@ -897,18 +897,19 @@ class CrossBenchCLI:
     logging.debug(e)
     logging.error("")
     logging.error("#" * 80)
-    logging.error("SUBCOMMAND UNSUCCESSFUL got %s:", e.__class__.__name__)
+    message: str = "SUBCOMMAND "
+    if benchmark:
+      message = f"{benchmark.NAME.upper()} BENCHMARK"
+    logging.error("%s FAILED WITH %s:", message, e.__class__.__name__)
     logging.error("-" * 80)
     self._log_benchmark_subcommand_exception(e)
     logging.error("-" * 80)
-    if benchmark:
-      logging.error("Running '%s' was not successful:", benchmark.NAME)
-    logging.error(
-        "- Use --debug for very verbose output (equivalent to --throw -vvv)")
     if runner and runner.runs:
       self._log_runner_debug_hints(runner)
     else:
       logging.error("- Check %s.json detailed backtraces", ErrorsProbe.NAME)
+    logging.error(
+        "- Use --debug for very verbose output (equivalent to --throw -vvv)")
     logging.error("#" * 80)
     sys.exit(3)
 
@@ -940,7 +941,7 @@ class CrossBenchCLI:
       candidates.extend(failed_run.out_dir.glob("*.log"))
 
     failed_run = failed_runs[0]
-    logging.error("- Check log outputs (1 of %d failed runs):",
+    logging.error("- Check log outputs (example 1 of %d failed runs):",
                   len(failed_runs))
     limit = 3
     for log_file in candidates[:limit]:
