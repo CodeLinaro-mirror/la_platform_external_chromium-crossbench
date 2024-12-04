@@ -239,7 +239,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
     self.run_action(click_action)
 
-  def test_click_selector_scroll_into_viwe_passes_scroll_true(self):
+  def test_click_selector_scroll_into_view_passes_scroll_true(self):
     click_action = ClickAction(
         InputSource.TOUCH,
         selector="div[]",
@@ -329,7 +329,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         window_inner_height=200,
         window_inner_width=200)
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "50", "1000")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "40", "1000")
 
     self.run_action(scroll_action)
 
@@ -339,7 +339,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
 
-    self.platform.expect_sh("input", "swipe", "5", "10", "5", "9", "1000")
+    self.platform.expect_sh("input", "swipe", "5", "9", "5", "8", "1000")
 
     self.run_action(scroll_action)
 
@@ -349,17 +349,17 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
 
-    self.platform.expect_sh("input", "swipe", "5", "0", "5", "1", "1000")
+    self.platform.expect_sh("input", "swipe", "5", "1", "5", "2", "1000")
 
     self.run_action(scroll_action)
 
   def test_scroll_window_scrolls_window_bounds(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=100)
+    scroll_action = ScrollAction(InputSource.TOUCH, distance=80)
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "1000")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "10", "1000")
 
     self.run_action(scroll_action)
 
@@ -372,20 +372,20 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         element_bounds=DisplayRectangle(Point(10, 10), 80, 80))
 
-    self.platform.expect_sh("input", "swipe", "50", "90", "50", "80", "1000")
+    self.platform.expect_sh("input", "swipe", "50", "82", "50", "72", "1000")
 
     self.run_action(scroll_action)
 
   def test_scroll_touch_duration_single_scroll(self):
     scroll_action = ScrollAction(
         InputSource.TOUCH,
-        distance=100,
+        distance=80,
         duration=dt.timedelta(milliseconds=3000))
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "3000")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "10", "3000")
 
     self.run_action(scroll_action)
 
@@ -395,10 +395,10 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
-    for _ in range(9):
-      self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "100")
+    for _ in range(12):
+      self.platform.expect_sh("input", "swipe", "50", "90", "50", "10", "80")
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "1", "99")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "51", "39")
 
     self.run_action(scroll_action)
 
