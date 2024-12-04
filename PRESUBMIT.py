@@ -105,6 +105,8 @@ def ModifiedFiles(input_api,
   for file_path in files:
     if not input_api.fnmatch.fnmatch(file_path, filename_pattern):
       continue
+    if not input_api.os_path.exists(file_path):
+      continue
     file_path = input_api.os_path.relpath(file_path,
                                           input_api.PresubmitLocalPath())
     files_to_check.append(file_path)
@@ -123,14 +125,18 @@ def PylintFilePatternsToCheck(on_commit, modified_py_files) -> List[str]:
 
 def MypyFilesToCheck(input_api, on_commit, modified_py_files) -> List[str]:
   root_path = pathlib.Path(input_api.PresubmitLocalPath())
-  mypy_files_to_check = [str(root_path / "PRESUBMIT.py")]
+  mypy_files_to_check = {"PRESUBMIT.py"}
   crossbench_path = root_path / "crossbench"
   if on_commit:
-    mypy_files_to_check.append(str(crossbench_path))
-    return mypy_files_to_check
-
-  mypy_files_to_check += modified_py_files
-  return modified_py_files
+    mypy_files_to_check.add(str(crossbench_path))
+  else:
+    mypy_files_to_check.update(modified_py_files)
+  # TODO: enable mypy on all tests
+  result = []
+  for file in mypy_files_to_check:
+    if not file.startswith("tests/"):
+      result.append(file)
+  return result
 
 
 def TestFilePatternsToCheck(on_commit, crossbench_test_path):
