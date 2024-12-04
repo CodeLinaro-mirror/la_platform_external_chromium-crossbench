@@ -91,7 +91,7 @@ class BenchmarkType(compat.StrEnum):
   TABLET = "loadline-tablet"
 
 
-def _verify_default_metrics(out_dir):
+def _verify_default_metrics(out_dir, only_total=False):
   result_csv = out_dir / "loadline_probe.csv"
   with result_csv.open() as csv:
     lines = csv.readlines()
@@ -104,10 +104,9 @@ def _verify_default_metrics(out_dir):
 
     values = lines[1].split(",")
     assert len(values) == 7
-    for value in values[1:]:
-      # TODO: fix to enable tests again
-      if value == "":
-        continue
+    values_to_check = values[1:2] if only_total else values[1:]
+    for value in values_to_check:
+      assert value, f"Encountered empty value. CSV contents: {lines}"
       assert float(value) > 0, f"Expected positive number, but got {value}"
 
 
@@ -150,7 +149,9 @@ def test_loadline_default(device_id, adb_path, tmp_dir, benchmark_type) -> None:
       benchmark_type, f"--browser={browser_config}", "--repeat=1", "--throw",
       f"--out-dir={out_dir}"
   ])
-  _verify_default_metrics(out_dir)
+  # With only 1 repetition, there's a chance that one story won't produce a
+  # metric. To avoid flaky failures, we only check the total score here.
+  _verify_default_metrics(out_dir, only_total=True)
 
 
 def test_loadline_experimental(device_id, adb_path, root_dir, tmp_dir) -> None:
@@ -171,7 +172,7 @@ def test_loadline_batch(device_id, adb_path, tmp_dir) -> None:
   browser_config = _browser_config(device_id, adb_path)
   out_dir = tmp_dir / "result_batch"
   cli.run([
-      BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=1",
+      BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=2",
       "--throw", f"--out-dir={out_dir}",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ])
