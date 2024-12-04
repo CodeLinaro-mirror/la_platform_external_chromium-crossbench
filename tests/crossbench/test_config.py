@@ -11,6 +11,7 @@ import json
 import pathlib
 import unittest
 from typing import Any, Dict, List, Optional
+from unittest import mock
 
 from immutabledict import immutabledict
 
@@ -575,6 +576,27 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.nested,
                      CustomNestedConfigObject(name="a nested name"))
+
+  def test_parse_nested_long(self):
+    test_dict = dict(self.TEST_DICT)
+    long_string = "abcd" * 1_000
+    test_dict["nested"] = long_string
+    config = CustomConfigObject.parse_dict(test_dict)
+    assert isinstance(config, CustomConfigObject)
+    self.assertEqual(config.nested.name, long_string)
+
+  def test_parse_nested_long_os_error(self):
+    test_dict = dict(self.TEST_DICT)
+    long_string = "abcd" * 100
+    test_dict["nested"] = long_string
+
+    def raise_os_error(self):
+      raise OSError("Invalid file name")
+
+    with mock.patch.object(pathlib.Path, "is_file", raise_os_error):
+      config = CustomConfigObject.parse_dict(test_dict)
+      assert isinstance(config, CustomConfigObject)
+    self.assertEqual(config.nested.name, long_string)
 
   def test_parse_missing_depending(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

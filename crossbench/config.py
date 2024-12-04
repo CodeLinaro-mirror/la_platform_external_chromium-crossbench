@@ -476,9 +476,13 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def is_valid_path(cls, path: pth.LocalPath) -> bool:
-    if not path.is_file():
-      return False
-    return path.suffix in cls.VALID_EXTENSIONS
+    try:
+      if path.is_file():
+        return path.suffix in cls.VALID_EXTENSIONS
+    except OSError:
+      # Ignore any OSError caused by too long path names.
+      pass
+    return False
 
   @classmethod
   def parse_unknown_path(cls: Type[ConfigObjectT], path: pth.LocalPath,

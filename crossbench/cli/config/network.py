@@ -125,8 +125,11 @@ class NetworkConfig(ConfigObject):
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return True
     # for local file server
-    if path.is_dir():
-      return True
+    try:
+      if path.is_dir():
+        return True
+    except OSError:
+      pass
     return super().is_valid_path(path)
 
   @classmethod
