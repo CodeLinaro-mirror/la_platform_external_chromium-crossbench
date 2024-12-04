@@ -5,36 +5,24 @@
 from __future__ import annotations
 
 import abc
-from enum import IntEnum
 import functools
 import logging
 import re
 import shlex
 import subprocess
+from signal import Signals
 from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, Mapping,
                     Optional)
 
 from crossbench import path as pth
 from crossbench.plt.base import Environ, Platform, SubprocessError
-from crossbench.plt.remote import RemotePlatformMixin
+from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
 
 if TYPE_CHECKING:
-  from crossbench.types import JsonDict
+
   from crossbench.plt.base import CmdArg, ListCmdArgs
+  from crossbench.types import JsonDict
 
-
-class PosixSignal(IntEnum):
-  SIGHUP = 1
-  SIGINT = 2
-  SIGQUIT = 3
-  SIGILL = 4
-  SIGABRT = 6
-  SIGFPE = 8
-  SIGKILL = 9
-  SIGSEGV = 11
-  SIGPIPE = 13
-  SIGALRM = 14
-  SIGTERM = 15
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
@@ -297,16 +285,25 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
                                remote_path).rstrip("\n").split("\n"):
       yield remote_path / name
 
-  def send_signal(self, signal: PosixSignal, proc_pid: int):
-    result = self.sh("kill", "-s", str(int(signal)), str(proc_pid), check=False)
+  def send_signal(self, pid: int, signal: Signals):
+    if self.is_local:
+      super().send_signal(pid, signal)
+      return
+    result = self.sh("kill", "-s", str(int(signal)), str(pid), check=False)
     if result.returncode > 0:
       raise ProcessLookupError
 
-  def terminate(self, proc_pid: int) -> None:
-    self.send_signal(PosixSignal.SIGTERM, proc_pid)
+  def terminate(self, pid: int) -> None:
+    if self.is_local:
+      super().terminate(pid)
+    else:
+      self.send_signal(pid, Signals.SIGTERM)
 
-  def kill(self, proc_pid: int) -> None:
-    self.send_signal(PosixSignal.SIGKILL, proc_pid)
+  def kill(self, pid: int) -> None:
+    if self.is_local:
+      super().kill(pid)
+    else:
+      self.send_signal(pid, Signals.SIGKILL)
 
   def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
     if self.is_local:
@@ -359,42 +356,6 @@ class RemotePosixEnviron(Environ):
   def __len__(self) -> int:
     return self._environ.__len__()
 
-
-class RemotePopen(subprocess.Popen):
-  """
-  A wrapper class to represent a process running on a remote platform.
-
-  Allows to send signals to the remote process and gracefully wait for its
-  termination.
-  """
-
-  def __init__(self,
-               platform: RemotePosixPlatform,
-               args: ListCmdArgs,
-               bufsize=-1,
-               stdout=None,
-               stderr=None,
-               stdin=None):
-    self._platform: RemotePosixPlatform = platform
-    self._pid: Optional[int] = None
-    super().__init__(args, bufsize=bufsize, stdout=stdout, stderr=stderr,
-                     stdin=stdin)
-
-  def set_pid(self, pid: int) -> None:
-    assert self._pid is None, "Should not set PID twice"
-    self._pid = pid
-
-  def send_signal(self, signal: int) -> None:
-    assert self._pid
-    self._platform.send_signal(PosixSignal(signal), self._pid)
-
-  def terminate(self) -> None:
-    assert self._pid
-    self._platform.terminate(self._pid)
-
-  def kill(self) -> None:
-    assert self._pid
-    self._platform.kill(self._pid)
 
 
 class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):

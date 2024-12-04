@@ -24,6 +24,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from signal import Signals
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generator,
                     Iterable, Iterator, List, Mapping, Optional, Sequence,
                     Tuple, Union)
@@ -344,6 +345,30 @@ class Platform(abc.ABC):
     finally:
       self.set_binary_lookup_override(binary_name, prev_override)
 
+  def send_signal(self, pid: int, signal: Signals):
+    self.assert_is_local()
+    os.kill(pid, signal)
+
+  def terminate(self, pid: int) -> None:
+    self._handle_process_tree(pid, lambda process: process.terminate())
+
+  def kill(self, pid: int) -> None:
+    self._handle_process_tree(pid, lambda process: process.kill())
+
+  def _handle_process_tree(self, pid: int, callback: Callable[[psutil.Process],
+                                                              None]) -> None:
+    self.assert_is_local()
+    try:
+      process = psutil.Process(pid)
+      for child_process in process.children(recursive=True):
+        try:
+          callback(child_process)
+        except _IGNORED_PROCESS_EXCEPTIONS:
+          pass
+      callback(process)
+    except _IGNORED_PROCESS_EXCEPTIONS:
+      pass
+
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     # TODO(cbruni): support remote platforms
@@ -392,14 +417,6 @@ class Platform(abc.ABC):
 
   def foreground_process(self) -> Optional[Dict[str, Any]]:
     return None
-
-  def terminate(self, proc_pid: int) -> None:
-    self.assert_is_local()
-    # TODO(cbruni): support remote platforms
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-      proc.terminate()
-    process.terminate()
 
   @property
   def default_tmp_dir(self) -> pth.AnyPath:
