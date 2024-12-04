@@ -36,6 +36,16 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         *args,
         result=result)
 
+  def _expect_sh_ssh_shell(self, *args, result=""):
+    cmd_string = f"ssh -p {str(self.SSH_PORT)} {self.SSH_USER}@{self.HOST} "
+
+    for arg in args:
+      cmd_string += arg + " "
+
+    self.mock_platform.expect_sh(
+        cmd_string,
+        result=result)
+
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
 
@@ -91,7 +101,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(
         self.platform.sh_stdout("ls foo && ls bar"), "FILE1\nFILE2\n")
 
-    self._expect_sh_ssh("'ls foo && ls bar'", result="FILE1\nFILE2\n")
+    self._expect_sh_ssh_shell("'ls foo && ls bar'", result="FILE1\nFILE2\n")
     self.assertEqual(
         self.platform.sh_stdout("ls foo && ls bar", shell=True),
         "FILE1\nFILE2\n")

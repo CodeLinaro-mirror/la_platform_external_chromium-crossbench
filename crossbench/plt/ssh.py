@@ -73,7 +73,7 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
     ssh_cmd: ListCmdArgs = self._build_ssh_cmd(*args, shell=shell)
     return self._host_platform.sh(
         *ssh_cmd,
-        shell=False,
+        shell=shell,
         capture_output=capture_output,
         stdout=stdout,
         stderr=stderr,

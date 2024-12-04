@@ -46,6 +46,15 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
         "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"
     ]
     ssh_cmd.append(shlex.join(map(str, args)))
+
+    if shell:
+      combined_ssh_cmd: str = ""
+
+      for cmd in ssh_cmd:
+        combined_ssh_cmd = combined_ssh_cmd + str(cmd) + " "
+
+      return [combined_ssh_cmd]
+
     return ssh_cmd
 
   def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
