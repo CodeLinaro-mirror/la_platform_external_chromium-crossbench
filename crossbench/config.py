@@ -560,8 +560,6 @@ class TemplateArg:
   def __post_init__(self):
     if not self.name:
       raise argparse.ArgumentTypeError("name cannot be empty")
-    if not self.value:
-      raise argparse.ArgumentTypeError("value cannot be empty")
 
   def set_used(self) -> None:
     self.used = True

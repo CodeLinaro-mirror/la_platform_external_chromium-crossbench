@@ -700,6 +700,14 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     self.assertEqual(config.nested.name, "nested")
 
+  def test_parse_templated_config_empty_arg(self):
+    config = {"template": {"name": "$[arg]"}, "args": {"arg": ""}}
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "")
+
   def test_parse_templated_config_string_only(self):
     config = {"template": {"name": "$[arg]"}, "args": {"arg": "arg_value"}}
 
