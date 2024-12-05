@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import sys
 
@@ -35,6 +36,11 @@ if __name__ == "__main__":
     more_flags.append(f"--ignore={END2END_TEST_DIR / 'android'}")
   if args.test_gsutil_path:
     more_flags.append(f"--test-gsutil-path={args.test_gsutil_path}")
+    current_path = os.environ["PATH"]
+    new_path = pathlib.Path(args.test_gsutil_path).parent / "python-bin"
+    updated_path = f"'{current_path}:{new_path}'"
+    os.environ["PATH"] = updated_path
+    os.environ["DEPOT_TOOLS_UPDATE"] = "0"
   return_code = pytest.main([
       "--verbose", "--numprocesses=1", "--log-cli-level=DEBUG", "-o",
       "log_cli=True", "-rs",

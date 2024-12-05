@@ -20,6 +20,8 @@ from crossbench.plt.android_adb import adb_devices
 from crossbench.plt.bin import Binaries, BinaryNotFoundError
 from tests import test_helper
 
+WIN_APP_SUFFIX = [".exe", ".bat"]
+
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
 
@@ -48,8 +50,11 @@ def pytest_xdist_auto_num_workers(config):
 
 def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
   app_path = request.config.getoption(option_key)
-  if app_path and plt.PLATFORM.is_win and app_path.suffix != ".exe":
-    return app_path.parent / (app_path.name + ".exe")
+  if app_path and plt.PLATFORM.is_win and app_path.suffix not in WIN_APP_SUFFIX:
+    if (app_path.parent / (app_path.name + ".bat")).exists():
+      return app_path.parent / (app_path.name + ".bat")
+    if (app_path.parent / (app_path.name + ".exe")).exists():
+      return app_path.parent / (app_path.name + ".exe")
   return app_path
 
 
@@ -82,10 +87,6 @@ def browser_path(request) -> Optional[pathlib.Path]:
 
 @pytest.fixture(scope="session", autouse=True)
 def gsutil_path(request) -> pathlib.Path:
-  if plt.PLATFORM.is_win:
-    # TODO: run gsutil as <PYTHON3> <GSUTIL>, not as a binary, and reenable the
-    # tests.
-    return pathlib.Path()
   maybe_gsutil_path: Optional[pathlib.Path] = _get_app_path(
       request, "--test-gsutil-path")
   if maybe_gsutil_path:

@@ -73,7 +73,10 @@ class WinPlatform(Platform):
     if version := self.sh_stdout(
         "powershell", "-command",
         f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion").strip():
-      return version
+      name = self.sh_stdout(
+          "powershell", "-command",
+          f"(Get-Item '{app_or_bin}').VersionInfo.ProductName").strip()
+      return f"{name} {version}"
     try:
       # Fall back to command-line tools.
       if version := self.sh_stdout(app_or_bin, "--version").strip():

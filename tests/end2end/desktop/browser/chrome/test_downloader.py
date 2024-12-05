@@ -72,7 +72,7 @@ def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
     assert list(driver_dir.iterdir()) == [driver_path]
     assert driver_path.is_file()
     # Downloading again should use the cache-version
-    driver_path: pathlib.Path = finder.download()
+    driver_path = finder.download()
     assert list(driver_dir.iterdir()) == [driver_path]
     assert driver_path.is_file()
     # Restore output dir state.
