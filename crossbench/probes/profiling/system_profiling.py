@@ -84,6 +84,9 @@ V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 RENDERER_CMD_PATH: Final[pth.LocalPath] = pth.LocalPath(
     __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
 
+MAC_TRACE_TEMPLATE_PATH: Final[pth.LocalPath] = pth.LocalPath(
+    __file__).parent / "time-profile.tracetemplate"
+
 
 def perf_frequency(value: Any) -> Union[str, int]:
   if value == "max":
@@ -585,8 +588,11 @@ class MacOSProfilingContext(ProfilingContext):
     return super().get_default_result_path().parent / "profile.trace"
 
   def start(self) -> None:
+    assert self.browser_platform.is_file(MAC_TRACE_TEMPLATE_PATH), (
+        f"Didn't find {MAC_TRACE_TEMPLATE_PATH}")
     self._process = self.browser_platform.popen("xctrace", "record",
-                                                "--template", "Time Profiler",
+                                                "--template",
+                                                MAC_TRACE_TEMPLATE_PATH,
                                                 "--all-processes", "--output",
                                                 self.result_path)
     # xctrace takes some time to start up
