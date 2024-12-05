@@ -101,8 +101,10 @@ class ProbeResult(abc.ABC):
         raise ValueError(f"Expected exactly one file with suffix {suffix}, "
                          f"but got {files_with_suffix}")
       return files_with_suffix[0]
-    raise ValueError(f"No files with suffix '.{suffix}'. "
-                     f"Options are {tuple(self._files.keys())}")
+    choices: str = f"Options are {tuple(self._files.keys())}."
+    if self.is_empty:
+      choices = "Empty ProbeResult."
+    raise ValueError(f"No files with suffix '.{suffix}'. {choices}")
 
   def get_all(self, suffix: str) -> List[pth.LocalPath]:
     if files_with_suffix := self._files.get(suffix):
