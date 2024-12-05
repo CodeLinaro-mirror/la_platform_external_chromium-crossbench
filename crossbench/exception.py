@@ -67,7 +67,7 @@ class ExceptionAnnotationScope:
       entries: Tuple[str, ...],
       throw_cls: Optional[Type[BaseException]] = None,
   ) -> None:
-    logging.debug("EAS: %s", entries)
+    logging.debug("EAS: %s%s", "  " * annotator.depth, " ".join(entries))
     self._annotator = annotator
     self._exception_types = exception_types
     self._ignore_exception_types = ignore_exception_types + (
@@ -78,9 +78,7 @@ class ExceptionAnnotationScope:
     self._previous_info_stack: TInfoStack = ()
 
   def __enter__(self) -> ExceptionAnnotationScope:
-    self._annotator._pending_exceptions.clear()
-    self._previous_info_stack = self._annotator.info_stack
-    self._annotator._info_stack = self._previous_info_stack + (
+    self._previous_info_stack = self._annotator.enter(
         self._added_info_stack_entries)
     return self
 
@@ -88,12 +86,12 @@ class ExceptionAnnotationScope:
                exception_value: Optional[BaseException],
                traceback: Optional[TracebackType]) -> bool:
     if not exception_value or not exception_type:
-      self._annotator._info_stack = self._previous_info_stack
+      self._annotator.leave(self._previous_info_stack)
       # False => exception not handled
       return False
     if issubclass(exception_type, self._ignore_exception_types) and (
         not issubclass(exception_type, MultiException)):
-      self._annotator._info_stack = self._previous_info_stack
+      self._annotator.leave(self._previous_info_stack)
       # False => exception not handled, directly forward
       return False
     logging.debug("Intermediate Exception: %s:%s", exception_type,
@@ -104,13 +102,14 @@ class ExceptionAnnotationScope:
       # Handle matching exceptions directly here and prevent further
       # exception handling by returning True.
       self._annotator.append(exception_value)
-      self._annotator._info_stack = self._previous_info_stack
+      self._annotator.leave(self._previous_info_stack)
       if self._throw_cls:
         self._annotator.assert_success(exception_cls=self._throw_cls)
       return True
     if exception_value not in self._annotator._pending_exceptions:
       self._annotator._pending_exceptions[
           exception_value] = self._annotator.info_stack
+    self._annotator._info_stack = self._previous_info_stack
     # False => exception not handled
     return False
 
@@ -135,6 +134,7 @@ class ExceptionAnnotator:
     # use in the `handle` method.
     # This is cleared whenever we enter a  new ExceptionAnnotationScope.
     self._pending_exceptions: Dict[BaseException, TInfoStack] = {}
+    self._depth = 0
 
   @property
   def is_success(self) -> bool:
@@ -148,6 +148,10 @@ class ExceptionAnnotator:
   def exceptions(self) -> List[Entry]:
     return self._exceptions
 
+  @property
+  def depth(self) -> int:
+    return self._depth
+
   def __getitem__(self, key: Any) -> Entry:
     if not isinstance(key, int):
       raise TypeError(f"Expected int key, but got: {key}")
@@ -155,6 +159,17 @@ class ExceptionAnnotator:
 
   def __len__(self) -> int:
     return len(self._exceptions)
+
+  def enter(self, added_info_stack_entries: Tuple[str, ...]) -> Tuple[str, ...]:
+    self._depth += 1
+    self._pending_exceptions.clear()
+    previous_stack = self._info_stack
+    self._info_stack = previous_stack + added_info_stack_entries
+    return previous_stack
+
+  def leave(self, previous_stack: Tuple[str, ...]) -> None:
+    self._depth -= 1
+    self._info_stack = previous_stack
 
   def matching(self, *args: Type[BaseException]) -> List[BaseException]:
     result = []
