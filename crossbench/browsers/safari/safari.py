@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING, Optional
 
 from crossbench import compat
@@ -91,4 +92,6 @@ class Safari(Browser):
     driver_version = " (" + driver_version.split(" (", maxsplit=1)[1]
     assert self.path
     app_path = self.path.parents[2]
-    return self.platform.app_version(app_path) + driver_version
+    browser_version = str(
+        re.findall(r"[\d\.]+", self.platform.app_version(app_path))[0])
+    return browser_version + driver_version
