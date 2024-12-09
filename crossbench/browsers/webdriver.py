@@ -159,7 +159,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     # Force main window to foreground.
     self._private_driver.switch_to.window(
         self._private_driver.current_window_handle)
-    if self.viewport.is_headless:
+    if (self.viewport.is_headless or
+        not self._private_driver.capabilities["setWindowRect"]):
       return
     if self.viewport.is_fullscreen:
       self._private_driver.fullscreen_window()
@@ -324,14 +325,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Driver has already been started. We just need to mark it as running.
     self._is_running = True
-    if self.viewport.is_fullscreen:
-      self._private_driver.fullscreen_window()
-    elif self.viewport.is_maximized:
-      self._private_driver.maximize_window()
-    else:
-      self._private_driver.set_window_position(self.viewport.x, self.viewport.y)
-      self._private_driver.set_window_size(self.viewport.width,
-                                           self.viewport.height)
+    self._setup_window()
 
   def quit(self) -> None:
     # External code that started the driver is responsible for shutting it down.
