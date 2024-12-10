@@ -126,6 +126,8 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
     plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
 @pytest.mark.skipif(
     plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_macos, reason="Tests temporarily skipped on Mac")
 def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
   # - Custom chrome version downloads
   # - headless

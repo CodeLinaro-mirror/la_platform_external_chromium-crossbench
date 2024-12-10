@@ -41,8 +41,7 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
                             version_or_archive: Union[str, pathlib.Path],
                             version_str: str) -> pathlib.Path:
   check_gsutil_access(gsutil_path)
-  with plt.PLATFORM.override_binary(
-      "gsutil", gsutil_path), tmp_platform_cache_dir(output_dir):
+  with tmp_platform_cache_dir(output_dir):
     app_path: pathlib.Path = ChromeDownloader.load(version_or_archive,
                                                    plt.PLATFORM)
     assert compat.is_relative_to(app_path, output_dir)
