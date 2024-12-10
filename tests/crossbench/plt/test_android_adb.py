@@ -419,6 +419,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
         "FILE1\nFILE2\n")
 
+  def test_display_resolution(self):
+    self.expect_adb("shell", "wm size", result="Physical size: 1366x768\n")
+    [horizontal, vertical] = self.platform.display_resolution()
+    self.assertEqual(horizontal, 1366)
+    self.assertEqual(vertical, 768)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

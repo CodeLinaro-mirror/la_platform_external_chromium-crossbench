@@ -863,3 +863,8 @@ class Platform(abc.ABC):
       s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
       s.bind(("localhost", 0))
       return s.getsockname()[1]
+
+  def display_resolution(self) -> Tuple[int, int]:
+    raise NotImplementedError(
+        "'display_resolution' is only available on Android and ChromeOS for "
+        "now")

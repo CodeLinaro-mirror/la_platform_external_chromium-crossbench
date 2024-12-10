@@ -12,7 +12,7 @@ import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
 from crossbench import path as pth
-from crossbench.parse import PathParser
+from crossbench.parse import NumberParser, PathParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.posix import RemotePosixPlatform
 
@@ -680,3 +680,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)
+
+  _WM_SIZE_RE = re.compile(r"Physical size: (?P<x>\d+)x(?P<y>\d+)")
+
+  def display_resolution(self) -> Tuple[int, int]:
+    wm_size_out = self.sh_stdout("wm", "size")
+    match_result = self._WM_SIZE_RE.match(wm_size_out)
+    if match_result is None:
+      raise ValueError(f"Could not find display resolution in '{wm_size_out}'")
+    x = NumberParser.positive_int(match_result.group("x"))
+    y = NumberParser.positive_int(match_result.group("y"))
+    return (x, y)
