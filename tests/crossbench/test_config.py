@@ -16,7 +16,8 @@ from unittest import mock
 from immutabledict import immutabledict
 
 from crossbench import compat
-from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from crossbench.config import (ConfigEnum, ConfigObject, ConfigParser,
+                               UnusedPropertiesMode)
 from crossbench.exception import MultiException
 from crossbench.parse import NumberParser, ObjectParser
 from tests import test_helper
@@ -165,7 +166,7 @@ class CustomConfigObjectStrict(CustomConfigObject):
 
   @classmethod
   def base_config_parser(cls) -> ConfigParser[CustomConfigObjectStrict]:
-    return ConfigParser(cls, allow_unused_config_data=False)
+    return ConfigParser(cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
 
 
 class CustomConfigObjectWithDefault(CustomConfigObject):

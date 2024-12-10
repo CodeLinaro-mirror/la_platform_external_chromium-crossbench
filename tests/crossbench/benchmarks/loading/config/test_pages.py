@@ -232,7 +232,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                     },
                     {
                         "action": "scroll",
-                        "direction": "down",
                         "duration": 3
                     },
                 ]

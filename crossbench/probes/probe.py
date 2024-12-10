@@ -9,7 +9,7 @@ from typing import (TYPE_CHECKING, Dict, Hashable, Optional, Set, Tuple, Type,
                     TypeVar)
 
 from crossbench import plt
-from crossbench.config import ConfigParser
+from crossbench.config import ConfigParser, UnusedPropertiesMode
 from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.probe_result_key import ProbeResultKey
@@ -35,7 +35,8 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 class ProbeConfigParser(ConfigParser[ProbeT]):
 
   def __init__(self, probe_cls: Type[ProbeT]) -> None:
-    super().__init__(probe_cls, allow_unused_config_data=False)
+    super().__init__(
+        probe_cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     self._probe_cls: Type[ProbeT] = probe_cls
 
   @property

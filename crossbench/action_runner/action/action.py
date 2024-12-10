@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Type, TypeVar
 
 from crossbench import exception
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.config import ConfigObject, ConfigParser
+from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -25,7 +25,8 @@ class ActionTypeConfigParser(ConfigParser):
   config dict."""
 
   def __init__(self):
-    super().__init__(ActionType)
+    super().__init__(
+        ActionType, unused_properties_mode=UnusedPropertiesMode.IGNORE)
     self.add_argument(
         "action",
         aliases=("type",),
@@ -57,6 +58,11 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   def parse_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
     action_cls: Type[ActionT] = ACTIONS[action_type]  # type: ignore
+    # Drop _ACTION_TYPE_CONFIG_PARSER arguments/aliases and avoid warnings
+    config = dict(config)
+    config.pop("action", None)
+    config.pop("type", None)
+
     with exception.annotate_argparsing(
         f"Parsing Action details  ...{{ action: \"{action_type}\", ...}}:"):
       action = action_cls.config_parser().parse(config)

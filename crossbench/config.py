@@ -794,15 +794,24 @@ class _ConfigKwargsParser:
     return dict(self._kwargs)
 
 
+@enum.unique
+class UnusedPropertiesMode(compat.StrEnum):
+  IGNORE = "ignore"
+  WARN = "warn"
+  ERROR = "error"
+
+
 ConfigResultObjectT = TypeVar("ConfigResultObjectT", bound="object")
 
 class ConfigParser(Generic[ConfigResultObjectT]):
 
-  def __init__(self,
-               cls: Type[ConfigResultObjectT],
-               title: Optional[str] = None,
-               default: Optional[ConfigResultObjectT] = None,
-               allow_unused_config_data: bool = True) -> None:
+  def __init__(
+      self,
+      cls: Type[ConfigResultObjectT],
+      title: Optional[str] = None,
+      default: Optional[ConfigResultObjectT] = None,
+      unused_properties_mode: UnusedPropertiesMode = UnusedPropertiesMode.WARN
+  ) -> None:
     self._cls = cls
     if title is None:
       title = f"{cls.__name__} parser"
@@ -816,7 +825,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     self._default = default
     self._args: Dict[str, _ConfigArgParser] = {}
     self._arg_names: Set[str] = set()
-    self._allow_unused_config_data = allow_unused_config_data
+    self._unused_properties_mode = unused_properties_mode
 
   @property
   def default(self) -> Optional[ConfigResultObjectT]:
@@ -887,8 +896,10 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
   def _handle_unused_config_data(self, unused_config_data: Dict[str,
                                                                 Any]) -> None:
-    logging.debug("Got unused properties: %s", unused_config_data.keys())
-    if not self._allow_unused_config_data:
+    if self._unused_properties_mode == UnusedPropertiesMode.IGNORE:
+      return
+    logging.warning("Got unused properties: %s", unused_config_data.keys())
+    if self._unused_properties_mode == UnusedPropertiesMode.ERROR:
       unused_keys = ", ".join(map(repr, unused_config_data.keys()))
       raise argparse.ArgumentTypeError(
           f"Config for {self._cls.__name__} contains unused properties: "
