@@ -7,6 +7,8 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import os
+import shutil
 import tempfile
 import zipfile
 from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
@@ -182,7 +184,7 @@ class ChromeDownloader(Downloader):
     candidate = archive_candidates[0]
     assert not self._archive_path.exists(), (
         f"Archive was already downloaded: {self._archive_path}")
-    candidate.replace(self._archive_path)
+    shutil.move(os.fspath(candidate), os.fspath(self._archive_path))
 
 
 class ChromeDownloaderLinux(ChromeDownloader):
