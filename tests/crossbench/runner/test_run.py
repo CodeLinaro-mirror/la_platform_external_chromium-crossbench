@@ -8,6 +8,7 @@ import datetime as dt
 
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.run import Run
+from crossbench.runner.run_annotation import RunAnnotation
 from tests.crossbench.mock_helper import MockStory
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe
@@ -24,3 +25,19 @@ class RunTestCase(BaseRunGroupTestCase):
     with session.open():
       self.assertIsNotNone(run.find_probe_context(MockProbe))
       self.assertIsNone(run.find_probe_context(ScreenshotProbe))
+
+  def test_annotate(self):
+    session = self.default_session()
+    run = Run(self.runner, session, MockStory("mock story"), 1, False,
+              "1_default", 1, "test run", dt.timedelta(minutes=1), True)
+    self.assertFalse(list(run.annotations))
+    annotation = RunAnnotation.warning("Some warning")
+
+    with self.assertNoLogs(level="INFO"):
+      run.log_annotations()
+
+    run.annotate(annotation)
+    self.assertIn(annotation, run.annotations)
+    with self.assertLogs(level="INFO") as cm:
+      run.log_annotations()
+    self.assertIn("Some warning", " ".join(cm.output))

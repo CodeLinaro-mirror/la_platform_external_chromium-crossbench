@@ -7,11 +7,12 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Iterable, Optional, Set, Type
 
 from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
+from crossbench.env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
@@ -23,6 +24,7 @@ from crossbench.runner.actions import Actions
 from crossbench.runner.exception import StopStoryException
 from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
+from crossbench.runner.run_annotation import RunAnnotation
 from crossbench.runner.timing import Timing
 
 if TYPE_CHECKING:
@@ -33,7 +35,6 @@ if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench.runner.probe_context_manager import ProbeContextT
   from crossbench.runner.runner import Runner
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
@@ -83,6 +84,7 @@ class Run(ResultOrigin):
     self._browser_tmp_dir: Optional[pth.AnyPath] = None
     self._probe_context_manager = ProbeRunContextManager(
         self, self._probe_results)
+    self._annotations: Set[RunAnnotation] = set()
 
   def __str__(self) -> str:
     return f"Run({self.name}, state={self._state}, {self.browser})"
@@ -138,6 +140,9 @@ class Run(ResultOrigin):
             "global": self.timing.to_json(),
         },
         "success": self.is_success,
+        "annotations": [
+            annotation.to_json() for annotation in self._annotations
+        ],
         "errors": self.exceptions.error_messages()
     }
 
@@ -244,6 +249,13 @@ class Run(ResultOrigin):
   def session(self) -> BrowserSessionRunGroup:
     return self._browser_session
 
+  def annotate(self, annotation: RunAnnotation) -> None:
+    self._annotations.add(annotation)
+
+  @property
+  def annotations(self) -> Iterable[RunAnnotation]:
+    return iter(self._annotations)
+
   def get_browser_details_json(self) -> JsonDict:
     details_json = self.browser.details_json()
     self.session.add_flag_details(details_json)
@@ -342,8 +354,7 @@ class Run(ResultOrigin):
         # throttled down non-foreground browser.
         self._exceptions.append(e)
       if self.is_success:
-        with self.exceptions.capture():
-          self.environment.check_browser_focused(self.browser)
+        self._run_success_validation()
 
   def _run_splashscreen(self):
     with self.actions("SplashScreen") as actions:
@@ -377,6 +388,12 @@ class Run(ResultOrigin):
     self._probe_context_manager.stop_story()
     with self.measure("story-tear-down"):
       self._story.teardown(self)
+
+  def _run_success_validation(self) -> None:
+    try:
+      self.environment.check_browser_focused(self.browser)
+    except ValidationError as e:
+      self.annotate(RunAnnotation.warning(str(e)))
 
   def teardown(self, is_dry_run: bool) -> None:
     self._state.transition(State.RUN, to=State.DONE)
@@ -414,6 +431,12 @@ class Run(ResultOrigin):
   def log_failure(self):
     assert not self.is_success
     self._exceptions.log(f"❗ RUN {self.index+1} GOT ERRORS", separator="-")
+
+  def log_annotations(self):
+    if not self._annotations:
+      return
+    logging.info("- " * 40)
+    RunAnnotation.log_all(self.annotations, limit=10)
 
   def find_probe_context(self,
                          cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:

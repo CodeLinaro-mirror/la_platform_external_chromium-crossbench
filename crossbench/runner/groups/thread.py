@@ -126,6 +126,7 @@ class RunThreadGroup(threading.Thread):
     if not run.is_success:
       logging.warning("%s: Got setup errors.", run)
     run.run(self.is_dry_run)
+    run.log_annotations()
     if run.is_success:
       run.log_results()
     else:

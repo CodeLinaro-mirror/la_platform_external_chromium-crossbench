@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import itertools
 import json
 import logging
 import os
@@ -43,6 +44,7 @@ from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES, DebuggerProbe
 from crossbench.probes.internal.errors import ErrorsProbe
 from crossbench.probes.thermal_monitor import ThermalStatus
+from crossbench.runner.run_annotation import RunAnnotation
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
 
@@ -1028,6 +1030,7 @@ class CrossBenchCLI:
     else:
       logging.critical("RESULTS (maybe incomplete/broken): %s", runner.out_dir)
     logging.info("=" * 80)
+    self._log_run_annotations(runner)
     if not runner.has_browser_group:
       logging.debug("No browser group in %s", runner)
       return
@@ -1039,6 +1042,11 @@ class CrossBenchCLI:
         if args.throw:
           raise
         logging.warning("log_result_summary failed: %s", e)
+
+  def _log_run_annotations(self, runner: Runner) -> None:
+    all_annotations = set(
+        itertools.chain.from_iterable(run.annotations for run in runner.runs))
+    RunAnnotation.log_all(all_annotations)
 
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
     # TODO: move browser instance create to separate method.
