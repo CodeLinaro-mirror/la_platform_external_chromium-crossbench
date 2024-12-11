@@ -8,12 +8,14 @@ import json
 from dataclasses import dataclass
 
 from crossbench.benchmarks.speedometer.speedometer_2_0 import (
-    Speedometer20Benchmark, Speedometer20Probe, Speedometer20Story)
+    Speedometer20Benchmark, Speedometer20Probe, Speedometer20ProbeContext,
+    Speedometer20Story)
 from crossbench.benchmarks.speedometer.speedometer_2_1 import (
-    Speedometer21Benchmark, Speedometer21Probe, Speedometer21Story)
+    Speedometer21Benchmark, Speedometer21Probe, Speedometer21ProbeContext,
+    Speedometer21Story)
 from crossbench.benchmarks.speedometer.speedometer_3_0 import (
     MeasurementMethod, Speedometer30Benchmark, Speedometer30Probe,
-    Speedometer30Story)
+    Speedometer30ProbeContext, Speedometer30Story)
 from crossbench.browsers.viewport import Viewport
 from tests import test_helper
 from tests.crossbench.benchmarks.speedometer_helper import (
@@ -33,6 +35,10 @@ class Speedometer20TestCase(Speedometer2BaseTestCase):
   @property
   def probe_cls(self):
     return Speedometer20Probe
+
+  @property
+  def probe_context_cls(self):
+    return Speedometer20ProbeContext
 
   @property
   def name(self):
@@ -63,6 +69,10 @@ class Speedometer21TestCase(Speedometer2BaseTestCase):
     return Speedometer21Probe
 
   @property
+  def probe_context_cls(self):
+    return Speedometer21ProbeContext
+
+  @property
   def name(self):
     return "speedometer_2.1"
 
@@ -80,6 +90,10 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
   @property
   def probe_cls(self):
     return Speedometer30Probe
+
+  @property
+  def probe_context_cls(self):
+    return Speedometer30ProbeContext
 
   @property
   def name(self):

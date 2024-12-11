@@ -17,6 +17,7 @@ from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.env_modifier import EnvModifier
 from crossbench.probes.frequency import FrequencyProbe
+from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
@@ -96,7 +97,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
       if "Mock" in str(probe_sub_cls):
         continue
       # Filter out abstract helper classes.
-      if probe_sub_cls in (ChromiumProbe, EnvModifier):
+      if probe_sub_cls in (ChromiumProbe, EnvModifier, JsonResultProbe):
         continue
       if not inspect.isabstract(probe_sub_cls):
         yield probe_sub_cls

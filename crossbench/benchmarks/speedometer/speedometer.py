@@ -17,7 +17,7 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 from crossbench.probes.helper import Flatten
-from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import Metric, MetricsMerger
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
@@ -43,20 +43,12 @@ class SpeedometerProbe(
   Speedometer-specific probe (compatible with v2.X and v3.X).
   Extracts all speedometer times and scores.
   """
-  JS: str = "return window.suiteValues;"
   SORT_KEYS: bool = False
   SCORE_METRIC_KEY: Final[str] = "Score"
 
-  def to_json(self, actions: Actions) -> Json:
-    return actions.js(self.JS)
-
-  def flatten_json_data(self, json_data: Any) -> Json:
-    # json_data may contain multiple iterations, merge those first
-    assert isinstance(json_data, list), f"Expected list got {type(json_data)}"
-    merged = MetricsMerger(
-        json_data, key_fn=_probe_remove_tests_segments).to_json(
-            value_fn=lambda values: values.geomean, sort=self.SORT_KEYS)
-    return Flatten(merged, sort=self.SORT_KEYS).data
+  @abc.abstractmethod
+  def get_context_cls(self) -> Type[SpeedometerProbeContext]:
+    pass
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
@@ -118,6 +110,21 @@ class SpeedometerProbe(
   def _is_valid_metric_key(self, metric_key: str) -> bool:
     pass
 
+
+class SpeedometerProbeContext(JsonResultProbeContext):
+
+  JS: str = "return window.suiteValues;"
+
+  def to_json(self, actions: Actions) -> Json:
+    return actions.js(self.JS)
+
+  def flatten_json_data(self, json_data: Any) -> Json:
+    # json_data may contain multiple iterations, merge those first
+    assert isinstance(json_data, list), f"Expected list got {type(json_data)}"
+    merged = MetricsMerger(
+        json_data, key_fn=_probe_remove_tests_segments).to_json(
+            value_fn=lambda values: values.geomean, sort=self.probe.SORT_KEYS)
+    return Flatten(merged, sort=self.probe.SORT_KEYS).data
 
 
 class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):

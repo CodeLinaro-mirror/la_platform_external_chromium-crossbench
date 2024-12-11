@@ -54,10 +54,6 @@ class Actions(TimeScope):
     return self._runner.timing
 
   @property
-  def run(self) -> Run:
-    return self._run
-
-  @property
   def platform(self) -> plt.Platform:
     return self._run.browser_platform
 
@@ -79,7 +75,7 @@ class Actions(TimeScope):
     super().__exit__(exc_type, exc_value, exc_traceback)
     logging.debug("Action end: %s", self._message)
     if self._measure:
-      self.run.durations[f"actions-duration {self.message}"] = self.duration
+      self._run.durations[f"actions-duration {self.message}"] = self.duration
 
   def _assert_is_active(self) -> None:
     assert self._is_active, "Actions have to be used in a with scope"

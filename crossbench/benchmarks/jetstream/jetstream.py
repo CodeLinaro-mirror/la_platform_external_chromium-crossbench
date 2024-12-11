@@ -9,11 +9,11 @@ import json
 import logging
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Tuple, cast)
+                    Tuple, Type, cast)
 
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
-from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
                                       geomean)
 from crossbench.probes.results import ProbeResult, ProbeResultDict
@@ -37,56 +37,16 @@ class JetStreamProbe(
   JetStream-specific Probe.
   Extracts all JetStream times and scores.
   """
-  FLATTEN: bool = False
-  JS: str = """
-  let results = Object.create(null);
-  let benchmarks = []
-  for (let benchmark of JetStream.benchmarks) {
-    const data = { score: benchmark.score };
-    if ("worst4" in benchmark) {
-      data.firstIteration = benchmark.firstIteration;
-      data.average = benchmark.average;
-      data.worst4 = benchmark.worst4;
-    } else if ("runTime" in benchmark) {
-      data.runTime = benchmark.runTime;
-      data.startupTime = benchmark.startupTime;
-    } else if ("mainRun" in benchmark) {
-      data.mainRun = benchmark.mainRun;
-      data.stdlib = benchmark.stdlib;
-    }
-    results[benchmark.plan.name] = data;
-    benchmarks.push(benchmark);
-  };
-  return results;
-"""
+
   TOTAL_METRIC_KEY: Final[str] = "Total/score"
 
   @property
   def jetstream(self) -> JetStreamBenchmark:
     return cast(JetStreamBenchmark, self.benchmark)
 
-  def to_json(self, actions: Actions) -> Dict[str, float]:
-    data = actions.js(self.JS)
-    assert len(data) > 0, "No benchmark data generated"
-    return data
-
-  def process_json_data(self, json_data: Dict[str, Any]) -> Dict[str, Any]:
-    assert "Total" not in json_data, (
-        "JSON result data already contains a ['Total'] entry.")
-    json_data["Total"] = self._compute_total_metrics(json_data)
-    return json_data
-
-  def _compute_total_metrics(self, json_data: Dict[str,
-                                                   Any]) -> Dict[str, float]:
-    # Manually add all total scores
-    accumulated_metrics = defaultdict(list)
-    for _, metrics in json_data.items():
-      for metric, value in metrics.items():
-        accumulated_metrics[metric].append(value)
-    total: Dict[str, float] = {}
-    for metric, values in accumulated_metrics.items():
-      total[metric] = geomean(values)
-    return total
+  @abc.abstractmethod
+  def get_context_cls(self) -> Type[JetStreamProbeContext]:
+    pass
 
   def log_run_result(self, run: Run) -> None:
     self._log_result(run.results, single_result=True)
@@ -156,6 +116,55 @@ class JetStreamProbe(
     if self.jetstream.detailed_metrics:
       return True
     return parts[0] != "Total" and parts[1] == "score"
+
+
+class JetStreamProbeContext(JsonResultProbeContext):
+  FLATTEN: bool = False
+  JS: str = """
+  let results = Object.create(null);
+  let benchmarks = []
+  for (let benchmark of JetStream.benchmarks) {
+    const data = { score: benchmark.score };
+    if ("worst4" in benchmark) {
+      data.firstIteration = benchmark.firstIteration;
+      data.average = benchmark.average;
+      data.worst4 = benchmark.worst4;
+    } else if ("runTime" in benchmark) {
+      data.runTime = benchmark.runTime;
+      data.startupTime = benchmark.startupTime;
+    } else if ("mainRun" in benchmark) {
+      data.mainRun = benchmark.mainRun;
+      data.stdlib = benchmark.stdlib;
+    }
+    results[benchmark.plan.name] = data;
+    benchmarks.push(benchmark);
+  };
+  return results;
+"""
+
+  def to_json(self, actions: Actions) -> Dict[str, float]:
+    data = actions.js(self.JS)
+    assert len(data) > 0, "No benchmark data generated"
+    return data
+
+  def process_json_data(self, json_data: Json) -> Json:
+    assert isinstance(json_data, dict)
+    assert "Total" not in json_data, (
+        "JSON result data already contains a ['Total'] entry.")
+    json_data["Total"] = self._compute_total_metrics(json_data)
+    return json_data
+
+  def _compute_total_metrics(self, json_data: Dict[str,
+                                                   Any]) -> Dict[str, float]:
+    # Manually add all total scores
+    accumulated_metrics = defaultdict(list)
+    for _, metrics in json_data.items():
+      for metric, value in metrics.items():
+        accumulated_metrics[metric].append(value)
+    total: Dict[str, float] = {}
+    for metric, values in accumulated_metrics.items():
+      total[metric] = geomean(values)
+    return total
 
 
 class JetStreamCSVFormatter(CSVFormatter):

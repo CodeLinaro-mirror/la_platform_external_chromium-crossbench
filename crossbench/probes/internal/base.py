@@ -23,7 +23,6 @@ class InternalProbe(Probe):
 
 class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
   IS_GENERAL_PURPOSE = False
-  FLATTEN = False
 
   def get_context_cls(self) -> Type[InternalJsonResultProbeContext]:
     return InternalJsonResultProbeContext
@@ -35,6 +34,7 @@ InternalJsonResultProbeT = TypeVar(
 
 class InternalJsonResultProbeContext(
     JsonResultProbeContext[InternalJsonResultProbeT]):
+  FLATTEN = False
 
   def stop(self) -> None:
     # Only extract data in the late teardown phase.

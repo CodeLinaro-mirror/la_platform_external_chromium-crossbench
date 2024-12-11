@@ -145,9 +145,6 @@ class ChromeHistogramsProbe(JsonResultProbe):
     super().validate_browser(env, browser)
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
 
-  def to_json(self, actions: Actions) -> Json:
-    raise NotImplementedError("should not be called, data comes from context")
-
   def get_context_cls(self) -> Type[ChromeHistogramsProbeContext]:
     return ChromeHistogramsProbeContext
 

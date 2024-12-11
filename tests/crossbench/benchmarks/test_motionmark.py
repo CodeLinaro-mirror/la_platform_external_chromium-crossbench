@@ -8,13 +8,15 @@ import csv
 from typing import Optional, Type
 from unittest import mock
 
-from crossbench.benchmarks.motionmark.motionmark_1 import (MotionMark1Benchmark,
-                                                           MotionMark1Probe,
-                                                           MotionMark1Story)
+from crossbench.benchmarks.motionmark.motionmark_1 import (
+    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
+    MotionMark1Story)
 from crossbench.benchmarks.motionmark.motionmark_1_2 import (
-    MotionMark12Benchmark, MotionMark12Probe, MotionMark12Story)
+    MotionMark12Benchmark, MotionMark12Probe, MotionMark12ProbeContext,
+    MotionMark12Story)
 from crossbench.benchmarks.motionmark.motionmark_1_3 import (
-    MotionMark13Benchmark, MotionMark13Probe, MotionMark13Story)
+    MotionMark13Benchmark, MotionMark13Probe, MotionMark13ProbeContext,
+    MotionMark13Story)
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
 from crossbench.runner.runner import Runner
@@ -38,6 +40,11 @@ class MotionMark1BaseTestCase(
   @property
   @abc.abstractmethod
   def probe_cls(self) -> Type[MotionMark1Probe]:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def probe_context_cls(self) -> Type[MotionMark1ProbeContext]:
     pass
 
 
@@ -154,7 +161,7 @@ class MotionMark1BaseTestCase(
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
-      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
+      self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
     with (self.out_dir /
           f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
@@ -185,6 +192,10 @@ class MotionMark12TestCase(MotionMark1BaseTestCase):
   def probe_cls(self):
     return MotionMark12Probe
 
+  @property
+  def probe_context_cls(self):
+    return MotionMark12ProbeContext
+
 
 class MotionMark13TestCase(MotionMark1BaseTestCase):
 
@@ -199,6 +210,10 @@ class MotionMark13TestCase(MotionMark1BaseTestCase):
   @property
   def probe_cls(self):
     return MotionMark13Probe
+
+  @property
+  def probe_context_cls(self):
+    return MotionMark13ProbeContext
 
 
 del MotionMark1BaseTestCase

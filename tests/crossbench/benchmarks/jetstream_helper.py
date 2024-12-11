@@ -10,6 +10,7 @@ from unittest import mock
 
 from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Probe,
+                                                         JetStream2ProbeContext,
                                                          JetStream2Story)
 from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
                             ValidationMode)
@@ -33,6 +34,11 @@ class JetStream2BaseTestCase(
   @property
   @abc.abstractmethod
   def probe_cls(self) -> Type[JetStream2Probe]:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def probe_context_cls(self) -> Type[JetStream2ProbeContext]:
     pass
 
   def test_run_throw(self):
@@ -102,7 +108,7 @@ class JetStream2BaseTestCase(
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
-      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
+      self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
 
     csv_file = self.out_dir / f"{self.probe_cls.NAME}.csv"
     with csv_file.open(encoding="utf-8") as f:

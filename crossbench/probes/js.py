@@ -71,11 +71,6 @@ class JSProbe(JsonResultProbe):
         ("setup_js", self._setup_js),
         ("metric_js", self._metric_js),
     )
-
-  def to_json(self, actions: Actions) -> Json:
-    data = actions.js(self._metric_js)
-    return ObjectParser.non_empty_dict(data, "JS metric data")
-
   def get_context_cls(self) -> Type[JSProbeContext]:
     return JSProbeContext
 
@@ -91,6 +86,10 @@ class JSProbe(JsonResultProbe):
 
 
 class JSProbeContext(JsonResultProbeContext[JSProbe]):
+
+  def to_json(self, actions: Actions) -> Json:
+    data = actions.js(self.probe.metric_js)
+    return ObjectParser.non_empty_dict(data, "JS metric data")
 
   def start(self) -> None:
     if setup_js := self.probe.setup_js:

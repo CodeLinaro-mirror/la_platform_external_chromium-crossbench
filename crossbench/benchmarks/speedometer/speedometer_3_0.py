@@ -14,7 +14,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 from crossbench import compat
 from crossbench.benchmarks.speedometer.speedometer import (
     ProbeClsTupleT, SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter,
-    SpeedometerProbe, SpeedometerStory)
+    SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
 from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser
@@ -34,16 +34,32 @@ class Speedometer30Probe(SpeedometerProbe):
   Extracts all speedometer times and scores.
   """
   NAME: str = "speedometer_3.0"
-  JS: str = "return window.benchmarkClient.metrics"
 
   @property
   def speedometer(self) -> Speedometer30Benchmark:
     return cast(Speedometer30Benchmark, self.benchmark)
 
-  def to_json(self, actions: Actions) -> Json:
-    return actions.js(self.JS)
+  def _is_valid_metric_key(self, metric_key: str) -> bool:
+    parts = metric_key.split("/")
+    if len(parts) != 1:
+      return False
+    if self.speedometer.detailed_metrics:
+      return True
+    if metric_key.startswith("Iteration-"):
+      return False
+    if metric_key == "Geomean":
+      return False
+    return True
+
+  def get_context_cls(self) -> Type[Speedometer30ProbeContext]:
+    return Speedometer30ProbeContext
+
+
+class Speedometer30ProbeContext(SpeedometerProbeContext):
+  JS: str = "return window.benchmarkClient.metrics"
 
   def process_json_data(self, json_data) -> Any:
+    assert isinstance(json_data, dict)
     # Move aggregate scores to the end
     aggregate_keys = []
     for metric_key in json_data.keys():
@@ -60,18 +76,6 @@ class Speedometer30Probe(SpeedometerProbe):
     for name, metric in json_data.items():
       result[name] = metric["mean"]
     return result
-
-  def _is_valid_metric_key(self, metric_key: str) -> bool:
-    parts = metric_key.split("/")
-    if len(parts) != 1:
-      return False
-    if self.speedometer.detailed_metrics:
-      return True
-    if metric_key.startswith("Iteration-"):
-      return False
-    if metric_key == "Geomean":
-      return False
-    return True
 
 
 @enum.unique

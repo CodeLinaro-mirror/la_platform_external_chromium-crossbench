@@ -7,8 +7,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Tuple
 
-from crossbench.benchmarks.speedometer.speedometer import (SpeedometerProbe,
-                                                           SpeedometerStory)
+from crossbench.benchmarks.speedometer.speedometer import (
+    SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
 from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
@@ -25,9 +25,14 @@ class Speedometer2Probe(SpeedometerProbe):
       return parts[0] in ("Geomean", "Score")
     return parts[-1] == "total"
 
+
+class Speedometer2ProbeContext(SpeedometerProbeContext):
+
   def process_json_data(self, json_data) -> Any:
+    assert isinstance(json_data, list)
     # Move aggregate scores to the end
     for iteration_data in json_data:
+      assert isinstance(iteration_data, dict)
       iteration_data["Mean"] = iteration_data.pop("mean")
       iteration_data["Total"] = iteration_data.pop("total")
       iteration_data["Geomean"] = iteration_data.pop("geomean")

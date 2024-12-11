@@ -9,7 +9,8 @@ import datetime as dt
 from typing import TYPE_CHECKING, Tuple, Type
 
 from crossbench.benchmarks.jetstream.jetstream import (JetStreamBenchmark,
-                                                       JetStreamProbe)
+                                                       JetStreamProbe,
+                                                       JetStreamProbeContext)
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
@@ -21,6 +22,10 @@ class JetStream2Probe(JetStreamProbe, metaclass=abc.ABCMeta):
   JetStream2-specific Probe.
   Extracts all JetStream2 times and scores.
   """
+
+
+class JetStream2ProbeContext(JetStreamProbeContext):
+  pass
 
 
 class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):

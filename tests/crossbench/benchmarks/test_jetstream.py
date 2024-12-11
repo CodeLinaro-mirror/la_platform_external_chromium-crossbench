@@ -5,18 +5,18 @@
 import unittest
 
 from crossbench.benchmarks.jetstream.jetstream import JetStreamCSVFormatter
-from crossbench.benchmarks.jetstream.jetstream_2_0 import (JetStream20Benchmark,
-                                                           JetStream20Probe,
-                                                           JetStream20Story)
-from crossbench.benchmarks.jetstream.jetstream_2_1 import (JetStream21Benchmark,
-                                                           JetStream21Probe,
-                                                           JetStream21Story)
-from crossbench.benchmarks.jetstream.jetstream_2_2 import (JetStream22Benchmark,
-                                                           JetStream22Probe,
-                                                           JetStream22Story)
-from crossbench.benchmarks.jetstream.jetstream_3_0 import (JetStream30Benchmark,
-                                                           JetStream30Probe,
-                                                           JetStream30Story)
+from crossbench.benchmarks.jetstream.jetstream_2_0 import (
+    JetStream20Benchmark, JetStream20Probe, JetStream20ProbeContext,
+    JetStream20Story)
+from crossbench.benchmarks.jetstream.jetstream_2_1 import (
+    JetStream21Benchmark, JetStream21Probe, JetStream21ProbeContext,
+    JetStream21Story)
+from crossbench.benchmarks.jetstream.jetstream_2_2 import (
+    JetStream22Benchmark, JetStream22Probe, JetStream22ProbeContext,
+    JetStream22Story)
+from crossbench.benchmarks.jetstream.jetstream_3_0 import (
+    JetStream30Benchmark, JetStream30Probe, JetStream30ProbeContext,
+    JetStream30Story)
 from crossbench.probes.metric import MetricsMerger
 from tests import test_helper
 # Only import module to avoid exposing the abstract test classes to the runner.
@@ -85,6 +85,10 @@ class JetStream20TestCase(jetstream_helper.JetStream2BaseTestCase):
     return JetStream20Probe
 
   @property
+  def probe_context_cls(self):
+    return JetStream20ProbeContext
+
+  @property
   def name(self):
     return "jetstream_2.0"
 
@@ -102,6 +106,10 @@ class JetStream21TestCase(jetstream_helper.JetStream2BaseTestCase):
   @property
   def probe_cls(self):
     return JetStream21Probe
+
+  @property
+  def probe_context_cls(self):
+    return JetStream21ProbeContext
 
   @property
   def name(self):
@@ -123,6 +131,10 @@ class JetStream22TestCase(jetstream_helper.JetStream2BaseTestCase):
     return JetStream22Probe
 
   @property
+  def probe_context_cls(self):
+    return JetStream22ProbeContext
+
+  @property
   def name(self):
     return "jetstream_2.2"
 
@@ -140,6 +152,10 @@ class JetStream30TestCase(jetstream_helper.JetStream3BaseTestCase):
   @property
   def probe_cls(self):
     return JetStream30Probe
+
+  @property
+  def probe_context_cls(self):
+    return JetStream30ProbeContext
 
   @property
   def name(self):
