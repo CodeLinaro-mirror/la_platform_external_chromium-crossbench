@@ -21,6 +21,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 colorama = "^0.4.6"
+google-auth = "^2.36.0"
 hjson = "^3.1.0"
 immutabledict = "^4.1.0"
 numpy = "^1.23.5"
@@ -32,6 +33,7 @@ psutil = "^5.9.1"
 python = ">=3.9,<3.12"
 python-dateutil = "2.7.3"
 pytz = "^2024.1"
+requests = "^2.32.3"
 selenium = "^4.1.0"
 tabulate = "^0.8.10"
 websockets = "^11.0.3"
