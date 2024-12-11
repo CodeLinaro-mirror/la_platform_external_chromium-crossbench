@@ -19,7 +19,6 @@ from crossbench.plt.base import Environ, Platform, SubprocessError
 from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
 
 if TYPE_CHECKING:
-
   from crossbench.plt.base import CmdArg, ListCmdArgs
   from crossbench.types import JsonDict
 
@@ -324,6 +323,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().environ
     return RemotePosixEnviron(self)
+
+  def is_port_used(self, port: int) -> bool:
+    return bool(self.sh_stdout("ss", "-HOlnt", "sport", "=", f"{port}"))
 
 
 class RemotePosixEnviron(Environ):

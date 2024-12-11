@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 
-from crossbench.plt import MachineArch
+from crossbench.plt.arch import MachineArch
 from tests import test_helper
 
 

@@ -11,10 +11,12 @@ from pyfakefs.fake_filesystem import OSType
 from crossbench import path as pth
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
-from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
+from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
+                                         BasePosixMockPlatformTestCase)
 
 
-class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
+class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
+                                BasePosixMockPlatformTestCase):
   __test__ = True
 
   def setUp(self) -> None:

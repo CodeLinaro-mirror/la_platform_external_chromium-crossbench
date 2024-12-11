@@ -31,7 +31,9 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generator,
 
 import psutil
 
+from crossbench import parse
 from crossbench import path as pth
+from crossbench.helper import wait
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
 
@@ -424,8 +426,10 @@ class Platform(abc.ABC):
     return self.path(tempfile.gettempdir())
 
   def port_forward(self, local_port: int, remote_port: int) -> int:
+    """ Forwards a device remote_port to a local port."""
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
+    parse.NumberParser.port_number(local_port, "local_port")
     self.assert_is_local()
     return local_port
 
@@ -434,14 +438,36 @@ class Platform(abc.ABC):
     self.assert_is_local()
 
   def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
+    """ Forwards a local port to a device port."""
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
+    parse.NumberParser.port_number(remote_port, "remote_port")
     self.assert_is_local()
     return remote_port
 
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     del remote_port
     self.assert_is_local()
+
+  def is_port_used(self, port: int) -> bool:
+    self.assert_is_local()
+    for conn in psutil.net_connections(kind="inet"):
+      if conn.status == psutil.CONN_LISTEN and conn.laddr:
+        if conn.laddr.port == port:
+          return True
+    return False
+
+  def wait_for_port(self, port: int, timeout: dt.timedelta) -> None:
+    for _ in wait.wait_with_backoff(timeout, self):
+      if self.is_port_used(port):
+        break
+
+  def get_free_port(self) -> int:
+    self.assert_is_local()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      s.bind(("localhost", 0))
+      return s.getsockname()[1]
 
   def local_cache_dir(self, name: Optional[str] = None) -> pth.LocalPath:
     return self.local_path(self.cache_dir(name))
@@ -856,13 +882,6 @@ class Platform(abc.ABC):
     # TODO: support screen coordinates
     raise NotImplementedError(
         "'screenshot' is only available on MacOS for now")
-
-  def get_free_port(self) -> int:
-    self.assert_is_local()
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-      s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-      s.bind(("localhost", 0))
-      return s.getsockname()[1]
 
   def display_resolution(self) -> Tuple[int, int]:
     raise NotImplementedError(

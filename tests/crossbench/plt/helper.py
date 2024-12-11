@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import pathlib
+from unittest import mock
 
 from crossbench import plt
 from crossbench.plt.posix import PosixPlatform
@@ -21,6 +23,13 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def setUp(self) -> None:
     super().setUp()
     self.mock_platform_setup()
+
+  def mock_platform_str(self, platform, name) -> None:
+    # Mock out str(platform) to avoid secondary errors when printing the
+    # platform name in failing tests.
+    patcher = mock.patch.object(type(platform), "__str__", return_value=name)
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
   def mock_platform_setup(self):
     self.mock_platform = MockPlatform()  # pytype: disable=not-instantiable
@@ -56,6 +65,35 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def test_is_chromeos(self):
     self.assertFalse(self.platform.is_chromeos)
+
+  def test_port_forward_invalid(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):
+      self.platform.port_forward(-1, -1)
+
+  def test_reverse_port_forward_invalid(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
+      self.platform.reverse_port_forward(-1, -1)
+
+
+class BaseLocalMockPlatformTestMixin:
+
+  def test_local_port_forward_invalid(self):
+    with self.assertRaisesRegex(ValueError, "local platform"):
+      self.platform.port_forward(1000, 2000)
+
+  def test_local_reverse_port_forward_invalid(self):
+    with self.assertRaisesRegex(ValueError, "local platform"):
+      self.platform.reverse_port_forward(1000, 2000)
+
+  def test_local_reverse_port_forward(self):
+    port = self.platform.get_free_port()
+    self.assertEqual(self.platform.reverse_port_forward(port, port), port)
+    self.platform.stop_reverse_port_forward(port)
+
+  def test_local_port_forward(self):
+    port = self.platform.get_free_port()
+    self.assertEqual(self.platform.port_forward(port, port), port)
+    self.platform.stop_port_forward(port)
 
 
 class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):

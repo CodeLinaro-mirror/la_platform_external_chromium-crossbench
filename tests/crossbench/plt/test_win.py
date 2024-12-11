@@ -11,10 +11,12 @@ from unittest import mock
 from crossbench import path as pth
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
-from tests.crossbench.plt.helper import BaseMockPlatformTestCase
+from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
+                                         BaseMockPlatformTestCase)
 
 
-class WinMockPlatformTestCase(BaseMockPlatformTestCase):
+class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
+                              BaseMockPlatformTestCase):
   __test__ = True
 
   def mock_platform_setup(self):

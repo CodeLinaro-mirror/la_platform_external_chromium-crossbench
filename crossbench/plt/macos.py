@@ -10,6 +10,7 @@ import json
 import logging
 import plistlib
 import re
+import socket
 import traceback as tb
 from subprocess import SubprocessError
 from typing import Any, Dict, Optional, Tuple
@@ -348,3 +349,11 @@ class MacOSPlatform(PosixPlatform):
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencapture", "-x", result_path)
+
+  def is_port_used(self, port: int) -> bool:
+    # We need a custom solution for macos:
+    # - psutil.net_connections requires root access on macos
+    # - 'ss' is not available by default on macos
+    # This is a semi-ideal solution as it creates a temporary local server.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      return s.connect_ex(("localhost", port)) == 0

@@ -369,6 +369,29 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertGreater(port, 0)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
       s.bind(("localhost", port))
+      self.assertNotEqual(port, self.platform.get_free_port())
+
+  def test_is_port_used(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    self.assertFalse(self.platform.is_port_used(port))
+    with socket.create_server(("localhost", port)):
+      self.assertTrue(self.platform.is_port_used(port))
+
+  def test_wait_for_port(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    with self.assertRaises(TimeoutError):
+      self.platform.wait_for_port(port, timeout=dt.timedelta(seconds=0.01))
+
+  def test_wait_for_port_active(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    with socket.create_server(("localhost", port)):
+      self.platform.wait_for_port(port, timeout=dt.timedelta(seconds=0.01))
 
   @unittest.skipIf(
       not plt.PLATFORM.which("python3"), reason="python3 not installed")
@@ -469,6 +492,7 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
       self.platform.app_version("path/to/invalid/test/crossbench/bin")
     version = self.platform.app_version(python_path)
     self.assertTrue(version)
+
 
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 

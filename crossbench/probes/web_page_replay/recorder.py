@@ -228,5 +228,12 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     pass
 
   def teardown(self) -> ProbeResult:
+    self._teardown_port_forwarding()
     self._recorder.stop()
     return LocalProbeResult(file=(self.local_result_path,))
+
+  def _teardown_port_forwarding(self) -> None:
+    if self._browser_platform.is_remote:
+      self._browser_platform.stop_reverse_port_forward(self._recorder.http_port)
+      self._browser_platform.stop_reverse_port_forward(
+          self._recorder.https_port)

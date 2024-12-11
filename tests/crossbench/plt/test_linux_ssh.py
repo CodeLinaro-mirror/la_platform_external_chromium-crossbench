@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+import contextlib
+from unittest import mock
+
 from crossbench import path as pth
 from crossbench import plt
 from tests import test_helper
@@ -20,12 +23,14 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def setUp(self) -> None:
     super().setUp()
+    self.host_platform = self.mock_platform
     self.platform = plt.LinuxSshPlatform(
         self.mock_platform,
         host=self.HOST,
         port=self.PORT,
         ssh_port=self.SSH_PORT,
         ssh_user=self.SSH_USER)
+    self.mock_platform_str(self.platform, "linux_ssh_mock_platform")
 
   def _expect_sh_ssh(self, *args, result=""):
     self.mock_platform.expect_sh(
@@ -110,6 +115,58 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(
         self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
         "FILE1\nFILE2\n")
+
+  @contextlib.contextmanager
+  def mock_popen(self, platform):
+    with mock.patch.object(type(platform), "popen") as patcher:
+      yield patcher
+
+  @contextlib.contextmanager
+  def mock_get_free_port(self, platform, port):
+    with mock.patch.object(
+        type(platform), "get_free_port", return_value=port) as patcher:
+      yield patcher
+
+  @contextlib.contextmanager
+  def mock_wait_for_port(self, platform):
+    with mock.patch.object(type(platform), "wait_for_port") as patcher:
+      yield patcher
+
+  def test_port_forward(self):
+    with self.mock_popen(
+        self.host_platform) as mock_popen, self.mock_wait_for_port(
+            self.host_platform) as mock_wait_for_port:
+      port = self.platform.port_forward(666, 33221)
+    mock_popen.assert_called_once()
+    mock_wait_for_port.assert_called_once()
+    self.assertEqual(port, 666)
+    with self.assertRaisesRegex(RuntimeError, "twice"):
+      port = self.platform.port_forward(666, 33221)
+    self.platform.stop_port_forward(port)
+
+  def test_port_forward_auto_port(self):
+    with self.mock_get_free_port(self.host_platform, 666) as mock_free_port:
+      with self.mock_popen(self.host_platform) as mock_popen:
+        with self.mock_wait_for_port(self.host_platform) as mock_wait_for_port:
+          port = self.platform.port_forward(0, 33221)
+      mock_popen.assert_called_once()
+      mock_wait_for_port.assert_called_once()
+    mock_free_port.assert_called_once()
+    self.assertEqual(port, 666)
+    with self.assertRaisesRegex(RuntimeError, "twice"):
+      port = self.platform.port_forward(666, 33221)
+    self.platform.stop_port_forward(port)
+
+  def test_reverse_port_forward(self):
+    self._expect_sh_ssh("ss -HOlnt sport = 666", result="666")
+    with self.mock_popen(self.host_platform) as mock_popen:
+      port = self.platform.reverse_port_forward(666, 33221)
+    mock_popen.assert_called_once()
+    with self.assertRaisesRegex(RuntimeError, "twice"):
+      self.platform.reverse_port_forward(666, 33221)
+    self.assertEqual(port, 666)
+    self.platform.stop_reverse_port_forward(port)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import pathlib
 import unittest
 from typing import Final
@@ -49,6 +50,10 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.adb_setup()
     self.platform = AndroidAdbPlatform(
         self.mock_platform, self.DEVICE_ID, adb=self.adb)
+    self.mock_platform_str(self.platform, "adb.mock_platform.arm64")
+
+  def test_str(self):
+    self.assertEqual(str(self.platform), "adb.mock_platform.arm64")
 
   def adb_setup(self):
     adb_patcher = mock.patch(
@@ -418,6 +423,30 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(
         self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
         "FILE1\nFILE2\n")
+
+  def test_port_forward(self):
+    self.expect_adb("forward", "tcp:0", "tcp:33221", result="666")
+    self.expect_adb("forward", "--remove", "tcp:666")
+    port = self.platform.port_forward(0, 33221)
+    self.assertEqual(port, 666)
+    self.platform.stop_port_forward(port)
+
+  def test_reverse_port_forward(self):
+    self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
+    self.expect_adb("reverse", "--remove", "tcp:666")
+    port = self.platform.reverse_port_forward(0, 33221)
+    self.assertEqual(port, 666)
+    self.platform.stop_reverse_port_forward(port)
+
+  def test_port_forward_invalid(self):
+    super().test_port_forward_invalid()
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
+      self.platform.port_forward(1111, 0)
+
+  def test_reverse_port_forward_invalid(self):
+    super().test_reverse_port_forward_invalid()
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):
+      self.platform.reverse_port_forward(1111, 0)
 
   def test_display_resolution(self):
     self.expect_adb("shell", "wm size", result="Physical size: 1366x768\n")
