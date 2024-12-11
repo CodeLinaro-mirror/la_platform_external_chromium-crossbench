@@ -47,8 +47,8 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   """
   NAME: str = "memory_probe"
 
-  def get_context(self, run: Run) -> MemoryProbeContext:
-    return MemoryProbeContext(self, run)
+  def get_context_cls(self) -> Type[MemoryProbeContext]:
+    return MemoryProbeContext
 
   def to_json(self, actions: Actions) -> JsonDict:
     raise NotImplementedError(

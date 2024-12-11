@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Optional, Type, cast
+from typing import TYPE_CHECKING, Iterable, Optional, cast
 
 from crossbench import path as pth
 from crossbench.helper import fs_helper
@@ -127,9 +127,6 @@ class PerfettoProbe(Probe):
     if run.browser_platform.is_chromeos:
       return ChromeOsPerfettoProbeContext(self, run)
     return AndroidPerfettoProbeContext(self, run)
-
-  def get_context_cls(self) -> Type[PerfettoProbeContext]:
-    raise NotImplementedError()
 
 
 class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):

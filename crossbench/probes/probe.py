@@ -219,9 +219,8 @@ class Probe(ProbeResultKey, abc.ABC):
     probe_cls: Type[ProbeContext[ProbeT]] = self.get_context_cls()
     return probe_cls(self, run)
 
-  @abc.abstractmethod
   def get_context_cls(self: ProbeT) -> Type[ProbeContext[ProbeT]]:
-    raise NotImplementedError()
+    raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
   def get_session_context(  # pylint: disable=useless-return
       self: ProbeT,

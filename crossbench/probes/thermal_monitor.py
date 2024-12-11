@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from enum import IntEnum
-from typing import TYPE_CHECKING, Iterable, Optional, Type
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
@@ -158,10 +158,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
   def get_context(self, run: Run) -> Optional[ProbeContext]:
     if run.browser.platform.is_android:
       return AndroidThermalMonitorProbeContext(self, run)
-    return super().get_context(run)
-
-  def get_context_cls(self) -> Type[ThermalMonitorProbeContext]:
-    return ThermalMonitorProbeContext
+    return ThermalMonitorProbeContext(self, run)
 
 
 class ThermalMonitorProbeContext(

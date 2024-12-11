@@ -17,7 +17,7 @@ import subprocess
 import time
 from functools import cached_property
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
-                    Sequence, Tuple, Type, Union, cast)
+                    Sequence, Tuple, Union, cast)
 
 from crossbench import path as pth
 from crossbench import plt
@@ -565,9 +565,6 @@ class ProfilingProbe(Probe):
     if run.browser_platform.is_android:
       return AndroidProfilingContext(self, run)
     raise NotImplementedError("Invalid platform")
-
-  def get_context_cls(self) -> Type[ProfilingContext]:
-    raise NotImplementedError()
 
 class ProfilingContext(ProbeContext[ProfilingProbe], metaclass=abc.ABCMeta):
 

@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+import abc
+
 from crossbench.probes.probe import Probe
 
 
-class EnvModifier(Probe):
+class EnvModifier(Probe, metaclass=abc.ABCMeta):
   """
   A class that modifies the running environment without actually producing
   data like a Probe.

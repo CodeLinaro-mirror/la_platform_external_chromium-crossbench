@@ -11,9 +11,11 @@ from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
                                    GENERAL_PURPOSE_PROBES, INTERNAL_PROBES,
                                    NON_CONFIGURABLE_INTERNAL_PROBES,
                                    OPTIONAL_INTERNAL_PROBES)
+from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
+from crossbench.probes.env_modifier import EnvModifier
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
@@ -92,6 +94,9 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
   def all_probe_subclasses(self, probe_cls=Probe):
     for probe_sub_cls in probe_cls.__subclasses__():
       if "Mock" in str(probe_sub_cls):
+        continue
+      # Filter out abstract helper classes.
+      if probe_sub_cls in (ChromiumProbe, EnvModifier):
         continue
       if not inspect.isabstract(probe_sub_cls):
         yield probe_sub_cls

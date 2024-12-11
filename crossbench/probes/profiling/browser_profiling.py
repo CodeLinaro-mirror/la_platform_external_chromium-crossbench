@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import enum
 import json
-from typing import TYPE_CHECKING, List, Optional, Type, cast
+from typing import TYPE_CHECKING, List, Optional, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
 
@@ -147,9 +147,6 @@ class BrowserProfilingProbe(Probe):
       return SafariWebdriverBrowserProfilerProbeContext(self, run)
     raise NotImplementedError(
         f"Probe({self}): Unsupported browser: {run.browser}")
-
-  def get_context_cls(self) -> Type[BrowserProfilingProbeContext]:
-    raise NotImplementedError()
 
 
 class BrowserProfilingProbeContext(
