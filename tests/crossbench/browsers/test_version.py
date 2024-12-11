@@ -8,8 +8,6 @@ import abc
 import unittest
 from typing import cast
 
-from tests import test_helper
-
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
@@ -19,6 +17,7 @@ from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
                                          BrowserVersionParseError,
                                          PartialBrowserVersionError,
                                          UnknownBrowserVersion)
+from tests import test_helper
 
 
 class BrowserVersionChannelTestCase(unittest.TestCase):
@@ -513,6 +512,11 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     beta_version = ChromeVersion.beta(version.parts)
     self.assertEqual(beta_version, version)
 
+  def test_parse_beta_chrome_alternative(self):
+    version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
+    alternative = self._parse_helper("Google Chrome Beta 116.0.5845.50")
+    self.assertEqual(alternative, version)
+
   def test_parse_alpha_chrome(self):
     version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
     self.assertEqual(version.major, 117)
@@ -528,6 +532,11 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     dev_version = ChromeVersion.dev(version.parts)
     self.assertEqual(dev_version, version)
 
+  def test_parse_alpha_chrome_alternative(self):
+    version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
+    alternative = self._parse_helper("Google Chrome Dev 117.0.5911.2")
+    self.assertEqual(alternative, version)
+
   def test_parse_pre_alpha_chrome(self):
     version: BrowserVersion = self._parse_helper(self.PRE_ALPHA_VERSION_STR)
     self.assertEqual(version.major, 117)
@@ -542,6 +551,11 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(pre_alpha_version, version)
     canary_version = ChromeVersion.canary(version.parts)
     self.assertEqual(canary_version, version)
+
+  def test_parse_pre_alpha_chrome_alternative(self):
+    version: BrowserVersion = self._parse_helper(self.PRE_ALPHA_VERSION_STR)
+    alternative = self._parse_helper("Google Chrome Canary 117.0.5921.0")
+    self.assertEqual(alternative, version)
 
   def test_parse_partial_milestone(self):
     version = self.parse("Chrome 125")
@@ -744,7 +758,7 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
   LTS_VERSION_STR = "Mozilla Firefox 114.0.1esr"
   STABLE_VERSION_STR = "Mozilla Firefox 115.0.3"
   # IRL Firefox version numbers do not distinct beta from stable. so we
-  # remap Firefox Dev => beta.
+  # remap Firefox Developer Edition => beta channel.
   BETA_VERSION_STR = "Mozilla Firefox 116.0b4"
   ALPHA_VERSION_STR = "Mozilla Firefox 117.0a1"
   PRE_ALPHA_VERSION_STR = ""
@@ -791,17 +805,42 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "stable")
 
+  def test_parse_stable_alternatives(self):
+    version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
+    for version_str in ("Firefox 115.0.3",):
+      alternative = self._parse_helper(version_str)
+      self.assertEqual(version, alternative)
+
   def test_parse_beta_firefox(self):
     version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(version.major, 116)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "dev")
 
+  def test_parse_beta_alternatives(self):
+    version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
+    self.assertEqual(
+        version,
+        self._parse_helper("Mozilla Firefox Developer Edition 116.0b4",))
+    self.assertEqual(version,
+                     self._parse_helper("Firefox Developer Edition 116.0b4"))
+    # Some developer versions on mac don't have 3-part version numbers.
+    alternative = self._parse_helper("Firefox Developer Edition 116.0")
+    self.assertTrue(alternative.is_beta)
+    self.assertEqual(alternative.parts, (116, 0, 0))
+
   def test_parse_alpha_firefox(self):
     version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
     self.assertEqual(version.major, 117)
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "nightly")
+
+  def test_parse_alpha_alternatives(self):
+    version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
+    for version_str in ("Mozilla Firefox Nightly 117.0a1",
+                        "Firefox Nightly 117.0a1"):
+      alternative = self._parse_helper(version_str)
+      self.assertEqual(version, alternative)
 
   def test_str(self):
     self.assertEqual(str(self.parse(self.LTS_VERSION_STR)), "114.0.1 esr")
@@ -845,6 +884,12 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(safari_version.release, 0)
     self.assertEqual(version.channel_name, "stable")
 
+  def test_parse_stable_alternative(self):
+    version: BrowserVersion = self._parse_helper("Safari 18.1.1")
+    self.assertTrue(version.is_stable)
+    self.assertEqual(version.parts, (18, 1, 1, 0))
+    self.assertTrue(version.is_complete)
+
   def test_parse_beta_safari(self):
     version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(version.major, 17)
@@ -853,6 +898,13 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertTrue(safari_version.is_tech_preview)
     self.assertEqual(safari_version.release, 175)
     self.assertEqual(version.channel_name, "technology preview")
+
+  def test_parse_beta_alternative(self):
+    version: BrowserVersion = self._parse_helper(
+        "Safari Technology Preview 20621.1.6")
+    self.assertTrue(version.is_beta)
+    self.assertEqual(version.parts, (20621, 1, 6, 0))
+    self.assertTrue(version.is_complete)
 
   def test_str(self):
     self.assertEqual(
