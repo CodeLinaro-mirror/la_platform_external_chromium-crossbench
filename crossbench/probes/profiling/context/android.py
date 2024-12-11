@@ -30,7 +30,6 @@ class AndroidProfilingContext(ProfilingContext):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._simpleperf_process: Optional[subprocess.Popen] = None
     self._story_ready = False
 
   @cached_property
@@ -80,13 +79,13 @@ class AndroidProfilingContext(ProfilingContext):
   def _start_simpleperf(self) -> None:
     command_line = self._generate_command_line()
     logging.info("Starting simpleperf with command line: %s.", command_line)
-    self._simpleperf_process = self.browser_platform.popen(
+    self._profiling_process = self.browser_platform.popen(
         *command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     # Wait a bit for simpleperf to start and (potentially) terminate on error.
     time.sleep(1)
-    if self._simpleperf_process.poll():
+    if self._profiling_process.poll():
       error_msg: str = ""
-      if stdout := self._simpleperf_process.stdout:
+      if stdout := self._profiling_process.stdout:
         if isinstance(stdout, io.BufferedReader):
           error_msg = stdout.read().decode("utf-8")
           logging.error(error_msg)
@@ -151,10 +150,10 @@ class AndroidProfilingContext(ProfilingContext):
     self.stop_process()
 
   def stop_process(self) -> None:
-    if self._simpleperf_process:
+    if self._profiling_process:
       proc_helper.wait_and_kill(
-          self._simpleperf_process, timeout=30, signal=signal.SIGINT)
-      self._simpleperf_process = None
+          self._profiling_process, timeout=30, signal=signal.SIGINT)
+      self._profiling_process = None
       self.browser.performance_mark("crossbench-probe-profiling-stop")
 
   def teardown(self) -> ProbeResult:

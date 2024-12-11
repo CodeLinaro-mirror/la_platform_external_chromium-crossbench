@@ -5,12 +5,22 @@
 from __future__ import annotations
 
 import abc
+import subprocess
+from typing import TYPE_CHECKING, Optional
 
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.v8.log import V8LogProbe
 
+if TYPE_CHECKING:
+  from crossbench.probes.profiling.system_profiling import ProfilingProbe
+  from crossbench.runner.run import Run
+
 
 class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
+
+  def __init__(self, probe: ProfilingProbe, run: Run) -> None:
+    super().__init__(probe, run)
+    self._profiling_process: Optional[subprocess.Popen] = None
 
   def setup_v8_log_path(self) -> None:
     if any(isinstance(probe, V8LogProbe) for probe in self.run.probes):

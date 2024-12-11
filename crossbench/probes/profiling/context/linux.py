@@ -8,7 +8,6 @@ import atexit
 import json
 import logging
 import multiprocessing
-import subprocess
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional
 
@@ -21,7 +20,6 @@ from crossbench.probes.profiling.enum import CleanupMode
 
 if TYPE_CHECKING:
   import crossbench.path as pth
-  from crossbench.probes.profiling.system_profiling import ProfilingProbe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -36,10 +34,6 @@ class LinuxProfilingContext(ProfilingContext):
       "jitted-*.so",
       JIT_DUMP_PATTERN,
   )
-
-  def __init__(self, probe: ProfilingProbe, run: Run) -> None:
-    super().__init__(probe, run)
-    self._perf_process: Optional[subprocess.Popen] = None
 
   def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
@@ -64,12 +58,12 @@ class LinuxProfilingContext(ProfilingContext):
       return
     perf_data_file: pth.AnyPath = self.result_path / "browser.perf.data"
     # TODO: not fully working yet
-    self._perf_process = self.browser_platform.popen(
+    self._profiling_process = self.browser_platform.popen(
         "perf", "record", f"--call-graph={self.probe.call_graph_mode or 'fp'}",
         f"--freq={self.probe.frequency or 'max'}",
         f"--clockid={self.probe.clockid or 'mono'}",
         f"--output={perf_data_file}", f"--pid={self.run.browser.pid}")
-    if self._perf_process.poll():
+    if self._profiling_process.poll():
       raise ValueError("Could not start linux profiler")
     atexit.register(self.stop_process)
 
@@ -77,9 +71,9 @@ class LinuxProfilingContext(ProfilingContext):
     self.stop_process()
 
   def stop_process(self) -> None:
-    if self._perf_process:
-      proc_helper.wait_and_kill(self._perf_process)
-      self._perf_process = None
+    if self._profiling_process:
+      proc_helper.wait_and_kill(self._profiling_process)
+      self._profiling_process = None
 
   def teardown(self) -> ProbeResult:
     # Waiting for linux-perf to flush all perf data
