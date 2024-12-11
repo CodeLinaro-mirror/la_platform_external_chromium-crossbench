@@ -7,9 +7,13 @@ import pathlib
 import unittest
 
 from crossbench.browsers.settings import Settings
-from crossbench.probes.profiling.system_profiling import (
-    RENDERER_CMD_PATH, CallGraphMode, CleanupMode, ProfilingProbe, TargetMode,
-    generate_simpleperf_command_line)
+from crossbench.probes.profiling.context.android import \
+    generate_simpleperf_command_line
+from crossbench.probes.profiling.system_profiling import (RENDERER_CMD_PATH,
+                                                          CallGraphMode,
+                                                          CleanupMode,
+                                                          ProfilingProbe,
+                                                          TargetMode)
 from tests import test_helper
 from tests.crossbench.mock_browser import (MockChromeStable, MockFirefox,
                                            MockSafari)
@@ -325,6 +329,7 @@ class EnumTestCase(unittest.TestCase):
   def test_call_graph_mode(self):
     self.assertIs(CallGraphMode("frame_pointer"), CallGraphMode.FRAME_POINTER)
     self.assertIs(CallGraphMode("FRAME_POINTER"), CallGraphMode.FRAME_POINTER)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
