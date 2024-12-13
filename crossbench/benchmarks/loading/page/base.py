@@ -8,13 +8,18 @@ import abc
 import datetime as dt
 from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
+from crossbench.action_runner.android_input_action_runner import \
+    AndroidInputActionRunner
+from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.chromeos_input_action_runner import \
+    ChromeOSInputActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
   from crossbench.cli.config.secrets import Secrets
   from crossbench.runner.run import Run
@@ -74,4 +79,15 @@ class Page(Story, metaclass=abc.ABCMeta):
 def get_action_runner(run: Run) -> ActionRunner:
   # TODO: make sure we have a single instance per Run
   benchmark = cast("PageLoadBenchmark", run.benchmark)
+
+  if not benchmark.action_runner:
+    platform = run.browser.platform
+
+    if platform.is_android:
+      benchmark.action_runner = AndroidInputActionRunner()
+    elif platform.is_chromeos:
+      benchmark.action_runner = ChromeOSInputActionRunner()
+    else:
+      benchmark.action_runner = DefaultActionRunner()
+
   return benchmark.action_runner

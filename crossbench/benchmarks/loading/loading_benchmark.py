@@ -11,7 +11,6 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
 from crossbench.action_runner.config import ActionRunnerConfig
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.loading.config.pages import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
@@ -271,11 +270,11 @@ class PageLoadBenchmark(SubStoryBenchmark):
   ) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
-
     parser.add_argument(
         "--action-runner",
         type=ActionRunnerConfig.parse,
-        help="Set the action runner for interactive pages.")
+        help="Set the action runner for interactive pages.",
+        required=False)
     return parser
 
   @classmethod
@@ -342,11 +341,15 @@ class PageLoadBenchmark(SubStoryBenchmark):
   def __init__(self,
                stories: Sequence[Page],
                action_runner: Optional[ActionRunner] = None) -> None:
-    self._action_runner = action_runner or DefaultActionRunner()
+    self._action_runner = action_runner
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)
 
   @property
-  def action_runner(self) -> ActionRunner:
+  def action_runner(self) -> Optional[ActionRunner]:
     return self._action_runner
+
+  @action_runner.setter
+  def action_runner(self, action_runner: Optional[ActionRunner]) -> None:
+    self._action_runner = action_runner
