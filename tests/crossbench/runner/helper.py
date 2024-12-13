@@ -13,6 +13,7 @@ from typing import Any, List, Optional, Type
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
+from crossbench.cli.config.secrets import Secrets
 from crossbench.env import HostEnvironment
 from crossbench.exception import Annotator
 from crossbench.path import safe_filename
@@ -63,6 +64,7 @@ class MockRun:
     self.is_success = True
     self.index = index
     self.story = story
+    self.story_secrets = Secrets()
     self.out_dir = (
         browser_session.root_dir / safe_filename(self.browser.unique_name) /
         "stories" / name / f"repetition={self.repetition}" / self.temperature)
@@ -91,6 +93,10 @@ class MockRun:
   @property
   def exceptions(self) -> Annotator:
     return self._exceptions
+
+  @property
+  def secrets(self) -> Secrets:
+    return self.story_secrets.merge(fallback=self.browser.secrets)
 
   def max_end_datetime(self) -> dt.datetime:
     return dt.datetime.max

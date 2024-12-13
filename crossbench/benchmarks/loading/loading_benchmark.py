@@ -233,7 +233,7 @@ class LoadingPageFilter(StoryFilter[Page]):
       return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
     return InteractivePage(label, config.blocks, config.setup, config.login,
-                           config.secrets.as_dict(), playback, tabs,
+                           config.secrets, playback, tabs,
                            args.about_blank_duration, args.run_login,
                            args.run_setup)
 

@@ -30,7 +30,7 @@ from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.secrets import SecretsConfig
+from crossbench.cli.config.secrets import Secrets
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -446,13 +446,13 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
             "password": "s3cr3t"
         }
     }
-    secrets_dict = SecretsConfig.parse(secrets_data).as_dict()
+    secrets = Secrets.parse(secrets_data)
     self.setup_expected_google_login_js()
     with self.patch_get_browser():
       with mock.patch.object(
           Settings, "secrets",
           new_callable=mock.PropertyMock) as mock_get_secrets:
-        mock_get_secrets.return_value = secrets_dict
+        mock_get_secrets.return_value = secrets
         self.run_cli("loading", "run", f"--page-config={config_file}",
                      "--env-validation=skip", "--throw",
                      f"--secrets={json.dumps(secrets_data)}")

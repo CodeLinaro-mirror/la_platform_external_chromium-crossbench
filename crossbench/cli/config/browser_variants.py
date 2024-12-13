@@ -179,7 +179,7 @@ class BrowserVariantsConfig:
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform,
-          secrets=args.secrets.as_dict(),
+          secrets=args.secrets,
           driver_logging=args.driver_logging,
           wipe_system_user_data=args.wipe_system_user_data,
           http_request_timeout=args.http_request_timeout)
@@ -503,7 +503,7 @@ class BrowserVariantsConfig:
           viewport=args.viewport,
           splash_screen=args.splash_screen,
           platform=browser_platform,
-          secrets=args.secrets.as_dict(),
+          secrets=args.secrets,
           driver_logging=args.driver_logging,
           wipe_system_user_data=args.wipe_system_user_data,
           http_request_timeout=args.http_request_timeout)

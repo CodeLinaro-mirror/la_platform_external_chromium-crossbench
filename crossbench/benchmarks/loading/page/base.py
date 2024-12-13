@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, List, Tuple, cast
+from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
@@ -16,6 +16,7 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+  from crossbench.cli.config.secrets import Secrets
   from crossbench.runner.run import Run
 
 DEFAULT_DURATION_SECONDS = 15
@@ -38,11 +39,12 @@ class Page(Story, metaclass=abc.ABCMeta):
                duration: dt.timedelta = DEFAULT_DURATION,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta()):
+               about_blank_duration: dt.timedelta = dt.timedelta(),
+               secrets: Optional[Secrets] = None):
     self._playback: PlaybackController = playback
     self._tabs: TabController = tabs
     self._about_blank_duration = about_blank_duration
-    super().__init__(name, duration)
+    super().__init__(name, duration, secrets)
 
   @property
   def about_blank_duration(self) -> dt.timedelta:

@@ -33,7 +33,7 @@ from crossbench.cli.config.env import (parse_env_config_file,
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.cli.config.secrets import SecretsConfig
+from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
     CrossbenchDevToolsRecorderProxy
@@ -619,8 +619,8 @@ class CrossBenchCLI:
     browser_group.add_argument(
         "--secrets",
         dest="secrets",
-        type=SecretsConfig.parse,
-        default=SecretsConfig(),
+        type=Secrets.parse,
+        default=Secrets(),
         help="Path to file containing login secrets")
 
     browser_group.add_argument(

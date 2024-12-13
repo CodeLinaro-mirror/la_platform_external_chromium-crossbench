@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.viewport import Viewport
-  from crossbench.cli.config.secrets import Secret, SecretsDict
+  from crossbench.cli.config.secrets import Secrets, UsernamePassword
   from crossbench.env import HostEnvironment
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
@@ -121,7 +121,7 @@ class Browser(abc.ABC):
     return self._settings.network
 
   @property
-  def secrets(self) -> SecretsDict:
+  def secrets(self) -> Secrets:
     return self._settings.secrets
 
   @property
@@ -267,7 +267,9 @@ class Browser(abc.ABC):
     self.start(session)
     assert self._is_running
 
-  def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:
+  def is_logged_in(self,
+                   secret: UsernamePassword,
+                   strict: bool = False) -> bool:
     """Determines whether the browser is already logged in with the given
     credentials.
 

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Iterable, Optional, Set, Type
 from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
+from crossbench.cli.config.secrets import Secrets
 from crossbench.env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
@@ -255,6 +256,10 @@ class Run(ResultOrigin):
   @property
   def annotations(self) -> Iterable[RunAnnotation]:
     return iter(self._annotations)
+
+  @property
+  def secrets(self) -> Secrets:
+    return self.story.secrets.merge(fallback=self.browser.secrets)
 
   def get_browser_details_json(self) -> JsonDict:
     details_json = self.browser.details_json()

@@ -5,56 +5,42 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Dict, Type
+from typing import Dict, Optional
 
-from immutabledict import immutabledict
-
-from crossbench import exception
-from crossbench.cli.config.secret_type import SecretType
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser
 
-SecretsDict = immutabledict[SecretType, "Secret"]
-
-
 @dataclasses.dataclass(frozen=True)
-class SecretsConfig(ConfigObject):
-  secrets: SecretsDict = dataclasses.field(default_factory=immutabledict)
+class Secrets(ConfigObject):
+  google: Optional[UsernamePassword] = None
 
   @classmethod
-  def parse_str(cls, value: str) -> SecretsConfig:
+  def config_parser(cls) -> ConfigParser[Secrets]:
+    parser = ConfigParser(cls)
+    parser.add_argument("google", type=GoogleUsernamePassword)
+    return parser
+
+  @classmethod
+  def parse_str(cls, value: str) -> Secrets:
     if value[0] == "{":
       return cls.parse_inline_hjson(value)
-    # TODO: maybe support passwd style string format
     raise NotImplementedError("Cannot create secrets from string")
 
   @classmethod
-  def parse_dict(cls, config: Dict) -> SecretsConfig:
-    secrets = {}
-    for type_str, secret_data in config.items():
-      secret_type = SecretType.parse(type_str)
-      with exception.annotate_argparsing("Parsing Secret details:"):
-        secret = Secret.parse_dict(secret_data, type=secret_type)
-      assert isinstance(secret,
-                        Secret), f"Expected {cls} but got {type(secret)}"
-      assert secret_type not in secrets, f"Duplicate entry for {type_str}"
-      secrets[secret_type] = secret
-    return SecretsConfig(immutabledict(secrets))
+  def parse_dict(cls, config: Dict) -> Secrets:
+    return cls.config_parser().parse(config)
 
-  def as_dict(self) -> SecretsDict:
-    return self.secrets
-
+  def merge(self, fallback: Secrets) -> Secrets:
+    return Secrets(self.google or fallback.google)
 
 @dataclasses.dataclass(frozen=True)
-class Secret(ConfigObject):
-  type: SecretType
+class UsernamePassword(ConfigObject):
   username: str
   password: str
 
   @classmethod
-  def config_parser(cls: Type[Secret]) -> ConfigParser[Secret]:
+  def config_parser(cls) -> ConfigParser[UsernamePassword]:
     parser = ConfigParser(cls)
-    parser.add_argument("type", type=SecretType, required=True)
     parser.add_argument(
         "username",
         aliases=("user", "usr", "account"),
@@ -68,11 +54,14 @@ class Secret(ConfigObject):
     return parser
 
   @classmethod
-  def parse_dict(  # pylint: disable=arguments-differ
-      cls, config: Dict, **kwargs) -> Secret:
-    return cls.config_parser().parse(config, **kwargs)
+  def parse_dict(cls, config: Dict) -> UsernamePassword:
+    return cls.config_parser().parse(config)
 
   @classmethod
   def parse_str(cls, value: str):
     # TODO: maybe support passwd style string format
     raise NotImplementedError("Cannot support")
+
+
+class GoogleUsernamePassword(UsernamePassword):
+  pass

@@ -28,7 +28,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
-from crossbench.cli.config.secrets import SecretsConfig
+from crossbench.cli.config.secrets import Secrets
 
 
 class CrossbenchFakeFsTestCase(
@@ -97,7 +97,7 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         browser_config=None,
         viewport=None,
         splash_screen=None,
-        secrets=SecretsConfig(),
+        secrets=Secrets(),
         wipe_system_user_data=False,
         http_request_timeout=dt.timedelta(),
         cache_dir=pathlib.Path("test_cache_dir"),

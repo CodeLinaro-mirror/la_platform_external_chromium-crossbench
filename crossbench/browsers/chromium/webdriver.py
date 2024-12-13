@@ -19,7 +19,7 @@ from crossbench import exception
 from crossbench import path as pth
 from crossbench.browsers.chromium.paths import ChromiumPathMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
-from crossbench.cli.config.secret_type import SecretType
+from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 from crossbench.parse import NumberParser
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.service import ChromiumService
 
   from crossbench.browsers.settings import Settings
-  from crossbench.cli.config.secrets import Secret
+  from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -352,7 +352,7 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
     #   2. investigate irrelevant / unsupported flags on ChromeOS
     #   3. filter out and pass the chrome flags to the debugging session below
     #   4. pass the remaining flags to RemoteWebDriver options
-    google_login = session.browser.secrets.get(SecretType.GOOGLE)
+    google_login = session.browser.secrets.google
     if google_login:
       dbg_port = platform.create_debugging_session(
           username=google_login.username, password=google_login.password)
@@ -367,10 +367,11 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
     return RemoteWebDriver(f"http://{host}:{port}", options=options)
 
   # On ChromeOS, the system profile is the same as the browser profile.
-  def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:
-    if secret.type != SecretType.GOOGLE:
-      return False
-    if secret.username == self.platform.username:
+  def is_logged_in(self,
+                   secret: UsernamePassword,
+                   strict: bool = False) -> bool:
+    if secret.username == self.platform.username and isinstance(
+        secret, GoogleUsernamePassword):
       return True
     if not strict:
       return False

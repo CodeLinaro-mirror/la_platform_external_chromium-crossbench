@@ -19,8 +19,7 @@ from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.config.pages import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig)
-from crossbench.cli.config.secret_type import SecretType
-from crossbench.cli.config.secrets import Secret, SecretsConfig
+from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -267,8 +266,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
         }
     }
     pages = PagesConfig.parse(config_data)
-    secret = Secret(SecretType.GOOGLE, "test", "s3cr3t")
-    self.assertEqual(pages.secrets, SecretsConfig({secret.type: secret}))
+    secret = GoogleUsernamePassword("test", "s3cr3t")
+    self.assertEqual(pages.secrets, Secrets(google=secret))
     self.assertEqual(pages.pages[0].first_url, "http://google.com")
 
   def test_no_scenarios(self):

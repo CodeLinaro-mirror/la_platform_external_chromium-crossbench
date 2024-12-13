@@ -20,7 +20,7 @@ from crossbench.action_runner.action.wait import WaitAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.input_source import InputSource
-from crossbench.cli.config.secrets import SecretsConfig
+from crossbench.cli.config.secrets import Secrets
 from crossbench.config import ConfigObject
 from crossbench.parse import DurationParseError, DurationParser, ObjectParser
 
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class PagesConfig(ConfigObject):
   pages: Tuple[PageConfig, ...] = ()
-  secrets: Optional[SecretsConfig] = None
+  secrets: Optional[Secrets] = None
 
   def validate(self) -> None:
     super().validate()
@@ -99,9 +99,9 @@ class PagesConfig(ConfigObject):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
             "Config does not provide a 'pages' dict.")
-      secrets: Optional[SecretsConfig] = None
+      secrets: Optional[Secrets] = None
       if secrets_data := config.get("secrets"):
-        secrets = SecretsConfig.parse(secrets_data)
+        secrets = Secrets.parse(secrets_data)
       pages_config = ObjectParser.non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
         pages = cls._parse_pages(pages_config, secrets)
@@ -109,10 +109,9 @@ class PagesConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_pages(
-      cls,
-      data: Dict[str, Any],
-      secrets: Optional[SecretsConfig] = None) -> Tuple[PageConfig, ...]:
+  def _parse_pages(cls,
+                   data: Dict[str, Any],
+                   secrets: Optional[Secrets] = None) -> Tuple[PageConfig, ...]:
     pages = []
     for name, page_config in data.items():
       with exception.annotate_argparsing(f"Parsing story ...['{name}']"):
