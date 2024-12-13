@@ -440,7 +440,10 @@ class ConfigObject(abc.ABC):
 
       if (cls is not _TemplatedConfigParser and
           _TemplatedConfigParser.is_template_invocation(value)):
-        return cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
+
+        result = cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
+
+        return result
 
       return cls.parse_dict(value, **kwargs)
     if not value:
@@ -598,24 +601,53 @@ class _TemplatedConfigParser(ConfigObject):
   # Matches escape sequences of the above: $[[ should not be replaced ]
   ESCAPED_ARG_RE = re.compile(r"\$\[\[([^\]].*)\]")
 
-  def __init__(self, template: Any, args: Dict[str, TemplateArg]):
+  VALID_KEYS_FOR_TEMPLATE_OBJECT: Final[frozenset] = frozenset([
+      frozenset(["template", "args"]),
+      frozenset(["template", "unbound_args"]),
+      frozenset(["template", "args", "unbound_args"]),
+  ])
+
+  def __init__(self,
+               template: Any,
+               args: Optional[Dict[str, TemplateArg]] = None,
+               unbound_args: Optional[Iterable[str]] = None):
     self._template: Any = template
-    self._args: Dict[str, TemplateArg] = args
-    self._missing_args: List[str] = []
+    self._args: Dict[str, TemplateArg] = args if args else {}
+    self._unbound_args: Set[str] = set(unbound_args) if unbound_args else set()
+    self._missing_args: Set[str] = set()
+
+    self.validate()
+
     with exception.annotate("Processing Templates:"):
       self._result = self._substitute()
 
+  def validate(self) -> None:
+    if not self._args and not self._unbound_args:
+      raise ConfigTemplateError(
+          "Either 'args' or 'unbound_args' are required for template usage.")
+
+    for (arg_name, template_arg) in self._args.items():
+      arg_value = template_arg.value
+
+      if isinstance(arg_value, str):
+        if f"$[{arg_name}]" in arg_value:
+          raise ConfigTemplateError(
+              f"Arguments cannot be self-referencing: {arg_name}. "
+              "If you are trying to forward an arg value from a higher level "
+              "template, add the argument name to the 'unbound_args' field.")
+
   @classmethod
   def is_template_invocation(cls, value: Any) -> bool:
-    return isinstance(
-        value,
-        dict) and len(value) == 2 and "template" in value and "args" in value
+    return isinstance(value, dict) and set(
+        value.keys()) in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT
 
   @classmethod
   def config_parser(cls) -> ConfigParser[_TemplatedConfigParser]:
     parser = ConfigParser(cls)
     parser.add_argument("template", type=ObjectParser.not_none, required=True)
-    parser.add_argument("args", type=template_args, required=True)
+    parser.add_argument("args", type=template_args, required=False, default={})
+    parser.add_argument(
+        "unbound_args", type=str, required=False, default=[], is_list=True)
     return parser
 
   @classmethod
@@ -671,7 +703,7 @@ class _TemplatedConfigParser(ConfigObject):
       value = _PrimitiveConfigObject.parse(value).value
 
     if isinstance(value, str):
-      value = self._substitute_arg(value)
+      value = self._substitute_str(value)
 
     if isinstance(value, str):
       return self._fix_escape_sequence(value)
@@ -700,9 +732,12 @@ class _TemplatedConfigParser(ConfigObject):
         result.append(self._substitute_args(child_value))
     return result
 
-  def _substitute_arg(self, value: str) -> Any:
+  def _substitute_str(self, value: str) -> Any:
 
     while matches := list(re.finditer(self.ARG_RE, value)):
+
+      made_a_substitution: bool = False
+
       # Reverse matches so that string indices don't get messed up while we
       # substitute.
       matches.reverse()
@@ -710,12 +745,17 @@ class _TemplatedConfigParser(ConfigObject):
         arg_name = m.group(1)
         assert arg_name
 
-        if template_arg := self._args.get(arg_name):
-          arg_value = template_arg.value
-          template_arg.set_used()
-        else:
-          self._missing_args.append(arg_name)
-          arg_value = "NOT FOUND"
+        if arg_name in self._unbound_args:
+          continue
+
+        if not (template_arg := self._args.get(arg_name)):
+          self._missing_args.add(arg_name)
+          continue
+
+        made_a_substitution = True
+
+        arg_value = template_arg.value
+        template_arg.set_used()
 
         if m.group(0) == value:
           # Arg pattern is the whole string, replace the whole value to allow
@@ -727,7 +767,11 @@ class _TemplatedConfigParser(ConfigObject):
               f"can not be substituted into {repr(value)}, "
               f"must be str/int/float"
           ))
+
         value = value[:m.start()] + str(arg_value) + value[m.end():]
+
+      if not made_a_substitution:
+        break
 
     return value
 

@@ -55,6 +55,7 @@ class CustomValueEnum(enum.Enum):
 @dataclasses.dataclass(frozen=True)
 class CustomNestedConfigObject(ConfigObject):
   name: str
+  option: Optional[str] = None
 
   @classmethod
   def parse_str(cls, value: str) -> CustomNestedConfigObject:
@@ -72,6 +73,7 @@ class CustomNestedConfigObject(ConfigObject):
   def config_parser(cls) -> ConfigParser[CustomNestedConfigObject]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=str, required=True)
+    parser.add_argument("option", type=str, required=False)
     return parser
 
 
@@ -685,9 +687,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         }
     }
 
-    with self.assertRaisesRegex(MultiException,
-                                "'missing_arg2', 'missing_arg'"):
+    with self.assertRaises(MultiException) as cm:
       config = CustomConfigObject.parse(config)
+    self.assertIn("'missing_arg'", str(cm.exception))
+    self.assertIn("'missing_arg2'", str(cm.exception))
 
   def test_parse_templated_config_unsupported_arg_throws(self):
     config = {
@@ -981,6 +984,107 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIsInstance(config, CustomConfigObject)
 
     self.assertEqual(config.name, "$[arg] arg_value")
+
+  def test_parse_template_single_unbound_arg(self):
+    config = {
+        "template": {
+            "name": "$[arg]",
+            "nested": {
+                "template": {
+                    "name": "$[arg]"
+                },
+                "unbound_args": ["arg"]
+            }
+        },
+        "args": {
+            "arg": "from-top-level"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "from-top-level")
+    self.assertEqual(config.nested.name, "from-top-level")
+
+  def test_parse_template_multiple_unbound_arg(self):
+    config = {
+        "template": {
+            "name": "$[arg]",
+            "nested": {
+                "template": {
+                    "name": "$[arg] $[arg2]"
+                },
+                "unbound_args": ["arg", "arg2"]
+            }
+        },
+        "args": {
+            "arg": "hello",
+            "arg2": "world"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "hello")
+    self.assertEqual(config.nested.name, "hello world")
+
+  def test_parse_template_unbound_arg_undefined(self):
+    config = {
+        "template": {
+            "name": "$[arg]",
+            "nested": {
+                "template": {
+                    "name": "$[not-an-arg]"
+                },
+                "unbound_args": ["not-an-arg"]
+            }
+        },
+        "args": {
+            "arg": "hello",
+        }
+    }
+
+    with self.assertRaisesRegex(MultiException, "'not-an-arg'"):
+      config = CustomConfigObject.parse(config)
+
+  def test_self_referencing_arg_throws(self):
+    config = {
+        "template": {
+            "name": "$[arg]",
+        },
+        "args": {
+            "arg": "some other $[arg] text"
+        }
+    }
+
+    with self.assertRaisesRegex(MultiException, "self-referencing"):
+      config = CustomConfigObject.parse(config)
+
+  def test_self_referencing_detection_escaped_arg(self):
+    config = {
+        "template": {
+            "name": "$[arg]",
+        },
+        "args": {
+            "arg": "some other $[[arg] text"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+
+  def test_self_referencing_detection_arg_name_no_arg_sequence(self):
+    config = {
+        "template": {
+            "name": "$[arg]",
+        },
+        "args": {
+            "arg": "some other arg text"
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
 
 
 class ConfigEnumTestCase(unittest.TestCase):
