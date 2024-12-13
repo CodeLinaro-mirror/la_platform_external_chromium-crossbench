@@ -51,3 +51,13 @@ class DisplayRectangleTestCase(unittest.TestCase):
     self.assertFalse(DisplayRectangle(Point(5, 6), 0, 1))
     self.assertFalse(DisplayRectangle(Point(3, 4), 1, 0))
     self.assertTrue(DisplayRectangle(Point(1, 2), 1, 1))
+
+  def test_display_rectangle_scrollable_area(self):
+    rect = DisplayRectangle(Point(100, 200), 500, 600)
+
+    (scrollable_top, scrollable_bottom,
+     max_scroll_distance) = rect.get_scrollable_area()
+
+    self.assertEqual(scrollable_top, 260)
+    self.assertEqual(scrollable_bottom, 740)
+    self.assertEqual(max_scroll_distance, 480)

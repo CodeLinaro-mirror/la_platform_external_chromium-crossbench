@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.base import InputSourceNotImplementedError
@@ -109,8 +109,6 @@ return [
   rect.height
 ];"""
 
-  _SCROLL_BOUNDS_OFFSET_FACTOR: float = 0.1
-
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
 
@@ -133,7 +131,7 @@ return [
           return
 
       (scrollable_top, scrollable_bottom,
-       max_swipe_distance) = self._trim_scroll_area(scroll_area)
+       max_swipe_distance) = scroll_area.get_scrollable_area()
 
       remaining_distance = abs(total_scroll_distance)
 
@@ -288,21 +286,6 @@ return [
 
     return DisplayRectangle(
         Point(int(match["left"]), int(match["top"])), width, height)
-
-  def _trim_scroll_area(self,
-                        scroll_area: DisplayRectangle) -> Tuple[int, int, int]:
-    scrollable_top = scroll_area.top
-    scrollable_bottom = scroll_area.bottom
-    max_swipe_distance = scrollable_bottom - scrollable_top
-
-    trim_amount = int(
-        round(max_swipe_distance * self._SCROLL_BOUNDS_OFFSET_FACTOR))
-
-    scrollable_top += trim_amount
-    scrollable_bottom -= trim_amount
-
-    return (scrollable_top, scrollable_bottom,
-            scrollable_bottom - scrollable_top)
 
   def _type_characters(self, run: Run, _: Actions, characters: str) -> None:
     # TODO(kalutes) handle special characters and other whitespaces like '\t'

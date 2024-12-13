@@ -586,14 +586,14 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(960, 1080), Point(960, 980), scroll_duration)
+        Point(960, 972), Point(960, 872), scroll_duration)
 
   def test_scroll_touch_window_multi_step_success(self):
 
     scroll_duration: dt.timedelta = dt.timedelta(seconds=2)
 
     scroll_action = ScrollAction(
-        InputSource.TOUCH, distance=2000, duration=scroll_duration)
+        InputSource.TOUCH, distance=1600, duration=scroll_duration)
 
     self.expect_touch_setup(
         expected_js=JsInvocation(result=[
@@ -618,9 +618,11 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(960, 1080), Point(960, 0), scroll_duration * (1080 / 2000))
+        Point(960, 972), Point(960, 108),
+        scroll_duration * ((972 - 108) / 1600))
     self.assert_coordinates_touched(
-        Point(960, 1080), Point(960, 160), scroll_duration * (920 / 2000))
+        Point(960, 972), Point(960, 236),
+        scroll_duration * ((972 - 236) / 1600))
 
   def test_scroll_touch_selector_required_not_found_raises(self):
     scroll_action = ScrollAction(
@@ -718,7 +720,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(35, 620), Point(35, 520), scroll_duration)
+        Point(35, 560), Point(35, 460), scroll_duration)
 
 
 if __name__ == "__main__":

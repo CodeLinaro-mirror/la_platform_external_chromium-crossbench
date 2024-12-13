@@ -321,7 +321,8 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
           return
         scroll_area = viewport_info.element_rect
 
-      max_swipe_distance = scroll_area.bottom - scroll_area.top
+      (scrollable_top, scrollable_bottom,
+       max_swipe_distance) = scroll_area.get_scrollable_area()
 
       remaining_distance = abs(total_scroll_distance)
 
@@ -337,13 +338,13 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
         if total_scroll_distance > 0:
           # If scrolling down, the swipe should start at the bottom and end
           # above.
-          y_start: int = scroll_area.bottom
-          y_end: int = round(scroll_area.bottom - current_distance)
+          y_start: int = scrollable_bottom
+          y_end: int = round(scrollable_bottom - current_distance)
 
         else:
           # If scrolling up, the swipe should start at the top and end below.
-          y_start = scroll_area.top
-          y_end = round(scroll_area.top + current_distance)
+          y_start = scrollable_top
+          y_end = round(scrollable_top + current_distance)
 
         self._execute_touch_playback(
             run,
