@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import atexit
 import dataclasses
 import datetime as dt
 import shlex
@@ -35,7 +36,6 @@ class ChromeOSViewportInfo:
                screen_avail_width, screen_avail_height, window_offset_x,
                window_offset_y,
                element_rect: Optional[DisplayRectangle]) -> None:
-
     # The actual screen width and height in pixels.
     # Corrects for any zoom/scaling factors.
     # 80 is a common factor of most display pixel widths, so use it as a common
@@ -259,10 +259,17 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
   def __init__(self):
     super().__init__()
     self._touch_device: Optional[TouchDevice] = None
-    self._remote_tmp_file = pth.AnyPath()
+    self._mouse_process: Optional[subprocess.Popen] = None
+
+    atexit.register(self._kill_mouse_process)
+
+  def _kill_mouse_process(self):
+    if self._mouse_process:
+      self._mouse_process.kill()
+      self._mouse_process.wait()
 
   def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
-    if self._touch_device is None:
+    if not self._touch_device:
       self._touch_device = self._setup_touch_device(run)
 
     with run.actions("ClickAction", measure=False) as actions:
@@ -286,22 +293,29 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
       click_location, viewport = self._get_click_location(actions, action)
 
+      if not self._mouse_process:
+        self._mouse_process = self._setup_mouse_process(
+            run, viewport.native_screen.width, viewport.native_screen.height)
+
       if not click_location:
         return
 
-      browser_platform = run.browser_platform
-      self._remote_tmp_file = browser_platform.mktemp()
-      script = (SCRIPTS_DIR / "mouse.py").read_text()
-      browser_platform.set_file_contents(self._remote_tmp_file, script)
+      click_string: str = (f"{action.duration.total_seconds()}\n"
+                           f"{click_location.x}\n"
+                           f"{click_location.y}\n")
 
-      run.browser_platform.sh("python3", self._remote_tmp_file,
-                              str(viewport.native_screen.width),
-                              str(viewport.native_screen.height),
-                              str(action.duration.total_seconds()),
-                              str(click_location.x), str(click_location.y))
+      assert self._mouse_process.stdin
+      self._mouse_process.stdin.write(click_string.encode("utf-8"))
+      self._mouse_process.stdin.flush()
+
+      assert self._mouse_process.stdout
+      output = int(self._mouse_process.stdout.readline())
+
+      if output != 0:
+        raise RuntimeError(f"Failed to perform click: {output}")
 
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
-    if self._touch_device is None:
+    if not self._touch_device:
       self._touch_device = self._setup_touch_device(run)
 
     with run.actions("ScrollAction", measure=False) as actions:
@@ -360,24 +374,26 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
     browser_platform = run.browser_platform
-    self._remote_tmp_file = browser_platform.mktemp()
-    script = (SCRIPTS_DIR / "text_input.py").read_text()
-    browser_platform.set_file_contents(self._remote_tmp_file, script)
-    typing_process: Optional[subprocess.Popen] = None
-    try:
-      typing_process = browser_platform.popen(
-          "python3", self._remote_tmp_file, bufsize=0, stdin=subprocess.PIPE)
-      typing_stdin = typing_process.stdin
-      assert typing_stdin, "Got no stdin"
 
-      self._rate_limit_keystrokes(
-          run, action,
-          lambda run, actions, text: typing_stdin.write(text.encode("utf-8")))
-    finally:
-      if typing_stdin:
-        typing_stdin.close()
-      if typing_process:
-        typing_process.wait(timeout=action.timeout.total_seconds())
+    script = (SCRIPTS_DIR / "text_input.py").read_text()
+
+    with browser_platform.NamedTemporaryFile() as script_file:
+      browser_platform.set_file_contents(script_file, script)
+      typing_process: Optional[subprocess.Popen] = None
+      try:
+        typing_process = browser_platform.popen(
+            "python3", script_file, bufsize=0, stdin=subprocess.PIPE)
+        typing_stdin = typing_process.stdin
+        assert typing_stdin, "Got no stdin"
+
+        self._rate_limit_keystrokes(
+            run, action,
+            lambda run, actions, text: typing_stdin.write(text.encode("utf-8")))
+      finally:
+        if typing_stdin:
+          typing_stdin.close()
+        if typing_process:
+          typing_process.wait(timeout=action.timeout.total_seconds())
 
   def _get_click_location(
       self, actions: Actions, action: i_action.ClickAction
@@ -446,9 +462,35 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
           "Failed to query touchscreen information from device.") from e
 
   def _setup_touch_device(self, run: Run) -> TouchDevice:
-    self._remote_tmp_file = run.browser_platform.mktemp()
     touch_device_output = self._query_touch_device(run)
     return TouchDevice.parse_str(touch_device_output)
+
+  def _setup_mouse_process(self, run: Run, screen_width: int,
+                           screen_height: int) -> subprocess.Popen:
+    browser_platform = run.browser_platform
+    script = (SCRIPTS_DIR / "mouse.py").read_text()
+
+    with browser_platform.NamedTemporaryFile() as script_file:
+      browser_platform.set_file_contents(script_file, script)
+
+      mouse_process = browser_platform.popen(
+          "python3",
+          script_file,
+          str(screen_width),
+          str(screen_height),
+          stdin=subprocess.PIPE,
+          stdout=subprocess.PIPE)
+
+      if mouse_process.poll() is not None:
+        raise RuntimeError("Failed to start ChromeOS mouse process.")
+
+      assert mouse_process.stdout
+      output = int(mouse_process.stdout.readline())
+
+      if output != 0:
+        raise RuntimeError(f"Failed to start mouse process: {output}")
+
+      return mouse_process
 
   def _execute_touch_playback(self, run: Run,
                               touch_event: ChromeOSTouchEvent) -> None:
@@ -461,15 +503,17 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
     # Because of this weird behavior, create a temp file on the device first
     # that contains the touch events.
+    assert self._touch_device, "Missing touch_device"
 
     touch_event_cmds = str(touch_event)
 
-    run.browser_platform.set_file_contents(self._remote_tmp_file,
-                                           touch_event_cmds)
-    assert self._touch_device, "Missing touch_device"
-    # Then run evemu-play with the input redirected from the temp file.
-    run.browser_platform.sh(
-        f"evemu-play --insert-slot0 "
-        f"{shlex.quote(self._touch_device.device_path)} < "
-        f"{self._remote_tmp_file}",
-        shell=True)
+    browser_platform = run.browser_platform
+
+    with browser_platform.NamedTemporaryFile() as playback_file:
+      browser_platform.set_file_contents(playback_file, touch_event_cmds)
+      # Then run evemu-play with the input redirected from the temp file.
+      run.browser_platform.sh(
+          f"evemu-play --insert-slot0 "
+          f"{shlex.quote(self._touch_device.device_path)} < "
+          f"{playback_file}",
+          shell=True)

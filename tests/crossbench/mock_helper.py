@@ -8,9 +8,9 @@ import collections
 import datetime as dt
 import pathlib
 import shlex
-from subprocess import CompletedProcess
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping,
-                    Optional, Sequence, Union)
+import subprocess
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional,
+                    Sequence, Union)
 
 import psutil
 
@@ -48,6 +48,7 @@ class MockPlatformMixin:
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
+    self.popens: List[MockPopen] = []
     super().__init__(*args, **kwargs)
 
   def expect_sh(self,
@@ -204,8 +205,77 @@ class MockPlatformMixin:
     del capture_output, stderr, stdin, stdout
     self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, check=check)
     # TODO: Generalize this in the future, to mimic failing `sh` calls.
-    return CompletedProcess(args, 0)
+    return subprocess.CompletedProcess(args, 0)
 
+  def popen(self,
+            *args: Union[str, pathlib.Path],
+            bufsize=-1,
+            shell: bool = False,
+            stdout=None,
+            stderr=None,
+            stdin=None,
+            env: Optional[Mapping[str, str]] = None,
+            quiet: bool = False) -> MockPopen:
+    del bufsize, stdout, stderr, stdin
+    self.sh_stdout(*args, shell=shell, quiet=quiet, env=env)
+
+    if not self.popens:
+      raise ValueError("No valid mock popen.")
+
+    return self.popens.pop(0)
+
+
+class MockFd:
+
+  def __init__(self):
+    self.expected_writes: List[bytes] = []
+    self.read_returns: List[bytes] = []
+
+  def __del__(self):
+    assert not self.expected_writes
+    assert not self.read_returns
+
+  def write(self, data: bytes):
+    if not self.expected_writes:
+      raise ValueError("No expected writes.")
+
+    expected = self.expected_writes.pop(0)
+
+    assert data == expected, (
+        f"Expected write does not match. Expected: {expected} Got: {data}")
+
+  def readline(self):
+    if not self.read_returns:
+      raise ValueError("No read returns.")
+
+    return self.read_returns.pop(0)
+
+  def flush(self):
+    return
+
+
+class MockPopen:
+
+  def __init__(self, stdout: MockFd, stdin: MockFd):
+    self._stdout: MockFd = stdout
+    self._stdin: MockFd = stdin
+
+  def poll(self):
+    return
+
+  def kill(self):
+    return
+
+  def wait(self):
+    return
+
+  @property
+  def stdin(self):
+    return self._stdin
+
+  @property
+  def stdout(self):
+    return self._stdout
 
 class PosixMockPlatformMixin(MockPlatformMixin):
   pass

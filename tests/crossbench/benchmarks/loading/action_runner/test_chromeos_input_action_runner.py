@@ -25,7 +25,7 @@ from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform)
+                                          LinuxMockPlatform, MockPopen, MockFd)
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
@@ -365,8 +365,6 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     path = SCRIPTS_DIR / "query_touch_device.py"
     self.fs.create_file(path, contents="query_touch_device")
 
-    self.platform.expect_sh("mktemp", "/usr/local/tmp/None.XXXXXXXXXXX")
-
     path = SCRIPTS_DIR / "get_window_positions.js"
     self.fs.create_file(path, contents="get_window_positions")
 
@@ -379,7 +377,14 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.browser.expect_js(expected_js=expected_js)
 
     for _ in range(touch_count):
-      self.platform.expect_sh("evemu-play --insert-slot0 /dev/input/event0 < .")
+      self.platform.expect_sh(
+          "mktemp",
+          "/usr/local/tmp/None.XXXXXXXXXXX",
+          result="/usr/local/tmp/None.RANDOM")
+      self.platform.expect_sh("evemu-play --insert-slot0 /dev/input/event0 <"
+                              " /usr/local/tmp/None.RANDOM")
+      self.platform.expect_sh("[", "-e", "/usr/local/tmp/None.RANDOM", "]")
+      self.platform.expect_sh("rm", "/usr/local/tmp/None.RANDOM")
 
   def expect_mouse_click(
       self,
@@ -395,11 +400,29 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     path = SCRIPTS_DIR / "mouse.py"
     self.fs.create_file(path, contents="mouse")
 
+    self.platform.expect_sh(
+        "mktemp",
+        "/usr/local/tmp/None.XXXXXXXXXXX",
+        result="/usr/local/tmp/None.RANDOM")
+    self.platform.expect_sh("python3", "/usr/local/tmp/None.RANDOM", "1920",
+                            "1080")
+    self.platform.expect_sh("[", "-e", "/usr/local/tmp/None.RANDOM", "]")
+    self.platform.expect_sh("rm", "/usr/local/tmp/None.RANDOM")
+
+    mouse_process_stdin: MockFd = MockFd()
+    mouse_process_stdout: MockFd = MockFd()
+
+    mouse_process_stdout.read_returns.append("0\n".encode("utf-8"))
+
     if clicked_coordinates:
-      self.platform.expect_sh("mktemp", "/usr/local/tmp/None.XXXXXXXXXXX")
-      self.platform.expect_sh("python3", ".", "1920", "1080",
-                              click_duration.total_seconds(),
-                              clicked_coordinates.x, clicked_coordinates.y)
+      mouse_process_stdin.expected_writes.append(
+          f"{click_duration.total_seconds()}\n"
+          f"{clicked_coordinates.x}\n{clicked_coordinates.y}\n".encode("utf-8"))
+      mouse_process_stdout.read_returns.append("0\n".encode("utf-8"))
+
+    mock_mouse_process: MockPopen = MockPopen(mouse_process_stdout,
+                                              mouse_process_stdin)
+    self.platform.popens.append(mock_mouse_process)
 
   def assert_coordinates_touched(
       self,
@@ -478,8 +501,10 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     click_action = ClickAction(
         InputSource.MOUSE, selector="div[]", required=True)
 
-    self.expect_mouse_click(
-        expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
+    path = SCRIPTS_DIR / "get_window_positions.js"
+    self.fs.create_file(path, contents="get_window_positions")
+
+    self.browser.expect_js(expected_js=self._NO_ELEMENT_JS_RESULT)
 
     with self.assertRaisesRegex(ElementNotFoundError, "matching DOM"):
       self.run_action(click_action)

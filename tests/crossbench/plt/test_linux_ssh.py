@@ -47,9 +47,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     for arg in args:
       cmd_string += arg + " "
 
-    self.mock_platform.expect_sh(
-        cmd_string,
-        result=result)
+    self.mock_platform.expect_sh(cmd_string, result=result)
 
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
