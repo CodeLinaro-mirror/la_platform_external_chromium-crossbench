@@ -8,7 +8,7 @@ import json
 
 import hjson
 
-from crossbench.cli.config.secrets import Secrets, UsernamePassword
+from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
@@ -24,13 +24,15 @@ class SecretsConfigTestCase(BaseConfigTestCase):
             "password": "pw",
             "account": "user@test.com"
         }})
-    self.assertEqual(secrets.google, UsernamePassword("user@test.com", "pw"))
+    self.assertEqual(secrets.google,
+                     GoogleUsernamePassword("user@test.com", "pw"))
     secrets = Secrets.parse(
         {"google": {
             "user": "user@test.com",
             "password": ""
         }})
-    self.assertEqual(secrets.google, UsernamePassword("user@test.com", ""))
+    self.assertEqual(secrets.google,
+                     GoogleUsernamePassword("user@test.com", ""))
 
   def test_equal_empty(self):
     secrets_1 = Secrets.parse({})
