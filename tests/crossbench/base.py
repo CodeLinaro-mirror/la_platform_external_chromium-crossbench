@@ -14,9 +14,6 @@ from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
 import crossbench
 from crossbench import path as pth
@@ -29,6 +26,10 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
+from crossbench.helper.sleep_preventer import SystemSleepPreventer
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
 
 class CrossbenchFakeFsTestCase(
@@ -46,6 +47,12 @@ class CrossbenchFakeFsTestCase(
     sleep_patcher = mock.patch("time.sleep", return_value=None)
     sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
+    # This is platform specific and causes issues pending sh commands
+    self.sleep_preventer_patcher = mock.patch.object(SystemSleepPreventer,
+                                                     "__enter__")
+    self.addCleanup(self.sleep_preventer_patcher.stop)
+    self.sleep_preventer_patcher.start()
+
 
   def create_file(self,
                   path_str: str,
