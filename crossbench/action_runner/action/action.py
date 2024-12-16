@@ -72,8 +72,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   @classmethod
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = ConfigParser(cls)
-    parser.add_argument(
-        "index", type=NumberParser.positive_zero_int, required=False, default=0)
+    parser.add_argument("index", type=NumberParser.positive_zero_int, default=0)
     parser.add_argument(
         "timeout",
         type=DurationParser.positive_duration,

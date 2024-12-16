@@ -172,7 +172,6 @@ class DriverConfig(ConfigObject):
     parser.add_argument(
         "path",
         type=driver_path,
-        required=False,
         depends_on=("type",),
         help="Path to the driver executable")
     parser.add_argument(
@@ -187,7 +186,6 @@ class DriverConfig(ConfigObject):
     parser.add_argument(
         "adb_bin",
         type=PathParser.binary_path,
-        required=False,
         help="Path to the adb binary, only valid for Android.")
     return parser
 

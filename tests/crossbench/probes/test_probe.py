@@ -11,12 +11,14 @@ from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
                                    GENERAL_PURPOSE_PROBES, INTERNAL_PROBES,
                                    NON_CONFIGURABLE_INTERNAL_PROBES,
                                    OPTIONAL_INTERNAL_PROBES)
+from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.env_modifier import EnvModifier
 from crossbench.probes.frequency import FrequencyProbe
+from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
@@ -28,6 +30,7 @@ from crossbench.probes.probe import Probe
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.screenshot import ScreenshotProbe
+from crossbench.probes.shell import ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
@@ -148,6 +151,34 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     for probe_cls in self.probe_classes():
       config_parser = probe_cls.config_parser()
       self.assertEqual(config_parser.probe_cls, probe_cls)
+      self.assertIn(probe_cls.NAME, config_parser.title)
+
+  def test_config_parser_defaults(self):
+    # If possible all probes should define a sane default so they can easily
+    # be experimented with and make it more accessible to explore.
+    # TODO(crbug.com/383572680): provide more default settings
+    requires_configuration = {
+        ChromeHistogramsProbe,
+        DTraceProbe,
+        # Reason: missing lldb binary on some platforms
+        DebuggerProbe,
+        # TODO: provide default settings
+        JSProbe,
+        # TODO: auto-download perfetto bin from storage
+        PerfettoProbe,
+        # TODO: provide default settings
+        ShellPollingProbe,
+        # TODO: provide default settings
+        ShellProbe,
+        # TODO: missing wpr, download precompiled wpr from storage
+        WebPageReplayProbe,
+    }
+    for probe_cls in GENERAL_PURPOSE_PROBES:
+      if probe_cls in requires_configuration:
+        continue
+      config_parser = probe_cls.config_parser()
+      probe = config_parser.parse({})
+      self.assertIsInstance(probe, probe_cls)
 
   def test_basic_probe_instances(self):
     keys = set()

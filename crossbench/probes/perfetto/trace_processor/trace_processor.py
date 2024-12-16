@@ -108,7 +108,6 @@ class TraceProcessorProbe(Probe):
     parser.add_argument(
         "batch",
         type=bool,
-        required=False,
         default=False,
         help="Run queries in batch mode when all the test runs are done. This "
         "can considerably reduce the run time at the expense of higher "
@@ -130,7 +129,6 @@ class TraceProcessorProbe(Probe):
     parser.add_argument(
         "trace_processor_bin",
         type=PathParser.local_binary_path,
-        required=False,
         help="Path to the trace_processor binary")
     return parser
 

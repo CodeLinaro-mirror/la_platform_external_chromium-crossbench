@@ -35,27 +35,23 @@ class ShellProbe(Probe):
         "setup_cmd",
         aliases=("setup",),
         type=ObjectParser.sh_cmd,
-        required=False,
         help="CMD is run before the browser is started.")
     parser.add_argument(
         "start_cmd",
         type=ObjectParser.sh_cmd,
         aliases=("start",),
-        required=False,
         help=("CMD is run right before each story is started "
               "and the browser is already running."))
     parser.add_argument(
         "start_story_run_cmd",
         aliases=("start-story",),
         type=ObjectParser.sh_cmd,
-        required=False,
         help=("CMD is run right before the measurement phase "
               "of a story is started."))
     parser.add_argument(
         "stop_story_run_cmd",
         aliases=("stop-story",),
         type=ObjectParser.sh_cmd,
-        required=False,
         help=("CMD is run right after the measurement phase "
               "of a story has ended."))
     parser.add_argument(
@@ -69,7 +65,6 @@ class ShellProbe(Probe):
         "teardown_cmd",
         aliases=("teardown",),
         type=ObjectParser.sh_cmd,
-        required=False,
         help="CMD is run after the browser is stopped.")
     return parser
 

@@ -130,7 +130,9 @@ class ChromeHistogramsProbe(JsonResultProbe):
         type=parse_histogram_metrics,
         help=("Required dictionary of Chrome UMA histogram metric names. "
               "Histograms are recorded before and after a test and any "
-              "differences logged."))
+              "differences logged."
+              "See tools/metrics/histograms/metadata/storage/histograms.xml"
+              "or chrome://histograms for a list of available histograms."))
     return parser
 
   def __init__(self, metrics: Sequence[ChromeHistogramMetric]) -> None:

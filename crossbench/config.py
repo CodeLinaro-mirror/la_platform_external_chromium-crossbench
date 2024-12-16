@@ -982,7 +982,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       if parts:
         return parts[0]
       return ""
-    parts.append(f"{self.title} Configuration:")
+    parts.append(f"{self.cls.__name__} Configuration/Settings:")
     parts.append("")
     for arg in self._args.values():
       parts.append(f"{arg.name}:")

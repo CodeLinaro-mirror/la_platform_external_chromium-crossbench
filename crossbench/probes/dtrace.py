@@ -33,7 +33,8 @@ class DTraceProbe(Probe):
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
-    parser.add_argument("script_path", type=PathParser.non_empty_file_path)
+    parser.add_argument(
+        "script_path", required=True, type=PathParser.non_empty_file_path)
     return parser
 
   def __init__(self, script_path: LocalPath):

@@ -59,12 +59,11 @@ class NetworkConfig(ConfigObject):
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
     parser.add_argument(
         "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
-    parser.add_argument("path", type=PathParser.existing_path, required=False)
-    parser.add_argument("url", type=str, required=False)
+    parser.add_argument("path", type=PathParser.existing_path)
+    parser.add_argument("url", type=str)
     parser.add_argument(
         "wpr_go_bin",
         type=PathParser.existing_file_path,
-        required=False,
         help=("Location of the wpr.go binary or source, "
               "used for WPR replay network. "
               "If not specified, a default lookup in known locations is used."))

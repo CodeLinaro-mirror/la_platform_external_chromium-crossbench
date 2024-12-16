@@ -305,7 +305,7 @@ class BrowserConfig(ConfigObject):
         depends_on=("driver",))
     parser.add_argument(
         "driver", type=DriverConfig, default=DriverConfig.default())
-    parser.add_argument("network", required=False, type=NetworkConfig)
+    parser.add_argument("network", type=NetworkConfig)
     return parser
 
   @property

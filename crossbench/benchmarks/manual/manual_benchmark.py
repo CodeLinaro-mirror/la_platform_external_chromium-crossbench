@@ -97,14 +97,12 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
     parser.add_argument(
         "--start-after",
         help="How long to wait until measurement starts",
-        required=False,
         type=DurationParser.positive_or_zero_duration)
     parser.add_argument(
         "--run-for",
         "--stop-after",
         "--duration",
         help="How long to run measurement for",
-        required=False,
         type=DurationParser.positive_duration)
     return parser
 

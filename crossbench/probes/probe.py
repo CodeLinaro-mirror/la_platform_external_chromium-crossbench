@@ -36,7 +36,9 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
 
   def __init__(self, probe_cls: Type[ProbeT]) -> None:
     super().__init__(
-        probe_cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+        probe_cls,
+        f"{probe_cls.NAME} probe parser",
+        unused_properties_mode=UnusedPropertiesMode.ERROR)
     self._probe_cls: Type[ProbeT] = probe_cls
 
   @property
