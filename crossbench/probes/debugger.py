@@ -14,12 +14,12 @@ from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.path import LocalPath
+  from crossbench.probes.results import ProbeResult
 
 _DEBUGGER_LOOKUP: Dict[str, str] = {
     "macos": "lldb",
@@ -159,4 +159,4 @@ class DebuggerContext(ProbeContext[DebuggerProbe]):
     pass
 
   def teardown(self) -> ProbeResult:
-    return EmptyProbeResult()
+    return self.empty_result()

@@ -11,12 +11,10 @@ from typing import TYPE_CHECKING, List, Optional, Type
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath
-  from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 
@@ -36,13 +34,8 @@ class DumpHtmlProbe(Probe):
   def get_context_cls(self) -> Type[DumpHtmlProbeContext]:
     return DumpHtmlProbeContext
 
-  def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
-    # TODO: implement
-    return EmptyProbeResult()
-
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    # TODO: implement
-    return EmptyProbeResult()
+  # TODO: implement merge_repetitions()
+  # TODO: implement merge_browsers()
 
 
 class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
@@ -74,5 +67,5 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
 
   def teardown(self) -> ProbeResult:
     if not self.browser_platform.is_dir(self.result_path):
-      return EmptyProbeResult()
+      return self.empty_result()
     return self.browser_result(file=tuple(self._results))

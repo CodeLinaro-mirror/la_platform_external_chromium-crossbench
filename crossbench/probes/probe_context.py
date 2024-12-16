@@ -157,6 +157,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     """Helper to create LocalProbeResult."""
     return LocalProbeResult(url=url, file=file, **kwargs)
 
+  def empty_result(self) -> EmptyProbeResult:
+    return EmptyProbeResult()
+
   def setup(self) -> None:
     """
     Called before starting the browser, typically used to set run-specific
@@ -268,7 +271,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
       - Either a path (or list of paths) to results file
       - Directly a primitive json-serializable object containing the data
     """
-    return EmptyProbeResult()
+    return self.empty_result()
 
 
 class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):

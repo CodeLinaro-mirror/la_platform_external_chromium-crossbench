@@ -8,10 +8,9 @@ from typing import TYPE_CHECKING, Type
 
 from crossbench.probes.internal.base import InternalProbe
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
-  from crossbench.runner.run import Run
+  from crossbench.probes.results import ProbeResult
 
 
 class BrowserDriverLogProbe(InternalProbe):
@@ -39,9 +38,9 @@ class BrowserDriverLogProbeContext(ProbeContext[BrowserDriverLogProbe]):
     # TODO: support remote driver log
     driver_log_file = self.browser.driver_log_file
     if not driver_log_file:
-      return EmptyProbeResult()
+      return self.empty_result()
     # safaridriver writes the log to non-configurable system-folder from which
     # we need to copy it out.
     if driver_log_file != self.local_result_path:
       self.host_platform.copy_file(driver_log_file, self.local_result_path)
-    return ProbeResult(file=(self.local_result_path,))
+    return self.local_result(file=(self.local_result_path,))

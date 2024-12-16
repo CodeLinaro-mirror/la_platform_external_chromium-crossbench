@@ -10,14 +10,12 @@ from typing import TYPE_CHECKING, List, Optional, Type
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env import HostEnvironment
   from crossbench.path import AnyPath
-  from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
 
 
@@ -48,13 +46,8 @@ class ScreenshotProbe(Probe):
   def get_context_cls(self) -> Type[ScreenshotProbeContext]:
     return ScreenshotProbeContext
 
-  def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
-    # TODO: implement
-    return EmptyProbeResult()
-
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    # TODO: implement
-    return EmptyProbeResult()
+  # TODO: implement merge_repetitions()
+  # TODO: implement merge_browsers()
 
 
 class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):

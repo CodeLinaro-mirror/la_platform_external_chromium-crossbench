@@ -7,13 +7,16 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import Dict, Generic, Optional, Set, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, Generic, Optional, Set, Type, TypeVar
 
 from crossbench import plt
 from crossbench.config import ConfigParser
 from crossbench.decor.target_protocol import DecoratorTargetProtocol
 from crossbench.helper.state import BaseState, StateMachine
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.probes.results import EmptyProbeResult
+
+if TYPE_CHECKING:
+  from crossbench.probes.results import ProbeResult
 
 DecoratorT = TypeVar("DecoratorT", bound="Decorator")
 DecoratorTargetT = TypeVar("DecoratorTargetT", bound=DecoratorTargetProtocol)

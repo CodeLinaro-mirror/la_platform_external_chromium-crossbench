@@ -13,11 +13,11 @@ from crossbench import path as pth
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
 from crossbench.probes.env_modifier import EnvModifier
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 
@@ -148,4 +148,4 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
           state.dir / self._MAX_FREQUENCY_FILE, state.max)
 
   def teardown(self) -> ProbeResult:
-    return EmptyProbeResult()
+    return self.empty_result()

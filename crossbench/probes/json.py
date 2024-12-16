@@ -19,8 +19,7 @@ from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
                                       metric_geomean)
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
@@ -203,7 +202,7 @@ class JsonResultProbeContext(
 
   def teardown(self) -> ProbeResult:
     if self._json_data is None:
-      return EmptyProbeResult()
+      return self.empty_result()
     self._json_data = self.process_json_data(self._json_data)
     return self.write_json(self.run, self._json_data)
 

@@ -154,7 +154,7 @@ class WebPageReplayProbe(Probe):
     shutil.copy(first_wprgo, result_file)
     for repetition_file in results:
       self.httparchive_merge(repetition_file, result_file)
-    return ProbeResult(file=[result_file])
+    return LocalProbeResult(file=[result_file])
 
   def httparchive_merge(self, input_archive: LocalPath,
                         output_archive: LocalPath) -> None:
