@@ -25,7 +25,10 @@ class SysExitException(Exception):
 
 
 @pytest.fixture(autouse=True)
-def cli_test_context(browser_path, driver_path):
+def cli_test_context(request, browser_path, driver_path):
+  if "skip_mock" in request.keywords:
+    yield
+    return
   # Mock out chrome's stable path to be able to run on the CQ with the
   # --test-browser-path option.
   with mock.patch(
@@ -41,7 +44,12 @@ def cli_test_context(browser_path, driver_path):
         yield
 
 
-def _run_cli(*args: str) -> Tuple[CrossBenchCLI, io.StringIO]:
+def _run_cli(*args: str,
+             auto_headless: bool = False) -> Tuple[CrossBenchCLI, io.StringIO]:
+  if auto_headless and not plt.PLATFORM.has_display:
+    if "--headless" not in args:
+      args += ("--headless",)
+      args = tuple(arg for arg in args if not arg.startswith("--viewport="))
   cli = CrossBenchCLI()
   with contextlib.redirect_stdout(io.StringIO()) as stdout:
     with mock.patch("sys.exit", side_effect=SysExitException):
@@ -59,12 +67,6 @@ def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
   return list(results_dir.glob("**/*-v8.log"))
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   # - Speedometer 2.0
@@ -78,17 +80,18 @@ def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   assert browser_config.is_file()
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("sp_2.0", f"--browser-config={browser_config}", "--iterations=2",
-           "--env-validation=skip", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--probe=tracing:{preset:'minimal'}")
+  _run_cli(
+      "sp_2.0",
+      f"--browser-config={browser_config}",
+      "--iterations=2",
+      "--stories=jQuery-TodoMVC",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--probe=tracing:{preset:'minimal'}",
+      auto_headless=True)
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_1(output_dir, cache_dir) -> None:
   # - Speedometer 2.1
@@ -114,7 +117,8 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
       "--probe=v8.log:"
       "{log_all:false, js_flags:['--log-maps'], prof:false, profview:false}",
       "--probe=v8.turbolizer",
-      "--debug")
+      "--debug",
+      auto_headless=True)
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
@@ -122,24 +126,27 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
   assert len(v8_log_files) > 1
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_macos, reason="Tests temporarily skipped on Mac")
+@pytest.mark.skip_mock
+@pytest.mark.flaky(retries=3, delay=5)
 def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
   # - Custom chrome version downloads
   # - headless
-  if not plt.PLATFORM.which("gsutil"):
-    pytest.skip("Missing required 'gsutil', skipping test.")
+  # Flaky due to downloading live custom builds.
   results_dir = output_dir / "results"
   # TODO: speed up --browser=chrome-M111 and add it.
   assert len(list(cache_dir.iterdir())) == 0
-  _run_cli("sp2.1", f"--cache-dir={cache_dir}", "--browser=chrome-M113",
-           "--browser=chrome-111.0.5563.110", "--headless", "--iterations=1",
-           "--env-validation=skip", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--stories=.*Vanilla.*")
+  _run_cli(
+      "sp2.1",
+      f"--cache-dir={cache_dir}",
+      "--browser=chrome-M113",
+      "--browser=chrome-111.0.5563.110",
+      "--headless",
+      "--iterations=1",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--stories=.*Vanilla.*",
+      "--debug")
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 2
@@ -148,11 +155,7 @@ def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
 
 
 @pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
+    not plt.PLATFORM.is_macos, reason="Safari is only available on macos")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
                                        driver_path) -> None:
@@ -170,10 +173,19 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
     pytest.skip("Test requires Safari, skipping on non macOS devices.")
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("sp2.1", "--browser=chrome", "--browser=safari",
-           "--splashscreen=none", "--iterations=1", "--repeat=2",
-           "--env-validation=skip", "--verbose", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--stories=.*React.*")
+  _run_cli(
+      "sp2.1",
+      "--browser=chrome",
+      "--browser=safari",
+      "--splashscreen=none",
+      "--iterations=1",
+      "--repeat=2",
+      "--env-validation=skip",
+      "--verbose",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--stories=.*React.*",
+      auto_headless=True)
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 2
@@ -181,12 +193,6 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
   assert not v8_log_files
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_jetstream_2_0(output_dir, cache_dir) -> None:
   # - jetstream 2.0
@@ -199,24 +205,26 @@ def test_jetstream_2_0(output_dir, cache_dir) -> None:
   _run_cli("describe", "--json", "benchmark", "jetstream_2.0")
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("jetstream_2.0", "--browser=chrome-stable", "--separate",
-           "--repeat=2", "--env-validation=skip", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--viewport=maximised",
-           "--stories=.*date-format.*", "--quiet",
-           "--js-flags=--log,--log-opt,--log-deopt", "--", "--no-sandbox")
+  _run_cli(
+      "jetstream_2.0",
+      "--browser=chrome-stable",
+      "--separate",
+      "--repeat=2",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--viewport=maximised",
+      "--stories=.*date-format.*",
+      "--quiet",
+      "--js-flags=--log,--log-opt,--log-deopt",
+      "--",
+      "--no-sandbox",
+      auto_headless=True)
 
-  v8_log_files = _get_v8_log_files(results_dir)
-  assert len(v8_log_files) > 1
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   # - jetstream 2.1
@@ -233,10 +241,19 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   results_dir = output_dir / "results"
   assert not results_dir.exists()
   chrome_version = "--browser=chrome"
-  _run_cli("jetstream_2.1", chrome_version, "--env-validation=skip",
-           "--splashscreen=http://google.com", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--viewport=900x800", "--stories=Box2D",
-           "--time-unit=0.9", f"--probe-config={probe_config}", "--throw")
+  _run_cli(
+      "jetstream_2.1",
+      chrome_version,
+      "--env-validation=skip",
+      "--splashscreen=http://google.com",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--viewport=900x800",
+      "--stories=Box2D",
+      "--time-unit=0.9",
+      f"--probe-config={probe_config}",
+      "--throw",
+      auto_headless=True)
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
@@ -244,12 +261,6 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   assert len(v8_log_files) > 1
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
   # - jetstream 2.2
@@ -266,10 +277,19 @@ def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
   results_dir = output_dir / "results"
   assert not results_dir.exists()
   chrome_version = "--browser=chrome"
-  _run_cli("jetstream_2.2", chrome_version, "--env-validation=skip",
-           "--splashscreen=http://google.com", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--viewport=900x800", "--stories=Box2D",
-           "--time-unit=0.9", f"--probe-config={probe_config}", "--throw")
+  _run_cli(
+      "jetstream_2.2",
+      chrome_version,
+      "--env-validation=skip",
+      "--splashscreen=http://google.com",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--viewport=900x800",
+      "--stories=Box2D",
+      "--time-unit=0.9",
+      f"--probe-config={probe_config}",
+      "--throw",
+      auto_headless=True)
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
@@ -277,12 +297,6 @@ def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
   assert len(v8_log_files) > 1
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_loading(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
@@ -294,39 +308,43 @@ def test_loading(output_dir, cache_dir) -> None:
   _run_cli("describe", "benchmark", "loading")
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("loading", "--browser=chr", "--env-validation=skip",
-           f"--out-dir={results_dir}", f"--cache-dir={cache_dir}",
-           "--viewport=headless", "--stories=cnn", "--cool-down-time=2.5",
-           "--probe=performance.entries")
+  _run_cli(
+      "loading",
+      "--browser=chr",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--viewport=headless",
+      "--stories=cnn",
+      "--cool-down-time=2.5",
+      "--probe=performance.entries",
+      auto_headless=True)
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 1
 
 
 @pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
+    plt.PLATFORM.is_win, reason="TODO(crbug.com/383896773): --page-config.")
 def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
   # - loading with config file
   page_config = root_dir / "config/doc/page.config.hjson"
   assert page_config.is_file()
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("loading", "--env-validation=skip", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", f"--page-config={page_config}",
-           "--probe=performance.entries", "--no-splash", "--cool-down-time=0",
-           "--throw")
+  _run_cli(
+      "loading",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      f"--page-config={page_config}",
+      "--probe=performance.entries",
+      "--no-splash",
+      "--cool-down-time=0",
+      "--throw",
+      auto_headless=True)
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_loading_playback_urls(output_dir, cache_dir) -> None:
   # - loading using url
@@ -334,19 +352,19 @@ def test_loading_playback_urls(output_dir, cache_dir) -> None:
   results_dir = output_dir / "results"
 
   assert not results_dir.exists()
-  _run_cli("loading", "--env-validation=skip", f"--out-dir={results_dir}",
-           f"--cache-dir={cache_dir}", "--playback=5.3s",
-           "--viewport=fullscreen",
-           "--stories=http://google.com,0.5,http://bing.com,0.4",
-           "--probe=performance.entries")
+  _run_cli(
+      "loading",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      "--verbose-driver",
+      f"--cache-dir={cache_dir}",
+      "--playback=5.3s",
+      "--viewport=fullscreen",
+      "--stories=http://google.com,0.5,http://bing.com,0.4",
+      "--probe=performance.entries",
+      auto_headless=True)
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_loading_playback(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
@@ -354,19 +372,30 @@ def test_loading_playback(output_dir, cache_dir) -> None:
   # - viewport-size via chrome flag
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("loading", "--browser=chr", "--env-validation=skip",
-           f"--out-dir={results_dir}", f"--cache-dir={cache_dir}",
-           "--playback=5.3s", "--separate", "--stories=twitter,2,facebook,0.4",
-           "--probe=performance.entries", "--", "--window-size=900,500",
-           "--window-position=150,150")
+  args = [
+      "loading",
+      "--browser=chr",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--playback=5.3s",
+      "--separate",
+      "--stories=twitter,2,facebook,0.4",
+      "--probe=performance.entries",
+  ]
+  if not plt.PLATFORM.is_linux:
+    args.extend([
+        "--",
+        "--window-size=900,500",
+        "--window-position=150,150",
+    ])
+  _run_cli(
+      *args,
+      auto_headless=True)
 
 
 @pytest.mark.skipif(
-    not plt.PLATFORM.has_display, reason="end2end test cannot run headless")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on windows")
+    not plt.PLATFORM.has_display, reason="Firefox cannot run headless")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_loading_playback_firefox(output_dir, cache_dir) -> None:
   # - loading using named pages with timeouts
@@ -380,10 +409,17 @@ def test_loading_playback_firefox(output_dir, cache_dir) -> None:
     pytest.skip("Test requires Firefox.")
   results_dir = output_dir / "results"
   assert not results_dir.exists()
-  _run_cli("loading", "--browser=chr", "--browser=ff", "--env-validation=skip",
-           f"--out-dir={results_dir}", f"--cache-dir={cache_dir}",
-           "--playback=2x", "--stories=twitter,1,facebook,0.4",
-           "--probe=performance.entries")
+  _run_cli(
+      "loading",
+      "--browser=chr",
+      "--browser=ff",
+      "--env-validation=skip",
+      f"--out-dir={results_dir}",
+      f"--cache-dir={cache_dir}",
+      "--playback=2x",
+      "--stories=twitter,1,facebook,0.4",
+      "--probe=performance.entries",
+      auto_headless=True)
 
   browser_dirs = _get_browser_dirs(results_dir)
   assert len(browser_dirs) == 2

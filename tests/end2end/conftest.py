@@ -10,6 +10,7 @@ import sys
 import tempfile
 from typing import Optional
 
+import psutil
 import pytest
 
 from crossbench import plt
@@ -118,6 +119,10 @@ def default_gsutil_path() -> pathlib.Path:
 def output_dir():
   with tempfile.TemporaryDirectory() as tmpdirname:
     yield pathlib.Path(tmpdirname)
+    if plt.PLATFORM.is_win:
+      for proc in psutil.process_iter():
+        if "chromedriver" in proc.name().lower():
+          proc.kill()
 
 
 @pytest.fixture(scope="session")
