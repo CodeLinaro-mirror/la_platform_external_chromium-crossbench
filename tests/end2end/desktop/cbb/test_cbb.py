@@ -36,8 +36,11 @@ def get_benchmark(benchmark_cls) -> PressBenchmark:
 
 @pytest.fixture
 def webdriver(driver_path, browser_path):
+  is_cq = driver_path is not None
+  flags = ["--headless"] if plt.PLATFORM.is_linux and is_cq else []
   return chrome_webdriver.ChromeWebDriver("Chrome", browser_path,
-                                          Settings(driver_path=driver_path))
+                                          Settings(driver_path=driver_path,
+                                                   flags=flags))
 
 
 def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
@@ -64,50 +67,26 @@ def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
   assert benchmark_data
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on Windows")
 def test_speedometer_20(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.Speedometer20Benchmark)
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on Windows")
 def test_speedometer_21(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.Speedometer21Benchmark)
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on Windows")
 def test_motionmark_12(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.MotionMark12Benchmark)
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on Windows")
 def test_motionmark_13(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.MotionMark13Benchmark)
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on Windows")
 def test_jetstream_20(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.JetStream20Benchmark)
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_linux, reason="Tests temporarily skipped on linux")
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="Tests temporarily skipped on Windows")
 def test_jetstream_21(output_dir, webdriver):
   run_benchmark(output_dir, webdriver, benchmarks.JetStream21Benchmark)
 
