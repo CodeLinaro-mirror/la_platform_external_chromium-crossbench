@@ -6,6 +6,7 @@ import unittest
 
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.benchmarks.loading.point import Point
+from tests import test_helper
 
 
 class DisplayRectangleTestCase(unittest.TestCase):
@@ -61,3 +62,7 @@ class DisplayRectangleTestCase(unittest.TestCase):
     self.assertEqual(scrollable_top, 260)
     self.assertEqual(scrollable_bottom, 740)
     self.assertEqual(max_scroll_distance, 480)
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

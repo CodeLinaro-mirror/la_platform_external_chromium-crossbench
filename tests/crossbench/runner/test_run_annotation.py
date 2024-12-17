@@ -4,35 +4,17 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
-import logging
-import sys
 import unittest
-from typing import Optional
 
 from ordered_set import OrderedSet
 
 from crossbench.runner.run_annotation import RunAnnotation, WarnLevel
+from tests import test_helper
+from tests.crossbench.base import AssertNoLogsCompatMixin
 
-TEST_WARNING = "Test Warning"
 
-class RunAnnotationTestCase(unittest.TestCase):
-
-  @contextlib.contextmanager
-  def assertNoLogs(self, level: Optional[str] = None):
-    if sys.version_info >= (3, 10):
-      with super().assertNoLogs(level=level):
-        yield
-    else:
-      # TODO: remove once migrated to 3.11
-      int_level = getattr(logging, level)
-      with self.assertLogs(level=level) as cm:
-        logging.log(int_level, TEST_WARNING)
-        yield
-      self.assertEqual(len(cm.output), 1)
-      # The global logger adds prefixes.
-      self.assertTrue(cm.output[0].endswith(TEST_WARNING))
+class RunAnnotationTestCase(AssertNoLogsCompatMixin, unittest.TestCase):
 
   def test_fatal(self):
     message = "FATAL custom message"
@@ -95,3 +77,7 @@ class RunAnnotationTestCase(unittest.TestCase):
       for i in range(5, 10):
         message = f"Annotation {level.name} {i}"
         self.assertNotIn(message, output)
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

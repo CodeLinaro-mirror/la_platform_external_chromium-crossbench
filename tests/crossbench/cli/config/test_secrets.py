@@ -9,6 +9,7 @@ import json
 import hjson
 
 from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
+from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
@@ -95,3 +96,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     merged = secrets_1.merge(fallback=secrets_2)
     self.assertEqual(secrets_1, merged)
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

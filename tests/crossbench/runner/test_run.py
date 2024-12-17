@@ -9,6 +9,7 @@ import datetime as dt
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.run import Run
 from crossbench.runner.run_annotation import RunAnnotation
+from tests import test_helper
 from tests.crossbench.mock_helper import MockStory
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe
@@ -41,3 +42,7 @@ class RunTestCase(BaseRunGroupTestCase):
     with self.assertLogs(level="INFO") as cm:
       run.log_annotations()
     self.assertIn("Some warning", " ".join(cm.output))
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

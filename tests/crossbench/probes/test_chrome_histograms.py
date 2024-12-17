@@ -179,3 +179,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         "Startup.FirstWebContents.NonEmptyPaint3_p50",
         "Startup.FirstWebContents.NonEmptyPaint3_p90",
     ])
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

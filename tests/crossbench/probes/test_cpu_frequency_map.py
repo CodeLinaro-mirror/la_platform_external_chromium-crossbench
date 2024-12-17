@@ -8,6 +8,7 @@ from typing import List
 from crossbench import path as pth
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
+from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
@@ -149,3 +150,7 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
                                     str(min(available_frequencies)) + "\n")
     self.platform.set_file_contents(cpu_dir / "scaling_max_freq",
                                     str(max(available_frequencies)) + "\n")
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

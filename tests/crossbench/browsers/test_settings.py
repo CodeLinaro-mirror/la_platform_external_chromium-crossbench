@@ -14,6 +14,7 @@ from crossbench.browsers.viewport import Viewport
 from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.flags.js_flags import JSFlags
+from tests import test_helper
 
 
 class SettingsTestCase(unittest.TestCase):
@@ -88,3 +89,7 @@ class SettingsTestCase(unittest.TestCase):
     with self.assertRaises(ValueError) as cm:
       _ = Settings(flags, js_flags=Flags({"--js-two": "js-2"}))
     self.assertIn("js-flags", str(cm.exception))
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)
