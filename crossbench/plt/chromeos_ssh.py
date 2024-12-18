@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import subprocess
 from typing import TYPE_CHECKING
 
 from crossbench import path as pth
@@ -55,7 +57,11 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
       if browser_flags:
         args.append("--")
         args.extend(browser_flags)
-      self.sh(*args)
+      autologin_output = self.sh(
+          *args, stdout=subprocess.PIPE,
+          stderr=subprocess.STDOUT).stdout.decode("utf-8")
+      logging.debug("Autologin Output:")
+      logging.debug(autologin_output)
     except plt.SubprocessError as e:
       raise RuntimeError("Autologin failed.") from e
     try:
