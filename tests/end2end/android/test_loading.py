@@ -66,10 +66,12 @@ def test_click(browser_config, input_source) -> None:
                   },
                   {
                       "action": "click",
-                      "selector": "button[id='button']",
-                      "required": True,
+                      "position": {
+                          "selector": "button[id='button']",
+                          "required": True,
+                          "scroll_into_view": True
+                      },
                       "source": str(input_source),
-                      "scroll_into_view": True
                   },
                   {
                       "action": "wait_for_element",

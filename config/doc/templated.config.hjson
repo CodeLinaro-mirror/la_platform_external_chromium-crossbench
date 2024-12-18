@@ -19,8 +19,10 @@
     "GOOGLE_URL": "https://www.google.com",
     "COOKIE_BANNER_ACTION": {
         "action": "click",
-        "required": false,
-        "selector": "xpath///button/div[contains(text(),'akzeptieren')]"
+        "position": {
+          "required": false,
+          "selector": "xpath///button/div[contains(text(),'akzeptieren')]",
+        },
     },
     "SCROLL_DISTANCE": 500,
     "SCROLL_DURATION": "10s"

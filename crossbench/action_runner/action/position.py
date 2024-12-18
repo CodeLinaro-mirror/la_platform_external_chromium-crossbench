@@ -1,0 +1,136 @@
+# Copyright 2024 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+from __future__ import annotations
+
+import argparse
+import dataclasses
+from typing import TYPE_CHECKING, Dict, Optional, Set
+
+from crossbench.benchmarks.loading.point import Point
+from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
+from crossbench.parse import NumberParser, ObjectParser
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
+
+
+@dataclasses.dataclass(frozen=True)
+class CoordinatesConfig(ConfigObject):
+  x: int
+  y: int
+
+  @classmethod
+  def parse_dict(cls, config: Dict) -> CoordinatesConfig:
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  def parse_str(cls, value):
+    del value
+    raise NotImplementedError("Cannot create CoordinatesConfig from string")
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[CoordinatesConfig]:
+    parser = ConfigParser(
+        cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+    parser.add_argument("x", type=NumberParser.positive_zero_int, required=True)
+    parser.add_argument("y", type=NumberParser.positive_zero_int, required=True)
+    return parser
+
+  def point(self) -> Point:
+    return Point(self.x, self.y)
+
+
+@dataclasses.dataclass(frozen=True)
+class SelectorConfig(ConfigObject):
+  required: bool
+  scroll_into_view: bool
+  selector: str
+
+  @classmethod
+  def parse_str(cls, value) -> SelectorConfig:
+    selector = ObjectParser.non_empty_str(value, "selector")
+    return cls(required=True, scroll_into_view=False, selector=selector)
+
+  @classmethod
+  def parse_dict(cls, config: Dict) -> SelectorConfig:
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[SelectorConfig]:
+    parser = ConfigParser(
+        cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+    parser.add_argument(
+        "selector", type=ObjectParser.non_empty_str, required=True)
+    parser.add_argument(
+        "scroll_into_view", type=ObjectParser.bool, default=False)
+    parser.add_argument("required", type=ObjectParser.bool, default=True)
+    return parser
+
+
+def has_all_required_args(config: Dict, config_parser: ConfigParser) -> bool:
+  config_keys: Set[str] = set(config.keys())
+  for arg in config_parser.arg_parsers:
+    if arg.required:
+      names = set(arg.aliases)
+      names.add(arg.name)
+      if not config_keys.intersection(names):
+        return False
+  return True
+
+
+@dataclasses.dataclass(frozen=True)
+class PositionConfig(ConfigObject):
+  coordinates: Optional[CoordinatesConfig] = None
+  selector: Optional[SelectorConfig] = None
+
+  @classmethod
+  def parse_str(cls, value) -> PositionConfig:
+    return cls(selector=SelectorConfig.parse_str(value))
+
+  @classmethod
+  def parse_dict(cls, config: Dict) -> PositionConfig:
+    selector_parser = SelectorConfig.config_parser()
+    if has_all_required_args(config, selector_parser):
+      return cls(selector=selector_parser.parse(config))
+
+    coordinates_parser = CoordinatesConfig.config_parser()
+    if has_all_required_args(config, coordinates_parser):
+      return cls(coordinates=coordinates_parser.parse(config))
+
+    raise argparse.ArgumentTypeError(
+        f"{config} is not a valid coordinate or selector")
+
+  @classmethod
+  def from_coordinates(cls, x: int, y: int) -> PositionConfig:
+    return cls(coordinates=CoordinatesConfig(x, y))
+
+  @classmethod
+  def from_selector(cls,
+                    selector: str,
+                    required: bool = True,
+                    scroll_into_view: bool = False) -> PositionConfig:
+    return cls(
+        selector=SelectorConfig(
+            required=required,
+            scroll_into_view=scroll_into_view,
+            selector=selector))
+
+  def validate(self) -> None:
+    super().validate()
+    if bool(self.coordinates) != bool(self.coordinates):
+      raise ValueError(
+          "Position config must have exactly one coordinates or selector")
+
+  def to_json(self) -> JsonDict:
+    if coordinates := self.coordinates:
+      return {"x": coordinates.x, "y": coordinates.y}
+    elif selector := self.selector:
+      return {
+          "required": selector.required,
+          "scroll_into_view": selector.scroll_into_view,
+          "selector": selector.selector,
+      }
+    raise ValueError(
+        "Position config must have exactly one coordinates or selector")

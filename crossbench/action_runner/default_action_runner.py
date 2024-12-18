@@ -128,19 +128,20 @@ class DefaultActionRunner(ActionRunner):
     if action.duration > dt.timedelta():
       raise InputSourceNotImplementedError(self, action, action.input_source,
                                            "Non-zero duration not implemented")
-    selector = action.selector
-    if not selector:
+    selector_config = action.position.selector
+    if not selector_config:
       raise RuntimeError("Missing selector")
 
     selector, script = self.get_selector_script(
-        selector,
+        selector_config.selector,
         check_element_exists=True,
-        scroll_into_view=action.scroll_into_view,
+        scroll_into_view=selector_config.scroll_into_view,
         click=True,
         return_on_success=True)
 
     with run.actions("ClickAction", measure=False) as actions:
-      if not actions.js(script, arguments=[selector]) and action.required:
+      if not actions.js(
+          script, arguments=[selector]) and selector_config.required:
         raise ElementNotFoundError(selector)
 
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:

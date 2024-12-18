@@ -56,7 +56,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.assertEqual(get_action.url, "https://www.google.com")
 
     cookie_banner_action = block.actions[1]
-    self.assertEqual(cookie_banner_action.selector,
+    self.assertIsNotNone(cookie_banner_action.position.selector)
+    self.assertEqual(cookie_banner_action.position.selector.selector,
                      "xpath///button/div[contains(text(),'akzeptieren')]")
 
     scroll_action = block.actions[2]

@@ -398,23 +398,20 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
   def _get_click_location(
       self, actions: Actions, action: i_action.ClickAction
   ) -> Tuple[Optional[Point], ChromeOSViewportInfo]:
-    viewport_info: ChromeOSViewportInfo = self._get_viewport_info(
-        actions, action.selector, action.scroll_into_view)
-
-    if action.selector:
+    if selector_config := action.position.selector:
+      viewport_info = self._get_viewport_info(actions, selector_config.selector,
+                                              selector_config.scroll_into_view)
       element_rect = viewport_info.element_rect
       if not element_rect:
-        if action.required:
-          raise ElementNotFoundError(action.selector)
+        if selector_config.required:
+          raise ElementNotFoundError(selector_config.selector)
         return (None, viewport_info)
-      click_location: Point = element_rect.middle
-    elif coordinates := action.coordinates:
-      click_location = coordinates
+      return (element_rect.middle, viewport_info)
+    elif coordinates_config := action.position.coordinates:
+      viewport_info = self._get_viewport_info(actions, None, False)
+      return (coordinates_config.point(), viewport_info)
     else:
       raise RuntimeError("Missing coordinates")
-
-    assert click_location, "Invalid click location click action."
-    return (click_location, viewport_info)
 
   def _get_viewport_info(self,
                          actions: Actions,

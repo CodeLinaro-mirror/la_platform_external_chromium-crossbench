@@ -16,6 +16,7 @@ from crossbench import path as pth
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.page import PageConfig
@@ -176,8 +177,8 @@ class DevToolsRecorderPagesConfig(PagesConfig):
     selector = cls._parse_selectors(step["selectors"])
     return ClickAction(
         InputSource.JS,
-        selector=selector,
-        scroll_into_view=True,
+        position=PositionConfig.from_selector(
+            selector=selector, scroll_into_view=True),
         timeout=default_timeout)
 
   @classmethod
