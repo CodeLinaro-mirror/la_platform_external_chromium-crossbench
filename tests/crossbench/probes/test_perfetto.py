@@ -36,7 +36,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertIsInstance(probe, PerfettoProbe)
 
 
-class PerfettoBinDownloaderTestCase(CrossbenchFakeFsTestCase):
+class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
 
   def test_download_linux(self):
     platform = LinuxMockPlatform()

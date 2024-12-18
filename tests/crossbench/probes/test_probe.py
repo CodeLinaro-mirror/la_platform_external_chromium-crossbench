@@ -75,7 +75,8 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DumpHtmlProbe()
     yield FrequencyProbe.from_config({})
-    yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"))
+    yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
+                        pth.LocalPath("tracebox.bin"))
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
     yield PowerSamplerProbe()
