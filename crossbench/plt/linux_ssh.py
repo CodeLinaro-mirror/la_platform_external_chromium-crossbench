@@ -74,6 +74,8 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return res
 
   def push(self, from_path: LocalPath, to_path: AnyPath) -> AnyPath:
+    self.mkdir(to_path.parent, parents=True, exist_ok=True)
+
     scp_cmd: CmdArgs = [
         "scp", "-P", f"{self._ssh_port}", f"{from_path}",
         f"{self._ssh_user}@{self._host}:{to_path}"
@@ -82,6 +84,8 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return to_path
 
   def pull(self, from_path: AnyPath, to_path: LocalPath) -> LocalPath:
+    self._host_platform.mkdir(to_path.parent, parents=True, exist_ok=True)
+
     scp_cmd: CmdArgs = [
         "scp", "-P", f"{self._ssh_port}",
         f"{self._ssh_user}@{self._host}:{from_path}", to_path

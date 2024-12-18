@@ -49,6 +49,7 @@ class MockPlatformMixin:
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
     self.popens: List[MockPopen] = []
+    self.mkdir_calls: int = 0
     super().__init__(*args, **kwargs)
 
   def expect_sh(self,
@@ -223,6 +224,13 @@ class MockPlatformMixin:
       raise ValueError("No valid mock popen.")
 
     return self.popens.pop(0)
+
+  def mkdir(self,
+            path: pth.AnyPathLike,
+            parents: bool = True,
+            exist_ok: bool = True) -> None:
+    super().mkdir(path, parents, exist_ok)
+    self.mkdir_calls += 1
 
 
 class MockFd:

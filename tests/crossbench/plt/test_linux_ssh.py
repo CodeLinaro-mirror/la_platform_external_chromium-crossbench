@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import os
 from unittest import mock
 
 from crossbench import path as pth
@@ -165,6 +166,26 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(port, 666)
     self.platform.stop_reverse_port_forward(port)
 
+  def test_push_creates_dest_dir(self):
+    self._expect_sh_ssh("mkdir -p remote/dest/path")
+    self.mock_platform.expect_sh(
+        "scp", "-P", self.SSH_PORT, "source/path/file",
+        f"{self.SSH_USER}@{self.HOST}:remote/dest/path/file")
+    self.platform.push(
+        self.platform.path("source/path/file"),
+        self.platform.path("remote/dest/path/file"))
+
+  def test_pull_creates_dest_dir(self):
+    self.mock_platform.expect_sh(
+        "scp", "-P", self.SSH_PORT,
+        f"{self.SSH_USER}@{self.HOST}:remote/source/path/file",
+        "local/dest/path/file")
+    self.platform.pull(
+        self.platform.path("remote/source/path/file"),
+        self.platform.path("local/dest/path/file"))
+
+    self.assertEqual(self.mock_platform.mkdir_calls, 1)
+    self.assertTrue(os.path.exists("local/dest/path"))
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
