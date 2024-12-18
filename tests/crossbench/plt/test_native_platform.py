@@ -8,6 +8,7 @@ import datetime as dt
 import os
 import pathlib
 import socket
+import stat
 import sys
 import tempfile
 import unittest
@@ -208,6 +209,39 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(dst_file))
       self.assertEqual(self.platform.cat(src_file), "some data")
       self.assertEqual(self.platform.cat(dst_file), "some data")
+      # Copying the same file should have no effect:
+      self.platform.copy(src_file, src_file)
+      self.platform.copy(dst_file, dst_file)
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
+
+  def test_copy_dir(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      src_file = pathlib.Path(tmp_dirname) / "src/file.txt"
+      dst_file = pathlib.Path(tmp_dirname) / "dst/file.txt"
+      src_dir = src_file.parent
+      dst_dir = dst_file.parent
+      with self.assertRaises(ValueError) as cm:
+        self.assertFalse(self.platform.exists(src_dir))
+        self.platform.copy(src_dir, dst_dir)
+      self.assertIn(str(src_dir), str(cm.exception))
+      self.assertFalse(self.platform.exists(src_dir))
+      self.assertFalse(self.platform.exists(dst_dir))
+
+      self.platform.mkdir(src_dir)
+      src_file.write_text("some data")
+      self.assertTrue(self.platform.exists(src_file))
+
+      self.platform.copy(src_dir, dst_dir)
+      self.assertTrue(self.platform.exists(src_file))
+      self.assertTrue(self.platform.exists(dst_file))
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
+      # Copying the same file should have no effect:
+      self.platform.copy(src_dir, src_dir)
+      self.platform.copy(dst_dir, dst_dir)
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
 
   def test_home(self):
     self.assertEqual(self.platform.home(), pathlib.Path.home())
@@ -289,6 +323,18 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(bar_file))
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
+
+  def test_chmod(self):
+    if self.platform.is_remote:
+      return
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_dir = pathlib.Path(tmp_dirname)
+      tmp_file = tmp_dir / "test.txt"
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.set_file_contents(tmp_file, "")
+      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.platform.chmod(tmp_file, 0o755)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
 
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -536,6 +582,16 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
 
   def test_cpu_usage(self):
     raise self.skipTest("Not supported on remote platforms")
+
+  def test_chmod(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_dir = pathlib.Path(tmp_dirname)
+      tmp_file = tmp_dir / "test.txt"
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.touch(tmp_file)
+      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.platform.chmod(tmp_file, 0o755)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")

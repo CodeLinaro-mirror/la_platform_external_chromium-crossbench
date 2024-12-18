@@ -226,8 +226,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     to_path = self.path(to_path)
     if not self.exists(from_path):
       raise ValueError(f"Cannot copy non-existing source path: {from_path}")
-    self.mkdir(to_path.parent, parents=True, exist_ok=True)
-    self.sh("cp", "-R", from_path, to_path)
+    if from_path != to_path:
+      self.mkdir(to_path.parent, parents=True, exist_ok=True)
+      self.sh("cp", "-R", from_path, to_path)
     return to_path
 
   def copy_file(self, from_path: pth.AnyPathLike,
@@ -238,8 +239,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     to_path = self.path(to_path)
     if not self.exists(from_path):
       raise ValueError(f"Cannot copy non-existing source path: {from_path}")
-    self.mkdir(to_path.parent, parents=True, exist_ok=True)
-    self.sh("cp", from_path, to_path)
+    if from_path != to_path:
+      self.mkdir(to_path.parent, parents=True, exist_ok=True)
+      self.sh("cp", from_path, to_path)
     return to_path
 
   def set_file_contents(self,
@@ -283,6 +285,14 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     for name in self.sh_stdout("ls", "-1",
                                remote_path).rstrip("\n").split("\n"):
       yield remote_path / name
+
+  def chmod(self, path: pth.AnyPathLike, mode: int):
+    if self.is_local:
+      super().chmod(path, mode)
+    else:
+      # strip the prefix
+      oct_mode = oct(mode)[2:]
+      self.sh("chmod", oct_mode, self.path(path))
 
   def send_signal(self, pid: int, signal: Signals):
     if self.is_local:

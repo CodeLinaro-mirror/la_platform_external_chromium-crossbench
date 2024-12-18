@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import collections
+import dataclasses
 import datetime as dt
 import pathlib
 import shlex
@@ -36,6 +37,12 @@ if TYPE_CHECKING:
 GIB = 1014**3
 
 
+@dataclasses.dataclass(frozen=True)
+class DownloadMockData:
+  url: str
+  path: pth.AnyPath
+  data: Optional[bytes] = None
+
 
 class MockPlatformMixin:
 
@@ -45,12 +52,36 @@ class MockPlatformMixin:
     self._sh_cmds: List[TupleCmdArgs] = []
     self._expected_sh_cmds: Optional[List[TupleCmdArgs]] = None
     self._sh_results: List[bytes] = []
+    self._download_results: List[DownloadMockData] = []
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
+    self.use_mock_name = True
+    self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: List[MockPopen] = []
     self.mkdir_calls: int = 0
     super().__init__(*args, **kwargs)
+
+  def expect_download(self,
+                      url: str,
+                      path: pth.AnyPath,
+                      data: Optional[bytes] = None):
+    self._download_results.append(DownloadMockData(url, path, data))
+
+  def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
+    assert self._download_results, (
+        f"No more download test data, but requested: {url}")
+    provided_data = self._download_results.pop()
+    assert url == provided_data.url, (f"Expected download url {url}, "
+                                      f"but got: {provided_data.url}")
+    assert path == provided_data.path, (
+        f"Expected download result path {path}, but got: {provided_data.path}")
+    if provided_data.data:
+      with path.open("wb") as f:
+        f.write(provided_data.data)
+    else:
+      self.touch(path)
+    return path
 
   def expect_sh(self,
                 *args: Union[str, pathlib.Path],
@@ -96,11 +127,19 @@ class MockPlatformMixin:
 
   @property
   def name(self) -> str:
-    return f"mock.{super().name}"
+    if self.use_mock_name:
+      return f"mock.{super().name}"
+    return super().name
 
   @property
   def machine(self) -> MachineArch:
+    if self._machine_arch:
+      return self._machine_arch
     return MachineArch.ARM_64
+
+  @machine.setter
+  def machine(self, value: MachineArch) -> None:
+    self._machine_arch = value
 
   @property
   def version(self) -> str:

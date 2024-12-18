@@ -101,7 +101,7 @@ class Platform(abc.ABC):
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
     self._cache_dir: Optional[pth.AnyPath] = None
     if self.is_local:
-      self._cache_dir = DEFAULT_CACHE_DIR
+      self._cache_dir = self.path(DEFAULT_CACHE_DIR)
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -534,16 +534,18 @@ class Platform(abc.ABC):
                to_path: pth.AnyPathLike) -> pth.AnyPath:
     from_path = self.local_path(from_path)
     to_path = self.local_path(to_path)
-    self.mkdir(to_path.parent, parents=True, exist_ok=True)
-    shutil.copytree(os.fspath(from_path), os.fspath(to_path))
+    if from_path != to_path:
+      self.mkdir(to_path.parent, parents=True, exist_ok=True)
+      shutil.copytree(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
   def copy_file(self, from_path: pth.AnyPathLike,
                 to_path: pth.AnyPathLike) -> pth.AnyPath:
     from_path = self.local_path(from_path)
     to_path = self.local_path(to_path)
-    self.mkdir(to_path.parent, parents=True, exist_ok=True)
-    shutil.copy2(os.fspath(from_path), os.fspath(to_path))
+    if from_path != to_path:
+      self.mkdir(to_path.parent, parents=True, exist_ok=True)
+      shutil.copy2(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
   def rm(self,
@@ -662,6 +664,9 @@ class Platform(abc.ABC):
            pattern: str) -> Generator[pth.AnyPath, None, None]:
     # TODO: support remotely
     return self.local_path(path).glob(pattern)
+
+  def chmod(self, path: pth.AnyPathLike, mode: int):
+    self.local_path(path).chmod(mode)
 
   def file_size(self, path: pth.AnyPathLike) -> int:
     # TODO: support remotely

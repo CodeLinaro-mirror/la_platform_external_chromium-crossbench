@@ -38,7 +38,7 @@ class CrossbenchFakeFsTestCase(
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser, pth])
+    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser, pth, plt])
     # gettext is used extensively in argparse
     gettext_patcher = mock.patch(
         "gettext.dgettext", side_effect=lambda domain, message: message)
