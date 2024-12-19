@@ -312,17 +312,17 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("116.845.4.3.2.1.0", str(cm.exception))
 
   def test_parse_adb_phone_serial(self):
-    self.platform.sh_results = [ADB_DEVICES_OUTPUT, "", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
     config = BrowserConfig.parse("0a388e93:chrome")
     assert isinstance(config, BrowserConfig)
     self.assertListEqual(self.platform.sh_results, [])
-    self.assertEqual(len(self.platform.sh_cmds), 3)
+    self.assertEqual(len(self.platform.sh_cmds), 2)
 
-    self.platform.sh_results = ["", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     expected_driver = DriverConfig(
         BrowserDriverType.ANDROID, device_id="0a388e93")
     self.assertEqual(len(self.platform.sh_results), 0)
-    self.assertEqual(len(self.platform.sh_cmds), 5)
+    self.assertEqual(len(self.platform.sh_cmds), 3)
     self.assertEqual(
         config,
         BrowserConfig(pth.AnyPosixPath("com.android.chrome"), expected_driver))

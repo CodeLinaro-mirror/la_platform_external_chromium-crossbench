@@ -19,7 +19,6 @@ from tests import test_helper
 from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
-from tests.crossbench.mock_helper import ShResult
 
 
 class DriverConfigTestCase(BaseConfigTestCase):
@@ -108,7 +107,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(platform.ssh_user, "root")
 
   def test_parse_inline_json_adb(self):
-    self.platform.sh_results = ["", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {"type": "adb", "settings": {"device_id": "0a388e93"}}
     config_1 = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config_1, DriverConfig)
@@ -121,7 +120,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertFalse(config_1.type.is_local_browser)
     self.assertIsNone(config_1.adb_bin)
 
-    self.platform.sh_results = ["", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_2 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_2, DriverConfig)
     self.assertEqual(config_2.type, BrowserDriverType.ANDROID)
@@ -134,7 +133,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertIsNone(config_2.adb_bin)
     self.assertEqual(config_1, config_2)
 
-    self.platform.sh_results = ["", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {"type": "adb", "device_id": "0a388e93"}
     config_3 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_3, DriverConfig)
@@ -151,7 +150,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_custom_adb_bin(self):
     adb_bin = self.out_dir / "adb"
-    self.platform.sh_results = ["", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {
         "type": "adb",
         "device_id": "0a388e93",
@@ -186,27 +185,12 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertTrue(cm.exception.matching(AmbiguousDriverIdentifier))
     self.assertEqual(len(self.platform.sh_cmds), 1)
 
-  def test_adb_connect_is_called(self):
-
-    self.platform.expect_sh("adb", "devices", "-l", result=ADB_DEVICES_OUTPUT)
-    self.platform.expect_sh("adb", "connect", "0a388e93")
-    self.platform.expect_sh("adb", "devices", "-l", result=ADB_DEVICES_OUTPUT)
-    _ = DriverConfig.parse("Nexus_7")
-
-  def test_adb_connect_failure_is_ignored(self):
-
-    self.platform.expect_sh("adb", "devices", "-l", result=ADB_DEVICES_OUTPUT)
-    self.platform.expect_sh(
-        "adb", "connect", "0a388e93", result=ShResult("", False))
-    self.platform.expect_sh("adb", "devices", "-l", result=ADB_DEVICES_OUTPUT)
-    _ = DriverConfig.parse("Nexus_7")
-
   def test_parse_adb_phone_identifier(self):
-    self.platform.sh_results = [ADB_DEVICES_OUTPUT, "", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
 
     config = DriverConfig.parse("Nexus_7")
     assert isinstance(config, DriverConfig)
-    self.assertEqual(len(self.platform.sh_cmds), 3)
+    self.assertEqual(len(self.platform.sh_cmds), 2)
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
@@ -214,11 +198,11 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertTrue(config.is_local)
 
   def test_parse_adb_phone_serial(self):
-    self.platform.sh_results = [ADB_DEVICES_OUTPUT, "", ADB_DEVICES_OUTPUT]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
 
     config = DriverConfig.parse("0a388e93")
     assert isinstance(config, DriverConfig)
-    self.assertEqual(len(self.platform.sh_cmds), 3)
+    self.assertEqual(len(self.platform.sh_cmds), 2)
 
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
