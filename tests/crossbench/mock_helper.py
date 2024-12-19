@@ -20,7 +20,7 @@ from crossbench import plt
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
-from crossbench.plt.base import MachineArch, Platform
+from crossbench.plt.base import MachineArch, Platform, SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -43,6 +43,25 @@ class DownloadMockData:
   path: pth.AnyPath
   data: Optional[bytes] = None
 
+class ShResult:
+  def __init__(self,
+               result: Union[str, bytes] = "",
+               success: bool = True) -> None:
+    if isinstance(result, str):
+      result = result.encode("utf-8")
+
+    assert isinstance(result, bytes)
+
+    self._result = result
+    self._success = success
+
+  @property
+  def result(self) -> bytes:
+    return self._result
+
+  @property
+  def success(self) -> bool:
+    return self._success
 
 class MockPlatformMixin:
 
@@ -51,7 +70,7 @@ class MockPlatformMixin:
     # Cache some helper properties that might fail under pyfakefs.
     self._sh_cmds: List[TupleCmdArgs] = []
     self._expected_sh_cmds: Optional[List[TupleCmdArgs]] = None
-    self._sh_results: List[bytes] = []
+    self._sh_results: List[ShResult] = []
     self._download_results: List[DownloadMockData] = []
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
@@ -83,16 +102,18 @@ class MockPlatformMixin:
       self.touch(path)
     return path
 
-  def expect_sh(self,
-                *args: Union[str, pathlib.Path],
-                result: Union[str, bytes] = "") -> None:
+  def expect_sh(
+      self,
+      *args: Union[str, pathlib.Path],
+      result: Union[str, ShResult] = ShResult()
+  ) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
       self._expected_sh_cmds.append(self._convert_sh_args(*args))
     if isinstance(result, str):
-      result = result.encode("utf-8")
-    assert isinstance(result, bytes)
+      result = ShResult(result)
+    assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
   def _convert_sh_args(self, *args: Union[str, pathlib.Path]) -> TupleCmdArgs:
@@ -104,11 +125,11 @@ class MockPlatformMixin:
     return tuple(converted_args)
 
   @property
-  def sh_results(self) -> List[bytes]:
+  def sh_results(self) -> List[ShResult]:
     return list(self._sh_results)
 
   @sh_results.setter
-  def sh_results(self, results: Iterable[Union[str, bytes]]) -> None:
+  def sh_results(self, results: Iterable[ShResult]) -> None:
     assert not self._sh_results, "Trying to override non-consumed results"
     assert not self._expected_sh_cmds, (
         "expect_sh() cannot be used together with sh_results")
@@ -230,7 +251,12 @@ class MockPlatformMixin:
       cmd = shlex.join(map(str, args))
       raise ValueError(f"After {len(self._sh_cmds)} cmds: "
                        f"MockPlatform has no more sh outputs for cmd: {cmd}")
-    return self._sh_results.pop(0)
+
+    sh_result = self._sh_results.pop(0)
+    if not sh_result.success:
+      raise SubprocessError(self, subprocess.CompletedProcess(args, -1))
+
+    return sh_result.result
 
   def sh(self,
          *args: Union[str, pathlib.Path],
