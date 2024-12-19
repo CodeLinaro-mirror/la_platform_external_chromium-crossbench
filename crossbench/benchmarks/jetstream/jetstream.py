@@ -13,6 +13,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
 
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
                                       geomean)
@@ -139,13 +140,15 @@ class JetStreamProbeContext(JsonResultProbeContext):
     results[benchmark.plan.name] = data;
     benchmarks.push(benchmark);
   };
-  return results;
+  return JSON.stringify(results);
 """
 
   def to_json(self, actions: Actions) -> Dict[str, float]:
-    data = actions.js(self.JS)
-    assert len(data) > 0, "No benchmark data generated"
-    return data
+    # Use serialized json as transport format to preserve object key order.
+    json_payload = actions.js(self.JS)
+    json_data = json.loads(json_payload)
+    ObjectParser.non_empty_dict(json_data, "jetstream metrics")
+    return json_data
 
   def process_json_data(self, json_data: Json) -> Json:
     assert isinstance(json_data, dict)

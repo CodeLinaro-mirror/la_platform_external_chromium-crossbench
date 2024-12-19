@@ -131,17 +131,19 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
 
   def _generate_test_probe_results(self, iterations, story):
     values = [21.3] * iterations
-    probe_result = {
-        "Geomean": self._generate_s3_metrics("Geomean", values),
-        "Score": self._generate_s3_metrics("Score", values),
-    }
+    probe_result = {}
+    for substory_name in story.substories:
+      probe_result[substory_name] = self._generate_s3_metrics(
+          substory_name, values)
+
     for iteration in range(iterations):
       key = f"Iteration-{iteration}-Total"
       probe_result[key] = self._generate_s3_metrics(key, values)
 
-    for substory_name in story.substories:
-      probe_result[substory_name] = self._generate_s3_metrics(
-          substory_name, values)
+    probe_result.update({
+        "Geomean": self._generate_s3_metrics("Geomean", values),
+        "Score": self._generate_s3_metrics("Score", values),
+    })
     return probe_result
 
   def test_run_combined(self):

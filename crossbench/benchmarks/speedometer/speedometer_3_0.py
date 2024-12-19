@@ -17,7 +17,7 @@ from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
 from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
-from crossbench.parse import DurationParser, NumberParser
+from crossbench.parse import DurationParser, NumberParser, ObjectParser
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -56,19 +56,11 @@ class Speedometer30Probe(SpeedometerProbe):
 
 
 class Speedometer30ProbeContext(SpeedometerProbeContext):
-  JS: str = "return window.benchmarkClient.metrics"
+  JS = "return JSON.stringify(window.benchmarkClient.metrics);"
 
-  def process_json_data(self, json_data) -> Any:
-    assert isinstance(json_data, dict)
-    # Move aggregate scores to the end
-    aggregate_keys = []
-    for metric_key in json_data.keys():
-      if metric_key.startswith("Iteration-"):
-        aggregate_keys.append(metric_key)
-    aggregate_keys.extend(["Geomean", "Score"])
-    for metric_key in aggregate_keys:
-      json_data[metric_key] = json_data.pop(metric_key)
-    return json_data
+  def to_json(self, actions: Actions) -> Json:
+    json_data = super().to_json(actions)
+    return ObjectParser.non_empty_dict(json_data, "speedometer metrics")
 
   def flatten_json_data(self, json_data: Any) -> Json:
     result: Dict[str, float] = {}

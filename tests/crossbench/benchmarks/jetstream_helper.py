@@ -5,6 +5,7 @@
 import abc
 import copy
 import csv
+import json
 from typing import Optional, Type
 from unittest import mock
 
@@ -86,7 +87,7 @@ class JetStream2BaseTestCase(
           browser.expect_js()
           # Wait until done
           browser.expect_js(result=True)
-          browser.expect_js(result=jetstream_probe_results)
+          browser.expect_js(result=json.dumps(jetstream_probe_results))
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 

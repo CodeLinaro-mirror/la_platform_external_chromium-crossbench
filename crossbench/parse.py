@@ -275,7 +275,7 @@ class ObjectParser:
 
   @classmethod
   def non_empty_sequence(cls, value: Any, name: str = "value") -> Sequence[Any]:
-    sequence_value = cls.sequence(value)
+    sequence_value = cls.sequence(value, name)
     if not sequence_value:
       raise argparse.ArgumentTypeError(
           f"Expected {name} to be a non-empty sequence.")

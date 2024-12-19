@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Tuple
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
 from crossbench.helper import url_helper
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
@@ -29,7 +30,8 @@ class Speedometer2Probe(SpeedometerProbe):
 class Speedometer2ProbeContext(SpeedometerProbeContext):
 
   def process_json_data(self, json_data) -> Any:
-    assert isinstance(json_data, list)
+    json_data = ObjectParser.non_empty_sequence(json_data,
+                                                "speedometer metrics")
     # Move aggregate scores to the end
     for iteration_data in json_data:
       assert isinstance(iteration_data, dict)

@@ -170,7 +170,7 @@ class SpeedometerBaseTestCase(
           browser.expect_js()
           # Wait until done
           browser.expect_js(result=True)
-          browser.expect_js(result=speedometer_probe_results)
+          browser.expect_js(result=json.dumps(speedometer_probe_results))
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 

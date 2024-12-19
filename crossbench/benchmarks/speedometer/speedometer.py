@@ -15,7 +15,7 @@ from crossbench.benchmarks.base import (PressBenchmark,
                                         PressBenchmarkStoryFilter)
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.helper import url_helper
-from crossbench.parse import NumberParser
+from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes.helper import Flatten
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import Metric, MetricsMerger
@@ -112,15 +112,17 @@ class SpeedometerProbe(
 
 
 class SpeedometerProbeContext(JsonResultProbeContext):
-
-  JS: str = "return window.suiteValues;"
+  JS = "return JSON.stringify(window.suiteValues);"
 
   def to_json(self, actions: Actions) -> Json:
-    return actions.js(self.JS)
+    # Use serialized json as transport format to preserve object key order.
+    json_payload = actions.js(self.JS)
+    return json.loads(json_payload)
 
   def flatten_json_data(self, json_data: Any) -> Json:
     # json_data may contain multiple iterations, merge those first
-    assert isinstance(json_data, list), f"Expected list got {type(json_data)}"
+    json_data = ObjectParser.non_empty_sequence(json_data,
+                                                "speedometer metrics")
     merged = MetricsMerger(
         json_data, key_fn=_probe_remove_tests_segments).to_json(
             value_fn=lambda values: values.geomean, sort=self.probe.SORT_KEYS)
