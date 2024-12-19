@@ -278,9 +278,9 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
           driver_port, self._forward_port)
     super().__init__(f"http://127.0.0.1:{self._forward_port}", options=options)
 
-  def close(self) -> None:
+  def quit(self) -> None:
     try:
-      super().close()
+      super().quit()
     finally:
       self._stop_remote_driver()
 
