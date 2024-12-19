@@ -51,6 +51,13 @@ def adb_devices(
   return result
 
 
+def adb_connect(device_id: str,
+                platform: Platform,
+                adb_bin: Optional[pth.AnyPath] = None) -> None:
+  adb_bin = adb_bin or _find_adb_bin(platform)
+  platform.sh(adb_bin, "connect", device_id)
+
+
 def _parse_adb_device_info(value: str) -> Dict[str, str]:
   parts = value.split(" ")
   assert parts[0], "device"

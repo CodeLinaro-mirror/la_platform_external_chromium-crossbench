@@ -17,7 +17,9 @@ from crossbench import plt
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
-from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
+from crossbench.plt.android_adb import (Adb, AndroidAdbPlatform, adb_connect,
+                                        adb_devices)
+from crossbench.plt.base import SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.ios import ios_devices
 
@@ -229,6 +231,9 @@ class DriverConfig(ConfigObject):
 
   def validate_android(self) -> None:
     platform = plt.PLATFORM
+
+    self._try_connect(platform)
+
     devices = adb_devices(platform, self.adb_bin)
     names = list(devices.keys())
     if not devices:
@@ -322,6 +327,17 @@ class DriverConfig(ConfigObject):
   def get_adb_platform(self) -> plt.Platform:
     adb = Adb(plt.PLATFORM, self.device_id, self.adb_bin)
     return AndroidAdbPlatform(plt.PLATFORM, self.device_id, adb)
+
+  def _try_connect(self, platform: plt.Platform) -> None:
+
+    if not self.device_id:
+      return
+
+    try:
+      adb_connect(self.device_id, platform, self.adb_bin)
+    except SubprocessError as e:
+      logging.debug("Could not connect to adb device: %s", e)
+
 
 def driver_device_id(device_id: Optional[str],
                      settings: Optional[immutabledict]) -> Optional[str]:
