@@ -132,6 +132,8 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
   def print_help(self, file=None) -> None:
     super().print_help(file=file)
     self.print_probes(file=file)
+    self.print_urls(file=file)
+    self.print_example(file=file)
 
   def print_probes(self, file=None) -> None:
     lines = [
@@ -154,6 +156,22 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
     file.write(textwrap.indent(contents, "    "))
     file.write("\n")
 
+  def print_urls(self, file=None) -> None:
+    file = file or sys.stdout
+    file.write("\n")
+    file.write("URLS:\n")
+    file.write("  Source: https://chromium.googlesource.com/crossbench\n")
+    file.write("  Bugs:   "
+               "https://issues.chromium.org/u/1/issues/new?component=1456712\n")
+
+  def print_example(self, file=None) -> None:
+    file = file or sys.stdout
+    file.write("\n")
+    file.write("EXAMPLE:\n")
+    file.write("  ./cb.py speedometer --browser=chrome-m131 "
+               "--browser=out/release/chrome --probe=profiling\n\n")
+    readme_file = pth.AnyPath(__file__).parent / "README.md"
+    file.write(f"  See {readme_file} for more details.\n")
 
 class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
@@ -183,7 +201,7 @@ class CrossBenchCLI:
     self._subparsers: Dict[BenchmarkClsT, CrossBenchArgumentParser] = {}
     self.parser = MainCrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
-                     "with configurable measurement probes."))
+                     "with configurable measurement probes.\n"))
     self.describe_parser = CrossBenchArgumentParser()
     self.recorder_parser = CrossBenchArgumentParser()
     self.args = argparse.Namespace()
