@@ -28,6 +28,7 @@ from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
+from crossbench.helper.cwd import ChangeCWD
 from crossbench.network.base import Network
 from crossbench.parse import LateArgumentError, ObjectParser
 
@@ -60,8 +61,9 @@ class BrowserVariantsConfig:
     if args.browser_config:
       with late_argument_type_error_wrapper("--browser-config"):
         path = args.browser_config.expanduser()
-        with path.open(encoding="utf-8") as f:
-          browser_config.parse_text_io(f, args)
+        with ChangeCWD(path.parent):
+          with path.open(encoding="utf-8") as f:
+            browser_config.parse_text_io(f, args)
     else:
       with late_argument_type_error_wrapper("--browser"):
         browser_config.parse_args(args)
