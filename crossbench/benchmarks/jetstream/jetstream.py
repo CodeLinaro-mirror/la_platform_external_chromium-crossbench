@@ -147,7 +147,7 @@ class JetStreamProbeContext(JsonResultProbeContext):
     # Use serialized json as transport format to preserve object key order.
     json_payload = actions.js(self.JS)
     json_data = json.loads(json_payload)
-    ObjectParser.non_empty_dict(json_data, "jetstream metrics")
+    ObjectParser.non_empty_dict(json_data, f"{self.probe.name} metrics")
     return json_data
 
   def process_json_data(self, json_data: Json) -> Json:

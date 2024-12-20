@@ -31,7 +31,7 @@ class Speedometer2ProbeContext(SpeedometerProbeContext):
 
   def process_json_data(self, json_data) -> Any:
     json_data = ObjectParser.non_empty_sequence(json_data,
-                                                "speedometer metrics")
+                                                f"{self.probe.name} metrics")
     # Move aggregate scores to the end
     for iteration_data in json_data:
       assert isinstance(iteration_data, dict)
