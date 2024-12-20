@@ -901,6 +901,16 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def get_argument(self, arg_name: str) -> _ConfigArgParser:
     return self._args[arg_name]
 
+  def has_all_required_args(self, config_data: Dict[str, Any]) -> bool:
+    config_keys: Set[str] = set(config_data.keys())
+    for arg in self._args.values():
+      if arg.required:
+        names = set(arg.aliases)
+        names.add(arg.name)
+        if not config_keys.intersection(names):
+          return False
+    return True
+
   def kwargs_from_config(self, config_data: Dict[str, Any],
                          **extra_kwargs) -> Dict[str, Any]:
     with exception.annotate_argparsing(

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import TYPE_CHECKING, Dict, Optional, Set
+from typing import TYPE_CHECKING, Dict, Optional
 
 from crossbench.benchmarks.loading.point import Point
 from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
@@ -69,17 +69,6 @@ class SelectorConfig(ConfigObject):
     return parser
 
 
-def has_all_required_args(config: Dict, config_parser: ConfigParser) -> bool:
-  config_keys: Set[str] = set(config.keys())
-  for arg in config_parser.arg_parsers:
-    if arg.required:
-      names = set(arg.aliases)
-      names.add(arg.name)
-      if not config_keys.intersection(names):
-        return False
-  return True
-
-
 @dataclasses.dataclass(frozen=True)
 class PositionConfig(ConfigObject):
   coordinates: Optional[CoordinatesConfig] = None
@@ -92,11 +81,11 @@ class PositionConfig(ConfigObject):
   @classmethod
   def parse_dict(cls, config: Dict) -> PositionConfig:
     selector_parser = SelectorConfig.config_parser()
-    if has_all_required_args(config, selector_parser):
+    if selector_parser.has_all_required_args(config):
       return cls(selector=selector_parser.parse(config))
 
     coordinates_parser = CoordinatesConfig.config_parser()
-    if has_all_required_args(config, coordinates_parser):
+    if coordinates_parser.has_all_required_args(config):
       return cls(coordinates=coordinates_parser.parse(config))
 
     raise argparse.ArgumentTypeError(

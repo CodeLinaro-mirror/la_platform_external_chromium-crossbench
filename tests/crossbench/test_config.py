@@ -304,6 +304,13 @@ class ConfigParserTestCase(unittest.TestCase):
         }})
     self.assertDictEqual(result, {"data": ("a name", [1, 2], 1)})
 
+  def test_has_all_required_args(self):
+    config_parser = CustomConfigObjectToArgumentValue.config_parser()
+    self.assertTrue(config_parser.has_all_required_args({"name": "a name"}))
+    self.assertTrue(
+        config_parser.has_all_required_args({"name_alias": "a name"}))
+    self.assertFalse(config_parser.has_all_required_args({"integer": 1}))
+
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
