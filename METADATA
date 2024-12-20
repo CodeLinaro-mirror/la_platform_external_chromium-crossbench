@@ -1,0 +1,16 @@
+name: "crossbench"
+description:
+    "Crossbench is a cross-browser/cross-benchmark runner to extract "
+    "performance numbers."
+
+third_party {
+  identifier {
+    type: "Git"
+    value: "https://chromium.googlesource.com/crossbench"
+    primary_source: true
+    version: "49340d5b69d458f1496edc23064dd9969b2033fa"
+  }
+  version: "49340d5b69d458f1496edc23064dd9969b2033fa"
+  last_upgrade_date { year: 2024 month: 11 day: 11 }
+  license_type: NOTICE
+}
