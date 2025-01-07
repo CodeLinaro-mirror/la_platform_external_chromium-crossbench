@@ -33,6 +33,7 @@ from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
+from crossbench.helper.cwd import ChangeCWD
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
@@ -930,7 +931,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin),}}}
-    config_file = pth.LocalPath("config.hjson")
+    config_file = pth.LocalPath("config/config.hjson")
+    config_file.parent.mkdir()
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
@@ -946,6 +948,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browser = config.variants[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.app_path, browser_bin)
+
+  def test_from_cli_args_browser_config_relative_path(self):
+    some_dir = pth.LocalPath("custom/test/dir")
+    some_dir.mkdir(parents=True)
+    with ChangeCWD(some_dir):
+      self.test_from_cli_args_browser_config()
 
   def test_from_cli_args_browser(self):
     if self.platform.is_win:

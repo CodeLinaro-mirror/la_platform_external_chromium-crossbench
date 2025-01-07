@@ -60,7 +60,7 @@ class BrowserVariantsConfig:
     browser_config = BrowserVariantsConfig()
     if args.browser_config:
       with late_argument_type_error_wrapper("--browser-config"):
-        path = args.browser_config.expanduser()
+        path = args.browser_config.expanduser().absolute()
         with ChangeCWD(path.parent):
           with path.open(encoding="utf-8") as f:
             browser_config.parse_text_io(f, args)
