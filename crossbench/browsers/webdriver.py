@@ -187,9 +187,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
       if target in ("_self", None):
-        handles = self._private_driver.window_handles
-        assert handles, "Browser has no more opened windows."
-        self._private_driver.switch_to.window(handles[-1])
+        # Do the navigation in the active tab.
+        pass
       elif target == "_new_tab":
         self._private_driver.switch_to.new_window("tab")
       elif target == "_new_window":
