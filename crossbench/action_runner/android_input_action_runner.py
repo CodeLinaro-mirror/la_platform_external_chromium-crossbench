@@ -15,6 +15,8 @@ from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
+from crossbench.action_runner.screenshot_annotation import \
+    ScreenshotPointAnnotation, ScreenshotRectAnnotation
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
@@ -197,6 +199,8 @@ return [
             raise ElementNotFoundError(selector_config.selector)
           return
 
+        self.add_failure_screenshot_annotation(
+            ScreenshotRectAnnotation(label=selector_config.selector, rect=rect))
         coordinates = Point(rect.mid_x, rect.mid_y)
 
       cmd: List[str] = ["input"]
@@ -204,6 +208,8 @@ return [
       if use_mouse:
         cmd.append("mouse")
       assert coordinates, "missing coordinates"
+      self.add_failure_screenshot_annotation(
+          ScreenshotPointAnnotation(label="click", point=coordinates))
       cmd.extend(["tap", str(coordinates.x), str(coordinates.y)])
 
       run.browser_platform.sh(*cmd)

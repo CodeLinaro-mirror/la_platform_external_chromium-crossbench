@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple
 
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.action.enums import ReadyState
@@ -15,6 +15,7 @@ from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
+from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
 from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
@@ -246,14 +247,18 @@ class DefaultActionRunner(ActionRunner):
             "text_input action is behind schedule! Consider extending this "
             "action's duration otherwise the action may timeout.")
 
-  def screenshot_impl(self, run: Run, suffix: str) -> None:
+  def screenshot_impl(
+      self,
+      run: Run,
+      suffix: str,
+      annotations: Optional[Sequence[ScreenshotAnnotation]] = None) -> None:
     ctx = run.find_probe_context(ScreenshotProbe)
     if not ctx:
       logging.warning("No screenshot probe for screenshot on %s",
                       repr(self.info_stack))
       return
     assert isinstance(ctx, ScreenshotProbeContext)
-    ctx.screenshot("_".join(self.info_stack) + f"_{suffix}")
+    ctx.screenshot("_".join(self.info_stack) + f"_{suffix}", annotations)
 
   def dump_html_impl(self, run: Run, suffix: str) -> None:
     ctx = run.find_probe_context(DumpHtmlProbe)

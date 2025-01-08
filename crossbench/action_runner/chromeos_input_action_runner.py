@@ -11,6 +11,8 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING
 
+from crossbench.action_runner.screenshot_annotation import \
+    ScreenshotPointAnnotation, ScreenshotRectAnnotation
 import crossbench.path as pth
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -406,10 +408,19 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
         if selector_config.required:
           raise ElementNotFoundError(selector_config.selector)
         return (None, viewport_info)
-      return (element_rect.middle, viewport_info)
+      self.add_failure_screenshot_annotation(
+          ScreenshotRectAnnotation(
+              label=selector_config.selector, rect=element_rect))
+      click_location = element_rect.middle
+      self.add_failure_screenshot_annotation(
+          ScreenshotPointAnnotation(label="click", point=click_location))
+      return (click_location, viewport_info)
     elif coordinates_config := action.position.coordinates:
       viewport_info = self._get_viewport_info(actions, None, False)
-      return (coordinates_config.point(), viewport_info)
+      click_location = coordinates_config.point()
+      self.add_failure_screenshot_annotation(
+          ScreenshotPointAnnotation(label="click", point=click_location))
+      return (click_location, viewport_info)
     else:
       raise RuntimeError("Missing coordinates")
 

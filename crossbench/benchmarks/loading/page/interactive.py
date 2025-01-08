@@ -77,7 +77,7 @@ class InteractivePage(Page):
                                message: str = "failure") -> None:
     action_runner = get_action_runner(run)
     try:
-      action_runner.screenshot_impl(run, message)
+      action_runner.failure_screenshot(run, message)
     except Exception as e:  # pylint: disable=broad-except
       logging.error("Failed to take a failure screenshot: %s", str(e))
 
