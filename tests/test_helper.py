@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 import sys
 from typing import Union
@@ -21,6 +22,10 @@ def crossbench_dir() -> pathlib.Path:
   if is_google_env():
     return root_dir()
   return root_dir() / "crossbench"
+
+
+def is_on_swarming():
+  return "SWARMING_SERVER" in os.environ
 
 
 def run_pytest(path: Union[str, pathlib.Path], *args):

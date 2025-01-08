@@ -31,6 +31,8 @@ class NativePlatformTestCase(unittest.TestCase):
     self.platform.sleep(dt.timedelta(seconds=0.1))
 
   def test_cpu_details(self):
+    if test_helper.is_on_swarming():
+      self.skipTest("Skipping this to run in CQ due to crbug.com/384993339.")
     details = self.platform.cpu_details()
     self.assertLess(0, details["physical cores"])
 
@@ -490,6 +492,8 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     self.assertTrue(pathlib.Path(bash_bin).exists())
 
   def test_system_details(self):
+    if test_helper.is_on_swarming():
+      self.skipTest("Skipping this to run in CQ due to crbug.com/384993339.")
     details = self.platform.system_details()
     self.assertTrue(details)
 
@@ -694,6 +698,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertFalse(self.platform.is_remote)
 
   def test_set_main_screen_brightness(self):
+    if test_helper.is_on_swarming():
+      self.skipTest("Skipping this to run in CQ due to crbug.com/384993339.")
     prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
     plt.PLATFORM.set_main_display_brightness(brightness_level)
@@ -703,6 +709,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(prev_level, plt.PLATFORM.get_main_display_brightness())
 
   def test_check_autobrightness(self):
+    if test_helper.is_on_swarming():
+      self.skipTest("Skipping this to run in CQ due to crbug.com/384993339.")
     self.platform.check_autobrightness()
 
   def test_exec_apple_script(self):
