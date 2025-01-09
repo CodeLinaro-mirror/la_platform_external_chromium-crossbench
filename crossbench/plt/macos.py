@@ -51,18 +51,45 @@ class MacOSPlatform(PosixPlatform):
   @functools.cached_property
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
-    cores_info = self._get_cpu_cores_info()
-    return f"{brand} {cores_info}"
+    num_cores = self.cpu_cores
+    return f"{brand} {num_cores} cores"
 
-  def _get_cpu_cores_info(self):
+  @functools.cached_property
+  def cpu_cores(self) -> int:
+    if self.is_local:
+      return super().cpu_cores
     cores = self.sh_stdout("sysctl", "-n", "machdep.cpu.core_count").strip()
-    return f"{cores} cores"
+    return int(cores)
 
   @property
   def is_battery_powered(self) -> bool:
     if self.is_local:
       return super().is_battery_powered
     return "Battery Power" in self.sh_stdout("pmset", "-g", "batt")
+
+  def get_relative_cpu_speed(self) -> float:
+    try:
+      lines = self.sh_stdout("pmset", "-g", "therm").split()
+      for index, line in enumerate(lines):
+        if line == "CPU_Speed_Limit":
+          return int(lines[index + 2]) / 100.0
+    except SubprocessError:
+      pass
+    logging.debug("Could not get relative CPU speed: %s", tb.format_exc())
+    return 1
+
+  @functools.lru_cache(maxsize=1)
+  def system_details(self) -> Dict[str, Any]:
+    details = super().system_details()
+    details.update({
+        "system_profiler":
+            self.sh_stdout("system_profiler", "SPHardwareDataType"),
+        "sysctl_machdep_cpu":
+            self.sh_stdout("sysctl", "machdep.cpu"),
+        "sysctl_hw":
+            self.sh_stdout("sysctl", "hw"),
+    })
+    return details
 
   def _find_app_binary_path(self, app_path: pth.AnyPath) -> pth.AnyPath:
     assert app_path.suffix == ".app", f"Expected .app but got {app_path}"
@@ -218,29 +245,6 @@ class MacOSPlatform(PosixPlatform):
       return psutil.Process(int(pid)).as_dict()
 
     return None
-
-  def get_relative_cpu_speed(self) -> float:
-    try:
-      lines = self.sh_stdout("pmset", "-g", "therm").split()
-      for index, line in enumerate(lines):
-        if line == "CPU_Speed_Limit":
-          return int(lines[index + 2]) / 100.0
-    except SubprocessError:
-      pass
-    logging.debug("Could not get relative CPU speed: %s", tb.format_exc())
-    return 1
-
-  def system_details(self) -> Dict[str, Any]:
-    details = super().system_details()
-    details.update({
-        "system_profiler":
-            self.sh_stdout("system_profiler", "SPHardwareDataType"),
-        "sysctl_machdep_cpu":
-            self.sh_stdout("sysctl", "machdep.cpu"),
-        "sysctl_hw":
-            self.sh_stdout("sysctl", "hw"),
-    })
-    return details
 
   def check_system_monitoring(self, disable: bool = False) -> bool:
     return self.check_crowdstrike(disable)

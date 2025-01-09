@@ -54,8 +54,8 @@ class LinuxPlatform(PosixPlatform):
       if line.startswith("model name"):
         _, cpu_str = line.split(":", maxsplit=2)
         break
-    if cores_info := self._get_cpu_cores_info():
-      cpu_str = f"{cpu_str} {cores_info}"
+    if num_cores := self.cpu_cores:
+      cpu_str = f"{cpu_str} {num_cores} cores"
     return cpu_str
 
   @property
@@ -70,6 +70,7 @@ class LinuxPlatform(PosixPlatform):
       return self.sh("on_ac_power", check=False).returncode == 1
     return False
 
+  @functools.lru_cache(maxsize=1)
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
     for info_bin in ("lscpu", "inxi"):

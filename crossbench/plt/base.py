@@ -131,6 +131,13 @@ class Platform(abc.ABC):
   def cpu(self) -> str:
     pass
 
+  @functools.cached_property
+  def cpu_cores(self) -> int:
+    self.assert_is_local()
+    if cores := psutil.cpu_count(logical=False):
+      return cores
+    return 0
+
   @property
   def full_version(self) -> str:
     return f"{self.name} {self.version} {self.machine}"
@@ -163,6 +170,7 @@ class Platform(abc.ABC):
       return MachineArch.ARM_32
     raise NotImplementedError(f"Unsupported machine type: {raw}")
 
+  @functools.lru_cache(maxsize=1)
   def _raw_machine_arch(self) -> str:
     self.assert_is_local()
     return py_platform.machine()
@@ -225,6 +233,76 @@ class Platform(abc.ABC):
     if not status:
       return False
     return not status.power_plugged
+
+  @functools.lru_cache(maxsize=1)
+  def cpu_details(self) -> Dict[str, Any]:
+    self.assert_is_local()
+    details = {
+        "physical cores":
+            self.cpu_cores,
+        "logical cores":
+            psutil.cpu_count(logical=True),
+        "usage":
+            psutil.cpu_percent(  # pytype: disable=attribute-error
+                percpu=True, interval=0.1),
+        "total usage":
+            psutil.cpu_percent(),
+        "system load":
+            psutil.getloadavg(),
+        "info":
+            self.cpu,
+    }
+    try:
+      cpu_freq = psutil.cpu_freq()
+    except FileNotFoundError as e:
+      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
+      return details
+    details.update({
+        "max frequency": f"{cpu_freq.max:.2f}Mhz",
+        "min frequency": f"{cpu_freq.min:.2f}Mhz",
+        "current frequency": f"{cpu_freq.current:.2f}Mhz",
+    })
+    return details
+
+  @functools.lru_cache(maxsize=1)
+  def system_details(self) -> Dict[str, Any]:
+    return {
+        "machine": str(self.machine),
+        "os": self.os_details(),
+        "python": self.python_details(),
+        "CPU": self.cpu_details(),
+    }
+
+  @functools.lru_cache(maxsize=1)
+  def os_details(self) -> JsonDict:
+    self.assert_is_local()
+    return {
+        "system": py_platform.system(),
+        "release": py_platform.release(),
+        "version": py_platform.version(),
+        "platform": py_platform.platform(),
+    }
+
+  @functools.lru_cache(maxsize=1)
+  def python_details(self) -> JsonDict:
+    self.assert_is_local()
+    return {
+        "version": py_platform.python_version(),
+        "bits": 64 if sys.maxsize > 2**32 else 32,
+    }
+
+  def get_relative_cpu_speed(self) -> float:
+    return 1
+
+  def is_thermal_throttled(self) -> bool:
+    return self.get_relative_cpu_speed() < 1
+
+  def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
+    return psutil.disk_usage(str(self.local_path(path)))
+
+  def cpu_usage(self) -> float:
+    self.assert_is_local()
+    return 1 - psutil.cpu_times_percent().idle / 100
 
   def _search_executable(
       self,
@@ -778,72 +856,6 @@ class Platform(abc.ABC):
   def check_system_monitoring(self, disable: bool = False) -> bool:
     # pylint: disable=unused-argument
     return True
-
-  def get_relative_cpu_speed(self) -> float:
-    return 1
-
-  def is_thermal_throttled(self) -> bool:
-    return self.get_relative_cpu_speed() < 1
-
-  def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
-    return psutil.disk_usage(str(self.local_path(path)))
-
-  def cpu_usage(self) -> float:
-    self.assert_is_local()
-    return 1 - psutil.cpu_times_percent().idle / 100
-
-  def cpu_details(self) -> Dict[str, Any]:
-    self.assert_is_local()
-    details = {
-        "physical cores":
-            psutil.cpu_count(logical=False),
-        "logical cores":
-            psutil.cpu_count(logical=True),
-        "usage":
-            psutil.cpu_percent(  # pytype: disable=attribute-error
-                percpu=True, interval=0.1),
-        "total usage":
-            psutil.cpu_percent(),
-        "system load":
-            psutil.getloadavg(),
-        "info":
-            self.cpu,
-    }
-    try:
-      cpu_freq = psutil.cpu_freq()
-    except FileNotFoundError as e:
-      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
-      return details
-    details.update({
-        "max frequency": f"{cpu_freq.max:.2f}Mhz",
-        "min frequency": f"{cpu_freq.min:.2f}Mhz",
-        "current frequency": f"{cpu_freq.current:.2f}Mhz",
-    })
-    return details
-
-  def system_details(self) -> Dict[str, Any]:
-    return {
-        "machine": str(self.machine),
-        "os": self.os_details(),
-        "python": self.python_details(),
-        "CPU": self.cpu_details(),
-    }
-
-  def os_details(self) -> JsonDict:
-    self.assert_is_local()
-    return {
-        "system": py_platform.system(),
-        "release": py_platform.release(),
-        "version": py_platform.version(),
-        "platform": py_platform.platform(),
-    }
-
-  def python_details(self) -> JsonDict:
-    self.assert_is_local()
-    return {
-        "version": py_platform.python_version(),
-        "bits": 64 if sys.maxsize > 2**32 else 32,
-    }
 
   def download_to(self, url: str, path: pth.LocalPath) -> pth.LocalPath:
     self.assert_is_local()

@@ -207,6 +207,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_adb(
         "shell", "getprop dalvik.vm.isa.arm.variant", result="cortex-a999")
     self.expect_adb("shell", "getprop ro.board.platform", result="msmnile")
+    self.expect_adb("shell", "cat /sys/devices/system/cpu/possible", result="")
+    self.expect_adb("shell", "which nproc", result="")
+    self.expect_adb("shell", "which getconf", result="")
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile")

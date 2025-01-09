@@ -424,8 +424,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                device_identifier: Optional[str] = None,
                adb: Optional[Adb] = None) -> None:
     super().__init__(host_platform)
-    self._system_details: Optional[Dict[str, Any]] = None
-    self._cpu_details: Optional[Dict[str, Any]] = None
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb = adb or Adb(host_platform, device_identifier)
@@ -455,8 +453,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     cpu_str = f"{variant} {platform}"
-    if cores_info := self._get_cpu_cores_info():
-      cpu_str = f"{cpu_str} {cores_info}"
+    if num_cores := self.cpu_cores:
+      cpu_str = f"{cpu_str} {num_cores} cores"
     return cpu_str
 
   @property
@@ -478,11 +476,26 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       raise ValueError(f"Unknown android CPU ABI: {cpu_abi}")
     return arch
 
+  def get_relative_cpu_speed(self) -> float:
+    # TODO figure out
+    return 1.0
+
+  @functools.lru_cache(maxsize=1)
+  def python_details(self) -> JsonDict:
+    # Python is not available on android.
+    return {}
+
+  @functools.lru_cache(maxsize=1)
+  def os_details(self) -> JsonDict:
+    # TODO: add more info
+    return {"version": self.version}
+
   def app_path_to_package(self, app_path: pth.AnyPathLike) -> str:
     path = self.path(app_path)
-    if len(path.parts) > 1:
+    parts = path.parts
+    if len(parts) > 1:
       raise ValueError(f"Invalid android package name: '{path}'")
-    package: str = path.parts[0]
+    package: str = parts[0]
     packages = self.adb.packages()
     if package not in packages:
       raise ValueError(f"Package '{package}' is not installed on {self._adb}")
@@ -523,18 +536,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     # adb shell dumpsys activity activities
     # TODO: implement
     return None
-
-  def get_relative_cpu_speed(self) -> float:
-    # TODO figure out
-    return 1.0
-
-  def python_details(self) -> JsonDict:
-    # Python is not available on android.
-    return {}
-
-  def os_details(self) -> JsonDict:
-    # TODO: add more info
-    return {"version": self.version}
 
   def check_autobrightness(self) -> bool:
     # adb shell dumpsys display
@@ -639,11 +640,10 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       res.append({"pid": int(tokens[0]), "name": tokens[1]})
     return res
 
+  @functools.lru_cache(maxsize=1)
   def cpu_details(self) -> Dict[str, Any]:
-    if self._cpu_details:
-      return self._cpu_details
     # TODO: Implement properly (i.e. remove all n/a values)
-    self._cpu_details = {
+    return {
         "info": self.cpu,
         "physical cores": "n/a",
         "logical cores": "n/a",
@@ -654,7 +654,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         "min frequency": "n/a",
         "current frequency": "n/a",
     }
-    return self._cpu_details
 
   _GETPROP_RE = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
 
@@ -668,12 +667,10 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     details["android"] = properties
     return details
 
+  @functools.lru_cache(maxsize=1)
   def system_details(self) -> Dict[str, Any]:
-    if self._system_details:
-      return self._system_details
-
     # TODO: Implement properly (i.e. remove all n/a values)
-    self._system_details = {
+    return {
         "machine": self.sh_stdout("uname", "-m").split()[0],
         "os": {
             "system": self.sh_stdout("uname", "-s").split()[0],
@@ -688,7 +685,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         "CPU": self.cpu_details(),
         "Android": self._getprop_system_details(),
     }
-    return self._system_details
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)

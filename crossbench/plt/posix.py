@@ -23,6 +23,8 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+_GETCONF_PROC_RE: re.Pattern = re.compile(
+    r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   # pylint: disable=locally-disabled, redefined-builtin
@@ -35,39 +37,45 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def version(self) -> str:  #pylint: disable=invalid-overridden-method
     return self.sh_stdout("uname", "-r").strip()
 
+  @functools.lru_cache(maxsize=1)
   def _raw_machine_arch(self):
     if self.is_local:
       return super()._raw_machine_arch()
     return self.sh_stdout("uname", "-m").strip()
 
-  def _get_cpu_cores_info(self) -> str:
+  def _read_possible_cpu_count(self) -> int:
     try:
       max_cores_file = self.path("/sys/devices/system/cpu/possible")
       _, max_core = self.cat(max_cores_file).strip().split("-", maxsplit=1)
-      cores = int(max_core) + 1
-      return f"{cores} cores"
+      return int(max_core) + 1
     except Exception as e:  # pylint: disable=broad-except
       logging.debug("Failed to get detailed CPU stats: %s", e)
-      return ""
+      return 0
 
-  _GET_CPONF_PROC_RE: re.Pattern = re.compile(
-      r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
+  @functools.cached_property
+  def cpu_cores(self) -> int:
+    if self.is_local:
+      return super().cpu_cores
+    if num_cores := self._read_possible_cpu_count():
+      return num_cores
+    if self.which("nproc"):
+      return int(self.sh_stdout("nproc"))
+    if self.which("getconf"):
+      if result := _GETCONF_PROC_RE.search(self.sh_stdout("getconf", "-a")):
+        return int(result["cores"])
+    logging.debug("Failed to get num CPU cores")
+    return 0
 
+  @functools.lru_cache(maxsize=1)
   def cpu_details(self) -> Dict[str, Any]:
     if self.is_local:
       return super().cpu_details()
-    cores = -1
-    if self.which("nproc"):
-      cores = int(self.sh_stdout("nproc"))
-    elif self.which("getconf"):
-      result = self._GET_CPONF_PROC_RE.search(self.sh_stdout("getconf", "-a"))
-      if result:
-        cores = int(result["cores"])
     return {
-        "physical cores": cores,
+        "physical cores": self.cpu_cores,
         "info": self.cpu,
     }
 
+  @functools.lru_cache(maxsize=1)
   def os_details(self) -> JsonDict:
     if self.is_local:
       return super().os_details()
@@ -80,6 +88,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   _PY_VERSION: str = "import sys; print(64 if sys.maxsize > 2**32 else 32)"
 
+  @functools.lru_cache(maxsize=1)
   def python_details(self) -> JsonDict:
     if self.is_local:
       return super().python_details()
