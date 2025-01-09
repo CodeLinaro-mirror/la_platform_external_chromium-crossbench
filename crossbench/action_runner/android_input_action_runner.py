@@ -187,6 +187,14 @@ return [
       if coordinates_config := action.position.coordinates:
         coordinates = coordinates_config.point()
       elif selector_config := action.position.selector:
+        if selector_config.wait:
+          self.wait_for_element_impl(
+              actions,
+              selector=selector_config.selector,
+              timeout=action.timeout,
+              scroll_into_view=selector_config.scroll_into_view,
+              check_element_rect=True)
+
         viewport_info = self._get_viewport_info(
             run, actions, selector_config.selector,
             selector_config.scroll_into_view)

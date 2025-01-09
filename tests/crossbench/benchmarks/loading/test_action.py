@@ -274,6 +274,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
             "selector": "#button",
             "required": True,
             "scroll_into_view": True,
+            "wait": True,
         },
         "timeout": "12s"
     }
@@ -285,6 +286,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.position.selector.selector, "#button")
     self.assertTrue(action.position.selector.required)
     self.assertTrue(action.position.selector.scroll_into_view)
+    self.assertTrue(action.position.selector.wait)
     self.assertTrue(action.has_timeout)
     action.validate()
 
@@ -795,15 +797,17 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertEqual("#id", position.selector.selector)
     self.assertTrue(position.selector.required)
     self.assertFalse(position.selector.scroll_into_view)
+    self.assertFalse(position.selector.wait)
 
   def test_parse_position_from_selector_all(self):
     position = PositionConfig.from_selector(
-        selector="#id", required=False, scroll_into_view=True)
+        selector="#id", required=False, scroll_into_view=True, wait=True)
     self.assertIsNone(position.coordinates)
     self.assertIsNotNone(position.selector)
     self.assertEqual("#id", position.selector.selector)
     self.assertFalse(position.selector.required)
     self.assertTrue(position.selector.scroll_into_view)
+    self.assertTrue(position.selector.wait)
 
 
 if __name__ == "__main__":

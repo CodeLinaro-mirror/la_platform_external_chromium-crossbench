@@ -34,6 +34,7 @@
         //    selector: [CSS_SELECTOR, XPATH_SELECTOR],
         //    scroll_into_view: BOOL = false,
         //    required: BOOL = true,
+        //    wait: BOOL = false,
         //  } | [
         //    CSS_SELECTOR, XPATH_SELECTOR
         //  ]

@@ -401,6 +401,14 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
       self, actions: Actions, action: i_action.ClickAction
   ) -> Tuple[Optional[Point], ChromeOSViewportInfo]:
     if selector_config := action.position.selector:
+      if selector_config.wait:
+        self.wait_for_element_impl(
+            actions,
+            selector=selector_config.selector,
+            timeout=action.timeout,
+            scroll_into_view=selector_config.scroll_into_view,
+            check_element_rect=True)
+
       viewport_info = self._get_viewport_info(actions, selector_config.selector,
                                               selector_config.scroll_into_view)
       element_rect = viewport_info.element_rect

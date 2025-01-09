@@ -42,6 +42,11 @@ class DefaultActionRunner(ActionRunner):
       element.scrollIntoView();
   """
 
+  CHECK_ELEMENT_RECT = """
+      const rect = element.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+  """
+
   ELEMENT_CLICK = """
       element.click();
   """
@@ -67,6 +72,7 @@ class DefaultActionRunner(ActionRunner):
                           selector: str,
                           check_element_exists=False,
                           scroll_into_view=False,
+                          check_element_rect=False,
                           click=False,
                           return_on_success=False) -> Tuple[str, str]:
     # TODO: support more selector types
@@ -85,6 +91,9 @@ class DefaultActionRunner(ActionRunner):
 
     if scroll_into_view:
       script += self.ELEMENT_SCROLL_INTO_VIEW
+
+    if check_element_rect:
+      script += self.CHECK_ELEMENT_RECT
 
     if click:
       script += self.ELEMENT_CLICK
@@ -141,6 +150,9 @@ class DefaultActionRunner(ActionRunner):
         return_on_success=True)
 
     with run.actions("ClickAction", measure=False) as actions:
+      if selector_config.wait:
+        self.wait_for_element_impl(
+            actions, selector=selector_config.selector, timeout=action.timeout)
       if not actions.js(
           script, arguments=[selector]) and selector_config.required:
         raise ElementNotFoundError(selector)
@@ -184,12 +196,28 @@ class DefaultActionRunner(ActionRunner):
       scroll_y = initial_scroll_y + distance
       actions.js(do_scroll_script, arguments=[selector, scroll_y])
 
+  def wait_for_element_impl(self,
+                            actions: Actions,
+                            selector: str,
+                            timeout: dt.timedelta,
+                            scroll_into_view: bool = False,
+                            check_element_rect: bool = False) -> None:
+    selector, selector_script = self.get_selector_script(
+        selector=selector,
+        check_element_exists=True,
+        scroll_into_view=scroll_into_view,
+        check_element_rect=check_element_rect,
+        return_on_success=True)
+    # TODO: if check_element_rect, we should wait for the position to be the
+    # same
+    actions.wait_js_condition(
+        selector_script, min_wait=0.2, timeout=timeout, arguments=(selector,))
+
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
     with run.actions("WaitForElementAction", measure=False) as actions:
-      actions.wait_js_condition(
-          f"return !!document.querySelector({repr(action.selector)})", 0.2,
-          action.timeout)
+      self.wait_for_element_impl(
+          actions=actions, selector=action.selector, timeout=action.timeout)
 
   def wait_for_ready_state(self, run: Run,
                            action: i_action.WaitForReadyStateAction) -> None:

@@ -44,14 +44,17 @@ class CoordinatesConfig(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class SelectorConfig(ConfigObject):
+  selector: str
+
   required: bool
   scroll_into_view: bool
-  selector: str
+  wait: bool
 
   @classmethod
   def parse_str(cls, value) -> SelectorConfig:
     selector = ObjectParser.non_empty_str(value, "selector")
-    return cls(required=True, scroll_into_view=False, selector=selector)
+    return cls(
+        selector=selector, required=True, scroll_into_view=False, wait=False)
 
   @classmethod
   def parse_dict(cls, config: Dict) -> SelectorConfig:
@@ -63,9 +66,10 @@ class SelectorConfig(ConfigObject):
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument(
         "selector", type=ObjectParser.non_empty_str, required=True)
+    parser.add_argument("required", type=ObjectParser.bool, default=True)
     parser.add_argument(
         "scroll_into_view", type=ObjectParser.bool, default=False)
-    parser.add_argument("required", type=ObjectParser.bool, default=True)
+    parser.add_argument("wait", type=ObjectParser.bool, default=False)
     return parser
 
 
@@ -99,12 +103,14 @@ class PositionConfig(ConfigObject):
   def from_selector(cls,
                     selector: str,
                     required: bool = True,
-                    scroll_into_view: bool = False) -> PositionConfig:
+                    scroll_into_view: bool = False,
+                    wait: bool = False) -> PositionConfig:
     return cls(
         selector=SelectorConfig(
+            selector=selector,
             required=required,
             scroll_into_view=scroll_into_view,
-            selector=selector))
+            wait=wait))
 
   def validate(self) -> None:
     super().validate()
@@ -120,6 +126,7 @@ class PositionConfig(ConfigObject):
           "required": selector.required,
           "scroll_into_view": selector.scroll_into_view,
           "selector": selector.selector,
+          "wait": selector.wait,
       }
     raise ValueError(
         "Position config must have exactly one coordinates or selector")
