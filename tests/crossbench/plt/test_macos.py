@@ -34,12 +34,28 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertTrue(self.platform.is_macos)
 
   def test_app_version_non_existing(self):
+    app_path = pth.AnyPosixPath("/Applications/Google Chrome.app")
+    self.assertFalse(self.platform.exists(app_path))
+    with self.assertRaisesRegex(ValueError, "not exist"):
+      self.platform.app_version(app_path)
     app_path = pth.AnyPath("/Applications/Google Chrome.app")
     self.assertFalse(self.platform.exists(app_path))
     with self.assertRaisesRegex(ValueError, "not exist"):
       self.platform.app_version(app_path)
 
-  def test_app_version_binary(self):
+  def test_app_version_binary_any_path(self):
+    app_path = pth.AnyPosixPath("/opt/homebrew/bin/brew")
+    self.fs.create_file(app_path, st_size=100)
+    self.expect_sh(app_path, "--version", result="111.22.3")
+    self.assertEqual(self.platform.app_version(app_path), "111.22.3")
+
+  def test_app_version_binary_local_path(self):
+    app_path = pth.LocalPath("/opt/homebrew/bin/brew")
+    self.fs.create_file(app_path, st_size=100)
+    self.expect_sh(app_path, "--version", result="111.22.3")
+    self.assertEqual(self.platform.app_version(app_path), "111.22.3")
+
+  def test_app_version_binary_posix_path(self):
     app_path = pth.AnyPath("/opt/homebrew/bin/brew")
     self.fs.create_file(app_path, st_size=100)
     self.expect_sh(app_path, "--version", result="111.22.3")

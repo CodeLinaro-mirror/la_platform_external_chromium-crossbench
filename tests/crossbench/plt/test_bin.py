@@ -9,6 +9,8 @@ import pathlib
 import unittest
 from unittest import mock
 
+from pyfakefs.fake_filesystem import OSType
+
 import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt import PLATFORM
@@ -253,6 +255,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
         binary.resolve_cached(platform)
 
   def test_known_binary_win(self):
+    self.fs.os = OSType.WINDOWS
     result = self.create_binary_path(
         "foo/bar/default/crossbench_mock_binary.exe")
     result = pathlib.PureWindowsPath(result)

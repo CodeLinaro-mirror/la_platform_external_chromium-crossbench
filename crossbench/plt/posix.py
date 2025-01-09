@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import functools
 import logging
+import pathlib
 import re
 import shlex
 import subprocess
@@ -127,9 +128,18 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return self._default_tmp_dir
 
   def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
+    converted_path = path
+    if isinstance(path, pathlib.PureWindowsPath):
+      # Special-case posix-absolute WindowsPath.
+      # for instance: WindowsPath("/usr/local/bin") or WindowsPath("C:/var/tmp")
+      parts = path.parts
+      if parts[0] in ("\\", "C:\\"):
+        # Reassemble parts for an absolute posix path.
+        parts = ("/", *path.parts[1:])
+        converted_path = pth.AnyPosixPath(*parts)
     if self.is_local:
-      return pth.LocalPosixPath(path)
-    return pth.AnyPosixPath(path)
+      return pth.LocalPosixPath(converted_path)
+    return pth.AnyPosixPath(converted_path)
 
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if self.is_local:

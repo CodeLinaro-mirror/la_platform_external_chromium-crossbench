@@ -9,6 +9,7 @@ import argparse
 import pathlib
 from unittest import mock
 
+import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt.posix import PosixPlatform
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -116,3 +117,19 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
     self.assertIsInstance(
         self.platform.path(pathlib.PurePosixPath("foo/bar")),
         pathlib.PurePosixPath)
+
+  def test_win_absolute_path_conversion(self):
+    windows_path = pth.AnyWindowsPath("/foo/bar/file")
+    abs_path = self.platform.absolute(windows_path)
+    self.assertEqual(str(abs_path), "/foo/bar/file")
+    self.assertIsInstance(abs_path, pth.AnyPosixPath)
+    self.assertTrue(abs_path.is_absolute())
+    self.assertTrue(self.platform.is_absolute(abs_path))
+
+  def test_win_absolute_path_conversion_drive(self):
+    windows_path = pth.AnyWindowsPath("C:/foo/bar/file")
+    abs_path = self.platform.absolute(windows_path)
+    self.assertEqual(str(abs_path), "/foo/bar/file")
+    self.assertIsInstance(abs_path, pth.AnyPosixPath)
+    self.assertTrue(abs_path.is_absolute())
+    self.assertTrue(self.platform.is_absolute(abs_path))

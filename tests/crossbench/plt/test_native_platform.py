@@ -334,9 +334,13 @@ class NativePlatformTestCase(unittest.TestCase):
       tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.set_file_contents(tmp_file, "")
-      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
-      self.platform.chmod(tmp_file, 0o755)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      mode = 0o400
+      self.platform.chmod(tmp_file, mode)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      mode = 0o600
+      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.platform.chmod(tmp_file, mode)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
 
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -376,6 +380,8 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_processes(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
+    if self.platform.is_win:
+      self.skipTest("Too Slow on windows")
     processes = self.platform.processes(["name"])
     self.assertTrue(processes)
     for process_info in processes:

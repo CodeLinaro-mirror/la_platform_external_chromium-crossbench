@@ -670,12 +670,16 @@ class Platform(abc.ABC):
   def absolute(self, path: pth.AnyPathLike) -> pth.AnyPath:
     """Convert an arbitrary path to a platform-specific absolute path"""
     platform_path: pth.AnyPath = self.path(path)
-    if platform_path.is_absolute():
-      return platform_path
     if self.is_local:
       return self.local_path(platform_path).absolute()
+    if platform_path.is_absolute():
+      return platform_path
     raise RuntimeError(
         f"Converting relative to absolute paths is not supported on {self}")
+
+  def is_absolute(self, path: pth.AnyPathLike) -> bool:
+    path = self.path(path)
+    return path.is_absolute()
 
   def home(self) -> pth.AnyPath:
     return pathlib.Path.home()

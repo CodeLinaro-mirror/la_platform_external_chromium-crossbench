@@ -249,7 +249,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     path = pathlib.Path("path/to/app.bin")
     with self.assertRaises(ValueError) as cm:
       self.platform.app_path_to_package(path)
-    self.assertIn(str(path), str(cm.exception))
+    self.assertIn(str(self.platform.path(path)), str(cm.exception))
 
   def test_app_path_to_package_not_installed(self):
     with self.assertRaises(ValueError) as cm:
