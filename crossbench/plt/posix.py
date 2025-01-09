@@ -58,10 +58,10 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().cpu_cores
     if num_cores := self._read_possible_cpu_count():
       return num_cores
-    if self.which("nproc"):
-      return int(self.sh_stdout("nproc"))
-    if self.which("getconf"):
-      if result := _GETCONF_PROC_RE.search(self.sh_stdout("getconf", "-a")):
+    if nproc := self.which("nproc"):
+      return int(self.sh_stdout(nproc))
+    if getconf := self.which("getconf"):
+      if result := _GETCONF_PROC_RE.search(self.sh_stdout(getconf, "-a")):
         return int(result["cores"])
     logging.debug("Failed to get num CPU cores")
     return 0
@@ -92,12 +92,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def python_details(self) -> JsonDict:
     if self.is_local:
       return super().python_details()
-    if not self.which("python3"):
-      return {"version": "unknown", "bits": 64}
-    return {
-        "version": self.sh_stdout("python3", "--version").strip(),
-        "bits": int(self.sh_stdout("python3", "-c", self._PY_VERSION).strip())
-    }
+    if python3 := self.which("python3"):
+      return {
+          "version": self.sh_stdout(python3, "--version").strip(),
+          "bits": int(self.sh_stdout(python3, "-c", self._PY_VERSION).strip())
+      }
+    return {"version": "unknown", "bits": 64}
 
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)

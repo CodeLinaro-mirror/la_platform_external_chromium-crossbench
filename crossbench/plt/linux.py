@@ -66,16 +66,16 @@ class LinuxPlatform(PosixPlatform):
   def is_battery_powered(self) -> bool:
     if self.is_local:
       return super().is_battery_powered
-    if self.which("on_ac_power"):
-      return self.sh("on_ac_power", check=False).returncode == 1
+    if on_ac_power := self.which("on_ac_power"):
+      return self.sh(on_ac_power, check=False).returncode == 1
     return False
 
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
     for info_bin in ("lscpu", "inxi"):
-      if self.which(info_bin):
-        details[info_bin] = self.sh_stdout(info_bin)
+      if info_bin_path := self.which(info_bin):
+        details[info_bin] = self.sh_stdout(info_bin_path)
     return details
 
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:

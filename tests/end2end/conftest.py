@@ -106,19 +106,19 @@ def gsutil_path(request) -> pathlib.Path:
 
 
 def default_gsutil_path() -> pathlib.Path:
-  if maybe_gsutil_path := plt.PLATFORM.which("gsutil"):
-    maybe_gsutil_path = plt.PLATFORM.local_path(maybe_gsutil_path)
-    assert maybe_gsutil_path, "could not find fallback gsutil"
-    assert maybe_gsutil_path.exists()
-    return maybe_gsutil_path
+  if gsutil_path := plt.PLATFORM.which("gsutil"):
+    gsutil_path = plt.PLATFORM.local_path(gsutil_path)
+    assert gsutil_path, "could not find fallback gsutil"
+    assert gsutil_path.exists()
+    return gsutil_path
   pytest.skip(f"Could not find gsutil on {plt.PLATFORM}")
   return pathlib.Path()
 
 
 @pytest.fixture
 def output_dir():
-  with tempfile.TemporaryDirectory() as tmpdirname:
-    yield pathlib.Path(tmpdirname)
+  with tempfile.TemporaryDirectory() as tmp_dirname:
+    yield pathlib.Path(tmp_dirname)
     if plt.PLATFORM.is_win:
       for proc in psutil.process_iter():
         if "chromedriver" in proc.name().lower():
