@@ -753,6 +753,14 @@ class ChromeDriverBrowserVersionTestCase(_BrowserVersionTestCase):
     return ChromeDriverVersion.parse(value)
 
 
+class MicrosoftEdgeWebdriverVersionTestCase(_BrowserVersionTestCase):
+  STABLE_VERSION_STR = ("Microsoft Edge WebDriver 131.0.2903.112"
+                        "(16ab910a6e75f1c7d2da060bbe9ac569dfe64f70)")
+  VERSION_CLS = ChromeDriverVersion
+
+  def parse(self, value: str) -> BrowserVersion:
+    return ChromeDriverVersion.parse(value)
+
 class FirefoxVersionTestCase(_BrowserVersionTestCase):
   ANY_VERSION_STR = "Mozilla Firefox 114.0.1 any"
   LTS_VERSION_STR = "Mozilla Firefox 114.0.1esr"
