@@ -50,9 +50,9 @@ class FirefoxDownloaderTestCase():
     self._load_and_check_webdriver(output_dir, browser)
     return app_path
 
-  def _load_and_check_webdriver(self, output_dir,
+  def _load_and_check_webdriver(self, test_env,
                                 browser: FirefoxWebDriver) -> None:
-    driver_dir = output_dir / "chromedriver-binaries"
+    driver_dir = test_env.output_dir / "chromedriver-binaries"
     assert not driver_dir.exists()
     with tmp_platform_cache_dir(driver_dir):
       finder = FirefoxDriverFinder(browser)
@@ -68,14 +68,15 @@ class FirefoxDownloaderTestCase():
       driver_path.unlink()
     driver_dir.rmdir()
 
-  def test_download_specific_version(self, output_dir, archive_dir) -> None:
-    assert not list(output_dir.iterdir())
+  def test_download_specific_version(self, test_env) -> None:
+    assert not list(test_env.output_dir.iterdir())
     version_str = "106.0.4"
-    self._load_and_check_version(output_dir, archive_dir,
+    self._load_and_check_version(test_env.output_dir, test_env.archive_dir,
                                  f"firefox-{version_str}", version_str)
 
     # Re-downloading should work as well and hit the extracted app.
-    app_path = self._load_and_check_version(output_dir, archive_dir,
+    app_path = self._load_and_check_version(test_env.output_dir,
+                                            test_env.archive_dir,
                                             f"firefox-{version_str}",
                                             version_str)
 
@@ -83,33 +84,35 @@ class FirefoxDownloaderTestCase():
     if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(output_dir.output_dir / version_str)
+      shutil.rmtree(test_env.output_dir.output_dir / version_str)
     assert not app_path.exists()
-    app_path = self._load_and_check_version(output_dir, archive_dir,
+    app_path = self._load_and_check_version(test_env.output_dir,
+                                            test_env.archive_dir,
                                             f"firefox-{version_str}",
                                             version_str)
     # Delete app and install from archive.
     if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(output_dir.output_dir / version_str)
+      shutil.rmtree(test_env.output_dir.output_dir / version_str)
     assert not app_path.exists()
-    archives = list(archive_dir.iterdir())
+    archives = list(test_env.archive_dir.iterdir())
     assert len(archives) == 1
     archive = archives[0]
-    app_path = self._load_and_check_version(output_dir, archive_dir, archive,
+    app_path = self._load_and_check_version(test_env.output_dir,
+                                            test_env.archive_dir, archive,
                                             version_str)
-    assert list(archive_dir.iterdir()) == [archive]
+    assert list(test_env.archive_dir.iterdir()) == [archive]
 
-  def test_download_specific_beta_version(self, output_dir,
-                                          archive_dir) -> None:
-    assert not list(output_dir.iterdir())
+  def test_download_specific_beta_version(self, test_env) -> None:
+    assert not list(test_env.output_dir.iterdir())
     version_str = "115.0b4"
-    self._load_and_check_version(output_dir, archive_dir,
+    self._load_and_check_version(test_env.output_dir, test_env.archive_dir,
                                  f"firefox-{version_str}", version_str)
 
     # Re-downloading should work as well and hit the extracted app.
-    app_path = self._load_and_check_version(output_dir, archive_dir,
+    app_path = self._load_and_check_version(test_env.output_dir,
+                                            test_env.archive_dir,
                                             f"firefox-{version_str}",
                                             version_str)
 
@@ -117,9 +120,10 @@ class FirefoxDownloaderTestCase():
     if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(output_dir.output_dir / version_str)
+      shutil.rmtree(test_env.output_dir.output_dir / version_str)
     assert not app_path.exists()
-    app_path = self._load_and_check_version(output_dir, archive_dir,
+    app_path = self._load_and_check_version(test_env.output_dir,
+                                            test_env.archive_dir,
                                             f"firefox-{version_str}",
                                             version_str)
 
@@ -127,14 +131,15 @@ class FirefoxDownloaderTestCase():
     if plt.PLATFORM.is_macos:
       shutil.rmtree(app_path)
     else:
-      shutil.rmtree(output_dir.output_dir / version_str)
+      shutil.rmtree(test_env.output_dir.output_dir / version_str)
     assert not app_path.exists()
-    archives = list(archive_dir.iterdir())
+    archives = list(test_env.archive_dir.iterdir())
     assert len(archives) == 1
     archive = archives[0]
-    app_path = self._load_and_check_version(output_dir, archive_dir, archive,
+    app_path = self._load_and_check_version(test_env.output_dir,
+                                            test_env.archive_dir, archive,
                                             version_str)
-    assert list(archive_dir.iterdir()) == [archive]
+    assert list(test_env.archive_dir.iterdir()) == [archive]
 
 
 if __name__ == "__main__":

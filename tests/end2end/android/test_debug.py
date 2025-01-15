@@ -10,15 +10,14 @@ from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 
 
-def test_debug(browser_config, output_dir) -> None:
+def test_debug(browser_config, test_env) -> None:
   cli = CrossBenchCLI()
-  result_dir = output_dir / "result"
   cli.run([
       "loading", "--url=blank", f"--browser={browser_config}", "--debug",
-      f"--out-dir={result_dir}"
-  ])
+      f"--out-dir={test_env.results_dir}"
+  ] + list(test_env.cq_flags))
 
-  result_files = list(result_dir.glob("*/runs/0/cb.results.json"))
+  result_files = list(test_env.results_dir.glob("cb.results.json"))
   assert len(result_files) == 1
   with result_files[0].open() as f:
     result = json.load(f)

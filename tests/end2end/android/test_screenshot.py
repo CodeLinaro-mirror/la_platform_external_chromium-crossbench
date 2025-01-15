@@ -8,15 +8,14 @@ from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 
 
-def test_screenshot(browser_config, output_dir) -> None:
+def test_screenshot(browser_config, test_env) -> None:
   cli = CrossBenchCLI()
-  result_dir = output_dir / "result"
   cli.run([
       "loading", "--url=blank", f"--browser={browser_config}",
-      "--probe=screenshot:{}", "--throw", f"--out-dir={result_dir}"
-  ])
+      "--probe=screenshot:{}", "--throw", f"--out-dir={test_env.results_dir}"
+  ] + list(test_env.cq_flags))
 
-  screenshots = list(result_dir.glob("*/runs/0/screenshot/*.png"))
+  screenshots = list(test_env.results_dir.rglob("*/screenshot/*.png"))
   assert set(f.name for f in screenshots) == {
       "start.png", "start_story.png", "stop.png", "stop_story.png"
   }

@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import sys
+import re
 import tempfile
 from typing import Optional
 
@@ -19,7 +20,7 @@ from crossbench.parse import PathParser
 from crossbench.path import LocalPath
 from crossbench.plt.android_adb import adb_devices
 from crossbench.plt.bin import Binaries, BinaryNotFoundError
-from tests import test_helper
+from tests.test_helper import TestEnv
 
 WIN_APP_SUFFIX = [".exe", ".bat"]
 
@@ -40,6 +41,7 @@ def pytest_addoption(parser):
   parser.addoption("--adb-device-id", default=None, type=str)
   parser.addoption("--adb-path", default=None, type=str)
   parser.addoption("--ignore-tests", default=None, type=str)
+  parser.addoption("--cas-archive", default=None, type=str)
 
 
 def pytest_xdist_auto_num_workers(config):
@@ -116,33 +118,21 @@ def default_gsutil_path() -> pathlib.Path:
 
 
 @pytest.fixture
-def output_dir():
-  with tempfile.TemporaryDirectory() as tmp_dirname:
-    yield pathlib.Path(tmp_dirname)
-    if plt.PLATFORM.is_win:
-      for proc in psutil.process_iter():
-        if "chromedriver" in proc.name().lower():
-          proc.kill()
-
-
-@pytest.fixture(scope="session")
-def root_dir() -> pathlib.Path:
-  return test_helper.root_dir()
-
-
-@pytest.fixture
-def cache_dir(output_dir) -> pathlib.Path:
-  path = output_dir / "cache"
-  assert not path.exists()
-  path.mkdir()
-  return path
-
-
-@pytest.fixture
-def archive_dir(output_dir) -> pathlib.Path:
-  path = output_dir / "browser_archive"
-  assert not path.exists()
-  return path
+def test_env(request):
+  test_name = re.sub(r"[\[\]\\/*?:\"<>|]", "_", request.node.name)
+  maybe_cas_archive: Optional[str] = request.config.getoption("--cas-archive")
+  if maybe_cas_archive is not None:
+    cas_test_env = TestEnv(maybe_cas_archive, test_name)
+    yield cas_test_env
+    cas_test_env.remove_non_result()
+  else:
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_test_env = TestEnv(tmp_dirname, test_name)
+      yield tmp_test_env
+      if plt.PLATFORM.is_win:
+        for proc in psutil.process_iter():
+          if "chromedriver" in proc.name().lower():
+            proc.kill()
 
 
 @pytest.fixture(scope="session", autouse=True)

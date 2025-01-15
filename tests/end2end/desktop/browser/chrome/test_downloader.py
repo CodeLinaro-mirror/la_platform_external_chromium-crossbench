@@ -18,6 +18,7 @@ from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
                                                         DriverNotFoundError)
 from crossbench.browsers.settings import Settings
 from tests import test_helper
+from tests.test_helper import TestEnv
 from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
 
 
@@ -89,18 +90,19 @@ def _delete_extracted_app(output_dir: pathlib.Path, app_version: str) -> None:
 
 @pytest.mark.skipif(
     plt.PLATFORM.is_linux, reason="No canary versions on linux.")
-def test_download_pre_115_canary(output_dir, archive_dir, gsutil_path) -> None:
-  assert not list(output_dir.iterdir())
-  _load_and_check_version(output_dir, archive_dir, gsutil_path,
-                          "chrome-114.0.5735.2 canary", "114.0.5735.2")
+def test_download_pre_115_canary(test_env: TestEnv, gsutil_path) -> None:
+  test_env.assert_empty_output_dir()
+  _load_and_check_version(test_env.output_dir, test_env.archive_dir,
+                          gsutil_path, "chrome-114.0.5735.2 canary",
+                          "114.0.5735.2")
 
 
-def test_download_major_version_milestone(output_dir, archive_dir,
+def test_download_major_version_milestone(test_env: TestEnv,
                                           gsutil_path) -> None:
-  assert not list(output_dir.iterdir())
+  test_env.assert_empty_output_dir()
   _load_and_check_version(
-      output_dir,
-      archive_dir,
+      test_env.output_dir,
+      test_env.archive_dir,
       gsutil_path,
       "chrome-M111",
       "111",
@@ -108,31 +110,31 @@ def test_download_major_version_milestone(output_dir, archive_dir,
 
   # Re-downloading should reuse the extracted app.
   app_path = _load_and_check_version(
-      output_dir,
-      archive_dir,
+      test_env.output_dir,
+      test_env.archive_dir,
       gsutil_path,
       "chrome-M111",
       "111",
   )
 
-  _delete_extracted_app(output_dir, "M111")
+  _delete_extracted_app(test_env.output_dir, "M111")
   assert not app_path.exists()
   _load_and_check_version(
-      output_dir,
-      archive_dir,
+      test_env.output_dir,
+      test_env.archive_dir,
       gsutil_path,
       "chrome-M111",
       "111",
   )
 
 
-def test_download_major_version_chrome_for_testing(output_dir, archive_dir,
+def test_download_major_version_chrome_for_testing(test_env: TestEnv,
                                                    gsutil_path) -> None:
   # Post M114 we're relying on the new chrome-for-testing download
-  assert not list(output_dir.iterdir())
+  test_env.assert_empty_output_dir()
   _load_and_check_version(
-      output_dir,
-      archive_dir,
+      test_env.output_dir,
+      test_env.archive_dir,
       gsutil_path,
       "chrome-M115",
       "115",
@@ -140,58 +142,59 @@ def test_download_major_version_chrome_for_testing(output_dir, archive_dir,
 
   # Re-downloading should reuse the extracted app.
   app_path = _load_and_check_version(
-      output_dir,
-      archive_dir,
+      test_env.output_dir,
+      test_env.archive_dir,
       gsutil_path,
       "chrome-M115",
       "115",
   )
 
-  _delete_extracted_app(output_dir, "M115")
+  _delete_extracted_app(test_env.output_dir, "M115")
   assert not app_path.exists()
   _load_and_check_version(
-      output_dir,
-      archive_dir,
+      test_env.output_dir,
+      test_env.archive_dir,
       gsutil_path,
       "chrome-M115",
       "115",
   )
 
 
-def test_download_specific_version_pre_115_stable(output_dir, archive_dir,
+def test_download_specific_version_pre_115_stable(test_env: TestEnv,
                                                   gsutil_path) -> None:
-  assert not list(output_dir.iterdir())
+  test_env.assert_empty_output_dir()
   version_str = "111.0.5563.146"
-  _load_and_check_version(output_dir, archive_dir, gsutil_path,
-                          f"chrome-{version_str}", version_str)
+  _load_and_check_version(test_env.output_dir, test_env.archive_dir,
+                          gsutil_path, f"chrome-{version_str}", version_str)
 
   # Re-downloading should work as well and hit the extracted app.
-  app_path = _load_and_check_version(output_dir, archive_dir, gsutil_path,
-                                     f"chrome-{version_str}", version_str)
+  app_path = _load_and_check_version(test_env.output_dir, test_env.archive_dir,
+                                     gsutil_path, f"chrome-{version_str}",
+                                     version_str)
 
-  _delete_extracted_app(output_dir, version_str)
+  _delete_extracted_app(test_env.output_dir, version_str)
   assert not app_path.exists()
-  app_path = _load_and_check_version(output_dir, archive_dir, gsutil_path,
-                                     f"chrome-{version_str}", version_str)
+  app_path = _load_and_check_version(test_env.output_dir, test_env.archive_dir,
+                                     gsutil_path, f"chrome-{version_str}",
+                                     version_str)
 
-  _delete_extracted_app(output_dir, version_str)
+  _delete_extracted_app(test_env.output_dir, version_str)
   assert not app_path.exists()
-  archives = list(archive_dir.iterdir())
+  archives = list(test_env.archive_dir.iterdir())
   assert len(archives) == 1
   archive = archives[0]
-  app_path = _load_and_check_version(output_dir, archive_dir, gsutil_path,
-                                     archive, version_str)
-  assert list(archive_dir.iterdir()) == [archive]
+  app_path = _load_and_check_version(test_env.output_dir, test_env.archive_dir,
+                                     gsutil_path, archive, version_str)
+  assert list(test_env.archive_dir.iterdir()) == [archive]
 
 
 @pytest.mark.skipif(
     plt.PLATFORM.is_macos and plt.PLATFORM.is_arm64,
     reason="Old versions only supported on intel machines.")
-def test_download_old_major_version(output_dir, archive_dir,
-                                    gsutil_path) -> None:
-  assert not list(output_dir.iterdir())
-  _load_and_check_version(output_dir, archive_dir, gsutil_path, "chrome-M68",
-                          "68")
+def test_download_old_major_version(test_env: TestEnv, gsutil_path) -> None:
+  test_env.assert_empty_output_dir()
+  _load_and_check_version(test_env.output_dir, test_env.archive_dir,
+                          gsutil_path, "chrome-M68", "68")
 
 
 if __name__ == "__main__":

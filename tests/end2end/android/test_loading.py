@@ -14,7 +14,8 @@ from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 
-def _run_loading_test(browser_config, page_config) -> None:
+
+def _run_loading_test(browser_config, page_config, test_env) -> None:
   with tempfile.NamedTemporaryFile() as page_config_file:
     with open(page_config_file.name, mode="w", encoding="utf-8") as f:
       json.dump(page_config, f)
@@ -24,11 +25,11 @@ def _run_loading_test(browser_config, page_config) -> None:
     cli.run([
         "loading", f"--browser={browser_config}",
         f"--page-config={page_config_file.name}", "--action-runner=android"
-    ])
+    ] + list(test_env.cq_flags))
 
 
 @pytest.mark.parametrize("input_source", InputSource)
-def test_click(browser_config, input_source) -> None:
+def test_click(browser_config, input_source, test_env) -> None:
 
   if input_source is InputSource.KEYBOARD:
     return
@@ -83,10 +84,10 @@ def test_click(browser_config, input_source) -> None:
       }
   }
 
-  _run_loading_test(browser_config, page_config)
+  _run_loading_test(browser_config, page_config, test_env)
 
 
-def test_scroll(browser_config) -> None:
+def test_scroll(browser_config, test_env) -> None:
 
   test_page = urllib.parse.quote("""
 <!DOCTYPE html>
@@ -150,7 +151,7 @@ def test_scroll(browser_config) -> None:
       }
   }
 
-  _run_loading_test(browser_config, page_config)
+  _run_loading_test(browser_config, page_config, test_env)
 
 
 if __name__ == "__main__":

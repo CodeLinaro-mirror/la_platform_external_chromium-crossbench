@@ -47,7 +47,7 @@ def _network_replay_config(archive) -> str:
   })
 
 
-def test_wpr_record_and_replay(browser_config, tmp_dir) -> None:
+def test_wpr_record_and_replay(browser_config, tmp_dir, test_env) -> None:
   cli = CrossBenchCLI()
   result_record_dir = tmp_dir / "result_record"
   target_url = "https://www.google.com/search?q=cats"
@@ -56,7 +56,7 @@ def test_wpr_record_and_replay(browser_config, tmp_dir) -> None:
       "loading", f"--url={target_url}", f"--browser={browser_config}",
       f"--probe=wpr:{_wpr_record_config(local_wpr_go)}",
       f"--out-dir={result_record_dir}"
-  ])
+  ] + list(test_env.cq_flags))
 
   archives = list(
       result_record_dir.glob("*/stories/*/0/0_default/archive.wprgo"))

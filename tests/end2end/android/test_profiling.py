@@ -22,15 +22,17 @@ def _profiling_config() -> str:
   })
 
 
-def test_profiling_probe(browser_config, output_dir, adb_root) -> None:
+def test_profiling_probe(browser_config, test_env, adb_root) -> None:
   del adb_root
   cli = CrossBenchCLI()
   profiling_config = _profiling_config()
-  result_dir = output_dir / "result"
-  cli.run(["load", "--url=blank,2s", "--throw", f"--browser={browser_config}",
-           f"--probe=profiling{profiling_config}", f"--out-dir={result_dir}"])
+  cli.run([
+      "load", "--url=blank,2s", "--throw", f"--browser={browser_config}",
+      f"--probe=profiling{profiling_config}",
+      f"--out-dir={test_env.results_dir}"
+  ] + list(test_env.cq_flags))
 
-  simpleperf_files = list(result_dir.glob("*/runs/0/simpleperf.perf.data"))
+  simpleperf_files = list(test_env.results_dir.rglob("simpleperf.perf.data"))
   assert len(simpleperf_files) == 1
   assert simpleperf_files[0].is_file()
 

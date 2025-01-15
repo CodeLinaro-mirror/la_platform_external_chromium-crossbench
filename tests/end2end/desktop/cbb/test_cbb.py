@@ -14,6 +14,7 @@ from crossbench.browsers.chrome import webdriver as chrome_webdriver
 from crossbench.browsers.settings import Settings
 from crossbench.cbb import cbb_adapter
 from tests import test_helper
+from tests.test_helper import TestEnv
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
@@ -43,23 +44,24 @@ def webdriver(driver_path, browser_path):
                                                    flags=flags))
 
 
-def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
+def run_benchmark(test_env: TestEnv, webdriver, benchmark_cls) -> None:
   """Tests that we can execute the specified benchmark and obtain result data
   post execution.
   This test uses Chrome browser to run the benchmarks.
   """
   benchmark = get_benchmark(benchmark_cls)
   assert benchmark
-  results_dir = output_dir / "result"
 
   maybe_results_file = cbb_adapter.get_probe_result_file(
-      benchmark_cls.NAME, webdriver, results_dir)
+      benchmark_cls.NAME, webdriver, test_env.results_dir)
   assert maybe_results_file
   results_file = pathlib.Path(maybe_results_file)
   assert not results_file.exists()
 
   cbb_adapter.run_benchmark(
-      output_folder=results_dir, browser_list=[webdriver], benchmark=benchmark)
+      output_folder=test_env.results_dir,
+      browser_list=[webdriver],
+      benchmark=benchmark)
 
   assert results_file.exists()
   with results_file.open(encoding="utf-8") as f:
@@ -67,28 +69,28 @@ def run_benchmark(output_dir, webdriver, benchmark_cls) -> None:
   assert benchmark_data
 
 
-def test_speedometer_20(output_dir, webdriver):
-  run_benchmark(output_dir, webdriver, benchmarks.Speedometer20Benchmark)
+def test_speedometer_20(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.Speedometer20Benchmark)
 
 
-def test_speedometer_21(output_dir, webdriver):
-  run_benchmark(output_dir, webdriver, benchmarks.Speedometer21Benchmark)
+def test_speedometer_21(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.Speedometer21Benchmark)
 
 
-def test_motionmark_12(output_dir, webdriver):
-  run_benchmark(output_dir, webdriver, benchmarks.MotionMark12Benchmark)
+def test_motionmark_12(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.MotionMark12Benchmark)
 
 
-def test_motionmark_13(output_dir, webdriver):
-  run_benchmark(output_dir, webdriver, benchmarks.MotionMark13Benchmark)
+def test_motionmark_13(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.MotionMark13Benchmark)
 
 
-def test_jetstream_20(output_dir, webdriver):
-  run_benchmark(output_dir, webdriver, benchmarks.JetStream20Benchmark)
+def test_jetstream_20(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.JetStream20Benchmark)
 
 
-def test_jetstream_21(output_dir, webdriver):
-  run_benchmark(output_dir, webdriver, benchmarks.JetStream21Benchmark)
+def test_jetstream_21(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.JetStream21Benchmark)
 
 
 if __name__ == "__main__":

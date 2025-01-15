@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import io
 import pathlib
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from unittest import mock
 
 import pytest
@@ -16,6 +16,7 @@ import crossbench.browsers.all as browsers
 from crossbench import plt
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
+from tests.test_helper import TestEnv
 
 
 class SysExitException(Exception):
@@ -45,11 +46,16 @@ def cli_test_context(request, browser_path, driver_path):
 
 
 def _run_cli(*args: str,
+             extra_flags: Tuple[str] = (),
+             test_env: Optional[TestEnv] = None,
              auto_headless: bool = False) -> Tuple[CrossBenchCLI, io.StringIO]:
+  if test_env is not None:
+    args += (f"--out-dir={test_env.results_dir}",) + test_env.cq_flags
   if auto_headless and not plt.PLATFORM.has_display:
     if "--headless" not in args:
       args += ("--headless",)
       args = tuple(arg for arg in args if not arg.startswith("--viewport="))
+  args += extra_flags
   cli = CrossBenchCLI()
   with contextlib.redirect_stdout(io.StringIO()) as stdout:
     with mock.patch("sys.exit", side_effect=SysExitException):
@@ -68,7 +74,7 @@ def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
+def test_speedometer_2_0(test_env: TestEnv) -> None:
   # - Speedometer 2.0
   # - Speedometer --iterations flag
   # - Tracing probe with inline args
@@ -76,24 +82,21 @@ def test_speedometer_2_0(output_dir, cache_dir, root_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("speedometer_2.0", "--help")
   _run_cli("describe", "benchmark", "speedometer_2.0")
-  browser_config = root_dir / "config/doc/browser.config.hjson"
+  browser_config = test_env.root_dir / "config/doc/browser.config.hjson"
   assert browser_config.is_file()
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "sp_2.0",
       f"--browser-config={browser_config}",
       "--iterations=2",
       "--stories=jQuery-TodoMVC",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--probe=tracing:{preset:'minimal'}",
+      test_env=test_env,
       auto_headless=True)
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_speedometer_2_1(output_dir, cache_dir) -> None:
+def test_speedometer_2_1(test_env: TestEnv) -> None:
   # - Speedometer 2.1
   # - Story filtering with regexp
   # - V8 probes
@@ -102,63 +105,55 @@ def test_speedometer_2_1(output_dir, cache_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("speedometer_2.1", "--help")
   _run_cli("describe", "benchmark", "speedometer_2.1")
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "sp2.1",
       "--browser=chrome-stable",
       "--splashscreen=minimal",
       "--iterations=2",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--stories=.*Vanilla.*",
       # V8 --prof doesn't always work on linux, skip it.
       "--probe=v8.log:"
       "{log_all:false, js_flags:['--log-maps'], prof:false, profview:false}",
       "--probe=v8.turbolizer",
       "--debug",
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 1
-  v8_log_files = _get_v8_log_files(results_dir)
+  v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert len(v8_log_files) > 1
 
 
 @pytest.mark.skip_mock
 @pytest.mark.flaky(retries=3, delay=5)
-def test_speedometer_2_1_custom_chrome_download(output_dir, cache_dir) -> None:
+def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
   # - Custom chrome version downloads
   # - headless
   # Flaky due to downloading live custom builds.
-  results_dir = output_dir / "results"
   # TODO: speed up --browser=chrome-M111 and add it.
-  assert len(list(cache_dir.iterdir())) == 0
   _run_cli(
       "sp2.1",
-      f"--cache-dir={cache_dir}",
       "--browser=chrome-M113",
       "--browser=chrome-111.0.5563.110",
       "--headless",
       "--iterations=1",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--stories=.*Vanilla.*",
-      "--debug")
+      "--debug",
+      test_env=test_env)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 2
-  v8_log_files = _get_v8_log_files(results_dir)
+  v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert not v8_log_files
 
 
 @pytest.mark.skipif(
     not plt.PLATFORM.is_macos, reason="Safari is only available on macos")
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
-                                       driver_path) -> None:
+def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path) -> None:
   # - Speedometer 3
   # - Merging stories over multiple iterations and browsers
   # - Testing safari
@@ -171,8 +166,6 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
   if not platform.is_macos and (not platform.exists(
       browsers.Safari.default_path(platform))):
     pytest.skip("Test requires Safari, skipping on non macOS devices.")
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "sp2.1",
       "--browser=chrome",
@@ -182,19 +175,18 @@ def test_speedometer_2_1_chrome_safari(output_dir, cache_dir,
       "--repeat=2",
       "--env-validation=skip",
       "--verbose",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--stories=.*React.*",
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 2
-  v8_log_files = _get_v8_log_files(results_dir)
+  v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert not v8_log_files
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_jetstream_2_0(output_dir, cache_dir) -> None:
+def test_jetstream_2_0(test_env: TestEnv) -> None:
   # - jetstream 2.0
   # - merge / run separate stories
   # - custom multiple --js-flags
@@ -203,30 +195,29 @@ def test_jetstream_2_0(output_dir, cache_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("jetstream_2.0", "--help")
   _run_cli("describe", "--json", "benchmark", "jetstream_2.0")
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "jetstream_2.0",
       "--browser=chrome-stable",
       "--separate",
       "--repeat=2",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--viewport=maximised",
       "--stories=.*date-format.*",
       "--quiet",
       "--js-flags=--log,--log-opt,--log-deopt",
-      "--",
-      "--no-sandbox",
+      extra_flags=(
+          "--",
+          "--no-sandbox",
+      ),
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 1
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
+def test_jetstream_2_1(test_env: TestEnv) -> None:
   # - jetstream 2.1
   # - custom --time-unit
   # - explicit single story
@@ -236,33 +227,30 @@ def test_jetstream_2_1(output_dir, cache_dir, root_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("jetstream_2.1", "--help")
   _run_cli("describe", "benchmark", "jetstream_2.1")
-  probe_config = root_dir / "config/doc/probe.config.hjson"
+  probe_config = test_env.root_dir / "config/doc/probe.config.hjson"
   assert probe_config.is_file()
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   chrome_version = "--browser=chrome"
   _run_cli(
       "jetstream_2.1",
       chrome_version,
       "--env-validation=skip",
       "--splashscreen=http://google.com",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--viewport=900x800",
       "--stories=Box2D",
       "--time-unit=0.9",
       f"--probe-config={probe_config}",
       "--throw",
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 1
-  v8_log_files = _get_v8_log_files(results_dir)
+  v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert len(v8_log_files) > 1
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
+def test_jetstream_2_2(test_env: TestEnv) -> None:
   # - jetstream 2.2
   # - custom --time-unit
   # - explicit single story
@@ -272,33 +260,30 @@ def test_jetstream_2_2(output_dir, cache_dir, root_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("jetstream_2.2", "--help")
   _run_cli("describe", "benchmark", "jetstream_2.2")
-  probe_config = root_dir / "config/doc/probe.config.hjson"
+  probe_config = test_env.root_dir / "config/doc/probe.config.hjson"
   assert probe_config.is_file()
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   chrome_version = "--browser=chrome"
   _run_cli(
       "jetstream_2.2",
       chrome_version,
       "--env-validation=skip",
       "--splashscreen=http://google.com",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--viewport=900x800",
       "--stories=Box2D",
       "--time-unit=0.9",
       f"--probe-config={probe_config}",
       "--throw",
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 1
-  v8_log_files = _get_v8_log_files(results_dir)
+  v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert len(v8_log_files) > 1
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading(output_dir, cache_dir) -> None:
+def test_loading(test_env: TestEnv) -> None:
   # - loading using named pages with timeouts
   # - custom cooldown time
   # - custom viewport
@@ -306,78 +291,64 @@ def test_loading(output_dir, cache_dir) -> None:
   with pytest.raises(SysExitException):
     _run_cli("loading", "--help")
   _run_cli("describe", "benchmark", "loading")
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "loading",
       "--browser=chr",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--viewport=headless",
       "--stories=cnn",
       "--cool-down-time=2.5",
       "--probe=performance.entries",
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 1
 
 
 @pytest.mark.skipif(
     plt.PLATFORM.is_win, reason="TODO(crbug.com/383896773): --page-config.")
-def test_loading_page_config(output_dir, cache_dir, root_dir) -> None:
+def test_loading_page_config(test_env: TestEnv) -> None:
   # - loading with config file
-  page_config = root_dir / "config/doc/page.config.hjson"
+  page_config = test_env.root_dir / "config/doc/page.config.hjson"
   assert page_config.is_file()
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "loading",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       f"--page-config={page_config}",
       "--probe=performance.entries",
       "--no-splash",
       "--cool-down-time=0",
       "--throw",
+      test_env=test_env,
       auto_headless=True)
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading_playback_urls(output_dir, cache_dir) -> None:
+def test_loading_playback_urls(test_env: TestEnv) -> None:
   # - loading using url
   # - combined pages and --playback controller
-  results_dir = output_dir / "results"
-
-  assert not results_dir.exists()
   _run_cli(
       "loading",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
       "--verbose-driver",
-      f"--cache-dir={cache_dir}",
       "--playback=5.3s",
       "--viewport=fullscreen",
       "--stories=http://google.com,0.5,http://bing.com,0.4",
       "--probe=performance.entries",
+      test_env=test_env,
       auto_headless=True)
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading_playback(output_dir, cache_dir) -> None:
+def test_loading_playback(test_env: TestEnv) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
   # - viewport-size via chrome flag
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   args = [
       "loading",
       "--browser=chr",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--playback=5.3s",
       "--separate",
       "--stories=twitter,2,facebook,0.4",
@@ -389,15 +360,13 @@ def test_loading_playback(output_dir, cache_dir) -> None:
         "--window-size=900,500",
         "--window-position=150,150",
     ])
-  _run_cli(
-      *args,
-      auto_headless=True)
+  _run_cli(*args, test_env=test_env, auto_headless=True)
 
 
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="Firefox cannot run headless")
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading_playback_firefox(output_dir, cache_dir) -> None:
+def test_loading_playback_firefox(test_env: TestEnv) -> None:
   # - loading using named pages with timeouts
   # - --playback controller
   # - Firefox
@@ -407,21 +376,18 @@ def test_loading_playback_firefox(output_dir, cache_dir) -> None:
       pytest.skip("Test requires Firefox.")
   except Exception:  # pylint: disable=broad-exception-caught
     pytest.skip("Test requires Firefox.")
-  results_dir = output_dir / "results"
-  assert not results_dir.exists()
   _run_cli(
       "loading",
       "--browser=chr",
       "--browser=ff",
       "--env-validation=skip",
-      f"--out-dir={results_dir}",
-      f"--cache-dir={cache_dir}",
       "--playback=2x",
       "--stories=twitter,1,facebook,0.4",
       "--probe=performance.entries",
+      test_env=test_env,
       auto_headless=True)
 
-  browser_dirs = _get_browser_dirs(results_dir)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 2
 
 
