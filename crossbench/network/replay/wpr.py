@@ -73,11 +73,13 @@ class WprReplayNetwork(ReplayNetwork):
                traffic_shaper: Optional[TrafficShaper] = None,
                wpr_go_bin: Optional[LocalPath] = None,
                browser_platform: Platform = PLATFORM,
-               persist_server: bool = False):
+               persist_server: bool = False,
+               inject_deterministic_script: bool = True):
     super().__init__(archive, traffic_shaper, browser_platform)
     self._server: Optional[WprReplayServer] = None
     self._tmp_dir: Optional[AnyPath] = None
     self._persist_server = persist_server
+    self._inject_deterministic_script = inject_deterministic_script
     self._ensure_wpr_go(wpr_go_bin)
 
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
@@ -150,6 +152,10 @@ class WprReplayNetwork(ReplayNetwork):
     assert self._server, "WPR is not running"
     return self._server.host
 
+  @property
+  def inject_deterministic_script(self) -> bool:
+    return self._inject_deterministic_script
+
   def __str__(self) -> str:
     return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"
 
@@ -193,9 +199,12 @@ class LocalWprReplayNetwork(WprReplayNetwork):
     browser_platform.stop_reverse_port_forward(https_port)
 
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+    inject_scripts: Optional[List[AnyPath]] = (
+        None if self.inject_deterministic_script else [])
     return WprReplayServer(
         self.archive_path,
         self._wpr_go_bin,
+        inject_scripts=inject_scripts,
         log_path=log_dir / "network.wpr.log",
         platform=self.host_platform)
 
@@ -268,11 +277,13 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     wpr_go_bin, archive, key_file, cert_file, inject_script =\
         self._push_required_files()
+    inject_scripts: List[AnyPath] = (
+        [inject_script] if self.inject_deterministic_script else [])
     return WprReplayServer(
         archive_path=archive,
         bin_path=wpr_go_bin,
         key_file=key_file,
         cert_file=cert_file,
-        inject_scripts=[inject_script],
+        inject_scripts=inject_scripts,
         log_path=log_dir / "network.wpr.log",
         platform=self.browser_platform)

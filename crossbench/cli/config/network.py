@@ -45,6 +45,7 @@ class NetworkConfig(ConfigObject):
   wpr_go_bin: Optional[pth.LocalPath] = None
   persist_server: bool = False
   run_on_device: bool = False
+  skip_injection: bool = False
 
   ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
   VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
@@ -69,6 +70,12 @@ class NetworkConfig(ConfigObject):
               "If not specified, a default lookup in known locations is used."))
     parser.add_argument("persist_server", type=bool, default=False)
     parser.add_argument("run_on_device", type=bool, default=False)
+    parser.add_argument(
+        "skip_injection",
+        type=bool,
+        default=False,
+        help=("Don't inject the deterministic.js script into every response "
+              "in WPR replay mode. Makes WPR response timings more stable."))
     return parser
 
   @classmethod
@@ -186,6 +193,9 @@ class NetworkConfig(ConfigObject):
     if self.run_on_device and self.type is not NetworkType.WPR:
       raise argparse.ArgumentTypeError(
           "run_on_device can only be used for the WPR replay network")
+    if self.skip_injection and self.type is not NetworkType.WPR:
+      raise argparse.ArgumentTypeError(
+          "skip_injection can only be used for the WPR replay network")
 
   def create(self, browser_platform: Platform) -> Network:
     with exception.annotate_argparsing(
@@ -204,10 +214,12 @@ class NetworkConfig(ConfigObject):
                 f"run_on_device is unsupported on {browser_platform}")
           return RemoteWprReplayNetwork(
               self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-              browser_platform, self.persist_server)
+              browser_platform, self.persist_server,
+              inject_deterministic_script=not self.skip_injection)
         return LocalWprReplayNetwork(
             self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-            browser_platform, self.persist_server)
+            browser_platform, self.persist_server,
+            inject_deterministic_script=not self.skip_injection)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:

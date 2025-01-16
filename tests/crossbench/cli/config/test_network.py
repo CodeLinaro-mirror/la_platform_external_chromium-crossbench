@@ -214,6 +214,17 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     config_1 = NetworkConfig.parse(json.dumps(config_dict))
     self.assertEqual(config, config_1)
 
+  def test_parse_dict_wpr_only_flags(self):
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "live", "persist_server": True})
+    self.assertIn("can only be used for the WPR", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "live", "run_on_device": True})
+    self.assertIn("can only be used for the WPR", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "live", "skip_injection": True})
+    self.assertIn("can only be used for the WPR", str(cm.exception))
+
   def test_parse_dict_local(self):
     benchmark_folder = pth.LocalPath("third_party/speedometer/v3.0")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
