@@ -157,6 +157,10 @@ class DefaultActionRunner(ActionRunner):
           script, arguments=[selector]) and selector_config.required:
         raise ElementNotFoundError(selector)
 
+      if action.verify:
+        self.wait_for_element_impl(
+            actions, selector=action.verify, timeout=action.timeout)
+
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
       selector = ""

@@ -25,6 +25,7 @@
         //      action: "click",
         //      position: POSITION,
         //      timeout: DURATION,
+        //      verify: [CSS_SELECTOR, XPATH_SELECTOR],
         //  }
         //
         //  POSITION: {

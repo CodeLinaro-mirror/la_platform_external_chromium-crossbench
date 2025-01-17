@@ -290,6 +290,13 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
               end_position=None,
               duration=action.duration))
 
+      if action.verify:
+        self.wait_for_element_impl(
+            actions,
+            selector=action.verify,
+            timeout=action.timeout,
+            check_element_rect=True)
+
   def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
     with run.actions("ClickAction", measure=False) as actions:
 
@@ -315,6 +322,13 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
       if output != 0:
         raise RuntimeError(f"Failed to perform click: {output}")
+
+      if action.verify:
+        self.wait_for_element_impl(
+            actions,
+            selector=action.verify,
+            timeout=action.timeout,
+            check_element_rect=True)
 
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
     if not self._touch_device:

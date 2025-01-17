@@ -222,6 +222,13 @@ return [
 
       run.browser_platform.sh(*cmd)
 
+      if action.verify:
+        self.wait_for_element_impl(
+            actions,
+            selector=action.verify,
+            timeout=action.timeout,
+            check_element_rect=True)
+
   def _swipe_impl(self, run: Run, start_x: int, start_y: int, end_x: int,
                   end_y: int, duration: dt.timedelta) -> None:
 
