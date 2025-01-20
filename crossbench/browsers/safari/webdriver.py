@@ -72,11 +72,6 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     service = SafariService(executable_path=os.fspath(driver_path))
     driver_kwargs = {"service": service, "options": options}
 
-    if webdriver.__version__ == "4.1.0":
-      # Manually inject desired options for older selenium versions
-      # (currently fixed version from vpython3).
-      self._legacy_settings(options, driver_kwargs)
-
     with Spinner():
       driver = self._start_driver_with_retries(driver_kwargs)
 
@@ -112,11 +107,6 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           raise DriverException("Could not start SafariWebDriver") from e
         seen_exceptions.add(type(e))
     raise DriverException("Could not start SafariWebDriver")
-
-  def _legacy_settings(self, options, driver_kwargs) -> None:
-    logging.debug("SafariDriver: using legacy capabilities")
-    options.binary_location = str(self.path)
-    driver_kwargs["desired_capabilities"] = options.to_capabilities()
 
   def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
     del session
