@@ -19,7 +19,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 import tabulate as tbl
 
 import crossbench.benchmarks.all as benchmarks
-from crossbench import __version__
+from crossbench import __version__, exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
@@ -761,8 +761,8 @@ class CrossBenchCLI:
     subparser.add_argument("other_browser_args", nargs="*")
 
   def benchmark_subcommand(self, args: argparse.Namespace) -> None:
-    benchmark = None
-    runner = None
+    benchmark: Optional[Benchmark] = None
+    runner: Optional[Runner] = None
     if args.cache_dir:
       plt.PLATFORM.set_cache_dir(args.cache_dir)
     self._benchmark_subcommand_helper(args)
@@ -773,10 +773,11 @@ class CrossBenchCLI:
         if args.dry_run:
           args.out_dir = pth.LocalPath(tmp_dirname) / "results"
         args.browser = self._get_browsers(args)
-        probes = self._get_probes(args)
-        env_config = self._get_env_config(args)
-        env_validation_mode = self._get_env_validation_mode(args)
-        timing = self._get_timing(args)
+        probes: Sequence[Probe] = self._get_probes(args)
+        env_config: HostEnvironmentConfig = self._get_env_config(args)
+        env_validation_mode: ValidationMode = self._get_env_validation_mode(
+            args)
+        timing: Timing = self._get_timing(args)
         runner = self._get_runner(args, benchmark, env_config,
                                   env_validation_mode, timing)
 
@@ -917,7 +918,7 @@ class CrossBenchCLI:
     logging.debug(e)
     logging.error("")
     logging.error("#" * 80)
-    message: str = "SUBCOMMAND "
+    message: str = "SUBCOMMAND"
     if benchmark:
       message = f"{benchmark.NAME.upper()} BENCHMARK"
     logging.error("%s FAILED WITH %s:", message, e.__class__.__name__)
@@ -942,8 +943,8 @@ class CrossBenchCLI:
       self._log_assertion_error_statement(e)
 
   def _log_assertion_error_statement(self, e: AssertionError) -> None:
-    _, exception, tb = sys.exc_info()
-    if exception is not e:
+    _, exc_exception, tb = sys.exc_info()
+    if exc_exception is not e:
       return
     tb_info = traceback.extract_tb(tb)
     filename, line, _, text = tb_info[-1]
@@ -1079,10 +1080,12 @@ class CrossBenchCLI:
     return args.probe_config.probes
 
   def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:
-    benchmark_cls = self._get_benchmark_cls(args)
+    benchmark_cls: Type[Benchmark] = self._get_benchmark_cls(args)
     assert (issubclass(benchmark_cls, Benchmark)), (
         f"benchmark_cls={benchmark_cls} is not subclass of Runner")
-    return benchmark_cls.from_cli_args(args)
+    with exception.annotate_argparsing(
+        f"Parsing {benchmark_cls.NAME} arguments"):
+      return benchmark_cls.from_cli_args(args)
 
   def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:
     return args.benchmark_cls

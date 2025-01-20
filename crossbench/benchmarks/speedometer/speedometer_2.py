@@ -4,16 +4,12 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import Any, Dict, Tuple
 
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
 from crossbench.helper import url_helper
 from crossbench.parse import ObjectParser
-
-if TYPE_CHECKING:
-  from crossbench.runner.run import Run
 
 
 class Speedometer2Probe(SpeedometerProbe):
@@ -63,11 +59,12 @@ class Speedometer2Story(SpeedometerStory):
       "Flight-TodoMVC",
   )
 
-  def log_run_test_url(self, run: Run) -> None:
+  @property
+  def test_url(self) -> str:
     test_url = f"{self.URL}/InteractiveRunner.html"
-    params = self.url_params
+    params: Dict[str, str] = self.url_params
     if len(self.substories) == 1:
       params["suite"] = self.substories[0]
     params["startAutomatically"] = "true"
     official_test_url = url_helper.update_url_query(test_url, params)
-    logging.info("STORY PUBLIC TEST URL: %s", official_test_url)
+    return official_test_url

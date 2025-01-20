@@ -54,7 +54,7 @@ class SpeedometerBaseTestCase(
 
   @dataclass
   class Namespace(argparse.Namespace):
-    stories = "all"
+    stories = "default"
     iterations: int = 10
     separate: bool = False
     custom_benchmark_url: Optional[str] = None
@@ -62,10 +62,10 @@ class SpeedometerBaseTestCase(
   def test_iterations_kwargs(self):
     args = self.Namespace()
     self.benchmark_cls.from_cli_args(args)
-    with self.assertRaises(TypeError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       args.iterations = "-10"  # pytype: disable=annotation-type-mismatch
       self.benchmark_cls.from_cli_args(args)
-    with self.assertRaises(TypeError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       args.iterations = "1234"  # pytype: disable=annotation-type-mismatch
       benchmark = self.benchmark_cls.from_cli_args(args)
     args.iterations = 1234
@@ -305,6 +305,7 @@ class SpeedometerBaseTestCase(
 
 
 class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
+
   EXAMPLE_STORY_DATA = {
       "tests": {
           "Adding100Items": {

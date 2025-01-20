@@ -3,9 +3,11 @@
 # found in the LICENSE file.
 
 import abc
+import argparse
 import copy
 import csv
 import json
+from dataclasses import dataclass
 from typing import Optional, Type
 from unittest import mock
 
@@ -141,6 +143,36 @@ class JetStream2BaseTestCase(
     self.assertIn("102.22.33.44", output)
     self.assertIn("100.22.33.44", output)
 
+  @dataclass
+  class Namespace(argparse.Namespace):
+    stories = "default"
+    iterations: Optional[int] = None
+    separate: bool = False
+    custom_benchmark_url: Optional[str] = None
+    detailed_metrics: bool = False
+
+  def test_iterations_kwargs(self):
+    args = self.Namespace()
+    args.stories = "default"
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertIsNone(story.iterations)
+    self.assertDictEqual(story.url_params, {})
+
+    args.iterations = 10
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertEqual(story.iterations, 10)
+    self.assertDictEqual(story.url_params, {"iterationCount": "10"})
+
+    args.iterations = 123
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertEqual(story.iterations, 123)
+    self.assertDictEqual(story.url_params, {"iterationCount": "123"})
 
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):

@@ -137,8 +137,10 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
                substories: Sequence[str] = (),
                iterations: Optional[int] = None,
                url: Optional[str] = None):
-    self._iterations: int = iterations or self.DEFAULT_ITERATIONS
-    assert self.iterations >= 1, f"Invalid iterations count: '{iterations}'."
+    self._iterations: int = NumberParser.positive_int(
+        iterations or self.DEFAULT_ITERATIONS,
+        "iteration count",
+        parse_str=False)
     super().__init__(url=url, substories=substories)
 
   @property
@@ -164,9 +166,11 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   @property
   def url_params(self) -> Dict[str, str]:
-    if self.iterations == self.DEFAULT_ITERATIONS:
-      return {}
-    return {"iterationCount": str(self.iterations)}
+    params: Dict[str, str] = {}
+    if self.iterations != self.DEFAULT_ITERATIONS:
+      params["iterationCount"] = str(self.iterations)
+    return params
+
 
   def setup(self, run: Run) -> None:
     updated_url = self.get_run_url(run)

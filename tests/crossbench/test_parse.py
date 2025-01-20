@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import pathlib
 import unittest
 from typing import Any
@@ -165,38 +166,70 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
   def test_parse_any_int(self):
     self.assertEqual(NumberParser.any_int("-123456"), -123456)
     self.assertEqual(NumberParser.any_int(-123456), -123456)
+    self.assertEqual(NumberParser.any_int(float(-123456)), -123456)
     self.assertEqual(NumberParser.any_int("-1"), -1)
     self.assertEqual(NumberParser.any_int(-1), -1)
+    self.assertEqual(NumberParser.any_int(float(-1)), -1)
     self.assertEqual(NumberParser.any_int("0"), 0)
     self.assertEqual(NumberParser.any_int(0), 0)
+    self.assertEqual(NumberParser.any_int(float(0)), 0)
     self.assertEqual(NumberParser.any_int("1"), 1)
     self.assertEqual(NumberParser.any_int(1), 1)
     self.assertEqual(NumberParser.any_int("123456"), 123456)
     self.assertEqual(NumberParser.any_int(123456), 123456)
 
+  def test_parse_any_int_strict(self):
+    self.assertEqual(NumberParser.any_int(float(0), parse_str=False), 0)
+    self.assertEqual(NumberParser.any_int(1, parse_str=False), 1)
+
   def test_parse_any_int_invalid(self):
-    for invalid in ("", "-1.2", "1.2", "100.001", "Nan", "inf", "-inf",
-                    "invalid"):
+    for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
+                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
+                    None):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.any_int(invalid)
 
+  def test_parse_any_int_invalid_strict(self):
+    for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
+                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
+                    None):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = NumberParser.any_int(invalid, parse_str=False)
+
   def test_parse_positive_int(self):
     self.assertEqual(NumberParser.positive_int("1"), 1)
+    self.assertEqual(NumberParser.positive_int(1), 1)
     self.assertEqual(NumberParser.positive_int("123"), 123)
+    self.assertEqual(NumberParser.positive_int(123), 123)
 
-  def test_parse_positive_int_ivalid(self):
-    for invalid in ("", "0", "-1", "-1.2", "1.2", "Nan", "inf", "-inf",
-                    "invalid"):
-      with self.assertRaises(argparse.ArgumentTypeError):
+  def test_parse_positive_int_invalid(self):
+    for invalid in ("", "0", 0, "-1", -1, "-1.2", -1.2, "1.2", 1.2, "Nan",
+                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
+                    None):
+      with self.assertRaises(
+          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
         _ = NumberParser.positive_int(invalid)
+
+  def test_parse_positive_int_invalid_strict(self):
+    for invalid in ("", "0", 0, "1", "-1", -1, float(-1), "-1.2", -1.2, "1.2",
+                    1.2, "Nan", math.nan, "inf", math.inf, "-inf", -math.inf,
+                    "invalid", None):
+      with self.assertRaises(
+          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
+        _ = NumberParser.positive_int(invalid, parse_str=False)
 
   def test_parse_positive_zero_int(self):
     self.assertEqual(NumberParser.positive_zero_int("1"), 1)
+    self.assertEqual(NumberParser.positive_zero_int(1), 1)
+    self.assertEqual(NumberParser.positive_zero_int(float(1)), 1)
     self.assertEqual(NumberParser.positive_zero_int("0"), 0)
+    self.assertEqual(NumberParser.positive_zero_int(0), 0)
 
   def test_parse_positive_zero_int_invalid(self):
-    for invalid in ("", "-1", "-1.2", "1.2", "NaN", "inf", "-inf", "invalid"):
-      with self.assertRaises(argparse.ArgumentTypeError):
+    for invalid in ("", "-1", -1, "-1.2", -1.2, "1.2", 1.2, "NaN", math.nan,
+                    "inf", math.inf, "-inf", -math.inf, "invalid", None):
+      with self.assertRaises(
+          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
         _ = NumberParser.positive_zero_int(invalid)
 
   def test_parse_any_float(self):

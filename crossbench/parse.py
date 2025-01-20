@@ -513,7 +513,16 @@ class NumberParser:
     return value_f
 
   @classmethod
-  def any_int(cls, value: Any, name: str = "value") -> int:
+  def any_int(cls,
+              value: Any,
+              name: str = "value",
+              parse_str: bool = True) -> int:
+    if (not parse_str and
+        isinstance(value, str)) or (not isinstance(value, (int, float, str))):
+      raise argparse.ArgumentTypeError(
+          f"Expected integer {name}, but got {type_str(value)}: {repr(value)}")
+    if isinstance(value, float) and not value.is_integer():
+      raise argparse.ArgumentTypeError(f"Invalid integer {name}: {repr(value)}")
     try:
       return int(value)
     except ValueError as e:
@@ -521,24 +530,33 @@ class NumberParser:
           f"Invalid integer {name}: {repr(value)}") from e
 
   @classmethod
-  def positive_zero_int(cls, value: Any, name: str = "value") -> int:
-    value_i = cls.any_int(value, name)
+  def positive_zero_int(cls,
+                        value: Any,
+                        name: str = "value",
+                        parse_str: bool = True) -> int:
+    value_i = cls.any_int(value, name, parse_str)
     if value_i < 0:
       raise argparse.ArgumentTypeError(
           f"Expected integer {name} >= 0, but got: {value_i}")
     return value_i
 
   @classmethod
-  def positive_int(cls, value: Any, name: str = "value") -> int:
-    value_i = cls.any_int(value, name)
+  def positive_int(cls,
+                   value: Any,
+                   name: str = "value",
+                   parse_str: bool = True) -> int:
+    value_i = cls.any_int(value, name, parse_str)
     if not math.isfinite(value_i) or value_i <= 0:
       raise argparse.ArgumentTypeError(
           f"Expected integer {name} > 0, but got: {value_i}")
     return value_i
 
   @classmethod
-  def port_number(cls, value: Any, name: str = "port") -> int:
-    port = cls.any_int(value, name)
+  def port_number(cls,
+                  value: Any,
+                  name: str = "port",
+                  parse_str: bool = True) -> int:
+    port = cls.any_int(value, name, parse_str)
     if 1 <= port <= 65535:
       return port
     raise argparse.ArgumentTypeError(

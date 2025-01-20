@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import enum
-import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type, Union, cast)
 
@@ -22,7 +21,6 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.runner.run import Run
   ShuffleSeedT = Optional[Union[str, int]]
   from crossbench.runner.actions import Actions
   from crossbench.types import Json
@@ -291,7 +289,7 @@ class Speedometer30Story(SpeedometerStory):
 
   @property
   def url_params(self) -> Dict[str, str]:
-    url_params = super().url_params
+    url_params: Dict[str, str] = super().url_params
     if sync_wait := self.sync_wait:
       url_params["waitBeforeSync"] = str(to_ms(sync_wait))
     if sync_warmup := self.sync_warmup:
@@ -302,16 +300,17 @@ class Speedometer30Story(SpeedometerStory):
       url_params["viewport"] = f"{viewport.width}x{viewport.height}"
     if self.shuffle_seed is not None:
       url_params["shuffleSeed"] = str(self.shuffle_seed)
+    if tuple(self.substories) != self.default_story_names():
+      url_params["suites"] = ",".join(self.substories)
     return url_params
 
-  def log_run_test_url(self, run: Run) -> None:
-    del run
-    params = self.url_params
-    params["suites"] = ",".join(self.substories)
+  @property
+  def test_url(self) -> str:
+    params: Dict[str, str] = self.url_params
     params["developerMode"] = "true"
     params["startAutomatically"] = "true"
     official_test_url = url_helper.update_url_query(self.URL, params)
-    logging.info("STORY PUBLIC TEST URL: %s", official_test_url)
+    return official_test_url
 
 
 class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
