@@ -88,6 +88,7 @@ V8_GC_STATS_TRACE_CONFIG = V8_TRACE_CONFIG | frozenset(
     ("disabled-by-default-v8.gc_stats",))
 
 TRACE_PRESETS: Dict[str, frozenset[str]] = {
+    "empty": frozenset(),
     "minimal": MINIMAL_CONFIG,
     "devtools": DEVTOOLS_TRACE_CONFIG,
     "v8": V8_TRACE_CONFIG,
