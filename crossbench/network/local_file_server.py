@@ -25,15 +25,23 @@ if TYPE_CHECKING:
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8000
+_DEFAULT_HOST = "localhost"
+_DEFAULT_PORT = 8000
+
 # List of known headers that are served by the default HTTPServer and might
 # be accidentally overridden by provided extra headers.
-CONFLICTING_EXTRA_HEADERS: Final[frozenset[str]] = frozenset(
+_CONFLICTING_EXTRA_HEADERS: Final[frozenset[str]] = frozenset(
     map(lambda header: header.lower(),
         ("Content-Type", "Content-Length", "Last-Modified", "Server", "Date",
          "Connection", "Location")))
 
+# Enable cross original isolation for high-precision timers.
+# This can be easily override by profiling a custom HEADER.txt file in the
+# served directory.
+_DEFAULT_HEADERS: Final[immutabledict[str, str]] = immutabledict({
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Embedder-Policy": "require-corp"
+})
 
 class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -98,8 +106,8 @@ class LocalFileNetwork(Network):
     return self._path
 
   def _parse_url(self, url: Optional[str]) -> Tuple[str, int]:
-    host: str = DEFAULT_HOST
-    port: int = DEFAULT_PORT
+    host: str = _DEFAULT_HOST
+    port: int = _DEFAULT_PORT
     if not url:
       return host, port
     parsed_url = ObjectParser.url(url)
@@ -114,7 +122,7 @@ class LocalFileNetwork(Network):
       header_file = self._path / name
       if header_file.exists():
         return self._read_headers_file(header_file)
-    return immutabledict()
+    return _DEFAULT_HEADERS
 
   def _read_headers_file(self,
                          header_file: LocalPath) -> immutabledict[str, str]:
@@ -125,7 +133,7 @@ class LocalFileNetwork(Network):
 
   def _validate_extra_headers(self):
     for key, value in self._extra_headers.items():
-      if key.lower() in CONFLICTING_EXTRA_HEADERS:
+      if key.lower() in _CONFLICTING_EXTRA_HEADERS:
         logging.error(
             "BROWSER Network: Extra header overrides server defaults: '%s: %s'",
             key, value)
