@@ -17,7 +17,7 @@ from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.browsers.chromium.paths import ChromiumPathMixin
+from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.flags.chrome import ChromeFlags
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.service import ChromiumService
 
   from crossbench.browsers.settings import Settings
+  from crossbench.browsers.version import BrowserVersion
   from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
@@ -50,7 +51,7 @@ FLAGS_CONTENT_SHELL: pth.AnyPosixPath = (
 FLAGS_CHROME: pth.AnyPosixPath = _FLAG_ROOT / "chrome-command-line"
 
 
-class ChromiumWebDriver(ChromiumPathMixin, ChromiumBasedWebDriver):
+class ChromiumWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):
 
   def _create_driver(
       self, options: ChromiumOptions,
@@ -212,8 +213,8 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
     return self._package_info["Package name"]
 
-  def _extract_version(self) -> str:
-    return self._package_info["versionName"]
+  def _extract_version(self) -> BrowserVersion:
+    return self.version_cls().parse(self._package_info["versionName"])
 
   def _parse_package_info(self, platform: Platform,
                           path: pth.AnyPath) -> immutabledict[str, Any]:

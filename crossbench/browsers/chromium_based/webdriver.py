@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
   from selenium import webdriver
 
+  from crossbench.browsers.version import BrowserVersion
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -45,7 +46,7 @@ class ChromiumBasedWebDriver(
             | BrowserAttributes.WEBDRIVER)
 
   def use_local_chromedriver(self) -> bool:
-    return self.major_version == 0 or self.is_locally_compiled()
+    return self.version.major == 0 or self.is_locally_compiled()
 
   def is_locally_compiled(self) -> bool:
     return pth.LocalPath(self.app_path.parent / "args.gn").exists()
@@ -114,7 +115,7 @@ class ChromiumBasedWebDriver(
                       args: Sequence[str]) -> ChromiumOptions:
     assert not self._is_running
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
-    options.set_capability("browserVersion", str(self.major_version))
+    options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "eager")
     for arg in args:
@@ -143,7 +144,8 @@ class ChromiumBasedWebDriver(
   def _validate_locally_built_driver(
       self, driver_path: pth.LocalPath) -> Optional[Iterable[str]]:
     # TODO: migrate to version object on the browser
-    browser_version = ChromiumVersion.parse(self.version)
+    browser_version: BrowserVersion = self.version
+    assert isinstance(browser_version, ChromiumVersion)
     driver_version = ChromeDriverVersion.parse(
         self.platform.app_version(driver_path))
     if browser_version.parts == driver_version.parts:
@@ -156,7 +158,7 @@ class ChromiumBasedWebDriver(
       self, driver_path: pth.AnyPath) -> Optional[Iterable[str]]:
     raw_version_str = self.host_platform.sh_stdout(driver_path, "--version")
     driver_version = ChromeDriverVersion.parse(raw_version_str)
-    if driver_version.major == self.major_version:
+    if driver_version.major == self.version.major:
       return None
     return (f"Chromedriver version mismatch: driver={driver_version} "
             f"browser={self.version} ({self})",)

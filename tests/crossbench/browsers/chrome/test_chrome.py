@@ -4,20 +4,20 @@
 
 import argparse
 
+from crossbench import path as pth
+from crossbench.browsers.chrome.version import ChromeVersion
+from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
+                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
 
-from crossbench import path as pth
-from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
-                                                  LocalChromeWebDriverAndroid)
-from crossbench.browsers.settings import Settings
-
 
 class ChromeWebDriverForTesting(ChromeWebDriver):
 
-  def _extract_version(self) -> str:
-    return mock_browser.MockChromeStable.VERSION
+  def _extract_version(self) -> ChromeVersion:
+    return ChromeVersion.parse(mock_browser.MockChromeStable.VERSION)
 
 
 class ChromeWebdriverTestCase(BaseCrossbenchTestCase):

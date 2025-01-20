@@ -17,6 +17,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
                                                   ChromeWebDriverAndroid,
                                                   ChromeWebDriverChromeOsSsh,
@@ -27,6 +28,7 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
                                                     ChromiumWebDriverAndroid,
                                                     ChromiumWebDriverSsh)
 from crossbench.browsers.safari.safari import Safari
+from crossbench.browsers.safari.version import SafariVersion
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import DriverConfig
@@ -138,10 +140,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertEqual(config.variants[1].platform.name, "linux_ssh")
       self.assertEqual(config.variants[2].platform.name, "chromeos_ssh")
       self.assertEqual(config.variants[3].platform.name, "chromeos_ssh")
-      self.assertEqual(config.variants[0].version, "102.22.33.44")
-      self.assertEqual(config.variants[1].version, "102.22.33.44")
-      self.assertEqual(config.variants[2].version, "125.0.6422.60")
-      self.assertEqual(config.variants[3].version, "125.0.6422.60")
+      self.assertEqual(config.variants[0].version.parts_str, "102.22.33.44")
+      self.assertEqual(config.variants[1].version.parts_str, "102.22.33.44")
+      self.assertEqual(config.variants[2].version.parts_str, "125.0.6422.60")
+      self.assertEqual(config.variants[3].version.parts_str, "125.0.6422.60")
 
   def test_parse_remote_browser_config_template_override_driver_path(self):
     override_driver_path = pth.AnyPosixPath("/path/to/override/chromedriver")
@@ -733,8 +735,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_inline_flags(self):
     with mock.patch.object(
-        ChromeWebDriver, "_extract_version",
-        return_value="101.22.333.44"), mock.patch.object(
+        ChromeWebDriver,
+        "_extract_version",
+        return_value=ChromeVersion.parse("101.22.333.44")), mock.patch.object(
             Chrome,
             "stable_path",
             return_value=mock_browser.MockChromeStable.mock_app_path()):
@@ -754,13 +757,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       # TODO: Fix once app lookup is cleaned up
       self.assertEqual(browser.app_path,
                        mock_browser.MockChromeStable.mock_app_path())
-      self.assertEqual(browser.version, "101.22.333.44")
+      self.assertEqual(browser.version.parts_str, "101.22.333.44")
       self.assertEqual(browser.flags["--foo"], "bar")
 
   def test_inline_load_safari(self):
     if not plt.PLATFORM.is_macos:
       return
-    with mock.patch.object(Safari, "_extract_version", return_value="16.0"):
+    with mock.patch.object(
+        Safari,
+        "_extract_version",
+        return_value=SafariVersion.parse("Safari 16.0.1")):
       config = BrowserVariantsConfig(
           {"browsers": {
               "safari": {

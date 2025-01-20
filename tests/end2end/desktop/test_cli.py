@@ -16,6 +16,7 @@ import crossbench.browsers.all as browsers
 from crossbench import plt
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
+from tests.end2end.conftest import mock_patch_chrome_stable
 from tests.test_helper import TestEnv
 
 
@@ -23,26 +24,6 @@ class SysExitException(Exception):
 
   def __init__(self):
     super().__init__("sys.exit")
-
-
-@pytest.fixture(autouse=True)
-def cli_test_context(request, browser_path, driver_path):
-  if "skip_mock" in request.keywords:
-    yield
-    return
-  # Mock out chrome's stable path to be able to run on the CQ with the
-  # --test-browser-path option.
-  with mock.patch(
-      "crossbench.browsers.all.Chrome.stable_path", return_value=browser_path):
-    if not driver_path:
-      yield
-    else:
-      # The CQ uses the latest canary, which might not have a easily publicly
-      # accessible chromedriver available.
-      with mock.patch(("crossbench.browsers.chromium"
-                       ".driver_finder.ChromeDriverFinder.download"),
-                      return_value=driver_path):
-        yield
 
 
 def _run_cli(*args: str,
@@ -74,7 +55,7 @@ def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_speedometer_2_0(test_env: TestEnv) -> None:
+def test_speedometer_2_0(test_env: TestEnv, browser_path) -> None:
   # - Speedometer 2.0
   # - Speedometer --iterations flag
   # - Tracing probe with inline args
@@ -84,19 +65,22 @@ def test_speedometer_2_0(test_env: TestEnv) -> None:
   _run_cli("describe", "benchmark", "speedometer_2.0")
   browser_config = test_env.root_dir / "config/doc/browser.config.hjson"
   assert browser_config.is_file()
-  _run_cli(
-      "sp_2.0",
-      f"--browser-config={browser_config}",
-      "--iterations=2",
-      "--stories=jQuery-TodoMVC",
-      "--env-validation=skip",
-      "--probe=tracing:{preset:'minimal'}",
-      test_env=test_env,
-      auto_headless=True)
+  results_dir = test_env.results_dir
+  assert not results_dir.exists()
+  with mock_patch_chrome_stable(browser_path):
+    _run_cli(
+        "sp_2.0",
+        f"--browser-config={browser_config}",
+        "--iterations=2",
+        "--stories=jQuery-TodoMVC",
+        "--env-validation=skip",
+        "--probe=tracing:{preset:'minimal'}",
+        test_env=test_env,
+        auto_headless=True)
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_speedometer_2_1(test_env: TestEnv) -> None:
+def test_speedometer_2_1(test_env: TestEnv, test_chrome_name) -> None:
   # - Speedometer 2.1
   # - Story filtering with regexp
   # - V8 probes
@@ -107,7 +91,7 @@ def test_speedometer_2_1(test_env: TestEnv) -> None:
   _run_cli("describe", "benchmark", "speedometer_2.1")
   _run_cli(
       "sp2.1",
-      "--browser=chrome-stable",
+      f"--browser={test_chrome_name}",
       "--splashscreen=minimal",
       "--iterations=2",
       "--env-validation=skip",
@@ -153,7 +137,8 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
 @pytest.mark.skipif(
     not plt.PLATFORM.is_macos, reason="Safari is only available on macos")
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path) -> None:
+def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
+                                       test_chrome_name) -> None:
   # - Speedometer 3
   # - Merging stories over multiple iterations and browsers
   # - Testing safari
@@ -168,7 +153,7 @@ def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path) -> None:
     pytest.skip("Test requires Safari, skipping on non macOS devices.")
   _run_cli(
       "sp2.1",
-      "--browser=chrome",
+      f"--browser={test_chrome_name}",
       "--browser=safari",
       "--splashscreen=none",
       "--iterations=1",
@@ -186,7 +171,7 @@ def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_jetstream_2_0(test_env: TestEnv) -> None:
+def test_jetstream_2_0(test_env: TestEnv, test_chrome_name) -> None:
   # - jetstream 2.0
   # - merge / run separate stories
   # - custom multiple --js-flags
@@ -197,7 +182,7 @@ def test_jetstream_2_0(test_env: TestEnv) -> None:
   _run_cli("describe", "--json", "benchmark", "jetstream_2.0")
   _run_cli(
       "jetstream_2.0",
-      "--browser=chrome-stable",
+      f"--browser={test_chrome_name}",
       "--separate",
       "--repeat=2",
       "--env-validation=skip",
@@ -217,7 +202,7 @@ def test_jetstream_2_0(test_env: TestEnv) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_jetstream_2_1(test_env: TestEnv) -> None:
+def test_jetstream_2_1(test_env: TestEnv, test_chrome_name) -> None:
   # - jetstream 2.1
   # - custom --time-unit
   # - explicit single story
@@ -229,10 +214,9 @@ def test_jetstream_2_1(test_env: TestEnv) -> None:
   _run_cli("describe", "benchmark", "jetstream_2.1")
   probe_config = test_env.root_dir / "config/doc/probe.config.hjson"
   assert probe_config.is_file()
-  chrome_version = "--browser=chrome"
   _run_cli(
       "jetstream_2.1",
-      chrome_version,
+      f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--splashscreen=http://google.com",
       "--viewport=900x800",
@@ -250,7 +234,7 @@ def test_jetstream_2_1(test_env: TestEnv) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_jetstream_2_2(test_env: TestEnv) -> None:
+def test_jetstream_2_2(test_env: TestEnv, test_chrome_name) -> None:
   # - jetstream 2.2
   # - custom --time-unit
   # - explicit single story
@@ -262,10 +246,9 @@ def test_jetstream_2_2(test_env: TestEnv) -> None:
   _run_cli("describe", "benchmark", "jetstream_2.2")
   probe_config = test_env.root_dir / "config/doc/probe.config.hjson"
   assert probe_config.is_file()
-  chrome_version = "--browser=chrome"
   _run_cli(
       "jetstream_2.2",
-      chrome_version,
+      f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--splashscreen=http://google.com",
       "--viewport=900x800",
@@ -283,7 +266,7 @@ def test_jetstream_2_2(test_env: TestEnv) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading(test_env: TestEnv) -> None:
+def test_loading(test_env: TestEnv, test_chrome_name) -> None:
   # - loading using named pages with timeouts
   # - custom cooldown time
   # - custom viewport
@@ -293,7 +276,7 @@ def test_loading(test_env: TestEnv) -> None:
   _run_cli("describe", "benchmark", "loading")
   _run_cli(
       "loading",
-      "--browser=chr",
+      f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--viewport=headless",
       "--stories=cnn",
@@ -308,12 +291,13 @@ def test_loading(test_env: TestEnv) -> None:
 
 @pytest.mark.skipif(
     plt.PLATFORM.is_win, reason="TODO(crbug.com/383896773): --page-config.")
-def test_loading_page_config(test_env: TestEnv) -> None:
+def test_loading_page_config(test_env: TestEnv, test_chrome_name) -> None:
   # - loading with config file
   page_config = test_env.root_dir / "config/doc/page.config.hjson"
   assert page_config.is_file()
   _run_cli(
       "loading",
+      f"--browser={test_chrome_name}",
       "--env-validation=skip",
       f"--page-config={page_config}",
       "--probe=performance.entries",
@@ -325,11 +309,12 @@ def test_loading_page_config(test_env: TestEnv) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading_playback_urls(test_env: TestEnv) -> None:
+def test_loading_playback_urls(test_env: TestEnv, test_chrome_name) -> None:
   # - loading using url
   # - combined pages and --playback controller
   _run_cli(
       "loading",
+      f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--verbose-driver",
       "--playback=5.3s",
@@ -341,13 +326,13 @@ def test_loading_playback_urls(test_env: TestEnv) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading_playback(test_env: TestEnv) -> None:
+def test_loading_playback(test_env: TestEnv, test_chrome_name) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
   # - viewport-size via chrome flag
   args = [
       "loading",
-      "--browser=chr",
+      f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--playback=5.3s",
       "--separate",
@@ -366,7 +351,7 @@ def test_loading_playback(test_env: TestEnv) -> None:
 @pytest.mark.skipif(
     not plt.PLATFORM.has_display, reason="Firefox cannot run headless")
 @pytest.mark.xdist_group("end2end-benchmark")
-def test_loading_playback_firefox(test_env: TestEnv) -> None:
+def test_loading_playback_firefox(test_env: TestEnv, test_chrome_name) -> None:
   # - loading using named pages with timeouts
   # - --playback controller
   # - Firefox
@@ -378,7 +363,7 @@ def test_loading_playback_firefox(test_env: TestEnv) -> None:
     pytest.skip("Test requires Firefox.")
   _run_cli(
       "loading",
-      "--browser=chr",
+      f"--browser={test_chrome_name}",
       "--browser=ff",
       "--env-validation=skip",
       "--playback=2x",

@@ -86,7 +86,9 @@ class StoriesRunGroup(RunGroup):
     info: JsonDict = {
         "label": self.browser.label,
         "browser": self.browser.app_name.title(),
-        "version": self.browser.version,
+        "version": self.browser.version.parts_str,
+        "major_version": self.browser.version.major,
+        "channel": self.browser.version.channel_name,
         "os": self.browser.platform.full_version,
         "device": self.browser.platform.device,
         "cpu": self.browser.platform.cpu,

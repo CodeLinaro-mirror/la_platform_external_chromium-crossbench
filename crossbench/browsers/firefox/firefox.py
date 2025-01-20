@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
-import re
 from typing import TYPE_CHECKING, Tuple
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
@@ -63,11 +63,8 @@ class Firefox(Browser):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX
 
-  def _extract_version(self) -> str:
-    assert self.path
-    version_string = self.platform.app_version(self.path)
-    # "Firefox 107.0" => "107.0"
-    return str(re.findall(r"[\d\.]+", version_string)[0])
+  def _extract_version(self) -> FirefoxVersion:
+    return FirefoxVersion.parse(self.platform.app_version(self.path))
 
   def _get_browser_flags_for_session(
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:

@@ -287,7 +287,8 @@ class BrowserVariantsConfig:
     for i, variant in enumerate(flag_variants):
       logging.info("   %s: %s", i, variant.flags)
 
-  def get_browser_cls(self, browser_config: BrowserConfig) -> Type[Browser]:
+  @classmethod
+  def get_browser_cls(cls, browser_config: BrowserConfig) -> Type[Browser]:
     driver = browser_config.driver.type
     path: pth.AnyPath = browser_config.path
     assert not isinstance(path, str), "Invalid path"
@@ -295,11 +296,11 @@ class BrowserVariantsConfig:
       raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
     path_str = str(browser_config.path).lower()
     if "safari" in path_str:
-      return self._get_safari_browser_cls(browser_config)
+      return cls.get_safari_browser_cls(browser_config)
     if "chrome" in path_str:
-      return self._get_chrome_browser_cls(browser_config)
+      return cls.get_chrome_browser_cls(browser_config)
     if "chromium" in path_str:
-      return self._get_chromium_browser_cls(browser_config)
+      return cls.get_chromium_browser_cls(browser_config)
     if "firefox" in path_str:
       if driver == BrowserDriverType.WEB_DRIVER:
         return browsers.FirefoxWebDriver
@@ -307,8 +308,9 @@ class BrowserVariantsConfig:
       return browsers.EdgeWebDriver
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
-  def _get_safari_browser_cls(self,
-                              browser_config: BrowserConfig) -> Type[Browser]:
+  @classmethod
+  def get_safari_browser_cls(cls,
+                             browser_config: BrowserConfig) -> Type[Browser]:
     driver = browser_config.driver.type
     if driver == BrowserDriverType.IOS:
       return browsers.SafariWebdriverIOS
@@ -318,8 +320,9 @@ class BrowserVariantsConfig:
       return browsers.SafariAppleScript
     raise argparse.ArgumentTypeError(f"Unsupported Safari driver: {driver}")
 
-  def _get_chrome_browser_cls(self,
-                              browser_config: BrowserConfig) -> Type[Browser]:
+  @classmethod
+  def get_chrome_browser_cls(cls,
+                             browser_config: BrowserConfig) -> Type[Browser]:
     driver = browser_config.driver.type
     if driver == BrowserDriverType.WEB_DRIVER:
       return browsers.ChromeWebDriver
@@ -336,8 +339,9 @@ class BrowserVariantsConfig:
       return browsers.ChromeWebDriverChromeOsSsh
     raise argparse.ArgumentTypeError(f"Unsupported Chrome driver: {driver}")
 
-  def _get_chromium_browser_cls(self,
-                                browser_config: BrowserConfig) -> Type[Browser]:
+  @classmethod
+  def get_chromium_browser_cls(cls,
+                               browser_config: BrowserConfig) -> Type[Browser]:
     driver = browser_config.driver.type
     # TODO: technically this should be ChromiumWebDriver
     if driver == BrowserDriverType.WEB_DRIVER:

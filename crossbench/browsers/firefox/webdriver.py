@@ -47,7 +47,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     assert not self._is_running
     assert self.log_file
     options = FirefoxOptions()
-    options.set_capability("browserVersion", str(self.major_version))
+    options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "eager")
     args = self._get_browser_flags_for_session(session)
@@ -94,7 +94,7 @@ class FirefoxDriverFinder:
       self.extension = ".exe"
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path = (
-        cache_dir / f"geckodriver-{self.browser.major_version}{self.extension}")
+        cache_dir / f"geckodriver-{self.browser.version.major}{self.extension}")
 
   def download(self) -> pth.LocalPath:
     if not self.driver_path.exists():
@@ -144,7 +144,7 @@ class FirefoxDriverFinder:
     return url, archive_type
 
   def _get_driver_version(self) -> Tuple[int, int, int]:
-    version = self.browser.major_version
+    version = self.browser.version.major
     # See https://firefox-source-docs.mozilla.org/testing/geckodriver/Support.html
     if version < 52:
       raise ValueError(f"Firefox {version} is too old for geckodriver.")

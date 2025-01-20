@@ -736,6 +736,15 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertFalse(milestone_125_beta.contains(channel_beta))
 
 
+class ChromeForTestingBrowserVersionTestCase(ChromeBrowserVersionTestCase):
+  ANY_VERSION_STR = "Google Chrome for Testing 115.0.5790.114 Any"
+  LTS_VERSION_STR = ""
+  STABLE_VERSION_STR = "Google Chrome for Testing 115.0.5790.114"
+  BETA_VERSION_STR = "Google Chrome for Testing 116.0.5845.50 beta"
+  ALPHA_VERSION_STR = "Google Chrome for Testing 117.0.5911.2 dev"
+  PRE_ALPHA_VERSION_STR = "Google Chrome for Testing 117.0.5921.0 canary"
+
+
 class ChromeDriverBrowserVersionTestCase(_BrowserVersionTestCase):
   ANY_VERSION_STR = ""
   LTS_VERSION_STR = ""
@@ -882,6 +891,8 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
       self.parse("16.6 XXX (18615.3...12.11.2)")
     with self.assertRaises(BrowserVersionParseError):
       self.parse("16.6 XXX (18615.3)")
+    with self.assertRaises(BrowserVersionParseError):
+      self.parse("Safari 16.6 XXX (18615.3)")
 
   def test_parse_stable_safari(self):
     version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
@@ -913,6 +924,19 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertTrue(version.is_beta)
     self.assertEqual(version.parts, (20621, 1, 6, 0))
     self.assertTrue(version.is_complete)
+
+  def test_parse_with_driver_version(self):
+    version = self._parse_helper(
+        "Safari 18.1.1 Included with Safari 18.1.1 (20619.2.8.11.12)")
+    self.assertTrue(version.is_stable)
+    self.assertEqual(version.major, 18)
+    self.assertEqual(version.parts, (18, 1, 1, 0, 20619, 2, 8, 11, 12))
+    version = self._parse_helper(
+        "Safari 18.2 "
+        "Included with Safari Technology Preview (Release 209, 20621.1.6)")
+    self.assertTrue(version.is_beta)
+    self.assertEqual(version.major, 18)
+    self.assertEqual(version.parts, (18, 2, 0, 209, 20621, 1, 6))
 
   def test_str(self):
     self.assertEqual(

@@ -66,7 +66,7 @@ class EdgeWebDriverDownloader:
       self.extension = ".exe"
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path: pth.LocalPath = (
-        cache_dir / f"edgedriver-{self.browser.major_version}{self.extension}")
+        cache_dir / f"edgedriver-{self.browser.version.major}{self.extension}")
 
   def download(self) -> pth.LocalPath:
     if not self.driver_path.exists():
@@ -78,7 +78,7 @@ class EdgeWebDriverDownloader:
   def _download(self) -> None:
     arch = self._arch_identifier()
     archive_name = f"edgedriver_{arch}.zip"
-    url = self.BASE_URL + f"/{self.browser.version}/{archive_name}"
+    url = self.BASE_URL + f"/{self.browser.version.parts_str}/{archive_name}"
     logging.info("EDGEDRIVER downloading %s: %s", self.browser.version, url)
     with tempfile.TemporaryDirectory() as tmp_dir:
       archive_file = pth.LocalPath(tmp_dir) / archive_name

@@ -10,7 +10,7 @@ import logging
 import os
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -19,6 +19,7 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.probes.internal.browser.driver_log import BrowserDriverLogProbe
 from crossbench.types import JsonDict
 
@@ -292,10 +293,13 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   """Represent a remote WebDriver that has already been started"""
 
   def __init__(self, label: str, driver: webdriver.Remote) -> None:
-    super().__init__(label=label, path=None)
     self._private_driver = driver
-    self.version: str = driver.capabilities["browserVersion"]
-    self.major_version: int = int(self.version.split(".")[0])
+    super().__init__(label=label, path=None)
+
+  def _extract_version(self) -> BrowserVersion:
+    raw_version: str = self._private_driver.capabilities["browserVersion"]
+    parts: Tuple[int, ...] = tuple(map(int, raw_version.split(".")))
+    return UnknownBrowserVersion(parts, version_str=raw_version)
 
   @property
   def type_name(self) -> str:
@@ -307,9 +311,6 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
 
   def _validate_driver_version(self) -> None:
     pass
-
-  def _extract_version(self) -> str:
-    raise NotImplementedError()
 
   def _find_driver(self) -> LocalPath:
     raise NotImplementedError()

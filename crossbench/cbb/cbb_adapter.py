@@ -86,7 +86,6 @@ def create_remote_webdriver(driver: webdriver.Remote
   """
 
   browser = cb_webdriver.RemoteWebDriver("default", driver)
-  browser.version = driver.capabilities["browserVersion"]
   return browser
 
 

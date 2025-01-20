@@ -42,8 +42,7 @@ class LinuxProfilingContext(ProfilingContext):
 
   @property
   def has_perf_prof_path(self) -> bool:
-    # TODO: replace with full version comparison
-    return self.browser.major_version > V8_PERF_PROF_PATH_FLAG_MIN_VERSION.major
+    return self.browser > V8_PERF_PROF_PATH_FLAG_MIN_VERSION
 
   def setup(self) -> None:
     self.setup_v8_log_path()
