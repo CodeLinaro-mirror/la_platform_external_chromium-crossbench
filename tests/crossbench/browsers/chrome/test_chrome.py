@@ -60,8 +60,11 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
           settings=Settings(flags=[field_trial_flag], platform=self.platform))
       flags = browser.flags
       for no_experiment_flag in ChromeWebDriver.NO_EXPERIMENTS_FLAGS:
-        self.assertNotIn(no_experiment_flag, flags)
-
+        # We check that there's no flag contained in the list of disallowed
+        # flags without value. This is necessary as
+        # '--enable-benchmarking=enable-field-trial-config' is actually
+        # allowed.
+        assert not flags.contains_without_value(no_experiment_flag)
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 

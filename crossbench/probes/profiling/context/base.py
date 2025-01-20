@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import abc
+from functools import cached_property
+import logging
 import subprocess
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.v8.log import V8LogProbe
@@ -21,6 +23,7 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._profiling_process: Optional[subprocess.Popen] = None
+    self._story_ready = False
 
   def setup_v8_log_path(self) -> None:
     if any(isinstance(probe, V8LogProbe) for probe in self.run.probes):
@@ -30,3 +33,29 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     v8_log_dir = self.result_path.parent / V8LogProbe.NAME / "v8.log"
     self.browser_platform.mkdir(v8_log_dir)
     self.session.extra_js_flags["--logfile"] = str(v8_log_dir)
+
+  def start_story_run(self) -> None:
+    self._story_ready = True
+
+  @cached_property
+  def renderer_pid_tid(self) -> Tuple[int, int]:
+    assert self._story_ready, (
+        "Fetching renderer PID/TID before the story is loaded could lead to "
+        "the wrong PID/TID being used. This should never happen TM!")
+    renderer_pid: Optional[int] = None
+    renderer_main_tid: Optional[int] = None
+    with self.run.actions("Get Renderer PID/TID") as actions:
+      renderer_pid = actions.js(
+          "return chrome?.benchmarking?.getRendererPid?.();")
+      renderer_main_tid = actions.js(
+          "return chrome?.benchmarking?.getRendererMainTid?.();")
+    if renderer_pid is None or renderer_main_tid is None:
+      error_message = (
+          "Unable to get Renderer PID/TID from browser. "
+          "Is the browser binary a sufficiently new version? "
+          "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, at least "
+          "https://chromium-review.googlesource.com/c/chromium/src/+/5374765 "
+          "is required.")
+      logging.error(error_message)
+      raise ValueError(error_message)
+    return renderer_pid, renderer_main_tid

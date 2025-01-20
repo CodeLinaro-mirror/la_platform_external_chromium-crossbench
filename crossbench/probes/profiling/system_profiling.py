@@ -11,7 +11,6 @@ from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Sequence,
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.helper import fs_helper
 from crossbench.parse import NumberParser, ObjectParser
@@ -109,7 +108,7 @@ class ProfilingProbe(Probe):
         "target",
         type=TargetMode,
         default=TargetMode.BROWSER_APP_ONLY,
-        help=("Chrome-on-Android-only: "
+        help=("Chrome-on-Android/Chrome-on-Mac: "
               "Profile either Renderer main/process only, "
               "or all processes of the Browser App, or system-wide. "
               "If Renderer main/process profiling is selected, "
@@ -384,9 +383,17 @@ class ProfilingProbe(Probe):
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.repetitions}.")
 
+    supported_mac_targets = (TargetMode.SYSTEM_WIDE,
+                             TargetMode.RENDERER_PROCESS_ONLY)
+    assert self._target in supported_mac_targets, (
+        f"Unsupported profile target for Mac: {self._target}. "
+        f"Should be one of {str(supported_mac_targets)}.")
+    if self._requires_chrome_with_extension():
+      self._assert_is_chrome_with_extension(browser)
+
   def _assert_is_chrome_with_extension(self, browser: Browser) -> None:
     assert (
-        BrowserAttributes.CHROME in browser.attributes and
+        browser.attributes.is_chromium_based and
         browser.major_version >= 124), (
             "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
             "browser version >= M124 https://crrev.com/c/5374765 is required.")

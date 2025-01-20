@@ -8,15 +8,20 @@ import atexit
 import logging
 import signal
 import time
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Optional
 
 import crossbench.path as pth
 from crossbench.helper import proc_helper
 from crossbench.helper.spinner import Spinner
 from crossbench.probes.profiling.context.base import ProfilingContext
+from crossbench.probes.profiling.enum import TargetMode
+
 
 if TYPE_CHECKING:
+  from crossbench.probes.profiling.system_profiling import ProfilingProbe
   from crossbench.probes.results import ProbeResult
+  from crossbench.runner.run import Run
+
 
 _MAC_TRACE_TEMPLATE_PATH: Final[pth.LocalPath] = pth.LocalPath(
     __file__).parents[1] / "time-profile.tracetemplate"
@@ -29,20 +34,44 @@ _XPATH_EXPRESSION: Final[str] = (
 
 class MacOSProfilingContext(ProfilingContext):
 
+  def __init__(self, probe: ProfilingProbe, run: Run) -> None:
+    super().__init__(probe, run)
+    assert self.probe.target in (
+        TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
+            f"Unsupported profiling mode for Mac: {str(self.probe.target)}")
+
+
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
-  def start(self) -> None:
+  def _start_xctrace(self, pid: Optional[int] = None):
     assert self.browser_platform.is_file(_MAC_TRACE_TEMPLATE_PATH), (
         f"Didn't find {_MAC_TRACE_TEMPLATE_PATH}")
+
+    atexit.register(self.stop_process)
+
+    process_filter = ["--all-processes"
+                     ] if pid is None else ["--attach", str(pid)]
     self._profiling_process = self.browser_platform.popen(
         "xctrace", "record", "--template", _MAC_TRACE_TEMPLATE_PATH,
-        "--all-processes", "--output", self.result_path)
+        *process_filter, "--output", self.result_path)
     # xctrace takes some time to start up
     time.sleep(3)
     if self._profiling_process.poll():
       raise ValueError("Could not start xctrace")
-    atexit.register(self.stop_process)
+
+  def start(self) -> None:
+    pass
+
+  def start_story_run(self) -> None:
+    super().start_story_run()
+    # In theory this could start earlier but we leave it here as the
+    # renderer-process mode requires us to run when we are guaranteed
+    # to have a renderer available.
+    if self.probe.target == TargetMode.SYSTEM_WIDE:
+      self._start_xctrace()
+    elif self.probe.target == TargetMode.RENDERER_PROCESS_ONLY:
+      self._start_xctrace(self.renderer_pid_tid[0])
 
   def stop(self) -> None:
     # Needs to be SIGINT for xctrace, terminate won't work.

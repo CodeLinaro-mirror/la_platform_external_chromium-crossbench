@@ -211,6 +211,9 @@ class BasicFlags(Freezable, collections.UserDict):
     ret.merge(other)
     return ret
 
+  def contains_without_value(self, key: str):
+    return key in self.data and self.data[key] is None
+
   def _describe(self, flag_name: str) -> str:
     value = self.get(flag_name)
     if value is None:

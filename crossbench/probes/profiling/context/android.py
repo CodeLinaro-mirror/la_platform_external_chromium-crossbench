@@ -10,7 +10,6 @@ import logging
 import signal
 import subprocess
 import time
-from functools import cached_property
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union, cast
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
@@ -28,39 +27,12 @@ if TYPE_CHECKING:
 
 class AndroidProfilingContext(ProfilingContext):
 
-  def __init__(self, probe: ProfilingProbe, run: Run) -> None:
-    super().__init__(probe, run)
-    self._story_ready = False
-
-  @cached_property
-  def _renderer_pid_tid(self) -> Tuple[int, int]:
-    assert self._story_ready, (
-        "Fetching renderer PID/TID before the story is loaded could lead to "
-        "the wrong PID/TID being used. This should never happen TM!")
-    renderer_pid: Optional[int] = None
-    renderer_main_tid: Optional[int] = None
-    with self.run.actions("Get Renderer PID/TID") as actions:
-      renderer_pid = actions.js(
-          "return chrome?.benchmarking?.getRendererPid?.();")
-      renderer_main_tid = actions.js(
-          "return chrome?.benchmarking?.getRendererMainTid?.();")
-    if renderer_pid is None or renderer_main_tid is None:
-      error_message = (
-          "Unable to get Renderer PID/TID from browser. "
-          "Is the browser binary a sufficiently new version? "
-          "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, at least "
-          "https://chromium-review.googlesource.com/c/chromium/src/+/5374765 "
-          "is required.")
-      logging.error(error_message)
-      raise ValueError(error_message)
-    return renderer_pid, renderer_main_tid
-
   def _generate_command_line(self) -> ListCmdArgs:
     renderer_pid: Optional[int] = None
     renderer_main_tid: Optional[int] = None
     if self.probe.target in (TargetMode.RENDERER_MAIN_ONLY,
                              TargetMode.RENDERER_PROCESS_ONLY):
-      renderer_pid, renderer_main_tid = self._renderer_pid_tid
+      renderer_pid, renderer_main_tid = self.renderer_pid_tid
     return generate_simpleperf_command_line(
         self.probe.target,
         str(self.run.browser.path),
@@ -114,7 +86,7 @@ class AndroidProfilingContext(ProfilingContext):
     return f"{mask:x}"
 
   def _pin_renderer_main_core(self, cpu: int):
-    _, renderer_main_tid = self._renderer_pid_tid
+    _, renderer_main_tid = self.renderer_pid_tid
     self.browser_platform.sh("taskset", "-p", self._cpu_mask([cpu]),
                              str(renderer_main_tid))
 
@@ -139,7 +111,7 @@ class AndroidProfilingContext(ProfilingContext):
       self._start_simpleperf()
 
   def start_story_run(self) -> None:
-    self._story_ready = True
+    super().start_story_run()
     if self.probe.pin_renderer_main_core is not None:
       self._pin_renderer_main_core(self.probe.pin_renderer_main_core)
 

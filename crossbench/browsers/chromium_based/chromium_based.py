@@ -50,6 +50,9 @@ class ChromiumBased(Browser):
   )
   NO_EXPERIMENTS_FLAGS: Tuple[str, ...] = (
       "--no-experiments",
+      # The benchmarking flag without value is a no-experiment flag. However,
+      # when used as '--enable-benchmarking=enable-field-trial-config' it
+      # works with experiments.
       "--enable-benchmarking",
       "--disable-field-trial-config",
   )
@@ -91,8 +94,15 @@ class ChromiumBased(Browser):
         self._flags.set(flag)
     else:
       logging.warning("Running with field-trials or finch experiments.")
+
+      # Enable the benchmarking extension with field trial configs which
+      # requires a special value. See `ShouldUseFieldTrialTestingConfig()`.
+      # https://crsrc.org/c/components/variations/service/variations_field_trial_creator_base.cc;l=138;drc=27d34700b83f381c62e3a348de2e6dfdc08364b8
+      self._flags.set("--enable-benchmarking", "enable-field-trial-config")
+
       no_finch_flags = [
-          flag for flag in self.NO_EXPERIMENTS_FLAGS if flag in self._flags
+          flag for flag in self.NO_EXPERIMENTS_FLAGS
+          if self._flags.contains_without_value(flag)
       ]
       if no_finch_flags:
         raise argparse.ArgumentTypeError(
