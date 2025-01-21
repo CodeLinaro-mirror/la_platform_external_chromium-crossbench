@@ -10,6 +10,8 @@ import time
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple
 
 from crossbench.action_runner.action import all as i_action
+from crossbench.action_runner.default_bond_action_runner import (
+    DefaultBondActionRunner)
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
@@ -21,6 +23,7 @@ from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.bond_base import BondActionRunner
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -68,6 +71,8 @@ class DefaultActionRunner(ActionRunner):
       return [true, element[arguments[1]]];
   """
 
+  _bond: Optional[DefaultBondActionRunner] = None
+
   def get_selector_script(self,
                           selector: str,
                           check_element_exists=False,
@@ -103,6 +108,12 @@ class DefaultActionRunner(ActionRunner):
 
     return selector, script
 
+  @property
+  def bond(self) -> BondActionRunner:
+    if not self._bond:
+      self._bond = DefaultBondActionRunner(self)
+    return self._bond
+
   def _wait_for_ready_state(self, actions: Actions, ready_state: ReadyState,
                             timeout: dt.timedelta) -> None:
     # Make sure we also finish if readyState jumps directly
@@ -112,6 +123,11 @@ class DefaultActionRunner(ActionRunner):
           let state = document.readyState;
           return state === '{ready_state}' || state === "complete";
         """, 0.2, timeout.total_seconds())
+
+  def teardown(self, run: Run):
+    del run
+    if self._bond:
+      self._bond.teardown()
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
     # TODO: potentially refactor the timing and logging out to the base class.

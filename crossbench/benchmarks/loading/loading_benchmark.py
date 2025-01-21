@@ -202,8 +202,9 @@ class LoadingPageFilter(StoryFilter[Page]):
     for page_config in config.pages:
       stories.append(cls._story_from_config(args, page_config, use_labels))
 
-    if use_labels:
+    if not use_labels:
       # Double check that the urls are unique
+
       urls = set(page_config.first_url for page_config in config.pages)
       if len(urls) != len(config.pages):
         raise argparse.ArgumentTypeError(

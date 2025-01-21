@@ -8,7 +8,8 @@ import json
 
 import hjson
 
-from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
+from crossbench.cli.config.secrets import (GoogleUsernamePassword, Secrets,
+                                           ServiceAccount)
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
@@ -34,6 +35,38 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     self.assertEqual(secrets.google,
                      GoogleUsernamePassword("user@test.com", ""))
+
+  def test_parse_bond(self):
+    secrets = Secrets.parse({
+        "bond": {
+            "type": "service_account",
+            "project_id": "my-project",
+            "private_key_id": "0BADC0DE",
+            "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+            "client_email": "name@example.com",
+            "client_id": "7",
+            "auth_uri": "https://example.com/oauth",
+            "token_uri": "https://example.com/token",
+            "auth_provider_x509_cert_url": "https://example.com/certs",
+            "client_x509_cert_url": "https://example.com/x509/my-project.cert",
+            "universe_domain": "example.com",
+        }
+    })
+    self.assertEqual(
+        secrets.bond,
+        ServiceAccount(
+            type="service_account",
+            project_id="my-project",
+            private_key_id="0BADC0DE",
+            private_key="-----BEGIN PRIVATE KEY-----\n...",
+            client_email="name@example.com",
+            client_id="7",
+            auth_uri="https://example.com/oauth",
+            token_uri="https://example.com/token",
+            auth_provider_x509_cert_url="https://example.com/certs",
+            client_x509_cert_url="https://example.com/x509/my-project.cert",
+            universe_domain="example.com",
+        ))
 
   def test_equal_empty(self):
     secrets_1 = Secrets.parse({})

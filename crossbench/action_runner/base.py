@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
+from crossbench.action_runner.bond_base import BondActionRunner
 from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.benchmarks.loading.input_source import InputSource
 
@@ -19,7 +20,6 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.combined import CombinedPage
   from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.benchmarks.loading.tab_controller import TabController
-  from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 
 
@@ -56,7 +56,6 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
 
     super().__init__(runner, action, input_source_message)
 
-
 class ActionRunner:
 
   def __init__(self):
@@ -76,6 +75,14 @@ class ActionRunner:
     if not self._info_stack:
       raise RuntimeError("info_stack can not be called before run_blocks")
     return self._info_stack
+
+  @property
+  def bond(self) -> BondActionRunner:
+    return BondActionRunner()
+
+  def teardown(self, run: Run):
+    del run
+    pass
 
   def run_blocks(self, run: Run, page: InteractivePage,
                  blocks: Iterable[ActionBlock]) -> None:

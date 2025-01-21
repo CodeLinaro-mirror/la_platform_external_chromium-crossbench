@@ -93,6 +93,10 @@ class InteractivePage(Page):
     if self._run_setup and (setup_block := self.setup_block):
       action_runner.run_setup(run, self, setup_block)
 
+  def teardown(self, run: Run) -> None:
+    action_runner = get_action_runner(run)
+    action_runner.teardown(run)
+
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     multiple_tabs = self.tabs.multiple_tabs
