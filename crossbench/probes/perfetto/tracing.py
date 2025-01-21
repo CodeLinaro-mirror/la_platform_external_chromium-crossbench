@@ -133,7 +133,8 @@ def parse_trace_config_file_path(value: str) -> pth.LocalPath:
     raise argparse.ArgumentTypeError(
         "Empty trace config: no trace categories or memory dumps configured.")
   RecordMode.parse(config.get("record_mode", RecordMode.CONTINUOUSLY))
-  return pth.LocalPath(value)
+  config_file_path = pth.LocalPath(value)
+  return config_file_path.absolute()
 
 
 ANDROID_TRACE_CONFIG_PATH = pth.AnyPosixPath(
@@ -145,13 +146,16 @@ class TracingProbe(ChromiumProbe):
   Chromium-only Probe to collect tracing / perfetto data that can be used by
   chrome://tracing or https://ui.perfetto.dev/.
 
-  Currently WIP
+  Configuration:
+  Currently you can configure the tracing probe in three different ways:
+  - preset:       Using a common preset, by default set to "minimal",
+  - categories:   Add more categories to the current selected preset,
+  - trace_config: Use a predefined trace config file that overrides the two
+                  previous options.
   """
   NAME = "tracing"
   RESULT_LOCATION = ResultLocation.BROWSER
   CHROMIUM_FLAGS = ("--enable-perfetto",)
-
-  HELP_URL = "https://bit.ly/chrome-about-tracing"
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -162,18 +166,23 @@ class TracingProbe(ChromiumProbe):
         default="minimal",
         choices=TRACE_PRESETS.keys(),
         help=("Use predefined trace categories, "
-              f"see source {__file__} for more details."))
+              f"see source {__file__} for more details. "
+              "This is cumulative with the categories option."))
     parser.add_argument(
         "categories",
         is_list=True,
         default=[],
         type=str,
-        help=f"A list of trace categories to enable.\n{cls.HELP_URL}")
+        help=("A list of trace categories to enable.\n"
+              "https://bit.ly/chrome-about-tracing\n"
+              "This is cumulative with the preset option."))
     parser.add_argument(
         "trace_config",
         type=parse_trace_config_file_path,
         help=("Sets Chromium's --trace-config-file to the given json config.\n"
-              "https://bit.ly/chromium-memory-startup-tracing "))
+              "https://bit.ly/chromium-memory-startup-tracing\n"
+              "'trace_config' is incompatible with the preset and categories "
+              "option."))
     parser.add_argument(
         "startup_duration",
         default=0,
@@ -217,7 +226,7 @@ class TracingProbe(ChromiumProbe):
     if preset:
       self._categories.update(TRACE_PRESETS[preset])
     if self._trace_config:
-      if self._categories != set(MINIMAL_CONFIG):
+      if self._categories and self._categories != set(MINIMAL_CONFIG):
         raise argparse.ArgumentTypeError(
             "TracingProbe requires either a list of "
             "trace categories or a trace_config file.")
@@ -255,6 +264,22 @@ class TracingProbe(ChromiumProbe):
   @property
   def record_format(self) -> RecordFormat:
     return self._record_format
+
+  @property
+  def record_mode(self) -> RecordMode:
+    return self._record_mode
+
+  @property
+  def categories(self) -> Set[str]:
+    return set(self._categories)
+
+  @property
+  def trace_config_file(self) -> Optional[pth.LocalPath]:
+    return self._trace_config
+
+  @property
+  def startup_duration(self) -> int:
+    return self._startup_duration
 
   def attach(self, browser: Browser) -> None:
     assert browser.attributes.is_chromium_based
