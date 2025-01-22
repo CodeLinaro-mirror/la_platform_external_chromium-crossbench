@@ -54,7 +54,7 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
     assert app_path.exists()
     chrome = ChromeWebDriver(
         "test-chrome", app_path, settings=Settings(platform=plt.PLATFORM))
-    assert version_str in str(chrome.version)
+    assert version_str in chrome.version
     _load_and_check_chromedriver(output_dir, chrome)
     return app_path
 

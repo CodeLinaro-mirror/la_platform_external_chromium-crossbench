@@ -142,7 +142,7 @@ class V8LogProbe(ChromiumProbe):
     # --prof sometimes causes issues on enterprise chrome on linux.
     if _PROF_FLAG not in self._js_flags:
       return
-    if not browser.platform.is_linux or browser.version.major <= 106:
+    if not browser.platform.is_linux or browser.major_version <= 106:
       return
     for search_path in cast(plt.LinuxPlatform, browser.platform).SEARCH_PATHS:
       if compat.is_relative_to(browser.path, search_path):

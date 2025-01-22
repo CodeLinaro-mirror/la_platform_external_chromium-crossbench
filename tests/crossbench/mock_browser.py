@@ -16,9 +16,7 @@ from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
-from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
-from crossbench.browsers.version import BrowserVersion
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
@@ -136,8 +134,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
       return
     self._is_running = False
 
-  def _extract_version(self) -> BrowserVersion:
-    return ChromiumVersion.parse(self.VERSION)
+  def _extract_version(self) -> str:
+    return self.VERSION
 
   def user_agent(self) -> str:
     return f"Mock Browser {self.type_name}, {self.VERSION}"

@@ -5,18 +5,17 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING, Optional
 
 from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
-from crossbench.browsers.safari.version import SafariVersion
 
 if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.settings import Settings
-  from crossbench.browsers.version import BrowserVersion
 
 
 SAFARIDRIVER_PATH = pth.AnyPosixPath("/usr/bin/safaridriver")
@@ -52,8 +51,8 @@ class Safari(Browser):
     assert self.platform.is_macos, "Safari only works on MacOS"
     self.bundle_name: str = ""
 
-  def _setup_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
-    super()._setup_path_and_version(path)
+  def _setup_path(self, path: Optional[pth.AnyPath] = None) -> None:
+    super()._setup_path(path)
     assert self.path
     self.bundle_name = self.path.stem.replace(" ", "")
 
@@ -83,9 +82,16 @@ class Safari(Browser):
           keystroke "e" using {{command down, option down}}
       end tell""")
 
-  def _extract_version(self) -> SafariVersion:
-    assert self.path
-    app_version: str = self.platform.app_version(self.path)
+  def _extract_version(self) -> str:
+    # Use the shipped safaridriver to get the more detailed version
+    # TODO: support remote platform
     driver_version = self.platform.app_version(
         find_safaridriver(self.path, self.platform))
-    return SafariVersion.parse(f"{app_version} {driver_version}")
+    # Input: "Included with Safari 16.6 (18615.3.6.11.1)"
+    # Output: " (18615.3.6.11.1)"
+    driver_version = " (" + driver_version.split(" (", maxsplit=1)[1]
+    assert self.path
+    app_path = self.path.parents[2]
+    browser_version = str(
+        re.findall(r"[\d\.]+", self.platform.app_version(app_path))[0])
+    return browser_version + driver_version

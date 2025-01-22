@@ -11,7 +11,6 @@ from crossbench import plt
 from crossbench.benchmarks import all as benchmarks
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.browsers.chrome import webdriver as chrome_webdriver
-from crossbench.browsers.chromium import webdriver as chromium_webdriver
 from crossbench.browsers.settings import Settings
 from crossbench.cbb import cbb_adapter
 from tests import test_helper
@@ -40,11 +39,9 @@ def get_benchmark(benchmark_cls) -> PressBenchmark:
 def webdriver(driver_path, browser_path):
   is_cq = driver_path is not None
   flags = ["--headless"] if plt.PLATFORM.is_linux and is_cq else []
-  browser_cls = chrome_webdriver.ChromeWebDriver
-  if "chromium" in str(driver_path).lower():
-    browser_cls = chromium_webdriver.ChromiumWebDriver
-  return browser_cls("Chrome", browser_path,
-                     Settings(driver_path=driver_path, flags=flags))
+  return chrome_webdriver.ChromeWebDriver("Chrome", browser_path,
+                                          Settings(driver_path=driver_path,
+                                                   flags=flags))
 
 
 def run_benchmark(test_env: TestEnv, webdriver, benchmark_cls) -> None:

@@ -11,14 +11,14 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chrome.base import ChromeBaseMixin
+from crossbench.browsers.chrome.paths import ChromePathMixin
 from crossbench.browsers.chromium.applescript import ChromiumAppleScript
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
 
-class ChromeAppleScript(ChromeBaseMixin, ChromiumAppleScript):
+class ChromeAppleScript(ChromePathMixin, ChromiumAppleScript):
 
   WEB_DRIVER_OPTIONS = ChromeOptions
   WEB_DRIVER_SERVICE = ChromeService

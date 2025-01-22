@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.base import ChromiumBaseMixin
+from crossbench.browsers.chromium.paths import ChromiumPathMixin
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 
 
-class Chromium(ChromiumBaseMixin, ChromiumBased):
+class Chromium(ChromiumPathMixin, ChromiumBased):
 
   @property
   def attributes(self) -> BrowserAttributes:

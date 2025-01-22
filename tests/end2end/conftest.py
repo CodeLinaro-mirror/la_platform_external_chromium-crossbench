@@ -4,25 +4,18 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import pathlib
-import re
 import sys
+import re
 import tempfile
-from typing import Iterator, Optional
-from unittest import mock
+from typing import Optional
 
 import psutil
 import pytest
 
 from crossbench import plt
 from crossbench.browsers import all as browsers
-from crossbench.browsers.chrome.chrome import Chrome
-from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
-from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.parse import PathParser
 from crossbench.path import LocalPath
 from crossbench.plt.android_adb import adb_devices
@@ -33,11 +26,14 @@ WIN_APP_SUFFIX = [".exe", ".bat"]
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
-BROWSER_PATH_FLAG = "--test-browser-path"
+
 
 def pytest_addoption(parser):
   parser.addoption(
-      BROWSER_PATH_FLAG, "--browserpath", default=None, type=PathParser.path)
+      "--test-browser-path",
+      "--browserpath",
+      default=None,
+      type=PathParser.path)
   parser.addoption(
       "--test-driver-path", "--driverpath", default=None, type=PathParser.path)
   parser.addoption(
@@ -65,7 +61,14 @@ def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
   return app_path
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
+def setup_session(request):
+  test_gsutil_path = request.getfixturevalue("gsutil_path")
+  with plt.PLATFORM.override_binary("gsutil", test_gsutil_path):
+    yield
+
+
+@pytest.fixture(scope="session", autouse=True)
 def driver_path(request) -> Optional[pathlib.Path]:
   maybe_driver_path: Optional[LocalPath] = _get_app_path(
       request, "--test-driver-path")
@@ -75,10 +78,10 @@ def driver_path(request) -> Optional[pathlib.Path]:
   return maybe_driver_path
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def browser_path(request) -> Optional[pathlib.Path]:
   maybe_browser_path: Optional[pathlib.Path] = _get_app_path(
-      request, BROWSER_PATH_FLAG)
+      request, "--test-browser-path")
   if maybe_browser_path:
     logging.info("browser path: %s", maybe_browser_path)
     assert maybe_browser_path.exists()
@@ -92,87 +95,16 @@ def browser_path(request) -> Optional[pathlib.Path]:
     return None
 
 
-def is_browser_path_chromium(browser_path) -> bool:
-  # We support local/infra built chrome and chromium versions in the tests
-  # However, the rest of crossbench is fairly strict in that regard, so we
-  # manually patch the default Chrome version to match whatever flavour
-  # (chrome or chromium) we want to use.
-  if not browser_path:
-    return False
-  version_str = plt.PLATFORM.app_version(browser_path)
-  return "chromium" in version_str.lower()
-
-
-@pytest.fixture(scope="session")
-def test_chrome_name(browser_path) -> str:
-  if is_browser_path_chromium(browser_path):
-    return "chromium"
-  return "chrome-stable"
-
-
 @pytest.fixture(scope="session", autouse=True)
-def session_patch_chrome_driver_finder(driver_path, browser_path):
-  if not driver_path:
-    yield
-    return
-
-  class MockChromeDriverFinder(ChromeDriverFinder):
-
-    def download(self):
-      if self.browser.path == browser_path:
-        # The CQ uses the latest canary, which might not have a easily publicly
-        # accessible chromedriver available.
-        return driver_path
-      return super().download()
-
-  with mock.patch(
-      "crossbench.browsers.chromium_based.webdriver.ChromeDriverFinder",
-      new=MockChromeDriverFinder):
-    yield
-
-
-@pytest.fixture(scope="session", autouse=True)
-def session_patch_chrome_stable(browser_path):
-  if is_browser_path_chromium(browser_path):
-    with mock.patch.object(Chromium, "default_path", return_value=browser_path):
-      yield
-      return
-  with mock.patch.object(Chrome, "stable_path", return_value=browser_path):
-    yield
-
-
-@contextlib.contextmanager
-def mock_patch_chrome_stable(browser_path):
-  is_chromium = is_browser_path_chromium(browser_path)
-  original_get_browser_cls = BrowserVariantsConfig.get_browser_cls
-
-  def mock_get_browser_cls(browser_config: BrowserConfig):
-    nonlocal is_chromium
-    path_str = str(browser_config.path).lower()
-    if "chrome" not in path_str and "chromium" not in path_str:
-      return original_get_browser_cls(browser_config)
-    if is_chromium:
-      return BrowserVariantsConfig.get_chromium_browser_cls(browser_config)
-    return BrowserVariantsConfig.get_chrome_browser_cls(browser_config)
-
-  with mock.patch.object(
-      Chrome, "stable_path", return_value=browser_path), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
-    yield
-
-
-@pytest.fixture(scope="session", autouse=True)
-def gsutil_path(request) -> Iterator[pathlib.Path]:
-  if gsutil_path_override := _get_app_path(request, "--test-gsutil-path"):
-    logging.info("gsutil path: %s", gsutil_path_override)
-    assert gsutil_path_override.exists()
-    with plt.PLATFORM.override_binary("gsutil", gsutil_path_override):
-      yield gsutil_path_override
-      return
+def gsutil_path(request) -> pathlib.Path:
+  maybe_gsutil_path: Optional[pathlib.Path] = _get_app_path(
+      request, "--test-gsutil-path")
+  if maybe_gsutil_path:
+    logging.info("gsutil path: %s", maybe_gsutil_path)
+    assert maybe_gsutil_path.exists()
+    return maybe_gsutil_path
   logging.info("Trying default gsutil path for local runs.")
-  yield default_gsutil_path()
+  return default_gsutil_path()
 
 
 def default_gsutil_path() -> pathlib.Path:
@@ -217,7 +149,6 @@ def device_id(request, adb_path) -> Optional[str]:
       return device_id
   logging.info("No Android device detected.")
   return None
-
 
 @pytest.fixture(scope="session", autouse=True)
 def adb_path(request) -> Optional[str]:

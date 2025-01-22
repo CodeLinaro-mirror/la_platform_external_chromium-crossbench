@@ -77,7 +77,7 @@ class DetailedSplashScreen(BaseURLSplashScreen):
   def get_url(self, info: SplashScreenData) -> str:
     browser: Browser = info.browser
     title = html.escape(browser.app_name.title())
-    version = html.escape(str(browser.version))
+    version = html.escape(browser.version)
     run_type = "Run"
     bg_color = "#000"
     if info.is_warmup:

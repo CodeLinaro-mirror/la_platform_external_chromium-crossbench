@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
-import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Optional, TextIO, Tuple, Type, cast
+import re
+from typing import TYPE_CHECKING, Optional, TextIO, Tuple, cast
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
@@ -17,9 +17,7 @@ from crossbench.flags.chrome import ChromeFlags
 from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
-  from crossbench.browsers.chromium.version import ChromiumVersion
   from crossbench.browsers.settings import Settings
-  from crossbench.browsers.version import BrowserVersion
   from crossbench.flags.base import Flags, FlagsData
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
@@ -60,11 +58,6 @@ class ChromiumBased(Browser):
   )
 
   @classmethod
-  @abc.abstractmethod
-  def version_cls(cls) -> Type[ChromiumVersion]:
-    pass
-
-  @classmethod
   def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
     return ChromeFlags(initial_data)
 
@@ -75,9 +68,6 @@ class ChromiumBased(Browser):
     super().__init__(label, path, settings=settings)
     self._stdout_log_file: Optional[TextIO] = None
     assert isinstance(self._flags, ChromeFlags)
-
-  def _extract_version(self) -> BrowserVersion:
-    return self.version_cls().parse(self.platform.app_version(self.path))
 
   def _setup_flags(self, settings: Settings) -> ChromeFlags:
     flags: Flags = settings.flags
@@ -127,7 +117,7 @@ class ChromiumBased(Browser):
   def _maybe_disable_gpu_compositing(self) -> None:
     # Chrome Remote Desktop provides no GPU and older chrome versions
     # don't handle this well.
-    if self.version.major > 92 or ("CHROME_REMOTE_DESKTOP_SESSION"
+    if self.major_version > 92 or ("CHROME_REMOTE_DESKTOP_SESSION"
                                    not in self.platform.environ):
       return
     self.flags.set("--disable-gpu-compositing")
@@ -145,6 +135,17 @@ class ChromiumBased(Browser):
     else:
       self.cache_dir = cache_dir
       self.clear_cache_dir = False
+
+  def _extract_version(self) -> str:
+    assert self.path
+    version_string = self.platform.app_version(self.path)
+    # Sample output: "Chromium 90.0.4430.212 dev" => "90.0.4430.212"
+    matches = re.findall(r"[\d.]+", version_string)
+    if not matches:
+      raise ValueError(
+          f"Could not extract version number from '{version_string}' "
+          f"for '{self.path}'")
+    return str(matches[0])
 
   @property
   def is_headless(self) -> bool:
@@ -210,7 +211,7 @@ class ChromiumBased(Browser):
     self._sync_viewport_flag(flags, "--headless", self.viewport.is_headless,
                              Viewport.HEADLESS)
     # M112 added --headless=new as replacement for --headless
-    if "--headless" in flags and (self.version.major
+    if "--headless" in flags and (self.major_version
                                   >= self.MIN_HEADLESS_NEW_VERSION):
       if flags["--headless"] is None:
         logging.info("Replacing --headless with --headless=new")

@@ -4,22 +4,15 @@
 
 from __future__ import annotations
 
-import abc
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
-from crossbench.browsers.chrome.version import ChromeVersion
+from crossbench import plt
 
 if TYPE_CHECKING:
-  from crossbench import plt
-  from crossbench.browsers.chromium.version import ChromiumVersion
   from crossbench.path import AnyPath
 
 
-class ChromeBaseMixin(abc.ABC):
-
-  @classmethod
-  def version_cls(cls) -> Type[ChromiumVersion]:
-    return ChromeVersion
+class ChromePathMixin:
 
   @classmethod
   def default_path(cls, platform: plt.Platform) -> AnyPath:
