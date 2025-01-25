@@ -95,6 +95,9 @@ class ChromiumBasedWebDriver(
     if self._settings.driver_logging:
       service_args += ["--verbose"]
       driver_log_path = os.fspath(self._setup_driver_log_file())
+    adb_port = os.environ.get("ANDROID_ADB_SERVER_PORT")
+    if adb_port and adb_port.isdigit():
+      service_args += ["--adb-port=" + adb_port]
     # pytype: disable=wrong-keyword-args
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
