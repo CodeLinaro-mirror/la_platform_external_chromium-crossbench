@@ -27,11 +27,11 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   DEVTOOLS_PORT_PATH = pth.AnyPosixPath("/home/chronos/DevToolsActivePort")
 
   def __init__(self, *args, **kwargs):
-    self._username: Optional[str] = None
     super().__init__(*args, **kwargs)
+    self._username: Optional[str] = None
     # `/tmp` on ChromeOS is mounted with `noexec` flag.
     # Instead, we use `/usr/local/tmp`, which allows executions of binaries.
-    self._default_tmp_dir: pth.AnyPath = pth.AnyPosixPath("/usr/local/tmp")
+    self._default_tmp_dir = pth.AnyPosixPath("/usr/local/tmp")
 
   @property
   def name(self) -> str:

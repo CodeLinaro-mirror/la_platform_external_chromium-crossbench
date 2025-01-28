@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import atexit
 import collections.abc
 import contextlib
 import datetime as dt
@@ -99,9 +100,7 @@ class Platform(abc.ABC):
 
   def __init__(self) -> None:
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
-    self._cache_dir: Optional[pth.AnyPath] = None
-    if self.is_local:
-      self._cache_dir = self.path(DEFAULT_CACHE_DIR)
+    self._cache_dir_root: Optional[pth.AnyPath] = None
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -556,17 +555,26 @@ class Platform(abc.ABC):
     return self.local_path(self.cache_dir(name))
 
   def cache_dir(self, name: Optional[str] = None) -> pth.AnyPath:
-    assert self._cache_dir, "missing cache dir"
+    if self._cache_dir_root is None:
+      self._cache_dir_root = self._lazy_setup_cache_dir()
+    assert self._cache_dir_root, "missing cache dir"
     if not name:
-      dir = self._cache_dir
+      dir = self._cache_dir_root
     else:
-      dir = self._cache_dir / pth.safe_filename(name)
+      dir = self._cache_dir_root / pth.safe_filename(name)
     self.mkdir(dir, parents=True, exist_ok=True)
     return dir
 
+  def _lazy_setup_cache_dir(self) -> pth.AnyPath:
+    if self.is_local and DEFAULT_CACHE_DIR:
+      return self.local_path(DEFAULT_CACHE_DIR)
+    tmp_cache_dir = self.default_tmp_dir / "crossbench_cache"
+    atexit.register(self.rm, tmp_cache_dir, dir=True, missing_ok=True)
+    return tmp_cache_dir
+
   def set_cache_dir(self, path: pth.AnyPath) -> None:
-    self._cache_dir = path
-    self.mkdir(path, parents=True, exist_ok=True)
+    self._cache_dir_root = self.path(path)
+    self.mkdir(path, parents=True)
 
   def cat(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""

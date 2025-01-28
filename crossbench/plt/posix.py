@@ -33,7 +33,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def __init__(self) -> None:
     super().__init__()
-    self._default_tmp_dir: pth.AnyPath = pth.AnyPosixPath("")
+    self._default_tmp_dir: Optional[pth.AnyPath] = None
 
   @property
   def signals(self) -> Type[AnyPosixSignals]:
@@ -113,7 +113,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @property
   def default_tmp_dir(self) -> pth.AnyPath:
-    if self._default_tmp_dir.parts:
+    if self._default_tmp_dir and self._default_tmp_dir.parts:
       return self._default_tmp_dir
     if self.is_local:
       self._default_tmp_dir = self.path(super().default_tmp_dir)
@@ -126,6 +126,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       tmp_path = self.path(env[tmp_var])
       if self.is_dir(tmp_path):
         self._default_tmp_dir = tmp_path
+        assert self.is_absolute(self._default_tmp_dir)
         return tmp_path
     self._default_tmp_dir = self.path("/tmp")
     assert self.is_dir(self._default_tmp_dir), (
