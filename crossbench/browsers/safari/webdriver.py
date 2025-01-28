@@ -13,7 +13,6 @@ from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
 
-from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
@@ -41,11 +40,6 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
 
-  def clear_cache(self) -> None:
-    # skip the default caching, and only do it after launching the browser
-    # via selenium.
-    pass
-
   def _find_driver(self) -> AnyPath:
     # TODO: support remote platform
     assert self.platform.is_local, "Remote platform is not supported yet"
@@ -67,13 +61,13 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
     options: SafariOptions = self._get_driver_options(session)
     session.setup_selenium_options(options)
-    self._force_clear_cache(session)
 
     service = SafariService(executable_path=os.fspath(driver_path))
     driver_kwargs = {"service": service, "options": options}
 
     with Spinner():
       driver = self._start_driver_with_retries(driver_kwargs)
+      self.platform.sleep(0.5)
 
     assert driver.session_id, "Could not start webdriver"
     logs: AnyPath = (
@@ -107,13 +101,6 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           raise DriverException("Could not start SafariWebDriver") from e
         seen_exceptions.add(type(e))
     raise DriverException("Could not start SafariWebDriver")
-
-  def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
-    del session
-    with exception.annotate("Clearing Browser Cache"):
-      self._clear_cache()
-      self.platform.exec_apple_script(f"""
-        tell application "{self.app_path}" to quit """)
 
   def _get_driver_options(self,
                           session: BrowserSessionRunGroup) -> SafariOptions:
@@ -158,6 +145,13 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           quit
         end tell""")
 
+  def force_quit(self):
+    try:
+      super().force_quit()
+    finally:
+      # Certain safaridriver versions keep on lingering around when they fail.
+      self.platform.sh("killall", "-9", "safaridriver", check=False)
+
 
 class SafariWebdriverIOS(SafariWebDriver):
   MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=15)
@@ -181,9 +175,6 @@ class SafariWebdriverIOS(SafariWebDriver):
     return options
 
   def _setup_window(self) -> None:
-    pass
-
-  def _force_clear_cache(self, session: BrowserSessionRunGroup) -> None:
     pass
 
   def quit(self) -> None:
