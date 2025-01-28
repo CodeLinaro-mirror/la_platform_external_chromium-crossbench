@@ -5,7 +5,7 @@
 import argparse
 import json
 import pathlib
-from typing import Dict, List, Type
+from typing import Dict, List, Tuple, Type
 from unittest import mock
 
 import hjson
@@ -27,8 +27,38 @@ class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running
   as part of the presubmit"""
 
-  def test_subcommand_help(self):
-    for benchmark_cls in CrossBenchCLI.BENCHMARKS:
+  def test_subcommand_help_part_1(self):
+    self.verify_subcommand_help(0)
+
+  def test_subcommand_help_part_2(self):
+    self.verify_subcommand_help(1)
+
+  def test_subcommand_help_part_3(self):
+    self.verify_subcommand_help(2)
+
+  def test_subcommand_help_part_4(self):
+    self.verify_subcommand_help(3)
+
+  def test_subcommand_help_part_5(self):
+    self.verify_subcommand_help(4)
+
+  def test_subcommand_help_part_6(self):
+    self.verify_subcommand_help(5)
+
+  def test_subcommand_help_part_7(self):
+    self.verify_subcommand_help(6)
+
+  def test_subcommand_help_part_8(self):
+    self.verify_subcommand_help(7)
+
+  def test_subcommand_help_part_9(self):
+    self.verify_subcommand_help(8)
+
+  def test_subcommand_help_part_10(self):
+    self.verify_subcommand_help(9)
+
+  def verify_subcommand_help(self, chunk: int):
+    for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
       subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
@@ -39,8 +69,38 @@ class CliSlowTestCase(BaseCliTestCase):
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
 
-  def test_subcommand_help_subcommand(self):
-    for benchmark_cls in CrossBenchCLI.BENCHMARKS:
+  def test_subcommand_help_subcommand_part_1(self):
+    self.verify_subcommand_help_subcommand(0)
+
+  def test_subcommand_help_subcommand_part_2(self):
+    self.verify_subcommand_help_subcommand(1)
+
+  def test_subcommand_help_subcommand_part_3(self):
+    self.verify_subcommand_help_subcommand(2)
+
+  def test_subcommand_help_subcommand_part_4(self):
+    self.verify_subcommand_help_subcommand(3)
+
+  def test_subcommand_help_subcommand_part_5(self):
+    self.verify_subcommand_help_subcommand(4)
+
+  def test_subcommand_help_subcommand_part_6(self):
+    self.verify_subcommand_help_subcommand(5)
+
+  def test_subcommand_help_subcommand_part_7(self):
+    self.verify_subcommand_help_subcommand(6)
+
+  def test_subcommand_help_subcommand_part_8(self):
+    self.verify_subcommand_help_subcommand(7)
+
+  def test_subcommand_help_subcommand_part_9(self):
+    self.verify_subcommand_help_subcommand(8)
+
+  def test_subcommand_help_subcommand_part_10(self):
+    self.verify_subcommand_help_subcommand(10)
+
+  def verify_subcommand_help_subcommand(self, chunk: int):
+    for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
       subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
@@ -51,8 +111,38 @@ class CliSlowTestCase(BaseCliTestCase):
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
 
-  def test_subcommand_describe_subcommand(self):
-    for benchmark_cls in CrossBenchCLI.BENCHMARKS:
+  def test_subcommand_describe_subcommand_part_1(self):
+    self.verify_subcommand_describe_subcommand(0)
+
+  def test_subcommand_describe_subcommand_part_2(self):
+    self.verify_subcommand_describe_subcommand(1)
+
+  def test_subcommand_describe_subcommand_part_3(self):
+    self.verify_subcommand_describe_subcommand(2)
+
+  def test_subcommand_describe_subcommand_part_4(self):
+    self.verify_subcommand_describe_subcommand(3)
+
+  def test_subcommand_describe_subcommand_part_5(self):
+    self.verify_subcommand_describe_subcommand(4)
+
+  def test_subcommand_describe_subcommand_part_6(self):
+    self.verify_subcommand_describe_subcommand(5)
+
+  def test_subcommand_describe_subcommand_part_7(self):
+    self.verify_subcommand_describe_subcommand(6)
+
+  def test_subcommand_describe_subcommand_part_8(self):
+    self.verify_subcommand_describe_subcommand(7)
+
+  def test_subcommand_describe_subcommand_part_9(self):
+    self.verify_subcommand_describe_subcommand(8)
+
+  def test_subcommand_describe_subcommand_part_10(self):
+    self.verify_subcommand_describe_subcommand(9)
+
+  def verify_subcommand_describe_subcommand(self, chunk: int):
+    for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
       subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
@@ -63,7 +153,19 @@ class CliSlowTestCase(BaseCliTestCase):
         output = stderr + stdout
         self.assertIn("See `describe benchmark ", output)
 
-  def test_browser_identifiers(self):
+  def test_browser_identifiers_part_1(self):
+    self.verify_browser_identifiers(0)
+
+  def test_browser_identifiers_part_2(self):
+    self.verify_browser_identifiers(1)
+
+  def test_browser_identifiers_part_3(self):
+    self.verify_browser_identifiers(2)
+
+  def test_browser_identifiers_part_4(self):
+    self.verify_browser_identifiers(3)
+
+  def verify_browser_identifiers(self, chunk: int):
     browsers: Dict[str, Type[mock_browser.MockBrowser]] = {
         "chrome": mock_browser.MockChromeStable,
         "chrome-stable": mock_browser.MockChromeStable,
@@ -97,7 +199,9 @@ class CliSlowTestCase(BaseCliTestCase):
           "tp": mock_browser.MockSafariTechnologyPreview,
       })
 
-    for identifier, browser_cls in browsers.items():
+    items_chunk: List[Tuple[str, Type[mock_browser.MockBrowser]]] = list(
+        browsers.items())[chunk::4]
+    for identifier, browser_cls in items_chunk:
       out_dir = self.out_dir / identifier
       self.assertFalse(out_dir.exists())
       with mock.patch.object(
