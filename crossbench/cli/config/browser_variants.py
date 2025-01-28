@@ -400,9 +400,12 @@ class BrowserVariantsConfig:
     def copy_and_set_js_flags(flags: ChromeFlags,
                               js_flags_str: str) -> ChromeFlags:
       flags = flags.copy()
-      for js_flag in js_flags_str.split(","):
-        js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
-        flags.js_flags.set(js_flag_name, js_flag_value)
+      if not js_flags_str.strip():
+        assert not flags.js_flags
+      else:
+        for js_flag in js_flags_str.split(","):
+          js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
+          flags.js_flags.set(js_flag_name, js_flag_value)
       return flags
 
     flags_sets = [

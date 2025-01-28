@@ -1053,6 +1053,61 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "--log-all": None
     })
 
+  def test_from_cli_args_browser_multiple_js_flags_empty_base(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features="",
+        disable_features="",
+        js_flags=[" ", "--max-opt=2,--log-all"],
+        other_browser_args=[])
+    with mock.patch.object(
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    self.assertEqual(len(config.variants), 2)
+    browser_0 = config.variants[0]
+    self.assertIsInstance(browser_0, browser_cls)
+    self.assertEqual(browser_0.js_flags.to_dict(), {})
+    browser_1 = config.variants[1]
+    self.assertIsInstance(browser_1, browser_cls)
+    self.assertEqual(browser_1.js_flags.to_dict(), {
+        "--max-opt": "2",
+        "--log-all": None
+    })
+
+  def test_from_cli_args_browser_multiple_js_flags_empty_base_defaults(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features="",
+        disable_features="",
+        js_flags=[" ", "--max-opt=2,--log-all"],
+        other_browser_args=["--js-flags=--no-turbofan"])
+    with mock.patch.object(
+        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    self.assertEqual(len(config.variants), 2)
+    browser_0 = config.variants[0]
+    self.assertIsInstance(browser_0, browser_cls)
+    self.assertEqual(browser_0.js_flags.to_dict(), {"--no-turbofan": None})
+    browser_1 = config.variants[1]
+    self.assertIsInstance(browser_1, browser_cls)
+    self.assertEqual(browser_1.js_flags.to_dict(), {
+        "--no-turbofan": None,
+        "--max-opt": "2",
+        "--log-all": None
+    })
+
   def test_from_cli_args_browser_multiple_js_flags(self):
     browser_cls = mock_browser.MockChromeStable
     args = mock.Mock(
