@@ -13,12 +13,13 @@ import re
 import socket
 import traceback as tb
 from subprocess import SubprocessError
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Type
 
 import psutil
 
 from crossbench import path as pth
 from crossbench.plt.posix import PosixPlatform
+from crossbench.plt.signals import MacOSSignals
 
 
 class MacOSPlatform(PosixPlatform):
@@ -39,6 +40,10 @@ class MacOSPlatform(PosixPlatform):
   @property
   def name(self) -> str:
     return "macos"
+
+  @property
+  def signals(self) -> Type[MacOSSignals]:
+    return MacOSSignals
 
   @functools.cached_property
   def version(self) -> str:

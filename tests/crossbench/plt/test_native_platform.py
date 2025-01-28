@@ -7,6 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import os
 import pathlib
+import signal
 import socket
 import stat
 import sys
@@ -464,6 +465,16 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertEqual(self.platform.which(test_binary), override_binary)
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
     self.assertIsNone(self.platform.which(test_binary))
+
+  def test_signals(self):
+    for signal_name in dir(self.platform.signals):
+      if not signal_name.startswith("SIG"):
+        continue
+      value = getattr(self.platform.signals, signal_name)
+      native_value = getattr(signal, signal_name)
+      self.assertEqual(value, native_value,
+                       f"Mismatching values for {signal_name}")
+
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")

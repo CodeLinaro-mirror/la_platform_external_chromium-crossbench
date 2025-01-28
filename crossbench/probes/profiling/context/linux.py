@@ -13,8 +13,9 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 from crossbench import plt
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.helper import fs_helper, proc_helper
+from crossbench.helper import fs_helper
 from crossbench.helper.spinner import Spinner
+from crossbench.plt import proc_helper
 from crossbench.probes.profiling.context.base import ProfilingContext
 from crossbench.probes.profiling.enum import CleanupMode
 

@@ -13,9 +13,9 @@ import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 from crossbench import compat
-from crossbench.helper import proc_helper
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import DurationParser, PathParser
+from crossbench.plt import proc_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import ProbeValidationError

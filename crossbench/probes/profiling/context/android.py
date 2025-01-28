@@ -13,7 +13,7 @@ import time
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union, cast
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
-from crossbench.helper import proc_helper
+from crossbench.plt import proc_helper
 from crossbench.probes.profiling.context.base import ProfilingContext
 from crossbench.probes.profiling.enum import CallGraphMode, TargetMode
 

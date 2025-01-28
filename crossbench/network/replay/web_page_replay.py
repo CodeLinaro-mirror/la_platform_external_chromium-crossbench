@@ -14,12 +14,12 @@ import subprocess
 import time
 from typing import Iterable, Optional, TextIO, Tuple
 
-from crossbench.helper import proc_helper, url_helper
+from crossbench.helper import url_helper
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
-from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
+from crossbench.plt import PLATFORM, Platform, TupleCmdArgs, proc_helper
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"

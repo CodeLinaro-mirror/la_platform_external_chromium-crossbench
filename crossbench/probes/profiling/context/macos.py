@@ -11,11 +11,10 @@ import time
 from typing import TYPE_CHECKING, Final, Optional
 
 import crossbench.path as pth
-from crossbench.helper import proc_helper
 from crossbench.helper.spinner import Spinner
+from crossbench.plt import proc_helper
 from crossbench.probes.profiling.context.base import ProfilingContext
 from crossbench.probes.profiling.enum import TargetMode
-
 
 if TYPE_CHECKING:
   from crossbench.probes.profiling.system_profiling import ProfilingProbe

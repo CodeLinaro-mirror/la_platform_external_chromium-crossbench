@@ -13,11 +13,12 @@ import shlex
 import subprocess
 from signal import Signals
 from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, Mapping,
-                    Optional)
+                    Optional, Type)
 
 from crossbench import path as pth
 from crossbench.plt.base import Environ, Platform, SubprocessError
 from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
+from crossbench.plt.signals import AnyPosixSignals, PosixBaseSignal
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, ListCmdArgs
@@ -33,6 +34,10 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def __init__(self) -> None:
     super().__init__()
     self._default_tmp_dir: pth.AnyPath = pth.AnyPosixPath("")
+
+  @property
+  def signals(self) -> Type[AnyPosixSignals]:
+    return PosixBaseSignal
 
   @functools.cached_property
   def version(self) -> str:  #pylint: disable=invalid-overridden-method

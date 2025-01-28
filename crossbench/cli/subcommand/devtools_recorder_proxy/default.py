@@ -20,8 +20,8 @@ from websockets import server as websockets
 
 from crossbench import compat
 from crossbench import path as pth
-from crossbench.helper import proc_helper
 from crossbench.helper.state import BaseState, StateMachine
+from crossbench.plt import proc_helper
 
 if TYPE_CHECKING:
   from asyncio.subprocess import Process

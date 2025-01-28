@@ -19,11 +19,12 @@ import sys
 from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
 
 from crossbench.flags.base import Flags
-from crossbench.helper import proc_helper, wait
+from crossbench.helper import wait
 from crossbench.helper.path_finder import TsProxyFinder
 from crossbench.network.traffic_shaping import ts_proxy_settings
 from crossbench.network.traffic_shaping.base import TrafficShaper
 from crossbench.parse import NumberParser, PathParser
+from crossbench.plt import proc_helper
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes

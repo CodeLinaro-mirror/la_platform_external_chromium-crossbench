@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import functools
 import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Type
 
 from crossbench import path as pth
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.posix import PosixPlatform
 from crossbench.plt.remote import RemotePlatformMixin
+from crossbench.plt.signals import LinuxSignals
 
 
 class LinuxPlatform(PosixPlatform):
@@ -33,6 +34,10 @@ class LinuxPlatform(PosixPlatform):
   @property
   def name(self) -> str:
     return "linux"
+
+  @property
+  def signals(self) -> Type[LinuxSignals]:
+    return LinuxSignals
 
   def check_system_monitoring(self, disable: bool = False) -> bool:
     return True

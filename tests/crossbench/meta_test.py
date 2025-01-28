@@ -23,7 +23,7 @@ class MetaTestCase(unittest.TestCase):
     # - pytest files (in end2end) use a different approach that doesn't rely
     #   on a per-file runner
     for test_file in UNITTEST_DIR.glob("**/test_*.py"):
-      with self.subTest(test_file=test_file):
+      with self.subTest(test_file=str(test_file)):
         self.assertTrue(
             test_file.read_text().rstrip().endswith(RUN_SNIPPET),
             f"{test_file} misses runner snippet: "

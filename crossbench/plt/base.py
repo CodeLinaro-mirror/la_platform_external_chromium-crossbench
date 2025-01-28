@@ -27,7 +27,7 @@ import urllib.request
 from signal import Signals
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generator,
                     Iterable, Iterator, List, Mapping, Optional, Sequence,
-                    Tuple, Union)
+                    Tuple, Type, Union)
 
 import psutil
 
@@ -38,7 +38,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench.plt.signals import AnySignals
   from crossbench.types import JsonDict
 
 
@@ -110,6 +110,11 @@ class Platform(abc.ABC):
     caller = inspect.stack()[1].function
     raise RuntimeError(f"{type(self).__name__}.{caller}(...) is not supported "
                        "on remote platform")
+
+  @property
+  @abc.abstractmethod
+  def signals(self) -> Type[AnySignals]:
+    pass
 
   @property
   @abc.abstractmethod

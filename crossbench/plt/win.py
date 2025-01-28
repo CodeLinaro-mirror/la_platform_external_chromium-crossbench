@@ -8,10 +8,11 @@ import functools
 import logging
 import os
 import shutil
-from typing import Optional
+from typing import Optional, Type
 
 from crossbench import path as pth
 from crossbench.plt.base import Platform
+from crossbench.plt.signals import WinSignals
 
 
 class WinPlatform(Platform):
@@ -23,6 +24,10 @@ class WinPlatform(Platform):
       pth.LocalPath(os.path.expandvars("%APPDATA%")),
       pth.LocalPath(os.path.expandvars("%LOCALAPPDATA%")),
   )
+
+  @property
+  def signals(self) -> Type[WinSignals]:
+    return WinSignals
 
   @property
   def is_win(self) -> bool:

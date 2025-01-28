@@ -13,7 +13,8 @@ import tempfile
 from typing import (TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type,
                     Union)
 
-from crossbench.helper import collection_helper, proc_helper
+from crossbench.helper import collection_helper
+from crossbench.plt import proc_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation

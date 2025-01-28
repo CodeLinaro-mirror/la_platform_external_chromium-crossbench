@@ -16,7 +16,7 @@ import psutil
 from crossbench import plt
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment, ValidationError
-from crossbench.helper import proc_helper
+from crossbench.plt import proc_helper
 
 if TYPE_CHECKING:
   import datetime as dt
