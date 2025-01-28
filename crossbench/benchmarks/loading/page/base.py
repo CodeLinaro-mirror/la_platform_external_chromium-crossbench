@@ -20,7 +20,7 @@ from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+  from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
   from crossbench.cli.config.secrets import Secrets
   from crossbench.runner.run import Run
 
@@ -78,7 +78,7 @@ class Page(Story, metaclass=abc.ABCMeta):
 
 def get_action_runner(run: Run) -> ActionRunner:
   # TODO: make sure we have a single instance per Run
-  benchmark = cast("PageLoadBenchmark", run.benchmark)
+  benchmark = cast("LoadingBenchmark", run.benchmark)
 
   if not benchmark.action_runner:
     platform = run.browser.platform

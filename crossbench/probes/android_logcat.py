@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class AndroidLogcatProbe(Probe):
+class LogcatAndroidProbe(Probe):
   """
   Android-only probe to collect logcat traces.
   """
@@ -54,9 +54,9 @@ class AndroidLogcatProbe(Probe):
     return AndroidLogcatProbeContext
 
 
-class AndroidLogcatProbeContext(ProbeContext[AndroidLogcatProbe]):
+class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
 
-  def __init__(self, probe: AndroidLogcatProbe, run: Run) -> None:
+  def __init__(self, probe: LogcatAndroidProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._logcat_start_time: Optional[str] = None
 

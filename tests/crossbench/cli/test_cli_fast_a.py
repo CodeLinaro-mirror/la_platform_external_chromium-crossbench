@@ -11,6 +11,7 @@ from unittest import mock
 import hjson
 
 from crossbench import __version__, plt
+from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.env import HostEnvironmentConfig
@@ -27,6 +28,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
   Keep FastCliTestCasePartA and FastCliTestCasePartB balanced for faster local
   presubmit checks.
   """
+
+  def test_benchmark_order(self):
+    sorted_benchmark_classes = sorted(
+        CrossBenchCLI.BENCHMARKS, key=lambda cls: cls.NAME)
+    self.assertSequenceEqual(sorted_benchmark_classes, CrossBenchCLI.BENCHMARKS)
 
   def test_invalid(self):
     with self.assertRaises(SysExitTestException):

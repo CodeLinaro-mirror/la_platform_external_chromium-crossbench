@@ -9,7 +9,7 @@ import json
 from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Sequence,
                     Tuple, Union)
 
-from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.env import HostEnvironmentConfig, ValidationMode
 from crossbench.probes.probe import Probe
@@ -48,7 +48,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    benchmark = PageLoadBenchmark(stories)  # pytype: disable=not-instantiable
+    benchmark = LoadingBenchmark(stories)  # pytype: disable=not-instantiable
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

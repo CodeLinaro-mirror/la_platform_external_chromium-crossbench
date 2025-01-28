@@ -23,7 +23,7 @@ from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
-from crossbench.probes.polling import ShellPollingProbe
+from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe
@@ -82,7 +82,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield PowerSamplerProbe()
     yield ProfilingProbe()
     yield ScreenshotProbe()
-    yield ShellPollingProbe(cmd=["ls"])
+    yield PollingShellProbe(cmd=["ls"])
     yield SystemStatsProbe()
     yield TracingProbe()
     yield V8BuiltinsPGOProbe()
@@ -95,6 +95,10 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
   def probe_classes(self):
     yield from INTERNAL_PROBES
     yield from GENERAL_PURPOSE_PROBES
+
+  def test_general_purpose_probe_order(self):
+    sorted_probe_classes = sorted(GENERAL_PURPOSE_PROBES, key=lambda x: x.NAME)
+    self.assertSequenceEqual(GENERAL_PURPOSE_PROBES, sorted_probe_classes)
 
   def all_probe_subclasses(self, probe_cls=Probe):
     for probe_sub_cls in probe_cls.__subclasses__():
@@ -168,7 +172,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
         # TODO: auto-download perfetto bin from storage
         PerfettoProbe,
         # TODO: provide default settings
-        ShellPollingProbe,
+        PollingShellProbe,
         # TODO: provide default settings
         ShellProbe,
         # TODO: missing wpr, download precompiled wpr from storage

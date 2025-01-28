@@ -246,7 +246,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     return self.stories
 
 
-class PageLoadBenchmark(SubStoryBenchmark):
+class LoadingBenchmark(SubStoryBenchmark):
   """
   Benchmark runner for loading pages.
 

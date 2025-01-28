@@ -179,18 +179,18 @@ class CrossBenchCLI:
       benchmarks.JetStream21Benchmark,
       benchmarks.JetStream22Benchmark,
       benchmarks.JetStream30Benchmark,
+      benchmarks.LoadingBenchmark,
       benchmarks.LoadLinePhoneBenchmark,
       benchmarks.LoadLineTabletBenchmark,
       benchmarks.ManualBenchmark,
+      benchmarks.MemoryBenchmark,
       benchmarks.MotionMark10Benchmark,
       benchmarks.MotionMark11Benchmark,
       benchmarks.MotionMark12Benchmark,
       benchmarks.MotionMark13Benchmark,
-      benchmarks.PageLoadBenchmark,
       benchmarks.Speedometer20Benchmark,
       benchmarks.Speedometer21Benchmark,
       benchmarks.Speedometer30Benchmark,
-      benchmarks.MemoryBenchmark,
   )
 
   RUNNER_CLS: Type[Runner] = Runner

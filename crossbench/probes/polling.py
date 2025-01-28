@@ -75,7 +75,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
     return PollingProbeContext
 
 
-class ShellPollingProbe(PollingProbe):
+class PollingShellProbe(PollingProbe):
   """
   General-purpose probe to periodically collect the stdout of a given bash cmd.
   """

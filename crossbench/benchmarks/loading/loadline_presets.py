@@ -17,8 +17,8 @@ from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
-                                                             PageLoadBenchmark)
+from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
+                                                             LoadingPageFilter)
 from crossbench.flags.base import Flags
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
@@ -120,7 +120,7 @@ class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
     return self.empty_result()
 
 
-class LoadLineBenchmark(PageLoadBenchmark, metaclass=abc.ABCMeta):
+class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS = LoadLinePageFilter
   PROBES = (LoadLineProbe,)
   DEFAULT_REPETITIONS = 100

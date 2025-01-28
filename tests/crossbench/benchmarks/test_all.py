@@ -12,7 +12,7 @@ from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
 from crossbench.benchmarks.jetstream.jetstream_3_0 import JetStream30Benchmark
-from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.loadline_presets import (
     LoadLinePhoneBenchmark, LoadLineTabletBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
@@ -45,7 +45,7 @@ ALL = (
     MotionMark11Benchmark,
     MotionMark12Benchmark,
     MotionMark13Benchmark,
-    PageLoadBenchmark,
+    LoadingBenchmark,
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,
@@ -75,8 +75,8 @@ class AllBenchmarksTestCase(unittest.TestCase):
       if benchmark_cls is MemoryBenchmark:
         continue
       if issubclass(benchmark_cls,
-                    PageLoadBenchmark) and (benchmark_cls
-                                            is not PageLoadBenchmark):
+                    LoadingBenchmark) and (benchmark_cls
+                                           is not LoadingBenchmark):
         continue
       self.assertNotIn(benchmark_cls.DEFAULT_STORY_CLS, seen_story_classes)
       seen_story_classes.add(benchmark_cls.DEFAULT_STORY_CLS)

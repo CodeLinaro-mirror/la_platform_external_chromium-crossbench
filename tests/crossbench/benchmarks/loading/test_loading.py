@@ -20,8 +20,8 @@ from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
-                                                             PageLoadBenchmark)
+from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
+                                                             LoadingPageFilter)
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
 from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
@@ -43,7 +43,7 @@ class TestPageLoadBenchmark(SubStoryTestCase):
 
   @property
   def benchmark_cls(self):
-    return PageLoadBenchmark
+    return LoadingBenchmark
 
   def story_filter(  # pylint: disable=arguments-differ
       self,
