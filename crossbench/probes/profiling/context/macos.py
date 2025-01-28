@@ -39,7 +39,6 @@ class MacOSProfilingContext(ProfilingContext):
         TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
             f"Unsupported profiling mode for Mac: {str(self.probe.target)}")
 
-
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 

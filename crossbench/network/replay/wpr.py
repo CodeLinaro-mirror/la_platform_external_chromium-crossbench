@@ -277,8 +277,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     wpr_go_bin, archive, key_file, cert_file, inject_script =\
         self._push_required_files()
-    inject_scripts: List[AnyPath] = (
-        [inject_script] if self.inject_deterministic_script else [])
+    inject_scripts: List[AnyPath] = ([inject_script] if
+                                     self.inject_deterministic_script else [])
     return WprReplayServer(
         archive_path=archive,
         bin_path=wpr_go_bin,

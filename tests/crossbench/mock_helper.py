@@ -43,7 +43,9 @@ class DownloadMockData:
   path: pth.AnyPath
   data: Optional[bytes] = None
 
+
 class ShResult:
+
   def __init__(self,
                result: Union[str, bytes] = "",
                success: bool = True) -> None:
@@ -349,6 +351,7 @@ class MockPopen:
   @property
   def stdout(self):
     return self._stdout
+
 
 class PosixMockPlatformMixin(MockPlatformMixin):
   pass

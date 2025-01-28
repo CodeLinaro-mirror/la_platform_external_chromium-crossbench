@@ -213,12 +213,18 @@ class NetworkConfig(ConfigObject):
             raise ValueError(
                 f"run_on_device is unsupported on {browser_platform}")
           return RemoteWprReplayNetwork(
-              self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-              browser_platform, self.persist_server,
+              self.url or str(self.path),
+              traffic_shaper,
+              self.wpr_go_bin,
+              browser_platform,
+              self.persist_server,
               inject_deterministic_script=not self.skip_injection)
         return LocalWprReplayNetwork(
-            self.url or str(self.path), traffic_shaper, self.wpr_go_bin,
-            browser_platform, self.persist_server,
+            self.url or str(self.path),
+            traffic_shaper,
+            self.wpr_go_bin,
+            browser_platform,
+            self.persist_server,
             inject_deterministic_script=not self.skip_injection)
     raise ValueError(f"Unknown network type {self.type}")
 
