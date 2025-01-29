@@ -281,7 +281,10 @@ class HostEnvironment:
   def _check_system_monitoring(self) -> None:
     # TODO(cbruni): refactor to use list_... and disable_system_monitoring api
     if self._platform.is_macos:
-      self._check_crowdstrike()
+      any_browser_on_macos = any(
+          browser.platform.is_macos for browser in self.browsers)
+      if any_browser_on_macos:
+        self._check_crowdstrike()
 
   def _check_crowdstrike(self) -> None:
     """Crowdstrike security monitoring (for googlers go/crowdstrike-falcon) can
