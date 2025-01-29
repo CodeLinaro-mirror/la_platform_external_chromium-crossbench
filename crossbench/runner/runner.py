@@ -474,6 +474,7 @@ class Runner:
       assert probe in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
+    browser.validate_flags()
 
   def has_any_live_network(self) -> bool:
     return any(browser.network.is_live for browser in self.browsers)

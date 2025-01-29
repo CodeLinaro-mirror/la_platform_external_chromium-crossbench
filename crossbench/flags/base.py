@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
-                    TypeVar, Union)
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple,
+                    Type, TypeVar, Union)
 
 
 class FrozenFlagsError(RuntimeError):
@@ -210,6 +210,11 @@ class BasicFlags(Freezable, collections.UserDict):
     ret = self.copy()
     ret.merge(other)
     return ret
+
+  def filtered(self: BasicFlagsT, flag_names: Iterable[str]) -> BasicFlagsT:
+    flag_names_set: Set[str] = set(flag_names)
+    filtered_flags = {k: v for k, v in self.items() if k in flag_names_set}
+    return self.__class__(filtered_flags)
 
   def contains_without_value(self, key: str):
     return key in self.data and self.data[key] is None

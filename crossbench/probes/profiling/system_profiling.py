@@ -313,17 +313,6 @@ class ProfilingProbe(Probe):
   def add_counters(self) -> Tuple[str, ...]:
     return self._add_counters
 
-  def attach(self, browser: Browser) -> None:
-    super().attach(browser)
-    if browser.platform.is_linux or browser.platform.is_android:
-      assert browser.attributes.is_chromium_based, (
-          f"Expected Chromium-based browser, found {type(browser)}.")
-    if browser.attributes.is_chromium_based:
-      chromium = cast(ChromiumBased, browser)
-      if not self._spare_renderer_process:
-        chromium.features.disable("SpareRendererForSitePerProcess")
-      self._attach(chromium)
-
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
     if browser_platform.is_linux:
@@ -334,6 +323,9 @@ class ProfilingProbe(Probe):
       self._validate_android(env, browser)
     else:
       raise ProbeIncompatibleBrowser(self, browser)
+    if browser.attributes.is_chromium_based:
+      chromium = cast(ChromiumBased, browser)
+      self._validate_chromium_based(chromium)
     if self.run_pprof:
       self._validate_pprof(env, browser)
     # Check that certain Android-only options are
@@ -342,6 +334,10 @@ class ProfilingProbe(Probe):
       self._validate_perf_settings(browser)
     if not browser_platform.is_android:
       self._validate_non_android_perf_settings(browser)
+
+  def _validate_chromium_based(self, browser: ChromiumBased) -> None:
+    if self._start_profiling_after_setup:
+      self._validate_benchmarking_extension_version(browser)
 
   def _validate_perf_settings(self, browser) -> None:
     unsupported_settings = (
@@ -388,26 +384,18 @@ class ProfilingProbe(Probe):
     assert self._target in supported_mac_targets, (
         f"Unsupported profile target for Mac: {self._target}. "
         f"Should be one of {str(supported_mac_targets)}.")
-    if self._requires_chrome_with_extension():
-      self._assert_is_chrome_with_extension(browser)
 
-  def _assert_is_chrome_with_extension(self, browser: Browser) -> None:
+  def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
+    del env
+    assert browser.platform.which("simpleperf"), "simpleperf is not available"
+
+  def _validate_benchmarking_extension_version(self,
+                                               browser: ChromiumBased) -> None:
     assert (
         browser.attributes.is_chromium_based and
         browser.major_version >= 124), (
             "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
             "browser version >= M124 https://crrev.com/c/5374765 is required.")
-
-  def _requires_chrome_with_extension(self) -> bool:
-    return self._target in (TargetMode.RENDERER_MAIN_ONLY,
-                            TargetMode.RENDERER_PROCESS_ONLY
-                           ) or self._pin_renderer_main_core is not None
-
-  def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
-    del env
-    if self._requires_chrome_with_extension():
-      self._assert_is_chrome_with_extension(browser)
-    assert browser.platform.which("simpleperf"), "simpleperf is not available"
 
   def _validate_pprof(self, env: HostEnvironment, browser: Browser) -> None:
     assert self._run_pprof
@@ -428,7 +416,20 @@ class ProfilingProbe(Probe):
     except plt.SubprocessError:
       env.handle_warning("Please run gcert for generating pprof results")
 
-  def _attach(self, browser: ChromiumBased) -> None:
+  def attach(self, browser: Browser) -> None:
+    super().attach(browser)
+    if browser.platform.is_linux or browser.platform.is_android:
+      assert browser.attributes.is_chromium_based, (
+          f"Expected Chromium-based browser, found {type(browser)}.")
+    if browser.attributes.is_chromium_based:
+      chromium = cast(ChromiumBased, browser)
+      self._attach_chromium(chromium)
+
+  def _attach_chromium(self, browser: ChromiumBased) -> None:
+    if not self._spare_renderer_process:
+      browser.features.disable("SpareRendererForSitePerProcess")
+    if self._start_profiling_after_setup:
+      browser.flags.enable_benchmarking_extension()
     if self._sample_js:
       if browser.platform.is_linux:
         browser.js_flags.set("--perf-prof")

@@ -39,23 +39,6 @@ class ChromiumBased(Browser):
       "--disable-background-timer-throttling",
       "--disable-renderer-backgrounding",
   )
-  # All flags that might affect how finch / field-trials are loaded.
-  FIELD_TRIAL_FLAGS: Tuple[str, ...] = (
-      "--force-fieldtrials",
-      "--variations-server-url",
-      "--variations-insecure-server-url",
-      "--variations-test-seed-path",
-      "--enable-field-trial-config",
-      "--disable-variations-safe-mode",
-  )
-  NO_EXPERIMENTS_FLAGS: Tuple[str, ...] = (
-      "--no-experiments",
-      # The benchmarking flag without value is a no-experiment flag. However,
-      # when used as '--enable-benchmarking=enable-field-trial-config' it
-      # works with experiments.
-      "--enable-benchmarking",
-      "--disable-field-trial-config",
-  )
 
   @classmethod
   def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
@@ -85,33 +68,18 @@ class ChromiumBased(Browser):
     # By default field-trials are disabled on non-Chrome branded builds, but
     # are auto-enabled on everything else. This gives very confusing results
     # when comparing local builds to official binaries.
-    field_trial_flags = [
-        flag for flag in self.FIELD_TRIAL_FLAGS if flag in self._flags
-    ]
+    field_trial_flags: ChromeFlags = self._flags.field_trial_flags
     if not field_trial_flags:
       logging.info("Disabling experiments/finch/field-trials for %s", self)
-      for flag in self.NO_EXPERIMENTS_FLAGS:
+      for flag in ChromeFlags.NO_EXPERIMENTS_FLAGS:
         self._flags.set(flag)
     else:
       logging.warning("Running with field-trials or finch experiments.")
 
-      # Enable the benchmarking extension with field trial configs which
-      # requires a special value. See `ShouldUseFieldTrialTestingConfig()`.
-      # https://crsrc.org/c/components/variations/service/variations_field_trial_creator_base.cc;l=138;drc=27d34700b83f381c62e3a348de2e6dfdc08364b8
-      self._flags.set("--enable-benchmarking", "enable-field-trial-config")
-
-      no_finch_flags = [
-          flag for flag in self.NO_EXPERIMENTS_FLAGS
-          if self._flags.contains_without_value(flag)
-      ]
-      if no_finch_flags:
-        raise argparse.ArgumentTypeError(
-            "Conflicting flag groups set: "
-            f"{field_trial_flags} vs {no_finch_flags}.\n"
-            "Cannot enable and disable finch / field-trials at the same time.")
-
     self.js_flags.update(js_flags)
     self._maybe_disable_gpu_compositing()
+    # Run early validation for conflicting command-line flags.
+    self.validate_flags()
     return self._flags
 
   def _maybe_disable_gpu_compositing(self) -> None:
@@ -122,6 +90,16 @@ class ChromiumBased(Browser):
       return
     self.flags.set("--disable-gpu-compositing")
     self.flags.set("--no-sandbox")
+
+  def validate_flags(self) -> None:
+    super().validate_flags()
+    field_trial_flags: ChromeFlags = self.flags.field_trial_flags
+    no_finch_flags = self.flags.no_experiments_flags
+    if field_trial_flags and no_finch_flags:
+      raise argparse.ArgumentTypeError(
+          f"Conflicting {self.type_name} flags detected: "
+          f"{field_trial_flags} vs {no_finch_flags}.\n"
+          "Cannot enable and disable finch / field-trials at the same time.")
 
   def _setup_cache_dir(self, settings: Settings) -> None:
     cache_dir = settings.cache_dir

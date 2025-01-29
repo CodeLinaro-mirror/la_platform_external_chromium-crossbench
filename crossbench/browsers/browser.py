@@ -252,6 +252,10 @@ class Browser(abc.ABC):
         "log": {}
     }
 
+  def validate_flags(self) -> None:
+    """ Helper method is called from the Runner before any Runs / Sessions
+    have started."""
+
   def validate_binary(self) -> None:
     """ Helper method is called from the Runner before any Runs / Sessions
     have started."""
