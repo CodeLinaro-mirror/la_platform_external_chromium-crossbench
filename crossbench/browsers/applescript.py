@@ -16,7 +16,6 @@ import psutil
 from crossbench import plt
 from crossbench.browsers.browser import Browser
 from crossbench.env import HostEnvironment, ValidationError
-from crossbench.plt import proc_helper
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -194,4 +193,4 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
 
   def quit(self) -> None:
     self._exec_apple_script("quit")
-    proc_helper.wait_and_kill(self._browser_process)
+    self.platform.wait_and_kill(self._browser_process)

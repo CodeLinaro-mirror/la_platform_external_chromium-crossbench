@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 from crossbench import compat
 from crossbench.parse import DurationParser
-from crossbench.plt import proc_helper
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.result_location import ResultLocation
@@ -128,5 +127,5 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
 
   def stop_process(self) -> None:
     if self._power_metrics_process:
-      proc_helper.wait_and_kill(self._power_metrics_process)
+      self.browser_platform.wait_and_kill(self._power_metrics_process)
       self._power_metrics_process = None

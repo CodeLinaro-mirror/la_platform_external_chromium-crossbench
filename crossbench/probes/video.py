@@ -7,14 +7,12 @@ from __future__ import annotations
 import atexit
 import logging
 import os
-import signal
 import subprocess
 import tempfile
 from typing import (TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type,
                     Union)
 
 from crossbench.helper import collection_helper
-from crossbench.plt import proc_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
@@ -275,9 +273,11 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       # The mac screencapture stops on the first (arbitrary) input.
       self._record_process.communicate(input=b"stop")
     elif self.browser_platform.is_android:
-      self._record_process.send_signal(signal.SIGINT)
+      assert not self._record_process.poll(), ("screencapture stopped early. ")
+      self.browser_platform.send_signal(
+          self._record_process, signal=self.browser_platform.signals.SIGINT)
     else:
-      self._record_process.terminate()
+      self.browser_platform.terminate(self._record_process)
 
   def teardown(self) -> ProbeResult:
     assert self._record_process, "Screen recorder stopped early."
@@ -303,7 +303,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      proc_helper.wait_and_kill(self._record_process, timeout=5)
+      self.browser_platform.wait_and_kill(self._record_process, timeout=5)
       self._record_process = None
 
   def _convert_to_constant_framerate(self):

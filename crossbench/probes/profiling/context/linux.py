@@ -15,8 +15,7 @@ from crossbench import plt
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.helper import fs_helper
 from crossbench.helper.spinner import Spinner
-from crossbench.plt import proc_helper
-from crossbench.probes.profiling.context.base import ProfilingContext
+from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import CleanupMode
 
 if TYPE_CHECKING:
@@ -29,7 +28,7 @@ PERF_DATA_PATTERN = "*.perf.data"
 JIT_DUMP_PATTERN = "jit-*.dump"
 
 
-class LinuxProfilingContext(ProfilingContext):
+class LinuxProfilingContext(PosixProfilingContext):
   TEMP_FILE_PATTERNS = (
       "*.perf.data.jitted",
       "jitted-*.so",
@@ -73,7 +72,7 @@ class LinuxProfilingContext(ProfilingContext):
 
   def stop_process(self) -> None:
     if self._profiling_process:
-      proc_helper.wait_and_kill(self._profiling_process)
+      self.browser_platform.wait_and_kill(self._profiling_process)
       self._profiling_process = None
 
   def teardown(self) -> ProbeResult:

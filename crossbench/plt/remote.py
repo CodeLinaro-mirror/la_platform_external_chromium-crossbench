@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import subprocess
-from signal import Signals
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
+  from crossbench.plt.signals import Signals
 
 
 class RemotePlatformMixin:
@@ -51,22 +51,27 @@ class RemotePopen(subprocess.Popen):
                stderr=None,
                stdin=None):
     self._platform: Platform = platform
-    self._pid: Optional[int] = None
+    assert self._platform.is_remote, (
+        f"Cannot create remote process on local platform {self._platform}")
+    self._remote_pid: Optional[int] = None
     super().__init__(
         args, bufsize=bufsize, stdout=stdout, stderr=stderr, stdin=stdin)
 
-  def set_pid(self, pid: int) -> None:
-    assert self._pid is None, "Should not set PID twice"
-    self._pid = pid
+  def set_remote_pid(self, pid: int) -> None:
+    assert self._remote_pid is None, "Should not set remote PID twice"
+    self._remote_pid = pid
+
+  @property
+  def remote_pid(self) -> int:
+    assert self._remote_pid, "remote process has no PID"
+    return self._remote_pid
 
   def send_signal(self, signal: Union[int, Signals]) -> None:
-    assert self._pid
-    self._platform.send_signal(self._pid, Signals(signal))
+    signal = self._platform.signals(signal)
+    self._platform.send_signal(self.remote_pid, signal)
 
   def terminate(self) -> None:
-    assert self._pid
-    self._platform.terminate(self._pid)
+    self._platform.terminate(self.remote_pid)
 
   def kill(self) -> None:
-    assert self._pid
-    self._platform.kill(self._pid)
+    self._platform.kill(self.remote_pid)

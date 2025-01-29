@@ -5,11 +5,12 @@
 from __future__ import annotations
 
 import abc
-from functools import cached_property
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Optional, Tuple
+from functools import cached_property
+from typing import TYPE_CHECKING, Optional, Tuple, cast
 
+from crossbench.plt.posix import PosixPlatform
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.v8.log import V8LogProbe
 
@@ -59,3 +60,10 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
       logging.error(error_message)
       raise ValueError(error_message)
     return renderer_pid, renderer_main_tid
+
+
+class PosixProfilingContext(ProfilingContext):
+
+  @property
+  def browser_platform(self) -> PosixPlatform:
+    return cast(PosixPlatform, super().browser_platform)

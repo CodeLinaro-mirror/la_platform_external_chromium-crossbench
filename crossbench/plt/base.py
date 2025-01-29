@@ -25,22 +25,27 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from signal import Signals
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generator,
-                    Iterable, Iterator, List, Mapping, Optional, Sequence,
-                    Tuple, Type, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
+                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
+                    Union)
 
 import psutil
 
 from crossbench import parse
 from crossbench import path as pth
 from crossbench.helper import wait
+from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
+from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
-  from crossbench.plt.signals import AnySignals
+  from asyncio.subprocess import Process
+  from subprocess import Popen
+
+  from crossbench.plt.signals import AnySignals, Signals
   from crossbench.types import JsonDict
+  ProcessLike = Union[Popen, Process, int]
 
 
 CmdArg = pth.AnyPathLike
@@ -48,7 +53,6 @@ SequenceCmdArgs = Sequence[CmdArg]
 ListCmdArgs = List[CmdArg]
 TupleCmdArgs = Tuple[CmdArg, ...]
 CmdArgs = Union[ListCmdArgs, TupleCmdArgs]
-
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass
@@ -89,9 +93,6 @@ class SubprocessError(subprocess.CalledProcessError):
       return f"{self.platform}: {super_str}"
     return f"{self.platform}: {super_str}\nstderr:{self.stderr.decode()}"
 
-
-_IGNORED_PROCESS_EXCEPTIONS: Final = (psutil.NoSuchProcess, psutil.AccessDenied,
-                                      psutil.ZombieProcess)
 
 DEFAULT_CACHE_DIR = pth.LocalPath(__file__).parents[2] / "cache"
 
@@ -429,28 +430,53 @@ class Platform(abc.ABC):
     finally:
       self.set_binary_lookup_override(binary_name, prev_override)
 
-  def send_signal(self, pid: int, signal: Signals):
+  def send_signal(self, process: ProcessLike, signal: Signals):
     self.assert_is_local()
-    os.kill(pid, signal)
+    if isinstance(process, int):
+      os.kill(process, signal.value)
+    else:
+      process.send_signal(signal.value)
 
-  def terminate(self, pid: int) -> None:
-    self._handle_process_tree(pid, lambda process: process.terminate())
+  def terminate(self, process: ProcessLike) -> None:
+    self._handle_process_tree(process, lambda process: process.terminate())
 
-  def kill(self, pid: int) -> None:
-    self._handle_process_tree(pid, lambda process: process.kill())
+  def kill(self, process: ProcessLike) -> None:
+    self._handle_process_tree(process, lambda process: process.kill())
 
-  def _handle_process_tree(self, pid: int, callback: Callable[[psutil.Process],
-                                                              None]) -> None:
+  def wait_and_kill(self,
+                    process: ProcessLike,
+                    timeout=1,
+                    signal: Optional[Signals] = None) -> None:
+    proc_helper.wait_and_kill(self, process, timeout, signal)
+
+  def wait_and_terminate(self,
+                         process: ProcessLike,
+                         timeout=1,
+                         signal: Optional[Signals] = None) -> None:
+    proc_helper.wait_and_terminate(self, process, timeout, signal)
+
+  def process_pid(self, process: ProcessLike) -> int:
+    if isinstance(process, int):
+      return process
+    if isinstance(process, RemotePopen):
+      assert self.is_remote, (
+          f"Cannot access remote process {process} on local platform {self}")
+      return process.remote_pid
+    return process.pid
+
+  def _handle_process_tree(self, process: ProcessLike,
+                           callback: Callable[[psutil.Process], None]) -> None:
     self.assert_is_local()
     try:
-      process = psutil.Process(pid)
-      for child_process in process.children(recursive=True):
+      pid: int = self.process_pid(process)
+      ps_process = psutil.Process(pid)
+      for child_process in ps_process.children(recursive=True):
         try:
           callback(child_process)
-        except _IGNORED_PROCESS_EXCEPTIONS:
+        except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
           pass
-      callback(process)
-    except _IGNORED_PROCESS_EXCEPTIONS:
+      callback(ps_process)
+    except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       pass
 
   def processes(self,
@@ -466,7 +492,7 @@ class Platform(abc.ABC):
       try:
         if proc.name().lower() in process_name_list:
           return proc.name()
-      except _IGNORED_PROCESS_EXCEPTIONS:
+      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
         pass
     return None
 
@@ -477,7 +503,7 @@ class Platform(abc.ABC):
     # TODO(cbruni): support remote platforms
     try:
       process = psutil.Process(parent_pid)
-    except _IGNORED_PROCESS_EXCEPTIONS:
+    except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return []
     return self._collect_process_dict(process.children(recursive=recursive))
 
@@ -487,16 +513,17 @@ class Platform(abc.ABC):
     for process in process_iterator:
       try:
         process_info_list.append(process.as_dict())
-      except _IGNORED_PROCESS_EXCEPTIONS:
+      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
         pass
     return process_info_list
 
-  def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
+      pid = self.process_pid(process)
       return psutil.Process(pid).as_dict()
-    except _IGNORED_PROCESS_EXCEPTIONS:
+    except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 
   def foreground_process(self) -> Optional[Dict[str, Any]]:

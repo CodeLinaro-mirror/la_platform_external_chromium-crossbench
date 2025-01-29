@@ -19,7 +19,7 @@ from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
-from crossbench.plt import PLATFORM, Platform, TupleCmdArgs, proc_helper
+from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
 
 _WPR_PORT_RE = re.compile(r".*Starting server on "
                           r"(?P<protocol>http|https)://"
@@ -298,7 +298,7 @@ class WprBase(abc.ABC):
       self._log_file.close()
       self._log_file = None
     if self._process:
-      proc_helper.wait_and_kill(self._process, timeout=1)
+      self._platform.wait_and_kill(self._process, timeout=1)
     self._process = None
     self._stop_forward_ports()
 

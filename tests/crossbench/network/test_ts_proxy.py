@@ -48,9 +48,12 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
       del args, kwargs
       return proc
 
-    with mock.patch("subprocess.Popen", side_effect=popen_mock) as popen:
-      yield proc
-    popen.assert_called_once()
+    with mock.patch("subprocess.Popen", side_effect=popen_mock) as mock_popen:
+      with mock.patch.object(self.platform,
+                             "wait_and_kill") as mock_wait_and_kill:
+        yield proc
+    mock_popen.assert_called_once()
+    mock_wait_and_kill.assert_called_once()
 
 
 class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
@@ -133,14 +136,15 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
     stdout_readline.assert_called_once()
     stdin_write.assert_called_once_with("exit\n")
 
+
 class TsProxyServerTestCase(TsProxyBaseTestCase):
 
   def test_construct_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      TsProxyServer(pathlib.Path("does/not/exist"))
+      TsProxyServer(self.platform, pathlib.Path("does/not/exist"))
 
   def test_basic_instance(self):
-    server = TsProxyServer(self.ts_proxy_path)
+    server = TsProxyServer(self.platform, self.ts_proxy_path)
     self.assertFalse(server.is_running)
 
     with self.assertRaises(AssertionError):
@@ -150,7 +154,7 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
     self.assertIsNone(server.stop())
 
   def test_basic_instance_http_port(self):
-    server = TsProxyServer(self.ts_proxy_path, http_port=8080)
+    server = TsProxyServer(self.platform, self.ts_proxy_path, http_port=8080)
     self.assertFalse(server.is_running)
     with self.assertRaises(AssertionError):
       _ = server.socks_proxy_port
@@ -158,16 +162,19 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
 
   def test_ports(self):
     with self.assertRaises(ValueError):
-      TsProxyServer(self.ts_proxy_path, https_port=400)
+      TsProxyServer(self.platform, self.ts_proxy_path, https_port=400)
     with self.assertRaises(ValueError):
-      TsProxyServer(self.ts_proxy_path, http_port=400, https_port=400)
+      TsProxyServer(
+          self.platform, self.ts_proxy_path, http_port=400, https_port=400)
     with self.assertRaises(argparse.ArgumentTypeError):
-      TsProxyServer(self.ts_proxy_path, http_port=-400, https_port=400)
+      TsProxyServer(
+          self.platform, self.ts_proxy_path, http_port=-400, https_port=400)
     with self.assertRaises(argparse.ArgumentTypeError):
-      TsProxyServer(self.ts_proxy_path, http_port=400, https_port=-400)
+      TsProxyServer(
+          self.platform, self.ts_proxy_path, http_port=400, https_port=-400)
 
   def test_start_server(self):
-    server = TsProxyServer(self.ts_proxy_path)
+    server = TsProxyServer(self.platform, self.ts_proxy_path)
     with self.startup_process_mock() as proc:
       self.assertFalse(server.is_running)
       with server:

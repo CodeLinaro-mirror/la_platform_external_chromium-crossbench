@@ -7,25 +7,21 @@ from __future__ import annotations
 import atexit
 import io
 import logging
-import signal
 import subprocess
 import time
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union, cast
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
-from crossbench.plt import proc_helper
-from crossbench.probes.profiling.context.base import ProfilingContext
+from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import CallGraphMode, TargetMode
 
 if TYPE_CHECKING:
   import crossbench.path as pth
   from crossbench.plt.base import ListCmdArgs
-  from crossbench.probes.profiling.system_profiling import ProfilingProbe
   from crossbench.probes.results import ProbeResult
-  from crossbench.runner.run import Run
 
 
-class AndroidProfilingContext(ProfilingContext):
+class AndroidProfilingContext(PosixProfilingContext):
 
   def _generate_command_line(self) -> ListCmdArgs:
     renderer_pid: Optional[int] = None
@@ -123,8 +119,10 @@ class AndroidProfilingContext(ProfilingContext):
 
   def stop_process(self) -> None:
     if self._profiling_process:
-      proc_helper.wait_and_kill(
-          self._profiling_process, timeout=30, signal=signal.SIGINT)
+      self.browser_platform.wait_and_kill(
+          self._profiling_process,
+          timeout=30,
+          signal=self.browser_platform.signals.SIGINT)
       self._profiling_process = None
       self.browser.performance_mark("crossbench-probe-profiling-stop")
 

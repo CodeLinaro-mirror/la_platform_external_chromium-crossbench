@@ -11,17 +11,18 @@ import pathlib
 import re
 import shlex
 import subprocess
-from signal import Signals
 from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, Mapping,
                     Optional, Type)
 
 from crossbench import path as pth
+from crossbench.plt import proc_helper
 from crossbench.plt.base import Environ, Platform, SubprocessError
 from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
-from crossbench.plt.signals import AnyPosixSignals, PosixBaseSignal
+from crossbench.plt.signals import PosixBaseSignal
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs
+  from crossbench.plt.base import CmdArg, ListCmdArgs, ProcessLike
+  from crossbench.plt.signals import AnyPosixSignals, Signals
   from crossbench.types import JsonDict
 
 
@@ -319,30 +320,42 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       oct_mode = oct(mode)[2:]
       self.sh("chmod", oct_mode, self.path(path))
 
-  def send_signal(self, pid: int, signal: Signals):
+  def send_signal(self, process: ProcessLike, signal: Signals):
     if self.is_local:
-      super().send_signal(pid, signal)
+      super().send_signal(process, signal)
       return
-    result = self.sh("kill", "-s", str(int(signal)), str(pid), check=False)
-    if result.returncode > 0:
-      raise ProcessLookupError
+    if pid := self.process_pid(process):
+      kill_process = self.sh(
+          "kill", f"-{int(signal)}", str(pid), check=False, capture_output=True)
+      # wait for the process to finish.
+      if kill_process.returncode > 0:
+        error_str = kill_process.stdout.decode("utf-8")
+        error_str += kill_process.stderr.decode("utf-8")
+        raise ProcessLookupError(f"{self}: {error_str}")
 
-  def terminate(self, pid: int) -> None:
+  def terminate(self, process: ProcessLike) -> None:
     if self.is_local:
-      super().terminate(pid)
+      super().terminate(process)
     else:
-      self.send_signal(pid, Signals.SIGTERM)
+      try:
+        self.send_signal(process, self.signals.SIGTERM)
+      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
+        pass
 
-  def kill(self, pid: int) -> None:
+  def kill(self, process: ProcessLike) -> None:
     if self.is_local:
-      super().kill(pid)
+      super().kill(process)
     else:
-      self.send_signal(pid, Signals.SIGKILL)
+      try:
+        self.send_signal(process, self.signals.SIGKILL)
+      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
+        pass
 
-  def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
     if self.is_local:
-      return super().process_info(pid)
+      return super().process_info(process)
     try:
+      pid = self.process_pid(process)
       lines = self.sh_stdout("ps", "-o", "comm", "-p", str(pid)).splitlines()
       if len(lines) <= 1:
         return None
@@ -410,7 +423,8 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
 
     with self.NamedTemporaryFile("popen_pid_") as temp_pid_file:
       shell_cmd = shlex.join(map(str, args))
-      shell_cmd += f" & echo $! >{temp_pid_file} && wait"
+      # Capture the PID and wait on the process to finish.
+      shell_cmd += f" & PID=$! && echo $PID >{temp_pid_file} && wait $PID"
       if not quiet:
         logging.debug("REMOTE SHELL: %s", shell_cmd)
 
@@ -420,6 +434,6 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
           self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
           stderr=stderr, stdin=stdin)
       remote_pid = int(self.cat(temp_pid_file))
-      remote_popen.set_pid(remote_pid)
+      remote_popen.set_remote_pid(remote_pid)
 
     return remote_popen

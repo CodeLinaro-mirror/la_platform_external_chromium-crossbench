@@ -13,7 +13,6 @@ import logging
 import os
 import re
 import shlex
-import signal
 import subprocess
 import sys
 from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
@@ -24,7 +23,6 @@ from crossbench.helper.path_finder import TsProxyFinder
 from crossbench.network.traffic_shaping import ts_proxy_settings
 from crossbench.network.traffic_shaping.base import TrafficShaper
 from crossbench.parse import NumberParser, PathParser
-from crossbench.plt import proc_helper
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
@@ -66,6 +64,7 @@ class TsProxyServer:
   """
 
   def __init__(self,
+               platform: Platform,
                ts_proxy_path: LocalPath,
                host: Optional[str] = None,
                socks_proxy_port: Optional[int] = None,
@@ -76,6 +75,7 @@ class TsProxyServer:
                out_kbps: Optional[int] = None,
                window: Optional[int] = None,
                verbose: bool = True):
+    self._platform = platform
     self._proc: Optional[TsProxyProcess] = None
     self._ts_proxy_path = PathParser.existing_file_path(ts_proxy_path)
     self._socks_proxy_port = socks_proxy_port
@@ -143,7 +143,7 @@ class TsProxyServer:
 
   def start(self) -> None:
     assert not self._proc, "ts_proxy is already running."
-    self._proc = TsProxyProcess(self._ts_proxy_path, self._host,
+    self._proc = TsProxyProcess(self._platform, self._ts_proxy_path, self._host,
                                 self._socks_proxy_port, self._http_port,
                                 self._https_port, self._rtt_ms, self._in_kbps,
                                 self._out_kbps, self._window, self._verbose)
@@ -171,6 +171,7 @@ class TsProxyProcess:
 
   def __init__(
       self,
+      platform: Platform,
       ts_proxy_path: LocalPath,
       host: Optional[str] = None,
       socks_proxy_port: Optional[int] = None,
@@ -182,6 +183,7 @@ class TsProxyProcess:
       window: Optional[int] = None,
       verbose: bool = False,
       timeout: Union[int, float] = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+    self._platform = platform
     """Start TsProxy server and verify that it started."""
     cmd: ListCmdArgs = [
         sys.executable,
@@ -224,20 +226,21 @@ class TsProxyProcess:
     self._verify_default_encoding()
     # In python3 universal_newlines forces subprocess to encode/decode,
     # allowing per-line buffering.
-    proc = subprocess.Popen(  # pylint: disable=consider-using-with
+    process = subprocess.Popen(  # pylint: disable=consider-using-with
         cmd,
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
         # stderr=subprocess.PIPE,
         bufsize=1,
         universal_newlines=True)
-    assert proc and proc.stdout and proc.stdin, "Could not start ts_proxy"
-    self._proc = proc
-    if stdout := proc.stdout:
+    assert process and process.stdout and process.stdin, (
+        "Could not start ts_proxy")
+    self._process = process
+    if stdout := process.stdout:
       self._stdout: IO[str] = stdout
     else:
       raise RuntimeError("Missing stdout")
-    if stdin := proc.stdin:
+    if stdin := process.stdin:
       self._stdin: IO[str] = stdin
     else:
       raise RuntimeError("Missing stdin")
@@ -277,7 +280,7 @@ class TsProxyProcess:
         f"Starting tsproxy timed out after {timeout} seconds")
 
   def _has_started(self) -> bool:
-    if self._proc.poll() is not None:
+    if self._process.poll() is not None:
       return False
     self._stdout.flush()
     output_line = self._read_line_ts_proxy_stdout(timeout=5)
@@ -351,8 +354,8 @@ class TsProxyProcess:
 
   def stop(self) -> Optional[str]:
     self._send_command("exit")
-    proc_helper.wait_and_kill(self._proc, signal=signal.SIGINT)
-    _, err = self._proc.communicate()
+    self._platform.wait_and_kill(self._process)
+    _, err = self._process.communicate()
     self._socks_proxy_port = self._initial_socks_proxy_port
     return err
 
@@ -375,6 +378,7 @@ class TsProxyTrafficShaper(TrafficShaper):
           f"Could not find ts_proxy script on {self.host_platform}")
     # Early instantiation to validate inputs.
     self._ts_proxy = TsProxyServer(
+        self.host_platform,
         self.host_platform.local_path(ts_proxy_path),
         rtt_ms=rtt_ms,
         in_kbps=in_kbps,
@@ -418,6 +422,7 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   def _create_remapping_ts_proxy(self, network) -> TsProxyServer:
     return TsProxyServer(
+        self.host_platform,
         self._ts_proxy.ts_proxy_path,
         rtt_ms=self._ts_proxy.rtt_ms,
         in_kbps=self._ts_proxy.in_kbps,

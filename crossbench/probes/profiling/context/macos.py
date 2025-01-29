@@ -6,14 +6,12 @@ from __future__ import annotations
 
 import atexit
 import logging
-import signal
 import time
 from typing import TYPE_CHECKING, Final, Optional
 
 import crossbench.path as pth
 from crossbench.helper.spinner import Spinner
-from crossbench.plt import proc_helper
-from crossbench.probes.profiling.context.base import ProfilingContext
+from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import TargetMode
 
 if TYPE_CHECKING:
@@ -31,7 +29,7 @@ _XPATH_EXPRESSION: Final[str] = (
     "//trace-toc/run/data/table[@schema=\"time-profile\"]")
 
 
-class MacOSProfilingContext(ProfilingContext):
+class MacOSProfilingContext(PosixProfilingContext):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
@@ -74,7 +72,8 @@ class MacOSProfilingContext(ProfilingContext):
   def stop(self) -> None:
     # Needs to be SIGINT for xctrace, terminate won't work.
     assert self._profiling_process
-    self._profiling_process.send_signal(signal.SIGINT)
+    self.browser_platform.send_signal(self._profiling_process,
+                                      self.browser_platform.signals.SIGINT)
 
   def teardown(self) -> ProbeResult:
     self.stop_process()
@@ -96,7 +95,9 @@ class MacOSProfilingContext(ProfilingContext):
       return
     logging.info("  Waiting for xctrace profiles (slow)...")
     with Spinner():
-      proc_helper.wait_and_kill(
-          self._profiling_process, signal=signal.SIGINT, timeout=60)
+      self.browser_platform.wait_and_kill(
+          self._profiling_process,
+          signal=self.browser_platform.signals.SIGINT,
+          timeout=60)
     self._profiling_process = None
     atexit.unregister(self.stop_process)

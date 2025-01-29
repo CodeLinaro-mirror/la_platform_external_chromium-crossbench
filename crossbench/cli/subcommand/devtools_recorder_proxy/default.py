@@ -20,8 +20,8 @@ from websockets import server as websockets
 
 from crossbench import compat
 from crossbench import path as pth
+from crossbench import plt
 from crossbench.helper.state import BaseState, StateMachine
-from crossbench.plt import proc_helper
 
 if TYPE_CHECKING:
   from asyncio.subprocess import Process
@@ -171,7 +171,7 @@ class CrossbenchDevToolsRecorderProxy:
   async def _stop_command(self) -> Tuple[Response, str]:
     if process := self._crossbench_process:
       logging.info("# CROSSBENCH COMMAND: KILL")
-      proc_helper.wait_and_terminate(process)
+      plt.PLATFORM.wait_and_terminate(process)
     self._state.transition(State.CONNECTED, State.CONNECTED, to=State.CONNECTED)
     return await self._status_command()
 
