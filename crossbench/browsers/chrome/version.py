@@ -23,7 +23,8 @@ class ChromeVersion(ChromiumVersion):
     prefix = prefix.lower()
     if prefix.strip() == "m":
       return True
-    return bool(cls._PREFIX_RE.fullmatch(prefix))
+    return (bool(cls._PREFIX_RE.fullmatch(prefix)) or
+            super()._validate_prefix(prefix))
 
   @classmethod
   def _validate_suffix(cls, suffix: Optional[str]) -> bool:

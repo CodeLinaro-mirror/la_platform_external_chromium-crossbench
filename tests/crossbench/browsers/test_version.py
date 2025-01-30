@@ -421,13 +421,7 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     with self.assertRaises(BrowserVersionParseError):
       self.parse("Chrome 121 121")
     with self.assertRaises(BrowserVersionParseError):
-      self.parse("Chromium 115.1.5790.114")
-    with self.assertRaises(BrowserVersionParseError):
-      self.parse("Chromium 115")
-    with self.assertRaises(BrowserVersionParseError):
       self.parse("Chromium X.X.X.X")
-    with self.assertRaises(BrowserVersionParseError):
-      self.parse("Chromium M115")
     with self.assertRaises(BrowserVersionParseError):
       self.parse("M1")
     with self.assertRaises(BrowserVersionParseError):
@@ -463,6 +457,17 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(
         self.parse("Google Chrome 115.0.5790.114"),
         self.parse("chrome m115.0.5790.114"))
+
+  def test_parse_chromium_prefix(self):
+    self.assertEqual(
+        self.parse("Chromium 115.1.5790.114"),
+        self.parse("Chrome 115.1.5790.114"))
+    self.assertEqual(
+        self.parse("Chromium 115"),
+        self.parse("Chrome 115"))
+    self.assertEqual(
+        self.parse("Chromium M115"),
+        self.parse("Chrome M115"))
 
   def test_parse_channel(self):
     self.assertEqual(
