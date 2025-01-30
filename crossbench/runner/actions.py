@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from crossbench.helper.durations import TimeScope
 from crossbench.helper.wait import WaitRange
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from crossbench.exception import ExceptionAnnotationScope
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-  from crossbench.runner.timing import Timing
+  from crossbench.runner.timing import AnyTimeUnit, Timing
 
 
 class Actions(TimeScope):
@@ -88,24 +88,25 @@ class Actions(TimeScope):
 
   def js(self,
          js_code: str,
-         timeout: Union[int, float, dt.timedelta] = 10,
+         timeout: AnyTimeUnit = 10,
+         absolute_time: bool = False,
          arguments: Sequence[object] = (),
          **kwargs) -> Any:
     self._assert_is_active()
     assert js_code, "js_code must be a valid JS script"
     if kwargs:
       js_code = js_code.format(**kwargs)
-    delta = self.timing.timeout_timedelta(timeout)
+    delta = self.timing.timeout_timedelta(timeout, absolute_time)
     return self._browser.js(js_code, delta, arguments=arguments)
 
   def wait_js_condition(
       self,
       js_code: str,
-      min_wait: Union[dt.timedelta, float],
-      timeout: Union[dt.timedelta, float],
-      delay: Union[dt.timedelta, float] = 0,
-      arguments: Sequence[object] = ()
-  ) -> None:
+      min_wait: AnyTimeUnit,
+      timeout: AnyTimeUnit,
+      delay: AnyTimeUnit = 0,
+      absolute_time: bool = False,
+      arguments: Sequence[object] = ()) -> None:
     wait_range = WaitRange(
         min=self.timing.timedelta(min_wait),
         timeout=self.timing.timeout_timedelta(timeout),
@@ -113,9 +114,12 @@ class Actions(TimeScope):
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
     for _, time_left in wait_range.wait_with_backoff():
-      time_units = self.timing.units(time_left)
+      time_units = self.timing.units(time_left, absolute_time)
       result = self.js(
-          js_code, timeout=time_units, absolute_time=True, arguments=arguments)
+          js_code,
+          timeout=time_units,
+          absolute_time=absolute_time,
+          arguments=arguments)
       if result:
         return
       assert result is False, (
@@ -132,8 +136,8 @@ class Actions(TimeScope):
         raise ValueError(f"Invalid target: {target}")
       self._browser.show_url(url, target=target)
 
-  def wait(
-      self, seconds: Union[dt.timedelta,
-                           float] = dt.timedelta(seconds=1)) -> None:
+  def wait(self,
+           time: AnyTimeUnit = dt.timedelta(seconds=1),
+           absolute_time: bool = False) -> None:
     self._assert_is_active()
-    self.platform.sleep(seconds)
+    self._runner.wait(time, absolute_time)

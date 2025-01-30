@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import abc
+import collections
 import datetime as dt
 import json
 import pathlib
-from typing import Any, List, Optional, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Type
 
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
@@ -26,6 +27,10 @@ from crossbench.runner.timing import Timing
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
 from tests.crossbench.mock_helper import MockBenchmark, MockStory
+
+if TYPE_CHECKING:
+  from crossbench.runner.timing import AnyTimeUnit
+
 
 
 class MockBrowser:
@@ -133,6 +138,9 @@ class MockPlatform:
     return self.name
 
 
+MockWait = collections.namedtuple("MockWait", ("time", "absolute_time"))
+
+
 class MockRunner:
 
   def __init__(self) -> None:
@@ -147,6 +155,10 @@ class MockRunner:
     self.timing = Timing()
     self.env = HostEnvironment(self.platform, self.out_dir, self.browsers,
                                self.probes, self.repetitions)
+    self.mock_waits = []
+
+  def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:
+    self.mock_waits.append(MockWait(time, absolute_time))
 
 
 class MockNetwork:

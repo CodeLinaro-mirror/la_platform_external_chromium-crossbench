@@ -25,8 +25,8 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.action_runner.action_runner_test_case import (
-    ActionRunnerTestCase)
+from tests.crossbench.action_runner.action_runner_test_case import \
+    ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
 from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
                                           LinuxMockPlatform, MockAdb)
@@ -188,20 +188,21 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_text_input_zero_duration(self):
     self.platform.expect_sh("input", "keyboard", "text", "Some%ssample%stext")
-
     text_input_action = TextInputAction(InputSource.KEYBOARD, dt.timedelta(),
                                         "Some sample text")
-
+    self.assertFalse(self.runner.mock_waits)
     self.run_action(text_input_action)
+    self.assertFalse(self.runner.mock_waits)
+
 
   def test_text_input_non_zero_duration(self):
     text_input_action = TextInputAction(InputSource.KEYBOARD,
                                         dt.timedelta(seconds=1), "aaa")
-
     for _ in range(3):
       self.platform.expect_sh("input", "keyboard", "text", "a")
-
+    self.assertFalse(self.runner.mock_waits)
     self.run_action(text_input_action)
+    self.assertTrue(self.runner.mock_waits)
 
   def test_click_touch_coordinates(self):
     click_action = ClickAction(

@@ -9,7 +9,7 @@ import datetime as dt
 import enum
 import logging
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
-                    Sequence, Set, Tuple, Type, Union)
+                    Sequence, Set, Tuple, Type)
 
 from crossbench import compat, exception
 from crossbench import path as pth
@@ -42,6 +42,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.runner.groups.base import RunGroup
+  from crossbench.runner.timing import AnyTimeUnit
   from crossbench.stories.story import Story
 
 
@@ -406,18 +407,10 @@ class Runner:
   def has_browser_group(self) -> bool:
     return self._browser_group is not None
 
-  def wait(self,
-           time: Union[int, float, dt.timedelta],
-           absolute_time: bool = False) -> None:
+  def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:
     if not time:
       return
-    if not absolute_time:
-      delta = self.timing.timedelta(time)
-    else:
-      if isinstance(time, (int, float)):
-        delta = dt.timedelta(seconds=time)
-      else:
-        delta = time
+    delta = self.timing.timedelta(time, absolute_time)
     self._platform.sleep(delta)
 
   def run(self, is_dry_run: bool = False) -> None:
