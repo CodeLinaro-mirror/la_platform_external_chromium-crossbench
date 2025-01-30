@@ -17,6 +17,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env import HostEnvironment
 from crossbench.exception import Annotator
+from crossbench.helper.wait import WaitRange
 from crossbench.path import safe_filename
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
@@ -115,6 +116,14 @@ class MockRun:
     assert self.is_dry_run is is_dry_run
     assert not self.did_teardown
     self.did_teardown = True
+
+  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit) -> WaitRange:
+    timing = self.timing
+    return WaitRange(
+        min=timing.timedelta(min_wait),
+        timeout=timing.timeout_timedelta(timeout),
+        delay=timing.timedelta(delay))
 
   def _teardown_browser(self, is_dry_run: bool) -> None:
     assert self.is_dry_run is is_dry_run

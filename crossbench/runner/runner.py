@@ -21,6 +21,7 @@ from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
 from crossbench.helper import collection_helper
 from crossbench.helper.sleep_preventer import SystemSleepPreventer
 from crossbench.helper.state import BaseState, StateMachine
+from crossbench.helper.wait import WaitRange
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
@@ -406,6 +407,14 @@ class Runner:
   @property
   def has_browser_group(self) -> bool:
     return self._browser_group is not None
+
+  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit) -> WaitRange:
+    timing = self.timing
+    return WaitRange(
+        min=timing.timedelta(min_wait),
+        timeout=timing.timeout_timedelta(timeout),
+        delay=timing.timedelta(delay))
 
   def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:
     if not time:

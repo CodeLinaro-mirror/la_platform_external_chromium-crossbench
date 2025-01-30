@@ -34,9 +34,11 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
+  from crossbench.runner.timing import AnyTimeUnit
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
 
@@ -104,6 +106,10 @@ class Run(ResultOrigin):
               verbose: bool = False,
               measure: bool = True) -> Actions:
     return Actions(name, self, verbose=verbose, measure=measure)
+
+  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit) -> WaitRange:
+    return self.runner.wait_range(min_wait, timeout, delay)
 
   @property
   def info_stack(self) -> TInfoStack:

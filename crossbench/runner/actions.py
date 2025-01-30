@@ -10,7 +10,6 @@ import sys
 from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 from crossbench.helper.durations import TimeScope
-from crossbench.helper.wait import WaitRange
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -107,10 +106,7 @@ class Actions(TimeScope):
       delay: AnyTimeUnit = 0,
       absolute_time: bool = False,
       arguments: Sequence[object] = ()) -> None:
-    wait_range = WaitRange(
-        min=self.timing.timedelta(min_wait),
-        timeout=self.timing.timeout_timedelta(timeout),
-        delay=delay)
+    wait_range = self._run.wait_range(min_wait, timeout, delay)
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
     for _, time_left in wait_range.wait_with_backoff():
