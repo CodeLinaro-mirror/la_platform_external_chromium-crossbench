@@ -6,79 +6,10 @@ import pathlib
 import unittest
 from unittest import mock
 
-import hjson
-
-from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
-                            ValidationError, ValidationMode)
+from crossbench.env import (EnvironmentConfig, HostEnvironment, ValidationError,
+                            ValidationMode)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-
-
-class HostEnvironmentConfigTestCase(unittest.TestCase):
-
-  def test_combine_bool_value(self):
-    default = HostEnvironmentConfig()
-    self.assertIsNone(default.power_use_battery)
-
-    battery = HostEnvironmentConfig(power_use_battery=True)
-    self.assertTrue(battery.power_use_battery)
-    self.assertTrue(battery.merge(battery).power_use_battery)
-    self.assertTrue(default.merge(battery).power_use_battery)
-    self.assertTrue(battery.merge(default).power_use_battery)
-
-    power = HostEnvironmentConfig(power_use_battery=False)
-    self.assertFalse(power.power_use_battery)
-    self.assertFalse(power.merge(power).power_use_battery)
-    self.assertFalse(default.merge(power).power_use_battery)
-    self.assertFalse(power.merge(default).power_use_battery)
-
-    with self.assertRaises(ValueError):
-      power.merge(battery)
-
-  def test_combine_min_float_value(self):
-    default = HostEnvironmentConfig()
-    self.assertIsNone(default.cpu_min_relative_speed)
-
-    high = HostEnvironmentConfig(cpu_min_relative_speed=1)
-    self.assertEqual(high.cpu_min_relative_speed, 1)
-    self.assertEqual(high.merge(high).cpu_min_relative_speed, 1)
-    self.assertEqual(default.merge(high).cpu_min_relative_speed, 1)
-    self.assertEqual(high.merge(default).cpu_min_relative_speed, 1)
-
-    low = HostEnvironmentConfig(cpu_min_relative_speed=0.5)
-    self.assertEqual(low.cpu_min_relative_speed, 0.5)
-    self.assertEqual(low.merge(low).cpu_min_relative_speed, 0.5)
-    self.assertEqual(default.merge(low).cpu_min_relative_speed, 0.5)
-    self.assertEqual(low.merge(default).cpu_min_relative_speed, 0.5)
-
-    self.assertEqual(high.merge(low).cpu_min_relative_speed, 1)
-
-  def test_combine_max_float_value(self):
-    default = HostEnvironmentConfig()
-    self.assertIsNone(default.cpu_max_usage_percent)
-
-    high = HostEnvironmentConfig(cpu_max_usage_percent=100)
-    self.assertEqual(high.cpu_max_usage_percent, 100)
-    self.assertEqual(high.merge(high).cpu_max_usage_percent, 100)
-    self.assertEqual(default.merge(high).cpu_max_usage_percent, 100)
-    self.assertEqual(high.merge(default).cpu_max_usage_percent, 100)
-
-    low = HostEnvironmentConfig(cpu_max_usage_percent=0)
-    self.assertEqual(low.cpu_max_usage_percent, 0)
-    self.assertEqual(low.merge(low).cpu_max_usage_percent, 0)
-    self.assertEqual(default.merge(low).cpu_max_usage_percent, 0)
-    self.assertEqual(low.merge(default).cpu_max_usage_percent, 0)
-
-    self.assertEqual(high.merge(low).cpu_max_usage_percent, 0)
-
-  def test_parse_example_config_file(self):
-    example_config_file = pathlib.Path(
-        __file__).parent.parent / "config/doc/env.config.hjson"
-    if not example_config_file.exists():
-      raise unittest.SkipTest(f"Test file {example_config_file} does not exist")
-    with example_config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
-    HostEnvironmentConfig(**data["env"])
 
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
@@ -105,25 +36,25 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     env = self.create_env()
     self.assertEqual(env.platform, self.mock_platform)
 
-    config = HostEnvironmentConfig()
+    config = EnvironmentConfig()
     env = self.create_env(config)
     self.assertSequenceEqual(env.browsers, self.mock_runner.browsers)
     self.assertEqual(env.config, config)
 
   def test_warn_mode_skip(self):
-    config = HostEnvironmentConfig()
+    config = EnvironmentConfig()
     env = self.create_env(config, ValidationMode.SKIP)
     env.handle_warning("foo")
 
   def test_warn_mode_fail(self):
-    config = HostEnvironmentConfig()
+    config = EnvironmentConfig()
     env = self.create_env(config, ValidationMode.THROW)
     with self.assertRaises(ValidationError) as cm:
       env.handle_warning("custom env check warning")
     self.assertIn("custom env check warning", str(cm.exception))
 
   def test_warn_mode_prompt(self):
-    config = HostEnvironmentConfig()
+    config = EnvironmentConfig()
     env = self.create_env(config, ValidationMode.PROMPT)
     with mock.patch("builtins.input", return_value="Y") as cm:
       env.handle_warning("custom env check warning")
@@ -136,7 +67,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("custom env check warning", cm.call_args[0][0])
 
   def test_warn_mode_warn(self):
-    config = HostEnvironmentConfig()
+    config = EnvironmentConfig()
     env = self.create_env(config, ValidationMode.WARN)
     with mock.patch("logging.warning") as cm:
       env.handle_warning("custom env check warning")
@@ -144,11 +75,11 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("custom env check warning", cm.call_args[0][0])
 
   def test_validate_skip(self):
-    env = self.create_env(HostEnvironmentConfig(), ValidationMode.SKIP)
+    env = self.create_env(EnvironmentConfig(), ValidationMode.SKIP)
     env.validate()
 
   def test_validate_warn(self):
-    env = self.create_env(HostEnvironmentConfig(), ValidationMode.WARN)
+    env = self.create_env(EnvironmentConfig(), ValidationMode.WARN)
     with mock.patch("logging.warning") as cm:
       env.validate()
     cm.assert_not_called()
@@ -157,7 +88,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_validate_warn_no_probes(self):
     env = self.create_env(
-        HostEnvironmentConfig(require_probes=True), ValidationMode.WARN)
+        EnvironmentConfig(require_probes=True), ValidationMode.WARN)
     with mock.patch("logging.warning") as cm:
       env.validate()
     cm.assert_called_once()
@@ -166,7 +97,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_request_battery_power_on(self):
     env = self.create_env(
-        HostEnvironmentConfig(power_use_battery=True), ValidationMode.THROW)
+        EnvironmentConfig(power_use_battery=True), ValidationMode.THROW)
     self.mock_platform.is_battery_powered = True
     env.validate()
 
@@ -177,7 +108,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_request_battery_power_off(self):
     env = self.create_env(
-        HostEnvironmentConfig(power_use_battery=False), ValidationMode.THROW)
+        EnvironmentConfig(power_use_battery=False), ValidationMode.THROW)
     self.mock_platform.is_battery_powered = True
     with self.assertRaises(ValidationError) as cm:
       env.validate()
@@ -193,7 +124,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     mock_probe.configure_mock(BATTERY_ONLY=True, name="mock_probe")
     self.mock_runner.probes = [mock_probe]
     env = self.create_env(
-        HostEnvironmentConfig(power_use_battery=False), ValidationMode.THROW)
+        EnvironmentConfig(power_use_battery=False), ValidationMode.THROW)
 
     with self.assertRaises(ValidationError) as cm:
       env.validate()
@@ -206,7 +137,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_request_is_headless_default(self):
     env = self.create_env(
-        HostEnvironmentConfig(browser_is_headless=HostEnvironmentConfig.IGNORE),
+        EnvironmentConfig(browser_is_headless=EnvironmentConfig.IGNORE),
         ValidationMode.THROW)
     mock_browser = mock.Mock(platform=self.mock_platform)
     self.mock_runner.browsers = [mock_browser]
@@ -222,7 +153,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         platform=self.mock_platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
-        HostEnvironmentConfig(browser_is_headless=True), ValidationMode.THROW)
+        EnvironmentConfig(browser_is_headless=True), ValidationMode.THROW)
 
     self.mock_platform.has_display = True
     mock_browser.viewport.is_headless = False
@@ -246,7 +177,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         platform=self.mock_platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
-        HostEnvironmentConfig(browser_is_headless=False), ValidationMode.THROW)
+        EnvironmentConfig(browser_is_headless=False), ValidationMode.THROW)
 
     self.mock_platform.has_display = True
     mock_browser.viewport.is_headless = False

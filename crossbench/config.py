@@ -437,33 +437,34 @@ class ConfigObject(abc.ABC):
   @classmethod
   def _parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
     if isinstance(value, dict):
-
       if (cls is not _TemplatedConfigParser and
           _TemplatedConfigParser.is_template_invocation(value)):
-
         result = cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
-
         return result
-
       return cls.parse_dict(value, **kwargs)
     if not value:
       raise ConfigError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pth.LocalPath):
       return cls.parse_path(value, **kwargs)
     if isinstance(value, str):
-      if urlparse(value).scheme:
-        # TODO(346197734): use parse_url here
-        return cls.parse_str(value, **kwargs)
-      try:
-        maybe_path = pth.LocalPath(value).expanduser()
-        if cls.is_valid_path(maybe_path):
-          return cls.parse_path(maybe_path, **kwargs)
-        if cls.value_has_path_prefix(value):
-          return cls.parse_unknown_path(maybe_path, **kwargs)
-      except OSError:
-        pass
-      return cls.parse_str(value, **kwargs)
+      return cls._parse_str(value, **kwargs)
     return cls.parse_other(value, **kwargs)
+
+  @classmethod
+  def _parse_str(cls: Type[ConfigObjectT], value: Any,
+                 **kwargs) -> ConfigObjectT:
+    if urlparse(value).scheme:
+      # TODO(346197734): use parse_url here
+      return cls.parse_str(value, **kwargs)
+    try:
+      maybe_path = pth.LocalPath(value).expanduser()
+      if cls.is_valid_path(maybe_path):
+        return cls.parse_path(maybe_path, **kwargs)
+      if cls.value_has_path_prefix(value):
+        return cls.parse_unknown_path(maybe_path, **kwargs)
+    except OSError:
+      pass
+    return cls.parse_str(value, **kwargs)
 
   @classmethod
   def parse_other(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:

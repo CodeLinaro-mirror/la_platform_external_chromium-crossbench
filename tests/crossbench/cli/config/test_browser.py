@@ -13,9 +13,11 @@ from immutabledict import immutabledict
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
-from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser import (ENV_PRESETS, NETWORK_PRESETS,
+                                           BrowserConfig)
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
+from crossbench.cli.config.env import ENV_CONFIG_PRESETS
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
@@ -30,6 +32,13 @@ from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):
+
+  def test_preset_no_overlap(self):
+    # make sure we have unique names between the two preset names so we
+    # can have simple short version browser specs
+    network_preset_names = NETWORK_PRESETS.split("|")
+    env_preset_names = ENV_PRESETS.split("|")
+    self.assertFalse(set(network_preset_names).intersection(env_preset_names))
 
   def test_equal(self):
     path = Chrome.stable_path(self.platform)
@@ -135,6 +144,36 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             Chrome.stable_path(self.platform),
             DriverConfig(BrowserDriverType.WEB_DRIVER),
             NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)))
+
+  def test_parse_simple_with_driver_with_env(self):
+    self.assertEqual(
+        BrowserConfig.parse("chrome:battery"),
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            env=ENV_CONFIG_PRESETS["battery"]))
+    self.assertEqual(
+        BrowserConfig.parse("selenium:chrome:battery"),
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            env=ENV_CONFIG_PRESETS["battery"]))
+
+  def test_parse_simple_with_driver_with_network_and_env(self):
+    self.assertEqual(
+        BrowserConfig.parse("chrome:4G:battery"),
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G),
+            ENV_CONFIG_PRESETS["battery"]))
+    self.assertEqual(
+        BrowserConfig.parse("selenium:chrome:4G:battery"),
+        BrowserConfig(
+            Chrome.stable_path(self.platform),
+            DriverConfig(BrowserDriverType.WEB_DRIVER),
+            NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G),
+            ENV_CONFIG_PRESETS["battery"]))
 
   def test_parse_simple_ambiguous_with_driver_ios(self):
     self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]

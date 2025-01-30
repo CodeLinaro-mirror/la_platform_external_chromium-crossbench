@@ -14,7 +14,7 @@ from unittest import mock
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
     SpeedometerStory)
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -180,7 +180,7 @@ class SpeedometerBaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,

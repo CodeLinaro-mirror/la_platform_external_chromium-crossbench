@@ -9,7 +9,7 @@ from typing import Optional
 from unittest import mock
 
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
@@ -55,7 +55,7 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,

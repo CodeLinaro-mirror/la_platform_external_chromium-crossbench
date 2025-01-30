@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
 import pathlib
 import shutil
 import sys
+from dataclasses import dataclass, field
 from typing import Any, Tuple, Union
 
 import pytest

@@ -15,8 +15,7 @@ from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Probe,
                                                          JetStream2ProbeContext,
                                                          JetStream2Story)
-from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
-                            ValidationMode)
+from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -99,7 +98,7 @@ class JetStream2BaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,

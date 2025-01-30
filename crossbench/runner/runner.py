@@ -16,8 +16,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
-from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
-                            ValidationMode)
+from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.sleep_preventer import SystemSleepPreventer
 from crossbench.helper.state import BaseState, StateMachine
@@ -201,7 +200,7 @@ class Runner:
                benchmark: Benchmark,
                additional_probes: Iterable[Probe] = (),
                platform: Optional[plt.Platform] = None,
-               env_config: Optional[HostEnvironmentConfig] = None,
+               env_config: Optional[EnvironmentConfig] = None,
                env_validation_mode: ValidationMode = ValidationMode.THROW,
                repetitions: int = 1,
                warmup_repetitions: int = 0,
