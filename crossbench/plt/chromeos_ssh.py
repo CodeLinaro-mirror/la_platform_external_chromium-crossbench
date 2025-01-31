@@ -46,7 +46,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     return True
 
   def create_debugging_session(self,
-                               browser_flags: Optional[ChromeFlags] = None,
+                               browser_flags: Optional[Tuple[str, ...]] = None,
                                username: Optional[str] = None,
                                password: Optional[str] = None) -> int:
     try:

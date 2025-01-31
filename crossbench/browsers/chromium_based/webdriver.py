@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Sequence, Type, Tuple, cast
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -23,6 +23,8 @@ from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.flags.base import FlagsT
+from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 
 if TYPE_CHECKING:
@@ -38,6 +40,7 @@ class ChromiumBasedWebDriver(
 
   WEB_DRIVER_OPTIONS: Type[ChromiumOptions] = ChromiumOptions
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
+  UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
 
   @property
   def attributes(self) -> BrowserAttributes:
@@ -56,6 +59,17 @@ class ChromiumBasedWebDriver(
         "cmd": cmd,
         "params": cmd_args
     })["value"]
+
+  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
+    assert isinstance(flags, ChromeFlags)
+    chrome_flags: ChromeFlags = cast(ChromeFlags, flags)
+    for flag in self.UNSUPPORTED_FLAGS:
+      if flag not in chrome_flags:
+        continue
+      flag_value = chrome_flags.pop(flag, None)
+      logging.debug("Chromium: Removed unsupported flag: %s=%s", flag,
+                    flag_value)
+    return chrome_flags  # type: ignore
 
   def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:

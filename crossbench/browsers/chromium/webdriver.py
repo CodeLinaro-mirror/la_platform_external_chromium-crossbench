@@ -20,7 +20,6 @@ from crossbench import path as pth
 from crossbench.browsers.chromium.paths import ChromiumPathMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.cli.config.secrets import GoogleUsernamePassword
-from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -95,23 +94,12 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     return path
 
   # TODO: implement setting a clean profile on android
-  _UNSUPPORTED_FLAGS: Tuple[str, ...] = (
+  UNSUPPORTED_FLAGS: Tuple[str, ...] = (
       "--user-data-dir",
       "--disable-sync",
       "--window-size",
       "--window-position",
   )
-
-  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
-    assert isinstance(flags, ChromeFlags)
-    chrome_flags: ChromeFlags = cast(ChromeFlags, flags)
-    for flag in self._UNSUPPORTED_FLAGS:
-      if flag not in chrome_flags:
-        continue
-      flag_value = chrome_flags.pop(flag, None)
-      logging.debug("Chrome Android: Removed unsupported flag: %s=%s", flag,
-                    flag_value)
-    return chrome_flags  # type: ignore
 
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
@@ -340,13 +328,19 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
         ChromeOsSshPlatform), (f"Invalid platform: {self._platform}")
     return cast(ChromeOsSshPlatform, self._platform)
 
+  UNSUPPORTED_FLAGS: Tuple[str, ...] = (
+      "--user-data-dir",
+      "--window-size",
+      "--window-position",
+  )
+
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> RemoteWebDriver:
     del driver_path
     platform = self.platform
     host = platform.host
     port = platform.port
-    args = self._get_browser_flags_for_session(session)
+    args: Tuple[str, ...] = self._get_browser_flags_for_session(session)
     # TODO(spadhi): correctly handle flags:
     #   1. decide which flags to pass to chrome vs chromedriver
     #   2. investigate irrelevant / unsupported flags on ChromeOS
@@ -355,9 +349,11 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
     google_login = session.browser.secrets.google
     if google_login:
       dbg_port = platform.create_debugging_session(
-          username=google_login.username, password=google_login.password)
+          username=google_login.username,
+          password=google_login.password,
+          browser_flags=args)
     else:
-      dbg_port = platform.create_debugging_session()
+      dbg_port = platform.create_debugging_session(browser_flags=args)
     options = self._create_options(session, args)
     options.add_experimental_option("debuggerAddress", f"127.0.0.1:{dbg_port}")
 
