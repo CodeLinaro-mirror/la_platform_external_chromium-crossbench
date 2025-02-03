@@ -52,9 +52,16 @@ def adb_devices(
 
 
 def _parse_adb_device_info(value: str) -> Dict[str, str]:
+  """
+  Convert a line from adb devices -l into a descriptive dictionary.
+  `value` is a line of output, typically:
+  ABCDEF01234567 device 2-1 product:shiba model:AOSP device:shiba transport_id:3
+
+  Some older versions of adb would not contain the `2-1` part.
+  """
   parts = value.split(" ")
   assert parts[0], "device"
-  return dict(part.split(":") for part in parts[1:])
+  return dict(part.split(":") for part in parts[1:] if ":" in part)
 
 
 class Adb:
