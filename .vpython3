@@ -1,7 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
+python_version: "3.11"
 
 wheel: <
   name: "infra/python/wheels/pytype/${vpython_platform}"
@@ -13,7 +13,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pytest-py3"
-  version: "version:6.2.2"
+  version: "version:7.3.1"
 >
 
 # Required by pytest 6.2.2 on Windows only
@@ -32,7 +32,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/tomli-py3"
-  version: "version:2.0.1"
+  version: "version:2.1.0"
 >
 
 wheel: <
@@ -42,27 +42,27 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/psutil/${vpython_platform}"
-  version: "version:5.8.0.chromium.3"
+  version: "version:5.9.8"
 >
 
 wheel: <
   name: "infra/python/wheels/websockets-py3"
-  version: "version:10.3"
+  version: "version:13.0"
 >
 
 wheel: <
   name: "infra/python/wheels/pyfakefs-py3"
-  version: "version:5.7.3"
+  version: "version:5.5.0"
 >
 
 wheel: <
-  name: "infra/python/wheels/attrs-py2_py3"
-  version: "version:21.4.0"
+  name: "infra/python/wheels/attrs-py3"
+  version: "version:24.2.0"
 >
 
 wheel: <
   name: "infra/python/wheels/py-py2_py3"
-  version: "version:1.10.0"
+  version: "version:1.11.0"
 >
 
 wheel: <
@@ -82,7 +82,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/colorama-py2_py3"
-  version: "version:0.4.1"
+  version: "version:0.4.6"
 >
 
 wheel: <
@@ -102,7 +102,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pyyaml-py3"
-  version: "version:5.3.1"
+  version: "version:6.0.1"
 >
 
 wheel: <
@@ -117,7 +117,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/importlab-py3"
-  version: "version:0.8"
+  version: "version:0.8.1"
 >
 
 wheel: <
@@ -127,7 +127,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/networkx-py3"
-  version: "version:2.5"
+  version: "version:3.1"
 >
 
 wheel: <
@@ -137,7 +137,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/ninja/${vpython_platform}"
-  version: "version:1.10.2.4"
+  version: "version:1.10.2.4.chromium.1"
 >
 
 wheel: <
@@ -152,7 +152,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/jinja2-py3"
-  version: "version:3.1.2"
+  version: "version:3.1.4"
 >
 
 wheel: <
@@ -161,33 +161,38 @@ wheel: <
 >
 
 wheel: <
-  name: "infra/python/wheels/packaging-py2_py3"
-  version: "version:16.8"
+  name: "infra/python/wheels/packaging-py3"
+  version: "version:24.1"
 >
 
 wheel: <
-  name: "infra/python/wheels/pyparsing-py2_py3"
-  version: "version:2.4.7"
+  name: "infra/python/wheels/pyparsing-py3"
+  version: "version:3.2.0"
 >
 
 wheel: <
   name: "infra/python/wheels/six-py2_py3"
-  version: "version:1.10.0"
+  version: "version:1.16.0"
 >
 
 wheel: <
   name: "infra/python/wheels/trio-py3"
-  version: "version:0.20.0"
+  version: "version:0.22.1"
 >
 
 wheel: <
   name: "infra/python/wheels/trio-websocket-py3"
-  version: "version:0.9.2"
+  version: "version:0.10.3"
 >
 
 wheel: <
-  name: "infra/python/wheels/urllib3-py2_py3"
-  version: "version:1.26.6"
+  name: "infra/python/wheels/exceptiongroup-py3"
+  version: "version:1.1.2"
+>
+
+wheel: <
+  name: "infra/python/wheels/urllib3-py3"
+  version: "version:2.1.0"
 >
 
 wheel: <
@@ -197,7 +202,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/outcome-py3"
-  version: "version:1.1.0"
+  version: "version:1.2.0"
 >
 
 wheel: <
@@ -207,47 +212,47 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/sniffio-py3"
-  version: "version:1.2.0"
+  version: "version:1.3.0"
 >
 
 wheel: <
-  name: "infra/python/wheels/idna-py2_py3"
-  version: "version:2.10"
+  name: "infra/python/wheels/idna-py3"
+  version: "version:3.4"
 >
 
 wheel: <
   name: "infra/python/wheels/wsproto-py3"
-  version: "version:1.1.0"
+  version: "version:1.2.0"
 >
 
 wheel: <
   name: "infra/python/wheels/h11-py3"
-  version: "version:0.13.0"
+  version: "version:0.14.0"
 >
 
 wheel: <
   name: "infra/python/wheels/certifi-py3"
-  version: "version:2023.5.7"
+  version: "version:2024.7.4"
 >
 
 wheel: <
-  name: "infra/python/wheels/pyopenssl-py2_py3"
-  version: "version:19.0.0"
+  name: "infra/python/wheels/pyopenssl-py3"
+  version: "version:24.2.1"
 >
 
 wheel: <
   name: "infra/python/wheels/cryptography/${vpython_platform}"
-  version: "version:3.3.1.chromium.1"
+  version: "version:43.0.0"
 >
 
 wheel: <
   name: "infra/python/wheels/cffi/${vpython_platform}"
-  version: "version:1.14.5.chromium.7"
+  version: "version:1.15.1.chromium.2"
 >
 
 wheel: <
   name: "infra/python/wheels/pycparser-py2_py3"
-  version: "version:2.19"
+  version: "version:2.21"
 >
 
 wheel: <
@@ -257,7 +262,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/tabulate-py3"
-  version: "version:0.8.10"
+  version: "version:0.9.0"
 >
 
 wheel: <
@@ -267,7 +272,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pycnite-py3"
-  version: "version:2023.10.11"
+  version: "version:2024.07.31"
 >
 
 wheel: <
@@ -277,17 +282,17 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/charset_normalizer-py3"
-  version: "version:2.0.4"
+  version: "version:3.3.2"
 >
 
 wheel: <
   name: "infra/python/wheels/debugpy/${vpython_platform}"
-  version: "version:1.5.1"
+  version: "version:1.8.0"
 >
 
 wheel: <
   name: "infra/python/wheels/markupsafe/${vpython_platform}"
-  version: "version:2.0.1"
+  version: "version:2.1.5"
 >
 
 wheel: <
@@ -297,13 +302,14 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pandas/${vpython_platform}"
-  version: "version:1.3.2.chromium.1"
+  version: "version:2.2.3.chromium.1"
 >
 
 wheel: <
   name: "infra/python/wheels/python-dateutil-py2_py3"
-  version: "version:2.7.3"
+  version: "version:2.9.0"
 >
+
 
 wheel: <
   name: "infra/python/wheels/numpy/${vpython_platform}"
@@ -355,3 +361,7 @@ wheel: <
   version: "version:0.5.1"
 >
 
+wheel: <
+  name: "infra/python/wheels/tzdata-py2_py3"
+  version: "version:2023.4"
+>

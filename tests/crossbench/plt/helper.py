@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import pathlib
+import unittest
 from unittest import mock
 
 import crossbench.path as pth
@@ -118,6 +119,7 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
         self.platform.path(pathlib.PurePosixPath("foo/bar")),
         pathlib.PurePosixPath)
 
+  @unittest.skipUnless(plt.PLATFORM.is_win, "Incompatible platform")
   def test_win_absolute_path_conversion(self):
     windows_path = pth.AnyWindowsPath("/foo/bar/file")
     abs_path = self.platform.absolute(windows_path)
@@ -126,6 +128,7 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
     self.assertTrue(abs_path.is_absolute())
     self.assertTrue(self.platform.is_absolute(abs_path))
 
+  @unittest.skipUnless(plt.PLATFORM.is_win, "Incompatible platform")
   def test_win_absolute_path_conversion_drive(self):
     windows_path = pth.AnyWindowsPath("C:/foo/bar/file")
     abs_path = self.platform.absolute(windows_path)
