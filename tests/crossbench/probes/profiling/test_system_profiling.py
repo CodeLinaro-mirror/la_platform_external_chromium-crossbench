@@ -327,8 +327,8 @@ class EnumTestCase(unittest.TestCase):
         TargetMode("RENDERER_MAIN_ONLY"), TargetMode.RENDERER_MAIN_ONLY)
 
   def test_call_graph_mode(self):
-    self.assertIs(CallGraphMode("frame_pointer"), CallGraphMode.FRAME_POINTER)
-    self.assertIs(CallGraphMode("FRAME_POINTER"), CallGraphMode.FRAME_POINTER)
+    self.assertIs(CallGraphMode("fp"), CallGraphMode.FRAME_POINTER)
+    self.assertIs(CallGraphMode("FP"), CallGraphMode.FRAME_POINTER)
 
 
 if __name__ == "__main__":
