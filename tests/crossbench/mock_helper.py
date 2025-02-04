@@ -78,6 +78,7 @@ class MockPlatformMixin:
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
     self.use_mock_name = True
+    self.use_fs = False
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: List[MockPopen] = []
     self.mkdir_calls: int = 0
@@ -198,9 +199,10 @@ class MockPlatformMixin:
                         file: pth.AnyPathLike,
                         data: str,
                         encoding: str = "utf-8") -> None:
-    del encoding
     file_path = self.path(file)
     self.file_contents[file_path].append(data)
+    if self.use_fs:
+      super().set_file_contents(file_path, data, encoding)
 
   def system_details(self):
     return {"CPU": "20-core 3.1 GHz"}

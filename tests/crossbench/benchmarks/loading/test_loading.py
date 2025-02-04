@@ -456,6 +456,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.run_cli("loading", "run", f"--page-config={config_file}",
                      "--env-validation=skip", "--throw",
                      f"--secrets={json.dumps(secrets_data)}")
+        self.assertEqual(mock_get_secrets.call_count, 2)
       for browser in self.browsers:
         self.assertListEqual([GOOGLE_LOGIN_URL, url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])

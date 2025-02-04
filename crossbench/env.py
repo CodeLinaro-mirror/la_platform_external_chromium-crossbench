@@ -393,6 +393,29 @@ class HostEnvironment:
           "Terminal.app does not launch apps in the foreground.\n"
           "Please use iTerm.app for a better experience.")
 
+  def _check_macos_file_access(self) -> None:
+    if not self._platform.is_macos:
+      return
+    # Make sure we can modify Safari's cache dir.
+    cache_dir = (
+        self.platform.home() /
+        "Library/Containers/com.apple.Safari/Data/Library/Caches")
+    try:
+      self.platform.mkdir(cache_dir, exist_ok=True, parents=True)
+      with self.platform.NamedTemporaryFile(
+          prefix="crossbench_file_access_test", dir=cache_dir) as test_file:
+        self.platform.set_file_contents(test_file, test_file.name)
+        assert self.platform.get_file_contents(test_file) == test_file.name
+        self.platform.rm(test_file)
+    except Exception as e:  # pylint: disable=broad-except
+      logging.debug("Failed file access test: %s", e)
+      term_program = self._platform.environ.get("TERM_PROGRAM",
+                                                "the current terminal App")
+      self.handle_validation_warning(
+          "Could not modify Safari's cache directory.\n"
+          "Likely missing 'Full Disk Access' macOS Privacy & Security "
+          f"permission for {term_program}.")
+
   def check_browser_focused(self, browser: Browser) -> None:
     if (self._config.browser_allow_background or not browser.pid or
         browser.viewport.is_headless):
@@ -435,6 +458,7 @@ class HostEnvironment:
     self._check_forbidden_system_process()
     self._check_screen_autobrightness()
     self._check_macos_terminal()
+    self._check_macos_file_access()
 
   def check_installed(self,
                       binaries: Iterable[str],
