@@ -61,8 +61,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     path = self.result_path / f"{label}.html"
     html = self.browser.js("return document.children[0].outerHTML",
                            dt.timedelta(seconds=10))
-    with open(path, "w", encoding="utf-8") as dump_file:
-      dump_file.write(html)
+    self.host_platform.set_file_contents(path, html)
     self._results.append(path)
 
   def teardown(self) -> ProbeResult:

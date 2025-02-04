@@ -126,10 +126,9 @@ class LocalFileNetwork(Network):
 
   def _read_headers_file(self,
                          header_file: LocalPath) -> immutabledict[str, str]:
-    with header_file.open("rb") as f:
-      # Reuse python's email message library to parse headers
-      message = email.parser.BytesParser().parsebytes(f.read())
-      return immutabledict(message)
+    # Reuse python's email message library to parse headers
+    message = email.parser.BytesParser().parsebytes(header_file.read_bytes())
+    return immutabledict(message)
 
   def _validate_extra_headers(self):
     for key, value in self._extra_headers.items():

@@ -98,8 +98,7 @@ class MockPlatformMixin:
     assert path == provided_data.path, (
         f"Expected download result path {path}, but got: {provided_data.path}")
     if provided_data.data:
-      with path.open("wb") as f:
-        f.write(provided_data.data)
+      path.write_bytes(provided_data.data)
     else:
       self.touch(path)
     return path

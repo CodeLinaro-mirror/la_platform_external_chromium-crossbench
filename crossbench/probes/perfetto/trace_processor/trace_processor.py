@@ -358,8 +358,9 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
     def run_metric(metric: str):
       json_file = self.local_result_path / f"{pth.safe_filename(metric)}.json"
       proto = tp.metric([metric])
-      with json_file.open("x") as f:
-        f.write(MessageToJson(proto))
+      assert not json_file.exists(), (
+          f"Cannot override previously generated metric {json_file}")
+      json_file.write_text(MessageToJson(proto))
       return json_file
 
     with self.run.actions("TRACE_PROCESSOR: Running metrics", verbose=True):

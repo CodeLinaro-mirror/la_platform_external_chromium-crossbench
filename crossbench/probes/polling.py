@@ -141,8 +141,7 @@ class CMDPoller(threading.Thread):
       data = self._platform.sh_stdout(*self._cmd)
       datetime_str = poll_start.strftime("%Y-%m-%d_%H%M%S_%f")
       out_file = self._path / f"{datetime_str}.txt"
-      with out_file.open("w", encoding="utf-8") as f:
-        f.write(data)
+      out_file.write_text(data, encoding="utf-8")
 
       poll_end = dt.datetime.now()
       diff = (poll_end - poll_start).total_seconds()

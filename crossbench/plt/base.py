@@ -605,13 +605,11 @@ class Platform(abc.ABC):
 
   def cat(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""
-    with self.local_path(file).open(encoding=encoding) as f:
-      return f.read()
+    return self.local_path(file).read_text(encoding=encoding)
 
   def cat_bytes(self, file: pth.AnyPathLike) -> bytes:
     """Hiss! I return the file contents as bytes."""
-    with self.local_path(file).open("rb") as f:
-      return f.read()
+    return self.local_path(file).read_bytes()
 
   def get_file_contents(self,
                         file: pth.AnyPathLike,
@@ -622,8 +620,7 @@ class Platform(abc.ABC):
                         file: pth.AnyPathLike,
                         data: str,
                         encoding: str = "utf-8") -> None:
-    with self.local_path(file).open("w", encoding=encoding) as f:
-      f.write(data)
+    self.local_path(file).write_text(data, encoding)
 
   def pull(self, from_path: pth.AnyPath,
            to_path: pth.LocalPath) -> pth.LocalPath:
