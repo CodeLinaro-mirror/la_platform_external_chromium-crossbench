@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
-                    Tuple, Type, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional,
+                    Sequence, Tuple, Type, TypeVar, cast)
 
 from ordered_set import OrderedSet
 
@@ -413,6 +413,7 @@ class PressBenchmark(SubStoryBenchmark):
         "--live",
         "--live-url",
         "--browser-ben",
+        "--browserben",
         dest="custom_benchmark_url",
         const=None,
         action="store_const",
