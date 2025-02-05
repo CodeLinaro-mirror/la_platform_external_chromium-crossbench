@@ -1,3 +1,9 @@
+-- For Google Pixel devices, the speedometer_compute_power_via_rails query
+-- estimates the total power consumed during a speedometer run, by leveraging
+-- go/pixel-odpm-rails counters (sorry, Googlers only). It includes all rails
+-- related to the SoC's compute logic (e.g. CPU, GPU, memory, fabric; but
+-- excluding e.g. display)
+
 SELECT IMPORT('chrome.speedometer');
 SELECT IMPORT('android.power_rails');
 
@@ -46,10 +52,9 @@ FROM (
   GROUP BY power_rail_name
 );
 
--- Power and energy consumed by all rails related to the SoC's compute logic
--- (e.g. CPU, GPU, memory, fabric; but excluding e.g. display).
-DROP VIEW IF EXISTS speedometer_compute_power;
-CREATE VIEW speedometer_compute_power AS
+-- See documentation at the top of the file.
+DROP VIEW IF EXISTS speedometer_compute_power_via_rails;
+CREATE VIEW speedometer_compute_power_via_rails AS
 SELECT
   SUM(energy_delta_uj) as energy_uj,
   SUM(average_power_mw) as average_power_mw
@@ -72,4 +77,4 @@ WHERE
   );
 
 SELECT *
-FROM speedometer_compute_power;
+FROM speedometer_compute_power_via_rails;
