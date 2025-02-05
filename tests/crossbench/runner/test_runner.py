@@ -9,6 +9,7 @@ from unittest import mock
 
 from crossbench import compat
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.webdriver import RemoteWebDriver
 from crossbench.env import HostEnvironment
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
@@ -181,6 +182,16 @@ class RunnerTestCase(BaseRunnerTestCase):
       runs_symlinks = list(
           (runner.out_dir / browser.unique_name / "runs").iterdir())
       self.assertEqual(len(runs_symlinks), 2)
+
+  def test_run_remote_web_driver(self):
+    driver = mock.Mock()
+    driver.capabilities = {
+        "browserVersion": "123.0.4567.89",
+        "setWindowRect": False,
+    }
+    browser = RemoteWebDriver("test-driver", driver)
+    runner = self.default_runner(browsers=[browser])
+    runner.run()
 
   def _validate_successful_run(self, run, runner, probe, probe_data):
     results = run.results[probe]

@@ -321,6 +321,9 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   def setup_binary(self) -> None:
     pass
 
+  def validate_binary(self) -> None:
+    pass
+
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Driver has already been started. We just need to mark it as running.
     self._is_running = True
