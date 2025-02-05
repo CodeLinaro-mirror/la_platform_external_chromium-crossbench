@@ -11,15 +11,19 @@ import logging
 import plistlib
 import re
 import socket
+import sys
 import traceback as tb
 from subprocess import SubprocessError
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
 
 import psutil
 
 from crossbench import path as pth
 from crossbench.plt.posix import PosixPlatform
 from crossbench.plt.signals import MacOSSignals
+
+if TYPE_CHECKING:
+  from crossbench.plt.base import CPUFreqInfo
 
 
 class MacOSPlatform(PosixPlatform):
@@ -48,6 +52,10 @@ class MacOSPlatform(PosixPlatform):
   @functools.cached_property
   def version(self) -> str:
     return self.sh_stdout("sw_vers", "-productVersion").strip()
+
+  @functools.cached_property
+  def version_parts(self) -> Tuple[int, ...]:
+    return tuple(map(int, self.version.split(".")))
 
   @functools.cached_property
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
@@ -95,6 +103,19 @@ class MacOSPlatform(PosixPlatform):
             self.sh_stdout("sysctl", "hw"),
     })
     return details
+
+  def _cpu_freq(self) -> Optional[CPUFreqInfo]:
+    if self.is_remote:
+      return super()._cpu_freq()
+    # BUG(394337121): older macOs versions on arm segfault with python 3.11
+    if (self.is_arm64 and sys.version_info >= (3, 11) and
+        self.version_parts < (12, 0)):
+      return None
+    try:
+      return super()._cpu_freq()
+    except FileNotFoundError as e:
+      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
+      return None
 
   def _find_app_binary_path(self, app_path: pth.AnyPath) -> pth.AnyPath:
     assert app_path.suffix == ".app", f"Expected .app but got {app_path}"

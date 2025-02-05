@@ -8,6 +8,7 @@ import abc
 import atexit
 import collections.abc
 import contextlib
+import dataclasses
 import datetime as dt
 import functools
 import inspect
@@ -92,6 +93,13 @@ class SubprocessError(subprocess.CalledProcessError):
     if not self.stderr:
       return f"{self.platform}: {super_str}"
     return f"{self.platform}: {super_str}\nstderr:{self.stderr.decode()}"
+
+
+@dataclasses.dataclass
+class CPUFreqInfo:
+  min: float
+  max: float
+  current: float
 
 
 DEFAULT_CACHE_DIR = pth.LocalPath(__file__).parents[2] / "cache"
@@ -257,17 +265,19 @@ class Platform(abc.ABC):
         "info":
             self.cpu,
     }
-    try:
-      cpu_freq = psutil.cpu_freq()
-    except FileNotFoundError as e:
-      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
-      return details
-    details.update({
-        "max frequency": f"{cpu_freq.max:.2f}Mhz",
-        "min frequency": f"{cpu_freq.min:.2f}Mhz",
-        "current frequency": f"{cpu_freq.current:.2f}Mhz",
-    })
+    if cpu_freq := self._cpu_freq():
+      details.update({
+          "max frequency": f"{cpu_freq.max:.2f}Mhz",
+          "min frequency": f"{cpu_freq.min:.2f}Mhz",
+          "current frequency": f"{cpu_freq.current:.2f}Mhz",
+      })
     return details
+
+  def _cpu_freq(self) -> Optional[CPUFreqInfo]:
+    self.assert_is_local()
+    cpu_freq = psutil.cpu_freq()
+    return CPUFreqInfo(cpu_freq.min, cpu_freq.max, cpu_freq.current)
+
 
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> Dict[str, Any]:
