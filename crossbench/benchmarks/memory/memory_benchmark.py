@@ -100,6 +100,9 @@ class MemoryProbeContext(ActionRunnerListener,
       raise TypeError("The probe only works for MemoryBenchmark")
     cur_benchmark.action_runner.set_listener(self)
     self._skippable_tab_count = cur_benchmark._skippable_tab_count
+    self._target_tab_count = cur_benchmark.get_target_tab_count()
+    self._intensive_tab_switch_count = \
+      cur_benchmark.get_intensive_tab_switch_count()
     # Records the navigation_start_time time for each window handle.
     self._navigation_time_ms: Dict[str, float] = {}
     self._tab_count: int = 1
@@ -174,9 +177,38 @@ class MemoryProbeContext(ActionRunnerListener,
     self._record_navigation_time(run)
     if self._tab_count > self._skippable_tab_count:
       self._check_liveness(run)
+    # Conduct intensive tab switch between the target num of tabs.
+    if self._intensive_tab_switch_count > 0 \
+      and self._tab_count == self._target_tab_count:
+      self._intensive_tab_switch(run)
+      self._collect_tab_switch_metric(run)
 
   def handle_new_tab(self, run: Run) -> None:
     self._increment_tab_count()
+
+  def _intensive_tab_switch(self, run: Run) -> None:
+    cur_tab_switch_count = 0
+    with run.actions("Intensive Tab Switching", measure=False) as action:
+      while cur_tab_switch_count < self._intensive_tab_switch_count:
+        for handle, _ in self._navigation_time_ms.items():
+          cur_tab_switch_count += 1
+          logging.debug(
+              "Browser: %s. Switching to handle: %s. "
+              "Current tab switch count: %s", run.browser, handle,
+              cur_tab_switch_count)
+          action.switch_window(handle)
+          action.wait(2)
+
+  def _collect_tab_switch_metric(self, run: Run) -> None:
+    with run.actions("Collect Tab Switch Metric", measure=False) as action:
+      browser = run.browser
+      browser.switch_to_new_tab()
+      switch_duration_histogram = \
+        "chrome://histograms/#Browser.Tabs.TotalSwitchDuration3"
+      browser.show_url(switch_duration_histogram)
+      content = action.js(
+          "let content = document.documentElement.innerText; return content;")
+      logging.info("TabSwitchDuration Metrics: %s", content)
 
 
 class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
@@ -309,12 +341,19 @@ class MemoryBenchmark(SubStoryBenchmark):
         type=NumberParser.positive_int,
         default=0,
         help="The number of tabs that can be skipped for liveness checking.")
+    parser.add_argument(
+        "--intensive-tab-switch-count",
+        type=NumberParser.positive_int,
+        default=0,
+        help="The num of tab switch for stress testing.")
     return parser
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["skippable_tab_count"] = args.skippable_tab_count
+    kwargs["target_tab_count"] = args.tabs.count
+    kwargs["intensive_tab_switch_count"] = args.intensive_tab_switch_count
     return kwargs
 
   @classmethod
@@ -330,12 +369,22 @@ class MemoryBenchmark(SubStoryBenchmark):
   def __init__(self,
                stories: Sequence[Page],
                skippable_tab_count: int = 0,
+               target_tab_count: int = 0,
+               intensive_tab_switch_count: int = 0,
                action_runner: Optional[ActionRunner] = None) -> None:
     self._action_runner = action_runner or DefaultActionRunner()
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)
     self._skippable_tab_count = skippable_tab_count
+    self._target_tab_count = target_tab_count
+    self._intensive_tab_switch_count = intensive_tab_switch_count
+
+  def get_target_tab_count(self) -> int:
+    return self._target_tab_count
+
+  def get_intensive_tab_switch_count(self) -> int:
+    return self._intensive_tab_switch_count
 
   @classmethod
   def describe(cls) -> Dict[str, Any]:
