@@ -210,6 +210,24 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
           argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
         _ = NumberParser.positive_int(invalid)
 
+  def test_parse_int_range(self):
+    self.assertEqual(NumberParser.int_range(min=0, max=10)("1"), 1)
+    self.assertEqual(NumberParser.int_range(min=0, max=10)(1), 1)
+    self.assertEqual(NumberParser.int_range(min=0, max=200)("123"), 123)
+    self.assertEqual(NumberParser.int_range(min=0, max=200)(123), 123)
+    self.assertEqual(NumberParser.int_range(min=-100, max=200)("-12"), -12)
+    self.assertEqual(NumberParser.int_range(min=-100, max=200)(-12), -12)
+
+  def test_parse_int_range_invalid(self):
+    with self.assertRaises(AssertionError):
+      NumberParser.int_range(1, 1)
+    with self.assertRaises(AssertionError):
+      NumberParser.int_range(10, 1)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1, 10)(-2)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1, 10)(11)
+
   def test_parse_positive_int_invalid_strict(self):
     for invalid in ("", "0", 0, "1", "-1", -1, float(-1), "-1.2", -1.2, "1.2",
                     1.2, "Nan", math.nan, "inf", math.inf, "-inf", -math.inf,
@@ -255,10 +273,34 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.positive_zero_float("0.0"), 0.0)
     self.assertEqual(NumberParser.positive_zero_float("1.23"), 1.23)
 
-  def test_parse_positive_zero_float_invlid(self):
+  def test_parse_positive_zero_float_invalid(self):
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.positive_zero_float(invalid)
+
+  def test_parse_float_range(self):
+    self.assertEqual(NumberParser.float_range(min=1, max=2)("1"), 1.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)(1), 1.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)("0"), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)(0), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)("0.0"), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)(0.0), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=11)("1.23"), 1.23)
+    self.assertEqual(NumberParser.float_range(min=0, max=11)(1.23), 1.23)
+    self.assertEqual(NumberParser.float_range(min=-2, max=11)("-1.1"), -1.1)
+    self.assertEqual(NumberParser.float_range(min=-2, max=11)(-1.1), -1.1)
+
+  def test_parse_float_range_invalid(self):
+    with self.assertRaises(AssertionError):
+      NumberParser.float_range(1, 1)
+    with self.assertRaises(AssertionError):
+      NumberParser.float_range(10, 1.0)
+    with self.assertRaises(AssertionError):
+      NumberParser.float_range(-10.1, -11.0)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1.1, 10.1)(-1.2)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1.1, 10.1)(10.2)
 
   def test_parse_port_number(self):
     self.assertEqual(NumberParser.port_number(1), 1)

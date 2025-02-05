@@ -8,14 +8,14 @@ import unittest
 
 import hjson
 
-from crossbench.cli.config.env import EnvironmentConfig
+from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvironmentConfig
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
 class EnvironmentConfigTestCase(BaseConfigTestCase):
 
-  def test_parse_dict(self):
+  def test_parse_global_config_dict(self):
     env_config_data = {
         "screen_brightness_percent": 66,
         "cpu_max_usage_percent": 77,
@@ -32,6 +32,16 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(direct.disk_min_free_space_gib, EnvironmentConfig.IGNORE)
     self.assertEqual(direct.screen_brightness_percent, 66)
     self.assertEqual(direct.cpu_max_usage_percent, 77)
+
+  def test_parse_empty_dict(self):
+    self.assertEqual(EnvironmentConfig.parse({}), ENV_CONFIG_PRESETS["default"])
+
+  def test_parse_dict(self):
+    config_data = {"cpu_min_relative_speed": None, "cpu_max_usage_percent": 12}
+    config = EnvironmentConfig.parse(config_data)
+    self.assertEqual(config, EnvironmentConfig.parse({"env": config_data}))
+    self.assertIsNone(config.cpu_min_relative_speed)
+    self.assertEqual(config.cpu_max_usage_percent, 12)
 
   def test_combine_bool_value(self):
     default = EnvironmentConfig()

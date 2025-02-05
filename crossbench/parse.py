@@ -12,8 +12,8 @@ import logging
 import math
 import re
 import shlex
-from typing import (Any, Dict, Final, Iterable, List, Optional, Sequence, Type,
-                    TypeVar, Union, cast)
+from typing import (Any, Callable, Dict, Final, Iterable, List, Optional,
+                    Sequence, Type, TypeVar, Union, cast)
 from urllib import parse as urlparse
 
 import hjson
@@ -505,12 +505,33 @@ class NumberParser:
       raise argparse.ArgumentTypeError(f"Invalid {name}: {repr(value)}") from e
 
   @classmethod
-  def positive_zero_float(cls, value: Any, name: str = "float") -> float:
+  def positive_float(cls, value: Any, name: str = "float") -> float:
     value_f = cls.any_float(value, name)
-    if not math.isfinite(value_f) or value_f < 0:
+    if not math.isfinite(value_f) or value_f <= 0:
       raise argparse.ArgumentTypeError(
-          f"Expected {name} >= 0, but got: {value_f}")
+          f"Expected {name} > 0, but got: {value_f}")
     return value_f
+
+  @classmethod
+  def positive_zero_float(cls, value: Any, name: str = "float") -> float:
+    return cls.float_range(0.0, math.inf, name=name)(value)
+
+  @classmethod
+  def float_range(  # pylint: disable=redefined-builtin
+      cls,
+      min: float = 0.0,
+      max: float = math.inf,
+      name: str = "float") -> Callable[[Any], float]:
+    assert min < max, f"Expected min={min} to be less than max={max}"
+
+    def float_ranged(value: Any) -> float:
+      value_f = cls.any_float(value, name)
+      if not math.isfinite(value_f) or value_f < min or max < value_f:
+        raise argparse.ArgumentTypeError(
+            f"Expected {min} <= {name} <= {max}, but got: {value_f}")
+      return value_f
+
+    return float_ranged
 
   @classmethod
   def any_int(cls,
@@ -534,11 +555,7 @@ class NumberParser:
                         value: Any,
                         name: str = "value",
                         parse_str: bool = True) -> int:
-    value_i = cls.any_int(value, name, parse_str)
-    if value_i < 0:
-      raise argparse.ArgumentTypeError(
-          f"Expected integer {name} >= 0, but got: {value_i}")
-    return value_i
+    return cls.int_range(0.0, name=name, parse_str=parse_str)(value)
 
   @classmethod
   def positive_int(cls,
@@ -552,15 +569,29 @@ class NumberParser:
     return value_i
 
   @classmethod
+  def int_range(  # pylint: disable=redefined-builtin
+      cls,
+      min: float = 0.0,
+      max: float = math.inf,
+      name: str = "value",
+      parse_str: bool = True) -> Callable[[Any], int]:
+    assert min < max, f"Expected min={min} to be less than max={max}"
+
+    def int_ranged(value: Any) -> int:
+      value_i = cls.any_int(value, name, parse_str)
+      if not math.isfinite(value_i) or value_i < min or max < value_i:
+        raise argparse.ArgumentTypeError(
+            f"Expected integer {min} <= {name} <= {max}, but got: {value_i}")
+      return value_i
+
+    return int_ranged
+
+  @classmethod
   def port_number(cls,
                   value: Any,
                   name: str = "port",
                   parse_str: bool = True) -> int:
-    port = cls.any_int(value, name, parse_str)
-    if 1 <= port <= 65535:
-      return port
-    raise argparse.ArgumentTypeError(
-        f"Invalid Port: expected 1 <= {name} <= 65535, but got: {repr(port)}")
+    return cls.int_range(1, 65535, name, parse_str)(value)
 
 
 class LateArgumentError(argparse.ArgumentTypeError):

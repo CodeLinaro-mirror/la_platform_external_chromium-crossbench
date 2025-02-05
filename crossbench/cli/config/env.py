@@ -10,8 +10,8 @@ import enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from crossbench import compat
-from crossbench.config import ConfigObject
-from crossbench.parse import ObjectParser
+from crossbench.config import ConfigObject, ConfigParser
+from crossbench.parse import NumberParser, ObjectParser
 
 
 @enum.unique
@@ -74,18 +74,18 @@ ENV_CONFIG_PRESETS: Dict[str, "EnvironmentConfig"] = {}
 class EnvironmentConfig(ConfigObject):
   IGNORE = None
 
-  disk_min_free_space_gib: Optional[float] = IGNORE
-  power_use_battery: Optional[bool] = IGNORE
-  screen_brightness_percent: Optional[int] = IGNORE
+  browser_allow_background: Optional[bool] = IGNORE
+  browser_allow_existing_process: Optional[bool] = IGNORE
+  browser_is_headless: Optional[bool] = IGNORE
   cpu_max_usage_percent: Optional[float] = IGNORE
   cpu_min_relative_speed: Optional[float] = IGNORE
-  system_allow_monitoring: Optional[bool] = IGNORE
-  browser_allow_existing_process: Optional[bool] = IGNORE
-  browser_allow_background: Optional[bool] = IGNORE
-  browser_is_headless: Optional[bool] = IGNORE
+  disk_min_free_space_gib: Optional[float] = IGNORE
+  power_use_battery: Optional[bool] = IGNORE
   require_probes: Optional[bool] = IGNORE
-  system_forbidden_process_names: Optional[List[str]] = IGNORE
   screen_allow_autobrightness: Optional[bool] = IGNORE
+  screen_brightness_percent: Optional[int] = IGNORE
+  system_allow_monitoring: Optional[bool] = IGNORE
+  system_forbidden_process_names: Optional[List[str]] = IGNORE
 
   @classmethod
   def default(cls) -> EnvironmentConfig:
@@ -106,22 +106,55 @@ class EnvironmentConfig(ConfigObject):
   def parse_dict(cls, config: Dict[str, Any]) -> EnvironmentConfig:
     if "env" in config:
       config = config["env"]
-    return cls(**config)
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[EnvironmentConfig]:
+    parser = ConfigParser(cls)
+    parser.add_argument("browser_allow_background", type=ObjectParser.bool)
+    parser.add_argument(
+        "browser_allow_existing_process",
+        type=ObjectParser.bool,
+        default=cls.IGNORE)
+    parser.add_argument("browser_is_headless", type=ObjectParser.bool)
+    parser.add_argument(
+        "cpu_max_usage_percent",
+        type=NumberParser.int_range(0, 100),
+        default=cls.IGNORE)
+    parser.add_argument(
+        "cpu_min_relative_speed",
+        type=NumberParser.int_range(0, 1),
+        default=cls.IGNORE)
+    parser.add_argument(
+        "disk_min_free_space_gib",
+        type=NumberParser.positive_float,
+        default=cls.IGNORE)
+    parser.add_argument("power_use_battery", type=ObjectParser.bool)
+    parser.add_argument("require_probes", type=ObjectParser.bool)
+    parser.add_argument(
+        "screen_allow_autobrightness",
+        type=ObjectParser.bool,
+        default=cls.IGNORE)
+    parser.add_argument("screen_brightness_percent", type=int)
+    parser.add_argument("system_allow_monitoring", type=ObjectParser.bool)
+    parser.add_argument(
+        "system_forbidden_process_names", type=str, is_list=True)
+    return parser
 
   def merge(self, other: EnvironmentConfig) -> EnvironmentConfig:
     mergers: Dict[str, Callable[[str, Any, Any], Any]] = {
-        "disk_min_free_space_gib": merge_number_max,
-        "power_use_battery": merge_bool,
-        "screen_brightness_percent": merge_number_max,
+        "browser_allow_background": merge_bool,
+        "browser_allow_existing_process": merge_bool,
+        "browser_is_headless": merge_bool,
         "cpu_max_usage_percent": merge_number_min,
         "cpu_min_relative_speed": merge_number_max,
-        "system_allow_monitoring": merge_bool,
-        "browser_allow_existing_process": merge_bool,
-        "browser_allow_background": merge_bool,
-        "browser_is_headless": merge_bool,
+        "disk_min_free_space_gib": merge_number_max,
+        "power_use_battery": merge_bool,
         "require_probes": merge_bool,
-        "system_forbidden_process_names": merge_str_list,
         "screen_allow_autobrightness": merge_bool,
+        "screen_brightness_percent": merge_number_max,
+        "system_allow_monitoring": merge_bool,
+        "system_forbidden_process_names": merge_str_list,
     }
     kwargs = {}
     for name, merger in mergers.items():
