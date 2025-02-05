@@ -456,10 +456,20 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertIs(ObjectParser.bool("False"), False)
     self.assertIs(ObjectParser.bool(False), False)
 
+  def test_parse_bool_success_strict(self):
+    self.assertIs(ObjectParser.bool(True, strict=True), True)
+    self.assertIs(ObjectParser.bool(False, strict=True), False)
+
   def test_parse_bool_invalid(self):
     for invalid in (1, 0, "1", "0", "", None, [], tuple()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.bool(invalid)
+        ObjectParser.bool(invalid, strict=True)
+
+  def test_parse_bool_invalid_strict(self):
+    for invalid in (None, "False", "false", "True", "true"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        ObjectParser.bool(invalid, strict=True)
 
   def test_parse_sh_cmd(self):
     self.assertListEqual(ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])

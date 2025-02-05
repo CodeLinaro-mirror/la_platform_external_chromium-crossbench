@@ -390,14 +390,15 @@ class ObjectParser:
     return parsed
 
   @classmethod
-  def bool(cls, value: Any, name: str = "value") -> bool:
+  def bool(cls, value: Any, name: str = "value", strict: bool = False) -> bool:
     if isinstance(value, bool):
       return value
     value = str(value).lower()
-    if value == "true":
-      return True
-    if value == "false":
-      return False
+    if not strict:
+      if value == "true":
+        return True
+      if value == "false":
+        return False
     raise argparse.ArgumentTypeError(
         f"Expected bool {name} but got {type_str(value)}: {repr(value)}")
 
