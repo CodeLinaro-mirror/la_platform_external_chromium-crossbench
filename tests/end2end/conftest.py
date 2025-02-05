@@ -33,22 +33,24 @@ WIN_APP_SUFFIX = [".exe", ".bat"]
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
-
+ADB_DEVICE_ID_FLAG = "--adb-device-id"
+ADB_PATH_FLAG = "--adb-path"
+CAS_ARCHIVE_FLAG = "--cas-archive"
+TEST_BROWSER_FLAG = "--test-browser-path"
+TEST_DRIVER_FLAG = "--test-driver-path"
+TEST_GSUTIL_FLAG = "--test-gsutil-path"
 
 def pytest_addoption(parser):
   parser.addoption(
-      "--test-browser-path",
-      "--browserpath",
-      default=None,
-      type=PathParser.path)
+      TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)
   parser.addoption(
-      "--test-driver-path", "--driverpath", default=None, type=PathParser.path)
+      TEST_DRIVER_FLAG, "--driverpath", default=None, type=PathParser.path)
   parser.addoption(
-      "--test-gsutil-path", "--gustilpath", default=None, type=PathParser.path)
-  parser.addoption("--adb-device-id", default=None, type=str)
+      TEST_GSUTIL_FLAG, "--gsutilpath", default=None, type=PathParser.path)
+  parser.addoption(ADB_DEVICE_ID_FLAG, default=None, type=str)
   parser.addoption("--adb-path", default=None, type=str)
   parser.addoption("--ignore-tests", default=None, type=str)
-  parser.addoption("--cas-archive", default=None, type=str)
+  parser.addoption(CAS_ARCHIVE_FLAG, default=None, type=str)
 
 
 def pytest_xdist_auto_num_workers(config):
@@ -78,7 +80,7 @@ def setup_session(request):
 @pytest.fixture(scope="session", autouse=True)
 def driver_path(request) -> Optional[pathlib.Path]:
   maybe_driver_path: Optional[LocalPath] = _get_app_path(
-      request, "--test-driver-path")
+      request, TEST_DRIVER_FLAG)
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
     assert maybe_driver_path.exists()
@@ -88,7 +90,7 @@ def driver_path(request) -> Optional[pathlib.Path]:
 @pytest.fixture(scope="session", autouse=True)
 def browser_path(request) -> Optional[pathlib.Path]:
   maybe_browser_path: Optional[pathlib.Path] = _get_app_path(
-      request, "--test-browser-path")
+      request, TEST_BROWSER_FLAG)
   if maybe_browser_path:
     logging.info("browser path: %s", maybe_browser_path)
     assert maybe_browser_path.exists()
@@ -174,7 +176,7 @@ def mock_patch_chrome_stable(browser_path):
 
 @pytest.fixture(scope="session", autouse=True)
 def gsutil_path(request) -> Iterator[pathlib.Path]:
-  if custom_gsutil := _get_app_path(request, "--test-gsutil-path"):
+  if custom_gsutil := _get_app_path(request, TEST_GSUTIL_FLAG):
     logging.info("gsutil path: %s", custom_gsutil)
     assert custom_gsutil.exists()
     with plt.PLATFORM.override_binary("gsutil", custom_gsutil):
@@ -197,7 +199,7 @@ def default_gsutil_path() -> pathlib.Path:
 @pytest.fixture
 def test_env(request):
   test_name = re.sub(r"[\[\]\\/*?:\"<>|]", "_", request.node.name)
-  maybe_cas_archive: Optional[str] = request.config.getoption("--cas-archive")
+  maybe_cas_archive: Optional[str] = request.config.getoption(CAS_ARCHIVE_FLAG)
   if maybe_cas_archive:
     cas_test_env = TestEnv(pathlib.Path(maybe_cas_archive), test_name)
     yield cas_test_env
@@ -214,7 +216,7 @@ def test_env(request):
 
 @pytest.fixture(scope="session")
 def device_id(request, adb_path) -> Optional[str]:
-  maybe_device_id: Optional[str] = request.config.getoption("--adb-device-id")
+  maybe_device_id: Optional[str] = request.config.getoption(ADB_DEVICE_ID_FLAG)
   if maybe_device_id:
     logging.info("adb device id: %s", maybe_device_id)
     return maybe_device_id
@@ -230,8 +232,7 @@ def device_id(request, adb_path) -> Optional[str]:
 
 @pytest.fixture(scope="session")
 def adb_path(request) -> Optional[str]:
-  maybe_adb_path: Optional[str] = request.config.getoption(
-      "--adb-path")
+  maybe_adb_path: Optional[str] = request.config.getoption(ADB_PATH_FLAG)
   if maybe_adb_path:
     logging.info("adb path: %s", maybe_adb_path)
     return maybe_adb_path
