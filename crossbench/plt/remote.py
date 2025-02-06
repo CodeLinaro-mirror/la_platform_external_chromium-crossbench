@@ -7,6 +7,8 @@ from __future__ import annotations
 import subprocess
 from typing import TYPE_CHECKING, Optional, Union
 
+from typing_extensions import override
+
 if TYPE_CHECKING:
   from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
@@ -66,12 +68,15 @@ class RemotePopen(subprocess.Popen):
     assert self._remote_pid, "remote process has no PID"
     return self._remote_pid
 
+  @override
   def send_signal(self, signal: Union[int, Signals]) -> None:
     signal = self._platform.signals(signal)
     self._platform.send_signal(self.remote_pid, signal)
 
+  @override
   def terminate(self) -> None:
     self._platform.terminate(self.remote_pid)
 
+  @override
   def kill(self) -> None:
     self._platform.kill(self.remote_pid)

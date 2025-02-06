@@ -8,6 +8,8 @@ import argparse
 import dataclasses
 from typing import TYPE_CHECKING, Dict, Optional
 
+from typing_extensions import override
+
 from crossbench.benchmarks.loading.point import Point
 from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
 from crossbench.parse import NumberParser, ObjectParser
@@ -22,10 +24,12 @@ class CoordinatesConfig(ConfigObject):
   y: int
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> CoordinatesConfig:
     return cls.config_parser().parse(config)
 
   @classmethod
+  @override
   def parse_str(cls, value):
     del value
     raise NotImplementedError("Cannot create CoordinatesConfig from string")
@@ -51,12 +55,14 @@ class SelectorConfig(ConfigObject):
   wait: bool
 
   @classmethod
+  @override
   def parse_str(cls, value) -> SelectorConfig:
     selector = ObjectParser.non_empty_str(value, "selector")
     return cls(
         selector=selector, required=True, scroll_into_view=False, wait=False)
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> SelectorConfig:
     return cls.config_parser().parse(config)
 
@@ -79,10 +85,12 @@ class PositionConfig(ConfigObject):
   selector: Optional[SelectorConfig] = None
 
   @classmethod
+  @override
   def parse_str(cls, value) -> PositionConfig:
     return cls(selector=SelectorConfig.parse_str(value))
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> PositionConfig:
     selector_parser = SelectorConfig.config_parser()
     if selector_parser.has_all_required_args(config):
@@ -112,6 +120,7 @@ class PositionConfig(ConfigObject):
             scroll_into_view=scroll_into_view,
             wait=wait))
 
+  @override
   def validate(self) -> None:
     super().validate()
     if bool(self.coordinates) != bool(self.coordinates):

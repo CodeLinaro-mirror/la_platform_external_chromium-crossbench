@@ -11,6 +11,8 @@ import functools
 import re
 from typing import Any, Final, Iterable, Optional, Tuple, Type, TypeVar
 
+from typing_extensions import override
+
 
 @dataclasses.dataclass
 class _BrowserVersionChannelMixin:
@@ -320,18 +322,22 @@ class UnknownBrowserVersion(BrowserVersion):
     super().__init__(parts, BrowserVersionChannel.ANY, version_str)
 
   @classmethod
+  @override
   def _parse(
       cls,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
     raise RuntimeError("UnknownBrowserVersion does not support parsing")
 
+  @override
   def _channel_name(self, channel: BrowserVersionChannel) -> str:
     return "unknown"
 
   @property
+  @override
   def has_complete_parts(self) -> bool:
     return False
 
   @property
+  @override
   def is_unknown(self) -> bool:
     return True

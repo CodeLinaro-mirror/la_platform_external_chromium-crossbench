@@ -8,6 +8,8 @@ import datetime as dt
 import os
 from typing import TYPE_CHECKING, List, Optional, Type
 
+from typing_extensions import override
+
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
@@ -26,11 +28,13 @@ class DumpHtmlProbe(Probe):
   RESULT_LOCATION = ResultLocation.LOCAL
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     # TODO: support stop dumps
     return parser
 
+  @override
   def get_context_cls(self) -> Type[DumpHtmlProbeContext]:
     return DumpHtmlProbeContext
 
@@ -44,6 +48,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     super().__init__(probe, run)
     self._results: List[AnyPath] = []
 
+  @override
   def get_default_result_path(self) -> AnyPath:
     dump_dir = super().get_default_result_path()
     os.mkdir(dump_dir)
@@ -64,6 +69,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     self.host_platform.set_file_contents(path, html)
     self._results.append(path)
 
+  @override
   def teardown(self) -> ProbeResult:
     if not self.browser_platform.is_dir(self.result_path):
       return self.empty_result()

@@ -10,6 +10,8 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Type
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
 from crossbench.helper.path_finder import TraceconvFinder
@@ -158,6 +160,7 @@ class TracingProbe(ChromiumProbe):
   CHROMIUM_FLAGS = ("--enable-perfetto",)
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -245,6 +248,7 @@ class TracingProbe(ChromiumProbe):
       logging.debug("Using default traceconv: %s", traceconv)
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (("preset", self._preset),
                           ("categories", tuple(self._categories)),
@@ -254,6 +258,7 @@ class TracingProbe(ChromiumProbe):
                           ("traceconv", str(self._traceconv)))
 
   @property
+  @override
   def result_path_name(self) -> str:
     return f"trace.{self._record_format.value}"  # pylint: disable=no-member
 
@@ -281,6 +286,7 @@ class TracingProbe(ChromiumProbe):
   def startup_duration(self) -> int:
     return self._startup_duration
 
+  @override
   def attach(self, browser: Browser) -> None:
     assert browser.attributes.is_chromium_based
     flags = browser.flags
@@ -300,6 +306,7 @@ class TracingProbe(ChromiumProbe):
       flags["--enable-tracing"] = ",".join(self._categories)
     super().attach(browser)
 
+  @override
   def get_context_cls(self) -> Type[TracingProbeContext]:
     return TracingProbeContext
 

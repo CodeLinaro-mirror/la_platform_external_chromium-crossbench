@@ -8,6 +8,8 @@ import dataclasses
 import re
 from typing import TYPE_CHECKING, Any, Dict, Final, Type
 
+from typing_extensions import override
+
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.parse import ObjectParser
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
@@ -40,6 +42,7 @@ class ProbeConfig(ConfigObject):
       raise ValueError(f"{type(self).__name__}.config cannot be None.")
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> ProbeConfig:
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
@@ -61,6 +64,7 @@ class ProbeConfig(ConfigObject):
     return cls.parse_dict(config)
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> ProbeConfig:
     probe_name = ObjectParser.non_empty_str(config.pop("name"), "name")
     return cls.parse_probe_dict(probe_name, config)

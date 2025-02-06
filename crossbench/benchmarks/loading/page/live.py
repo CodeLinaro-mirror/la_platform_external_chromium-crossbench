@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Dict, Tuple
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.get import GetAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.base import DEFAULT_DURATION, PAGE_LIST
@@ -22,6 +24,7 @@ if TYPE_CHECKING:
 class LivePage(InteractivePage):
 
   @classmethod
+  @override
   def all_story_names(cls) -> Tuple[str, ...]:
     return tuple(page.name for page in PAGE_LIST)
 
@@ -44,12 +47,14 @@ class LivePage(InteractivePage):
         tabs=tabs,
         about_blank_duration=about_blank_duration)
 
+  @override
   def details_json(self) -> JsonDict:
     result = super().details_json()
     result["url"] = str(self.url)
     return result
 
   @property
+  @override
   def first_url(self) -> str:
     return self.url
 

@@ -10,6 +10,8 @@ import enum
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench.parse import DurationParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
@@ -52,6 +54,7 @@ class PowerMetricsProbe(Probe):
                           SamplerType.TASKS, SamplerType.THERMAL)
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -72,6 +75,7 @@ class PowerMetricsProbe(Probe):
     self._samplers = tuple(samplers)
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("sampling_interval", self.sampling_interval.total_seconds()),
@@ -86,10 +90,12 @@ class PowerMetricsProbe(Probe):
   def samplers(self) -> Tuple[SamplerType, ...]:
     return self._samplers
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_macos(browser)
 
+  @override
   def get_context_cls(self) -> Type[PowerMetricsProbeContext]:
     return PowerMetricsProbeContext
 

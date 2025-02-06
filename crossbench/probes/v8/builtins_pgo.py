@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Type
 
+from typing_extensions import override
+
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -23,13 +25,16 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
   """
   NAME = "v8.builtins.pgo"
 
+  @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     browser.js_flags.set("--allow-natives-syntax")
 
+  @override
   def get_context_cls(self) -> Type[V8BuiltinsPGOProbeContext]:
     return V8BuiltinsPGOProbeContext
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (run.results[self].file for run in group.runs)
@@ -37,6 +42,7 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
         inputs=result_files, output=merged_result_path)
     return LocalProbeResult(file=(result_file,))
 
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (g.results[self].file for g in group.repetitions_groups)
@@ -48,6 +54,7 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
 class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
   _pgo_counters: Optional[str] = None
 
+  @override
   def setup(self) -> None:
     pass
 

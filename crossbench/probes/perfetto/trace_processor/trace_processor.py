@@ -20,6 +20,7 @@ from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.config import ConfigObject, ConfigParser
@@ -44,6 +45,7 @@ class TraceProcessorQueryConfig(ConfigObject):
   sql: str
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> TraceProcessorQueryConfig:
     name = ObjectParser.safe_filename(value)
     sql_path = PathParser.existing_file_path(_QUERIES_DIR / f"{value}.sql",
@@ -52,6 +54,7 @@ class TraceProcessorQueryConfig(ConfigObject):
     return cls(name=name, sql=sql)
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> TraceProcessorQueryConfig:
     return cls.config_parser().parse(config)
 
@@ -103,6 +106,7 @@ class TraceProcessorProbe(Probe):
   NAME = "trace_processor"
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -190,9 +194,11 @@ class TraceProcessorProbe(Probe):
         load_timeout=10,
         extra_flags=extra_flags)
 
+  @override
   def get_context_cls(self) -> Type[TraceProcessorProbeContext]:
     return TraceProcessorProbeContext
 
+  @override
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
     self._check_sql()
@@ -242,6 +248,7 @@ class TraceProcessorProbe(Probe):
         for metric_name, merged in merged_metrics.items()
     }
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     if self.needs_btp_run:
       return self._run_btp(group)
@@ -296,6 +303,7 @@ class TraceProcessorProbe(Probe):
 
     return LocalProbeResult(csv=csv_files, json=json_files)
 
+  @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
     logging.critical("TraceProcessor merged traces:")

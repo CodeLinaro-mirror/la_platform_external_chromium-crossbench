@@ -12,6 +12,8 @@ import tempfile
 from typing import (TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type,
                     Union)
 
+from typing_extensions import override
+
 from crossbench.helper import collection_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -44,6 +46,7 @@ class VideoProbe(Probe):
   FRAMERATE = 60
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -68,6 +71,7 @@ class VideoProbe(Probe):
     self._merge_runs = merge_runs
 
   @property
+  @override
   def result_path_name(self) -> str:
     return f"{self.name}.mp4"
 
@@ -79,6 +83,7 @@ class VideoProbe(Probe):
   def merge_runs(self) -> bool:
     return self._merge_runs
 
+  @override
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
     if env.repetitions > 10:
@@ -117,9 +122,11 @@ class VideoProbe(Probe):
             f"Viewport size for {browser} is {viewport}, "
             f"which differs from first viewport {first_viewport}. ")
 
+  @override
   def get_context_cls(self) -> Type[VideoProbeContext]:
     return VideoProbeContext
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     if not self.merge_runs:
       return LocalProbeResult()
@@ -163,6 +170,7 @@ class VideoProbe(Probe):
 
     return LocalProbeResult(file=group_files)
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """Merge story videos from multiple browser/configurations"""
     if not self.merge_runs:

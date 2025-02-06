@@ -12,6 +12,8 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import DurationParser, PathParser
@@ -60,6 +62,7 @@ class PowerSamplerProbe(Probe):
                           SamplerType.MAIN_DISPLAY)
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument("bin_path", type=PathParser.binary_path)
@@ -94,6 +97,7 @@ class PowerSamplerProbe(Probe):
     self._wait_for_battery = wait_for_battery
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("bin_path", str(self.bin_path)),
@@ -118,6 +122,7 @@ class PowerSamplerProbe(Probe):
   def wait_for_battery(self) -> bool:
     return self._wait_for_battery
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     self.expect_macos(browser)
     if not browser.platform.is_battery_powered:
@@ -155,6 +160,7 @@ class PowerSamplerProbe(Probe):
     ]
     return ProbeValidationError(self, "\n".join(error_message))
 
+  @override
   def get_context_cls(self) -> Type[PowerSamplerProbeContext]:
     return PowerSamplerProbeContext
 

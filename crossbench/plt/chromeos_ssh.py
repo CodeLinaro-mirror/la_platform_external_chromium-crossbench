@@ -9,6 +9,8 @@ import logging
 import subprocess
 from typing import TYPE_CHECKING
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.parse import NumberParser, ObjectParser
@@ -34,6 +36,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     self._default_tmp_dir = pth.AnyPosixPath("/usr/local/tmp")
 
   @property
+  @override
   def name(self) -> str:
     return "chromeos_ssh"
 
@@ -42,6 +45,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     return self._username
 
   @property
+  @override
   def is_chromeos(self) -> bool:
     return True
 
@@ -70,9 +74,11 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
       raise RuntimeError("Could not read remote debugging port.") from e
     return int(dbg_port)
 
+  @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screenshot", result_path)
 
+  @override
   def display_resolution(self) -> Tuple[int, int]:
     display_info_json = self.sh_stdout("cros-health-tool", "telem",
                                        "--category=display")

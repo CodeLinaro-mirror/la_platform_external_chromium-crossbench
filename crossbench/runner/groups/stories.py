@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.helper import collection_helper
 from crossbench.runner.groups.base import RunGroup
 
@@ -61,6 +63,7 @@ class StoriesRunGroup(RunGroup):
       yield from group.cache_temperatures_groups
 
   @property
+  @override
   def runs(self) -> Iterable[Run]:
     for group in self._repetitions_groups:
       yield from group.runs
@@ -75,6 +78,7 @@ class StoriesRunGroup(RunGroup):
     return (group.story for group in self._repetitions_groups)
 
   @property
+  @override
   def info_stack(self) -> exception.TInfoStack:
     return (
         "Merging results from multiple stories",
@@ -82,6 +86,7 @@ class StoriesRunGroup(RunGroup):
     )
 
   @property
+  @override
   def info(self) -> JsonMapping:
     info: JsonDict = {
         "label": self.browser.label,
@@ -98,5 +103,6 @@ class StoriesRunGroup(RunGroup):
     info.update(super().info)
     return info
 
+  @override
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_stories(self)

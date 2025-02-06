@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Sequence, Type,
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
@@ -43,6 +44,7 @@ class ChromiumBasedWebDriver(
   UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.WEBDRIVER)
@@ -60,6 +62,7 @@ class ChromiumBasedWebDriver(
         "params": cmd_args
     })["value"]
 
+  @override
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
     chrome_flags: ChromeFlags = cast(ChromeFlags, flags)
@@ -71,6 +74,7 @@ class ChromiumBasedWebDriver(
                     flag_value)
     return chrome_flags  # type: ignore
 
+  @override
   def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:
       return self._driver_path
@@ -92,6 +96,7 @@ class ChromiumBasedWebDriver(
       # to make an old pytype version happy
       return pth.LocalPath()
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
     return self._start_chromedriver(session, driver_path)
@@ -145,6 +150,7 @@ class ChromiumBasedWebDriver(
                      service: ChromiumService) -> ChromiumDriver:
     pass
 
+  @override
   def _validate_driver_version(self) -> None:
     assert self._driver_path, "No driver available"
     error_message = None
@@ -178,17 +184,21 @@ class ChromiumBasedWebDriver(
     return (f"Chromedriver version mismatch: driver={driver_version} "
             f"browser={self.version} ({self})",)
 
+  @override
   def run_script_on_new_document(self, script: str) -> None:
     self._execute_cdp_cmd(self._private_driver,
                           "Page.addScriptToEvaluateOnNewDocument",
                           {"source": script})
 
+  @override
   def current_window_id(self) -> str:
     return str(self._private_driver.current_window_handle)
 
+  @override
   def switch_window(self, window_id: str) -> None:
     self._private_driver.switch_to.window(window_id)
 
+  @override
   def switch_tab(
       self,
       title: Optional[re.Pattern] = None,

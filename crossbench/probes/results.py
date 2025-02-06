@@ -11,6 +11,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.parse import ObjectParser
@@ -253,6 +254,7 @@ class BrowserProbeResult(ProbeResult):
     super().__init__(url, local_file, **local_kwargs)
 
   @property
+  @override
   def is_remote(self) -> bool:
     return self._is_remote
 

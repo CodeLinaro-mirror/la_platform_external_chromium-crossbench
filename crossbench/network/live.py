@@ -7,6 +7,8 @@ from __future__ import annotations
 import contextlib
 from typing import TYPE_CHECKING, Iterator
 
+from typing_extensions import override
+
 from crossbench.network.base import Network
 
 if TYPE_CHECKING:
@@ -16,10 +18,12 @@ if TYPE_CHECKING:
 class LiveNetwork(Network):
 
   @property
+  @override
   def is_live(self) -> bool:
     return True
 
   @contextlib.contextmanager
+  @override
   def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
     with super().open(session):
       with self._traffic_shaper.open(self, session):

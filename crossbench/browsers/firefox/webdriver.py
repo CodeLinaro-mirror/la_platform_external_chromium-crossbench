@@ -12,6 +12,8 @@ import stat
 import tempfile
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
+from typing_extensions import override
+
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
@@ -31,13 +33,16 @@ if TYPE_CHECKING:
 class FirefoxWebDriver(WebDriverBrowser, Firefox):
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX | BrowserAttributes.WEBDRIVER
 
+  @override
   def _find_driver(self) -> pth.AnyPath:
     finder = FirefoxDriverFinder(self)
     return finder.download()
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
     return self._start_firefox_driver(session, driver_path)
@@ -77,6 +82,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     driver = webdriver.Firefox(options=options, service=service)
     return driver
 
+  @override
   def _validate_driver_version(self) -> None:
     # TODO
     # version = self.platform.sh_stdout(self._driver_path, "--version")

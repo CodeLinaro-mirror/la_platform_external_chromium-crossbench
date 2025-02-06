@@ -396,8 +396,8 @@ class Platform(abc.ABC):
     if not binary_name:
       raise ValueError("Got empty path")
     self.assert_is_local()
-    if override := self.lookup_binary_override(binary_name):
-      return override
+    if binary_override := self.lookup_binary_override(binary_name):
+      return binary_override
     if result := shutil.which(os.fspath(binary_name)):
       return self.path(result)
     return None

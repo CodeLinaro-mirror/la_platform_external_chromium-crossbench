@@ -9,6 +9,8 @@ import logging
 import time
 from typing import TYPE_CHECKING, Final, Optional
 
+from typing_extensions import override
+
 import crossbench.path as pth
 from crossbench.helper.spinner import Spinner
 from crossbench.probes.profiling.context.base import PosixProfilingContext
@@ -37,6 +39,7 @@ class MacOSProfilingContext(PosixProfilingContext):
         TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
             f"Unsupported profiling mode for Mac: {str(self.probe.target)}")
 
+  @override
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
@@ -59,6 +62,7 @@ class MacOSProfilingContext(PosixProfilingContext):
   def start(self) -> None:
     pass
 
+  @override
   def start_story_run(self) -> None:
     super().start_story_run()
     # In theory this could start earlier but we leave it here as the

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.edge.service import Service as EdgeService
+from typing_extensions import override
 
 import crossbench
 import crossbench.exception
@@ -34,13 +35,16 @@ class EdgeWebDriver(EdgePathMixin, ChromiumBasedWebDriver):
   WEB_DRIVER_SERVICE = EdgeService
 
   @property
+  @override
   def type_name(self) -> str:
     return "edge"
 
+  @override
   def _find_driver(self) -> pth.AnyPath:
     finder = EdgeWebDriverDownloader(self)
     return finder.download()
 
+  @override
   def _create_driver(
       self,
       options: EdgeOptions,  # type: ignore
@@ -48,6 +52,7 @@ class EdgeWebDriver(EdgePathMixin, ChromiumBasedWebDriver):
     return webdriver.Edge(options=options, service=service)
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return (BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.WEBDRIVER)

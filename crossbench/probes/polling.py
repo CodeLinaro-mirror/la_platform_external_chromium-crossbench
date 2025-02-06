@@ -11,6 +11,8 @@ import threading
 import time
 from typing import TYPE_CHECKING, Iterable, Type
 
+from typing_extensions import override
+
 from crossbench.parse import DurationParser, ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import ProbeContext
@@ -32,6 +34,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   IS_GENERAL_PURPOSE = False
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -53,6 +56,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
       raise ValueError(f"Polling interval must be >= 0.1s, but got: {interval}")
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (("cmd", tuple(self.cmd)),
                           ("interval", self.interval.total_seconds()))
@@ -65,12 +69,14 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   def cmd(self) -> TupleCmdArgs:
     return self._cmd
 
+  @override
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
     if env.repetitions != 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.repetitions}.")
 
+  @override
   def get_context_cls(self) -> Type[PollingProbeContext]:
     return PollingProbeContext
 
@@ -84,6 +90,7 @@ class PollingShellProbe(PollingProbe):
   NAME = "poll"
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -102,6 +109,7 @@ class PollingProbeContext(ProbeContext[PollingProbe]):
     self._poller = CMDPoller(self.browser_platform, self.probe.cmd,
                              self.probe.interval, self.local_result_path)
 
+  @override
   def setup(self) -> None:
     self.local_result_path.mkdir()
 

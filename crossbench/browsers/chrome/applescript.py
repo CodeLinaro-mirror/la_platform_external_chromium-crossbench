@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from typing_extensions import override
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -24,6 +26,7 @@ class ChromeAppleScript(ChromePathMixin, ChromiumAppleScript):
   WEB_DRIVER_SERVICE = ChromeService
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.APPLESCRIPT)

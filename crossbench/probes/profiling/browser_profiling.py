@@ -10,6 +10,7 @@ import json
 from typing import TYPE_CHECKING, List, Optional, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
+from typing_extensions import override
 
 from crossbench import compat
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
@@ -91,6 +92,7 @@ class BrowserProfilingProbe(Probe):
   IS_GENERAL_PURPOSE = True
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -108,6 +110,7 @@ class BrowserProfilingProbe(Probe):
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("moz_profiler_startup_features",
@@ -117,6 +120,7 @@ class BrowserProfilingProbe(Probe):
   def moz_profiler_startup_features(self) -> List[MozProfilerStartupFeatures]:
     return self._moz_profiler_startup_features
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if browser.platform.is_remote:
@@ -152,6 +156,7 @@ class BrowserProfilingProbe(Probe):
 class BrowserProfilingProbeContext(
     ProbeContext[BrowserProfilingProbe], metaclass=abc.ABCMeta):
 
+  @override
   def setup(self) -> None:
     pass
 
@@ -165,6 +170,7 @@ class BrowserProfilingProbeContext(
 class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
                                                   ):
 
+  @override
   def get_default_result_path(self) -> AnyPath:
     return (super().get_default_result_path().parent /
             f"{self.browser.type_name}.profile.json")
@@ -192,9 +198,11 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
 
 class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
+  @override
   def get_default_result_path(self) -> AnyPath:
     return super().get_default_result_path().parent / "firefox.profile.json"
 
+  @override
   def setup(self) -> None:
     env = self.browser.platform.environ
     env[FirefoxProfilerEnvVars.STARTUP] = "y"
@@ -203,6 +211,7 @@ class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
           str(feature) for feature in self.probe.moz_profiler_startup_features)
     env[FirefoxProfilerEnvVars.SHUTDOWN] = str(self.result_path)
 
+  @override
   def teardown(self) -> ProbeResult:
     env = self.browser.platform.environ
     del env[FirefoxProfilerEnvVars.STARTUP]
@@ -213,13 +222,16 @@ class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
 class SafariWebdriverBrowserProfilerProbeContext(BrowserProfilingProbeContext):
 
+  @override
   def get_default_result_path(self) -> AnyPath:
     return super().get_default_result_path().parent / "safari.timeline.json"
 
+  @override
   def setup_selenium_options(self, options: BaseOptions) -> None:
     assert isinstance(options, SafariOptions)
     cast(SafariOptions, options).automatic_profiling = True
 
+  @override
   def stop(self) -> None:
     # TODO: Update this mess when Safari supports a command-line option
     # to download the profile.
@@ -248,5 +260,6 @@ class SafariWebdriverBrowserProfilerProbeContext(BrowserProfilingProbeContext):
         end tell
       end tell""")
 
+  @override
   def teardown(self) -> ProbeResult:
     return self.browser_result(json=[self.result_path])

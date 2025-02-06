@@ -11,6 +11,8 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from typing_extensions import override
+
 from crossbench import parse
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.linux import RemoteLinuxPlatform
@@ -36,6 +38,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     atexit.register(self._stop_all_port_forward)
 
   @property
+  @override
   def name(self) -> str:
     return "linux_ssh"
 
@@ -56,6 +59,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
     return ssh_cmd
 
+  @override
   def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
     return self._build_ssh_cmd(*args)
 

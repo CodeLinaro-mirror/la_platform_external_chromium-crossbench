@@ -8,6 +8,8 @@ import abc
 import datetime as dt
 from typing import TYPE_CHECKING, Any, Dict, Type, TypeVar
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
@@ -51,10 +53,12 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ActionType = ActionType.GET
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> Action:
     return ACTIONS[ActionType.GET].parse_str(value)
 
   @classmethod
+  @override
   def parse_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
     action_cls: Type[ActionT] = ACTIONS[action_type]  # type: ignore
@@ -104,6 +108,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     pass
 
+  @override
   def validate(self) -> None:
     if self._timeout.total_seconds() < 0:
       raise ValueError(

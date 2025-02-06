@@ -10,6 +10,8 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
+from typing_extensions import override
+
 from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.loading.config.pages import (
@@ -48,6 +50,7 @@ class LoadingPageFilter(StoryFilter[Page]):
   stories: Sequence[Page]
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(parser)
@@ -157,6 +160,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "for more details.")
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
@@ -171,6 +175,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     self._args: argparse.Namespace = args
     super().__init__(story_cls, patterns, separate)
 
+  @override
   def process_all(self, patterns: Sequence[str]) -> None:
     name_or_url_list = patterns
     if len(name_or_url_list) == 1:
@@ -237,6 +242,7 @@ class LoadingPageFilter(StoryFilter[Page]):
                            args.about_blank_duration, args.run_login,
                            args.run_setup)
 
+  @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
     logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
     if not separate and len(self.stories) > 1:
@@ -266,6 +272,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS = LoadingPageFilter
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
   ) -> CrossBenchArgumentParser:
@@ -283,6 +290,7 @@ class LoadingBenchmark(SubStoryBenchmark):
     return args.separate
 
   @classmethod
+  @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     has_default_stories: bool = args.stories and args.stories == "default"
     if config := cls.get_pages_config(args):
@@ -326,16 +334,19 @@ class LoadingBenchmark(SubStoryBenchmark):
     return args.pages_config
 
   @classmethod
+  @override
   def aliases(cls) -> Tuple[str, ...]:
     return ("load", "ld")
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["action_runner"] = args.action_runner
     return kwargs
 
   @classmethod
+  @override
   def all_story_names(cls) -> Sequence[str]:
     return sorted(LivePage.all_story_names())
 

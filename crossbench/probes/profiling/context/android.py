@@ -11,6 +11,8 @@ import subprocess
 import time
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union, cast
 
+from typing_extensions import override
+
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import CallGraphMode, TargetMode
@@ -106,6 +108,7 @@ class AndroidProfilingContext(PosixProfilingContext):
     if not self.probe.start_profiling_after_setup:
       self._start_simpleperf()
 
+  @override
   def start_story_run(self) -> None:
     super().start_story_run()
     if self.probe.pin_renderer_main_core is not None:

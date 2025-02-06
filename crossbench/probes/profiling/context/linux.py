@@ -11,6 +11,8 @@ import multiprocessing
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.helper import fs_helper
@@ -35,6 +37,7 @@ class LinuxProfilingContext(PosixProfilingContext):
       JIT_DUMP_PATTERN,
   )
 
+  @override
   def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
     self.browser_platform.mkdir(result_dir)
@@ -45,6 +48,7 @@ class LinuxProfilingContext(PosixProfilingContext):
     # TODO: replace with full version comparison
     return self.browser.major_version > V8_PERF_PROF_PATH_FLAG_MIN_VERSION.major
 
+  @override
   def setup(self) -> None:
     self.setup_v8_log_path()
     if self.has_perf_prof_path:

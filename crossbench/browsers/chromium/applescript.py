@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from typing_extensions import override
+
 from crossbench.browsers.applescript import AppleScriptBrowser
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
@@ -20,10 +22,12 @@ class ChromiumAppleScript(ChromiumBased, AppleScriptBrowser):
   APPLE_SCRIPT_SET_URL: str = (
       "set URL of the active tab of front window to %(url)s")
 
+  @override
   def _setup_window(self) -> None:
     pass
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.APPLESCRIPT)

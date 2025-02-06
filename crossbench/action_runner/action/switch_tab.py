@@ -8,6 +8,8 @@ import datetime as dt
 import re
 from typing import TYPE_CHECKING, Optional, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
                                                     ActionT)
 from crossbench.action_runner.action.action_type import ActionType
@@ -24,6 +26,7 @@ class SwitchTabAction(Action):
   TYPE: ActionType = ActionType.SWITCH_TAB
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
@@ -60,9 +63,11 @@ class SwitchTabAction(Action):
   def tab_index(self) -> Optional[int]:
     return self._tab_index
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.switch_tab(run, self)
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     if self._tab_index:

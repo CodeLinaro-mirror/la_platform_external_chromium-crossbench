@@ -16,6 +16,7 @@ import traceback as tb
 from subprocess import SubprocessError
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
 
+from typing_extensions import override
 import psutil
 
 from crossbench import path as pth
@@ -38,10 +39,12 @@ class MacOSPlatform(PosixPlatform):
   LSAPPINFO_PID_LINE_RE = r"\s*pid = ([0-9]+).*"
 
   @property
+  @override
   def is_macos(self) -> bool:
     return True
 
   @property
+  @override
   def name(self) -> str:
     return "macos"
 
@@ -50,6 +53,7 @@ class MacOSPlatform(PosixPlatform):
     return MacOSSignals
 
   @functools.cached_property
+  @override
   def version(self) -> str:
     return self.sh_stdout("sw_vers", "-productVersion").strip()
 
@@ -58,16 +62,19 @@ class MacOSPlatform(PosixPlatform):
     return tuple(map(int, self.version.split(".")))
 
   @functools.cached_property
+  @override
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
     return self.sh_stdout("sysctl", "hw.model").strip().split(maxsplit=1)[1]
 
   @functools.cached_property
+  @override
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
     num_cores = self.cpu_cores
     return f"{brand} {num_cores} cores"
 
   @functools.cached_property
+  @override
   def cpu_cores(self) -> int:
     if self.is_local:
       return super().cpu_cores
@@ -75,6 +82,7 @@ class MacOSPlatform(PosixPlatform):
     return int(cores)
 
   @property
+  @override
   def is_battery_powered(self) -> bool:
     if self.is_local:
       return super().is_battery_powered
@@ -92,6 +100,7 @@ class MacOSPlatform(PosixPlatform):
     return 1
 
   @functools.lru_cache(maxsize=1)
+  @override
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
     details.update({
@@ -198,6 +207,7 @@ class MacOSPlatform(PosixPlatform):
     assert self.is_dir(app_path)
     return app_path
 
+  @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
@@ -380,6 +390,7 @@ class MacOSPlatform(PosixPlatform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencapture", "-x", result_path)
 
+  @override
   def is_port_used(self, port: int) -> bool:
     # We need a custom solution for macos:
     # - psutil.net_connections requires root access on macos

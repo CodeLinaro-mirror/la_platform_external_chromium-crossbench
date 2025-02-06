@@ -7,6 +7,8 @@ from __future__ import annotations
 import shlex
 from typing import TYPE_CHECKING, Dict, Iterable, Type
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.parse import PathParser
@@ -38,6 +40,7 @@ class DebuggerProbe(Probe):
   IS_GENERAL_PURPOSE = True
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -88,6 +91,7 @@ class DebuggerProbe(Probe):
     self._spare_renderer_process = spare_renderer_process
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("debugger", str(self._debugger_bin)),
@@ -97,6 +101,7 @@ class DebuggerProbe(Probe):
         ("spare_renderer_process", self._spare_renderer_process),
     )
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
@@ -109,6 +114,7 @@ class DebuggerProbe(Probe):
     if not browser.platform.which("xterm"):
       raise ProbeValidationError(self, "Please install xterm on your system.")
 
+  @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     assert browser.attributes.is_chromium_based
@@ -146,6 +152,7 @@ class DebuggerProbe(Probe):
       debugger_cmd += ["--args"]
     return shlex.join(debugger_cmd)
 
+  @override
   def get_context_cls(self) -> Type[DebuggerContext]:
     return DebuggerContext
 

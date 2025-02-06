@@ -7,6 +7,8 @@ from __future__ import annotations
 import re
 from typing import Dict, Final, Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 
@@ -35,6 +37,7 @@ class FirefoxVersion(BrowserVersion):
   }
 
   @classmethod
+  @override
   def _parse(
       cls,
       full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
@@ -76,6 +79,7 @@ class FirefoxVersion(BrowserVersion):
       return True
     return bool(cls._PREFIX_RE.match(prefix))
 
+  @override
   def _channel_name(self, channel: BrowserVersionChannel) -> str:
     if channel == BrowserVersionChannel.LTS:
       return "esr"
@@ -88,9 +92,11 @@ class FirefoxVersion(BrowserVersion):
     raise ValueError(f"Unsupported channel: {channel}")
 
   @property
+  @override
   def has_complete_parts(self) -> bool:
     return len(self.parts) == 3
 
   @property
+  @override
   def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
     return (self.comparable_parts(self._PARTS_LEN), self._channel)

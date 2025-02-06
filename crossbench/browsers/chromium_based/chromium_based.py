@@ -9,6 +9,8 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional, TextIO, Tuple, cast
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.browser_helper import convert_flags_to_label
@@ -41,6 +43,7 @@ class ChromiumBased(Browser):
   )
 
   @classmethod
+  @override
   def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
     return ChromeFlags(initial_data)
 
@@ -52,6 +55,7 @@ class ChromiumBased(Browser):
     self._stdout_log_file: Optional[TextIO] = None
     assert isinstance(self._flags, ChromeFlags)
 
+  @override
   def _setup_flags(self, settings: Settings) -> ChromeFlags:
     flags: Flags = settings.flags
     js_flags: Flags = settings.js_flags
@@ -91,6 +95,7 @@ class ChromiumBased(Browser):
     self.flags.set("--disable-gpu-compositing")
     self.flags.set("--no-sandbox")
 
+  @override
   def validate_flags(self) -> None:
     super().validate_flags()
     field_trial_flags: ChromeFlags = self.flags.field_trial_flags
@@ -101,6 +106,7 @@ class ChromiumBased(Browser):
           f"{field_trial_flags} vs {no_finch_flags}.\n"
           "Cannot enable and disable finch / field-trials at the same time.")
 
+  @override
   def _setup_cache_dir(self, settings: Settings) -> None:
     cache_dir = settings.cache_dir
     if cache_dir is None:
@@ -114,6 +120,7 @@ class ChromiumBased(Browser):
       self.cache_dir = cache_dir
       self.clear_cache_dir = False
 
+  @override
   def _extract_version(self) -> str:
     assert self.path
     version_string = self.platform.app_version(self.path)
@@ -135,17 +142,21 @@ class ChromiumBased(Browser):
     return self.log_file.with_suffix(f".{self.type_name}.log")
 
   @property
+  @override
   def flags(self) -> ChromeFlags:
     return cast(ChromeFlags, self._flags)
 
   @property
+  @override
   def js_flags(self) -> JSFlags:
     return cast(ChromeFlags, self._flags).js_flags
 
   @property
+  @override
   def features(self) -> ChromeFeatures:
     return cast(ChromeFlags, self._flags).features
 
+  @override
   def details_json(self) -> JsonDict:
     details: JsonDict = super().details_json()
     if self.log_file:
@@ -155,6 +166,7 @@ class ChromiumBased(Browser):
     details["js_flags"] = tuple(self.js_flags)
     return details
 
+  @override
   def _get_browser_flags_for_session(
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     js_flags_copy = self.js_flags.copy()
@@ -193,7 +205,7 @@ class ChromiumBased(Browser):
                                   >= self.MIN_HEADLESS_NEW_VERSION):
       if flags["--headless"] is None:
         logging.info("Replacing --headless with --headless=new")
-        flags.set("--headless", "new", override=True)
+        flags.set("--headless", "new", should_override=True)
 
     if self.viewport.is_default:
       update_viewport = False
@@ -220,6 +232,7 @@ class ChromiumBased(Browser):
   def get_label_from_flags(self) -> str:
     return convert_flags_to_label(*self.flags, *self.js_flags)
 
+  @override
   def quit(self) -> None:
     super().quit()
     if self._stdout_log_file:

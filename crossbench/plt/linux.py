@@ -8,6 +8,8 @@ import functools
 import os
 from typing import Any, Dict, Optional, Tuple, Type
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.posix import PosixPlatform
@@ -28,10 +30,12 @@ class LinuxPlatform(PosixPlatform):
   )
 
   @property
+  @override
   def is_linux(self) -> bool:
     return True
 
   @property
+  @override
   def name(self) -> str:
     return "linux"
 
@@ -43,6 +47,7 @@ class LinuxPlatform(PosixPlatform):
     return True
 
   @functools.cached_property
+  @override
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
     try:
       id_dir = self.path("/sys/devices/virtual/dmi/id")
@@ -53,6 +58,7 @@ class LinuxPlatform(PosixPlatform):
       return "UNKNOWN"
 
   @functools.cached_property
+  @override
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     cpu_str = "UNKNOWN"
     for line in self.cat(self.path("/proc/cpuinfo")).splitlines():
@@ -64,10 +70,12 @@ class LinuxPlatform(PosixPlatform):
     return cpu_str
 
   @property
+  @override
   def has_display(self) -> bool:
     return "DISPLAY" in os.environ
 
   @property
+  @override
   def is_battery_powered(self) -> bool:
     if self.is_local:
       return super().is_battery_powered
@@ -76,6 +84,7 @@ class LinuxPlatform(PosixPlatform):
     return False
 
   @functools.lru_cache(maxsize=1)
+  @override
   def system_details(self) -> Dict[str, Any]:
     details = super().system_details()
     for info_bin in ("lscpu", "inxi"):

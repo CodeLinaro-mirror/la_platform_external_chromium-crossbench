@@ -9,6 +9,8 @@ import enum
 import logging
 from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.exception import TInfoStack
 from crossbench.flags.base import Flags
 from crossbench.flags.js_flags import JSFlags
@@ -135,6 +137,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self.raw_session_dir
 
   @property
+  @override
   def out_dir(self) -> LocalPath:
     return self._get_session_dir()
 
@@ -151,6 +154,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._env
 
   @property
+  @override
   def probes(self) -> Iterable[Probe]:
     return iter(self._probes)
 
@@ -159,6 +163,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._network
 
   @property
+  @override
   def browser(self) -> Browser:
     return self._browser
 
@@ -175,6 +180,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._root_dir
 
   @property
+  @override
   def runs(self) -> Iterable[Run]:
     return iter(self._runs)
 
@@ -203,11 +209,13 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self.first_run.setup_selenium_options(options)
 
   @property
+  @override
   def info_stack(self) -> TInfoStack:
     return ("Merging results from multiple browser sessions",
             f"browser={self.browser.unique_name}", f"session={self.index}")
 
   @property
+  @override
   def info(self) -> JsonMapping:
     info_dict = dict(super().info)
     info_dict.update({"index": self.index})
@@ -217,16 +225,19 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return f"Session({self.browser}, {self.index})"
 
   @property
+  @override
   def browser_tmp_dir(self) -> AnyPath:
     if not self._browser_tmp_dir:
       prefix = f"cb_browser_session_{self.index}"
       self._browser_tmp_dir = self.browser_platform.mkdtemp(prefix)
     return self._browser_tmp_dir
 
+  @override
   def merge(self, probes: Iterable[Probe]) -> None:
     # TODO: implement merging of session probes
     pass
 
+  @override
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return EmptyProbeResult()
 

@@ -8,6 +8,8 @@ import abc
 from typing import (TYPE_CHECKING, Dict, Hashable, Optional, Set, Tuple, Type,
                     TypeVar)
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.config import ConfigParser, UnusedPropertiesMode
 from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
@@ -135,6 +137,7 @@ class Probe(ProbeResultKey, abc.ABC):
     return plt.PLATFORM
 
   @property
+  @override
   def name(self) -> str:
     return self.NAME
 

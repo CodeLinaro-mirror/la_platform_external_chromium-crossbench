@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
+from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
@@ -48,10 +49,12 @@ class LoadLinePageFilter(LoadingPageFilter):
     pass
 
   @classmethod
+  @override
   def default_stories(cls) -> Tuple[Page, ...]:
     return cls.all_stories()
 
   @classmethod
+  @override
   def all_stories(cls) -> Tuple[Page, ...]:
     return ()
 
@@ -60,9 +63,11 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE = False
   NAME = "loadline_probe"
 
+  @override
   def get_context_cls(self,) -> Type[LoadLineProbeContext]:
     return LoadLineProbeContext
 
+  @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
     logging.critical("LoadLine Benchmark (%s)", VERSION_STRING)
@@ -75,6 +80,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
             headers="keys",
             tablefmt="plain"))
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     csv_file = group.get_local_probe_result_path(self).with_suffix(".csv")
     self._compute_score(group).to_csv(csv_file)
@@ -109,6 +115,7 @@ class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
   def start(self) -> None:
     pass
 
+  @override
   def start_story_run(self) -> None:
     self.browser.performance_mark(
         f"LoadLine/{self.probe.benchmark.NAME}/{self.run.story.name}")
@@ -126,6 +133,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   DEFAULT_REPETITIONS = 100
 
   @classmethod
+  @override
   def requires_separate(cls, args: argparse.Namespace) -> bool:
     # Perfetto metrics used in the benchmark require a separate Perfetto
     # session for each run.
@@ -137,6 +145,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @abc.abstractmethod
+  @override
   def default_network_config_path(cls) -> pth.LocalPath:
     pass
 
@@ -151,6 +160,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
     return PagesConfig.parse(cls.default_pages_config_path())
 
   @classmethod
+  @override
   def all_story_names(cls) -> Sequence[str]:
     return tuple(page.any_label for page in cls.get_pages_config().pages)
 
@@ -161,18 +171,22 @@ class LoadLineTabletBenchmark(LoadLineBenchmark):
   NAME = "loadline-tablet"
 
   @classmethod
+  @override
   def default_pages_config_path(cls) -> pth.LocalPath:
     return pth.LocalPath(LOADLINE_DIR) / "page_config_tablet.hjson"
 
   @classmethod
+  @override
   def default_network_config_path(cls) -> pth.LocalPath:
     return pth.LocalPath(LOADLINE_DIR) / "network_config_tablet.hjson"
 
   @classmethod
+  @override
   def aliases(cls) -> Tuple[str, ...]:
     return ("loading-tablet", "load-tablet", "ld-tablet")
 
   @classmethod
+  @override
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
     assert browser_attributes.is_chromium_based
     return Flags(["--request-desktop-sites"])
@@ -184,13 +198,16 @@ class LoadLinePhoneBenchmark(LoadLineBenchmark):
   NAME = "loadline-phone"
 
   @classmethod
+  @override
   def default_pages_config_path(cls) -> pth.LocalPath:
     return pth.LocalPath(LOADLINE_DIR) / "page_config_phone.hjson"
 
   @classmethod
+  @override
   def default_network_config_path(cls) -> pth.LocalPath:
     return pth.LocalPath(LOADLINE_DIR) / "network_config_phone.hjson"
 
   @classmethod
+  @override
   def aliases(cls) -> Tuple[str, ...]:
     return ("loading-phone", "load-phone", "ld-phone")

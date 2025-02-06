@@ -9,6 +9,8 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple
 
+from typing_extensions import override
+
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.default_bond_action_runner import (
     DefaultBondActionRunner)
@@ -118,6 +120,7 @@ class DefaultActionRunner(ActionRunner):
     return selector, script
 
   @property
+  @override
   def bond(self) -> BondActionRunner:
     if not self._bond:
       self._bond = DefaultBondActionRunner(self)
@@ -133,11 +136,13 @@ class DefaultActionRunner(ActionRunner):
           return state === '{ready_state}' || state === "complete";
         """, 0.2, timeout.total_seconds())
 
+  @override
   def teardown(self, run: Run):
     del run
     if self._bond:
       self._bond.teardown()
 
+  @override
   def get(self, run: Run, action: i_action.GetAction) -> None:
     # TODO: potentially refactor the timing and logging out to the base class.
     start_time = time.time()
@@ -158,6 +163,7 @@ class DefaultActionRunner(ActionRunner):
         logging.info("%s took longer (%s) than expected action duration (%s).",
                      action, run_duration, action.duration)
 
+  @override
   def click_js(self, run: Run, action: i_action.ClickAction) -> None:
 
     if action.duration > dt.timedelta():
@@ -186,6 +192,7 @@ class DefaultActionRunner(ActionRunner):
         self.wait_for_element_impl(
             actions, selector=action.verify, timeout=action.timeout)
 
+  @override
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
     with run.actions("ScrollAction", measure=False) as actions:
       selector = ""
@@ -260,6 +267,7 @@ class DefaultActionRunner(ActionRunner):
         arguments=(selector,),
         success_condition=success_condition)
 
+  @override
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
     with run.actions("WaitForElementAction", measure=False) as actions:
@@ -270,16 +278,19 @@ class DefaultActionRunner(ActionRunner):
           or_more=action.or_more,
           timeout=action.timeout)
 
+  @override
   def wait_for_ready_state(self, run: Run,
                            action: i_action.WaitForReadyStateAction) -> None:
     with run.actions(
         f"Wait for ready state {action.ready_state}", measure=False) as actions:
       self._wait_for_ready_state(actions, action.ready_state, action.timeout)
 
+  @override
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     run.browser.run_script_on_new_document(action.script)
 
+  @override
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction) -> None:
     with run.actions("SwitchTabAction", measure=False):
       run.browser.switch_tab(action.title, action.url, action.tab_index,
@@ -326,6 +337,7 @@ class DefaultActionRunner(ActionRunner):
             "text_input action is behind schedule! Consider extending this "
             "action's duration otherwise the action may timeout.")
 
+  @override
   def screenshot_impl(
       self,
       run: Run,
@@ -339,6 +351,7 @@ class DefaultActionRunner(ActionRunner):
     assert isinstance(ctx, ScreenshotProbeContext)
     ctx.screenshot("_".join(self.info_stack) + f"_{suffix}", annotations)
 
+  @override
   def dump_html_impl(self, run: Run, suffix: str) -> None:
     ctx = run.find_probe_context(DumpHtmlProbe)
     if not ctx:

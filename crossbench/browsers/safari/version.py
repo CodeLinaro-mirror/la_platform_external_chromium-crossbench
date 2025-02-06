@@ -7,6 +7,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Final, Tuple
 
+from typing_extensions import override
+
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 
 if TYPE_CHECKING:
@@ -26,6 +28,7 @@ class SafariVersion(BrowserVersion):
                                    r"\).*")
 
   @classmethod
+  @override
   def _parse(cls, full_version: str) -> VersionParseResult:
     full_version = full_version.strip()
     if matches := cls._SIMPLE_VERSION_RE.fullmatch(full_version):
@@ -82,6 +85,7 @@ class SafariVersion(BrowserVersion):
     return BrowserVersionChannel.STABLE
 
   @property
+  @override
   def has_complete_parts(self) -> bool:
     return len(self.parts) >= self._MIN_COMPLEX_PARTS_LEN
 
@@ -93,6 +97,7 @@ class SafariVersion(BrowserVersion):
   def release(self) -> int:
     return self._parts[2]
 
+  @override
   def _channel_name(self, channel: BrowserVersionChannel) -> str:
     if channel == BrowserVersionChannel.STABLE:
       return "stable"
@@ -101,5 +106,6 @@ class SafariVersion(BrowserVersion):
     raise ValueError(f"Unsupported channel: {channel}")
 
   @property
+  @override
   def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
     return (self.comparable_parts(self._MIN_COMPLEX_PARTS_LEN), self._channel)

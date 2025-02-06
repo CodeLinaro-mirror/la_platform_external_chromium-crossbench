@@ -7,6 +7,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Tuple
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
@@ -46,6 +48,7 @@ class Firefox(Browser):
         linux=["firefox-nightly", "firefox-trunk"],
         win=["Firefox Nightly/firefox.exe"])
 
+  @override
   def _setup_cache_dir(self, settings: Settings) -> None:
     cache_dir = settings.cache_dir
     if cache_dir:
@@ -56,19 +59,23 @@ class Firefox(Browser):
       self.clear_cache_dir = True
 
   @property
+  @override
   def type_name(self) -> str:
     return "firefox"
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX
 
+  @override
   def _extract_version(self) -> str:
     assert self.path
     version_string = self.platform.app_version(self.path)
     # "Firefox 107.0" => "107.0"
     return str(re.findall(r"[\d\.]+", version_string)[0])
 
+  @override
   def _get_browser_flags_for_session(
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy = self.flags.copy()

@@ -17,6 +17,8 @@ import subprocess
 import sys
 from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
 
+from typing_extensions import override
+
 from crossbench.flags.base import Flags
 from crossbench.helper import wait
 from crossbench.helper.path_finder import TsProxyFinder
@@ -392,6 +394,7 @@ class TsProxyTrafficShaper(TrafficShaper):
     return self._ts_proxy
 
   @contextlib.contextmanager
+  @override
   def open(self, network: Network,
            session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
     if not network.is_live:
@@ -404,6 +407,7 @@ class TsProxyTrafficShaper(TrafficShaper):
           yield self
 
   @contextlib.contextmanager
+  @override
   def pause(self):
     old_settings = {
         "rtt_ms": self._ts_proxy.rtt_ms,
@@ -446,6 +450,7 @@ class TsProxyTrafficShaper(TrafficShaper):
     if browser_platform.is_remote:
       browser_platform.stop_reverse_port_forward(ts_proxy_port)
 
+  @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
     if not browser_attributes.is_chromium_based:
       raise ValueError(

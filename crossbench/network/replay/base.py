@@ -10,6 +10,8 @@ import re
 from typing import TYPE_CHECKING, Iterator, Optional, Union
 from urllib.parse import urlparse
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench import path as pth
 from crossbench.helper.spinner import Spinner
@@ -39,6 +41,7 @@ class ReplayNetwork(Network):
     self._archive_path = self._ensure_archive(archive)
 
   @property
+  @override
   def is_wpr(self) -> bool:
     return True
 
@@ -47,6 +50,7 @@ class ReplayNetwork(Network):
     return self._archive_path
 
   @contextlib.contextmanager
+  @override
   def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
     with super().open(session):
       with self._open_replay_server(session):

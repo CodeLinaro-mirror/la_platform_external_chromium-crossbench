@@ -21,6 +21,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
 from urllib.parse import urlparse
 
 import tabulate
+from typing_extensions import override
 
 from crossbench import compat, exception
 from crossbench import path as pth
@@ -539,11 +540,13 @@ class _PrimitiveConfigObject(ConfigObject):
     return self._value
 
   @classmethod
+  @override
   def parse_str(cls: Type[_PrimitiveConfigObject],
                 value: str) -> _PrimitiveConfigObject:
     return _PrimitiveConfigObject(value)
 
   @classmethod
+  @override
   def parse_dict(cls: Type[_PrimitiveConfigObject],
                  config: Dict[str, Any]) -> _PrimitiveConfigObject:
     result: Dict[str, Any] = {}
@@ -622,6 +625,7 @@ class _TemplatedConfigParser(ConfigObject):
     with exception.annotate("Processing Templates:"):
       self._result = self._substitute()
 
+  @override
   def validate(self) -> None:
     if not self._args and not self._unbound_args:
       raise ConfigTemplateError(
@@ -652,10 +656,12 @@ class _TemplatedConfigParser(ConfigObject):
     return parser
 
   @classmethod
+  @override
   def parse_str(cls: Type[_TemplatedConfigParser], value: str) -> Any:
     raise NotImplementedError("Cannot create templated config from strings")
 
   @classmethod
+  @override
   def parse_dict(cls: Type[_TemplatedConfigParser],
                  config: Dict[str, Any]) -> _TemplatedConfigParser:
     return cls.config_parser().parse(config)

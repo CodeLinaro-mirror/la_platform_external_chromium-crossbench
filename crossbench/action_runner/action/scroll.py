@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
@@ -24,6 +26,7 @@ class ScrollAction(InputSourceAction):
   TYPE: ActionType = ActionType.SCROLL
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("distance", type=NumberParser.any_float, default=500)
@@ -62,9 +65,11 @@ class ScrollAction(InputSourceAction):
   def required(self) -> bool:
     return self._required
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.scroll(run, self)
 
+  @override
   def validate(self) -> None:
     super().validate()
     if not self.distance:
@@ -74,9 +79,11 @@ class ScrollAction(InputSourceAction):
       raise ValueError(
           "'required' can only be used when a selector is specified")
 
+  @override
   def supported_input_sources(self) -> Tuple[InputSource, ...]:
     return (InputSource.JS, InputSource.TOUCH)
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["distance"] = str(self.distance)

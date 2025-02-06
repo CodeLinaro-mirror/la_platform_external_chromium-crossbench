@@ -9,6 +9,8 @@ import dataclasses
 import enum
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from typing_extensions import override
+
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.traffic_shaping import ts_proxy_settings
 from crossbench.parse import NumberParser, PathParser
@@ -54,12 +56,14 @@ class NetworkSpeedConfig(ConfigObject):
     return NetworkSpeedConfig()
 
   @classmethod
+  @override
   def parse(cls, value: Any, **kwargs) -> NetworkSpeedConfig:
     if isinstance(value, NetworkSpeedPreset):
       return cls.parse_preset(value)
     return super().parse(value, **kwargs)
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> NetworkSpeedConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
@@ -76,6 +80,7 @@ class NetworkSpeedConfig(ConfigObject):
     return cls(**preset_kwargs)
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> NetworkSpeedConfig:
     return cls.config_parser().parse(config)
 
@@ -109,5 +114,6 @@ class NetworkSpeedConfig(ConfigObject):
     return cls.config_parser().help
 
   @property
+  @override
   def is_live(self):
     return self == self.default()

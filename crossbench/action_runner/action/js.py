@@ -8,6 +8,8 @@ import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench import path as pth
 from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
@@ -36,6 +38,7 @@ class JsAction(Action):
   TYPE: ActionType = ActionType.JS
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("script", type=ObjectParser.non_empty_str)
@@ -74,15 +77,18 @@ class JsAction(Action):
   def script(self) -> str:
     return self._script
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.js(run, self)
 
+  @override
   def validate(self) -> None:
     super().validate()
     if not self.script:
       raise ValueError(
           f"{self}.script is missing or the provided script file is empty.")
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     if self._original_script:

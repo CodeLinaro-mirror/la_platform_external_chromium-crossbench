@@ -7,6 +7,8 @@ from __future__ import annotations
 import re
 from typing import Iterable, Optional, Type
 
+from typing_extensions import override
+
 from crossbench.browsers.chromium.version import ChromiumVersion
 
 
@@ -17,6 +19,7 @@ class ChromeVersion(ChromiumVersion):
       rf"(?:{ChromiumVersion._CHANNEL_RE.pattern})?[- ]?m?", re.I)
 
   @classmethod
+  @override
   def _validate_prefix(cls, prefix: Optional[str]) -> bool:
     if not prefix:
       return True
@@ -27,6 +30,7 @@ class ChromeVersion(ChromiumVersion):
             super()._validate_prefix(prefix))
 
   @classmethod
+  @override
   def _validate_suffix(cls, suffix: Optional[str]) -> bool:
     if suffix and "(Official Build)" in suffix:
       return True

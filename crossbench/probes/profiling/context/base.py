@@ -10,6 +10,8 @@ import subprocess
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
+from typing_extensions import override
+
 from crossbench.plt.posix import PosixPlatform
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.v8.log import V8LogProbe
@@ -35,6 +37,7 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     self.browser_platform.mkdir(v8_log_dir)
     self.session.extra_js_flags["--logfile"] = str(v8_log_dir)
 
+  @override
   def start_story_run(self) -> None:
     self._story_ready = True
 
@@ -65,5 +68,6 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
 class PosixProfilingContext(ProfilingContext):
 
   @property
+  @override
   def browser_platform(self) -> PosixPlatform:
     return cast(PosixPlatform, super().browser_platform)

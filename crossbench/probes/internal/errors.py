@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Type
 
+from typing_extensions import override
+
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
                                              InternalJsonResultProbeContext)
 from crossbench.probes.results import EmptyProbeResult
@@ -27,13 +29,16 @@ class ErrorsProbe(InternalJsonResultProbe):
   """
   NAME = "cb.errors"
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     return self._merge_group(group, (run.results for run in group.runs))
 
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     return self._merge_group(
         group, (rep_group.results for rep_group in group.repetitions_groups))
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self._merge_group(
         group, (story_group.results for story_group in group.story_groups))
@@ -61,11 +66,13 @@ class ErrorsProbe(InternalJsonResultProbe):
       return EmptyProbeResult()
     return self.write_group_result(group, merged_errors, csv_formatter=None)
 
+  @override
   def get_context_cls(self) -> Type[ErrorsProbeContext]:
     return ErrorsProbeContext
 
 
 class ErrorsProbeContext(InternalJsonResultProbeContext):
 
+  @override
   def to_json(self, actions: Actions) -> Json:
     return self.run.exceptions.to_json()

@@ -16,6 +16,7 @@ import datetime as dt
 from typing import TYPE_CHECKING, List, Optional, Type
 
 from selenium import webdriver
+from typing_extensions import override
 
 import crossbench.benchmarks.all as benchmarks
 import crossbench.browsers.browser
@@ -119,6 +120,7 @@ def get_probe_result_file(benchmark_name: str,
 
 class CbbRunner(crossbench.runner.runner.Runner):
 
+  @override
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
                  repetition: int, is_warmup: bool, temperature: str, index: int,
                  name: str, timeout: dt.timedelta, throw: bool) -> Run:
@@ -128,6 +130,7 @@ class CbbRunner(crossbench.runner.runner.Runner):
 
 class CbbRun(Run):
 
+  @override
   def _setup_session_dir(self) -> None:
     # Don't create symlink loops and skip this step
     pass

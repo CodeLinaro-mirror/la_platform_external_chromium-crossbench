@@ -10,6 +10,7 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
+from typing_extensions import override
 from immutabledict import immutabledict
 
 from crossbench import path as pth
@@ -57,6 +58,7 @@ class DriverConfig(ConfigObject):
     return cls(BrowserDriverType.default())
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> DriverConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
@@ -159,6 +161,7 @@ class DriverConfig(ConfigObject):
       return re.compile(re.escape(maybe_pattern))
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> DriverConfig:
     return cls.config_parser().parse(config)
 
@@ -207,6 +210,7 @@ class DriverConfig(ConfigObject):
   def is_local(self) -> bool:
     return self.type.is_local_driver
 
+  @override
   def validate(self) -> None:
     if self.type == BrowserDriverType.ANDROID:
       self.validate_android()

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
@@ -64,5 +66,6 @@ class Edge(EdgePathMixin, ChromiumBased):
   )
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Tuple, Type
 
+from typing_extensions import override
+
 from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Probe,
                                                          JetStream2ProbeContext,
@@ -17,6 +19,7 @@ class JetStream21Probe(JetStream2Probe):
   __doc__ = JetStream2Probe.__doc__
   NAME: str = "jetstream_2.1"
 
+  @override
   def get_context_cls(self) -> Type[JetStream21ProbeContext]:
     return JetStream21ProbeContext
 
@@ -42,5 +45,6 @@ class JetStream21Benchmark(JetStream2Benchmark):
   PROBES: ProbeClsTupleT = (JetStream21Probe,)
 
   @classmethod
+  @override
   def version(cls) -> Tuple[int, ...]:
     return (2, 1)

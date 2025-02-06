@@ -9,6 +9,8 @@ import enum
 import logging
 from typing import TYPE_CHECKING, Iterable, Optional, Set, Type
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
@@ -197,6 +199,7 @@ class Run(ResultOrigin):
     return self._index
 
   @property
+  @override
   def runner(self) -> Runner:
     return self._runner
 
@@ -209,6 +212,7 @@ class Run(ResultOrigin):
     return self._browser_session
 
   @property
+  @override
   def browser(self) -> Browser:
     return self._browser
 
@@ -218,6 +222,7 @@ class Run(ResultOrigin):
     return self.runner.env
 
   @property
+  @override
   def out_dir(self) -> pth.LocalPath:
     """A local directory where all result files are gathered.
     Results from browsers on remote platforms are transferred to this dir
@@ -225,6 +230,7 @@ class Run(ResultOrigin):
     return self._out_dir
 
   @property
+  @override
   def browser_tmp_dir(self) -> pth.AnyPath:
     """Returns a path to a tmp dir on the browser platform."""
     if not self._browser_tmp_dir:
@@ -245,6 +251,7 @@ class Run(ResultOrigin):
     return self._name
 
   @property
+  @override
   def exceptions(self) -> Annotator:
     return self._exceptions
 

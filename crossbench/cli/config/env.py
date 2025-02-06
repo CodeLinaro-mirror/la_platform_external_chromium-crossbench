@@ -9,6 +9,8 @@ import dataclasses
 import enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
@@ -92,6 +94,7 @@ class EnvironmentConfig(ConfigObject):
     return ENV_CONFIG_PRESETS["default"]
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> EnvironmentConfig:
     value = ObjectParser.non_empty_str(value)
     if preset := ENV_CONFIG_PRESETS.get(value):
@@ -103,6 +106,7 @@ class EnvironmentConfig(ConfigObject):
         f"Choices are {','.join(ENV_CONFIG_PRESETS.keys())}")
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> EnvironmentConfig:
     if "env" in config:
       config = config["env"]

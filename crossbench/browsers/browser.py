@@ -12,6 +12,7 @@ import shlex
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
@@ -129,10 +130,12 @@ class Browser(abc.ABC):
     return self._settings
 
   @property
+  @override
   def viewport(self) -> Viewport:
     return self._settings.viewport
 
   @viewport.setter
+  @override
   def viewport(self, value: Viewport) -> None:
     self._settings.viewport = value
 

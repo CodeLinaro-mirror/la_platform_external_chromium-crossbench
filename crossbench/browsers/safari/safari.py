@@ -8,6 +8,8 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
@@ -58,11 +60,13 @@ class Safari(Browser):
     assert self.platform.is_macos, "Safari only works on MacOS"
     self.bundle_name: str = ""
 
+  @override
   def _setup_path(self, path: Optional[pth.AnyPath] = None) -> None:
     super()._setup_path(path)
     assert self.path
     self.bundle_name = self.path.stem.replace(" ", "")
 
+  @override
   def _setup_cache_dir(self, settings: Settings) -> None:
     assert settings.cache_dir is None, (
         "Cannot set custom cache dir for Safari")
@@ -71,13 +75,16 @@ class Safari(Browser):
         f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
 
   @property
+  @override
   def type_name(self) -> str:
     return self._type_name
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.SAFARI
 
+  @override
   def clear_cache(self) -> None:
     logging.info("CLEAR CACHE: %s", self)
     assert self.cache_dir, "Missing cache dir"
@@ -88,6 +95,7 @@ class Safari(Browser):
     # This magic wait lowers safaridriver startup failures.
     self.platform.sleep(0.5)
 
+  @override
   def _extract_version(self) -> str:
     # Use the shipped safaridriver to get the more detailed version
     # TODO: support remote platform

@@ -8,6 +8,7 @@ import shutil
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type, Union
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import plt
 from crossbench.helper.cwd import ChangeCWD
@@ -41,6 +42,7 @@ class WebPageReplayProbe(Probe):
   NAME = "wpr"
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument("http_port", type=int, default=8080, required=False)
@@ -121,25 +123,30 @@ class WebPageReplayProbe(Probe):
     return self._record_setup
 
   @property
+  @override
   def result_path_name(self) -> str:
     return "archive.wprgo"
 
   def is_compatible(self, browser: Browser) -> bool:
     return browser.attributes.is_chromium_based and browser.platform.is_local
 
+  @override
   def get_context_cls(self) -> Type[WprRecorderProbeContext]:
     return WprRecorderProbeContext
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     results = [run.results[self].file for run in group.runs]
     return self.merge_group(results, group)
 
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     results = [
         subgroup.results[self].file for subgroup in group.repetitions_groups
     ]
     return self.merge_group(results, group)
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     results = [subgroup.results[self].file for subgroup in group.story_groups]
     return self.merge_group(results, group)
@@ -187,6 +194,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     self._recorder = WprRecorder(**kwargs)
     self._browser_platform = run.browser_platform
 
+  @override
   def setup(self) -> None:
     self._recorder.start()
     self._setup_extra_flags()

@@ -10,6 +10,8 @@ import datetime as dt
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
                     Sequence, Tuple, Type, cast)
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
@@ -35,6 +37,7 @@ class ActionBlock(ConfigObject):
   actions: Tuple[Action, ...] = tuple()
 
   @classmethod
+  @override
   def parse_str(cls: Type[ActionBlock], value: str) -> ActionBlock:
     raise NotImplementedError("Cannot create action blocks from strings")
 
@@ -45,6 +48,7 @@ class ActionBlock(ConfigObject):
     return super().parse_other(value, **kwargs)
 
   @classmethod
+  @override
   def parse_dict(  # pylint: disable=arguments-differ
       cls: Type,
       config: Dict[str, Any],
@@ -81,6 +85,7 @@ class ActionBlock(ConfigObject):
           f"Block label {repr(label)} is reserved for login blocks")
     return value
 
+  @override
   def validate(self) -> None:
     super().validate()
     self.validate_actions()
@@ -188,6 +193,7 @@ class ActionBlockListConfig(ConfigObject):
     return isinstance(sample, str) or "action" in sample
 
   @classmethod
+  @override
   def parse_dict(cls: Type[ActionBlockListConfig],
                  config: Dict[str, Any]) -> ActionBlockListConfig:
     config = ObjectParser.non_empty_dict(config, "blocks")
@@ -220,9 +226,11 @@ class ActionBlockListConfig(ConfigObject):
     return ActionBlock.parse(block_data, label=label, index=index)
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> ActionBlockListConfig:
     raise NotImplementedError("Cannot create action blocks from strings")
 
+  @override
   def validate(self) -> None:
     super().validate()
     if not self.blocks:

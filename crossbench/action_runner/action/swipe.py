@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_duration import DurationAction
@@ -23,6 +25,7 @@ class SwipeAction(DurationAction):
   TYPE: ActionType = ActionType.SWIPE
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
@@ -71,9 +74,11 @@ class SwipeAction(DurationAction):
   def end_y(self) -> int:
     return self._end_y
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.swipe(run, self)
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["start_x"] = self._start_x

@@ -11,6 +11,8 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench import path as pth
 from crossbench.action_runner.action.click import ClickAction
@@ -34,6 +36,7 @@ class PagesConfig(ConfigObject):
   pages: Tuple[PageConfig, ...] = ()
   secrets: Optional[Secrets] = None
 
+  @override
   def validate(self) -> None:
     super().validate()
     for index, page in enumerate(self.pages):
@@ -41,6 +44,7 @@ class PagesConfig(ConfigObject):
           f"pages[{index}] is not a PageConfig but {type(page).__name__}")
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> PagesConfig:
     """
     Simple comma-separate config:
@@ -91,6 +95,7 @@ class PagesConfig(ConfigObject):
     return PagesConfig(pages=tuple(pages))
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> PagesConfig:
     """
     Variant a):
@@ -125,11 +130,13 @@ class PagesConfig(ConfigObject):
 class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
+  @override
   def parse_str(cls: Type[DevToolsRecorderPagesConfig],
                 value: str) -> DevToolsRecorderPagesConfig:
     raise NotImplementedError()
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> DevToolsRecorderPagesConfig:
     config = ObjectParser.non_empty_dict(config)
     with exception.annotate_argparsing("Loading DevTools recording file"):
@@ -228,6 +235,7 @@ class ListPagesConfig(PagesConfig):
   VALID_EXTENSIONS: Tuple[str, ...] = (".txt", ".list")
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> ListPagesConfig:
     raise argparse.ArgumentTypeError(
         f"URL list file {repr(value)} does not exist.")
@@ -251,6 +259,7 @@ class ListPagesConfig(PagesConfig):
     return PagesConfig(pages=tuple(pages))
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> PagesConfig:  # type: ignore
     config = ObjectParser.non_empty_dict(config, "pages")
     with exception.annotate_argparsing("Parsing scenarios / pages"):

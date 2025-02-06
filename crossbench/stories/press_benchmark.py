@@ -9,6 +9,8 @@ import datetime as dt
 import logging
 from typing import List, Optional, Sequence, Tuple, Type, TypeVar
 
+from typing_extensions import override
+
 from crossbench.parse import ObjectParser
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
@@ -25,6 +27,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   SUBSTORIES: Tuple[str, ...] = ()
 
   @classmethod
+  @override
   def all_story_names(cls) -> Tuple[str, ...]:
     assert cls.SUBSTORIES
     return cls.SUBSTORIES
@@ -170,6 +173,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
       assert substory in self.SUBSTORIES, (f"Unknown {self.NAME} substory %s" %
                                            substory)
 
+  @override
   def log_run_details(self, run: Run) -> None:
     super().log_run_details(run)
     self.log_run_test_url(run)

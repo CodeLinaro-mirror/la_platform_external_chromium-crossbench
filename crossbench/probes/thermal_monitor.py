@@ -11,6 +11,8 @@ import re
 from enum import IntEnum
 from typing import TYPE_CHECKING, Iterable, Optional
 
+from typing_extensions import override
+
 from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
                                              InternalJsonResultProbeContext)
@@ -76,6 +78,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
       raise ValueError("Threshold must be positive")
 
   @property
+  @override
   def result_path_name(self) -> str:
     return "cb.thermal_monitor.json"
 
@@ -90,19 +93,23 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
   def to_json(self, actions: Actions) -> Json:
     raise NotImplementedError("Should not be called, data comes from context")
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if self.threshold is not None and not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(
           self, browser, "Thermal thresholds only supported on android")
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     return self._merge_group(group, (run.results for run in group.runs))
 
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     return self._merge_group(
         group, (rep_group.results for rep_group in group.repetitions_groups))
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self._merge_group(
         group, (story_group.results for story_group in group.story_groups))
@@ -135,6 +142,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
 
     return LocalProbeResult(json=(merged_path,))
 
+  @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     if self not in group.results:
       return
@@ -182,6 +190,7 @@ class ThermalMonitorProbeContext(
         break
       logging.info("COOLDOWN: still hot, waiting some more")
 
+  @override
   def to_json(self, actions: Actions) -> Json:
     del actions
     return {}
@@ -217,6 +226,7 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
       logging.error("COOLDOWN: device is still too hot after waiting for %s",
                     COOLDOWN_WAIT_RANGE.timeout)
 
+  @override
   def setup(self) -> None:
     if self.probe.threshold is not None:
       self._wait_if_necessary(self.probe.threshold)
@@ -227,6 +237,7 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
     self._max_observed_status = max(self._max_observed_status, current_status)
     logging.debug("Thermal throttling before run: %s", current_status.name)
 
+  @override
   def teardown(self) -> ProbeResult:
     current_status = self._get_thermal_status()
     self._max_observed_status = max(self._max_observed_status, current_status)
@@ -236,6 +247,7 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
     # register the run as a failure to process it correctly later.
     return super().teardown()
 
+  @override
   def to_json(self, actions: Actions) -> Json:
     del actions
     return {"max_observed_status": self._max_observed_status.value}

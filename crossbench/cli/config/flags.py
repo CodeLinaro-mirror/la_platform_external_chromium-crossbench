@@ -11,6 +11,7 @@ from typing import Any, Dict, Final, List, Optional, Sequence, Set, Tuple
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
+from typing_extensions import override
 
 from crossbench import exception
 from crossbench.browsers.browser_helper import convert_flags_to_label
@@ -239,12 +240,14 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
 class FlagsConfig(ConfigObject, immutabledict[str, FlagsGroupConfig]):
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> FlagsConfig:
     if not value:
       raise ConfigError("Cannot parse empty string")
     return cls({"default": FlagsGroupConfig.parse_str(value)})
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> FlagsConfig:
     groups: Dict[str, FlagsGroupConfig] = {}
     for group_name, group_data in config.items():

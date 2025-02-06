@@ -15,6 +15,7 @@ from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
                     Type)
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench.network.base import Network
 from crossbench.parse import ObjectParser
@@ -98,6 +99,7 @@ class LocalFileNetwork(Network):
       self._validate_extra_headers()
 
   @property
+  @override
   def is_local_file_server(self) -> bool:
     return True
 
@@ -138,6 +140,7 @@ class LocalFileNetwork(Network):
             key, value)
 
   @contextlib.contextmanager
+  @override
   def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
     with super().open(session):
       with self._open_local_file_server():
@@ -186,15 +189,18 @@ class LocalFileNetwork(Network):
       browser_platform.stop_reverse_port_forward(self._port)
 
   @property
+  @override
   def http_port(self) -> Optional[int]:
     return self._port
 
   @property
+  @override
   def https_port(self) -> Optional[int]:
     # TODO: support https locally
     return None
 
   @property
+  @override
   def host(self) -> Optional[str]:
     return self._host
 

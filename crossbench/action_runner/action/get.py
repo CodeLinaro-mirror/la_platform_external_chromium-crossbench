@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_duration import BaseDurationAction
@@ -24,10 +26,12 @@ class GetAction(BaseDurationAction):
   TYPE: ActionType = ActionType.GET
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> GetAction:
     return cls(url=ObjectParser.parse_fuzzy_url_str(value))
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
@@ -56,6 +60,7 @@ class GetAction(BaseDurationAction):
     self._target = target
     super().__init__(duration, timeout, index)
 
+  @override
   def validate_duration(self) -> None:
     if self.ready_state != ReadyState.ANY:
       if self.duration != dt.timedelta():
@@ -73,6 +78,7 @@ class GetAction(BaseDurationAction):
     return self._ready_state
 
   @property
+  @override
   def duration(self) -> dt.timedelta:
     return self._duration
 
@@ -80,9 +86,11 @@ class GetAction(BaseDurationAction):
   def target(self) -> WindowTarget:
     return self._target
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.get(run, self)
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["url"] = self.url

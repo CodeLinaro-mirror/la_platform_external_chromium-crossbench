@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.helper import collection_helper
 from crossbench.runner.groups.base import RunGroup
 
@@ -57,6 +59,7 @@ class CacheTemperaturesRunGroup(RunGroup):
     self._runs.append(run)
 
   @property
+  @override
   def runs(self) -> Iterable[Run]:
     return iter(self._runs)
 
@@ -75,6 +78,7 @@ class CacheTemperaturesRunGroup(RunGroup):
     return self._browser
 
   @property
+  @override
   def info_stack(self) -> exception.TInfoStack:
     return (
         "Merging results from multiple cache temperatures",
@@ -84,6 +88,7 @@ class CacheTemperaturesRunGroup(RunGroup):
     )
 
   @property
+  @override
   def info(self) -> JsonMapping:
     info: JsonDict = {
         "story": str(self.story),
@@ -92,5 +97,6 @@ class CacheTemperaturesRunGroup(RunGroup):
     info.update(super().info)
     return info
 
+  @override
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_cache_temperatures(self)

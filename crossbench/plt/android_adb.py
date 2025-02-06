@@ -11,6 +11,8 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.parse import NumberParser, PathParser
 from crossbench.plt.arch import MachineArch
@@ -436,18 +438,22 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self._adb = adb or Adb(host_platform, device_identifier)
 
   @property
+  @override
   def is_android(self) -> bool:
     return True
 
   @property
+  @override
   def name(self) -> str:
     return "android"
 
   @functools.cached_property
+  @override
   def version(self) -> str:  #pylint: disable=invalid-overridden-method
     return str(self.adb.build_version)
 
   @functools.cached_property
+  @override
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
     return self.adb.getprop("ro.product.model")
 
@@ -456,6 +462,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self._adb.serial_id
 
   @functools.cached_property
+  @override
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
@@ -476,6 +483,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   }
 
   @functools.cached_property
+  @override
   def machine(self) -> MachineArch:  #pylint: disable=invalid-overridden-method
     cpu_abi = self.adb.getprop("ro.product.cpu.abi")
     arch = self._MACHINE_ARCH_LOOKUP.get(cpu_abi, None)
@@ -483,16 +491,19 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       raise ValueError(f"Unknown android CPU ABI: {cpu_abi}")
     return arch
 
+  @override
   def get_relative_cpu_speed(self) -> float:
     # TODO figure out
     return 1.0
 
   @functools.lru_cache(maxsize=1)
+  @override
   def python_details(self) -> JsonDict:
     # Python is not available on android.
     return {}
 
   @functools.lru_cache(maxsize=1)
+  @override
   def os_details(self) -> JsonDict:
     # TODO: add more info
     return {"version": self.version}
@@ -508,6 +519,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       raise ValueError(f"Package '{package}' is not installed on {self._adb}")
     return package
 
+  @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     app_or_bin_path = self.path(app_or_bin)
     if not app_or_bin_path.parts:
@@ -518,11 +530,13 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       return app_or_bin_path
     return None
 
+  @override
   def home(self) -> pth.AnyPath:
     raise RuntimeError("Cannot access home dir on (non-rooted) android device")
 
   _VERSION_NAME_RE = re.compile(r"versionName=(?P<version>.+)")
 
+  @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     # adb shell dumpsys package com.chrome.canary | grep versionName -C2
     package = self.app_path_to_package(app_or_bin)
@@ -533,17 +547,20 @@ class AndroidAdbPlatform(RemotePosixPlatform):
           f"Could not find version for '{package}': {package_info}")
     return match_result.group("version")
 
+  @override
   def process_children(self,
                        parent_pid: int,
                        recursive: bool = False) -> List[Dict[str, Any]]:
     # TODO: implement
     return []
 
+  @override
   def foreground_process(self) -> Optional[Dict[str, Any]]:
     # adb shell dumpsys activity activities
     # TODO: implement
     return None
 
+  @override
   def check_autobrightness(self) -> bool:
     # adb shell dumpsys display
     # TODO: implement.
@@ -552,6 +569,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   _BRIGHTNESS_RE = re.compile(
       r"mLatestFloatBrightness=(?P<brightness>[0-9]+\.[0-9]+)")
 
+  @override
   def get_main_display_brightness(self) -> int:
     display_info: str = self.adb.shell_stdout("dumpsys", "display")
     match_result = self._BRIGHTNESS_RE.search(display_info)
@@ -560,12 +578,15 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return int(float(match_result.group("brightness")) * 100)
 
   @property
+  @override
   def default_tmp_dir(self) -> pth.AnyPath:
     return self.path("/data/local/tmp/")
 
+  @override
   def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
     return self.adb.build_adb_cmd("shell", *args)
 
+  @override
   def sh(self,
          *args: CmdArg,
          shell: bool = False,
@@ -587,6 +608,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         quiet=quiet,
         check=check)
 
+  @override
   def sh_stdout_bytes(self,
                       *args: CmdArg,
                       shell: bool = False,
@@ -597,6 +619,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self.adb.shell_stdout_bytes(
         *args, shell=shell, stdin=stdin, env=env, quiet=quiet, check=check)
 
+  @override
   def port_forward(self, local_port: int, remote_port: int) -> int:
     local_port = NumberParser.positive_zero_int(local_port, "local_port")
     remote_port = NumberParser.port_number(remote_port, "remote_port")
@@ -605,9 +628,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                   self._host_platform.name, local_port, self, remote_port)
     return local_port
 
+  @override
   def stop_port_forward(self, local_port: int) -> None:
     self.adb.forward_remove(local_port, protocol="tcp")
 
+  @override
   def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
     remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
     local_port = NumberParser.port_number(local_port, "local_port")
@@ -616,9 +641,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                   local_port, self, remote_port)
     return remote_port
 
+  @override
   def stop_reverse_port_forward(self, remote_port: int) -> None:
     self.adb.reverse_remove(remote_port, protocol="tcp")
 
+  @override
   def pull(self, from_path: pth.AnyPath,
            to_path: pth.LocalPath) -> pth.LocalPath:
     device_path = self.path(from_path)
@@ -629,11 +656,13 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self.adb.pull(device_path, local_host_path)
     return to_path
 
+  @override
   def push(self, from_path: pth.LocalPath, to_path: pth.AnyPath) -> pth.AnyPath:
     to_path = self.path(to_path)
     self.adb.push(self.host_path(from_path), to_path)
     return to_path
 
+  @override
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()
@@ -648,6 +677,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return res
 
   @functools.lru_cache(maxsize=1)
+  @override
   def cpu_details(self) -> Dict[str, Any]:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
@@ -675,6 +705,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return details
 
   @functools.lru_cache(maxsize=1)
+  @override
   def system_details(self) -> Dict[str, Any]:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
@@ -693,11 +724,13 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         "Android": self._getprop_system_details(),
     }
 
+  @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)
 
   _WM_SIZE_RE = re.compile(r"Physical size: (?P<x>\d+)x(?P<y>\d+)")
 
+  @override
   def display_resolution(self) -> Tuple[int, int]:
     wm_size_out = self.sh_stdout("wm", "size")
     match_result = self._WM_SIZE_RE.match(wm_size_out)

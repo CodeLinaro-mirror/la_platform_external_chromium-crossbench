@@ -8,6 +8,8 @@ import atexit
 import subprocess
 from typing import TYPE_CHECKING, Optional, TextIO, Type
 
+from typing_extensions import override
+
 from crossbench.parse import PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
@@ -31,6 +33,7 @@ class DTraceProbe(Probe):
   RESULT_LOCATION = ResultLocation.BROWSER
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -42,6 +45,7 @@ class DTraceProbe(Probe):
     self._script_path = script_path.resolve()
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (("script_path", str(self.script_path)),)
 
@@ -49,6 +53,7 @@ class DTraceProbe(Probe):
   def script_path(self) -> LocalPath:
     return self._script_path
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_macos(browser)
@@ -81,6 +86,7 @@ class DTraceProbe(Probe):
           self, "Cannot execute 'sudo dtrace'. "
           "This probe will fail to start.") from e
 
+  @override
   def get_context_cls(self) -> Type[DTraceProbeContext]:
     return DTraceProbeContext
 

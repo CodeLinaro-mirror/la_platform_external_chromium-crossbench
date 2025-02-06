@@ -9,6 +9,8 @@ import dataclasses
 import enum
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench.cli.config.network_speed import NetworkSpeedConfig
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
@@ -98,6 +100,7 @@ class NetworkConfig(ConfigObject):
     return config
 
   @classmethod
+  @override
   def parse_str(  # pylint: disable=arguments-differ
       cls,
       value: str,
@@ -127,6 +130,7 @@ class NetworkConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
+  @override
   def is_valid_path(cls, path: pth.LocalPath) -> bool:
     if path.suffix in cls.ARCHIVE_EXTENSIONS:
       return True
@@ -156,9 +160,11 @@ class NetworkConfig(ConfigObject):
     return NetworkConfig(type=NetworkType.WPR, url=url)
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any], **kwargs) -> NetworkConfig:
     return cls.config_parser().parse(config, **kwargs)
 
+  @override
   def validate(self) -> None:
     if not self.type:
       raise argparse.ArgumentTypeError("Missing NetworkConfig.type.")

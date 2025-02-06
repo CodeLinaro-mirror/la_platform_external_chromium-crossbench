@@ -11,6 +11,8 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
+from typing_extensions import override
+
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter
 from crossbench.benchmarks.jetstream.jetstream import (JetStreamBenchmark,
                                                        JetStreamProbe,
@@ -114,6 +116,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
     super().__init__(url=url, substories=substories)
 
   @property
+  @override
   def substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=2)
 
@@ -128,6 +131,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
       params["iterationCount"] = str(self.iterations)
     return params
 
+  @override
   def get_run_url(self, run: Run) -> str:
     url = super().get_run_url(run)
     url = url_helper.update_url_query(url, self.url_params)
@@ -135,6 +139,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
       logging.info("CUSTOM URL: %s", url)
     return url
 
+  @override
   def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
       actions.show_url(self.get_run_url(run))
@@ -176,6 +181,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
   __doc__ = PressBenchmarkStoryFilter.__doc__
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(parser)
@@ -194,6 +200,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
     return parser
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["iterations"] = args.iterations
@@ -209,6 +216,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
     assert issubclass(story_cls, JetStream2Story)
     super().__init__(story_cls, patterns, separate, url)
 
+  @override
   def create_stories_from_names(self, names: List[str],
                                 separate: bool) -> Sequence[JetStream2Story]:
     return self.story_cls.from_names(

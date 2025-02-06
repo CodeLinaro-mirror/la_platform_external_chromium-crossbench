@@ -9,6 +9,8 @@ import shlex
 from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Sequence,
                     Tuple, Union, cast)
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
@@ -60,6 +62,7 @@ class ProfilingProbe(Probe):
   IS_GENERAL_PURPOSE = True
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -233,6 +236,7 @@ class ProfilingProbe(Probe):
     self._add_counters: Tuple[str, ...] = tuple(add_counters)
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("js", self._sample_js),
@@ -313,6 +317,7 @@ class ProfilingProbe(Probe):
   def add_counters(self) -> Tuple[str, ...]:
     return self._add_counters
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
     if browser_platform.is_linux:
@@ -416,6 +421,7 @@ class ProfilingProbe(Probe):
     except plt.SubprocessError:
       env.handle_warning("Please run gcert for generating pprof results")
 
+  @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     if browser.platform.is_linux or browser.platform.is_android:
@@ -465,9 +471,11 @@ class ProfilingProbe(Probe):
       cmd_prefix.append(f"--perf-args={shlex.join(custom_perf_args)}")
     browser.flags["--renderer-cmd-prefix"] = shlex.join(cmd_prefix)
 
+  @override
   def log_run_result(self, run: Run) -> None:
     self._log_results([run])
 
+  @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_results(group.runs)
 

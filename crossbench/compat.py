@@ -12,6 +12,7 @@ import textwrap
 from typing import List, NamedTuple, Optional, Tuple, Type, TypeVar, cast
 
 import tabulate
+from typing_extensions import override
 
 from crossbench import path as pth
 
@@ -34,6 +35,7 @@ if sys.version_info >= (3, 9):
     return path.readlink()
 else:
 
+  @override
   def is_relative_to(path_a: pth.AnyPath, path_b: pth.AnyPath) -> bool:
     try:
       path_a.relative_to(path_b)
@@ -41,6 +43,7 @@ else:
     except ValueError:
       return False
 
+  @override
   def readlink(path: pth.LocalPath) -> pth.LocalPath:
     return pth.LocalPath(os.readlink(path))
 

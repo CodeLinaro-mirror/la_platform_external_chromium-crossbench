@@ -14,6 +14,7 @@ import hjson
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
+from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
@@ -51,6 +52,7 @@ FLAGS_CHROME: pth.AnyPosixPath = _FLAG_ROOT / "chrome-command-line"
 
 class ChromiumWebDriver(ChromiumPathMixin, ChromiumBasedWebDriver):
 
+  @override
   def _create_driver(
       self, options: ChromiumOptions,
       service: ChromiumService) -> chromium_webdriver.ChromiumDriver:
@@ -84,6 +86,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     return self._android_package
 
   @property
+  @override
   def platform(self) -> AndroidAdbPlatform:
     assert isinstance(
         self._platform,
@@ -101,6 +104,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       "--window-position",
   )
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
     self.adb_force_stop()
@@ -153,6 +157,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
                                       self._previous_command_line_contents)
     self._previous_command_line_contents = None
 
+  @override
   def _create_options(self, session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromiumOptions:
     options: ChromiumOptions = super()._create_options(session, args)
@@ -197,6 +202,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
         settings.platform, path)
     super().__init__(label, path, settings)
 
+  @override
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
     return self._package_info["Package name"]
 
@@ -213,6 +219,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
       package_info[key] = hjson.loads(value)
     return immutabledict(package_info)
 
+  @override
   def setup_binary(self) -> None:
     super().setup_binary()
     self.host_platform.sh_stdout(self.path, "install",
@@ -299,11 +306,13 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
 class ChromiumWebDriverSsh(ChromiumBasedWebDriver):
 
   @property
+  @override
   def platform(self) -> LinuxSshPlatform:
     assert isinstance(self._platform,
                       LinuxSshPlatform), (f"Invalid platform: {self._platform}")
     return cast(LinuxSshPlatform, self._platform)
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> RemoteWebDriver:
     del driver_path
@@ -322,6 +331,7 @@ class ChromiumWebDriverSsh(ChromiumBasedWebDriver):
 class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
 
   @property
+  @override
   def platform(self) -> ChromeOsSshPlatform:
     assert isinstance(
         self._platform,
@@ -334,6 +344,7 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
       "--window-position",
   )
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> RemoteWebDriver:
     del driver_path

@@ -14,6 +14,8 @@ import sys
 import tempfile
 from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type, Union
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.helper.spinner import Spinner
@@ -268,6 +270,7 @@ class ArchiveHelper(abc.ABC):
 class RPMArchiveHelper(ArchiveHelper):
 
   @classmethod
+  @override
   def extract(cls, platform: Platform, archive_path: pth.LocalPath,
               dest_path: pth.LocalPath) -> pth.LocalPath:
     rpm2cpio = platform.which("rpm2cpio")

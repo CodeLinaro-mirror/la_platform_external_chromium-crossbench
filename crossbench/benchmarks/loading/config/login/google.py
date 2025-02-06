@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from typing_extensions import override
+
 from crossbench.benchmarks.loading.config.login.base import PresetLoginBlock
 
 if TYPE_CHECKING:
@@ -38,6 +40,7 @@ class GoogleLogin(PresetLoginBlock):
               f"inputField.value = {repr(input_val)};"
               f"document.getElementById({repr(button_name)}).click();")
 
+  @override
   def run_with(self, runner: ActionRunner, run: Run,
                page: InteractivePage) -> None:
     secret: Optional[UsernamePassword] = run.secrets.google

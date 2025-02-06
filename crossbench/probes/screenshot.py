@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, List, Optional, Sequence, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.screenshot_annotation import \
     ScreenshotAnnotation, annotate_screenshot_svg
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -30,6 +32,7 @@ class ScreenshotProbe(Probe):
   IMAGE_FORMAT = "png"
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     # TODO: support interval-based screenshots
@@ -45,6 +48,7 @@ class ScreenshotProbe(Probe):
         env.handle_warning(
             f"Viewport for '{browser}' might include toolbar: {viewport}")
 
+  @override
   def get_context_cls(self) -> Type[ScreenshotProbeContext]:
     return ScreenshotProbeContext
 
@@ -58,6 +62,7 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
     super().__init__(probe, run)
     self._results: List[AnyPath] = []
 
+  @override
   def get_default_result_path(self) -> AnyPath:
     screenshot_dir = super().get_default_result_path()
     self.browser_platform.mkdir(screenshot_dir)
@@ -66,9 +71,11 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
   def start(self) -> None:
     self.screenshot("start")
 
+  @override
   def start_story_run(self) -> None:
     self.screenshot("start_story")
 
+  @override
   def stop_story_run(self) -> None:
     self.screenshot("stop_story")
 
@@ -100,6 +107,7 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
     if annotations:
       self._annotate_screenshot(file_name, label, annotations)
 
+  @override
   def teardown(self) -> ProbeResult:
     if not self.browser_platform.is_dir(self.result_path):
       raise ProbeMissingDataError(

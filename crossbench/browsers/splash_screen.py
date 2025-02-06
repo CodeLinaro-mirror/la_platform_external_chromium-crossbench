@@ -11,6 +11,8 @@ import urllib.parse
 from argparse import ArgumentTypeError
 from typing import TYPE_CHECKING, Any, Dict
 
+from typing_extensions import override
+
 from crossbench import path as pth
 
 if TYPE_CHECKING:
@@ -74,6 +76,7 @@ class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):
 
 class DetailedSplashScreen(BaseURLSplashScreen):
 
+  @override
   def get_url(self, info: SplashScreenData) -> str:
     browser: Browser = info.browser
     title = html.escape(browser.app_name.title())
@@ -125,6 +128,7 @@ class DetailedSplashScreen(BaseURLSplashScreen):
 
 class MinimalSplashScreen(DetailedSplashScreen):
 
+  @override
   def _render_browser_details(self, info: SplashScreenData) -> str:
     properties = {"User Agent": info.browser.user_agent()}
     return self._render_properties("Browser Details", properties)
@@ -136,6 +140,7 @@ class URLSplashScreen(BaseURLSplashScreen):
     super().__init__(timeout)
     self._url = url
 
+  @override
   def get_url(self, info: SplashScreenData) -> str:
     del info
     return self._url

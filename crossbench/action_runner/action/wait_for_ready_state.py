@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
                                                     ActionT)
 from crossbench.action_runner.action.action_type import ActionType
@@ -23,6 +25,7 @@ class WaitForReadyStateAction(Action):
   TYPE: ActionType = ActionType.WAIT_FOR_READY_STATE
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
@@ -40,9 +43,11 @@ class WaitForReadyStateAction(Action):
   def ready_state(self) -> ReadyState:
     return self._ready_state
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.wait_for_ready_state(run, self)
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["ready_state"] = str(self.ready_state)

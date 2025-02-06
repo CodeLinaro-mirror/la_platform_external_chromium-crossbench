@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
@@ -25,6 +27,7 @@ class ClickAction(InputSourceAction):
   TYPE: ActionType = ActionType.CLICK
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
@@ -58,22 +61,27 @@ class ClickAction(InputSourceAction):
   def verify(self) -> Optional[str]:
     return self._verify
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.click(run, self)
 
+  @override
   def validate(self) -> None:
     super().validate()
 
     if self._input_source is InputSource.JS and self.position.coordinates:
       raise ValueError("X,Y Coordinates cannot be used with JS click source.")
 
+  @override
   def validate_duration(self) -> None:
     # A click action is allowed to have a zero duration.
     return
 
+  @override
   def supported_input_sources(self) -> Tuple[InputSource, ...]:
     return (InputSource.JS, InputSource.TOUCH, InputSource.MOUSE)
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["position"] = self._position.to_json()

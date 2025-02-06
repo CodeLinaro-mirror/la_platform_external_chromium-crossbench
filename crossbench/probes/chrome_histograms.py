@@ -12,6 +12,8 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type
 
+from typing_extensions import override
+
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
@@ -56,6 +58,7 @@ class ChromeHistogramCountMetric(ChromeHistogramMetric):
   def __init__(self, histogram_name: str):
     super().__init__(f"{histogram_name}_count", histogram_name)
 
+  @override
   def compute(self, delta: ChromeHistogramSample,
               baseline: ChromeHistogramSample) -> float:
     return delta.diff_count(baseline)
@@ -66,6 +69,7 @@ class ChromeHistogramMeanMetric(ChromeHistogramMetric):
   def __init__(self, histogram_name: str):
     super().__init__(f"{histogram_name}_mean", histogram_name)
 
+  @override
   def compute(self, delta: ChromeHistogramSample,
               baseline: ChromeHistogramSample) -> float:
     return delta.diff_mean(baseline)
@@ -77,6 +81,7 @@ class ChromeHistogramPercentileMetric(ChromeHistogramMetric):
     super().__init__(f"{histogram_name}_p{percentile}", histogram_name)
     self._percentile = percentile
 
+  @override
   def compute(self, delta: ChromeHistogramSample,
               baseline: ChromeHistogramSample) -> float:
     return delta.diff_percentile(baseline, self._percentile)
@@ -122,6 +127,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
   RESULT_LOCATION = ResultLocation.LOCAL
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -354,6 +360,7 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
     self._delta = self.dump_histograms("stop")
     super().stop()
 
+  @override
   def to_json(self, actions: Actions) -> Json:
     del actions
     assert self._baseline, "Did not extract start histograms"

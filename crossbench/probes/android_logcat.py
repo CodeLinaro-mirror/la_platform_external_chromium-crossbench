@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Type, cast
 
+from typing_extensions import override
+
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeIncompatibleBrowser)
 from crossbench.probes.result_location import ResultLocation
@@ -27,6 +29,7 @@ class LogcatAndroidProbe(Probe):
   IS_GENERAL_PURPOSE = True
 
   @classmethod
+  @override
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
@@ -45,11 +48,13 @@ class LogcatAndroidProbe(Probe):
   def filterspec(self) -> Tuple[str, ...]:
     return self._filterspec
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")
 
+  @override
   def get_context_cls(self) -> Type[AndroidLogcatProbeContext]:
     return AndroidLogcatProbeContext
 
@@ -68,6 +73,7 @@ class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
     self.browser_platform.sh("log", "-t", "crossbench", msg)
 
   @property
+  @override
   def browser_platform(self) -> AndroidAdbPlatform:
     browser_platform = super().browser_platform
     assert browser_platform.is_android, (

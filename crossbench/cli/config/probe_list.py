@@ -8,6 +8,8 @@ import argparse
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Type)
 
+from typing_extensions import override
+
 from crossbench import exception
 from crossbench.cli.config.probe import ProbeConfig, ProbeConfigError
 from crossbench.config import ConfigObject
@@ -42,6 +44,7 @@ class ProbeListConfig(ConfigObject):
     return cls(probe_configs)
 
   @classmethod
+  @override
   def parse_dict(cls: Type[ProbeListConfig],
                  config: Dict[str, Any]) -> ProbeListConfig:
     # Support global configs with {"probes": ...}
@@ -60,6 +63,7 @@ class ProbeListConfig(ConfigObject):
     return cls(probe_configs)
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> ProbeListConfig:
     raise NotImplementedError()
 

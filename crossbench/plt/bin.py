@@ -7,6 +7,8 @@ from __future__ import annotations
 import functools
 from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Union
 
+from typing_extensions import override
+
 from crossbench import path as pth
 
 if TYPE_CHECKING:
@@ -33,6 +35,7 @@ class UnsupportedPlatformError(BinaryNotFoundError):
     self.expected_platform_name: str = expected
     super().__init__(binary, platform)
 
+  @override
   def _create_message(self) -> str:
     return (f"Could not find binary '{self.binary}' on {self.platform}. "
             f"Only supported on {self.expected_platform_name}")
@@ -136,6 +139,7 @@ class PosixBinary(Binary):
   def __init__(self, name: pth.AnyPathLike):
     super().__init__(pth.AnyPosixPath(name).name, posix=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
       raise UnsupportedPlatformError(self, platform, "posix")
@@ -146,6 +150,7 @@ class MacOsBinary(Binary):
   def __init__(self, name: pth.AnyPathLike):
     super().__init__(pth.AnyPosixPath(name).name, macos=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_macos:
       raise UnsupportedPlatformError(self, platform, "macos")
@@ -156,6 +161,7 @@ class LinuxBinary(Binary):
   def __init__(self, name: pth.AnyPathLike):
     super().__init__(pth.AnyPosixPath(name).name, linux=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
       raise UnsupportedPlatformError(self, platform, "linux")
@@ -166,6 +172,7 @@ class AndroidBinary(Binary):
   def __init__(self, name: pth.AnyPathLike):
     super().__init__(pth.AnyPosixPath(name).name, android=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_android:
       raise UnsupportedPlatformError(self, platform, "android")
@@ -176,6 +183,7 @@ class WinBinary(Binary):
   def __init__(self, name: pth.AnyPathLike):
     super().__init__(pth.AnyWindowsPath(name).name, win=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_win:
       raise UnsupportedPlatformError(self, platform, "windows")
@@ -186,6 +194,7 @@ class ChromeOSBinary(Binary):
   def __init__(self, name: pth.AnyPathLike):
     super().__init__(pth.AnyPosixPath(name).name, chromeos=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_chromeos:
       raise UnsupportedPlatformError(self, platform, "chromeos")

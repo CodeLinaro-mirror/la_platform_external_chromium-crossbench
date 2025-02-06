@@ -12,6 +12,7 @@ import re
 from typing import Any, Dict, Optional, TextIO, Tuple, cast
 
 import hjson
+from typing_extensions import override
 
 import crossbench.browsers.all as browsers
 from crossbench import exception
@@ -72,6 +73,7 @@ class BrowserConfig(ConfigObject):
         browsers.Chrome.stable_path(plt.PLATFORM), DriverConfig.default())
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> BrowserConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
@@ -299,6 +301,7 @@ class BrowserConfig(ConfigObject):
     raise argparse.ArgumentTypeError(f"Could not parse : '{f.name}'")
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> BrowserConfig:
     return cls.config_parser().parse(config)
 

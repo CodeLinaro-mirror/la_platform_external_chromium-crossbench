@@ -12,6 +12,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional,
                     Sequence, Tuple, Type, TypeVar, cast)
 
 from ordered_set import OrderedSet
+from typing_extensions import override
 
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.flags.base import Flags
@@ -194,12 +195,14 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS: Type[StoryFilter] = StoryFilter  # type: ignore
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     return parser
 
   @classmethod
+  @override
   def cli_description(cls) -> str:
     desc = super().cli_description()
     desc += "\n\n"
@@ -215,6 +218,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
     return desc
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["stories"] = cls.stories_from_cli_args(args)
@@ -226,6 +230,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
                                               args).stories
 
   @classmethod
+  @override
   def describe(cls) -> Dict[str, Any]:
     data = super().describe()
     data["stories"] = cls.all_story_names()
@@ -257,6 +262,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   """
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
@@ -278,6 +284,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
           f"Known story names cannot start with '-', but got '{name}'.")
       assert not name == "all", "Known story name cannot match 'all'."
 
+  @override
   def process_all(self, patterns: Sequence[str]) -> None:
     if not isinstance(patterns, (list, tuple)):
       raise ValueError("Expected Sequence of story name or patterns "
@@ -357,6 +364,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                        "previously filtered story names.")
     return substories
 
+  @override
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
     logging.info("SELECTED STORIES: %s",
                  str(list(map(str, self._selected_names))))
@@ -389,6 +397,7 @@ class PressBenchmark(SubStoryBenchmark):
     raise NotImplementedError()
 
   @classmethod
+  @override
   def aliases(cls) -> Tuple[str, ...]:
     version = [str(v) for v in cls.version()]
     assert version, "Expected non-empty version tuple."
@@ -401,6 +410,7 @@ class PressBenchmark(SubStoryBenchmark):
     return tuple(version_names)
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
@@ -442,12 +452,14 @@ class PressBenchmark(SubStoryBenchmark):
     return parser
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["custom_url"] = args.custom_benchmark_url
     return kwargs
 
   @classmethod
+  @override
   def describe(cls) -> Dict[str, Any]:
     data = super().describe()
     assert issubclass(cls.DEFAULT_STORY_CLS, PressBenchmarkStory)
@@ -466,6 +478,7 @@ class PressBenchmark(SubStoryBenchmark):
         press_story = cast(PressBenchmarkStory, story)
         assert press_story.url == custom_url
 
+  @override
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
     self.validate_url(runner)

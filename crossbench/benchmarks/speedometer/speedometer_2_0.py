@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Tuple, Type
 
+from typing_extensions import override
+
 from crossbench.benchmarks.speedometer.speedometer import (ProbeClsTupleT,
                                                            SpeedometerBenchmark)
 from crossbench.benchmarks.speedometer.speedometer_2 import (
@@ -15,6 +17,7 @@ from crossbench.benchmarks.speedometer.speedometer_2 import (
 class Speedometer20Probe(Speedometer2Probe):
   NAME: str = "speedometer_2.0"
 
+  @override
   def get_context_cls(self) -> Type[Speedometer20ProbeContext]:
     return Speedometer20ProbeContext
 
@@ -38,5 +41,6 @@ class Speedometer20Benchmark(SpeedometerBenchmark):
   PROBES: ProbeClsTupleT = (Speedometer20Probe,)
 
   @classmethod
+  @override
   def version(cls) -> Tuple[int, ...]:
     return (2, 0)

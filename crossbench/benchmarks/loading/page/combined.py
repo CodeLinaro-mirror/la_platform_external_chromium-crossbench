@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Iterable
 
+from typing_extensions import override
+
 from crossbench.benchmarks.loading.page.base import Page, get_action_runner
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
@@ -39,6 +41,7 @@ class CombinedPage(Page):
     self.url = None
 
   @property
+  @override
   def tabs(self) -> TabController:
     return self._tabs
 
@@ -47,14 +50,17 @@ class CombinedPage(Page):
     return self._pages
 
   @property
+  @override
   def first_url(self) -> str:
     return self._pages[0].first_url
 
+  @override
   def details_json(self) -> JsonDict:
     result = super().details_json()
     result["pages"] = list(page.details_json() for page in self._pages)
     return result
 
+  @override
   def teardown(self, run: Run) -> None:
     for page in self._pages:
       page.teardown(run)
@@ -65,6 +71,7 @@ class CombinedPage(Page):
     for _ in self._playback:
       action_runner.run_combined_page(run, self, multiple_tabs)
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner,
                multiple_tabs: bool) -> None:
     action_runner.run_combined_page(run, self, multiple_tabs)

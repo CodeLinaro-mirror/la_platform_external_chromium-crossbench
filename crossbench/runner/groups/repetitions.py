@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.helper import collection_helper
 from crossbench.path import LocalPath
 from crossbench.runner.groups.base import RunGroup
@@ -87,21 +89,25 @@ class RepetitionsRunGroup(RunGroup):
     return list(self._cache_temperature_repetitions_groups.values())
 
   @property
+  @override
   def runs(self) -> Iterable[Run]:
     for group in self._cache_temperatures_groups:
       yield from group.runs
 
   @property
+  @override
   def info_stack(self) -> exception.TInfoStack:
     return ("Merging results from multiple repetitions",
             f"browser={self.browser.unique_name}", f"story={self.story}")
 
   @property
+  @override
   def info(self) -> JsonMapping:
     info: JsonDict = {"story": str(self.story)}
     info.update(super().info)
     return info
 
+  @override
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     return probe.merge_repetitions(self)
 
@@ -134,6 +140,7 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
     return self._repetitions_group.browser
 
   @property
+  @override
   def path(self) -> LocalPath:
     return self._repetitions_group.path
 
@@ -142,16 +149,19 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
     return self._cache_temperature
 
   @property
+  @override
   def runs(self) -> Iterable[Run]:
     return iter(self._runs)
 
   @property
+  @override
   def info_stack(self) -> exception.TInfoStack:
     info_stack = self.repetitions_group.info_stack
     info_stack += (f"cache_temperature={self.cache_temperature}",)
     return info_stack
 
   @property
+  @override
   def info(self) -> JsonMapping:
     info: JsonMapping = self._repetitions_group.info
     return info
@@ -162,5 +172,6 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
     assert self._cache_temperature == run.temperature
     self._runs.append(run)
 
+  @override
   def _merge_probe_results(self, probe: Probe) -> ProbeResult:
     raise NotImplementedError("Unsupported")

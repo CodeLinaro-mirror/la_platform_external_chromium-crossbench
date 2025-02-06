@@ -10,6 +10,8 @@ import enum
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type, Union, cast)
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench.benchmarks.speedometer.speedometer import (
     ProbeClsTupleT, SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter,
@@ -37,6 +39,7 @@ class Speedometer30Probe(SpeedometerProbe):
   def speedometer(self) -> Speedometer30Benchmark:
     return cast(Speedometer30Benchmark, self.benchmark)
 
+  @override
   def _is_valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")
     if len(parts) != 1:
@@ -49,6 +52,7 @@ class Speedometer30Probe(SpeedometerProbe):
       return False
     return True
 
+  @override
   def get_context_cls(self) -> Type[Speedometer30ProbeContext]:
     return Speedometer30ProbeContext
 
@@ -56,10 +60,12 @@ class Speedometer30Probe(SpeedometerProbe):
 class Speedometer30ProbeContext(SpeedometerProbeContext):
   JS = "return JSON.stringify(window.benchmarkClient.metrics);"
 
+  @override
   def to_json(self, actions: Actions) -> Json:
     json_data = super().to_json(actions)
     return ObjectParser.non_empty_dict(json_data, "speedometer metrics")
 
+  @override
   def flatten_json_data(self, json_data: Any) -> Json:
     result: Dict[str, float] = {}
     assert isinstance(json_data, dict), f"Expected dict, got {type(json_data)}"
@@ -237,6 +243,7 @@ class Speedometer30Story(SpeedometerStory):
   SUBSTORIES: Tuple[str, ...] = tuple(SPEEDOMETER_3_STORY_DATA.keys())
 
   @classmethod
+  @override
   def default_story_names(cls) -> Tuple[str, ...]:
     return tuple(
         tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
@@ -264,6 +271,7 @@ class Speedometer30Story(SpeedometerStory):
     super().__init__(url=url, substories=substories, iterations=iterations)
 
   @property
+  @override
   def single_substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=0.25)
 
@@ -288,6 +296,7 @@ class Speedometer30Story(SpeedometerStory):
     return self._shuffle_seed
 
   @property
+  @override
   def url_params(self) -> Dict[str, str]:
     url_params: Dict[str, str] = super().url_params
     if sync_wait := self.sync_wait:
@@ -317,6 +326,7 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
   __doc__ = SpeedometerBenchmarkStoryFilter.__doc__
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(parser)
@@ -363,6 +373,7 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
     return parser
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["iterations"] = args.iterations
@@ -392,6 +403,7 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
     assert issubclass(story_cls, Speedometer30Story)
     super().__init__(story_cls, patterns, separate, url, iterations=iterations)
 
+  @override
   def create_stories_from_names(self, names: List[str],
                                 separate: bool) -> Sequence[SpeedometerStory]:
     return self.story_cls.from_names(
@@ -416,14 +428,17 @@ class Speedometer30Benchmark(SpeedometerBenchmark):
   PROBES: ProbeClsTupleT = (Speedometer30Probe,)
 
   @classmethod
+  @override
   def version(cls) -> Tuple[int, ...]:
     return (3, 0)
 
   @classmethod
+  @override
   def aliases(cls) -> Tuple[str, ...]:
     return ("sp3", "speedometer_3") + super().aliases()
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
   ) -> CrossBenchArgumentParser:
@@ -437,6 +452,7 @@ class Speedometer30Benchmark(SpeedometerBenchmark):
     return parser
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["detailed_metrics"] = args.detailed_metrics

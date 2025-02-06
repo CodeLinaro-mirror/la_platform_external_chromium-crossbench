@@ -10,6 +10,8 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence,
                     Tuple, Type, cast)
 from urllib import parse as urlparse
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
@@ -43,6 +45,7 @@ class PageConfig(ConfigObject):
     return super().parse_other(value)
 
   @classmethod
+  @override
   def parse_str(  # pylint: disable=arguments-differ
       cls: Type[PageConfig],
       value: str,
@@ -76,6 +79,7 @@ class PageConfig(ConfigObject):
     return cls(label, secrets=secrets, blocks=blocks.blocks)
 
   @classmethod
+  @override
   def parse_dict(  # pylint: disable=arguments-differ
       cls: Type[PageConfig],
       config: Dict[str, Any],

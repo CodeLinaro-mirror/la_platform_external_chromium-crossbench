@@ -14,6 +14,8 @@ import subprocess
 import time
 from typing import Iterable, Optional, TextIO, Tuple
 
+from typing_extensions import override
+
 from crossbench.helper import url_helper
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
@@ -321,9 +323,11 @@ class WprRecorder(WprBase):
     return self._platform.local_path(self._cert_file)
 
   @property
+  @override
   def cmd(self) -> TupleCmdArgs:
     return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
 
+  @override
   def _validate_archive_path(self, path: AnyPath) -> LocalPath:
     return PathParser.not_existing_path(path, "Wpr.go result archive")
 
@@ -357,11 +361,13 @@ class WprReplayServer(WprBase):
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 
+  @override
   def _validate_archive_path(self, path: AnyPath) -> AnyPath:
     assert self._platform.is_file(path)
     return path
 
   @property
+  @override
   def cmd(self) -> TupleCmdArgs:
     cmd = ("replay",) + super().base_cmd_flags
     if self._rules_file:

@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
-
 from urllib.parse import urlparse
+
+from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.action.get import GetAction
@@ -46,6 +47,7 @@ class DefaultBondActionRunner(BondActionRunner):
     # Conference code is url path without leading '/'
     return url.path[1:]
 
+  @override
   def meet_create(self, run: Run, action: i_action.MeetCreateAction):
     bond_client = self.bond_client(run)
     conference_code = bond_client.create_meeting()

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Type
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
+from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
@@ -37,18 +38,22 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     assert self.platform.is_macos
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
 
+  @override
   def _find_driver(self) -> AnyPath:
     # TODO: support remote platform
     assert self.platform.is_local, "Remote platform is not supported yet"
     return self.host_platform.local_path(
         find_safaridriver(self.path, self.platform))
 
+  @override
   def _setup_driver_log_file(self) -> LocalPath:
     raise NotImplementedError("Cannot use custom driver log path for Safari")
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: AnyPath) -> webdriver.Remote:
     return self._start_safari_driver(session, driver_path)
@@ -119,6 +124,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       options.use_technology_preview = True
     return options
 
+  @override
   def _validate_driver_version(self) -> None:
     # The bundled driver is always ok
     assert self._driver_path
@@ -130,6 +136,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         f"safaridriver={self._driver_path} version='{version}' "
         f" doesn't match safari version={self.major_version}")
 
+  @override
   def _setup_window(self) -> None:
     super()._setup_window()
     self.platform.exec_apple_script(f"""
@@ -137,6 +144,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           activate
         end tell""")
 
+  @override
   def quit(self) -> None:
     super().quit()
     # Safari needs some additional push to quit properly
@@ -145,6 +153,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           quit
         end tell""")
 
+  @override
   def force_quit(self):
     try:
       super().force_quit()
@@ -156,6 +165,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 class SafariWebdriverIOS(SafariWebDriver):
   MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=15)
 
+  @override
   def _get_driver_options(self,
                           session: BrowserSessionRunGroup) -> SafariOptions:
     options = super()._get_driver_options(session)
@@ -174,9 +184,11 @@ class SafariWebdriverIOS(SafariWebDriver):
       options.set_capability(key, value)
     return options
 
+  @override
   def _setup_window(self) -> None:
     pass
 
+  @override
   def quit(self) -> None:
     self._private_driver.close()
     self.platform.sleep(1.0)

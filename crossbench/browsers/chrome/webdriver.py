@@ -11,6 +11,7 @@ import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
+from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.paths import ChromePathMixin
@@ -33,10 +34,12 @@ class ChromeWebDriver(ChromePathMixin, ChromiumBasedWebDriver):
   WEB_DRIVER_SERVICE = ChromeService
 
   @property
+  @override
   def attributes(self) -> BrowserAttributes:
     return (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.WEBDRIVER)
 
+  @override
   def _create_driver(self, options: ChromiumOptions,
                      service: ChromiumService) -> ChromiumDriver:
     assert isinstance(options, ChromeOptions)

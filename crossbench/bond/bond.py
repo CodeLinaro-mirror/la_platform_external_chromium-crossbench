@@ -9,6 +9,7 @@ import logging
 from typing import Any, Dict, Mapping, Optional, Sequence, Set
 
 from google.oauth2 import service_account
+from typing_extensions import override
 
 import google.auth.transport.requests
 from google.auth.credentials import TokenState
@@ -42,11 +43,13 @@ class AddBotsConfig(ConfigObject):
   video_file_path: Optional[str]
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> AddBotsConfig:
     del value
     raise NotImplementedError("Cannot create AddBotsConfig from string")
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> AddBotsConfig:
     return cls.config_parser().parse(config)
 

@@ -7,6 +7,8 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Dict, Optional
 
+from typing_extensions import override
+
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser
 
@@ -27,12 +29,14 @@ class Secrets(ConfigObject):
     return parser
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> Secrets:
     if value[0] == "{":
       return cls.parse_inline_hjson(value)
     raise NotImplementedError("Cannot create secrets from string")
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> Secrets:
     return cls.config_parser().parse(config)
 
@@ -60,10 +64,12 @@ class UsernamePassword(ConfigObject):
     return parser
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> UsernamePassword:
     return cls.config_parser().parse(config)
 
   @classmethod
+  @override
   def parse_str(cls, value: str):
     # TODO: maybe support passwd style string format
     raise NotImplementedError("Cannot support")
@@ -116,10 +122,12 @@ class ServiceAccount(ConfigObject):
     return parser
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict) -> ServiceAccount:
     return cls.config_parser().parse(config)
 
   @classmethod
+  @override
   def parse_str(cls, value: str):
     del value
     raise NotImplementedError("ServiceAccount from string not supported")

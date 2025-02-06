@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Type
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
                                                     ActionT)
 from crossbench.action_runner.action.action_type import ActionType
@@ -23,6 +25,7 @@ class WaitForElementAction(Action):
   TYPE: ActionType = ActionType.WAIT_FOR_ELEMENT
 
   @classmethod
+  @override
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
@@ -58,15 +61,18 @@ class WaitForElementAction(Action):
   def or_more(self) -> bool:
     return self._or_more
 
+  @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.wait_for_element(run, self)
 
+  @override
   def validate(self) -> None:
     super().validate()
     if not self.selector:
       raise ValueError(f"{self}.selector is missing.")
     NumberParser.positive_int(self.expected_count, "expected_count")
 
+  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["selector"] = self.selector

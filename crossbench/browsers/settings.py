@@ -7,6 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, Optional
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.splash_screen import SplashScreen
@@ -115,10 +117,12 @@ class Settings:
     return self._http_request_timeout
 
   @property
+  @override
   def viewport(self) -> Viewport:
     return self._viewport
 
   @viewport.setter
+  @override
   def viewport(self, value: Viewport) -> None:
     assert self._viewport.is_default
     self._viewport = value

@@ -13,6 +13,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
                     Tuple, Type, TypeVar, Union)
 
 from tabulate import tabulate
+from typing_extensions import override
 
 from crossbench.probes import helper
 from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
@@ -44,9 +45,11 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   SORT_KEYS = True
 
   @property
+  @override
   def result_path_name(self) -> str:
     return f"{self.name}.json"
 
+  @override
   def merge_repetitions(
       self,
       group: RepetitionsRunGroup,

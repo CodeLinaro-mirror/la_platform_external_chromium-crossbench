@@ -64,7 +64,7 @@ class TestFlags(unittest.TestCase):
     self.assertIsNone(flags["--bar"])
     with self.assertRaises(ValueError):
       flags.set("--bar", "v3")
-    flags.set("--bar", "v4", override=True)
+    flags.set("--bar", "v4", should_override=True)
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v4")
 
@@ -117,7 +117,7 @@ class TestFlags(unittest.TestCase):
       flags.update({"--bar": "v2"})
     self.assertEqual(flags["--foo"], "v1")
     self.assertIsNone(flags["--bar"])
-    flags.update({"--bar": "v2"}, override=True)
+    flags.update({"--bar": "v2"}, should_override=True)
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v2")
     self.assertTrue(flags)
@@ -633,7 +633,9 @@ class TestChromeFlags(TestFlags):
     self.assertEqual(
         str(field_trials.field_trial_flags), "--enable-field-trial-config")
     field_trials.set(
-        "--enable-benchmarking", "enable-field-trial-config", override=True)
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
     self.assertEqual(
         str(field_trials.field_trial_flags), "--enable-field-trial-config "
         "--enable-benchmarking=enable-field-trial-config")
@@ -651,7 +653,9 @@ class TestChromeFlags(TestFlags):
         str(field_trials.no_experiments_flags),
         "--disable-field-trial-config --enable-benchmarking")
     field_trials.set(
-        "--enable-benchmarking", "enable-field-trial-config", override=True)
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
     self.assertEqual(
         str(field_trials.no_experiments_flags), "--disable-field-trial-config")
 
@@ -735,13 +739,13 @@ class TestJSFlags(TestFlags):
     self.assertIsNone(flags["--foo"])
     self.assertIsNone(flags["--no-bar"])
 
-    flags.set("--no-foo", override=True)
+    flags.set("--no-foo", should_override=True)
     self.assertNotIn("--foo", flags)
     self.assertIn("--no-foo", flags)
     self.assertNotIn("--bar", flags)
     self.assertIn("--no-bar", flags)
 
-    flags.set("--bar", override=True)
+    flags.set("--bar", should_override=True)
     self.assertNotIn("--foo", flags)
     self.assertIn("--no-foo", flags)
     self.assertIn("--bar", flags)
