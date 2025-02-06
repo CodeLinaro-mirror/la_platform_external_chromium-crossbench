@@ -6,6 +6,7 @@ import argparse
 import datetime as dt
 import json
 from dataclasses import dataclass
+from typing import Any
 
 from crossbench.benchmarks.speedometer.speedometer_2_0 import (
     Speedometer20Benchmark, Speedometer20Probe, Speedometer20ProbeContext,
@@ -112,7 +113,7 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
     shuffle_seed = None
     detailed_metrics = False
 
-  EXAMPLE_STORY_DATA = {}
+  EXAMPLE_STORY_DATA: dict[str, Any] = {}
 
   def _generate_s3_metrics(self, name, values):
     return {

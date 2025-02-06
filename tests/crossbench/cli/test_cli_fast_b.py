@@ -45,9 +45,9 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
     # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    suffix = browser_cls.mock_app_path(self.platform).suffix
+    browser_bin = browser_cls.mock_app_path(
+        self.platform).with_name(f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
     with mock.patch.object(
@@ -63,9 +63,9 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
     # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    suffix = browser_cls.mock_app_path(self.platform).suffix
+    browser_bin = browser_cls.mock_app_path(
+        self.platform).with_name(f"Custom Google Chrome{suffix}")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
     with mock.patch.object(
@@ -98,7 +98,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
@@ -143,7 +143,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
@@ -187,7 +187,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
@@ -219,17 +219,19 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
       if browser_config.driver.type == BrowserDriverType.IOS:
-        self.assertEqual(browser_config.path,
-                         mock_browser.MockChromeStable.mock_app_path())
+        self.assertEqual(
+            browser_config.path,
+            mock_browser.MockChromeStable.mock_app_path(self.platform))
         return mock_browser.MockChromeStable
       if browser_config.driver.type == BrowserDriverType.WEB_DRIVER:
-        self.assertEqual(browser_config.path,
-                         mock_browser.MockChromeBeta.mock_app_path())
+        self.assertEqual(
+            browser_config.path,
+            mock_browser.MockChromeBeta.mock_app_path(self.platform))
         return mock_browser.MockChromeBeta
       self.assertEqual(browser_config.driver.type,
                        BrowserDriverType.APPLE_SCRIPT)
       self.assertEqual(browser_config.path,
-                       mock_browser.MockChromeDev.mock_app_path())
+                       mock_browser.MockChromeDev.mock_app_path(self.platform))
       return mock_browser.MockChromeDev
 
     self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
@@ -320,7 +322,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 

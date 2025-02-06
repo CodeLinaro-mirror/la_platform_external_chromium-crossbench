@@ -7,6 +7,7 @@ from __future__ import annotations
 import collections
 import dataclasses
 import datetime as dt
+import functools
 import pathlib
 import shlex
 import subprocess
@@ -30,7 +31,7 @@ from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import ListCmdArgs, TupleCmdArgs
+  from crossbench.plt.base import CmdArg, ListCmdArgs, TupleCmdArgs
   from crossbench.runner.runner import Runner
 
 
@@ -90,7 +91,7 @@ class MockPlatformMixin:
                       data: Optional[bytes] = None):
     self._download_results.append(DownloadMockData(url, path, data))
 
-  def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
+  def download_to(self, url: str, path: pth.LocalPath) -> pth.LocalPath:
     assert self._download_results, (
         f"No more download test data, but requested: {url}")
     provided_data = self._download_results.pop()
@@ -99,16 +100,13 @@ class MockPlatformMixin:
     assert path == provided_data.path, (
         f"Expected download result path {path}, but got: {provided_data.path}")
     if provided_data.data:
-      path.write_bytes(provided_data.data)
+      pathlib.Path(path).write_bytes(provided_data.data)
     else:
       self.touch(path)
     return path
 
   def expect_sh(
-      self,
-      *args: Union[str, pathlib.Path],
-      result: Union[str, ShResult] = ShResult()
-  ) -> None:
+      self, *args: CmdArg, result: Union[str, ShResult] = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
@@ -118,7 +116,7 @@ class MockPlatformMixin:
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
-  def _convert_sh_args(self, *args: Union[str, pathlib.Path]) -> TupleCmdArgs:
+  def _convert_sh_args(self, *args: CmdArg) -> TupleCmdArgs:
     converted_args : ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
@@ -183,7 +181,7 @@ class MockPlatformMixin:
   def is_thermal_throttled(self) -> bool:
     return False
 
-  def disk_usage(self, path: pathlib.Path):
+  def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     del path
     # pylint: disable=protected-access
     return psutil._common.sdiskusage(
@@ -192,6 +190,7 @@ class MockPlatformMixin:
   def cpu_usage(self) -> float:
     return 0.1
 
+  @functools.lru_cache(maxsize=1)
   def cpu_details(self) -> Dict[str, Any]:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
@@ -204,6 +203,7 @@ class MockPlatformMixin:
     if self.use_fs:
       super().set_file_contents(file_path, data, encoding)
 
+  @functools.lru_cache(maxsize=1)
   def system_details(self):
     return {"CPU": "20-core 3.1 GHz"}
 
@@ -232,7 +232,7 @@ class MockPlatformMixin:
     return self.path(f"/usr/bin/{name}")
 
   def sh_stdout_bytes(self,
-                      *args: Union[str, pathlib.Path],
+                      *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
                       stdin=None,
@@ -262,7 +262,7 @@ class MockPlatformMixin:
     return sh_result.result
 
   def sh(self,
-         *args: Union[str, pathlib.Path],
+         *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
          stdout=None,
@@ -277,7 +277,7 @@ class MockPlatformMixin:
     return subprocess.CompletedProcess(args, 0)
 
   def popen(self,
-            *args: Union[str, pathlib.Path],
+            *args: CmdArg,
             bufsize=-1,
             shell: bool = False,
             stdout=None,
@@ -318,7 +318,7 @@ class MockFd:
     expected = self.expected_writes.pop(0)
 
     assert data == expected, (
-        f"Expected write does not match. Expected: {expected} Got: {data}")
+        f"Expected write does not match. Expected: {expected} Got: {data!r}")
 
   def readline(self):
     if not self.read_returns:

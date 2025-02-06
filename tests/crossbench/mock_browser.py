@@ -29,6 +29,7 @@ if TYPE_CHECKING:
   from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsData
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  from crossbench import path as pth
 
 
 @dataclasses.dataclass(frozen=True)
@@ -294,7 +295,7 @@ class MockChromeAndroidStable(MockChromeStable):
         AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
     return cast(AndroidAdbPlatform, self._platform)
 
-  def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
+  def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
   @property

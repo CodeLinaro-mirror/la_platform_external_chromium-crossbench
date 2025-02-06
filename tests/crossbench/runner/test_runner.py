@@ -6,6 +6,7 @@ import json
 import pathlib
 import unittest
 from unittest import mock
+from typing import TYPE_CHECKING
 
 from crossbench import compat
 from crossbench.browsers.browser import Browser
@@ -26,7 +27,8 @@ from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
                                             MockPlatform, MockProbe,
                                             MockProbeContext, MockRun,
                                             MockRunner)
-
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
 
 # Skip strict type checks for better mocking
 # pytype: disable=wrong-arg-types
@@ -55,7 +57,7 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.runner = MockRunner()
     self.root_dir = pathlib.Path()
     self.env = self.runner.env
-    self.probes = []
+    self.probes: list[Probe] = []
     self.runs = (
         MockRun(self.runner, self.create_session(self.browser_a_1, 1), "run 1"),
         MockRun(self.runner, self.create_session(self.browser_a_2, 2), "run 2"),

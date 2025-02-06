@@ -55,9 +55,7 @@ class CrossbenchFakeFsTestCase(
     self.sleep_preventer_patcher.start()
 
 
-  def create_file(self,
-                  path_str: str,
-                  contents: Optional[str] = None) -> pathlib.Path:
+  def create_file(self, path_str: str, contents: str = "") -> pathlib.Path:
     path = pathlib.Path(path_str)
     self.fs.create_file(path, contents=contents)
     return path
@@ -101,7 +99,7 @@ class BaseCrossbenchTestCase(
     logging.getLogger().setLevel(logging.CRITICAL)
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs)
-      self.assertTrue(mock_browser_cls.mock_app_path().exists())
+      self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.fs.add_real_directory(

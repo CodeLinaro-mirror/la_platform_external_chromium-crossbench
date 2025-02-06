@@ -313,7 +313,7 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
 
   def test_init_invalid(self):
     with self.assertRaises(BrowserVersionParseError):
-      ChromiumVersion(None)
+      ChromiumVersion(None)  # pytype: disable=wrong-arg-types
     with self.assertRaises(BrowserVersionParseError):
       ChromiumVersion((-1, -2))
 

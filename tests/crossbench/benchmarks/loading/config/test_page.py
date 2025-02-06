@@ -10,6 +10,7 @@ import unittest
 
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
+from crossbench.action_runner.action.get import GetAction
 from tests import test_helper
 
 
@@ -107,6 +108,8 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config_1.first_url, "http://test.com/0")
     self.assertEqual(len(config_1.blocks), 1)
     self.assertEqual(len(tuple(config_1.actions())), 2)
+    self.assertIsInstance(config_1.blocks[0].actions[0], GetAction)
+    self.assertIsInstance(config_1.blocks[0].actions[1], GetAction)
     self.assertEqual(config_1.blocks[0].actions[0].url, "http://test.com/0")
     self.assertEqual(config_1.blocks[0].actions[1].url,
                      "http://test.com/0,123s")

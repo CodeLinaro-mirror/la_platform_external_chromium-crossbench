@@ -31,6 +31,7 @@ from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 if TYPE_CHECKING:
   from crossbench.runner.timing import AnyTimeUnit
+  from crossbench.runner.run import Run
 
 
 
@@ -65,7 +66,7 @@ class MockRun:
     self.is_warmup = is_warmup
     self.temperature = temperature
     self.name = name
-    self.probes = []
+    self.probes: list[Probe] = []
     self.timing = Timing()
     self.is_success = True
     self.index = index
@@ -154,17 +155,17 @@ class MockRunner:
 
   def __init__(self) -> None:
     self.benchmark = MockBenchmark(stories=[MockStory("mock_story")])
-    self.runs = tuple()
+    self.runs: tuple[Run, ...] = tuple()
     self.platform = MockPlatform("test-platform")
     self.repetitions = 1
     self.create_symlinks = True
-    self.probes = []
-    self.browsers = []
+    self.probes: list[Probe] = []
+    self.browsers: list[Browser] = []
     self.out_dir = pathlib.Path("results/out")
     self.timing = Timing()
     self.env = HostEnvironment(self.platform, self.out_dir, self.browsers,
                                self.probes, self.repetitions)
-    self.mock_waits = []
+    self.mock_waits: list[MockWait] = []
 
   def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:
     self.mock_waits.append(MockWait(time, absolute_time))
@@ -202,7 +203,7 @@ class MockProbeContext(ProbeContext):
     pass
 
   def teardown(self) -> ProbeResult:
-    with self.result_path.open("w") as f:
+    with pathlib.Path(self.result_path).open("w", encoding="utf-8") as f:
       json.dump(self.probe.test_data, f)
     return LocalProbeResult(json=(self.result_path,))
 

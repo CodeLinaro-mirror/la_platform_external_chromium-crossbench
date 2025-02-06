@@ -264,7 +264,7 @@ class CliSlowTestCase(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 

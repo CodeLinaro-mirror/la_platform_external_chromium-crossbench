@@ -351,7 +351,6 @@ class NativePlatformTestCase(unittest.TestCase):
         self.assertTrue(self.platform.is_dir(cache_dir))
         self.assertEqual(cache_dir.parent, tmp_dir)
       finally:
-        self.platform.rm(cache_dir, dir=True, missing_ok=True)
         if self.platform.is_local:
           self.platform.set_cache_dir(DEFAULT_CACHE_DIR)
 
@@ -567,6 +566,7 @@ class MockRemotePosixPlatform(type(plt.PLATFORM)):
   def host_platform(self):
     return plt.PLATFORM
 
+  @property
   def is_remote(self) -> bool:
     return True
 
@@ -671,14 +671,15 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
       self.assertEqual(binary.name, "Calendar.app")
 
   def test_app_version_app(self):
-    app = self.platform.search_app(pathlib.Path("Safari.app"))
+    app = pathlib.Path(self.platform.search_app(pathlib.Path("Safari.app")))
     self.assertIsNotNone(app)
     self.assertTrue(app.is_dir())
     version = self.platform.app_version(app)
     self.assertRegex(version, r"[0-9]+\.[0-9]+")
 
   def test_app_version_app_binary(self):
-    binary = self.platform.search_binary(pathlib.Path("Safari.app"))
+    binary = pathlib.Path(
+        self.platform.search_binary(pathlib.Path("Safari.app")))
     self.assertIsNotNone(binary)
     self.assertTrue(binary.is_file())
     version = self.platform.app_version(binary)
@@ -764,13 +765,15 @@ class WinNativePlatformTestCase(NativePlatformTestCase):
   def test_search_binary(self):
     with self.assertRaises(ValueError):
       self.platform.search_binary(pathlib.Path("does not exist"))
-    path = self.platform.search_binary(
-        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+    path = pathlib.Path(
+        self.platform.search_binary(
+            pathlib.Path("Windows NT/Accessories/wordpad.exe")))
     self.assertTrue(path and path.exists())
 
   def test_app_version(self):
-    path = self.platform.search_binary(
-        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+    path = pathlib.Path(
+        self.platform.search_binary(
+            pathlib.Path("Windows NT/Accessories/wordpad.exe")))
     self.assertTrue(path and path.exists())
     version = self.platform.app_version(path)
     self.assertIsNotNone(version)

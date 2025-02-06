@@ -46,7 +46,7 @@ def cli_test_context(request, browser_path, driver_path):
 
 
 def _run_cli(*args: str,
-             extra_flags: Tuple[str] = (),
+             extra_flags: tuple[str, ...] = (),
              test_env: Optional[TestEnv] = None,
              auto_headless: bool = False) -> Tuple[CrossBenchCLI, io.StringIO]:
   if test_env is not None:

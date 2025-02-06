@@ -50,9 +50,9 @@ class FirefoxDownloaderTestCase():
     self._load_and_check_webdriver(output_dir, browser)
     return app_path
 
-  def _load_and_check_webdriver(self, test_env,
+  def _load_and_check_webdriver(self, output_dir,
                                 browser: FirefoxWebDriver) -> None:
-    driver_dir = test_env.output_dir / "chromedriver-binaries"
+    driver_dir = output_dir / "chromedriver-binaries"
     assert not driver_dir.exists()
     with tmp_platform_cache_dir(driver_dir):
       finder = FirefoxDriverFinder(browser)
@@ -61,7 +61,7 @@ class FirefoxDownloaderTestCase():
       assert list(driver_dir.iterdir()) == [driver_path]
       assert driver_path.is_file()
       # Downloading again should use the cache-version
-      driver_path: pathlib.Path = finder.download()
+      driver_path = finder.download()
       assert list(driver_dir.iterdir()) == [driver_path]
       assert driver_path.is_file()
       # Restore output dir state.
