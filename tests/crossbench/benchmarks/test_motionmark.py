@@ -8,6 +8,8 @@ import csv
 from typing import Optional, Type
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.benchmarks.motionmark.motionmark_1 import (
     MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
     MotionMark1Story)
@@ -28,11 +30,13 @@ class MotionMark1BaseTestCase(
 
   @property
   @abc.abstractmethod
+  @override
   def benchmark_cls(self) -> Type[MotionMark1Benchmark]:
     pass
 
   @property
   @abc.abstractmethod
+  @override
   def story_cls(self) -> Type[MotionMark1Story]:
     pass
 
@@ -180,18 +184,22 @@ class MotionMark1BaseTestCase(
 class MotionMark12TestCase(MotionMark1BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return MotionMark12Benchmark
 
   @property
+  @override
   def story_cls(self):
     return MotionMark12Story
 
   @property
+  @override
   def probe_cls(self):
     return MotionMark12Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return MotionMark12ProbeContext
 
@@ -199,18 +207,22 @@ class MotionMark12TestCase(MotionMark1BaseTestCase):
 class MotionMark13TestCase(MotionMark1BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return MotionMark13Benchmark
 
   @property
+  @override
   def story_cls(self):
     return MotionMark13Story
 
   @property
+  @override
   def probe_cls(self):
     return MotionMark13Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return MotionMark13ProbeContext
 

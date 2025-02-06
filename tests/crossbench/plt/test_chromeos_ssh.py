@@ -5,6 +5,8 @@
 from __future__ import annotations
 import pathlib
 
+from typing_extensions import override
+
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
 from tests.crossbench.plt.test_linux_ssh import LinuxSshMockPlatformTestCase
@@ -14,6 +16,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   SSH_USER = "chronos"
   platform: ChromeOsSshPlatform
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.platform = ChromeOsSshPlatform(

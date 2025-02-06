@@ -8,6 +8,8 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from typing_extensions import override
+
 from crossbench.benchmarks.speedometer.speedometer_2_0 import (
     Speedometer20Benchmark, Speedometer20Probe, Speedometer20ProbeContext,
     Speedometer20Story)
@@ -26,22 +28,27 @@ from tests.crossbench.benchmarks.speedometer_helper import (
 class Speedometer20TestCase(Speedometer2BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return Speedometer20Benchmark
 
   @property
+  @override
   def story_cls(self):
     return Speedometer20Story
 
   @property
+  @override
   def probe_cls(self):
     return Speedometer20Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return Speedometer20ProbeContext
 
   @property
+  @override
   def name(self):
     return "speedometer_2.0"
 
@@ -58,22 +65,27 @@ class Speedometer20TestCase(Speedometer2BaseTestCase):
 class Speedometer21TestCase(Speedometer2BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return Speedometer21Benchmark
 
   @property
+  @override
   def story_cls(self):
     return Speedometer21Story
 
   @property
+  @override
   def probe_cls(self):
     return Speedometer21Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return Speedometer21ProbeContext
 
   @property
+  @override
   def name(self):
     return "speedometer_2.1"
 
@@ -81,22 +93,27 @@ class Speedometer21TestCase(Speedometer2BaseTestCase):
 class Speedometer30TestCase(SpeedometerBaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return Speedometer30Benchmark
 
   @property
+  @override
   def story_cls(self):
     return Speedometer30Story
 
   @property
+  @override
   def probe_cls(self):
     return Speedometer30Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return Speedometer30ProbeContext
 
   @property
+  @override
   def name(self):
     return "speedometer_3.0"
 
@@ -130,6 +147,7 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
         "values": values
     }
 
+  @override
   def _generate_test_probe_results(self, iterations, story):
     values = [21.3] * iterations
     probe_result = {}

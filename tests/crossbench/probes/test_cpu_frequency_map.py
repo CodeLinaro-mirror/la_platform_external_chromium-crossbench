@@ -5,6 +5,8 @@
 import argparse
 from typing import List
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
@@ -14,6 +16,7 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.platform = LinuxPlatform()

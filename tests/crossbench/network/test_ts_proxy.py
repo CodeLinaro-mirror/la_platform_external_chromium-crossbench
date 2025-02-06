@@ -7,6 +7,8 @@ import contextlib
 import pathlib
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.network.base import Network
 from crossbench.network.traffic_shaping.ts_proxy import (TsProxyProcess,
                                                          TsProxyServer,
@@ -18,6 +20,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 class TsProxyBaseTestCase(BaseCrossbenchTestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.ts_proxy_path = pathlib.Path("/chrome/tsproxy/tsproxy.py")

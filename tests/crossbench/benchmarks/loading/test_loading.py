@@ -15,6 +15,8 @@ import unittest
 from typing import List, Sequence
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -42,9 +44,11 @@ from tests.crossbench.mock_browser import JsInvocation
 class TestPageLoadBenchmark(SubStoryTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return LoadingBenchmark
 
+  @override
   def story_filter(  # pylint: disable=arguments-differ
       self,
       patterns: Sequence[str],

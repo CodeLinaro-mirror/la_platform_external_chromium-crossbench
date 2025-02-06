@@ -8,6 +8,8 @@ import unittest
 from unittest import mock
 from typing import TYPE_CHECKING
 
+from typing_extensions import override
+
 from crossbench import compat
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.webdriver import RemoteWebDriver
@@ -47,6 +49,7 @@ class TestThreadModeTestCase(unittest.TestCase):
         create_symlinks=True,
         throw=True)
 
+  @override
   def setUp(self) -> None:
     self.platform_a = MockPlatform("platform a")
     self.platform_b = MockPlatform("platform b")
@@ -126,6 +129,7 @@ class TestThreadModeTestCase(unittest.TestCase):
 
 class FailingMockProbeContext(MockProbeContext):
 
+  @override
   def setup(self):
     raise CustomException("failing setup")
 
@@ -280,6 +284,7 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     class PartialFailingMockProbeContext(MockProbeContext):
 
+      @override
       def setup(self):
         nonlocal setup_count
         setup_count += 1
@@ -382,6 +387,7 @@ class CustomException(Exception):
 
 class RunThreadGroupTestCase(BaseRunnerTestCase):
 
+  @override
   def tearDown(self) -> None:
     for browser in self.browsers:
       self.assertFalse(browser.is_running)

@@ -6,6 +6,7 @@ from typing import List
 from unittest import mock
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
@@ -20,6 +21,7 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.platform = LinuxPlatform()

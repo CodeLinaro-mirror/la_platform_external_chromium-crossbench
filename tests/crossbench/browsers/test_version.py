@@ -8,6 +8,8 @@ import abc
 import unittest
 from typing import cast
 
+from typing_extensions import override
+
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
@@ -286,6 +288,7 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
   PRE_ALPHA_VERSION_STR = ""
   VERSION_CLS = ChromiumVersion
 
+  @override
   def parse(self, value: str) -> ChromiumVersion:
     return ChromiumVersion.parse(value)
 
@@ -406,6 +409,7 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
   PRE_ALPHA_VERSION_STR = "Google Chrome 117.0.5921.0 canary"
   VERSION_CLS = ChromeVersion
 
+  @override
   def parse(self, value: str) -> ChromeVersion:
     return ChromeVersion.parse(value)
 
@@ -754,6 +758,7 @@ class ChromeDriverBrowserVersionTestCase(_BrowserVersionTestCase):
                            "0000000000000000000000000000000000000000)")
   VERSION_CLS = ChromeDriverVersion
 
+  @override
   def parse(self, value: str) -> BrowserVersion:
     return ChromeDriverVersion.parse(value)
 
@@ -763,6 +768,7 @@ class MicrosoftEdgeWebdriverVersionTestCase(_BrowserVersionTestCase):
                         "(16ab910a6e75f1c7d2da060bbe9ac569dfe64f70)")
   VERSION_CLS = ChromeDriverVersion
 
+  @override
   def parse(self, value: str) -> BrowserVersion:
     return ChromeDriverVersion.parse(value)
 
@@ -778,6 +784,7 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
   PRE_ALPHA_VERSION_STR = ""
   VERSION_CLS = FirefoxVersion
 
+  @override
   def parse(self, value: str) -> BrowserVersion:
     return FirefoxVersion.parse(value)
 
@@ -874,6 +881,7 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
   PRE_ALPHA_VERSION_STR = ""
   VERSION_CLS = SafariVersion
 
+  @override
   def parse(self, value: str) -> BrowserVersion:
     return SafariVersion.parse(value)
 
@@ -931,6 +939,7 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
 
 class BrowserVersionTestCase(unittest.TestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.sf_version = SafariVersion.parse(

@@ -7,6 +7,8 @@ from __future__ import annotations
 import signal
 import unittest
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.plt.signals import (LinuxSignals, MacOSSignals, PosixBaseSignal,
                                     PosixSignals, WinSignals)
@@ -15,6 +17,7 @@ from tests import test_helper
 
 class SignalsTestCase(unittest.TestCase):
 
+  @override
   def setUp(self):
     self.platform = plt.PLATFORM
 

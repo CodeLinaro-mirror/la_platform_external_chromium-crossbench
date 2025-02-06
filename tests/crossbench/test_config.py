@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 from unittest import mock
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import compat
 from crossbench.config import (ConfigEnum, ConfigObject, ConfigParser,
@@ -58,6 +59,7 @@ class CustomNestedConfigObject(ConfigObject):
   option: Optional[str] = None
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> CustomNestedConfigObject:
     if ":" in value:
       raise ValueError("Invalid Config")
@@ -66,6 +68,7 @@ class CustomNestedConfigObject(ConfigObject):
     return cls(name=value)
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any]) -> CustomNestedConfigObject:
     return cls.config_parser().parse(config)
 
@@ -97,6 +100,7 @@ class CustomConfigObject(ConfigObject):
     return cls("default")
 
   @classmethod
+  @override
   def parse_str(cls, value: str) -> CustomConfigObject:
     if ":" in value:
       raise ValueError("Invalid Config")
@@ -130,6 +134,7 @@ class CustomConfigObject(ConfigObject):
 
 
   @classmethod
+  @override
   def parse_dict(cls, config: Dict[str, Any], **kwargs) -> CustomConfigObject:
     return cls.config_parser().parse(config, **kwargs)
 
@@ -186,6 +191,7 @@ class CustomConfigObjectToArgumentValue(CustomConfigObject):
 
 class ConfigParserTestCase(unittest.TestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.parser = ConfigParser(CustomConfigObject)

@@ -10,6 +10,8 @@ import pathlib
 import unittest
 from unittest import mock
 
+from typing_extensions import override
+
 import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt.posix import PosixPlatform
@@ -22,6 +24,7 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   platform: plt.Platform
   mock_platform: MockPlatform
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.mock_platform_setup()
@@ -101,6 +104,7 @@ class BaseLocalMockPlatformTestMixin:
 class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
   platform: PosixPlatform
 
+  @override
   def tearDown(self) -> None:
     assert isinstance(self.platform, PosixPlatform)
     super().tearDown()

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import Optional, Type
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Probe,
                                                          JetStream2ProbeContext,
@@ -25,11 +27,13 @@ class JetStream2BaseTestCase(
 
   @property
   @abc.abstractmethod
+  @override
   def benchmark_cls(self) -> Type[JetStream2Benchmark]:
     pass
 
   @property
   @abc.abstractmethod
+  @override
   def story_cls(self) -> Type[JetStream2Story]:
     pass
 

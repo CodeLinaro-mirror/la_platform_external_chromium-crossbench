@@ -7,6 +7,8 @@ import pathlib
 import unittest
 from typing import Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig
@@ -114,6 +116,7 @@ class ViewportInfoTestCase(unittest.TestCase):
 class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.host_platform = LinuxMockPlatform()

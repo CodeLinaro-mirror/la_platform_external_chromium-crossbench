@@ -6,6 +6,8 @@ import argparse
 import copy
 import csv
 
+from typing_extensions import override
+
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.memory.memory_benchmark import (
@@ -19,10 +21,12 @@ from tests.crossbench.benchmarks import helper
 class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return MemoryBenchmark
 
   @property
+  @override
   def story_cls(self):
     return MemoryBenchmarkStoryFilter
 

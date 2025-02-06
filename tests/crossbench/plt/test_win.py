@@ -9,6 +9,7 @@ import pathlib
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
+from typing_extensions import override
 
 from crossbench import path as pth
 from tests import test_helper
@@ -21,6 +22,7 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
                               BaseMockPlatformTestCase):
   __test__ = True
 
+  @override
   def mock_platform_setup(self):
     self.mock_platform = WinMockPlatform()
     self.fs.os = OSType.WINDOWS

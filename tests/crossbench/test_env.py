@@ -7,6 +7,8 @@ import unittest
 from typing import Any
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.env import (EnvironmentConfig, HostEnvironment, ValidationError,
                             ValidationMode)
@@ -17,6 +19,7 @@ from tests.crossbench.mock_helper import LinuxMockPlatform, MockPlatform
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.platform = MockPlatform()

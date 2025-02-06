@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import Type
 from unittest import mock
 
+from typing_extensions import override
+
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import ShResult
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -57,6 +59,7 @@ ADB_DEVICES_OUTPUT = ShResult(
 
 class BaseConfigTestCase(BaseCrossbenchTestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     adb_patcher = mock.patch(

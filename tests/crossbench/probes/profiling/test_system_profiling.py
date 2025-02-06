@@ -6,6 +6,8 @@ import argparse
 import pathlib
 import unittest
 
+from typing_extensions import override
+
 from crossbench.browsers.settings import Settings
 from crossbench.probes.profiling.context.android import \
     generate_simpleperf_command_line
@@ -23,6 +25,7 @@ from tests.crossbench.probes.helper import GenericProbeTestCase
 
 class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.fs.add_real_file(RENDERER_CMD_PATH)

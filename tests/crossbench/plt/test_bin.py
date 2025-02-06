@@ -10,6 +10,7 @@ import unittest
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
+from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench import plt
@@ -26,6 +27,7 @@ from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
 
 class BinaryTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self._all_mock_platforms = (

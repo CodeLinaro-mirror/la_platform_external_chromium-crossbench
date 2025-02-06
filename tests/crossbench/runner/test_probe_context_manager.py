@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from typing_extensions import override
+
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.runner.run import ProbeRunContextManager
 from tests import test_helper
@@ -14,6 +16,7 @@ from tests.crossbench.test_exception import CustomException
 
 class FailingMockProbeContext(MockProbeContext):
 
+  @override
   def setup(self):
     raise CustomException("failing setup")
 

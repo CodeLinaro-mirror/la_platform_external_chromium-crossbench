@@ -8,6 +8,8 @@ import contextlib
 import os
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench import plt
 from tests import test_helper
@@ -22,6 +24,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
   SSH_USER = "user"
   platform: plt.LinuxSshPlatform
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.host_platform = self.mock_platform

@@ -14,6 +14,8 @@ import sys
 import tempfile
 import unittest
 
+from typing_extensions import override
+
 from crossbench import compat, plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR
 from crossbench.plt.posix import PosixPlatform
@@ -22,6 +24,7 @@ from tests import test_helper
 
 class NativePlatformTestCase(unittest.TestCase):
 
+  @override
   def setUp(self):
     self.platform: plt.Platform = plt.PLATFORM
 
@@ -480,6 +483,7 @@ class NativePlatformTestCase(unittest.TestCase):
 class PosixNativePlatformTestCase(NativePlatformTestCase):
   platform: PosixPlatform
 
+  @override
   def setUp(self):
     super().setUp()
     assert isinstance(plt.PLATFORM, PosixPlatform)
@@ -521,10 +525,10 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
 
   def test_search_binary_posix_lookup_override(self):
     path = pathlib.Path("ls")
-    override = self.platform.which("cp")
-    with self.platform.override_binary(path, override):
+    overridden_binary = self.platform.which("cp")
+    with self.platform.override_binary(path, overridden_binary):
       result_path = self.platform.search_binary(path)
-      self.assertEqual(result_path, override)
+      self.assertEqual(result_path, overridden_binary)
       self.assertTrue(self.platform.exists(result_path))
 
     result_path_2 = self.platform.search_binary(path)
@@ -563,6 +567,7 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
   @property
+  @override
   def host_platform(self):
     return plt.PLATFORM
 
@@ -570,13 +575,16 @@ class MockRemotePosixPlatform(type(plt.PLATFORM)):
   def is_remote(self) -> bool:
     return True
 
+  @override
   def local_path(self, path):
     # override to bypass is_local checks
     return pathlib.Path(path)
 
+  @override
   def sh(self, *args, **kwargs):
     return plt.PLATFORM.sh(*args, **kwargs)
 
+  @override
   def sh_stdout(self, *args, **kwargs):
     return plt.PLATFORM.sh_stdout(*args, **kwargs)
 
@@ -587,6 +595,7 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   This test fakes this by temporarily changing the current PLATFORM's is_remote
   getter to return True"""
 
+  @override
   def setUp(self):
     super().setUp()
     self.platform = MockRemotePosixPlatform()
@@ -619,6 +628,7 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
 class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
   platform: plt.MacOSPlatform
 
+  @override
   def setUp(self):
     super().setUp()
     assert isinstance(plt.PLATFORM, plt.MacOSPlatform)
@@ -639,8 +649,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(binary.name, "Safari")
 
   def test_search_app_binary_override(self):
-    override = pathlib.Path("/System/Applications/Calendar.app")
-    with self.platform.override_binary("Safari.app", override):
+    overridden_binary = pathlib.Path("/System/Applications/Calendar.app")
+    with self.platform.override_binary("Safari.app", overridden_binary):
       binary = self.platform.search_binary(pathlib.Path("Safari.app"))
       self.assertIsNotNone(binary)
       self.assertTrue(self.platform.is_file(binary))
@@ -662,8 +672,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertTrue(self.platform.is_dir(binary))
 
   def test_search_app_override(self):
-    override = pathlib.Path("/System/Applications/Calendar.app")
-    with self.platform.override_binary("Safari.app", override):
+    overridden_binary = pathlib.Path("/System/Applications/Calendar.app")
+    with self.platform.override_binary("Safari.app", overridden_binary):
       binary = self.platform.search_app(pathlib.Path("Safari.app"))
       self.assertIsNotNone(binary)
       self.assertTrue(self.platform.exists(binary))
@@ -753,6 +763,7 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
 class WinNativePlatformTestCase(NativePlatformTestCase):
   platform: plt.WinPlatform
 
+  @override
   def setUp(self):
     super().setUp()
     assert isinstance(plt.PLATFORM, plt.WinPlatform)

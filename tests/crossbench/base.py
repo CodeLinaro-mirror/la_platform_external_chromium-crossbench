@@ -15,6 +15,7 @@ from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
+from typing_extensions import override
 
 import crossbench
 from crossbench import path as pth
@@ -88,6 +89,7 @@ class BaseCrossbenchTestCase(
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]
 
+  @override
   def setUp(self) -> None:
     # Instantiate MockPlatform before setting up fake_filesystem so we can
     # still interact with the original, real plt.Platform object for extracting
@@ -156,6 +158,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   SPLASH_URLS_LEN: Final[int] = 2
 
+  @override
   def setUp(self) -> None:
     super().setUp()
 

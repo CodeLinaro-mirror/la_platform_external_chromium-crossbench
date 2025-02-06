@@ -15,6 +15,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional,
                     Sequence, Union)
 
 import psutil
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
@@ -388,12 +389,15 @@ class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
 
 class MockAdb(Adb):
 
+  @override
   def start_server(self) -> None:
     pass
 
+  @override
   def stop_server(self) -> None:
     pass
 
+  @override
   def kill_server(self) -> None:
     pass
 
@@ -419,6 +423,7 @@ else:
 class MockStory(Story):
 
   @classmethod
+  @override
   def all_story_names(cls):
     return ["story_1", "story_2"]
 

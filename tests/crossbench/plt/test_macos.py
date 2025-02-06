@@ -7,6 +7,7 @@ from __future__ import annotations
 import plistlib
 
 from pyfakefs.fake_filesystem import OSType
+from typing_extensions import override
 
 from crossbench import path as pth
 from tests import test_helper
@@ -19,10 +20,12 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
                                 BasePosixMockPlatformTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.fs.os = OSType.MACOS
 
+  @override
   def mock_platform_setup(self) -> None:
     self.mock_platform = MacOsMockPlatform()
     self.platform = self.mock_platform

@@ -8,6 +8,8 @@ import datetime as dt
 from typing import Optional
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
@@ -18,6 +20,7 @@ from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 class TestManualBenchmark(BaseBenchmarkTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return ManualBenchmark
 

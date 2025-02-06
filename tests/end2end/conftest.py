@@ -15,6 +15,7 @@ from unittest import mock
 
 import psutil
 import pytest
+from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers import all as browsers
@@ -129,6 +130,7 @@ def session_patch_chrome_driver_finder(driver_path, browser_path):
 
   class MockChromeDriverFinder(ChromeDriverFinder):
 
+    @override
     def download(self):
       if self.browser.path == browser_path:
         # The CQ uses the latest canary, which might not have a easily publicly

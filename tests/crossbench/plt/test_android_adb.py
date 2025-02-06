@@ -11,6 +11,7 @@ from typing import Final
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
@@ -45,6 +46,7 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"
   platform: AndroidAdbPlatform
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.adb_setup()
@@ -80,10 +82,12 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.fs.os = OSType.WINDOWS
 
+  @override
   def mock_platform_setup(self):
     self.mock_platform = WinMockPlatform()
 

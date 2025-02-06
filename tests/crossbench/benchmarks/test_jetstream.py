@@ -4,6 +4,8 @@
 
 import unittest
 
+from typing_extensions import override
+
 from crossbench.benchmarks.jetstream.jetstream import JetStreamCSVFormatter
 from crossbench.benchmarks.jetstream.jetstream_2_0 import (
     JetStream20Benchmark, JetStream20Probe, JetStream20ProbeContext,
@@ -73,18 +75,22 @@ class JetStreamCSVFormatterTestCase(unittest.TestCase):
 class JetStream20TestCase(jetstream_helper.JetStream2BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return JetStream20Benchmark
 
   @property
+  @override
   def story_cls(self):
     return JetStream20Story
 
   @property
+  @override
   def probe_cls(self):
     return JetStream20Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return JetStream20ProbeContext
 
@@ -96,18 +102,22 @@ class JetStream20TestCase(jetstream_helper.JetStream2BaseTestCase):
 class JetStream21TestCase(jetstream_helper.JetStream2BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return JetStream21Benchmark
 
   @property
+  @override
   def story_cls(self):
     return JetStream21Story
 
   @property
+  @override
   def probe_cls(self):
     return JetStream21Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return JetStream21ProbeContext
 
@@ -119,22 +129,27 @@ class JetStream21TestCase(jetstream_helper.JetStream2BaseTestCase):
 class JetStream22TestCase(jetstream_helper.JetStream2BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return JetStream22Benchmark
 
   @property
+  @override
   def story_cls(self):
     return JetStream22Story
 
   @property
+  @override
   def probe_cls(self):
     return JetStream22Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return JetStream22ProbeContext
 
   @property
+  @override
   def name(self):
     return "jetstream_2.2"
 
@@ -142,18 +157,22 @@ class JetStream22TestCase(jetstream_helper.JetStream2BaseTestCase):
 class JetStream30TestCase(jetstream_helper.JetStream3BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return JetStream30Benchmark
 
   @property
+  @override
   def story_cls(self):
     return JetStream30Story
 
   @property
+  @override
   def probe_cls(self):
     return JetStream30Probe
 
   @property
+  @override
   def probe_context_cls(self):
     return JetStream30ProbeContext
 

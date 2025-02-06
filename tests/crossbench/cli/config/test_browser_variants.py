@@ -12,6 +12,7 @@ from typing import Dict, Tuple, Type
 from unittest import mock
 
 import hjson
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
@@ -49,6 +50,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   EXAMPLE_REMOTE_CONFIG_PATH = (
       test_helper.config_dir() / "doc/remote_browser.config.hjson")
 
+  @override
   def setUp(self):
     super().setUp()
     self.browser_lookup: Dict[str, Tuple[

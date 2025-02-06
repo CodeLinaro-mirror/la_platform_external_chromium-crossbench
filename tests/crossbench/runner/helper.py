@@ -11,6 +11,8 @@ import json
 import pathlib
 from typing import TYPE_CHECKING, Any, List, Optional, Type
 
+from typing_extensions import override
+
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
@@ -186,9 +188,11 @@ class MockProbe(Probe):
     self.context_cls = context_cls or MockProbeContext
 
   @property
+  @override
   def result_path_name(self) -> str:
     return f"{self.name}.json"
 
+  @override
   def get_context_cls(self):
     return self.context_cls
 
@@ -210,6 +214,7 @@ class MockProbeContext(ProbeContext):
 
 class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
+  @override
   def setUp(self):
     super().setUp()
     self.out_dir = pathlib.Path("/testing/out_dir")

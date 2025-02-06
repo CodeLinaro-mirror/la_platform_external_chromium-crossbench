@@ -11,6 +11,8 @@ import argparse
 import datetime as dt
 from typing import Sequence
 
+from typing_extensions import override
+
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.loadline_presets import (
     LoadLinePageFilter, LoadLinePhoneBenchmark, LoadLineTabletBenchmark)
@@ -25,6 +27,7 @@ from tests.crossbench.benchmarks.helper import SubStoryTestCase
 # TODO(378584786): use shared helper mixin with TestPageLoadBenchmark
 class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
 
+  @override
   def story_filter(  # pylint: disable=arguments-differ
       self,
       patterns: Sequence[str],
@@ -55,6 +58,7 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
 class TestLoadLineTabletBenchmark(BaseLoadLineBenchmarkTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return LoadLineTabletBenchmark
 
@@ -62,6 +66,7 @@ class TestLoadLineTabletBenchmark(BaseLoadLineBenchmarkTestCase):
 class TestLoadLinePhoneBenchmark(BaseLoadLineBenchmarkTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return LoadLinePhoneBenchmark
 

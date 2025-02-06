@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Type
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
     SpeedometerStory)
@@ -24,11 +26,13 @@ class SpeedometerBaseTestCase(
 
   @property
   @abc.abstractmethod
+  @override
   def benchmark_cls(self) -> Type[SpeedometerBenchmark]:
     pass
 
   @property
   @abc.abstractmethod
+  @override
   def story_cls(self) -> Type[SpeedometerStory]:
     pass
 
@@ -333,6 +337,7 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
       "total": 121.40000000596046
   }
 
+  @override
   def _generate_test_probe_results(self, iterations, story):
     return [{
         "tests": {

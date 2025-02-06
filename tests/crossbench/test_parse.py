@@ -13,6 +13,8 @@ import unittest
 from typing import Any
 from urllib import parse as urlparse
 
+from typing_extensions import override
+
 from crossbench.parse import (DurationParser, NumberParser, ObjectParser,
                               PathParser)
 from tests import test_helper
@@ -135,6 +137,7 @@ class DurationParserTestCase(unittest.TestCase):
 
 class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self._json_test_data = {"int": 1, "array": [1, "2"]}

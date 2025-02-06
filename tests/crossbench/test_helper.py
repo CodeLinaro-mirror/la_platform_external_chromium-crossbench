@@ -7,6 +7,8 @@ import enum
 import pathlib
 import unittest
 
+from typing_extensions import override
+
 from crossbench import compat, plt
 from crossbench.helper import collection_helper, fs_helper, url_helper
 from crossbench.helper.cwd import ChangeCWD
@@ -243,6 +245,7 @@ class GroupByTestCase(unittest.TestCase):
 
 class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.platform = plt.PLATFORM
