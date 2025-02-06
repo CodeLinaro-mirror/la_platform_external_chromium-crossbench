@@ -122,7 +122,7 @@ class AndroidProfilingContext(PosixProfilingContext):
 
   def stop_process(self) -> None:
     if self._profiling_process:
-      self.browser_platform.wait_and_kill(
+      self.browser_platform.terminate_gracefully(
           self._profiling_process,
           timeout=30,
           signal=self.browser_platform.signals.SIGINT)

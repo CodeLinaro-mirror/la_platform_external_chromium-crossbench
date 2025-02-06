@@ -219,7 +219,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     if not self._perfetto_pid:
       return
     atexit.unregister(self._stop_perfetto)
-    # TODO(cbruni): replace with wait_and_terminate
+    # TODO(cbruni): replace with terminate_gracefully
     self.browser_platform.terminate(self._perfetto_pid)
     try:
       for _ in WaitRange(1, 30).wait_with_backoff():

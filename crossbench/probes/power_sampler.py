@@ -226,13 +226,13 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def stop_processes(self) -> None:
     if self._power_process:
-      self.browser_platform.wait_and_kill(self._power_process)
+      self.browser_platform.terminate_gracefully(self._power_process)
       self._power_process = None
     if self._power_battery_process:
-      self.browser_platform.wait_and_kill(self._power_battery_process)
+      self.browser_platform.terminate_gracefully(self._power_battery_process)
       self._power_battery_process = None
     if self._active_user_process:
-      self.browser_platform.wait_and_kill(self._active_user_process)
+      self.browser_platform.terminate_gracefully(self._active_user_process)
       self._active_user_process = None
 
   def _wait_for_battery_not_full(self, run: Run) -> None:

@@ -133,5 +133,5 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
 
   def stop_process(self) -> None:
     if self._power_metrics_process:
-      self.browser_platform.wait_and_kill(self._power_metrics_process)
+      self.browser_platform.terminate_gracefully(self._power_metrics_process)
       self._power_metrics_process = None

@@ -50,10 +50,10 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
 
     with mock.patch("subprocess.Popen", side_effect=popen_mock) as mock_popen:
       with mock.patch.object(self.platform,
-                             "wait_and_kill") as mock_wait_and_kill:
+                             "terminate_gracefully") as terminate_gracefully:
         yield proc
     mock_popen.assert_called_once()
-    mock_wait_and_kill.assert_called_once()
+    terminate_gracefully.assert_called_once()
 
 
 class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):

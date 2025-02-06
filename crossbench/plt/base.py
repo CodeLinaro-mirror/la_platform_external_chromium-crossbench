@@ -453,17 +453,11 @@ class Platform(abc.ABC):
   def kill(self, process: ProcessLike) -> None:
     self._handle_process_tree(process, lambda process: process.kill())
 
-  def wait_and_kill(self,
-                    process: ProcessLike,
-                    timeout=1,
-                    signal: Optional[Signals] = None) -> None:
-    proc_helper.wait_and_kill(self, process, timeout, signal)
-
-  def wait_and_terminate(self,
-                         process: ProcessLike,
-                         timeout=1,
-                         signal: Optional[Signals] = None) -> None:
-    proc_helper.wait_and_terminate(self, process, timeout, signal)
+  def terminate_gracefully(self,
+                           process: ProcessLike,
+                           timeout=1,
+                           signal: Optional[Signals] = None) -> None:
+    proc_helper.terminate_gracefully(self, process, timeout, signal)
 
   def process_pid(self, process: ProcessLike) -> int:
     if isinstance(process, int):

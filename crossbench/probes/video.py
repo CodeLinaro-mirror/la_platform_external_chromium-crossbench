@@ -311,7 +311,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      self.browser_platform.wait_and_kill(self._record_process, timeout=5)
+      self.browser_platform.terminate_gracefully(self._record_process,
+                                                 timeout=5)
       self._record_process = None
 
   def _convert_to_constant_framerate(self):

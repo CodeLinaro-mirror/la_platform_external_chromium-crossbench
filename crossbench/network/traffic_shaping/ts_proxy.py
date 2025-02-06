@@ -356,7 +356,7 @@ class TsProxyProcess:
 
   def stop(self) -> Optional[str]:
     self._send_command("exit")
-    self._platform.wait_and_kill(self._process)
+    self._platform.terminate_gracefully(self._process)
     _, err = self._process.communicate()
     self._socks_proxy_port = self._initial_socks_proxy_port
     return err

@@ -200,4 +200,4 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   @override
   def quit(self) -> None:
     self._exec_apple_script("quit")
-    self.platform.wait_and_kill(self._browser_process)
+    self.platform.terminate_gracefully(self._browser_process)

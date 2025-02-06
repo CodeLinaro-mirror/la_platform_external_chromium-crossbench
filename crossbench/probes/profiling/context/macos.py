@@ -99,7 +99,7 @@ class MacOSProfilingContext(PosixProfilingContext):
       return
     logging.info("  Waiting for xctrace profiles (slow)...")
     with Spinner():
-      self.browser_platform.wait_and_kill(
+      self.browser_platform.terminate_gracefully(
           self._profiling_process,
           signal=self.browser_platform.signals.SIGINT,
           timeout=60)

@@ -171,7 +171,7 @@ class CrossbenchDevToolsRecorderProxy:
   async def _stop_command(self) -> Tuple[Response, str]:
     if process := self._crossbench_process:
       logging.info("# CROSSBENCH COMMAND: KILL")
-      plt.PLATFORM.wait_and_terminate(process)
+      plt.PLATFORM.terminate_gracefully(process)
     self._state.transition(State.CONNECTED, State.CONNECTED, to=State.CONNECTED)
     return await self._status_command()
 

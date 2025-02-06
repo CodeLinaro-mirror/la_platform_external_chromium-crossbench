@@ -76,7 +76,7 @@ class LinuxProfilingContext(PosixProfilingContext):
 
   def stop_process(self) -> None:
     if self._profiling_process:
-      self.browser_platform.wait_and_kill(self._profiling_process)
+      self.browser_platform.terminate_gracefully(self._profiling_process)
       self._profiling_process = None
 
   def teardown(self) -> ProbeResult:
