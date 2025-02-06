@@ -61,6 +61,7 @@ class ViewportInfo:
     if element_rect:
       self._element_rect = (element_rect * self.actual_pixel_ratio).shift_by(
           self._chrome_window)
+      self._element_rect = self.chrome_window.intersection(self._element_rect)
 
   @property
   def chrome_window(self) -> DisplayRectangle:
