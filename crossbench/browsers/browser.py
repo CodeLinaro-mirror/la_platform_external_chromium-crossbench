@@ -383,6 +383,10 @@ class Browser(abc.ABC):
     del timeout
     raise NotImplementedError(f"Switching tabs is not supported by {self}")
 
+  @property
+  def current_url(self) -> str:
+    raise NotImplementedError(f"Getting current url is not supported by {self}")
+
   @abc.abstractmethod
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     pass

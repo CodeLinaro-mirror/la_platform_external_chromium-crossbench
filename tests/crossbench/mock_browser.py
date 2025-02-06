@@ -103,6 +103,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.clear_cache_dir: bool = False
     self.tab_handler_generator = self._tab_handler_generator()
     self.tab_list: List[int] = [next(self.tab_handler_generator)]
+    self._current_url: str = ""
 
   def expect_js(
       self,
@@ -205,6 +206,14 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
         if strict:
           raise RuntimeError("Secret mismatch")
     return False
+
+  def set_current_url(self, url: str) -> None:
+    self._current_url = url
+
+  @property
+  def current_url(self) -> str:
+    return self._current_url
+
 
 def app_root(platform: plt.Platform) -> pathlib.Path:
   if platform.is_macos:

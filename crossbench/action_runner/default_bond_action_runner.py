@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from urllib.parse import urlparse
+
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.bond_base import BondActionRunner
@@ -14,6 +16,7 @@ from crossbench.bond.bond import BondClient
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
   from crossbench.action_runner.base import ActionRunner
+  from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
 
 
@@ -36,6 +39,13 @@ class DefaultBondActionRunner(BondActionRunner):
       self._bond_client.teardown()
       self._bond_client = None
 
+  def get_current_conference_code(self, browser: Browser) -> str:
+    url = urlparse(browser.current_url)
+    if url.hostname != "meet.google.com":
+      raise RuntimeError(f"Unsupported URL for Bond action: {url.geturl()}")
+    # Conference code is url path without leading '/'
+    return url.path[1:]
+
   def meet_create(self, run: Run, action: i_action.MeetCreateAction):
     bond_client = self.bond_client(run)
     conference_code = bond_client.create_meeting()
@@ -45,3 +55,8 @@ class DefaultBondActionRunner(BondActionRunner):
     self._action_runner.get(
         run,
         GetAction(url, ready_state=ReadyState.COMPLETE, target=action.target))
+
+  def meet_script(self, run: Run, action: i_action.MeetScriptAction):
+    conference_code = self.get_current_conference_code(run.browser)
+    bond_client = self.bond_client(run)
+    bond_client.run_script(conference_code, action.script)

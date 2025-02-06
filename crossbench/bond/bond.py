@@ -192,6 +192,16 @@ class BondClient:
     self._meetings_with_bots.add(conference_code)
     return bot_ids
 
+  def run_script(self, conference_code: str, script: str):
+    request_body_json = {
+        "script": script,
+        "conference": {
+            "conference_code": conference_code,
+        },
+    }
+    self._post_with_retry(f"{ENDPOINT}/v1/conference/{conference_code}/script",
+                          request_body_json)
+
   def remove_all_bots(self, conference_code: str):
     request_body_json = {
         "conference": {

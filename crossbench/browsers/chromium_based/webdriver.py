@@ -228,6 +228,10 @@ class ChromiumBasedWebDriver(
       error += f" with tab_index matching {tab_index}"
     raise RuntimeError(error)
 
+  @property
+  def current_url(self) -> str:
+    return self._private_driver.current_url
+
   def start_profiling(self) -> None:
     assert isinstance(self._private_driver, ChromiumDriver)
     # TODO: reuse the TraceProbe categories,
