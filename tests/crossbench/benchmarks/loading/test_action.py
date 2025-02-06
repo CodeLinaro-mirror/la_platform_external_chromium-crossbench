@@ -502,6 +502,43 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
+  def test_parse_wait_for_element_expected_count(self):
+    config_dict = {
+        "action": "wait_for_element",
+        "selector": "#button",
+        "expected_count": "5"
+    }
+    action = WaitForElementAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_ELEMENT)
+    self.assertEqual(action.selector, "#button")
+    self.assertEqual(action.expected_count, 5)
+    self.assertFalse(action.or_more)
+    action.validate()
+
+    action_2 = WaitForElementAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_wait_for_element_expected_count_or_more(self):
+    config_dict = {
+        "action": "wait_for_element",
+        "selector": "#button",
+        "expected_count": "15",
+        "or_more": True
+    }
+    action = WaitForElementAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_ELEMENT)
+    self.assertEqual(action.selector, "#button")
+    self.assertEqual(action.expected_count, 15)
+    self.assertTrue(action.or_more)
+    action.validate()
+
+    action_2 = WaitForElementAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
   def test_js_script(self):
     config_dict = {
         "action": "js",

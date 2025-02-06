@@ -30,15 +30,23 @@ if TYPE_CHECKING:
 
 class DefaultActionRunner(ActionRunner):
   XPATH_SELECT_ELEMENT = """
-      let element = document.evaluate(arguments[0], document).iterateNext();
+      let elements = [];
+      let xpathResult = document.evaluate(arguments[0], document);
+      let currentElement = xpathResult.iterateNext();
+      let element = currentElement;
+      while (currentElement) {
+        elements.push(currentElement);
+        currentElement = xpathResult.iterateNext();
+      }
   """
 
   CSS_SELECT_ELEMENT = """
-      let element = document.querySelector(arguments[0]);
+      let elements = document.querySelectorAll(arguments[0]);
+      let element = elements[0];
   """
 
   CHECK_ELEMENT_EXISTS = """
-      if (!element) return false;
+      if (!element) return 0;
   """
 
   ELEMENT_SCROLL_INTO_VIEW = """
@@ -47,7 +55,7 @@ class DefaultActionRunner(ActionRunner):
 
   CHECK_ELEMENT_RECT = """
       const rect = element.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return false;
+      if (rect.width === 0 || rect.height === 0) return 0;
   """
 
   ELEMENT_CLICK = """
@@ -55,10 +63,11 @@ class DefaultActionRunner(ActionRunner):
   """
 
   RETURN_SUCCESS = """
-      return true;
+      return elements.length;
   """
 
   SELECT_WINDOW = """
+      let elements = [window];
       let element = window;
   """
 
@@ -67,8 +76,8 @@ class DefaultActionRunner(ActionRunner):
   """
 
   GET_CURRENT_SCROLL_POSITION = """
-      if (!element) return [false, 0];
-      return [true, element[arguments[1]]];
+      if (!element) return [0, 0];
+      return [elements.length, element[arguments[1]]];
   """
 
   _bond: Optional[DefaultBondActionRunner] = None
@@ -220,6 +229,8 @@ class DefaultActionRunner(ActionRunner):
                             actions: Actions,
                             selector: str,
                             timeout: dt.timedelta,
+                            expected_count: int = 1,
+                            or_more: bool = False,
                             scroll_into_view: bool = False,
                             check_element_rect: bool = False) -> None:
     selector, selector_script = self.get_selector_script(
@@ -230,14 +241,34 @@ class DefaultActionRunner(ActionRunner):
         return_on_success=True)
     # TODO: if check_element_rect, we should wait for the position to be the
     # same
+
+    def _exact_match(js_result: int) -> bool:
+      return js_result == expected_count
+
+    def _or_more_match(js_result: int) -> bool:
+      return js_result >= expected_count
+
+    success_condition = _exact_match
+
+    if or_more:
+      success_condition = _or_more_match
+
     actions.wait_js_condition(
-        selector_script, min_wait=0.2, timeout=timeout, arguments=(selector,))
+        selector_script,
+        min_wait=0.2,
+        timeout=timeout,
+        arguments=(selector,),
+        success_condition=success_condition)
 
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
     with run.actions("WaitForElementAction", measure=False) as actions:
       self.wait_for_element_impl(
-          actions=actions, selector=action.selector, timeout=action.timeout)
+          actions=actions,
+          selector=action.selector,
+          expected_count=action.expected_count,
+          or_more=action.or_more,
+          timeout=action.timeout)
 
   def wait_for_ready_state(self, run: Run,
                            action: i_action.WaitForReadyStateAction) -> None:

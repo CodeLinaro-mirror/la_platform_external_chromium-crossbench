@@ -7,9 +7,10 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence
 
 from crossbench.helper.durations import TimeScope
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -19,6 +20,14 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
   from crossbench.runner.timing import AnyTimeUnit, Timing
 
+
+def _default_success_condition(js_result: Any) -> bool:
+  if js_result is True:
+    return True
+
+  ObjectParser.bool(js_result, strict=True)
+
+  return False
 
 class Actions(TimeScope):
 
@@ -105,7 +114,9 @@ class Actions(TimeScope):
       timeout: AnyTimeUnit,
       delay: AnyTimeUnit = 0,
       absolute_time: bool = False,
-      arguments: Sequence[object] = ()) -> None:
+      arguments: Sequence[object] = (),
+      success_condition: Callable[[Any], bool] = _default_success_condition
+  ) -> None:
     wait_range = self._run.wait_range(min_wait, timeout, delay)
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
@@ -116,11 +127,8 @@ class Actions(TimeScope):
           timeout=time_units,
           absolute_time=absolute_time,
           arguments=arguments)
-      if result:
+      if success_condition(result):
         return
-      assert result is False, (
-          f"js_code did not return a bool, but got: {result}\n"
-          f"js-code: {js_code}")
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     self._assert_is_active()
