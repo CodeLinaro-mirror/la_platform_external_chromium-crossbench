@@ -16,7 +16,7 @@ import unittest
 
 from typing_extensions import override
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
@@ -141,7 +141,7 @@ class NativePlatformTestCase(unittest.TestCase):
       tmp_dir = pathlib.Path(tmp_dirname)
       result = self.platform.mkdtemp(dir=tmp_dir)
       self.assertTrue(self.platform.is_dir(result))
-      self.assertTrue(compat.is_relative_to(result, tmp_dir))
+      self.assertTrue(result.is_relative_to(tmp_dir))
     self.assertFalse(self.platform.exists(result))
 
   def test_mktemp(self):
@@ -156,7 +156,7 @@ class NativePlatformTestCase(unittest.TestCase):
       tmp_dir = pathlib.Path(tmp_dirname)
       result = self.platform.mktemp(dir=tmp_dir)
       self.assertTrue(self.platform.is_file(result))
-      self.assertTrue(compat.is_relative_to(result, tmp_dir))
+      self.assertTrue(result.is_relative_to(tmp_dir))
     self.assertFalse(self.platform.exists(result))
 
   def test_exists(self):

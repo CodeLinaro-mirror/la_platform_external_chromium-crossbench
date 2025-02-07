@@ -4,7 +4,6 @@
 
 from unittest import mock
 
-from crossbench import compat
 from crossbench.helper.state import UnexpectedStateError
 from tests import test_helper
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
@@ -177,7 +176,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     self.assertTrue(session.path.is_dir())
     session_symlinks = list((session.browser_dir / "sessions").iterdir())
     self.assertEqual(len(session_symlinks), 1)
-    self.assertEqual(compat.readlink(session_symlinks[0]), session.path)
+    self.assertEqual(session_symlinks[0].readlink(), session.path)
     self.assertTrue(run.did_setup)
     self.assertFalse(run.did_run)
     self.assertTrue(run.did_teardown_browser)

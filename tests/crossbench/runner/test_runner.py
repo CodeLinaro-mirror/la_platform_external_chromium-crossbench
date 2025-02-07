@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.webdriver import RemoteWebDriver
 from crossbench.env import HostEnvironment
@@ -208,7 +207,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     # Pyfakefs is having some issues with relative symlinks, thus we're
     # manually combining the paths.
     runs_dir = browser_dir / "runs"
-    run_symlink = runs_dir / compat.readlink(runs_dir / str(run.index))
+    run_symlink = runs_dir / (runs_dir / str(run.index)).readlink()
     self.assertEqual(run_symlink.resolve(), run.out_dir)
     self._validate_internal_probes(run, runner)
 

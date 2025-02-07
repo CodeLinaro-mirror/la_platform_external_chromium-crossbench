@@ -6,15 +6,11 @@
 from __future__ import annotations
 
 import enum
-import os
 import sys
 import textwrap
 from typing import List, NamedTuple, Optional, Tuple, Type, TypeVar, cast
 
 import tabulate
-from typing_extensions import override
-
-from crossbench import path as pth
 
 if sys.version_info >= (3, 11):
   from enum import StrEnum  # pylint: disable=unused-import
@@ -24,28 +20,6 @@ else:
 
     def __str__(self) -> str:
       return str(self.value)
-
-
-if sys.version_info >= (3, 9):
-
-  def is_relative_to(path_a: pth.AnyPath, path_b: pth.AnyPath) -> bool:
-    return path_a.is_relative_to(path_b)
-
-  def readlink(path: pth.LocalPath) -> pth.LocalPath:
-    return path.readlink()
-else:
-
-  @override
-  def is_relative_to(path_a: pth.AnyPath, path_b: pth.AnyPath) -> bool:
-    try:
-      path_a.relative_to(path_b)
-      return True
-    except ValueError:
-      return False
-
-  @override
-  def readlink(path: pth.LocalPath) -> pth.LocalPath:
-    return pth.LocalPath(os.readlink(path))
 
 
 class StrHelpDataMixin(NamedTuple):

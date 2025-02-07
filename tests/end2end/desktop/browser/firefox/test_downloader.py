@@ -9,7 +9,7 @@ import shutil
 import unittest
 from typing import Union
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.firefox.webdriver import (FirefoxDriverFinder,
                                                    FirefoxWebDriver)
@@ -30,7 +30,7 @@ class FirefoxDownloaderTestCase():
     app_path: pathlib.Path
     with tmp_platform_cache_dir(output_dir):
       app_path = FirefoxDownloader.load(version_or_archive, plt.PLATFORM)
-    assert compat.is_relative_to(app_path, output_dir)
+    assert app_path.is_relative_to(output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
     if plt.PLATFORM.is_macos:

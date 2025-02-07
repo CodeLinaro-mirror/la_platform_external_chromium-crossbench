@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
@@ -31,7 +30,7 @@ def find_safaridriver(bin_path: pth.AnyPath,
   if platform.exists(driver_path):
     return driver_path
   # The system-default Safari version doesn't come with the driver
-  assert compat.is_relative_to(bin_path, Safari.default_path(platform)), (
+  assert bin_path.is_relative_to(Safari.default_path(platform)), (
       f"Expected default Safari.app binary but got {bin_path}")
   return SAFARIDRIVER_PATH
 

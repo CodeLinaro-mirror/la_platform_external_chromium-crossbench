@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Type, cast
 
 from typing_extensions import override
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import V8ToolsFinder
@@ -151,7 +151,7 @@ class V8LogProbe(ChromiumProbe):
     if not browser.platform.is_linux or browser.version.major <= 106:
       return
     for search_path in cast(plt.LinuxPlatform, browser.platform).SEARCH_PATHS:
-      if compat.is_relative_to(browser.path, search_path):
+      if browser.path.is_relative_to(search_path):
         logging.error(
             "Probe with V8 --prof might not work with enterprise profiles")
 

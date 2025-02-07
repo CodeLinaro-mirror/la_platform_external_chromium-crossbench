@@ -11,7 +11,7 @@ from typing import Union
 
 import pytest
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
 from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
@@ -45,7 +45,7 @@ def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
   with tmp_platform_cache_dir(output_dir):
     app_path: pathlib.Path = ChromeDownloader.load(version_or_archive,
                                                    plt.PLATFORM)
-    assert compat.is_relative_to(app_path, output_dir)
+    assert app_path.is_relative_to(output_dir)
     assert archive_dir.exists()
     assert app_path.exists()
     assert version_str in plt.PLATFORM.app_version(app_path)
