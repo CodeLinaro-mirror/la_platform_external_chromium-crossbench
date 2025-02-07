@@ -7,11 +7,11 @@ from __future__ import annotations
 from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.paths import ChromiumPathMixin
+from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 
 
-class Chromium(ChromiumPathMixin, ChromiumBased):
+class Chromium(ChromiumBaseMixin, ChromiumBased):
 
   @property
   @override

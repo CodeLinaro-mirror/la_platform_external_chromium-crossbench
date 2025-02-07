@@ -132,9 +132,9 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       if parent == self.path.parent:
         return
     version = self.platform.sh_stdout(self._driver_path, "--version")
-    assert str(self.major_version) in version, (
+    assert str(self.version.major) in version, (
         f"safaridriver={self._driver_path} version='{version}' "
-        f" doesn't match safari version={self.major_version}")
+        f" doesn't match safari version={self.version.major}")
 
   @override
   def _setup_window(self) -> None:

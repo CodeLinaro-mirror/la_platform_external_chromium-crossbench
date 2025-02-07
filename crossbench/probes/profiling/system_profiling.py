@@ -398,7 +398,7 @@ class ProfilingProbe(Probe):
                                                browser: ChromiumBased) -> None:
     assert (
         browser.attributes.is_chromium_based and
-        browser.major_version >= 124), (
+        browser.version.major >= 124), (
             "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
             "browser version >= M124 https://crrev.com/c/5374765 is required.")
 

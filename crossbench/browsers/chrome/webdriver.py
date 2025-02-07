@@ -14,7 +14,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chrome.paths import ChromePathMixin
+from crossbench.browsers.chrome.base import ChromeBaseMixin
 from crossbench.browsers.chromium import helper
 from crossbench.browsers.chromium.webdriver import (
     ChromiumBasedWebDriver, ChromiumWebDriverAndroid,
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
 
-class ChromeWebDriver(ChromePathMixin, ChromiumBasedWebDriver):
+class ChromeWebDriver(ChromeBaseMixin, ChromiumBasedWebDriver):
 
   WEB_DRIVER_OPTIONS = ChromeOptions
   WEB_DRIVER_SERVICE = ChromeService

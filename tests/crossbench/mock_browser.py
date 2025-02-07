@@ -18,7 +18,9 @@ from crossbench import plt
 from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
+from crossbench.browsers.version import BrowserVersion
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
@@ -28,10 +30,10 @@ if TYPE_CHECKING:
   import datetime as dt
   import re
 
+  from crossbench import path as pth
   from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsData
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-  from crossbench import path as pth
 
 
 @dataclasses.dataclass(frozen=True)
@@ -144,8 +146,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self._is_running = False
 
   @override
-  def _extract_version(self) -> str:
-    return self.VERSION
+  def _extract_version(self) -> BrowserVersion:
+    return ChromiumVersion.parse(self.VERSION)
 
   @override
   def user_agent(self) -> str:

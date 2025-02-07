@@ -17,6 +17,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.settings import Settings
+from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.flags.base import Flags, FlagsData, FlagsT
 
 if TYPE_CHECKING:
@@ -47,13 +48,12 @@ class Browser(abc.ABC):
     self._settings = settings or Settings()
     self._platform = self._settings.platform
     self.label: str = label
-    self._unique_name: str = ""
     self.app_name: str = self.type_name
-    self.version: str = "custom"
-    self.major_version: int = 0
     self.app_path: pth.AnyPath = pth.AnyPath()
-    self.path = pth.AnyPath()
-    self._setup_path(path)
+    self._path = pth.AnyPath()
+    self._unique_name: str = ""
+    self._version: BrowserVersion = UnknownBrowserVersion()
+    self._setup_path_and_version(path)
     self._is_running: bool = False
     self._pid: Optional[int] = None
     self._probes: OrderedSet[Probe] = OrderedSet()
@@ -63,19 +63,19 @@ class Browser(abc.ABC):
     self.clear_cache_dir: bool = True
     self._setup_cache_dir(self._settings)
 
-  def _setup_path(self, path: Optional[pth.AnyPath] = None) -> None:
+  def _setup_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
     if not path:
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
-      self.unique_name = f"{self.type_name}_{self.label}".lower()
+      self._version = self._extract_version()
+      self._unique_name = f"{self.type_name}_{self.label}".lower()
       return
-    self.path = self._resolve_binary(path)
+    self._path = self._resolve_binary(path)
     # TODO clean up
     if not self.platform.is_android:
       assert self.path.is_absolute()
-    self.version = self._extract_version()
-    self.major_version = int(self.version.split(".")[0])
-    self.unique_name = f"{self.type_name}_v{self.major_version}_{self.label}"
+    self._version = self._extract_version()
+    self._unique_name = f"{self.type_name}_v{self.version.major}_{self.label}"
 
   def _setup_flags(self, settings: Settings) -> Flags:
     assert not self._settings.js_flags, (
@@ -104,6 +104,10 @@ class Browser(abc.ABC):
     return self._platform.host_platform
 
   @property
+  def version(self) -> BrowserVersion:
+    return self._version
+
+  @property
   def unique_name(self) -> str:
     return self._unique_name
 
@@ -112,6 +116,10 @@ class Browser(abc.ABC):
     assert name
     # Replace any potentially unsafe chars in the name
     self._unique_name = pth.safe_filename(name).lower()
+
+  @property
+  def path(self) -> pth.AnyPath:
+    return self._path
 
   @property
   def driver_logging(self) -> bool:
@@ -246,12 +254,13 @@ class Browser(abc.ABC):
         "browser": self.type_name,
         "unique_name": self.unique_name,
         "app_name": self.app_name,
-        "version": self.version,
+        "version": self.version.parts_str,
+        "channel": self.version.channel_name,
         "flags": tuple(self.flags),
         "js_flags": tuple(),
         "path": os.fspath(self.path),
         "clear_cache_dir": self.clear_cache_dir,
-        "major_version": self.major_version,
+        "major_version": self.version.major,
         "log": {}
     }
 
@@ -296,7 +305,7 @@ class Browser(abc.ABC):
     return False
 
   @abc.abstractmethod
-  def _extract_version(self) -> str:
+  def _extract_version(self) -> BrowserVersion:
     pass
 
   def clear_cache(self) -> None:

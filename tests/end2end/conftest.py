@@ -71,14 +71,7 @@ def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
   return app_path
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_session(request):
-  test_gsutil_path = request.getfixturevalue("gsutil_path")
-  with plt.PLATFORM.override_binary("gsutil", test_gsutil_path):
-    yield
-
-
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def driver_path(request) -> Optional[pathlib.Path]:
   maybe_driver_path: Optional[LocalPath] = _get_app_path(
       request, TEST_DRIVER_FLAG)
@@ -88,7 +81,7 @@ def driver_path(request) -> Optional[pathlib.Path]:
   return maybe_driver_path
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def browser_path(request) -> Optional[pathlib.Path]:
   maybe_browser_path: Optional[pathlib.Path] = _get_app_path(
       request, TEST_BROWSER_FLAG)

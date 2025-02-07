@@ -15,7 +15,7 @@ from crossbench.browsers.chromium.version import ChromiumVersion
 class ChromeVersion(ChromiumVersion):
 
   _PREFIX_RE = re.compile(
-      r"(?:google )?chr(?:ome)?[- ]?"
+      r"(?:google )?chr(?:ome(?: for testing)?)?[- ]?"
       rf"(?:{ChromiumVersion._CHANNEL_RE.pattern})?[- ]?m?", re.I)
 
   @classmethod

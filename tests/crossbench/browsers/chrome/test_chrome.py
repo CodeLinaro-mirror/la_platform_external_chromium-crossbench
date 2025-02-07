@@ -7,6 +7,7 @@ import argparse
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
                                                   LocalChromeWebDriverAndroid)
 from crossbench.browsers.settings import Settings
@@ -19,8 +20,8 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 class ChromeWebDriverForTesting(ChromeWebDriver):
 
   @override
-  def _extract_version(self) -> str:
-    return mock_browser.MockChromeStable.VERSION
+  def _extract_version(self) -> ChromeVersion:
+    return ChromeVersion.parse(mock_browser.MockChromeStable.VERSION)
 
 
 class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
