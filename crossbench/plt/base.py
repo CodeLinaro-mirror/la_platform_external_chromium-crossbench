@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
-                    Union)
+                    TypeAlias)
 
 import psutil
 
@@ -46,14 +46,13 @@ if TYPE_CHECKING:
 
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.types import JsonDict
-  ProcessLike = Union[Popen, Process, int]
+  ProcessLike: TypeAlias = Popen | Process | int
 
-
-CmdArg = pth.AnyPathLike
-SequenceCmdArgs = Sequence[CmdArg]
-ListCmdArgs = List[CmdArg]
-TupleCmdArgs = Tuple[CmdArg, ...]
-CmdArgs = Union[ListCmdArgs, TupleCmdArgs]
+CmdArg: TypeAlias = pth.AnyPathLike
+SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
+ListCmdArgs: TypeAlias = List[CmdArg]
+TupleCmdArgs: TypeAlias = Tuple[CmdArg, ...]
+CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass
@@ -384,7 +383,7 @@ class Platform(abc.ABC):
     This can be false on linux without $DISPLAY, true an all other platforms."""
     return True
 
-  def sleep(self, seconds: Union[int, float, dt.timedelta]) -> None:
+  def sleep(self, seconds: int | float | dt.timedelta) -> None:
     if isinstance(seconds, dt.timedelta):
       seconds = seconds.total_seconds()
     if seconds == 0:
@@ -422,7 +421,7 @@ class Platform(abc.ABC):
     self._binary_lookup_override[name] = new_path
 
   @contextlib.contextmanager
-  def override_binary(self, binary: Union[pth.AnyPathLike, Binary],
+  def override_binary(self, binary: pth.AnyPathLike | Binary,
                       result: Optional[pth.AnyPath]):
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):

@@ -7,7 +7,7 @@ from __future__ import annotations
 import copy
 import json
 from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Sequence,
-                    Tuple, Union)
+                    Tuple)
 
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
@@ -23,8 +23,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
 
   def create_runner(self,
                     stories: Sequence[Page],
-                    js_side_effects: Union[List[Any], Callable[[Page],
-                                                               List[Any]]],
+                    js_side_effects: List[Any] | Callable[[Page], List[Any]],
                     separate: bool = False,
                     repetitions: int = 3,
                     warmup_repetitions: int = 0,

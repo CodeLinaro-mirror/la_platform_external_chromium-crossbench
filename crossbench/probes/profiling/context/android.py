@@ -9,7 +9,7 @@ import io
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, cast
 
 from typing_extensions import override
 
@@ -139,7 +139,7 @@ def generate_simpleperf_command_line(
     renderer_pid: Optional[int],
     renderer_main_tid: Optional[int],
     call_graph_mode: CallGraphMode,
-    frequency: Optional[Union[int, str]],
+    frequency: Optional[int | str],
     count: Optional[int],
     cpus: Tuple[int, ...],
     events: Tuple[str, ...],

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -165,7 +165,7 @@ class WebPageReplayProbe(Probe):
 
   def httparchive_merge(self, input_archive: LocalPath,
                         output_archive: LocalPath) -> None:
-    cmd: List[Union[str, LocalPath]] = [
+    cmd: List[str | LocalPath] = [
         "go",
         "run",
         self._wpr_go_bin.parent / "httparchive.go",

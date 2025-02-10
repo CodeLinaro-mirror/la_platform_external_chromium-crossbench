@@ -9,8 +9,7 @@ import dataclasses
 import json
 import logging
 import zipfile
-from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Type,
-                    Union)
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Type
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -69,7 +68,7 @@ class TraceProcessorQueryConfig(ConfigObject):
 class CrossbenchTraceUriResolver(TraceUriResolver):
   PREFIX = "crossbench"
 
-  def __init__(self, traces: Union[Iterable[Run], TraceProcessorProbeContext]):
+  def __init__(self, traces: Iterable[Run] | TraceProcessorProbeContext):
 
     def metadata(run: Run) -> Dict[str, str]:
       return {

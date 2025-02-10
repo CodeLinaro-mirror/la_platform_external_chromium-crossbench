@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
@@ -69,7 +69,7 @@ class RemotePopen(subprocess.Popen):
     return self._remote_pid
 
   @override
-  def send_signal(self, signal: Union[int, Signals]) -> None:
+  def send_signal(self, signal: int | Signals) -> None:
     signal = self._platform.signals(signal)
     self._platform.send_signal(self.remote_pid, signal)
 

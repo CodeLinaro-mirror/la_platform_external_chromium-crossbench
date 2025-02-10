@@ -13,7 +13,7 @@ import math
 import re
 import shlex
 from typing import (Any, Callable, Dict, Final, Iterable, List, Optional,
-                    Sequence, Type, TypeVar, Union, cast)
+                    Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
@@ -178,7 +178,7 @@ class ObjectParser:
 
   @classmethod
   def enum(cls, label: str, enum_cls: Type[EnumT], data: Any,
-           choices: Union[Type[EnumT], Iterable[EnumT]]) -> EnumT:
+           choices: Type[EnumT] | Iterable[EnumT]) -> EnumT:
     try:
       # Try direct conversion, relying on the Enum._missing_ hook:
       enum_value = enum_cls(data)

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import TYPE_CHECKING, Optional, Type, Union
+from typing import TYPE_CHECKING, Optional, Type
 
 from typing_extensions import override
 
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.repetitions import (
       CacheTemperatureRepetitionsRunGroup, RepetitionsRunGroup)
   from crossbench.runner.groups.stories import StoriesRunGroup
-  from crossbench.runner.run import Run
 
 
 class V8RCSProbe(ChromiumProbe):
@@ -42,9 +41,8 @@ class V8RCSProbe(ChromiumProbe):
   def get_context_cls(self) -> Type[V8RCSProbeContext]:
     return V8RCSProbeContext
 
-  def concat_group_files(self,
-                         group: Union[RepetitionsRunGroup,
-                                      CacheTemperatureRepetitionsRunGroup],
+  def concat_group_files(self, group: RepetitionsRunGroup
+                         | CacheTemperatureRepetitionsRunGroup,
                          file_name: str) -> LocalPath:
     result_dir = group.get_local_probe_result_dir(self)
     result_files = (run.results[self].file for run in group.runs)

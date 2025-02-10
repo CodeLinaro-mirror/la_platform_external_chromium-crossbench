@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Iterator, Optional, Tuple, Union
+from typing import Iterator, Optional, Tuple
 
 from crossbench import plt
 
 
-def as_timedelta(value: Union[int, float, dt.timedelta]) -> dt.timedelta:
+def as_timedelta(value: int | float | dt.timedelta) -> dt.timedelta:
   if isinstance(value, dt.timedelta):
     return value
   return dt.timedelta(seconds=value)
@@ -37,12 +37,12 @@ class WaitRange:
 
   def __init__(
       self,
-      min: Union[int, float, dt.timedelta] = 0.1,  # pylint: disable=redefined-builtin
-      timeout: Union[int, float, dt.timedelta] = 10,
+      min: int | float | dt.timedelta = 0.1,  # pylint: disable=redefined-builtin
+      timeout: int | float | dt.timedelta = 10,
       factor: float = 1.01,
-      max: Optional[Union[int, float, dt.timedelta]] = None,  # pylint: disable=redefined-builtin
+      max: Optional[int | float | dt.timedelta] = None,  # pylint: disable=redefined-builtin
       max_iterations: Optional[int] = None,
-      delay: Union[int, float, dt.timedelta] = 0) -> None:
+      delay: int | float | dt.timedelta = 0) -> None:
     self.min = as_timedelta(min)
     assert self.min.total_seconds() > 0
     if not max:
@@ -85,7 +85,7 @@ class WaitRange:
 
 
 def wait_with_backoff(
-    wait_range: Union[int, float, dt.timedelta, WaitRange],
+    wait_range: int | float | dt.timedelta | WaitRange,
     platform: Optional[plt.Platform] = None) -> Iterator[Tuple[float, float]]:
   if not isinstance(wait_range, WaitRange):
     wait_range = WaitRange(timeout=wait_range)

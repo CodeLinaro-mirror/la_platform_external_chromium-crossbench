@@ -9,7 +9,7 @@ import logging
 import math
 from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Optional, Sequence, Set, Tuple, Union)
+                    Optional, Sequence, Set, Tuple)
 
 from crossbench.probes import helper
 
@@ -30,9 +30,7 @@ class Metric:
   """
 
   @classmethod
-  def format(cls,
-             value: Union[float, int],
-             stddev: Optional[float] = None) -> str:
+  def format(cls, value: float | int, stddev: Optional[float] = None) -> str:
     """Format value and stdev to only expose significant + 1 digits.
     Example outputs:
       100 ± 10%
@@ -135,7 +133,7 @@ class Metric:
     return json_data
 
 
-def geomean(values: Iterable[Union[int, float]]) -> float:
+def geomean(values: Iterable[int | float]) -> float:
   product: float = 1
   length: int = 0
   for value in values:
@@ -191,7 +189,7 @@ class MetricsMerger:
     return merger
 
   def __init__(self,
-               *args: Union[Dict, List[Dict]],
+               *args: Dict | List[Dict],
                key_fn: Optional[helper.KeyFnType] = None):
     """Create a new MetricsMerger
 
@@ -234,7 +232,7 @@ class MetricsMerger:
       else:
         self._data[key] = Metric.from_json(item)
 
-  def add(self, data: Union[Dict, List[Dict]]) -> None:
+  def add(self, data: Dict | List[Dict]) -> None:
     """ Merge "arbitrary" hierarchical data that ends up having primitive leafs.
     Anything that is not a dict is considered a leaf node.
     """
@@ -246,8 +244,7 @@ class MetricsMerger:
       self._merge(data)
 
   def _merge(
-      self, data: Union[Dict,
-                        List[Dict]], parent_path: Tuple[str, ...] = ()) -> None:
+      self, data: Dict | List[Dict], parent_path: Tuple[str, ...] = ()) -> None:
     assert isinstance(data, dict)
     for property_name, value in data.items():
       path = parent_path + (property_name,)

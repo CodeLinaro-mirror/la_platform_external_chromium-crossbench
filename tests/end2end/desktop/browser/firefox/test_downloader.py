@@ -7,7 +7,6 @@ from __future__ import annotations
 import pathlib
 import shutil
 import unittest
-from typing import Union
 
 from crossbench import plt
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
@@ -24,7 +23,7 @@ class FirefoxDownloaderTestCase():
   def _load_and_check_version(self,
                               output_dir: pathlib.Path,
                               archive_dir: pathlib.Path,
-                              version_or_archive: Union[str, pathlib.Path],
+                              version_or_archive: str | pathlib.Path,
                               version_str: str,
                               expect_archive: bool = True) -> pathlib.Path:
     app_path: pathlib.Path

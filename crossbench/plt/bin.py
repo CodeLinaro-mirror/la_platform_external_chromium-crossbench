@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Tuple, TypeAlias
 
 from typing_extensions import override
 
@@ -41,7 +41,7 @@ class UnsupportedPlatformError(BinaryNotFoundError):
             f"Only supported on {self.expected_platform_name}")
 
 
-BinaryLookup = Union[pth.AnyPathLike, Iterable[pth.AnyPathLike]]
+BinaryLookup: TypeAlias = pth.AnyPathLike | Iterable[pth.AnyPathLike]
 
 
 class Binary:

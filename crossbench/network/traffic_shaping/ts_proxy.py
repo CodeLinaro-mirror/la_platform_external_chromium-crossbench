@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Union
+from typing import IO, TYPE_CHECKING, Iterator, List, Optional
 
 from typing_extensions import override
 
@@ -184,7 +184,7 @@ class TsProxyProcess:
       out_kbps: Optional[int] = None,
       window: Optional[int] = None,
       verbose: bool = False,
-      timeout: Union[int, float] = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+      timeout: int | float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     self._platform = platform
     """Start TsProxy server and verify that it started."""
     cmd: ListCmdArgs = [
@@ -271,7 +271,7 @@ class TsProxyProcess:
     if encoding != "UTF-8":
       logging.warning("Decoding will use %s instead of UTF-8", encoding)
 
-  def _wait_for_startup(self, timeout: Union[int, float]) -> None:
+  def _wait_for_startup(self, timeout: int | float) -> None:
     for _ in wait.wait_with_backoff(timeout):
       if self._has_started():
         logging.info("TsProxy: port=%i", self._socks_proxy_port)
@@ -293,7 +293,7 @@ class TsProxyProcess:
     self._socks_proxy_port = NumberParser.port_number(port, "socks_proxy_port")
     return True
 
-  def _read_line_ts_proxy_stdout(self, timeout: Union[int, float]) -> str:
+  def _read_line_ts_proxy_stdout(self, timeout: int | float) -> str:
     for _ in wait.wait_with_backoff(timeout):
       try:
         return self._stdout.readline().strip()
@@ -304,7 +304,7 @@ class TsProxyProcess:
   def _send_command(
       self,
       command: str,
-      timeout: Union[int, float] = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+      timeout: int | float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     logging.debug("TsProxy: Sending command to ts_proxy_server: %s", command)
     self._stdin.write(f"{command}\n")
     command_output = self._wait_for_status_response(timeout)
@@ -314,7 +314,7 @@ class TsProxyProcess:
     if not success:
       raise TsProxyServerError(f"Failed to execute command: {command}")
 
-  def _wait_for_status_response(self, timeout: Union[int, float]) -> List[str]:
+  def _wait_for_status_response(self, timeout: int | float) -> List[str]:
     logging.debug("TsProxy: waiting for status response")
     command_output = []
     for _ in wait.wait_with_backoff(timeout):

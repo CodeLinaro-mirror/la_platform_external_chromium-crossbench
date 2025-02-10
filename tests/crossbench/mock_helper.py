@@ -12,7 +12,7 @@ import pathlib
 import shlex
 import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional,
-                    Sequence, Union)
+                    Sequence)
 
 import psutil
 from typing_extensions import override
@@ -48,9 +48,7 @@ class DownloadMockData:
 
 class ShResult:
 
-  def __init__(self,
-               result: Union[str, bytes] = "",
-               success: bool = True) -> None:
+  def __init__(self, result: str | bytes = "", success: bool = True) -> None:
     if isinstance(result, str):
       result = result.encode("utf-8")
 
@@ -106,8 +104,8 @@ class MockPlatformMixin:
       self.touch(path)
     return path
 
-  def expect_sh(
-      self, *args: CmdArg, result: Union[str, ShResult] = ShResult()) -> None:
+  def expect_sh(self, *args: CmdArg,
+                result: str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []

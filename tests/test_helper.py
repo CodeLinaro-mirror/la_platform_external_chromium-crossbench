@@ -9,7 +9,7 @@ import pathlib
 import shutil
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Tuple, Union
+from typing import Any, Tuple
 
 import pytest
 
@@ -72,7 +72,7 @@ class TestEnv():
     assert not tuple(self.output_dir.glob("**/*"))
 
 
-def run_pytest(path: Union[str, pathlib.Path], *args):
+def run_pytest(path: str | pathlib.Path, *args):
   extra_args = [*args, *sys.argv[1:]]
   # Run tests single-threaded by default when running the test file directly.
   if "-n" not in extra_args:

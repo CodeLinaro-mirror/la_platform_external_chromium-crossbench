@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import logging
 from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set,
-                    TextIO, Tuple, Type, Union, cast)
+                    TextIO, Tuple, Type, cast)
 
 import hjson
 
@@ -137,7 +137,7 @@ class BrowserVariantsConfig:
         f"{repr(raw_browser_data)}")
 
   def _parse_browser_dict(self, name: str,
-                          raw_browser_data: Union[str, Dict[str, Any]],
+                          raw_browser_data: str | Dict[str, Any],
                           args: argparse.Namespace) -> None:
     path_or_identifier: Optional[str] = None
     if isinstance(raw_browser_data, dict):
@@ -200,8 +200,7 @@ class BrowserVariantsConfig:
     return f"{name}_{convert_flags_to_label(*flags)}"
 
   def _create_unique_variant_labels(self, name: str,
-                                    raw_browser_data: Union[str, Dict[str,
-                                                                      Any]],
+                                    raw_browser_data: str | Dict[str, Any],
                                     flag_variants: FlagsGroupConfig) -> Dict:
     labels_lookup: Dict[FlagsVariantConfig, str] = {}
     group_labels = set(variant.label for variant in flag_variants)
@@ -231,7 +230,7 @@ class BrowserVariantsConfig:
 
   def _get_browser_variants(
       self, browser_name: str,
-      raw_browser_data: Union[str, Dict[str, Any]]) -> FlagsGroupConfig:
+      raw_browser_data: str | Dict[str, Any]) -> FlagsGroupConfig:
     default_variant = FlagsVariantConfig(DEFAULT_LABEL)
     flag_variants = FlagsGroupConfig((default_variant,))
     if not isinstance(raw_browser_data, dict):
@@ -525,8 +524,7 @@ class BrowserVariantsConfig:
                    browser_instance.unique_name, path)
       self._variants.append(browser_instance)
 
-  def _get_browser_network(self, network_config: Union[pth.LocalPath,
-                                                       NetworkConfig],
+  def _get_browser_network(self, network_config: pth.LocalPath | NetworkConfig,
                            browser_platform: plt.Platform) -> Network:
     if not isinstance(network_config, NetworkConfig):
       network_config = NetworkConfig.parse(network_config)

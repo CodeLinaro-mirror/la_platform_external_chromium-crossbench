@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import shlex
 from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Sequence,
-                    Tuple, Union, cast)
+                    Tuple, cast)
 
 from typing_extensions import override
 
@@ -38,7 +38,8 @@ V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
 RENDERER_CMD_PATH: Final[pth.LocalPath] = pth.LocalPath(
     __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
 
-def perf_frequency(value: Any) -> Union[str, int]:
+
+def perf_frequency(value: Any) -> str | int:
   if value == "max":
     return "max"
   return NumberParser.positive_int(value, "frequency")
@@ -205,7 +206,7 @@ class ProfilingProbe(Probe):
                target: TargetMode = TargetMode.BROWSER_APP_ONLY,
                pin_renderer_main_core: Optional[int] = None,
                call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
-               frequency: Optional[Union[int, str]] = None,
+               frequency: Optional[int | str] = None,
                clockid: Optional[str] = None,
                count: Optional[int] = None,
                cpu: Sequence[int] = (),
@@ -227,7 +228,7 @@ class ProfilingProbe(Probe):
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY,
         TargetMode.RENDERER_PROCESS_ONLY) or pin_renderer_main_core is not None
-    self._frequency: Optional[Union[int, str]] = frequency
+    self._frequency: Optional[int | str] = frequency
     self._clockid: Optional[str] = clockid
     self._count: Optional[int] = count
     self._cpu: Tuple[int, ...] = tuple(cpu)
@@ -290,7 +291,7 @@ class ProfilingProbe(Probe):
     return self._start_profiling_after_setup
 
   @property
-  def frequency(self) -> Optional[Union[int, str]]:
+  def frequency(self) -> Optional[int | str]:
     return self._frequency
 
   @property

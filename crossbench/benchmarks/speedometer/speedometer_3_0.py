@@ -8,7 +8,7 @@ import argparse
 import datetime as dt
 import enum
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type, Union, cast)
+                    Type, cast)
 
 from typing_extensions import override
 
@@ -23,9 +23,10 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench.cli.parser import CrossBenchArgumentParser
-  ShuffleSeedT = Optional[Union[str, int]]
   from crossbench.runner.actions import Actions
   from crossbench.types import Json
+
+  ShuffleSeedT = Optional[str | int]
 
 
 class Speedometer30Probe(SpeedometerProbe):

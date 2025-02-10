@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 import pathlib
 import shutil
-from typing import Union
 
 import pytest
 
@@ -39,7 +38,7 @@ def check_gsutil_access():
 
 
 def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
-                            version_or_archive: Union[str, pathlib.Path],
+                            version_or_archive: str | pathlib.Path,
                             version_str: str) -> pathlib.Path:
   check_gsutil_access()
   with tmp_platform_cache_dir(output_dir):

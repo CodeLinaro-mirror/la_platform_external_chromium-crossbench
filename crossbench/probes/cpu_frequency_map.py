@@ -8,10 +8,10 @@ import abc
 import argparse
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Hashable, List, Pattern, Type,
-                    Union)
+                    TypeAlias)
 
-from typing_extensions import override
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
@@ -38,7 +38,7 @@ class _ExtremeFrequency(StrEnum):
 
 
 if TYPE_CHECKING:
-  FrequencyType = Union[_ExtremeFrequency, int]
+  FrequencyType: TypeAlias = _ExtremeFrequency | int
 
 
 class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
@@ -152,8 +152,8 @@ class ExplicitCPUFrequencyMap(CPUFrequencyMap):
       with exception.annotate_argparsing(f"Parsing cpu frequency: {k}, {v}"):
         typed_map[ObjectParser.non_empty_str(k)] = (
             CPUFrequencyMap._parse_frequency(v))
-    self._frequencies: immutabledict[str, Union[_ExtremeFrequency,
-                                                int]] = immutabledict(typed_map)
+    self._frequencies: immutabledict[str,
+                                     FrequencyType] = immutabledict(typed_map)
 
   @override
   def get_target_frequencies(

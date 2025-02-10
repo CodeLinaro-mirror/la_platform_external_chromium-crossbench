@@ -10,7 +10,7 @@ import copy
 import dataclasses
 import pathlib
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
-                    Union, cast)
+                    cast)
 
 from typing_extensions import override
 
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class JsInvocation:
   result: Any
-  script: Optional[Union[str, re.Pattern]] = None
+  script: Optional[str | re.Pattern] = None
   arguments: Optional[List[Any]] = None
   timeout: Optional[dt.timedelta] = None
 

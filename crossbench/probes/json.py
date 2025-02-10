@@ -10,7 +10,7 @@ import json
 import logging
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
-                    Tuple, Type, TypeVar, Union)
+                    Tuple, Type, TypeVar)
 
 from tabulate import tabulate
 from typing_extensions import override
@@ -104,7 +104,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def write_group_result(
       self,
       group: RunGroup,
-      merged_data: Union[Dict, List, MetricsMerger],
+      merged_data: Dict | List | MetricsMerger,
       csv_formatter: Optional[Type[CSVFormatter]] = CSVFormatter,
       value_fn: Callable[[Any], Any] = metric_geomean) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)

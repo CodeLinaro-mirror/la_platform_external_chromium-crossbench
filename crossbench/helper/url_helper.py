@@ -8,10 +8,10 @@ import logging
 import urllib.error
 import urllib.parse as urlparse
 import urllib.request
-from typing import Dict, Union
+from typing import Dict
 
 
-def urlopen(url: str, timeout: Union[int, float] = 10):
+def urlopen(url: str, timeout: int | float = 10):
   try:
     logging.debug("Opening url: %s", url)
     return urllib.request.urlopen(url, timeout=timeout)

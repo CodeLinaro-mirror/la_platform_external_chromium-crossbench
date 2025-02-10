@@ -9,8 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import (TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type,
-                    Union)
+from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type
 
 from typing_extensions import override
 
@@ -143,7 +142,7 @@ class VideoProbe(Probe):
     group_files = [video_file]
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
-    video_file_inputs: List[Union[str, LocalPath]] = []
+    video_file_inputs: List[str | LocalPath] = []
     for run in runs:
       video_file_inputs += ["-i", run.results[self].file_list[0]]
     draw_text = ("fontfile='/Library/Fonts/Arial.ttf':"

@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import re
-from typing import TYPE_CHECKING, Iterator, Optional, Union
+from typing import TYPE_CHECKING, Iterator, Optional
 from urllib.parse import urlparse
 
 from typing_extensions import override
@@ -34,7 +34,7 @@ class ReplayNetwork(Network):
   from a an archive."""
 
   def __init__(self,
-               archive: Union[pth.LocalPath, str],
+               archive: pth.LocalPath | str,
                traffic_shaper: Optional[TrafficShaper] = None,
                browser_platform: Optional[plt.Platform] = None):
     super().__init__(traffic_shaper, browser_platform)
@@ -83,7 +83,7 @@ class ReplayNetwork(Network):
       self.host_platform.sh("gsutil", "cp", url, local_path)
     return local_path
 
-  def _ensure_archive(self, archive: Union[pth.LocalPath, str]) -> LocalPath:
+  def _ensure_archive(self, archive: pth.LocalPath | str) -> LocalPath:
     if isinstance(archive, str) and archive.startswith(GS_PREFIX):
       return self._download_gcloud_archive(url=archive)
     return PathParser.existing_file_path(archive).resolve()

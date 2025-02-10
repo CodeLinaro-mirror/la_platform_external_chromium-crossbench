@@ -16,8 +16,8 @@ import logging
 import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
-                    Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union,
-                    cast)
+                    Iterable, List, Optional, Set, Tuple, Type, TypeAlias,
+                    TypeVar, cast)
 from urllib.parse import urlparse
 
 import tabulate
@@ -30,7 +30,7 @@ from crossbench.helper.cwd import ChangeCWD
 from crossbench.parse import ObjectParser, PathParser
 
 if TYPE_CHECKING:
-  ArgParserType = Union[Callable[..., Any], Type]
+  ArgParserType: TypeAlias = Callable[..., Any] | Type
 
 
 class ConfigError(argparse.ArgumentTypeError):

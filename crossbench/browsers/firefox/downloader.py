@@ -8,8 +8,7 @@ import abc
 import os
 import shutil
 import urllib.parse
-from typing import (TYPE_CHECKING, Dict, Final, Iterable, Optional, Tuple, Type,
-                    Union)
+from typing import TYPE_CHECKING, Dict, Final, Iterable, Optional, Tuple, Type
 
 from typing_extensions import override
 
@@ -64,8 +63,7 @@ class FirefoxDownloader(Downloader):
     return (browser_platform.exists(path) and
             path.name.endswith(cls.ARCHIVE_SUFFIX))
 
-  def __init__(self, version_identifier: Union[str,
-                                               LocalPath], browser_type: str,
+  def __init__(self, version_identifier: str | LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform):
     assert not browser_type
     assert not platform_name

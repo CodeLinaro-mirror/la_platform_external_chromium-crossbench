@@ -14,7 +14,7 @@ import sys
 import textwrap
 import traceback
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type, Union)
+                    Type)
 
 import tabulate as tbl
 
@@ -82,7 +82,7 @@ class EnableDebuggingAction(argparse.Action):
   def __call__(self,
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
-               values: Union[str, Sequence[Any], None],
+               values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
     setattr(namespace, "throw", True)
     setattr(namespace, "verbosity", 3)
@@ -95,7 +95,7 @@ class EnableFastAction(argparse.Action):
   def __call__(self,
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
-               values: Union[str, Sequence[Any], None],
+               values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
     setattr(namespace, "cool_down_time", dt.timedelta())
     setattr(namespace, "splash_screen", SplashScreen.NONE)
@@ -112,7 +112,7 @@ class AppendDebuggerProbeAction(argparse.Action):
   def __call__(self,
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
-               values: Union[str, Sequence[Any], None],
+               values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
     probes: List[ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings = {"debugger": "gdb"}

@@ -7,7 +7,8 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional,
+                    TypeAlias)
 
 from typing_extensions import override
 
@@ -15,6 +16,8 @@ from crossbench import compat
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
 
+if TYPE_CHECKING:
+  Number: TypeAlias = float | int
 
 @enum.unique
 class ValidationMode(compat.StrEnumWithHelp):
@@ -36,7 +39,6 @@ def merge_bool(name: str, left: Optional[bool],
   return left
 
 
-Number = Union[float, int]
 
 
 def merge_number_max(name: str, left: Optional[Number],

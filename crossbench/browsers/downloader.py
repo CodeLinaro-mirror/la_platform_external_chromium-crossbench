@@ -12,7 +12,7 @@ import re
 import shutil
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type
 
 from typing_extensions import override
 
@@ -50,7 +50,7 @@ class Downloader(abc.ABC):
     pass
 
   @classmethod
-  def load(cls, archive_path_or_version_identifier: Union[str, pth.LocalPath],
+  def load(cls, archive_path_or_version_identifier: str | pth.LocalPath,
            browser_platform: Platform) -> pth.LocalPath:
     logging.debug("Downloading chrome %s binary for %s",
                   archive_path_or_version_identifier, browser_platform)
@@ -59,8 +59,7 @@ class Downloader(abc.ABC):
                                     browser_platform)
     return loader.app_path
 
-  def __init__(self, archive_path_or_version_identifier: Union[str,
-                                                               pth.LocalPath],
+  def __init__(self, archive_path_or_version_identifier: str | pth.LocalPath,
                browser_type: str, platform_name: str,
                browser_platform: Platform):
     assert browser_type, "Missing browser_type"
@@ -82,8 +81,8 @@ class Downloader(abc.ABC):
     self._validate()
 
   def find(
-      self, archive_path_or_version_identifier: Union[str, pth.LocalPath]
-  ) -> pth.LocalPath:
+      self,
+      archive_path_or_version_identifier: str | pth.LocalPath) -> pth.LocalPath:
     version_value = os.fspath(archive_path_or_version_identifier)
     if self.is_valid_version(version_value):
       self._requested_version = self._parse_version(version_value)

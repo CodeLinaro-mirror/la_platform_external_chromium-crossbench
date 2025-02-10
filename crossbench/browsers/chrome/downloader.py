@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import zipfile
 from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
-                    Type, Union, cast)
+                    Type, cast)
 
 from typing_extensions import override
 
@@ -205,9 +205,8 @@ class ChromeDownloaderLinux(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform):
     assert not browser_type
     if browser_platform.is_linux and browser_platform.is_x64:
       platform_name = "linux64"
@@ -271,9 +270,8 @@ class ChromeDownloaderMacOS(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform):
     assert not browser_type
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
     platform_name = "mac-universal"
@@ -374,9 +372,8 @@ class ChromeDownloaderAndroid(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform):
     assert not browser_type
     assert browser_platform.is_android, (
         f"{type(self)} can only be used on Android")
@@ -532,9 +529,8 @@ class ChromeDownloaderWin(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform):
     assert not browser_type
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
     platform_name = "win64-clang"

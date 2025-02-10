@@ -9,7 +9,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import (TYPE_CHECKING, Final, Iterator, List, Mapping, Optional,
-                    Tuple, Union)
+                    Tuple)
 
 from typing_extensions import override
 
@@ -72,7 +72,7 @@ WPR_PREBUILT_LOOKUP: Final[Mapping[Tuple[str, str], WPRCloudBinary]] = {
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
-               archive: Union[LocalPath, str],
+               archive: LocalPath | str,
                traffic_shaper: Optional[TrafficShaper] = None,
                wpr_go_bin: Optional[LocalPath] = None,
                browser_platform: Platform = PLATFORM,

@@ -7,7 +7,7 @@ from __future__ import annotations
 import enum
 import signal
 import sys
-from typing import Union
+from typing import TypeAlias
 
 
 class Signals(enum.IntEnum):
@@ -176,7 +176,7 @@ class MacOSSignals(_PosixSignals):
 
 
 # Type unions of concrete Signals implementations.
-AnySignals = Union[WinSignals, PosixBaseSignal, PosixSignals, LinuxSignals,
-                   MacOSSignals]
-AnyPosixSignals = Union[PosixBaseSignal, PosixSignals, LinuxSignals,
-                        MacOSSignals]
+AnySignals: TypeAlias = (
+    WinSignals | PosixBaseSignal | PosixSignals | LinuxSignals | MacOSSignals)
+AnyPosixSignals: TypeAlias = (
+    PosixBaseSignal | PosixSignals | LinuxSignals | MacOSSignals)
