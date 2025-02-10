@@ -8,11 +8,9 @@ import enum
 from argparse import ArgumentTypeError
 from typing import Any, Tuple
 
-from crossbench import compat
-
 
 @enum.unique
-class ViewportMode(compat.StrEnum):
+class ViewportMode(enum.StrEnum):
   SIZE = "size"
   MAXIMIZED = "maximized"
   FULLSCREEN = "fullscreen"

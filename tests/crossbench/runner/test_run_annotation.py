@@ -11,10 +11,9 @@ from ordered_set import OrderedSet
 
 from crossbench.runner.run_annotation import RunAnnotation, WarnLevel
 from tests import test_helper
-from tests.crossbench.base import AssertNoLogsCompatMixin
 
 
-class RunAnnotationTestCase(AssertNoLogsCompatMixin, unittest.TestCase):
+class RunAnnotationTestCase(unittest.TestCase):
 
   def test_fatal(self):
     message = "FATAL custom message"

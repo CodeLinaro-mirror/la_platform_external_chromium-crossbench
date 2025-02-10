@@ -12,15 +12,15 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional,
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   Number: TypeAlias = float | int
 
 @enum.unique
-class ValidationMode(compat.StrEnumWithHelp):
+class ValidationMode(StrEnumWithHelp):
   THROW = ("throw", "Strict mode, throw and abort on env issues")
   PROMPT = ("prompt", "Prompt to accept potential env issues")
   WARN = ("warn", "Only display a warning for env issue")

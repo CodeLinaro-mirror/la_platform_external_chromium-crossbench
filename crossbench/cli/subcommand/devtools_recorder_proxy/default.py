@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Any, Coroutine, Dict, Optional, Tuple
 
 from websockets import server as websockets
 
-from crossbench import compat
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.helper.state import BaseState, StateMachine
@@ -40,7 +39,7 @@ class State(BaseState):
 
 
 @enum.unique
-class Response(compat.StrEnum):
+class Response(enum.StrEnum):
   STATUS = "status"
   OUTPUT = "output"
 

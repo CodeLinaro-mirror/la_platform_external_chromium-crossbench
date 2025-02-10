@@ -11,7 +11,7 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
                     Sequence, Set, Tuple, Type)
 
-from crossbench import compat, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
@@ -37,6 +37,7 @@ from crossbench.runner.groups.stories import StoriesRunGroup
 from crossbench.runner.groups.thread import RunThreadGroup
 from crossbench.runner.run import Run
 from crossbench.runner.timing import Timing
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
@@ -52,7 +53,7 @@ class RunnerException(exception.MultiException):
 
 
 @enum.unique
-class ThreadMode(compat.StrEnumWithHelp):
+class ThreadMode(StrEnumWithHelp):
   NONE = ("none", (
       "Execute all browser-sessions sequentially, default. "
       "Low interference risk, use for worry-free time-critical measurements."))

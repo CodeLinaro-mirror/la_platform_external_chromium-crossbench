@@ -12,7 +12,6 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.benchmarks.speedometer.speedometer import (
     ProbeClsTupleT, SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter,
     SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
@@ -20,6 +19,7 @@ from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 from crossbench.stories.story import Story
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from crossbench.cli.parser import CrossBenchArgumentParser
@@ -76,7 +76,7 @@ class Speedometer30ProbeContext(SpeedometerProbeContext):
 
 
 @enum.unique
-class MeasurementMethod(compat.StrEnumWithHelp):
+class MeasurementMethod(StrEnumWithHelp):
   RAF = ("raf", "requestAnimationFrame-based measurement")
   TIMER = ("timer", "setTimeout-based measurement")
 

@@ -23,11 +23,12 @@ from urllib.parse import urlparse
 import tabulate
 from typing_extensions import override
 
-from crossbench import compat, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench.helper import txt_helper
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.parse import ObjectParser, PathParser
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   ArgParserType: TypeAlias = Callable[..., Any] | Type
@@ -265,7 +266,7 @@ class _ConfigArgParser:
 
   def _enum_help_text(self) -> List[Tuple[str, str]]:
     if self.type and hasattr(self.type, "help_text_items"):
-      # See compat.StrEnumWithHelp
+      # See str_enum_with_help.StrEnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
     assert self.choices
     return [self._choices_help_text(choice.value for choice in self.choices)]
@@ -390,7 +391,7 @@ class _ConfigArgParser:
 ConfigEnumT = TypeVar("ConfigEnumT", bound="ConfigEnum")
 
 
-class ConfigEnum(compat.StrEnumWithHelp):
+class ConfigEnum(StrEnumWithHelp):
 
   @classmethod
   def parse(cls: Type[ConfigEnumT], value: Any) -> ConfigEnumT:
@@ -846,7 +847,7 @@ class _ConfigKwargsParser:
 
 
 @enum.unique
-class UnusedPropertiesMode(compat.StrEnum):
+class UnusedPropertiesMode(enum.StrEnum):
   IGNORE = "ignore"
   WARN = "warn"
   ERROR = "error"

@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
+import enum
 import json
 import logging
 
 import pytest
 
-from crossbench import compat
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.network.replay.wpr import WPR_PREBUILT_LOOKUP
@@ -84,7 +84,7 @@ def _batch_trace_process_config() -> str:
   })
 
 
-class BenchmarkType(compat.StrEnum):
+class BenchmarkType(enum.StrEnum):
   PHONE = "loadline-phone"
   TABLET = "loadline-tablet"
 

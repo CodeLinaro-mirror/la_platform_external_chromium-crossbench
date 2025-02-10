@@ -3,10 +3,11 @@
 # found in the LICENSE file.
 
 import argparse
+import enum
 import unittest
 
-from crossbench import compat
 from crossbench.probes.probe import Probe, ProbeConfigParser
+from crossbench.str_enum_with_help import StrEnumWithHelp
 from tests import test_helper
 
 
@@ -183,7 +184,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_enum_type(self):
 
-    class MyEnum(compat.StrEnum):
+    class MyEnum(enum.StrEnum):
       ONE = "one"
       TWO = "two"
 
@@ -214,7 +215,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_enum_with_help(self):
 
-    class MyEnum(compat.StrEnumWithHelp):
+    class MyEnum(StrEnumWithHelp):
       ONE = ("oneX", "the one help")
       TWO = ("twoX", "the two help")
 

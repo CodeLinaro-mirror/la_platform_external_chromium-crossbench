@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Iterable, Optional, Set, Type
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli.config.secrets import Secrets
@@ -29,6 +28,7 @@ from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
 from crossbench.runner.run_annotation import RunAnnotation
 from crossbench.runner.timing import Timing
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class Temperature(compat.StrEnumWithHelp):
+class Temperature(StrEnumWithHelp):
   COLD = ("cold", "first run")
   WARM = ("warm", "second run")
   HOT = ("hot", "third run")

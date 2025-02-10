@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import enum
 import signal
-import sys
 from typing import TypeAlias
 
 
@@ -115,8 +114,7 @@ class LinuxSignals(_PosixSignals):
   SIGUSR2 = 12
   SIGPIPE = 13
   SIGALRM = 14
-  if sys.version_info >= (3, 11):
-    SIGSTKFLT = 16
+  SIGSTKFLT = 16
   SIGCLD = 17
   SIGCHLD = 17
   SIGCONT = 18

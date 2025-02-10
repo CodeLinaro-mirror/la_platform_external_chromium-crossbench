@@ -10,7 +10,6 @@ import datetime as dt
 import io
 import logging
 import pathlib
-import sys
 from typing import Final, List, Optional, Sequence, Tuple
 from unittest import mock
 
@@ -65,26 +64,7 @@ class CrossbenchFakeFsTestCase(
 TEST_WARNING = "Test Warning"
 
 
-class AssertNoLogsCompatMixin:
-
-  @contextlib.contextmanager
-  def assertNoLogs(self, level: Optional[str] = None):
-    if sys.version_info >= (3, 10):
-      with super().assertNoLogs(level=level):
-        yield
-    else:
-      # TODO: remove once migrated to 3.11
-      int_level = getattr(logging, level)
-      with self.assertLogs(level=level) as cm:
-        logging.log(int_level, TEST_WARNING)
-        yield
-      self.assertEqual(len(cm.output), 1)
-      # The global logger adds prefixes.
-      self.assertTrue(cm.output[0].endswith(TEST_WARNING))
-
-
-class BaseCrossbenchTestCase(
-    AssertNoLogsCompatMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]

@@ -7,7 +7,7 @@ from __future__ import annotations
 import enum
 from typing import Optional
 
-from crossbench.compat import StrEnumWithHelp
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 
 @enum.unique

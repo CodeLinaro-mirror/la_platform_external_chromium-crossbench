@@ -11,7 +11,6 @@ import logging
 import plistlib
 import re
 import socket
-import sys
 import traceback as tb
 from subprocess import SubprocessError
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
@@ -117,8 +116,7 @@ class MacOSPlatform(PosixPlatform):
     if self.is_remote:
       return super()._cpu_freq()
     # BUG(394337121): older macOs versions on arm segfault with python 3.11
-    if (self.is_arm64 and sys.version_info >= (3, 11) and
-        self.version_parts < (12, 0)):
+    if self.is_arm64 and self.version_parts < (12, 0):
       return None
     try:
       return super()._cpu_freq()

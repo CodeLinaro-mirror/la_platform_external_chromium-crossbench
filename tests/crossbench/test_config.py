@@ -16,17 +16,17 @@ from unittest import mock
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.config import (ConfigEnum, ConfigObject, ConfigParser,
                                UnusedPropertiesMode)
 from crossbench.exception import MultiException
 from crossbench.parse import NumberParser, ObjectParser
+from crossbench.str_enum_with_help import StrEnumWithHelp
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 @enum.unique
-class GenericEnum(compat.StrEnumWithHelp):
+class GenericEnum(StrEnumWithHelp):
   A = ("a", "A Help")
   B = ("b", "B Help")
   C = ("c", "C Help")

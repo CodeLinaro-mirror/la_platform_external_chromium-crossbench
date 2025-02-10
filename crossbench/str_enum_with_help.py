@@ -1,25 +1,14 @@
 # Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-""" A collection of helpers that rely on non-crossbench code."""
 
 from __future__ import annotations
 
 import enum
-import sys
 import textwrap
 from typing import List, NamedTuple, Optional, Tuple, Type, TypeVar, cast
 
 import tabulate
-
-if sys.version_info >= (3, 11):
-  from enum import StrEnum  # pylint: disable=unused-import
-else:
-
-  class StrEnum(str, enum.Enum):
-
-    def __str__(self) -> str:
-      return str(self.value)
 
 
 class StrHelpDataMixin(NamedTuple):
@@ -28,6 +17,7 @@ class StrHelpDataMixin(NamedTuple):
 
 
 StrEnumWithHelpT = TypeVar("StrEnumWithHelpT", bound="StrEnumWithHelp")
+
 
 class StrEnumWithHelp(StrHelpDataMixin, enum.Enum):
 

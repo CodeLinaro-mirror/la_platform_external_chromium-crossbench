@@ -9,11 +9,12 @@ import unittest
 
 from typing_extensions import override
 
-from crossbench import compat, plt
+from crossbench import plt
 from crossbench.helper import collection_helper, fs_helper, url_helper
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
 from crossbench.helper.wait import WaitRange
+from crossbench.str_enum_with_help import StrEnumWithHelp
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -270,7 +271,7 @@ class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
 class StrEnumWithHelpTestCase(unittest.TestCase):
 
   @enum.unique
-  class TestEnum(compat.StrEnumWithHelp):
+  class TestEnum(StrEnumWithHelp):
     A = ("a", "help a")
     B = ("b", "help b")
 

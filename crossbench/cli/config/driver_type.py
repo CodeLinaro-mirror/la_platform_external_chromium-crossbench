@@ -8,12 +8,12 @@ import argparse
 import enum
 from typing import Any
 
-from crossbench import compat
 from crossbench.parse import ObjectParser
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 
 @enum.unique
-class BrowserDriverType(compat.StrEnumWithHelp):
+class BrowserDriverType(StrEnumWithHelp):
   WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
   APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
   ANDROID = ("Android",

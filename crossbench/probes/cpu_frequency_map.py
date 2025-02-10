@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import argparse
+import enum
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Hashable, List, Pattern, Type,
                     TypeAlias)
@@ -15,7 +16,6 @@ from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.compat import StrEnum
 from crossbench.config import ConfigObject
 from crossbench.parse import NumberParser, ObjectParser
 
@@ -32,7 +32,7 @@ _WILDCARD_CONFIG_KEY = "*"
 _CPU_NAME_REGEX: Pattern[str] = re.compile("cpu[0-9]+$")
 
 
-class _ExtremeFrequency(StrEnum):
+class _ExtremeFrequency(enum.StrEnum):
   MAX = "max"
   MIN = "min"
 

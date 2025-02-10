@@ -2,16 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import enum
 import pytest
 
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.compat import StrEnum
 from crossbench.parse import NumberParser
 from tests import test_helper
 from tests.test_helper import TestEnv
 
 
-class SpeedometerVersion(StrEnum):
+class SpeedometerVersion(enum.StrEnum):
   V2_0 = "2.0"
   V2_1 = "2.1"
   V3_0 = "3.0"

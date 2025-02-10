@@ -12,11 +12,11 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.parse import DurationParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.result_location import ResultLocation
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class SamplerType(compat.StrEnumWithHelp):
+class SamplerType(StrEnumWithHelp):
   BATTERY = ("battery", "Battery level")
   CPU_POWER = ("cpu_power",
                "CPU power and per-core frequency and idle residency")

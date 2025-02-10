@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, List, Optional, cast
 from selenium.webdriver.safari.options import Options as SafariOptions
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
                                            ProbeValidationError)
 from crossbench.probes.result_location import ResultLocation
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class MozProfilerStartupFeatures(compat.StrEnumWithHelp):
+class MozProfilerStartupFeatures(StrEnumWithHelp):
   """Options for MOZ_PROFILER_STARTUP_FEATURES env var.
     Extracted via MOZ_PROFILER_HELP=1 ./firefox-nightly-en/firefox
     """
@@ -70,7 +70,7 @@ class MozProfilerStartupFeatures(compat.StrEnumWithHelp):
 
 
 @enum.unique
-class FirefoxProfilerEnvVars(compat.StrEnum):
+class FirefoxProfilerEnvVars(enum.StrEnum):
   # If set to any value other than '' or '0'/'N'/'n', starts the
   # profiler immediately on start-up.
   STARTUP = "MOZ_PROFILER_STARTUP"

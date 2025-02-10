@@ -14,13 +14,13 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
 
 from typing_extensions import override
 
-from crossbench import compat
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 @enum.unique
-class SamplerType(compat.StrEnumWithHelp):
+class SamplerType(StrEnumWithHelp):
   MAIN_DISPLAY = ("main_display",
                   "Samples the backlight level of the main display.")
   BATTERY = ("battery", "Provides data retrieved from the IOPMPowerSource.")
