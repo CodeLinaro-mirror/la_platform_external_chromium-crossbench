@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import math
 import re
 import shlex
 import subprocess
@@ -467,9 +468,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     cpu_str = f"{variant} {platform}"
-    if num_cores := self.cpu_cores:
+    if num_cores := self.cpu_cores(logical=False):
       cpu_str = f"{cpu_str} {num_cores} cores"
     return cpu_str
+
+  def cpu_usage(self) -> float:
+    return math.nan
 
   @property
   def adb(self) -> Adb:
@@ -596,7 +600,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          stdin=None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
-         check: bool = False) -> subprocess.CompletedProcess:
+         check: bool = True) -> subprocess.CompletedProcess:
     return self.adb.shell(
         *args,
         shell=shell,
@@ -682,8 +686,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
         "info": self.cpu,
-        "physical cores": "n/a",
-        "logical cores": "n/a",
+        "physical cores": self.cpu_cores(logical=False),
+        "logical cores": self.cpu_cores(logical=True),
         "usage": "n/a",
         "total usage": "n/a",
         "system load": "n/a",

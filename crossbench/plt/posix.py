@@ -8,11 +8,10 @@ import abc
 import functools
 import logging
 import pathlib
-import re
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, Mapping,
-                    Optional, Type)
+from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, List,
+                    Mapping, Optional, Set, Type)
 
 from typing_extensions import override
 
@@ -27,9 +26,6 @@ if TYPE_CHECKING:
   from crossbench.plt.signals import AnyPosixSignals, Signals
   from crossbench.types import JsonDict
 
-
-_GETCONF_PROC_RE: re.Pattern = re.compile(
-    r".*PROCESSORS_CONF[^0-9]+(?P<cores>[0-9]+)")
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   # pylint: disable=locally-disabled, redefined-builtin
@@ -53,29 +49,56 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super()._raw_machine_arch()
     return self.sh_stdout("uname", "-m").strip()
 
-  def _read_possible_cpu_count(self) -> int:
-    try:
-      max_cores_file = self.path("/sys/devices/system/cpu/possible")
-      _, max_core = self.cat(max_cores_file).strip().split("-", maxsplit=1)
-      return int(max_core) + 1
-    except Exception as e:  # pylint: disable=broad-except
-      logging.debug("Failed to get detailed CPU stats: %s", e)
-      return 0
-
-  @functools.cached_property
+  @functools.lru_cache(maxsize=2)
   @override
-  def cpu_cores(self) -> int:
+  def cpu_cores(self, logical: bool) -> int:
     if self.is_local:
-      return super().cpu_cores
-    if num_cores := self._read_possible_cpu_count():
-      return num_cores
-    if nproc := self.which("nproc"):
-      return int(self.sh_stdout(nproc))
-    if getconf := self.which("getconf"):
-      if result := _GETCONF_PROC_RE.search(self.sh_stdout(getconf, "-a")):
-        return int(result["cores"])
+      return super().cpu_cores(logical)
+    if cores := self._parse_cpuinfo(logical):
+      return cores
+    if logical:
+      if getconf := self.which("getconf"):
+        if result := self.sh_stdout(getconf, "_NPROCESSORS_ONLN"):
+          return int(result)
     logging.debug("Failed to get num CPU cores")
     return 0
+
+  def _parse_cpuinfo(self, logical: bool) -> int:
+    assert not self.is_macos, "unsupported operation on macos"
+    entries = self.sh_stdout("grep", "-E", "processor|core id|physical id",
+                             "/proc/cpuinfo")
+    logical_cores: Set[int] = set()
+    core_ids: List[int] = []
+    physical_ids: List[int] = []
+
+    for line in entries.splitlines():
+      line = line.strip()
+      if line:
+        key, value = line.rsplit(": ", maxsplit=1)
+        match key.strip():
+          case "processor":
+            logical_cores.add(int(value))
+          case "core id":
+            core_ids.append(int(value))
+          case "physical id":
+            physical_ids.append(int(value))
+
+    if logical:
+      return len(logical_cores)
+
+    if core_ids:
+      if len(core_ids) == len(physical_ids):
+        pairs = set(zip(core_ids, physical_ids))
+        return len(pairs)
+      else:
+        logging.debug("Invalid cpuinfo data: Cannot determine core counts.")
+
+    # Android doesn't report core-id in cpuinfo, assuming single-threaded
+    # CPUs and report physical_cores
+    if self.is_android:
+      return len(logical_cores)
+    return 0
+
 
   @functools.lru_cache(maxsize=1)
   @override
@@ -83,7 +106,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().cpu_details()
     return {
-        "physical cores": self.cpu_cores,
+        "physical cores": self.cpu_cores(logical=False),
+        "logical cores": self.cpu_cores(logical=True),
         "info": self.cpu,
     }
 
@@ -439,7 +463,6 @@ class RemotePosixEnviron(Environ):
 
   def __len__(self) -> int:
     return self._environ.__len__()
-
 
 
 class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):

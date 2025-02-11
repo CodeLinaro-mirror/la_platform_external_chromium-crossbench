@@ -143,10 +143,10 @@ class Platform(abc.ABC):
   def cpu(self) -> str:
     pass
 
-  @functools.cached_property
-  def cpu_cores(self) -> int:
+  @functools.lru_cache(maxsize=2)
+  def cpu_cores(self, logical: bool) -> int:
     self.assert_is_local()
-    if cores := psutil.cpu_count(logical=False):
+    if cores := psutil.cpu_count(logical=logical):
       return cores
     return 0
 
@@ -251,9 +251,9 @@ class Platform(abc.ABC):
     self.assert_is_local()
     details = {
         "physical cores":
-            self.cpu_cores,
+            self.cpu_cores(logical=False),
         "logical cores":
-            psutil.cpu_count(logical=True),
+            self.cpu_cores(logical=True),
         "usage":
             psutil.cpu_percent(  # pytype: disable=attribute-error
                 percpu=True, interval=0.1),

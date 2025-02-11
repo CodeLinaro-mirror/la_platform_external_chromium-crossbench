@@ -15,8 +15,8 @@ import traceback as tb
 from subprocess import SubprocessError
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
 
-from typing_extensions import override
 import psutil
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.plt.posix import PosixPlatform
@@ -63,21 +63,22 @@ class MacOSPlatform(PosixPlatform):
   @functools.cached_property
   @override
   def device(self) -> str:  #pylint: disable=invalid-overridden-method
-    return self.sh_stdout("sysctl", "hw.model").strip().split(maxsplit=1)[1]
+    return self.sh_stdout("sysctl", "-n", "hw.model").strip()
 
   @functools.cached_property
   @override
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
-    num_cores = self.cpu_cores
+    num_cores = self.cpu_cores(logical=True)
     return f"{brand} {num_cores} cores"
 
-  @functools.cached_property
+  @functools.lru_cache(maxsize=2)
   @override
-  def cpu_cores(self) -> int:
+  def cpu_cores(self, logical: bool = False) -> int:
     if self.is_local:
-      return super().cpu_cores
-    cores = self.sh_stdout("sysctl", "-n", "machdep.cpu.core_count").strip()
+      return super().cpu_cores(logical)
+    sysctl_name = "hw.logicalcpu_max" if logical else "hw.physicalcpu_max"
+    cores = self.sh_stdout("sysctl", "-n", sysctl_name).strip()
     return int(cores)
 
   @property
