@@ -27,6 +27,7 @@ class NativePlatformTestCase(unittest.TestCase):
   @override
   def setUp(self):
     self.platform: plt.Platform = plt.PLATFORM
+    self.known_binary = "python3"
 
   def test_sleep(self):
     self.platform.sleep(0)
@@ -88,46 +89,51 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertIn("empty", str(cm.exception))
 
   def test_cat(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      file = pathlib.Path(tmp_dirname) / "test.txt"
-      with file.open("w") as f:
-        f.write("a b c d e f 11")
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      file = tmp_dir / "test.txt"
+      self.platform.set_file_contents(file, "a b c d e f 11")
       result = self.platform.cat(file)
       self.assertEqual(result, "a b c d e f 11")
 
   def test_cat_bytes(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      file = pathlib.Path(tmp_dirname) / "test.data"
-      with file.open("wb") as f:
-        f.write(b"a b c d e f 11")
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      file = tmp_dir / "test.data"
+      self.platform.set_file_contents(file, "a b c d e f 11")
       result = self.platform.cat_bytes(file)
       self.assertEqual(result, b"a b c d e f 11")
 
   def test_mkdir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      path = pathlib.Path(tmp_dirname) / "foo" / "bar"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      path = tmp_dir / "foo" / "bar"
       self.assertFalse(self.platform.exists(path))
       self.platform.mkdir(path)
-      self.assertTrue(path.is_dir())
+      self.assertTrue(self.platform.is_dir(path))
+      if self.platform.is_local:
+        self.assertTrue(pathlib.Path(path).is_dir())
 
   def test_rm_file(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      path = pathlib.Path(tmp_dirname) / "foo.txt"
-      path.touch()
-      self.assertTrue(path.is_file())
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      path = tmp_dir / "foo.txt"
+      self.platform.touch(path)
+      self.assertTrue(self.platform.is_file(path))
+      if self.platform.is_local:
+        self.assertTrue(pathlib.Path(path).is_file())
       self.platform.rm(path)
       self.assertFalse(self.platform.exists(path))
 
   def test_rm_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      path = pathlib.Path(tmp_dirname) / "foo" / "bar"
-      path.mkdir(parents=True, exist_ok=False)
-      self.assertTrue(path.is_dir())
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      path = tmp_dir / "foo" / "bar"
+      self.platform.mkdir(path, parents=True, exist_ok=False)
+      self.assertTrue(self.platform.is_dir(path))
+      if self.platform.is_local:
+        self.assertTrue(path.is_dir())
       with self.assertRaises(Exception):
         self.platform.rm(path.parent)
       self.platform.rm(path.parent, dir=True)
       self.assertFalse(self.platform.exists(path))
-      self.assertFalse(path.parent.exists())
+      if self.platform.is_local:
+        self.assertFalse(pathlib.Path(path).parent.exists())
 
   def test_mkdtemp(self):
     result = self.platform.mkdtemp(prefix="a_custom_prefix")
@@ -137,8 +143,7 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertFalse(self.platform.exists(result))
 
   def test_mkdtemp_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       result = self.platform.mkdtemp(dir=tmp_dir)
       self.assertTrue(self.platform.is_dir(result))
       self.assertTrue(result.is_relative_to(tmp_dir))
@@ -152,40 +157,48 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertFalse(self.platform.exists(result))
 
   def test_mktemp_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       result = self.platform.mktemp(dir=tmp_dir)
       self.assertTrue(self.platform.is_file(result))
       self.assertTrue(result.is_relative_to(tmp_dir))
     self.assertFalse(self.platform.exists(result))
 
   def test_exists(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       self.assertTrue(self.platform.exists(tmp_dir))
       self.assertFalse(self.platform.exists(tmp_dir / "foo"))
 
   def test_touch(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
-      self.assertFalse(tmp_file.exists())
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
+      if self.platform.is_local:
+        self.assertFalse(tmp_file.exists())
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.touch(tmp_file)
-      self.assertTrue(tmp_file.exists())
+      if self.platform.is_local:
+        self.assertTrue(tmp_file.exists())
       self.assertTrue(self.platform.exists(tmp_file))
-      self.assertEqual(tmp_file.stat().st_size, 0)
+      if self.platform.is_local:
+        self.assertEqual(tmp_file.stat().st_size, 0)
 
   def test_rename(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
       tmp_file_renamed = tmp_file.with_name("test_renamed.txt")
       self.platform.touch(tmp_file)
-      self.assertTrue(tmp_file.exists())
-      self.assertFalse(tmp_file_renamed.exists())
+      if self.platform.is_local:
+        self.assertTrue(tmp_file.exists())
+        self.assertFalse(tmp_file_renamed.exists())
+      self.assertTrue(self.platform.exists(tmp_file))
+      self.assertFalse(self.platform.exists(tmp_file_renamed))
+
       result = self.platform.rename(tmp_file, tmp_file_renamed)
       self.assertEqual(result, tmp_file_renamed)
-      self.assertFalse(tmp_file.exists())
-      self.assertTrue(tmp_file_renamed.exists())
+      if self.platform.is_local:
+        self.assertFalse(tmp_file.exists())
+        self.assertTrue(tmp_file_renamed.exists())
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.assertTrue(self.platform.exists(tmp_file_renamed))
 
   def test_default_tmp_dir(self):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
@@ -198,9 +211,9 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertFalse(self.platform.exists(path))
 
   def test_copy(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      src_file = pathlib.Path(tmp_dirname) / "src.txt"
-      dst_file = pathlib.Path(tmp_dirname) / "dst.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      src_file = tmp_dir / "src.txt"
+      dst_file = tmp_dir / "dst.txt"
       with self.assertRaises(ValueError) as cm:
         self.assertFalse(self.platform.exists(src_file))
         self.platform.copy(src_file, dst_file)
@@ -208,7 +221,7 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(src_file))
       self.assertFalse(self.platform.exists(dst_file))
 
-      src_file.write_text("some data")
+      self.platform.set_file_contents(src_file, "some data")
       self.assertTrue(self.platform.exists(src_file))
       self.platform.copy(src_file, dst_file)
       self.assertTrue(self.platform.exists(src_file))
@@ -222,9 +235,9 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertEqual(self.platform.cat(dst_file), "some data")
 
   def test_copy_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      src_file = pathlib.Path(tmp_dirname) / "src/file.txt"
-      dst_file = pathlib.Path(tmp_dirname) / "dst/file.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      src_file = tmp_dir / "src/file.txt"
+      dst_file = tmp_dir / "dst/file.txt"
       src_dir = src_file.parent
       dst_dir = dst_file.parent
       with self.assertRaises(ValueError) as cm:
@@ -235,7 +248,7 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(dst_dir))
 
       self.platform.mkdir(src_dir)
-      src_file.write_text("some data")
+      self.platform.set_file_contents(src_file, "some data")
       self.assertTrue(self.platform.exists(src_file))
 
       self.platform.copy(src_dir, dst_dir)
@@ -250,7 +263,10 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertEqual(self.platform.cat(dst_file), "some data")
 
   def test_home(self):
-    self.assertEqual(self.platform.home(), pathlib.Path.home())
+    if self.platform.is_local:
+      self.assertEqual(self.platform.home(), pathlib.Path.home())
+    else:
+      self.assertTrue(self.platform.is_dir(self.platform.home()))
 
   def test_absolute_absolute(self):
     if self.platform.is_win:
@@ -271,8 +287,7 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_glob(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       self.assertFalse(list(self.platform.glob(tmp_dir, "*")))
       a = tmp_dir / "a"
       b = tmp_dir / "b"
@@ -283,8 +298,8 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_set_file_contents(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.mkdir(tmp_file.parent)
       self.platform.touch(tmp_file)
@@ -297,7 +312,7 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_set_file_contents_dir(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    with tempfile.TemporaryDirectory() as tmp_dirname:
+    with self.platform.TemporaryDirectory() as tmp_dirname:
       self.assertTrue(self.platform.is_dir(tmp_dirname))
       tmp_dir_path = self.platform.path(tmp_dirname)
       self.assertTrue(self.platform.is_dir(tmp_dir_path))
@@ -306,8 +321,7 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertIn(tmp_dir_path.name, str(cm.exception))
 
   def test_path_tests(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       self.assertTrue(self.platform.exists(tmp_dir))
       self.assertTrue(self.platform.is_dir(tmp_dir))
       self.assertFalse(self.platform.is_file(tmp_dir))
@@ -333,8 +347,7 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_chmod(self):
     if self.platform.is_remote:
       return
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.set_file_contents(tmp_file, "")
@@ -350,7 +363,7 @@ class NativePlatformTestCase(unittest.TestCase):
     with self.platform.TemporaryDirectory() as tmp_dir:
       try:
         self.platform.set_cache_dir(tmp_dir)
-        cache_dir = self.platform.local_cache_dir("test")
+        cache_dir = self.platform.cache_dir("test")
         self.assertTrue(self.platform.is_dir(cache_dir))
         self.assertEqual(cache_dir.parent, tmp_dir)
       finally:
@@ -457,7 +470,7 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
     self.assertIsNone(self.platform.which(test_binary))
     # Use an arbitrary existing binary for testing.
-    override_binary = self.platform.which("python3")
+    override_binary = self.platform.which(self.known_binary)
     self.assertTrue(override_binary)
     with self.platform.override_binary(test_binary, override_binary):
       self.assertEqual(self.platform.which(test_binary), override_binary)
@@ -505,11 +518,11 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
   def test_which(self):
     ls_bin = self.platform.which("ls")
     self.assertIsNotNone(ls_bin)
-    bash_bin = self.platform.which("bash")
-    self.assertIsNotNone(bash_bin)
-    self.assertNotEqual(ls_bin, bash_bin)
-    self.assertTrue(pathlib.Path(ls_bin).exists())
-    self.assertTrue(pathlib.Path(bash_bin).exists())
+    known_binary = self.platform.which(self.known_binary)
+    self.assertIsNotNone(known_binary)
+    self.assertNotEqual(ls_bin, known_binary)
+    self.assertTrue(self.platform.exists(ls_bin))
+    self.assertTrue(self.platform.exists(known_binary))
 
   def test_system_details(self):
     if test_helper.is_on_swarming():
@@ -542,7 +555,20 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     self.assertIn("PATH", env)
     self.assertTrue(list(env))
 
+  def test_environ_set_property_fails_on_remote(self):
+    if self.platform.is_local:
+      return
+    env = self.platform.environ
+    custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
+    self.assertNotIn(custom_key, env)
+    with self.assertRaises(Exception):
+      env[custom_key] = 1234
+    with self.assertRaises(Exception):
+      env[custom_key] = "1234"
+
   def test_environ_set_property(self):
+    if self.platform.is_remote:
+      return
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
@@ -587,6 +613,9 @@ class MockRemotePosixPlatform(type(plt.PLATFORM)):
   @override
   def sh_stdout(self, *args, **kwargs):
     return plt.PLATFORM.sh_stdout(*args, **kwargs)
+
+  def push(self, from_path, to_path):
+    return self.copy_file(from_path, to_path)
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")

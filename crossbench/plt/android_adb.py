@@ -728,6 +728,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         "Android": self._getprop_system_details(),
     }
 
+  @property
+  @override
+  def is_battery_powered(self) -> bool:
+    battery_info = self.adb.dumpsys("battery").lower()
+    # Looking for any power source, i.e. 'AC powered: true'
+    has_external_power = " powered: true" in battery_info
+    return not has_external_power
+
   @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)

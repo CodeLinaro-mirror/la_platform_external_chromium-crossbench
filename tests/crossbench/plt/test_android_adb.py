@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import textwrap
 import unittest
 from typing import Final
 from unittest import mock
@@ -77,7 +78,23 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   def test_is_android(self):
     self.assertTrue(self.platform.is_android)
 
-
+  def test_is_battery_powered(self):
+    dumpsys_battery_output = textwrap.dedent("""
+      AC powered: false
+      USB powered: false
+      Wireless powered: true
+      Max charging current: 3000000
+    """)
+    self.expect_adb("shell", "dumpsys battery", result=dumpsys_battery_output)
+    self.assertFalse(self.platform.is_battery_powered)
+    dumpsys_battery_output = textwrap.dedent("""
+      AC powered: false
+      USB powered: false
+      Wireless powered: false
+      Max charging current: 3000000
+    """)
+    self.expect_adb("shell", "dumpsys battery", result=dumpsys_battery_output)
+    self.assertTrue(self.platform.is_battery_powered)
 
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True

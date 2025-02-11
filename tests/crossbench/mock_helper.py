@@ -269,7 +269,7 @@ class MockPlatformMixin:
          stdin=None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
-         check: bool = False):
+         check: bool = True):
     del capture_output, stderr, stdin, stdout
     self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, check=check)
     # TODO: Generalize this in the future, to mimic failing `sh` calls.
