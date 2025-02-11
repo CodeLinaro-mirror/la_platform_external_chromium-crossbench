@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import pathlib
 from typing import List, Optional, Tuple
 from unittest import mock
@@ -338,6 +339,7 @@ def test_loading_playback(test_env: TestEnv, test_chrome_name) -> None:
       "--separate",
       "--stories=twitter,2,facebook,0.4",
       "--probe=performance.entries",
+      "--debug",
   ]
   if not plt.PLATFORM.is_linux:
     args.extend([
@@ -374,6 +376,45 @@ def test_loading_playback_firefox(test_env: TestEnv, test_chrome_name) -> None:
 
   browser_dirs = _get_browser_dirs(test_env.results_dir)
   assert len(browser_dirs) == 2
+
+
+@pytest.mark.xdist_group("end2end-benchmark")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_win,
+    reason="stdout forwarding is not always supported on windows")
+def test_chrome_stdout_logging(test_env: TestEnv) -> None:
+  # - loading inline hjson
+  # - executing custom JS
+  # - validating chrome browser stdout using generated content to make sure it
+  #   is not just in the driver log as part of the script source.
+  out_dir = test_env.results_dir
+  assert not list(out_dir.glob("**/*.stdout.log"))
+  page_config = {
+      "pages": {
+          "STDOUT TEST": [{
+              "action": "get",
+              "url": "https://www.google.com"
+          }, {
+              "action": "js",
+              "script": "%DebugPrint('TestOutput'.repeat(3))"
+          }]
+      }
+  }
+  _run_cli(
+      "loading",
+      "--browser=chrome",
+      "--env-validation=skip",
+      "--js-flags=--allow-natives-syntax",
+      "--fast",
+      f"--page-config={json.dumps(page_config)}",
+      test_env=test_env,
+      auto_headless=True)
+
+  stdout_files = list(out_dir.glob("**/*.stdout.log"))
+  assert len(stdout_files) == 1
+  stdout_file = stdout_files[0]
+  test_output = "TestOutput" * 3
+  assert test_output in stdout_file.read_text()
 
 
 if __name__ == "__main__":

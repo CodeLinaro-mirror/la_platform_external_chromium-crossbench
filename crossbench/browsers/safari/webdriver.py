@@ -147,11 +147,12 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   @override
   def quit(self) -> None:
     super().quit()
-    # Safari needs some additional push to quit properly
-    self.platform.exec_apple_script(f"""
-        tell application "{self.app_name}"
-          quit
-        end tell""")
+    if self.platform.is_macos:
+      # Safari needs some additional push to quit properly
+      self.platform.exec_apple_script(f"""
+          tell application "{self.app_name}"
+            quit
+          end tell""")
 
   @override
   def force_quit(self):
@@ -187,10 +188,3 @@ class SafariWebdriverIOS(SafariWebDriver):
   @override
   def _setup_window(self) -> None:
     pass
-
-  @override
-  def quit(self) -> None:
-    self._private_driver.close()
-    self.platform.sleep(1.0)
-    self._private_driver.quit()
-    self.force_quit()

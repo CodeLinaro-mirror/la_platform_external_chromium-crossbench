@@ -13,6 +13,8 @@ from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
+  BinaryLookup: TypeAlias = pth.AnyPathLike | Iterable[pth.AnyPathLike]
+
 
 
 class BinaryNotFoundError(RuntimeError):
@@ -39,9 +41,6 @@ class UnsupportedPlatformError(BinaryNotFoundError):
   def _create_message(self) -> str:
     return (f"Could not find binary '{self.binary}' on {self.platform}. "
             f"Only supported on {self.expected_platform_name}")
-
-
-BinaryLookup: TypeAlias = pth.AnyPathLike | Iterable[pth.AnyPathLike]
 
 
 class Binary:

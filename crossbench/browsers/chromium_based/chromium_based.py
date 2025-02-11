@@ -233,7 +233,9 @@ class ChromiumBased(Browser):
 
   @override
   def quit(self) -> None:
-    super().quit()
-    if self._stdout_log_file:
-      self._stdout_log_file.close()
-      self._stdout_log_file = None
+    try:
+      super().quit()
+    finally:
+      if self._stdout_log_file:
+        self._stdout_log_file.close()
+        self._stdout_log_file = None

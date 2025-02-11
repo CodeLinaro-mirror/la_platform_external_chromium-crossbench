@@ -112,20 +112,29 @@ class ChromiumBasedWebDriver(
 
     self._log_browser_start(args, driver_path)
     service_args: List[str] = []
-    driver_log_path: Optional[str] = None
     if self._settings.driver_logging:
-      service_args += ["--verbose"]
-      driver_log_path = os.fspath(self._setup_driver_log_file())
+      service_args += [
+          "--verbose", f"--log-path={os.fspath(self._setup_driver_log_file())}"
+      ]
+
     adb_port = os.environ.get("ANDROID_ADB_SERVER_PORT")
     if adb_port and adb_port.isdigit():
       service_args += ["--adb-port=" + adb_port]
+
     # pytype: disable=wrong-keyword-args
+    assert self._stdout_log_file is None
+    self._stdout_log_file = self.log_file.with_suffix(
+        ".browser.stdout.log").open("w+")
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
-        log_output=driver_log_path,  # type: ignore
-        # TODO: remove after upgrading the vpython selenium version.
-        log_path=driver_log_path,
-        service_args=service_args)
+        service_args=service_args,
+        log_output=self._stdout_log_file,
+    )
+    if hasattr(service, "log_file"):
+      # TODO: remove once we upgrade the min selenium version
+      # Workaround for older selenium versions which ignore the log_file kwarg.
+      setattr(service, "log_file", self._stdout_log_file)
+
     # TODO: support remote platforms
     driver = self._create_driver(options, service)
     # pytype: enable=wrong-keyword-args

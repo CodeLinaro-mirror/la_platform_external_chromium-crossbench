@@ -263,9 +263,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def quit(self) -> None:
-    assert self._is_running
-    self.close_all_tabs()
-    self.force_quit()
+    try:
+      assert self._is_running
+      self.close_all_tabs()
+    finally:
+      super().quit()
 
   @override
   def force_quit(self) -> None:

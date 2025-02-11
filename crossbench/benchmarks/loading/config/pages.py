@@ -50,6 +50,10 @@ class PagesConfig(ConfigObject):
     Simple comma-separate config:
     value = URL, [DURATION], ...
     """
+    value = ObjectParser.non_empty_str(value)
+    if value[0] == "{":
+      return cls.parse_inline_hjson(value)
+
     values: List[str] = []
     previous_part: Optional[str] = None
     for part in value.strip().split(","):
@@ -87,6 +91,7 @@ class PagesConfig(ConfigObject):
     # TODO: support parsing a list of PageConfig dicts
     if not values:
       raise argparse.ArgumentTypeError("Got empty page list.")
+    ObjectParser.non_empty_sequence(values, "page list")
     pages: List[PageConfig] = []
     for index, single_line_config in enumerate(values):
       with exception.annotate_argparsing(

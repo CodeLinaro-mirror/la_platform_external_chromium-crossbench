@@ -178,9 +178,13 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     assert not file.exists()
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    pages = PagesConfig.parse(str(file)).pages
+    file_config = PagesConfig.parse(str(file))
+    self.assertEqual(config, file_config)
+    pages = file_config.pages
     self.assert_single_google_story(pages)
-    self.assertIsNone(config.pages[0].login)
+    self.assertIsNone(pages[0].login)
+
+    self.assertEqual(config, PagesConfig.parse(json.dumps(config_data)))
 
   def test_example_with_login(self):
     config_data = {
