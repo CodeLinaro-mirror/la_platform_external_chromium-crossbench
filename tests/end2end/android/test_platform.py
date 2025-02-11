@@ -8,6 +8,7 @@ import pytest
 
 from crossbench import plt
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
+from crossbench.plt.remote import RemotePopen
 from tests import test_helper
 from tests.crossbench.plt.test_native_platform import \
     PosixNativePlatformTestCase
@@ -27,8 +28,9 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
     assert hasattr(self, "device_id")
     assert hasattr(self, "adb_path")
     self.adb = Adb(plt.PLATFORM, self.device_id, self.adb_path)
+    self.host_platform = plt.PLATFORM
     self.platform: AndroidAdbPlatform = AndroidAdbPlatform(
-        plt.PLATFORM, adb=self.adb)
+        self.host_platform, adb=self.adb)
     assert self.platform.is_android
     self.known_binary = "dumpsys"
 
@@ -47,6 +49,20 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
 
   def test_cpu_usage(self):
     self.skipTest("Not supported yet")
+
+  def test_remote_popen(self):
+    popen = None
+    try:
+      popen = self.platform.popen("watch", "ls")
+      self.assertIsInstance(popen, RemotePopen)
+      self.assertTrue(popen.remote_pid)
+      self.assertTrue(popen.pid)
+      process_info = self.platform.process_info(popen.remote_pid)
+      self.assertTrue(process_info)
+      self.assertTrue(self.host_platform.process_info(popen.pid))
+    finally:
+      popen.kill()
+      self.assertIsNone(self.platform.process_info(popen.remote_pid))
 
 
 del PosixNativePlatformTestCase

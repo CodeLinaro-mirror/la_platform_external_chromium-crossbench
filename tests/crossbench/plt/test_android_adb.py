@@ -443,7 +443,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(
         self.platform.sh_stdout("ls foo && ls bar"), "FILE1\nFILE2\n")
 
-    self.expect_adb("shell", "'ls foo && ls bar'", result="FILE1\nFILE2\n")
+    self.expect_adb("shell", "ls foo && ls bar", result="FILE1\nFILE2\n")
     self.assertEqual(
         self.platform.sh_stdout("ls foo && ls bar", shell=True),
         "FILE1\nFILE2\n")

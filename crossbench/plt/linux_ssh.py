@@ -43,7 +43,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return "linux_ssh"
 
   def _build_ssh_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
-    self._validate_shell_args(shell, args)
+    self.validate_shell_args(args, shell)
     ssh_cmd: ListCmdArgs = [
         "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"
     ]
@@ -51,17 +51,15 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
     if shell:
       combined_ssh_cmd: str = ""
-
       for cmd in ssh_cmd:
         combined_ssh_cmd = combined_ssh_cmd + str(cmd) + " "
-
       return [combined_ssh_cmd]
 
     return ssh_cmd
 
   @override
-  def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
-    return self._build_ssh_cmd(*args)
+  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
+    return self._build_ssh_cmd(*args, shell=shell)
 
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:

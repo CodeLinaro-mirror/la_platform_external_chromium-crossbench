@@ -487,7 +487,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
       if not quiet:
         logging.debug("REMOTE SHELL: %s", shell_cmd)
 
-      host_platform_cmd = self.build_shell_cmd(shell_cmd)
+      host_platform_cmd = self.build_shell_cmd(shell_cmd, shell=True)
 
       remote_popen = RemotePopen(
           self, host_platform_cmd, bufsize=bufsize, stdout=stdout,

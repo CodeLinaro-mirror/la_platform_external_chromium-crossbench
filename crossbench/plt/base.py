@@ -823,7 +823,7 @@ class Platform(abc.ABC):
         check=check)
     return completed_process.stdout
 
-  def _validate_shell_args(self, shell: bool, args: TupleCmdArgs) -> None:
+  def validate_shell_args(self, args: TupleCmdArgs, shell: bool) -> None:
     if shell and len(args) != 1:
       raise ValueError("Expected single sh arg with shell=True, "
                        f"but got: {args}")
@@ -838,7 +838,7 @@ class Platform(abc.ABC):
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
     self.assert_is_local()
-    self._validate_shell_args(shell, args)
+    self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", os.getcwd())
@@ -862,7 +862,7 @@ class Platform(abc.ABC):
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     self.assert_is_local()
-    self._validate_shell_args(shell, args)
+    self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", os.getcwd())

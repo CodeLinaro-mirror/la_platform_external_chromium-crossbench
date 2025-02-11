@@ -32,7 +32,7 @@ class RemotePlatformMixin:
   def host_path(self, path: AnyPathLike) -> LocalPath:
     return self._host_platform.local_path(path)
 
-  def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
+  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
     raise NotImplementedError()
 
 

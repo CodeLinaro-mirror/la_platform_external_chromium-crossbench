@@ -143,7 +143,7 @@ class Adb:
   def device_info(self) -> Dict[str, str]:
     return self._device_info
 
-  def build_adb_cmd(self,
+  def _build_adb_cmd(self,
                      *args: CmdArg,
                      use_serial_id: bool = True) -> ListCmdArgs:
     adb_cmd: ListCmdArgs = [self._adb_bin]
@@ -151,14 +151,6 @@ class Adb:
       adb_cmd.extend(("-s", self._serial_id))
     adb_cmd.extend(args)
     return adb_cmd
-
-  def _build_shell_args(self,
-                        *args: CmdArg,
-                        shell: bool = False) -> ListCmdArgs:
-    if shell and len(args) != 1:
-      raise ValueError("Expected single sh arg with shell=True, "
-                       f"but got: {args}")
-    return [shlex.join(map(str, args))]
 
   def _adb(self,
            *args: CmdArg,
@@ -172,7 +164,7 @@ class Adb:
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
     del shell
-    adb_cmd = self.build_adb_cmd(*args, use_serial_id=use_serial_id)
+    adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh(
         *adb_cmd,
         capture_output=capture_output,
@@ -204,9 +196,22 @@ class Adb:
                         stdin=None,
                         use_serial_id: bool = True,
                         check: bool = True) -> bytes:
-    adb_cmd = self.build_adb_cmd(*args, use_serial_id=use_serial_id)
+    adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh_stdout_bytes(
         *adb_cmd, quiet=quiet, check=check, stdin=stdin)
+
+  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
+    self._host_platform.validate_shell_args(args, shell)
+    shell_cmd: ListCmdArgs = ["shell"]
+    if not shell:
+      shell_cmd.append(shlex.join(map(str, args)))
+    elif len(args) == 1:
+      shell_cmd.append(args[0])
+    else:
+      raise ValueError("Expected single sh arg with shell=True, "
+                       f"but got: {args}")
+    adb_shell_cmd = self._build_adb_cmd(*shell_cmd)
+    return adb_shell_cmd
 
   def shell_stdout(self,
                    *args: CmdArg,
@@ -234,9 +239,9 @@ class Adb:
     # -x: disable remote exit codes and stdout/stderr separation
     if env:
       raise ValueError("ADB shell only supports an empty env for now.")
-    shell_args = self._build_shell_args(*args, shell=shell)
-    return self._adb_stdout_bytes(
-        "shell", *shell_args, stdin=stdin, quiet=quiet, check=check)
+    shell_cmd = self.build_shell_cmd(*args, shell=shell)
+    return self._host_platform.sh_stdout_bytes(
+        *shell_cmd, stdin=stdin, quiet=quiet, check=check)
 
   def shell(self,
             *args: CmdArg,
@@ -251,11 +256,9 @@ class Adb:
     if env:
       raise ValueError("ADB shell only supports an empty env for now.")
     # See shell_stdout for more `adb shell` options.
-    shell_args = self._build_shell_args(*args, shell=shell)
-    return self._adb(
-        "shell",
-        *shell_args,
-        shell=shell,
+    shell_cmd = self.build_shell_cmd(*args, shell=shell)
+    return self._host_platform.sh(
+        *shell_cmd,
         capture_output=capture_output,
         stdout=stdout,
         stderr=stderr,
@@ -587,8 +590,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self.path("/data/local/tmp/")
 
   @override
-  def build_shell_cmd(self, *args: CmdArg) -> ListCmdArgs:
-    return self.adb.build_adb_cmd("shell", *args)
+  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
+    return self.adb.build_shell_cmd(*args, shell=shell)
 
   @override
   def sh(self,

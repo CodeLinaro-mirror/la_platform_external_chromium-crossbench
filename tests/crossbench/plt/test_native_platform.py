@@ -17,7 +17,7 @@ import unittest
 from typing_extensions import override
 
 from crossbench import plt
-from crossbench.plt.base import DEFAULT_CACHE_DIR
+from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 
@@ -589,6 +589,60 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     version = self.platform.app_version(python_path)
     self.assertTrue(version)
 
+  def test_shell_piping(self):
+    with self.platform.NamedTemporaryFile() as file:
+      result = self.platform.sh_stdout(
+          f"echo 'test data' > {file} && cat {file}", shell=True)
+      self.assertEqual(result, "test data\n")
+
+  def test_simple_shell_status_ok(self):
+    self.platform.sh("ls", shell=False)
+    self.platform.sh("ls && ls", shell=True)
+    self.assertTrue(self.platform.sh_stdout("ls", shell=False))
+    self.assertTrue(self.platform.sh_stdout("ls && ls", shell=True))
+
+  def test_simple_shell_fail(self):
+    with self.assertRaises(SubprocessError):
+      self.platform.sh("ls", "path/to/invalid/test/crossbench/dir", shell=False)
+    with self.assertRaises(SubprocessError):
+      self.platform.sh(
+          "ls path/to/invalid/test/crossbench/dir && ls", shell=True)
+    with self.assertRaises(SubprocessError):
+      self.platform.sh_stdout(
+          "ls", "path/to/invalid/test/crossbench/dir", shell=False)
+    with self.assertRaises(SubprocessError):
+      self.platform.sh_stdout(
+          "ls path/to/invalid/test/crossbench/dir && ls", shell=True)
+
+  def test_simple_shell_fail_ignore(self):
+    self.platform.sh(
+        "ls", "path/to/invalid/test/crossbench/dir", shell=False, check=False)
+    self.platform.sh(
+        "ls path/to/invalid/test/crossbench/dir && ls", shell=True, check=False)
+    self.assertEqual(
+        self.platform.sh_stdout(
+            "ls",
+            "path/to/invalid/test/crossbench/dir",
+            shell=False,
+            check=False), "")
+    self.assertEqual(
+        self.platform.sh_stdout(
+            "ls path/to/invalid/test/crossbench/dir && ls",
+            shell=True,
+            check=False), "")
+
+  def test_popen_watch(self):
+    # TODO: implement mock remote popen
+    if self.platform.is_remote:
+      self.skipTest("Missing remote platform popen")
+      return
+    popen = None
+    try:
+      popen = self.platform.popen("sleep", "5")
+      self.assertTrue(popen.pid)
+      self.assertTrue(self.platform.host_platform.process_info(popen.pid))
+    finally:
+      popen.kill()
 
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
