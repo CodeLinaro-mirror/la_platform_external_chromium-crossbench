@@ -123,7 +123,7 @@ class PositionConfig(ConfigObject):
   @override
   def validate(self) -> None:
     super().validate()
-    if bool(self.coordinates) != bool(self.coordinates):
+    if bool(self.coordinates) == bool(self.selector):
       raise ValueError(
           "Position config must have exactly one coordinates or selector")
 

@@ -15,7 +15,8 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
-from crossbench.action_runner.action.position import PositionConfig
+from crossbench.action_runner.action.position import (
+    CoordinatesConfig, PositionConfig, SelectorConfig)
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
@@ -849,6 +850,13 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertFalse(position.selector.required)
     self.assertTrue(position.selector.scroll_into_view)
     self.assertTrue(position.selector.wait)
+
+  def test_selector_and_coordinates_raises(self):
+    with self.assertRaisesRegex(ValueError, "exactly one"):
+      PositionConfig(
+          coordinates=CoordinatesConfig(x=123, y=456),
+          selector=SelectorConfig(
+              "#id", required=True, scroll_into_view=False, wait=False))
 
 
 if __name__ == "__main__":
