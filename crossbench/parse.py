@@ -18,8 +18,8 @@ from urllib import parse as urlparse
 
 import hjson
 
+import crossbench.plt
 from crossbench import path as pth
-from crossbench import plt
 
 
 def type_str(value: Any) -> str:
@@ -115,11 +115,12 @@ class PathParser:
     return path
 
   @classmethod
-  def binary_path(cls,
-                  value: Optional[pth.AnyPathLike],
-                  name: str = "binary",
-                  platform: Optional[plt.Platform] = None) -> pth.AnyPath:
-    platform = platform or plt.PLATFORM
+  def binary_path(
+      cls,
+      value: Optional[pth.AnyPathLike],
+      name: str = "binary",
+      platform: Optional[crossbench.plt.Platform] = None) -> pth.AnyPath:
+    platform = platform or crossbench.plt.PLATFORM
     not_none: pth.AnyPathLike = ObjectParser.not_none(value,
                                                       name)  # type: ignore
     maybe_path: pth.AnyPath = platform.path(not_none)
