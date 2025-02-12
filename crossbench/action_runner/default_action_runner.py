@@ -183,7 +183,10 @@ class DefaultActionRunner(ActionRunner):
     with run.actions("ClickAction", measure=False) as actions:
       if selector_config.wait:
         self.wait_for_element_impl(
-            actions, selector=selector_config.selector, timeout=action.timeout)
+            actions,
+            selector=selector_config.selector,
+            timeout=action.timeout,
+            required=selector_config.required)
       if not actions.js(
           script, arguments=[selector]) and selector_config.required:
         raise ElementNotFoundError(selector)
@@ -239,7 +242,8 @@ class DefaultActionRunner(ActionRunner):
                             expected_count: int = 1,
                             or_more: bool = False,
                             scroll_into_view: bool = False,
-                            check_element_rect: bool = False) -> None:
+                            check_element_rect: bool = False,
+                            required: bool = True) -> None:
     selector, selector_script = self.get_selector_script(
         selector=selector,
         check_element_exists=True,
@@ -260,12 +264,17 @@ class DefaultActionRunner(ActionRunner):
     if or_more:
       success_condition = _or_more_match
 
-    actions.wait_js_condition(
-        selector_script,
-        min_wait=0.2,
-        timeout=timeout,
-        arguments=(selector,),
-        success_condition=success_condition)
+    try:
+      actions.wait_js_condition(
+          selector_script,
+          min_wait=0.2,
+          timeout=timeout,
+          arguments=(selector,),
+          success_condition=success_condition)
+    except TimeoutError as e:
+      if required:
+        raise
+      logging.debug("Element %s not found: %s", selector, e)
 
   @override
   def wait_for_element(self, run: Run,

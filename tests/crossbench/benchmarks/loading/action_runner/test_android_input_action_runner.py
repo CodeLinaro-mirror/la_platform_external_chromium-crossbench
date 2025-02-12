@@ -321,6 +321,32 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
     self.run_action(click_action)
 
+  def test_click_wait_timeout_required(self):
+    click_action = ClickAction(
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=True, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+    self.browser.expect_js(JsInvocation(arguments=("#selector",), result=False))
+
+    with self.assertRaises(TimeoutError):
+      self.run_action(click_action)
+
+  def test_click_wait_timeout_unrequired(self):
+    click_action = ClickAction(
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=False, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+    self.browser.expect_js(JsInvocation(arguments=("#selector",), result=False))
+
+    # We continue to execute the click even after the wait fails.
+    self.expect_action_setup(found_element=False)
+
+    self.run_action(click_action)
+
   def test_scroll_selector_non_required_element_success(self):
     scroll_action = ScrollAction(
         InputSource.TOUCH, distance=100, selector="div[]", required=False)

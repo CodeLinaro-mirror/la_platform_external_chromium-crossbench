@@ -58,26 +58,18 @@ def test_click(browser_config, input_source, test_env) -> None:
                   {
                       "action": "get",
                       "url": f"data:text/html;charset=utf-8,{test_page}",
-                      "ready_state": "complete"
-                  },
-                  {
-                      "action": "wait_for_element",
-                      "selector": "button[id='button']",
-                      "timeout": "10s"
+                      "ready_state": "complete",
                   },
                   {
                       "action": "click",
                       "position": {
                           "selector": "button[id='button']",
                           "required": True,
-                          "scroll_into_view": True
+                          "scroll_into_view": True,
+                          "wait": True,
                       },
+                      "verify": "button[id='clicked-button']",
                       "source": str(input_source),
-                  },
-                  {
-                      "action": "wait_for_element",
-                      "selector": "button[id='clicked-button']",
-                      "timeout": "1s"
                   },
               ]
           }

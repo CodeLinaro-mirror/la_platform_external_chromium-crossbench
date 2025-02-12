@@ -194,7 +194,8 @@ return [
               selector=selector_config.selector,
               timeout=action.timeout,
               scroll_into_view=selector_config.scroll_into_view,
-              check_element_rect=True)
+              check_element_rect=True,
+              required=selector_config.required)
 
         viewport_info = self._get_viewport_info(
             run, actions, selector_config.selector,

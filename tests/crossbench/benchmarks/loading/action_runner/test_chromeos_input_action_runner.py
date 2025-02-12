@@ -595,6 +595,34 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
     self.run_action(click_action)
 
+  def test_click_wait_timeout_required(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=True, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+
+    self.expect_touch_setup(
+        touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
+
+    with self.assertRaises(TimeoutError):
+      self.run_action(click_action)
+
+  def test_click_wait_timeout_unrequired(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=False, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+
+    self.expect_touch_setup(
+        touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
+    self.browser.expect_js(self._NO_ELEMENT_JS_RESULT)
+
+    self.run_action(click_action)
+
   def test_scroll_touch_window_success(self):
 
     scroll_duration: dt.timedelta = dt.timedelta(seconds=2)

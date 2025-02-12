@@ -46,7 +46,7 @@ class CrossbenchFakeFsTestCase(
     self.addCleanup(gettext_patcher.stop)
 
     sleep_patcher = mock.patch("time.sleep", return_value=None)
-    sleep_patcher.start()
+    self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
     # This is platform specific and causes issues pending sh commands
     self.sleep_preventer_patcher = mock.patch.object(SystemSleepPreventer,
