@@ -44,10 +44,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path(self.platform).suffix
     browser_bin = browser_cls.mock_app_path(
-        self.platform).with_name(f"Custom Google Chrome{suffix}")
+        self.platform).with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
     with mock.patch.object(
@@ -62,10 +60,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path(self.platform).suffix
     browser_bin = browser_cls.mock_app_path(
-        self.platform).with_name(f"Custom Google Chrome{suffix}")
+        self.platform).with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
     with mock.patch.object(

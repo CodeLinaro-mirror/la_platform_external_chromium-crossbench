@@ -933,10 +933,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    browser_bin = browser_cls.mock_app_path().with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin),}}}
     config_file = pth.LocalPath("config/config.hjson")
@@ -967,10 +964,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    browser_bin = browser_cls.mock_app_path().with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     args = mock.Mock(
         network=NetworkConfig.default(),
