@@ -36,8 +36,6 @@ class NativePlatformTestCase(unittest.TestCase):
     self.platform.sleep(dt.timedelta(seconds=0.1))
 
   def test_cpu_details(self):
-    if test_helper.is_on_swarming():
-      self.skipTest("Skipping this to run in CQ due to crbug.com/384993339.")
     details = self.platform.cpu_details()
     self.assertLess(0, details["physical cores"])
 
@@ -525,8 +523,6 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     self.assertTrue(self.platform.exists(known_binary))
 
   def test_system_details(self):
-    if test_helper.is_on_swarming():
-      self.skipTest("Skipping this to run in CQ due to crbug.com/384993339.")
     details = self.platform.system_details()
     self.assertTrue(details)
 
