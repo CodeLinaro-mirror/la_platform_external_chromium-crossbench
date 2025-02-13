@@ -290,8 +290,6 @@ def test_loading(test_env: TestEnv, test_chrome_name) -> None:
   assert len(browser_dirs) == 1
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_win, reason="TODO(crbug.com/383896773): --page-config.")
 def test_loading_page_config(test_env: TestEnv, test_chrome_name) -> None:
   # - loading with config file
   page_config = test_env.root_dir / "config/doc/page.config.hjson"

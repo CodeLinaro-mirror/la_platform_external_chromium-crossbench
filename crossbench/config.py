@@ -408,6 +408,7 @@ class ConfigObject(abc.ABC):
   - It is then used to create a real instance of an object.
   """
   VALID_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
+  VALID_SCHEME: Tuple[str, ...] = ("http", "https", "file", "gs", "ftp")
 
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
@@ -455,7 +456,7 @@ class ConfigObject(abc.ABC):
   @classmethod
   def _parse_str(cls: Type[ConfigObjectT], value: Any,
                  **kwargs) -> ConfigObjectT:
-    if urlparse(value).scheme:
+    if cls.is_valid_url(value):
       # TODO(346197734): use parse_url here
       return cls.parse_str(value, **kwargs)
     try:
@@ -489,6 +490,10 @@ class ConfigObject(abc.ABC):
       # Ignore any OSError caused by too long path names.
       pass
     return False
+
+  @classmethod
+  def is_valid_url(cls, value: Any) -> bool:
+    return urlparse(value).scheme in cls.VALID_SCHEME
 
   @classmethod
   def parse_unknown_path(cls: Type[ConfigObjectT], path: pth.LocalPath,
