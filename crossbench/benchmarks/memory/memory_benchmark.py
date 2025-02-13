@@ -9,10 +9,9 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
 
-from typing_extensions import override
-
 import selenium.common.exceptions
 import urllib3.exceptions
+from typing_extensions import override
 
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
@@ -331,7 +330,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
-    logging.info("SELECTED STORIES: %s", ", ".join(map(str, self.stories)))
+    logging.info("📚 SELECTED STORIES: %s", ", ".join(map(str, self.stories)))
     return self.stories
 
 

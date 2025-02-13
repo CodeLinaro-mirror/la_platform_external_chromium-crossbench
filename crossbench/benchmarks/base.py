@@ -366,7 +366,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
   @override
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
-    logging.info("SELECTED STORIES: %s",
+    logging.info("📚 SELECTED STORIES: %s",
                  str(list(map(str, self._selected_names))))
     names = list(self._selected_names)
     return self.create_stories_from_names(names, separate)

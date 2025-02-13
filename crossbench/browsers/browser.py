@@ -320,14 +320,14 @@ class Browser(abc.ABC):
   def _log_browser_start(self,
                          args: Tuple[str, ...],
                          driver_path: Optional[pth.AnyPath] = None) -> None:
-    logging.info("STARTING BROWSER Binary:  %s", self.path)
-    logging.info("STARTING BROWSER Version: %s", self.version)
+    logging.info("🌐 STARTING BROWSER Binary:  %s", self.path)
+    logging.info("🏷️  STARTING BROWSER Version: %s", self.version)
     if driver_path:
-      logging.info("STARTING BROWSER Driver:  %s", driver_path)
-    logging.info("STARTING BROWSER Network: %s", self.network)
-    logging.info("STARTING BROWSER Probes:  %s",
+      logging.info("🐎 STARTING BROWSER Driver:  %s", driver_path)
+    logging.info("🕸  STARTING BROWSER Network: %s", self.network)
+    logging.info("🩺 STARTING BROWSER Probes:  %s",
                  ", ".join(p.NAME for p in self.probes))
-    logging.info("STARTING BROWSER Flags:   %s", shlex.join(args))
+    logging.info("🚩 STARTING BROWSER Flags:   %s", shlex.join(args))
 
   def _get_browser_flags_for_session(
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:

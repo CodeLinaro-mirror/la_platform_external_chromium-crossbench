@@ -336,13 +336,13 @@ class Run(ResultOrigin):
 
   def _log_setup(self) -> None:
     logging.debug("SETUP")
-    logging.info(
+    logging.debug(
         "PROBES: %s",
         ", ".join(probe.NAME for probe in self.probes if not probe.is_internal))
     logging.debug("PROBES ALL: %s",
                   ", ".join(probe.NAME for probe in self.probes))
     self.story.log_run_details(self)
-    logging.info("RUN DIR: %s", self._out_dir)
+    logging.info("📁 RUN DIR:                  %s", self._out_dir)
     logging.debug("CWD %s", self._out_dir)
 
   def run(self, is_dry_run: bool) -> None:

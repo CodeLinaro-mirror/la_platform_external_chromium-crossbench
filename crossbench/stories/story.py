@@ -51,9 +51,9 @@ class Story(abc.ABC):
     return {"name": self.name, "duration": self.duration.total_seconds()}
 
   def log_run_details(self, run: Run) -> None:
-    logging.info("STORY:          %s", self)
+    logging.info("📚 STORY:                    %s", self)
     timing = run.timing
-    logging.info("STORY DURATION: expected=%s timeout=%s",
+    logging.info("⏳ STORY DURATION:           expected=%s timeout=%s",
                  timing.timedelta(self.duration),
                  timing.timeout_timedelta(self.duration))
 

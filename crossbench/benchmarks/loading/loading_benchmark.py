@@ -244,7 +244,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
-    logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
+    logging.info("📚 SELECTED STORIES: %s", str(list(map(str, self.stories))))
     if not separate and len(self.stories) > 1:
       combined_name = "_".join(page.name for page in self.stories)
       self.stories = (CombinedPage(self.stories, combined_name,

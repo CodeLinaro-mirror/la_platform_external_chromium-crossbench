@@ -281,7 +281,7 @@ class BrowserVariantsConfig:
 
   def _log_browser_variants(self, name: str,
                             flag_variants: FlagsGroupConfig) -> None:
-    logging.info("SELECTED BROWSER: '%s' with %s flag variants:", name,
+    logging.info("🌐 SELECTED BROWSER: '%s' with %s flag variants:", name,
                  len(flag_variants))
     for i, variant in enumerate(flag_variants):
       logging.info("   %s: %s", i, variant.flags)
@@ -520,7 +520,7 @@ class BrowserVariantsConfig:
           label=label,
           path=path,
           settings=settings)
-      logging.info("SELECTED BROWSER: name=%s path='%s' ",
+      logging.info("🌐 SELECTED BROWSER: name=%s path='%s' ",
                    browser_instance.unique_name, path)
       self._variants.append(browser_instance)
 

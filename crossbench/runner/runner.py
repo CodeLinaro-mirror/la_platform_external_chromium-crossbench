@@ -453,7 +453,7 @@ class Runner:
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
       assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
-      logging.info("DISCOVERED %d RUN(S)", len(self._all_runs))
+      logging.info("🏃 SETUP %d RUN(S)", len(self._all_runs))
       self._measured_runs = [run for run in self._all_runs if not run.is_warmup]
     with self._exceptions.annotate("Preparing Environment"):
       self._env.setup()
@@ -462,7 +462,7 @@ class Runner:
       self._benchmark.setup(self)
 
   def _setup_validate_browsers(self) -> None:
-    logging.info("PREPARING %d BROWSER(S)", len(self.browsers))
+    logging.info("🌐 SETUP %d BROWSER(S)", len(self.browsers))
     with self._exceptions.annotate("Validating all browsers"):
       for browser in self.browsers:
         with self._exceptions.capture(
