@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_duration import BaseDurationAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
@@ -32,7 +32,7 @@ class GetAction(BaseDurationAction):
 
   @classmethod
   @override
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "url", type=ObjectParser.parse_fuzzy_url_str, required=True)

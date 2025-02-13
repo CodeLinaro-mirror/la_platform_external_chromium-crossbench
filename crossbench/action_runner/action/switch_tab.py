@@ -6,12 +6,11 @@ from __future__ import annotations
 
 import datetime as dt
 import re
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
-                                                    ActionT)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import NumberParser, ObjectParser
 
@@ -27,7 +26,7 @@ class SwitchTabAction(Action):
 
   @classmethod
   @override
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "tab_index",

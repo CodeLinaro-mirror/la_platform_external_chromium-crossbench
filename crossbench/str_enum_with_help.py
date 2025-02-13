@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import enum
 import textwrap
-from typing import List, NamedTuple, Optional, Tuple, Type, TypeVar, cast
+from typing import List, NamedTuple, Optional, Self, Tuple, Type, cast
 
 import tabulate
 
@@ -16,14 +16,11 @@ class StrHelpDataMixin(NamedTuple):
   help: str
 
 
-StrEnumWithHelpT = TypeVar("StrEnumWithHelpT", bound="StrEnumWithHelp")
-
 
 class StrEnumWithHelp(StrHelpDataMixin, enum.Enum):
 
   @classmethod
-  def _missing_(cls: Type[StrEnumWithHelpT],
-                value) -> Optional[StrEnumWithHelpT]:
+  def _missing_(cls: Type[Self], value) -> Optional[Self]:
     value = str(value).lower()
     for member in cls:
       if member.value == value:

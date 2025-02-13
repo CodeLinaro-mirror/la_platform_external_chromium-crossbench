@@ -5,12 +5,11 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
-                                                    ActionT)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import DurationParser
 
@@ -55,7 +54,7 @@ class DurationAction(BaseDurationAction):
 
   @classmethod
   @override
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "duration", type=DurationParser.positive_duration, required=True)

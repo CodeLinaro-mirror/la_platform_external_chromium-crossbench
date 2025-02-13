@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Self, Sequence
 
 from typing_extensions import override
 
@@ -36,14 +36,13 @@ class ProbeListConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
-  def parse_other(cls: Type[ProbeListConfig], value: Any) -> ProbeListConfig:
+  def parse_other(cls, value: Any) -> Self:
     if isinstance(value, (tuple, list)):
       return cls.parse_sequence(value)
     return super().parse_other(value)
 
   @classmethod
-  def parse_sequence(cls: Type[ProbeListConfig],
-                     config: Sequence[Dict[str, Any]]) -> ProbeListConfig:
+  def parse_sequence(cls, config: Sequence[Dict[str, Any]]) -> Self:
     probe_configs: List[ProbeConfig] = []
     for index, probe_config in enumerate(config):
       with exception.annotate(f"Parsing probes[{index}]"):
@@ -52,8 +51,7 @@ class ProbeListConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls: Type[ProbeListConfig],
-                 config: Dict[str, Any]) -> ProbeListConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     # Support global configs with {"probes": ...}
     if "probes" in config:
       config = config["probes"]

@@ -15,8 +15,8 @@ from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.action_runner.screenshot_annotation import \
-    ScreenshotPointAnnotation, ScreenshotRectAnnotation
+from crossbench.action_runner.screenshot_annotation import (
+    ScreenshotPointAnnotation, ScreenshotRectAnnotation)
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.runner.actions import Actions
@@ -182,7 +182,7 @@ return [
     if action.duration > dt.timedelta():
       raise InputSourceNotImplementedError(self, action, action.input_source,
                                            "Non-zero duration not implemented")
-
+    coordinates: Point | None = None
     with run.actions("ClickAction", measure=False) as actions:
 
       if coordinates_config := action.position.coordinates:

@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional
+from typing import IO, TYPE_CHECKING, Iterator, List, Optional, TypeVar
 
 from typing_extensions import override
 
@@ -362,6 +362,9 @@ class TsProxyProcess:
     return err
 
 
+TsProxyTrafficShaperT = TypeVar(
+    "TsProxyTrafficShaperT", bound="TsProxyTrafficShaper")
+
 class TsProxyTrafficShaper(TrafficShaper):
 
   def __init__(self,
@@ -395,8 +398,8 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   @contextlib.contextmanager
   @override
-  def open(self, network: Network,
-           session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
+  def open(self: TsProxyTrafficShaperT, network: Network,
+           session: BrowserSessionRunGroup) -> Iterator[TsProxyTrafficShaperT]:
     if not network.is_live:
       self._ts_proxy = self._create_remapping_ts_proxy(network)
 

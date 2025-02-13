@@ -16,8 +16,8 @@ import logging
 import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
-                    Iterable, List, Optional, Set, Tuple, Type, TypeAlias,
-                    TypeVar, cast)
+                    Iterable, List, Optional, Self, Set, Tuple, Type,
+                    TypeAlias, TypeVar, cast)
 from urllib.parse import urlparse
 
 import tabulate
@@ -387,18 +387,12 @@ class _ConfigArgParser:
 
 
 
-
-ConfigEnumT = TypeVar("ConfigEnumT", bound="ConfigEnum")
-
-
 class ConfigEnum(StrEnumWithHelp):
 
   @classmethod
-  def parse(cls: Type[ConfigEnumT], value: Any) -> ConfigEnumT:
+  def parse(cls, value: Any) -> Self:
     return ObjectParser.enum(cls.__name__, cls, value, cls)
 
-
-ConfigObjectT = TypeVar("ConfigObjectT", bound="ConfigObject")
 
 class ConfigObject(abc.ABC):
   """A ConfigObject is a placeholder object with parsed values from
@@ -428,7 +422,7 @@ class ConfigObject(abc.ABC):
     return self
 
   @classmethod
-  def parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
+  def parse(cls, value: Any, **kwargs) -> Self:
     # Quick return for default values used by parsers.
     if isinstance(value, cls):
       return value
@@ -438,7 +432,7 @@ class ConfigObject(abc.ABC):
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse(cls: Type[ConfigObjectT], value: Any, **kwargs) -> ConfigObjectT:
+  def _parse(cls, value: Any, **kwargs) -> Self:
     if isinstance(value, dict):
       if (cls is not _TemplatedConfigParser and
           _TemplatedConfigParser.is_template_invocation(value)):
@@ -454,8 +448,7 @@ class ConfigObject(abc.ABC):
     return cls.parse_other(value, **kwargs)
 
   @classmethod
-  def _parse_str(cls: Type[ConfigObjectT], value: Any,
-                 **kwargs) -> ConfigObjectT:
+  def _parse_str(cls, value: Any, **kwargs) -> Self:
     if cls.is_valid_url(value):
       # TODO(346197734): use parse_url here
       return cls.parse_str(value, **kwargs)
@@ -470,13 +463,13 @@ class ConfigObject(abc.ABC):
     return cls.parse_str(value, **kwargs)
 
   @classmethod
-  def parse_other(cls: Type[ConfigObjectT], value: Any) -> ConfigObjectT:
+  def parse_other(cls, value: Any) -> Self:
     raise ConfigError(
         f"Invalid config input type {type(value).__name__}: {value}")
 
   @classmethod
   @abc.abstractmethod
-  def parse_str(cls: Type[ConfigObjectT], value: str) -> ConfigObjectT:
+  def parse_str(cls, value: str) -> Self:
     """Custom implementation for parsing config values that are
     not handled by the default .parse(...) method."""
     raise NotImplementedError()
@@ -496,27 +489,23 @@ class ConfigObject(abc.ABC):
     return urlparse(value).scheme in cls.VALID_SCHEME
 
   @classmethod
-  def parse_unknown_path(cls: Type[ConfigObjectT], path: pth.LocalPath,
-                         **kwargs) -> ConfigObjectT:
+  def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     # TODO: this should be redirected to parse_config_path
     return cls.parse_str(str(path), **kwargs)
 
   @classmethod
-  def parse_path(cls: Type[ConfigObjectT], path: pth.LocalPath,
-                 **kwargs) -> ConfigObjectT:
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     return cls.parse_config_path(path, **kwargs)
 
   @classmethod
-  def parse_inline_hjson(cls: Type[ConfigObjectT], value: str,
-                         **kwargs) -> ConfigObjectT:
+  def parse_inline_hjson(cls, value: str, **kwargs) -> Self:
     with exception.annotate(f"Parsing inline {cls.__name__}"):
       data = ObjectParser.inline_hjson(value)
       return cls.parse_dict(data, **kwargs)
     raise exception.UnreachableError()
 
   @classmethod
-  def parse_config_path(cls: Type[ConfigObjectT], path: pth.LocalPathLike,
-                        **kwargs) -> ConfigObjectT:
+  def parse_config_path(cls, path: pth.LocalPathLike, **kwargs) -> Self:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       file_path = PathParser.existing_file_path(path)
       data = ObjectParser.dict_hjson_file(file_path)
@@ -526,8 +515,7 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def parse_dict(cls: Type[ConfigObjectT], config: Dict[str,
-                                                        Any]) -> ConfigObjectT:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     raise NotImplementedError()
 
 
@@ -547,25 +535,22 @@ class _PrimitiveConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls: Type[_PrimitiveConfigObject],
-                value: str) -> _PrimitiveConfigObject:
-    return _PrimitiveConfigObject(value)
+  def parse_str(cls, value: str) -> Self:
+    return cls(value)
 
   @classmethod
   @override
-  def parse_dict(cls: Type[_PrimitiveConfigObject],
-                 config: Dict[str, Any]) -> _PrimitiveConfigObject:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     result: Dict[str, Any] = {}
 
     for key, value in config.items():
       result[key] = _PrimitiveConfigObject.parse(value).value
 
-    return _PrimitiveConfigObject(result)
+    return cls(result)
 
   @classmethod
-  def parse_other(cls: Type[_PrimitiveConfigObject],
-                  value: Any) -> _PrimitiveConfigObject:
-    return _PrimitiveConfigObject(value)
+  def parse_other(cls, value: Any) -> Self:
+    return cls(value)
 
 
 @dataclasses.dataclass(frozen=False)
@@ -653,7 +638,7 @@ class _TemplatedConfigParser(ConfigObject):
         value.keys()) in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[_TemplatedConfigParser]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("template", type=ObjectParser.not_none, required=True)
     parser.add_argument("args", type=template_args, required=False, default={})
@@ -663,13 +648,12 @@ class _TemplatedConfigParser(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls: Type[_TemplatedConfigParser], value: str) -> Any:
+  def parse_str(cls, value: str) -> Any:
     raise NotImplementedError("Cannot create templated config from strings")
 
   @classmethod
   @override
-  def parse_dict(cls: Type[_TemplatedConfigParser],
-                 config: Dict[str, Any]) -> _TemplatedConfigParser:
+  def parse_dict(cls: Type[Self], config: Dict[str, Any]) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, TypeVar
 
 from typing_extensions import override
 
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
+
+TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
 class TrafficShaper(abc.ABC):
 
@@ -47,8 +49,8 @@ class TrafficShaper(abc.ABC):
     return Flags()
 
   @contextlib.contextmanager
-  def open(self, network: Network,
-           session: BrowserSessionRunGroup) -> Iterator[TrafficShaper]:
+  def open(self: TrafficShaperT, network: Network,
+           session: BrowserSessionRunGroup) -> Iterator[TrafficShaperT]:
     del network, session
     assert not self._is_running, "Cannot start network more than once."
     self._is_running = True

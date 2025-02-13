@@ -58,7 +58,7 @@ pytest-profiling = "^1.7.0"
 
 [tool.poetry.group.dev-pytype.dependencies]
 python = ">=3.11,<3.12"
-pytype = { version = "^2024.1.24", markers = "sys_platform != 'win32'" }
+pytype = { version = "^2024.10.11", markers = "sys_platform != 'win32'" }
 
 [build-system]
 requires = ["poetry_core>=1.1.5"]

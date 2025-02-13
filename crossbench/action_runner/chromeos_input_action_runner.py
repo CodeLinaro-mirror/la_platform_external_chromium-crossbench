@@ -9,16 +9,16 @@ import dataclasses
 import datetime as dt
 import shlex
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
-from crossbench.action_runner.screenshot_annotation import \
-    ScreenshotPointAnnotation, ScreenshotRectAnnotation
 import crossbench.path as pth
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
+from crossbench.action_runner.screenshot_annotation import (
+    ScreenshotPointAnnotation, ScreenshotRectAnnotation)
 from crossbench.benchmarks.loading.point import Point
 from crossbench.parse import NumberParser
 
@@ -124,14 +124,14 @@ class TouchDevice:
   y_max: int
 
   @classmethod
-  def parse_str(cls: Type[TouchDevice], config: str) -> TouchDevice:
+  def parse_str(cls, config: str) -> Self:
     # The first line of output is always 'Performing autotest_lib import'
     # Followed by the output we care about.
     touch_device_values = config.splitlines()[1].split(" ")
 
-    return TouchDevice(touch_device_values[0],
-                       NumberParser.positive_zero_int(touch_device_values[1]),
-                       NumberParser.positive_zero_int(touch_device_values[2]))
+    return cls(touch_device_values[0],
+               NumberParser.positive_zero_int(touch_device_values[1]),
+               NumberParser.positive_zero_int(touch_device_values[2]))
 
   def __str__(self) -> str:
     return f"{self.device_path} {self.x_max} {self.y_max}"

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Dict, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Self, Type
 
 from typing_extensions import override
 
@@ -43,8 +43,6 @@ _ACTION_TYPE_CONFIG_PARSER = ActionTypeConfigParser()
 
 ACTION_TIMEOUT = dt.timedelta(seconds=20)
 
-ActionT = TypeVar("ActionT", bound="Action")
-
 # Lazily initialized Action class lookup.
 ACTIONS: Dict[ActionType, Type[Action]] = {}
 
@@ -59,9 +57,9 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def parse_dict(cls: Type[ActionT], config: Dict[str, Any]) -> ActionT:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
-    action_cls: Type[ActionT] = ACTIONS[action_type]  # type: ignore
+    action_cls: Type[Self] = ACTIONS[action_type]  # type: ignore
     # Drop _ACTION_TYPE_CONFIG_PARSER arguments/aliases and avoid warnings
     config = dict(config)
     config.pop("action", None)
@@ -74,7 +72,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     return action
 
   @classmethod
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("index", type=NumberParser.positive_zero_int, default=0)
     parser.add_argument(

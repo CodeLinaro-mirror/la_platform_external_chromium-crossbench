@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import re
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional, TypeVar
 from urllib.parse import urlparse
 
 from typing_extensions import override
@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 GS_PREFIX = "gs://"
 GSUTIL_LS_MD5_RE = re.compile(r"Hash \(md5\):\s*([A-Za-z0-9+/]+)=*")
 
+ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
 class ReplayNetwork(Network):
   """ A network implementation that can be used to replay requests
@@ -51,7 +52,8 @@ class ReplayNetwork(Network):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+  def open(self: ReplayNetworkT,
+           session: BrowserSessionRunGroup) -> Iterator[ReplayNetworkT]:
     with super().open(session):
       with self._open_replay_server(session):
         with self._traffic_shaper.open(self, session):

@@ -6,17 +6,14 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import (Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple,
-                    Type, TypeAlias, TypeVar, Union)
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Self, Set,
+                    Tuple, TypeAlias, TypeVar, Union)
 
 from typing_extensions import override
 
 
 class FrozenFlagsError(RuntimeError):
   pass
-
-
-FreezableT = TypeVar("FreezableT", bound="Freezable")
 
 
 class Freezable:
@@ -33,7 +30,7 @@ class Freezable:
   def is_frozen(self) -> bool:
     return self._frozen
 
-  def freeze(self: FreezableT) -> FreezableT:
+  def freeze(self: Self) -> Self:
     self._frozen = True
     return self
 
@@ -44,8 +41,6 @@ class Freezable:
       msg = f"Cannot modify frozen {type(self).__name__}"
     raise FrozenFlagsError(msg)
 
-
-BasicFlagsT = TypeVar("BasicFlagsT", bound="BasicFlags")
 
 
 FlagsData: TypeAlias = Union[None, Dict[str, str], "Flags",
@@ -78,7 +73,7 @@ class BasicFlags(Freezable, collections.UserDict):
     return (flag_str, None)
 
   @classmethod
-  def parse(cls: Type[BasicFlagsT], data: Any) -> BasicFlagsT:
+  def parse(cls, data: Any) -> Self:
     if isinstance(data, cls):
       return data
     if isinstance(data, str):
@@ -86,13 +81,11 @@ class BasicFlags(Freezable, collections.UserDict):
     return cls(data)
 
   @classmethod
-  def parse_str(cls: Type[BasicFlagsT], raw_flags: str) -> BasicFlagsT:
+  def parse_str(cls, raw_flags: str) -> Self:
     return cls._parse_str(raw_flags)
 
   @classmethod
-  def _parse_str(cls: Type[BasicFlagsT],
-                 raw_flags: str,
-                 msg: str = "flag") -> BasicFlagsT:
+  def _parse_str(cls, raw_flags: str, msg: str = "flag") -> Self:
     raw_flags = raw_flags.strip()
     if not raw_flags:
       return cls()
@@ -205,7 +198,7 @@ class BasicFlags(Freezable, collections.UserDict):
   def merge(self, other: FlagsData) -> None:
     self.update(other)
 
-  def copy(self: BasicFlagsT) -> BasicFlagsT:
+  def copy(self: Self) -> Self:
     return self.__class__(self)
 
   def merge_copy(self, other: FlagsData):
@@ -213,7 +206,7 @@ class BasicFlags(Freezable, collections.UserDict):
     ret.merge(other)
     return ret
 
-  def filtered(self: BasicFlagsT, flag_names: Iterable[str]) -> BasicFlagsT:
+  def filtered(self: Self, flag_names: Iterable[str]) -> Self:
     flag_names_set: Set[str] = set(flag_names)
     filtered_flags = {k: v for k, v in self.items() if k in flag_names_set}
     return self.__class__(filtered_flags)

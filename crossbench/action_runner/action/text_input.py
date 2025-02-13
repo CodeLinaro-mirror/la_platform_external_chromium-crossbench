@@ -5,11 +5,11 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Self, Tuple
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
 from crossbench.benchmarks.loading.input_source import InputSource
@@ -27,7 +27,7 @@ class TextInputAction(InputSourceAction):
 
   @classmethod
   @override
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument("text", type=ObjectParser.non_empty_str, required=True)
     parser.add_argument(

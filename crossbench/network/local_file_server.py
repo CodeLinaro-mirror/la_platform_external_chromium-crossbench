@@ -12,7 +12,7 @@ import logging
 import os
 import threading
 from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
-                    Type)
+                    Type, TypeVar)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -48,7 +48,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   @classmethod
   def bind(
-      cls: Type[CustomHeadersRequestHandler],
+      cls,
       server_dir: LocalPath,
       extra_headers: Mapping[str, str],
   ) -> Type[http.server.SimpleHTTPRequestHandler]:
@@ -82,6 +82,8 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
     for key, value in self._extra_headers.items():
       self.send_header(key, value)
 
+
+LocalFileNetworkT = TypeVar("LocalFileNetworkT", bound="LocalFileNetwork")
 
 class LocalFileNetwork(Network):
 
@@ -141,7 +143,8 @@ class LocalFileNetwork(Network):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+  def open(self: LocalFileNetworkT,
+           session: BrowserSessionRunGroup) -> Iterator[LocalFileNetworkT]:
     with super().open(session):
       with self._open_local_file_server():
         # TODO: properly hook up traffic shaper for the local http server

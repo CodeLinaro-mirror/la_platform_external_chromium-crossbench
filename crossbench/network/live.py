@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, TypeVar
 
 from typing_extensions import override
 
@@ -14,6 +14,7 @@ from crossbench.network.base import Network
 if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
+LiveNetworkT = TypeVar("LiveNetworkT", bound="LiveNetwork")
 
 class LiveNetwork(Network):
 
@@ -24,7 +25,8 @@ class LiveNetwork(Network):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+  def open(self: LiveNetworkT,
+           session: BrowserSessionRunGroup) -> Iterator[LiveNetworkT]:
     with super().open(session):
       with self._traffic_shaper.open(self, session):
         # TODO: implement

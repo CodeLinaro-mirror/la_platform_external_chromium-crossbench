@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import abc
-from typing import (TYPE_CHECKING, Dict, Hashable, Optional, Set, Tuple, Type,
-                    TypeVar)
+from typing import (TYPE_CHECKING, Dict, Hashable, Optional, Self, Set, Tuple,
+                    Type, TypeVar)
 
 from typing_extensions import override
 
@@ -220,16 +220,16 @@ class Probe(ProbeResultKey, abc.ABC):
     del group
     return EmptyProbeResult()
 
-  def get_context(self: ProbeT, run: Run) -> Optional[ProbeContext[ProbeT]]:
-    probe_cls: Type[ProbeContext[ProbeT]] = self.get_context_cls()
+  def get_context(self: Self, run: Run) -> Optional[ProbeContext[Self]]:
+    probe_cls: Type[ProbeContext[Self]] = self.get_context_cls()
     return probe_cls(self, run)
 
-  def get_context_cls(self: ProbeT) -> Type[ProbeContext[ProbeT]]:
+  def get_context_cls(self: Self) -> Type[ProbeContext[Self]]:
     raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
   def get_session_context(  # pylint: disable=useless-return
-      self: ProbeT,
-      session: BrowserSessionRunGroup) -> Optional[ProbeSessionContext[ProbeT]]:
+      self: Self,
+      session: BrowserSessionRunGroup) -> Optional[ProbeSessionContext[Self]]:
     del session
     return None
 

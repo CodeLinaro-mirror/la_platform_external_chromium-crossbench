@@ -37,9 +37,6 @@ class JSFlags(Flags):
   def parse_str(cls, raw_flags: str) -> JSFlags:
     return cls._parse_str(raw_flags, "--js-flags")
 
-  def copy(self) -> JSFlags:
-    return self.__class__(self)
-
   @override
   def _set(self,
            flag_name: str,

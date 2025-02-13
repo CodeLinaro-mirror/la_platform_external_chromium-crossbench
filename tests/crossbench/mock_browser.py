@@ -48,7 +48,8 @@ class MockNetwork(Network):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+  def open(self: MockNetwork,
+           session: BrowserSessionRunGroup) -> Iterator[MockNetwork]:
     with super().open(session):
       assert session.browser.network is self
       yield self

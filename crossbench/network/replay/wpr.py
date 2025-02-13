@@ -9,7 +9,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import (TYPE_CHECKING, Final, Iterator, List, Mapping, Optional,
-                    Tuple)
+                    Tuple, TypeVar)
 
 from typing_extensions import override
 
@@ -69,6 +69,8 @@ WPR_PREBUILT_LOOKUP: Final[Mapping[Tuple[str, str], WPRCloudBinary]] = {
 }
 
 
+WprReplayNetworkT = TypeVar("WprReplayNetworkT", bound="WprReplayNetwork")
+
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
@@ -118,7 +120,8 @@ class WprReplayNetwork(ReplayNetwork):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+  def open(self: WprReplayNetworkT,
+           session: BrowserSessionRunGroup) -> Iterator[WprReplayNetworkT]:
     with super().open(session):
       yield self
 
@@ -186,7 +189,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+  def open(self: LocalWprReplayNetwork,
+           session: BrowserSessionRunGroup) -> Iterator[LocalWprReplayNetwork]:
     with super().open(session):
       with self._forward_ports(session):
         yield self
@@ -252,7 +256,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   @contextlib.contextmanager
   @override
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[ReplayNetwork]:
+  def open(self: RemoteWprReplayNetwork,
+           session: BrowserSessionRunGroup) -> Iterator[RemoteWprReplayNetwork]:
     with self._remote_temp_dir(session):
       with super().open(session):
         yield self

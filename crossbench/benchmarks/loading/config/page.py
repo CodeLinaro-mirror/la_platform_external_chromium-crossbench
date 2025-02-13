@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence,
-                    Tuple, Type, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Self,
+                    Sequence, Tuple, cast)
 from urllib import parse as urlparse
 
 from typing_extensions import override
@@ -39,7 +39,7 @@ class PageConfig(ConfigObject):
   blocks: Tuple[ActionBlock, ...] = tuple()
 
   @classmethod
-  def parse_other(cls: Type[PageConfig], value: Any, **kwargs) -> PageConfig:
+  def parse_other(cls, value: Any, **kwargs) -> Self:
     if isinstance(value, (list, tuple)):
       return cls.parse_sequence(value, **kwargs)
     return super().parse_other(value)
@@ -47,9 +47,9 @@ class PageConfig(ConfigObject):
   @classmethod
   @override
   def parse_str(  # pylint: disable=arguments-differ
-      cls: Type[PageConfig],
+      cls,
       value: str,
-      label: Optional[str] = None) -> PageConfig:
+      label: Optional[str] = None) -> Self:
     """
     Simple comma-separated string with optional duration:
       value = URL,[DURATION]
@@ -67,10 +67,10 @@ class PageConfig(ConfigObject):
     return cls.from_url(label, url, duration)
 
   @classmethod
-  def parse_sequence(cls: Type[PageConfig],
+  def parse_sequence(cls,
                      value: Sequence[Any],
                      label: Optional[str] = None,
-                     secrets: Optional[Secrets] = None) -> PageConfig:
+                     secrets: Optional[Secrets] = None) -> Self:
     value = ObjectParser.non_empty_sequence(value, "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
     if label is not None:
@@ -81,17 +81,17 @@ class PageConfig(ConfigObject):
   @classmethod
   @override
   def parse_dict(  # pylint: disable=arguments-differ
-      cls: Type[PageConfig],
+      cls,
       config: Dict[str, Any],
       label: Optional[str] = None,
-      secrets: Optional[Secrets] = None) -> PageConfig:
+      secrets: Optional[Secrets] = None) -> Self:
     config = ObjectParser.non_empty_dict(config, "story actions or blocks")
     page_config = cls.config_parser().parse(
         config, label=label, secrets=secrets)
     return page_config
 
   @classmethod
-  def config_parser(cls: Type[PageConfig]) -> ConfigParser[PageConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("label", type=ObjectParser.non_empty_str)
     parser.add_argument("playback", type=PlaybackController.parse)
@@ -108,10 +108,10 @@ class PageConfig(ConfigObject):
   def from_url(cls,
                label: Optional[str],
                url: str,
-               duration: dt.timedelta = dt.timedelta()) -> PageConfig:
+               duration: dt.timedelta = dt.timedelta()) -> Self:
     actions = (GetAction(url, duration=duration),)
     blocks = (ActionBlock(actions=actions),)
-    return PageConfig(label=label, blocks=blocks)
+    return cls(label=label, blocks=blocks)
 
   def actions(self) -> Iterator[Action]:
     for block in self.blocks:

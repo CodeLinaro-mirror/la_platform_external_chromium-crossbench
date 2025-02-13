@@ -8,8 +8,7 @@ import abc
 import argparse
 import enum
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Hashable, List, Pattern, Type,
-                    TypeAlias)
+from typing import TYPE_CHECKING, Any, Dict, Hashable, List, Pattern, TypeAlias
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -55,16 +54,14 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def parse_dict(cls: Type[CPUFrequencyMap],
-                 config: Dict[str, Any]) -> CPUFrequencyMap:
+  def parse_dict(cls, config: Dict[str, Any]) -> CPUFrequencyMap:
     if _WILDCARD_CONFIG_KEY in config:
       return WildcardCPUFrequencyMap(config)
-
     return ExplicitCPUFrequencyMap(config)
 
   @classmethod
   @override
-  def parse_str(cls: Type[CPUFrequencyMap], value: str) -> CPUFrequencyMap:
+  def parse_str(cls, value: str) -> CPUFrequencyMap:
     return CPUFrequencyMap.parse_dict({_WILDCARD_CONFIG_KEY: value})
 
   @classmethod

@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
+                    Tuple)
 
 from typing_extensions import override
 
@@ -136,13 +136,12 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
   @override
-  def parse_str(cls: Type[DevToolsRecorderPagesConfig],
-                value: str) -> DevToolsRecorderPagesConfig:
+  def parse_str(cls, value: str) -> Self:
     raise NotImplementedError()
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> DevToolsRecorderPagesConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     config = ObjectParser.non_empty_dict(config)
     with exception.annotate_argparsing("Loading DevTools recording file"):
       title = ObjectParser.non_empty_str(config["title"], "title")
@@ -150,7 +149,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
       # Use default block
       blocks = (ActionBlock(actions=actions),)
       pages = (PageConfig(label=title, blocks=blocks),)
-      return DevToolsRecorderPagesConfig(pages)
+      return cls(pages)
     raise exception.UnreachableError()
 
   @classmethod

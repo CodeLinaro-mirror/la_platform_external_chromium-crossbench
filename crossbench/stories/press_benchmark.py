@@ -7,16 +7,13 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import List, Optional, Sequence, Tuple, Type, TypeVar
+from typing import List, Optional, Self, Sequence, Tuple
 
 from typing_extensions import override
 
 from crossbench.parse import ObjectParser
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
-
-PressBenchmarkStoryT = TypeVar(
-    "PressBenchmarkStoryT", bound="PressBenchmarkStory")
 
 
 class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
@@ -39,25 +36,25 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     return cls.all_story_names()
 
   @classmethod
-  def all(cls: Type[PressBenchmarkStoryT],
+  def all(cls,
           separate: bool = False,
           url: Optional[str] = None,
-          **kwargs) -> List[PressBenchmarkStoryT]:
+          **kwargs) -> List[Self]:
     return cls.from_names(cls.all_story_names(), separate, url, **kwargs)
 
   @classmethod
-  def default(cls: Type[PressBenchmarkStoryT],
+  def default(cls,
               separate: bool = False,
               url: Optional[str] = None,
-              **kwargs) -> List[PressBenchmarkStoryT]:
+              **kwargs) -> List[Self]:
     return cls.from_names(cls.default_story_names(), separate, url, **kwargs)
 
   @classmethod
-  def from_names(cls: Type[PressBenchmarkStoryT],
+  def from_names(cls,
                  substories: Sequence[str],
                  separate: bool = False,
                  url: Optional[str] = None,
-                 **kwargs) -> List[PressBenchmarkStoryT]:
+                 **kwargs) -> List[Self]:
     if not substories:
       raise ValueError("No substories provided")
     if separate:

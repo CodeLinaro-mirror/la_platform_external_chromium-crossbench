@@ -6,14 +6,13 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Self
 
 from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
-                                                    ActionT)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import ObjectParser, PathParser
 
@@ -39,7 +38,7 @@ class JsAction(Action):
 
   @classmethod
   @override
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument("script", type=ObjectParser.non_empty_str)
     parser.add_argument(

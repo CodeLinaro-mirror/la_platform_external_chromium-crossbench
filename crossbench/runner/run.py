@@ -456,9 +456,9 @@ class Run(ResultOrigin):
     logging.info("- " * 40)
     RunAnnotation.log_all(self.annotations, limit=10)
 
-  def find_probe_context(self,
-                         cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:
-    return self._probe_context_manager.find_probe_context(cls)
+  def find_probe_context(
+      self, probe_cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:
+    return self._probe_context_manager.find_probe_context(probe_cls)
 
 
 class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
