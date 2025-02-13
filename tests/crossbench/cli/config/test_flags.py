@@ -125,6 +125,23 @@ class FlagsConfigTestCase(unittest.TestCase):
     self.assertEqual(str(flags_a_1), "--foo=1 --bar=1")
     self.assertEqual(str(flags_a_2), "--foo=1 --bar=2")
 
+  def test_parse_multi_dict_list_groups(self):
+    config = FlagsConfig.parse({
+        "a": {
+            "label_a_1": ["--foo=1", "--bar=1"],
+            "label_a_2": ["--foo=1", "--bar=2"],
+        }
+    })
+    self.assertEqual(len(config), 1)
+    self.assertEqual(len(config["a"]), 2)
+    self.assertTupleEqual(
+        tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
+    variants_a = config["a"]
+    flags_a_1 = variants_a[0].flags
+    flags_a_2 = variants_a[1].flags
+    self.assertEqual(str(flags_a_1), "--foo=1 --bar=1")
+    self.assertEqual(str(flags_a_2), "--foo=1 --bar=2")
+
   def test_parse_multi_dict_dict_groups(self):
     config = FlagsConfig.parse({
         "a": {
@@ -225,6 +242,12 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
 
   def test_parse_str_multiple(self):
     group = FlagsGroupConfig.parse(("--foo-a=1 --bar", "--foo-a=2"))
+    self.assertEqual(len(group), 2)
+    self.assertEqual(str(group[0].flags), "--foo-a=1 --bar")
+    self.assertEqual(str(group[1].flags), "--foo-a=2")
+
+  def test_parse_list_multiple(self):
+    group = FlagsGroupConfig.parse((("--foo-a=1", "--bar"), "--foo-a=2"))
     self.assertEqual(len(group), 2)
     self.assertEqual(str(group[0].flags), "--foo-a=1 --bar")
     self.assertEqual(str(group[1].flags), "--foo-a=2")
@@ -410,6 +433,21 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     with self.assertRaises(ValueError) as cm:
       group_a.product(group_b)
     self.assertIn("different previous value", str(cm.exception))
+
+  def test_inline_groups_1(self):
+    group_inline = FlagsGroupConfig.parse_args(("--foo=1",))
+    group_a = FlagsGroupConfig.parse(("--foo=1",))
+    group_b = FlagsGroupConfig.parse("--foo=1")
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+
+  def test_inline_groups_2(self):
+    group_inline = FlagsGroupConfig.parse_args(("--foo=1", "--bar"))
+    group_a = FlagsGroupConfig.parse(("--foo=1 --bar"))
+    group_b = FlagsGroupConfig.parse("--foo=1 --bar")
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+
 
 
 if __name__ == "__main__":

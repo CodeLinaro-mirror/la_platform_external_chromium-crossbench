@@ -7,7 +7,8 @@ from __future__ import annotations
 import dataclasses
 import functools
 import logging
-from typing import Any, Dict, Final, List, Optional, Sequence, Set, Tuple
+from typing import (Any, Dict, Final, Iterable, List, Optional, Sequence, Set,
+                    Tuple)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -22,6 +23,20 @@ from crossbench.parse import ObjectParser
 DEFAULT_LABEL: Final[str] = "default"
 
 
+def _parse_flags(flag_data) -> Flags:
+  if not flag_data:
+    return Flags().freeze()
+  if isinstance(flag_data, str):
+    return Flags.parse_str(flag_data).freeze()
+  if isinstance(flag_data, (list, tuple)):
+    return _parse_flags_sequence(flag_data)
+  return Flags.parse(flag_data).freeze()
+
+
+def _parse_flags_sequence(flag_data: Iterable) -> Flags:
+  split_flags = (Flags.split(flag) for flag in flag_data)
+  return Flags(split_flags).freeze()
+
 @dataclasses.dataclass(frozen=True)
 class FlagsVariantConfig:
   label: str
@@ -30,7 +45,7 @@ class FlagsVariantConfig:
 
   @classmethod
   def parse(cls, name: str, index: int, data: Any) -> FlagsVariantConfig:
-    return cls(name, index, Flags.parse(data).freeze())
+    return cls(name, index, _parse_flags(data))
 
   def merge_copy(self,
                  other: FlagsVariantConfig,
@@ -175,16 +190,12 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
     variants: List[FlagsVariantConfig] = []
     duplicates: Set[str] = set()
     for flag_data in data:
-      if not flag_data:
-        flags = Flags()
-      else:
-        flags = Flags.parse(flag_data)
+      flags = _parse_flags(flag_data)
       if flag_data in duplicates:
         raise ConfigError(f"Duplicate variant: {flags}")
       duplicates.add(flag_data)
-      variants.append(
-          FlagsVariantConfig(
-              convert_flags_to_label(*flags), len(variants), flags))
+      label = convert_flags_to_label(*flags)
+      variants.append(FlagsVariantConfig(label, len(variants), flags))
     return FlagsGroupConfig(tuple(variants))
 
   @classmethod
@@ -193,6 +204,19 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
       return FlagsGroupConfig()
     variants = (FlagsVariantConfig.parse(DEFAULT_LABEL, 0, value),)
     return FlagsGroupConfig(variants)
+
+  @classmethod
+  def parse_args(cls, args: Iterable[str]) -> FlagsGroupConfig:
+    arg_groups = {}
+    current_label: str | None = None
+    current_flags = []
+    for arg in args:
+      flag = arg
+      current_flags.append(flag)
+    if not current_label:
+      assert DEFAULT_LABEL not in arg_groups
+      arg_groups[DEFAULT_LABEL] = current_flags
+    return cls.parse(arg_groups)
 
   def product(self, *args: FlagsGroupConfig) -> FlagsGroupConfig:
     return functools.reduce(lambda a, b: a.inner_product(b), args, self)
