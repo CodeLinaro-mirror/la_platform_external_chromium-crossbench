@@ -32,11 +32,11 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
 
 @dataclasses.dataclass(frozen=True)
 class ProbeConfig(ConfigObject):
-  cls: Type[Probe]
+  probe_cls: Type[Probe]
   config: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
   def __post_init__(self) -> None:
-    if not self.cls:
+    if not self.probe_cls:
       raise ValueError(f"{type(self).__name__}.cls cannot be None.")
     if self.config is None:
       raise ValueError(f"{type(self).__name__}.config cannot be None.")
@@ -86,4 +86,4 @@ class ProbeConfig(ConfigObject):
 
   @property
   def name(self) -> str:
-    return self.cls.NAME
+    return self.probe_cls.NAME

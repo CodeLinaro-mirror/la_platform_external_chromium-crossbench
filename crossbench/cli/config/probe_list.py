@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import argparse
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
-                    Sequence, Type)
+import logging
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Type
 
 from typing_extensions import override
 
@@ -16,6 +16,7 @@ from crossbench.config import ConfigObject
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  import crossbench.path as pth
   from crossbench.probes.probe import Probe
 
 
@@ -24,9 +25,15 @@ class ProbeListConfig(ConfigObject):
   @classmethod
   def from_cli_args(cls, args: argparse.Namespace) -> ProbeListConfig:
     with exception.annotate_argparsing():
-      if args.probe_config:
-        return cls.parse_path(args.probe_config)
-      return cls(args.probe)
+      config_from_args = cls(args.probe)
+      if not args.probe_config:
+        return config_from_args
+      probe_config_path: pth.LocalPath = args.probe_config
+      config_from_file = cls.parse_path(probe_config_path)
+      with exception.annotate(
+          f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
+        return config_from_file.merge(config_from_args, should_override=True)
+    raise exception.UnreachableError()
 
   @classmethod
   def parse_other(cls: Type[ProbeListConfig], value: Any) -> ProbeListConfig:
@@ -39,8 +46,8 @@ class ProbeListConfig(ConfigObject):
                      config: Sequence[Dict[str, Any]]) -> ProbeListConfig:
     probe_configs: List[ProbeConfig] = []
     for index, probe_config in enumerate(config):
-      probe_config = ObjectParser.dict(probe_config, f"probes[{index}]")
-      probe_configs.append(ProbeConfig.parse_dict(probe_config))
+      with exception.annotate(f"Parsing probes[{index}]"):
+        probe_configs.append(ProbeConfig.parse(probe_config))
     return cls(probe_configs)
 
   @classmethod
@@ -67,18 +74,43 @@ class ProbeListConfig(ConfigObject):
   def parse_str(cls, value: str) -> ProbeListConfig:
     raise NotImplementedError()
 
-  def __init__(self, probes: Optional[Iterable[ProbeConfig]] = None):
-    self._probes: List[Probe] = []
-    if not probes:
+  def __init__(self,
+               probe_configs: Iterable[ProbeConfig] = tuple(),
+               probes: Iterable[Probe] = tuple()):
+    self._probes: Dict[str, Probe] = {}
+    if not probe_configs and not probes:
       return
-    for probe_config in probes:
+    for probe_config in probe_configs:
       with exception.annotate(f"Parsing --probe={probe_config.name}"):
-        self._add_probe(probe_config)
+        self._add_probe_config(probe_config)
+    for probe in probes:
+      self._add_probe(probe)
 
   @property
   def probes(self) -> List[Probe]:
-    return self._probes
+    return list(self._probes.values())
 
-  def _add_probe(self, probe_config: ProbeConfig) -> None:
-    probe: Probe = probe_config.cls.from_config(probe_config.config)
-    self._probes.append(probe)
+  def _add_probe_config(self, probe_config: ProbeConfig) -> None:
+    probe: Probe = probe_config.probe_cls.from_config(probe_config.config)
+    self._add_probe(probe)
+
+  def _add_probe(self, probe: Probe) -> None:
+    if probe.name in self._probes:
+      raise ValueError(f"Duplicate probe: {probe.name}")
+    self._probes[probe.name] = probe
+
+  def merge(self,
+            other: ProbeListConfig,
+            should_override: bool = False) -> ProbeListConfig:
+    merged_probes = {probe.name: probe for probe in self.probes}
+    for probe in other.probes:
+      name = probe.name
+      if name in merged_probes:
+        if not should_override:
+          raise ValueError(f"Duplicate probe: {name}")
+        else:
+          logging.warning("PROBES: Overriding existing probe %s!", name)
+      merged_probes[name] = probe
+
+    merged = ProbeListConfig(probes=merged_probes.values())
+    return merged

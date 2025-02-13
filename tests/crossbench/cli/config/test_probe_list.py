@@ -14,12 +14,13 @@ from crossbench.cli.config.probe import ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
+from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.types import JsonDict
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
-class TestProbeConfig(CrossbenchFakeFsTestCase):
+class TestProbeListConfig(BaseConfigTestCase):
   # pylint: disable=expression-not-assigned
 
   def parse_config(self, config_data) -> ProbeListConfig:
@@ -70,7 +71,7 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     }
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    args = mock.Mock(probe_config=file)
+    args = mock.Mock(probe_config=file, probe=[])
     config = ProbeListConfig.from_cli_args(args)
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
@@ -156,6 +157,126 @@ class TestProbeConfig(CrossbenchFakeFsTestCase):
     powersampler_probe = config.probes[1]
     assert isinstance(powersampler_probe, PowerSamplerProbe)
     self.assertEqual(powersampler_probe.bin_path, powersampler_bin)
+
+  def test_parse_args_empty(self):
+    args = mock.Mock(probe_config=None, probe=[])
+    probe_list = ProbeListConfig.from_cli_args(args)
+    self.assertFalse(probe_list.probes)
+
+  def test_parse_sequence(self):
+    probe_list = ProbeListConfig.parse(["v8.rcs", "v8.log"])
+    probes = probe_list.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8RCSProbe)
+    self.assertIsInstance(probes[1], V8LogProbe)
+
+  def test_parse_dict_simple(self):
+    probe_list = ProbeListConfig.parse({"v8.rcs": {}, "v8.log": {}})
+    probes = probe_list.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8RCSProbe)
+    self.assertIsInstance(probes[1], V8LogProbe)
+    # respect input order
+    probe_list = ProbeListConfig.parse({"v8.log": {}, "v8.rcs": {}})
+    probes = probe_list.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8LogProbe)
+    self.assertIsInstance(probes[1], V8RCSProbe)
+
+  def test_parse_dict_nested_config(self):
+    probe_list = ProbeListConfig.parse({"probes": {"v8.rcs": {}, "v8.log": {}}})
+    probes = probe_list.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8RCSProbe)
+    self.assertIsInstance(probes[1], V8LogProbe)
+
+  def test_parse_args_single_probe_config(self):
+    args = mock.Mock(probe_config=None, probe=[ProbeConfig.parse("v8.log")])
+    probe_list = ProbeListConfig.from_cli_args(args)
+    probes = probe_list.probes
+    self.assertEqual(len(probes), 1)
+    probe = probes[0]
+    self.assertIsInstance(probe, V8LogProbe)
+
+  def test_parse_args_multiple_probe_config(self):
+    args = mock.Mock(
+        probe_config=None,
+        probe=[
+            ProbeConfig.parse("v8.log"),
+            ProbeConfig.parse("v8.rcs"),
+        ])
+    probe_list = ProbeListConfig.from_cli_args(args)
+    probes = probe_list.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8LogProbe)
+    self.assertIsInstance(probes[1], V8RCSProbe)
+
+  def test_empty_config_file(self):
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        hjson.dump({"probes": []}, f)
+      args = mock.Mock(probe_config=config_file, probe=[])
+      probe_list = ProbeListConfig.from_cli_args(args)
+      self.assertFalse(probe_list.probes)
+
+  def test_merge_empty_config_file_with_single_probe(self):
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        hjson.dump({"probes": []}, f)
+      args = mock.Mock(
+          probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
+      probe_list = ProbeListConfig.from_cli_args(args)
+      probes = probe_list.probes
+      self.assertEqual(len(probes), 1)
+      probe = probes[0]
+      self.assertIsInstance(probe, V8LogProbe)
+
+  def test_merge_config_file_single_probe(self):
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        hjson.dump({"probes": ["v8.rcs"]}, f)
+      args = mock.Mock(
+          probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
+      probe_list = ProbeListConfig.from_cli_args(args)
+      probes = probe_list.probes
+      self.assertEqual(len(probes), 2)
+      self.assertIsInstance(probes[0], V8RCSProbe)
+      self.assertIsInstance(probes[1], V8LogProbe)
+
+  def test_merge_config_file_conflict(self):
+    # By default --probe args override --probe-config args
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        hjson.dump({"probes": ["v8.rcs"]}, f)
+      args = mock.Mock(
+          probe_config=config_file, probe=[ProbeConfig.parse("v8.rcs")])
+      probe_list = ProbeListConfig.from_cli_args(args)
+      probes = probe_list.probes
+      self.assertEqual(len(probes), 1)
+      probe = probes[0]
+      self.assertIsInstance(probe, V8RCSProbe)
+
+  def test_merge_conflict_raw(self):
+    probe_list_a = ProbeListConfig(
+        [ProbeConfig.parse("v8.log"),
+         ProbeConfig.parse("v8.rcs")])
+    probe_list_b = ProbeListConfig([ProbeConfig.parse("v8.rcs")])
+    with self.assertRaisesRegex(ValueError, "Duplicate"):
+      probe_list_a.merge(probe_list_b)
+    with self.assertRaisesRegex(ValueError, "Duplicate"):
+      probe_list_b.merge(probe_list_a)
+
+    merged_a_b = probe_list_a.merge(probe_list_b, should_override=True)
+    probes = merged_a_b.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8LogProbe)
+    self.assertIsInstance(probes[1], V8RCSProbe)
+
+    merged_b_a = probe_list_b.merge(probe_list_a, should_override=True)
+    probes = merged_b_a.probes
+    self.assertEqual(len(probes), 2)
+    self.assertIsInstance(probes[0], V8RCSProbe)
+    self.assertIsInstance(probes[1], V8LogProbe)
 
 
 if __name__ == "__main__":

@@ -3,17 +3,17 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import dataclasses
 import enum
 import logging
 from typing import Any, Dict, Mapping, Optional, Sequence, Set
 
+import google.auth.transport.requests
+import requests
+from google.auth.credentials import TokenState
 from google.oauth2 import service_account
 from typing_extensions import override
-
-import google.auth.transport.requests
-from google.auth.credentials import TokenState
-import requests
 
 from crossbench.cli.config.secrets import ServiceAccount
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser

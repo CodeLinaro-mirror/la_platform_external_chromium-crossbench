@@ -727,8 +727,7 @@ class CrossBenchCLI:
               "and disabled by default by crossbench."))
 
     probe_group = subparser.add_argument_group("Probe Options", "")
-    probe_config_group = probe_group.add_mutually_exclusive_group()
-    probe_config_group.add_argument(
+    probe_group.add_argument(
         "--probe",
         action="append",
         type=ProbeConfig.parse,
@@ -742,17 +741,15 @@ class CrossBenchCLI:
             "--probe='path/to/config.hjson'."
             "Use 'describe probes' or 'describe probe $NAME' for probe "
             "configuration details."
-            "Cannot be used together with --probe-config."
             f"\n\nChoices: {', '.join(PROBE_LOOKUP.keys())}"))
-    probe_config_group.add_argument(
+    probe_group.add_argument(
         "--probe-config",
         type=PathParser.hjson_file_path,
         default=benchmark_cls.default_probe_config_path(),
         help=("Browser configuration.json file. "
               "Use this config file to specify more complex Probe settings."
               "See config/doc/probe.config.hjson on how to set up a complex "
-              "configuration file. "
-              "Cannot be used together with --probe."))
+              "configuration file."))
     subparser.set_defaults(
         subcommand_fn=self.benchmark_subcommand, benchmark_cls=benchmark_cls)
     self._add_verbosity_argument(subparser)
