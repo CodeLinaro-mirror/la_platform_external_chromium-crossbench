@@ -299,7 +299,7 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
     self._platform.sh("killall", "chromedriver", check=False)
 
   def _wait_for_driver_port(self) -> int:
-    for _ in wait.wait_with_backoff(10, self._platform):
+    for _ in wait.wait_with_backoff(10):
       listening = self._platform.sh_stdout("ss", "-HOlntp")
       if m := self.SS_CHROMEDRIVER_LINE_RE.search(listening):
         return NumberParser.port_number(m[1], "driver port")

@@ -5,9 +5,11 @@
 from __future__ import annotations
 
 import datetime as dt
+import logging
+import time
 from typing import Iterator, Optional, Tuple
 
-from crossbench import plt
+from crossbench.runner.timing import AnyTimeUnit
 
 
 def as_timedelta(value: int | float | dt.timedelta) -> dt.timedelta:
@@ -69,10 +71,7 @@ class WaitRange:
       current_sleep = min(current_sleep * self.factor, self.max)
       i += 1
 
-  def wait_with_backoff(
-      self,
-      platform: Optional[plt.Platform] = None) -> Iterator[Tuple[float, float]]:
-    platform = platform or plt.PLATFORM
+  def wait_with_backoff(self) -> Iterator[Tuple[float, float]]:
     start = dt.datetime.now()
     timeout = self.timeout
     for sleep_for in self:
@@ -81,12 +80,25 @@ class WaitRange:
         raise TimeoutError(f"Waited for {duration}")
       time_left = timeout - duration
       yield duration.total_seconds(), time_left.total_seconds()
-      platform.sleep(sleep_for.total_seconds())
+      sleep_f(sleep_for.total_seconds())
+
+
+def sleep(seconds: AnyTimeUnit) -> None:
+  if isinstance(seconds, dt.timedelta):
+    seconds = seconds.total_seconds()
+  sleep_f(seconds)
+
+
+def sleep_f(seconds: float) -> None:
+  if seconds == 0:
+    return
+  logging.debug("WAIT %ss", seconds)
+  time.sleep(seconds)
 
 
 def wait_with_backoff(
-    wait_range: int | float | dt.timedelta | WaitRange,
-    platform: Optional[plt.Platform] = None) -> Iterator[Tuple[float, float]]:
+    wait_range: int | float | dt.timedelta | WaitRange
+) -> Iterator[Tuple[float, float]]:
   if not isinstance(wait_range, WaitRange):
     wait_range = WaitRange(timeout=wait_range)
-  return wait_range.wait_with_backoff(platform)
+  return wait_range.wait_with_backoff()

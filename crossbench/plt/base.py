@@ -22,7 +22,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -384,12 +383,7 @@ class Platform(abc.ABC):
     return True
 
   def sleep(self, seconds: int | float | dt.timedelta) -> None:
-    if isinstance(seconds, dt.timedelta):
-      seconds = seconds.total_seconds()
-    if seconds == 0:
-      return
-    logging.debug("WAIT %ss", seconds)
-    time.sleep(seconds)
+    wait.sleep(seconds)
 
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if not binary_name:
@@ -570,7 +564,7 @@ class Platform(abc.ABC):
     return False
 
   def wait_for_port(self, port: int, timeout: dt.timedelta) -> None:
-    for _ in wait.wait_with_backoff(timeout, self):
+    for _ in wait.wait_with_backoff(timeout):
       if self.is_port_used(port):
         break
 
