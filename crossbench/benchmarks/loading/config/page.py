@@ -31,11 +31,11 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class PageConfig(ConfigObject):
-  label: Optional[str] = None
-  playback: Optional[PlaybackController] = None
+  label: str | None = None
+  playback: PlaybackController | None = None
   secrets: Secrets = Secrets()
-  login: Optional[LoginBlock] = None
-  setup: Optional[ActionBlock] = None
+  login: LoginBlock | None = None
+  setup: ActionBlock | None = None
   blocks: Tuple[ActionBlock, ...] = tuple()
 
   @classmethod

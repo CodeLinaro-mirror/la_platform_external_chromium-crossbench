@@ -88,7 +88,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
 
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    loadline_result: Optional[pth.LocalPath] = None
+    loadline_result: pth.LocalPath | None = None
     for result in all_results:
       # Look for the "loadline/benchmark_score" trace processor query result.
       if result.name == "loadline_benchmark_score.csv":

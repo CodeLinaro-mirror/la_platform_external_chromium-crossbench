@@ -48,8 +48,8 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     self._result_origin = result_origin
     self._is_active: bool = False
     self._is_success: bool = False
-    self._start_time: Optional[dt.datetime] = None
-    self._stop_time: Optional[dt.datetime] = None
+    self._start_time: dt.datetime | None = None
+    self._stop_time: dt.datetime | None = None
 
   def set_start_time(self, start_datetime: dt.datetime) -> None:
     assert self._start_time is None

@@ -8,7 +8,7 @@ import atexit
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Sequence, Tuple, Type
 
 from typing_extensions import override
 
@@ -104,7 +104,7 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
 
   def __init__(self, probe: PowerMetricsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._power_metrics_process: Optional[subprocess.Popen] = None
+    self._power_metrics_process: subprocess.Popen | None = None
     self._output_plist_file: AnyPath = self.result_path.with_suffix(".plist")
 
   def start(self) -> None:

@@ -419,7 +419,7 @@ class Adb:
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    user: Optional[str] = None
+    user: str | None = None
     if self.build_version >= 14:
       user = self.cmd("user", "get-main-user").strip()
     for perm in ANDROID_PERMISSIONS:

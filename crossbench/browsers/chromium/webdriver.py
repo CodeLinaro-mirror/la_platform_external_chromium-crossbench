@@ -72,7 +72,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
                settings: Optional[Settings] = None):
     assert settings, "Android browser needs custom settings and platform"
     self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
-    self._previous_command_line_contents: Optional[str] = None
+    self._previous_command_line_contents: str | None = None
     super().__init__(label, path, settings)
     self._android_package: str = self._lookup_android_package(self.path)
     if not self._android_package:
@@ -254,7 +254,7 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
 
   _platform: LinuxSshPlatform
   _forward_port: int
-  _chromedriver: Optional[subprocess.Popen]
+  _chromedriver: subprocess.Popen | None
 
   def __init__(
       self,

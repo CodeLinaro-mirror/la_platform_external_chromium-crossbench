@@ -32,8 +32,8 @@ from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
 from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 if TYPE_CHECKING:
-  from crossbench.runner.timing import AnyTimeUnit
   from crossbench.runner.run import Run
+  from crossbench.runner.timing import AnyTimeUnit
 
 
 
@@ -82,7 +82,7 @@ class MockRun:
     self.did_run = False
     self.did_teardown = False
     self.did_teardown_browser = False
-    self.is_dry_run: Optional[bool] = None
+    self.is_dry_run: bool | None = None
 
   def validate_env(self, env: HostEnvironment):
     pass

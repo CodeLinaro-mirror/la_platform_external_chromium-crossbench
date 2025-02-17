@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 class AndroidProfilingContext(PosixProfilingContext):
 
   def _generate_command_line(self) -> ListCmdArgs:
-    renderer_pid: Optional[int] = None
-    renderer_main_tid: Optional[int] = None
+    renderer_pid: int | None = None
+    renderer_main_tid: int | None = None
     if self.probe.target in (TargetMode.RENDERER_MAIN_ONLY,
                              TargetMode.RENDERER_PROCESS_ONLY):
       renderer_pid, renderer_main_tid = self.renderer_pid_tid

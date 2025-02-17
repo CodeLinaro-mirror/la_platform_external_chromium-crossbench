@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -55,7 +55,7 @@ class RemotePopen(subprocess.Popen):
     self._platform: Platform = platform
     assert self._platform.is_remote, (
         f"Cannot create remote process on local platform {self._platform}")
-    self._remote_pid: Optional[int] = None
+    self._remote_pid: int | None = None
     super().__init__(
         args, bufsize=bufsize, stdout=stdout, stderr=stderr, stdin=stdin)
 

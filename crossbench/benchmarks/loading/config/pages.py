@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class PagesConfig(ConfigObject):
   pages: Tuple[PageConfig, ...] = ()
-  secrets: Optional[Secrets] = None
+  secrets: Secrets | None = None
 
   @override
   def validate(self) -> None:
@@ -55,7 +55,7 @@ class PagesConfig(ConfigObject):
       return cls.parse_inline_hjson(value)
 
     values: List[str] = []
-    previous_part: Optional[str] = None
+    previous_part: str | None = None
     for part in value.strip().split(","):
       part = ObjectParser.non_empty_str(part, "url or duration")
       try:
@@ -110,7 +110,7 @@ class PagesConfig(ConfigObject):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
             "Config does not provide a 'pages' dict.")
-      secrets: Optional[Secrets] = None
+      secrets: Secrets | None = None
       if secrets_data := config.get("secrets"):
         secrets = Secrets.parse(secrets_data)
       pages_config = ObjectParser.non_empty_dict(config["pages"], "pages")
@@ -194,10 +194,10 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
   def _parse_selectors(cls, selectors: List[List[str]]) -> str:
-    xpath: Optional[str] = None
-    aria: Optional[str] = None
-    text: Optional[str] = None
-    css: Optional[str] = None
+    xpath: str | None = None
+    aria: str | None = None
+    text: str | None = None
+    css: str | None = None
     # Detect all single-element selectors first.
     for selector_list in selectors:
       if len(selector_list) != 1:

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 from typing_extensions import override
 
@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class Secrets(ConfigObject):
-  google: Optional[UsernamePassword] = None
-  bond: Optional[ServiceAccount] = None
+  google: UsernamePassword | None = None
+  bond: ServiceAccount | None = None
 
   @classmethod
   def config_parser(cls) -> ConfigParser[Secrets]:

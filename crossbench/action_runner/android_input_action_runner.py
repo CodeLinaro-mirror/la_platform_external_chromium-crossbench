@@ -30,7 +30,7 @@ class ViewportInfo:
                window_inner_height: int,
                window_inner_width: int,
                element_rect: Optional[DisplayRectangle] = None) -> None:
-    self._element_rect: Optional[DisplayRectangle] = None
+    self._element_rect: DisplayRectangle | None = None
 
     # On android, clank does not report the correct window.devicePixelRatio
     # when a page is zoomed.
@@ -87,7 +87,7 @@ class AndroidInputActionRunner(DefaultActionRunner):
 
   # Represents the position of the chrome main window relative to the entire
   # screen as reported by Android window manager.
-  _raw_chrome_window_bounds: Optional[DisplayRectangle] = None
+  _raw_chrome_window_bounds: DisplayRectangle | None = None
 
   @property
   def raw_chrome_window_bounds(self) -> DisplayRectangle:
@@ -263,7 +263,7 @@ return [
     if not self._raw_chrome_window_bounds:
       self._raw_chrome_window_bounds = self._find_chrome_window_size(run)
 
-    element_rect: Optional[DisplayRectangle] = None
+    element_rect: DisplayRectangle | None = None
     if found_element:
       element_rect = DisplayRectangle(Point(left, top), width, height)
 

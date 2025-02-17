@@ -149,9 +149,9 @@ class JetStream2BaseTestCase(
   @dataclass
   class Namespace(argparse.Namespace):
     stories = "default"
-    iterations: Optional[int] = None
+    iterations: int | None = None
     separate: bool = False
-    custom_benchmark_url: Optional[str] = None
+    custom_benchmark_url: str | None = None
     detailed_metrics: bool = False
 
   def test_iterations_kwargs(self):

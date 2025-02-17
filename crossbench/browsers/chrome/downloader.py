@@ -46,7 +46,7 @@ class ChromeDownloader(Downloader):
   }
 
   def __init__(self, *args, **kwargs):
-    self._gsutil: Optional[pth.AnyPath] = None
+    self._gsutil: pth.AnyPath | None = None
     super().__init__(*args, **kwargs)
 
   @classmethod

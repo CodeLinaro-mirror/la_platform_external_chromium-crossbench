@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -114,7 +114,7 @@ class V8RCSProbe(ChromiumProbe):
 
 
 class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
-  _rcs_table: Optional[str] = None
+  _rcs_table: str | None = None
 
   @override
   def setup(self) -> None:

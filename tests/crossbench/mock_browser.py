@@ -39,9 +39,9 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class JsInvocation:
   result: Any
-  script: Optional[str | re.Pattern] = None
-  arguments: Optional[List[Any]] = None
-  timeout: Optional[dt.timedelta] = None
+  script: str | re.Pattern | None = None
+  arguments: List[Any] | None = None
+  timeout: dt.timedelta | None = None
 
 
 class MockNetwork(Network):

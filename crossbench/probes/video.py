@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, TextIO, Tuple, Type
 
 from typing_extensions import override
 
@@ -231,8 +231,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def __init__(self, probe: VideoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._record_process: Optional[subprocess.Popen] = None
-    self._recorder_log_file: Optional[TextIO] = None
+    self._record_process: subprocess.Popen | None = None
+    self._recorder_log_file: TextIO | None = None
 
   def start(self) -> None:
     browser = self.run.browser

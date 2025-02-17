@@ -195,7 +195,7 @@ class CrossBenchCLI:
 
   def __init__(self, enable_logging: bool = True) -> None:
     self._enable_logging = enable_logging
-    self._console_handler: Optional[logging.StreamHandler] = None
+    self._console_handler: logging.StreamHandler | None = None
     self._subparsers: Dict[BenchmarkClsT, CrossBenchArgumentParser] = {}
     self.parser = MainCrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
@@ -756,8 +756,8 @@ class CrossBenchCLI:
     subparser.add_argument("other_browser_args", nargs="*")
 
   def benchmark_subcommand(self, args: argparse.Namespace) -> None:
-    benchmark: Optional[Benchmark] = None
-    runner: Optional[Runner] = None
+    benchmark: Benchmark | None = None
+    runner: Runner | None = None
     if args.cache_dir:
       plt.PLATFORM.set_cache_dir(args.cache_dir)
     self._benchmark_subcommand_helper(args)

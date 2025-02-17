@@ -238,7 +238,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
 
   def __init__(self) -> None:
     super().__init__()
-    self._enabled: Dict[str, Optional[str]] = {}
+    self._enabled: Dict[str, str | None] = {}
     self._disabled: OrderedSet[str] = OrderedSet()
 
   @property

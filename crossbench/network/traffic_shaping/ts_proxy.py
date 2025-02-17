@@ -78,7 +78,7 @@ class TsProxyServer:
                window: Optional[int] = None,
                verbose: bool = True):
     self._platform = platform
-    self._proc: Optional[TsProxyProcess] = None
+    self._proc: TsProxyProcess | None = None
     self._ts_proxy_path = PathParser.existing_file_path(ts_proxy_path)
     self._socks_proxy_port = socks_proxy_port
     self._host = host
@@ -191,8 +191,8 @@ class TsProxyProcess:
         sys.executable,
         ts_proxy_path,
     ]
-    self._socks_proxy_port: Optional[int] = socks_proxy_port
-    self._initial_socks_proxy_port: Optional[int] = socks_proxy_port
+    self._socks_proxy_port: int | None = socks_proxy_port
+    self._initial_socks_proxy_port: int | None = socks_proxy_port
     if not socks_proxy_port:
       # Use port 0 so tsproxy picks a random available port.
       cmd.append("--port=0")
@@ -200,23 +200,23 @@ class TsProxyProcess:
       cmd.append(f"--port={socks_proxy_port}")
     if verbose:
       cmd.append("--verbose")
-    self._in_kbps: Optional[int] = in_kbps
+    self._in_kbps: int | None = in_kbps
     if in_kbps:
       cmd.append(f"--inkbps={in_kbps}")
-    self._out_kbps: Optional[int] = out_kbps
+    self._out_kbps: int | None = out_kbps
     if out_kbps:
       cmd.append(f"--outkbps={out_kbps}")
-    self._window: Optional[int] = window
+    self._window: int | None = window
     if window:
       cmd.append(f"--window={window}")
-    self._rtt_ms: Optional[int] = rtt_ms
+    self._rtt_ms: int | None = rtt_ms
     if rtt_ms:
       cmd.append(f"--rtt={rtt_ms}")
-    self._host: Optional[str] = host
+    self._host: str | None = host
     if host:
       cmd.append(f"--desthost={host}")
-    self._http_port: Optional[int] = http_port
-    self._https_port: Optional[int] = https_port
+    self._http_port: int | None = http_port
+    self._https_port: int | None = https_port
     TsProxyServer.verify_ports(http_port, https_port)
     mapports = []
     if https_port:

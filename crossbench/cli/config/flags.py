@@ -164,7 +164,7 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
         return cls.parse_str(flag_name)
       data = (data_str,)
     assert isinstance(data, (list, tuple)), "Invalid flag variant type"
-    flags: OrderedSet[Optional[Flags]] = OrderedSet()
+    flags: OrderedSet[Flags | None] = OrderedSet()
     for variant in data:
       if variant is None:
         flag = None

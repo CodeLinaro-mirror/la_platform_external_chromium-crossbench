@@ -42,9 +42,9 @@ class NetworkType(ConfigEnum):
 class NetworkConfig(ConfigObject):
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
-  path: Optional[pth.LocalPath] = None
-  url: Optional[str] = None
-  wpr_go_bin: Optional[pth.LocalPath] = None
+  path: pth.LocalPath | None = None
+  url: str | None = None
+  wpr_go_bin: pth.LocalPath | None = None
   persist_server: bool = False
   run_on_device: bool = False
   skip_injection: bool = False

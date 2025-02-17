@@ -61,8 +61,8 @@ class FirefoxVersion(BrowserVersion):
 
   @classmethod
   def _parse_channel(cls, full_version: str, matches) -> BrowserVersionChannel:
-    channel_long: Optional[str] = matches["channel_long"]
-    channel_short: Optional[str] = matches["channel_short"]
+    channel_long: str | None = matches["channel_long"]
+    channel_short: str | None = matches["channel_short"]
     if not channel_long and not channel_short:
       full_version_lower = full_version.lower()
       for long_name, channel in cls._CHANNEL_LONG_LOOKUP.items():

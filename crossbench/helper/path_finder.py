@@ -23,7 +23,7 @@ class BaseToolFinder(abc.ABC):
                                                   ...] = tuple()) -> None:
     self._platform = platform
     self._candidates = candidates + self.default_candidates()
-    self._path: Optional[pth.AnyPath] = self._find_path()
+    self._path: pth.AnyPath | None = self._find_path()
     if self._path:
       assert self.is_valid_path(self._path)
 
@@ -198,13 +198,13 @@ class V8ToolsFinder:
                d8_binary: Optional[pth.AnyPath] = None,
                v8_checkout: Optional[pth.AnyPath] = None) -> None:
     self.platform = platform
-    self.d8_binary: Optional[pth.AnyPath] = d8_binary
-    self.v8_checkout: Optional[pth.AnyPath] = None
+    self.d8_binary: pth.AnyPath | None = d8_binary
+    self.v8_checkout: pth.AnyPath | None = None
     if v8_checkout:
       self.v8_checkout = v8_checkout
     else:
       self.v8_checkout = V8CheckoutFinder(self.platform).path
-    self.tick_processor: Optional[pth.AnyPath] = None
+    self.tick_processor: pth.AnyPath | None = None
     self.d8_binary = self._find_d8()
     if self.d8_binary:
       self.tick_processor = self._find_v8_tick_processor()

@@ -107,7 +107,7 @@ class Platform(abc.ABC):
 
   def __init__(self) -> None:
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
-    self._cache_dir_root: Optional[pth.AnyPath] = None
+    self._cache_dir_root: pth.AnyPath | None = None
 
   def assert_is_local(self) -> None:
     if self.is_local:

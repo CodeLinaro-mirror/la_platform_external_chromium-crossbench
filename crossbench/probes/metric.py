@@ -248,7 +248,7 @@ class MetricsMerger:
     assert isinstance(data, dict)
     for property_name, value in data.items():
       path = parent_path + (property_name,)
-      key: Optional[str] = self._key_fn(path)
+      key: str | None = self._key_fn(path)
       if key is None:
         continue
       if isinstance(value, dict):

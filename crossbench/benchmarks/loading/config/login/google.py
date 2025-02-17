@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class GoogleLogin(PresetLoginBlock):
   @override
   def run_with(self, runner: ActionRunner, run: Run,
                page: InteractivePage) -> None:
-    secret: Optional[UsernamePassword] = run.secrets.google
+    secret: UsernamePassword | None = run.secrets.google
     if not secret:
       raise RuntimeError("No google login provided")
 

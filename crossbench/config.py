@@ -62,20 +62,20 @@ class _ConfigArgParser:
     self.name: str = name
     self.aliases = tuple(aliases)
     self._validate_aliases()
-    self.type: Optional[ArgParserType] = type
+    self.type: ArgParserType | None = type
     self.required: bool = required
-    self.help: Optional[str] = help
+    self.help: str | None = help
     self.is_list: bool = is_list
     type_is_class = inspect.isclass(type)
     self.type_is_class: bool = type_is_class
     self.is_enum: bool = type_is_class and issubclass(
         type,  # type: ignore
         enum.Enum)
-    self.config_object_type: Optional[Type[ConfigObject]] = None
+    self.config_object_type: Type[ConfigObject] | None = None
     if type_is_class and issubclass(type, ConfigObject):  # type: ignore
       self.config_object_type = type  # type: ignore
     self.depends_on = frozenset(depends_on) if depends_on else frozenset()
-    self.choices: Optional[frozenset] = self._validate_choices(choices)
+    self.choices: frozenset | None = self._validate_choices(choices)
     if self.type:
       self._validate_callable()
     self.default = self._validate_default(default)
@@ -160,7 +160,7 @@ class _ConfigArgParser:
     if self.is_enum:
       return self._validate_enum_default(default)
     # TODO: Remove once pytype can handle self.type
-    maybe_class: Optional[ArgParserType] = self.type
+    maybe_class: ArgParserType | None = self.type
     if self.is_list:
       self._validate_list_default(default, maybe_class)
     elif maybe_class and inspect.isclass(maybe_class):
@@ -297,7 +297,7 @@ class _ConfigArgParser:
     return self.parse_data(data, depending_kwargs)
 
   def _pop_alias(self, config_data) -> Optional[Any]:
-    value: Optional[Any] = None
+    value: Any | None = None
     found: bool = False
     for alias in self.aliases:
       if alias not in config_data:

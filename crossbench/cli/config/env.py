@@ -78,18 +78,18 @@ ENV_CONFIG_PRESETS: Dict[str, "EnvironmentConfig"] = {}
 class EnvironmentConfig(ConfigObject):
   IGNORE = None
 
-  browser_allow_background: Optional[bool] = IGNORE
-  browser_allow_existing_process: Optional[bool] = IGNORE
-  browser_is_headless: Optional[bool] = IGNORE
-  cpu_max_usage_percent: Optional[float] = IGNORE
-  cpu_min_relative_speed: Optional[float] = IGNORE
-  disk_min_free_space_gib: Optional[float] = IGNORE
-  power_use_battery: Optional[bool] = IGNORE
-  require_probes: Optional[bool] = IGNORE
-  screen_allow_autobrightness: Optional[bool] = IGNORE
-  screen_brightness_percent: Optional[int] = IGNORE
-  system_allow_monitoring: Optional[bool] = IGNORE
-  system_forbidden_process_names: Optional[List[str]] = IGNORE
+  browser_allow_background: bool | None = IGNORE
+  browser_allow_existing_process: bool | None = IGNORE
+  browser_is_headless: bool | None = IGNORE
+  cpu_max_usage_percent: float | None = IGNORE
+  cpu_min_relative_speed: float | None = IGNORE
+  disk_min_free_space_gib: float | None = IGNORE
+  power_use_battery: bool | None = IGNORE
+  require_probes: bool | None = IGNORE
+  screen_allow_autobrightness: bool | None = IGNORE
+  screen_brightness_percent: int | None = IGNORE
+  system_allow_monitoring: bool | None = IGNORE
+  system_forbidden_process_names: List[str] | None = IGNORE
 
   @classmethod
   def default(cls) -> EnvironmentConfig:

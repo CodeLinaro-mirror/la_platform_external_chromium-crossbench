@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, Mapping, Optional, Sequence, Set
+from typing import Any, Dict, Mapping, Sequence, Set
 
 import google.auth.transport.requests
 import requests
@@ -40,7 +40,7 @@ class AddBotsConfig(ConfigObject):
   video_fps: int
   mute_video: bool
   requested_layout: MeetLayout
-  video_file_path: Optional[str]
+  video_file_path: str | None
 
   @classmethod
   @override

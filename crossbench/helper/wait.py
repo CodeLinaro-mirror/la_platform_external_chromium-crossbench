@@ -35,7 +35,7 @@ class WaitRange:
   min: dt.timedelta
   max: dt.timedelta
   initial_sleep: dt.timedelta
-  max_iterations: Optional[int]
+  max_iterations: int | None
 
   def __init__(
       self,

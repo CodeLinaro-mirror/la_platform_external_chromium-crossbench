@@ -34,7 +34,7 @@ from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  FlagGroupItemT = Optional[Tuple[str, Optional[str]]]
+  FlagGroupItemT = Tuple[str, str | None] | None
   BrowserLookupTableT = Dict[str, Tuple[Type[Browser], "BrowserConfig"]]
 
 
@@ -139,7 +139,7 @@ class BrowserVariantsConfig:
   def _parse_browser_dict(self, name: str,
                           raw_browser_data: str | Dict[str, Any],
                           args: argparse.Namespace) -> None:
-    path_or_identifier: Optional[str] = None
+    path_or_identifier: str | None = None
     if isinstance(raw_browser_data, dict):
       path_or_identifier = raw_browser_data.get("path")
     else:

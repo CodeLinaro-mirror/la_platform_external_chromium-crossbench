@@ -30,9 +30,9 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def __init__(self, host_platform: Platform, host: str, port: int,
                ssh_port: int, ssh_user: str) -> None:
     super().__init__(host_platform, host, port, ssh_port, ssh_user)
-    self._machine: Optional[MachineArch] = None
-    self._system_details: Optional[Dict[str, Any]] = None
-    self._cpu_details: Optional[Dict[str, Any]] = None
+    self._machine: MachineArch | None = None
+    self._system_details: Dict[str, Any] | None = None
+    self._cpu_details: Dict[str, Any] | None = None
     self._port_forward_popens: Dict[int, subprocess.Popen] = {}
     self._reverse_port_forward_popens: Dict[int, subprocess.Popen] = {}
     atexit.register(self._stop_all_port_forward)

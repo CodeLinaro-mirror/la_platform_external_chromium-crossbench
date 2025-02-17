@@ -69,7 +69,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._index: int = index
     self._runs: List[Run] = []
     self._root_dir: LocalPath = root_dir
-    self._browser_tmp_dir: Optional[AnyPath] = None
+    self._browser_tmp_dir: AnyPath | None = None
     self._extra_js_flags = JSFlags()
     self._extra_flags = extra_flags
     # Temporary objects, reset after all runs are ready (see set_ready).

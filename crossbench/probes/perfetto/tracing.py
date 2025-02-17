@@ -223,9 +223,9 @@ class TracingProbe(ChromiumProbe):
                record_format: RecordFormat = RecordFormat.PROTO,
                traceconv: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
-    self._trace_config: Optional[pth.LocalPath] = trace_config
+    self._trace_config: pth.LocalPath | None = trace_config
     self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
-    self._preset: Optional[str] = preset
+    self._preset: str | None = preset
     if preset:
       self._categories.update(TRACE_PRESETS[preset])
     if self._trace_config:
@@ -238,7 +238,7 @@ class TracingProbe(ChromiumProbe):
     self._startup_duration: int = startup_duration
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
-    self._traceconv: Optional[pth.LocalPath] = traceconv
+    self._traceconv: pth.LocalPath | None = traceconv
     if not traceconv and self._record_format == RecordFormat.PROTO:
       self._find_traceconv()
 
@@ -312,7 +312,7 @@ class TracingProbe(ChromiumProbe):
 
 
 class TracingProbeContext(ProbeContext[TracingProbe]):
-  _traceconv: Optional[pth.AnyPath]
+  _traceconv: pth.AnyPath | None
   _record_format: RecordFormat
 
   def setup(self) -> None:
@@ -328,7 +328,7 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
   def teardown(self) -> ProbeResult:
     if self._record_format == RecordFormat.JSON:
       return self.browser_result(json=(self.result_path,))
-    traceconv: Optional[pth.LocalPath] = self.probe.traceconv
+    traceconv: pth.LocalPath | None = self.probe.traceconv
     result = self.browser_result(proto=(self.result_path,))
     if not traceconv:
       logging.info(

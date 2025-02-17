@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, List, Optional, Type
+from typing import TYPE_CHECKING, List, Type
 
 from typing_extensions import override
 
@@ -39,7 +39,7 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
   @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     repetitions: List[JsonDict] = []
-    browser: Optional[JsonDict] = None
+    browser: JsonDict | None = None
 
     for run in group.runs:
       source_file = run.results[self].json

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -52,7 +52,7 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
 
 
 class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
-  _pgo_counters: Optional[str] = None
+  _pgo_counters: str | None = None
 
   @override
   def setup(self) -> None:

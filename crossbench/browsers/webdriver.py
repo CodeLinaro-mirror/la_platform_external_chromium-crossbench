@@ -52,19 +52,19 @@ class DriverException(RuntimeError):
 
 
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
+  # TODO: properly annotate this lazily initialized instance variable.
   _private_driver: webdriver.Remote
-  _driver_path: Optional[AnyPath]
-  _driver_pid: int
-  _pid: int
-  log_file: Optional[LocalPath]
 
   def __init__(self,
                label: str,
                path: Optional[AnyPath] = None,
                settings: Optional[Settings] = None):
     super().__init__(label, path, settings)
-    self._driver_path = self._settings.driver_path
-    self._driver_log_file: Optional[LocalPath] = None
+    self._driver_path: AnyPath | None = self._settings.driver_path
+    self._driver_log_file: LocalPath | None = None
+    self._driver_pid: int = 0
+    self._pid: int = 0
+    self.log_file: LocalPath | None = None
 
   @property
   @override

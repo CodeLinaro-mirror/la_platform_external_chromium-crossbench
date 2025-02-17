@@ -58,8 +58,8 @@ class BrowserConfig(ConfigObject):
   # Make network optional since --network provides a global default and we do
   # want to have the option to explicitly specify the default network in a
   # browser config.
-  network: Optional[NetworkConfig] = None
-  env: Optional[EnvironmentConfig] = None
+  network: NetworkConfig | None = None
+  env: EnvironmentConfig | None = None
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -77,10 +77,10 @@ class BrowserConfig(ConfigObject):
   def parse_str(cls, value: str) -> BrowserConfig:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
-    path: Optional[pth.AnyPathLike] = None
+    path: pth.AnyPathLike | None = None
     driver = DriverConfig.default()
-    network: Optional[NetworkConfig] = None
-    env: Optional[EnvironmentConfig] = None
+    network: NetworkConfig | None = None
+    env: EnvironmentConfig | None = None
     if ":" not in value or cls.value_has_path_prefix(value):
       # Variant 1: $PATH_OR_IDENTIFIER
       path = cls._parse_path_or_identifier(value)

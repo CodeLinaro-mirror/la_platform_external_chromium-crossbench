@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
   from crossbench.types import Json
 
-  ShuffleSeedT = Optional[str | int]
+  ShuffleSeedT = str | int | None
 
 
 class Speedometer30Probe(SpeedometerProbe):

@@ -8,7 +8,7 @@ import abc
 import logging
 import subprocess
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Tuple, cast
 
 from typing_extensions import override
 
@@ -25,7 +25,7 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._profiling_process: Optional[subprocess.Popen] = None
+    self._profiling_process: subprocess.Popen | None = None
     self._story_ready = False
 
   def setup_v8_log_path(self) -> None:
@@ -46,8 +46,8 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     assert self._story_ready, (
         "Fetching renderer PID/TID before the story is loaded could lead to "
         "the wrong PID/TID being used. This should never happen TM!")
-    renderer_pid: Optional[int] = None
-    renderer_main_tid: Optional[int] = None
+    renderer_pid: int | None = None
+    renderer_main_tid: int | None = None
     with self.run.actions("Get Renderer PID/TID") as actions:
       renderer_pid = actions.js(
           "return chrome?.benchmarking?.getRendererPid?.();")

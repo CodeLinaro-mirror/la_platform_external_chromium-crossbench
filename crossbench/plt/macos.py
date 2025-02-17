@@ -232,7 +232,7 @@ class MacOSPlatform(PosixPlatform):
 
 
     # Backup solution use the binary (not the .app bundle) with --version.
-    maybe_bin_path: Optional[pth.AnyPath] = app_or_bin
+    maybe_bin_path: pth.AnyPath | None = app_or_bin
     if app_or_bin.suffix == ".app":
       maybe_bin_path = self.search_binary(app_or_bin)
     if not maybe_bin_path:

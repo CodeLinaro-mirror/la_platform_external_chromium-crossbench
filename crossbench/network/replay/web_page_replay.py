@@ -51,11 +51,11 @@ class WprBase(abc.ABC):
                log_path: Optional[LocalPath] = None,
                platform: Platform = PLATFORM):
     self._platform: Platform = platform
-    self._process: Optional[subprocess.Popen] = None
-    self._log_path: Optional[LocalPath] = None
+    self._process: subprocess.Popen | None = None
+    self._log_path: LocalPath | None = None
     if log_path:
       self._log_path = PathParser.not_existing_path(log_path)
-    self._log_file: Optional[TextIO] = None
+    self._log_file: TextIO | None = None
     self._bin_path = bin_path
     self._go_cmd: TupleCmdArgs = ()
     self._host_http_port: int = 0
@@ -355,7 +355,7 @@ class WprReplayServer(WprBase):
                platform: Platform = PLATFORM):
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
-    self._rules_file: Optional[AnyPath] = None
+    self._rules_file: AnyPath | None = None
     if rules_file:
       self._rules_file = PathParser.non_empty_file_path(rules_file)
     self._fuzzy_url_matching: bool = fuzzy_url_matching

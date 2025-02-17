@@ -223,14 +223,14 @@ class ProfilingProbe(Probe):
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
     self._target: TargetMode = target
-    self._pin_renderer_main_core: Optional[int] = pin_renderer_main_core
+    self._pin_renderer_main_core: int | None = pin_renderer_main_core
     self._call_graph_mode: CallGraphMode = call_graph_mode
     self._start_profiling_after_setup: bool = target in (
         TargetMode.RENDERER_MAIN_ONLY,
         TargetMode.RENDERER_PROCESS_ONLY) or pin_renderer_main_core is not None
-    self._frequency: Optional[int | str] = frequency
-    self._clockid: Optional[str] = clockid
-    self._count: Optional[int] = count
+    self._frequency: int | str | None = frequency
+    self._clockid: str | None = clockid
+    self._count: int | None = count
     self._cpu: Tuple[int, ...] = tuple(cpu)
     self._events: Tuple[str, ...] = tuple(events)
     self._grouped_events: Tuple[str, ...] = tuple(grouped_events)

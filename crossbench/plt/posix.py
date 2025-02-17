@@ -32,7 +32,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def __init__(self) -> None:
     super().__init__()
-    self._default_tmp_dir: Optional[pth.AnyPath] = None
+    self._default_tmp_dir: pth.AnyPath | None = None
 
   @property
   def signals(self) -> Type[AnyPosixSignals]:

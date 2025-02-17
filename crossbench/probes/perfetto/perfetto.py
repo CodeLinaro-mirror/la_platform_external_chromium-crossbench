@@ -8,7 +8,7 @@ import abc
 import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Optional, cast
+from typing import TYPE_CHECKING, Iterable, cast
 
 from typing_extensions import override
 
@@ -152,7 +152,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     super().__init__(probe, run)
     self._host_config_file: pth.LocalPath = (
         run.out_dir / "perfetto_config.textproto")
-    self._perfetto_pid: Optional[int] = None
+    self._perfetto_pid: int | None = None
 
   def setup(self) -> None:
     assert self._perfetto_pid is None
@@ -247,7 +247,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
 class DesktopPerfettoProbeContext(PerfettoProbeContext):
 
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
-    self._tracebox_proc: Optional[subprocess.Popen] = None
+    self._tracebox_proc: subprocess.Popen | None = None
     super().__init__(probe, run)
     self._tracebox_bin = self.probe.tracebox_bin
 

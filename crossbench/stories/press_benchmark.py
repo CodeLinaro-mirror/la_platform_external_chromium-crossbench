@@ -91,7 +91,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     super().__init__(*args, **kwargs)
     # If the _custom_url is empty, we generate a matching URL when the
     # local file server is used.
-    self._custom_url: Optional[str] = url
+    self._custom_url: str | None = url
 
   def _get_unique_name(self) -> str:
     substories_set = set(self._substories)

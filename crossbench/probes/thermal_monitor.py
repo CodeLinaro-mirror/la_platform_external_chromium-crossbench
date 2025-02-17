@@ -72,7 +72,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
                cool_down_time: dt.timedelta = dt.timedelta(),
                threshold: Optional[ThermalStatus] = None):
     super().__init__()
-    self._threshold: Optional[ThermalStatus] = threshold
+    self._threshold: ThermalStatus | None = threshold
     self._cool_down_time: dt.timedelta = cool_down_time
     if threshold is not None and threshold <= 0:
       raise ValueError("Threshold must be positive")

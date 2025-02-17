@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Tuple
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class StoriesRunGroup(RunGroup):
   def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._repetitions_groups: List[RepetitionsRunGroup] = []
-    self._browser: Optional[Browser] = None
+    self._browser: Browser | None = None
 
   @classmethod
   def groups(cls,

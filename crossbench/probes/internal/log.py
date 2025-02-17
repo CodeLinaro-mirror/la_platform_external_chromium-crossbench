@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -33,7 +33,7 @@ class LogProbeContext(ProbeContext[LogProbe]):
 
   def __init__(self, probe_instance: LogProbe, run: Run) -> None:
     super().__init__(probe_instance, run)
-    self._log_handler: Optional[logging.Handler] = None
+    self._log_handler: logging.Handler | None = None
 
   @override
   def setup(self) -> None:

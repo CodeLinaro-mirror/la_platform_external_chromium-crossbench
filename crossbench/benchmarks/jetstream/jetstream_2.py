@@ -109,7 +109,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
                substories: Sequence[str] = (),
                iterations: Optional[int] = None,
                url: Optional[str] = None):
-    self._iterations: Optional[int] = iterations
+    self._iterations: int | None = iterations
     if iterations is not None:
       self._iterations = NumberParser.positive_int(
           self._iterations, "iteration count", parse_str=False)

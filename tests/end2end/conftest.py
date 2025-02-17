@@ -73,8 +73,7 @@ def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
 
 @pytest.fixture(scope="session")
 def driver_path(request) -> Optional[pathlib.Path]:
-  maybe_driver_path: Optional[LocalPath] = _get_app_path(
-      request, TEST_DRIVER_FLAG)
+  maybe_driver_path: LocalPath | None = _get_app_path(request, TEST_DRIVER_FLAG)
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
     assert maybe_driver_path.exists()
@@ -83,7 +82,7 @@ def driver_path(request) -> Optional[pathlib.Path]:
 
 @pytest.fixture(scope="session")
 def browser_path(request) -> Optional[pathlib.Path]:
-  maybe_browser_path: Optional[pathlib.Path] = _get_app_path(
+  maybe_browser_path: pathlib.Path | None = _get_app_path(
       request, TEST_BROWSER_FLAG)
   if maybe_browser_path:
     logging.info("browser path: %s", maybe_browser_path)
@@ -194,7 +193,7 @@ def default_gsutil_path() -> pathlib.Path:
 @pytest.fixture
 def test_env(request):
   test_name = re.sub(r"[\[\]\\/*?:\"<>|]", "_", request.node.name)
-  maybe_cas_archive: Optional[str] = request.config.getoption(CAS_ARCHIVE_FLAG)
+  maybe_cas_archive: str | None = request.config.getoption(CAS_ARCHIVE_FLAG)
   if maybe_cas_archive:
     cas_test_env = TestEnv(pathlib.Path(maybe_cas_archive), test_name)
     yield cas_test_env
@@ -211,7 +210,7 @@ def test_env(request):
 
 @pytest.fixture(scope="session")
 def device_id(request, adb_path) -> Optional[str]:
-  maybe_device_id: Optional[str] = request.config.getoption(ADB_DEVICE_ID_FLAG)
+  maybe_device_id: str | None = request.config.getoption(ADB_DEVICE_ID_FLAG)
   if maybe_device_id:
     logging.info("adb device id: %s", maybe_device_id)
     return maybe_device_id
@@ -227,7 +226,7 @@ def device_id(request, adb_path) -> Optional[str]:
 
 @pytest.fixture(scope="session")
 def adb_path(request) -> Optional[str]:
-  maybe_adb_path: Optional[str] = request.config.getoption(ADB_PATH_FLAG)
+  maybe_adb_path: str | None = request.config.getoption(ADB_PATH_FLAG)
   if maybe_adb_path:
     logging.info("adb path: %s", maybe_adb_path)
     return maybe_adb_path

@@ -10,14 +10,13 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
@@ -65,7 +64,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
       options.profile = FirefoxProfile(self.cache_dir)
     self._log_browser_start(args, driver_path)
     service_args: List[str] = []
-    driver_log_path: Optional[str] = None
+    driver_log_path: str | None = None
     if self._settings.driver_logging:
       # TODO: Separate browser from driver logging
       service_args += ["--log", "debug"]

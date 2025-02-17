@@ -274,7 +274,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                patterns: Sequence[str],
                separate: bool = False,
                url: Optional[str] = None):
-    self.url: Optional[str] = url
+    self.url: str | None = url
     self._selected_names: OrderedSet[str] = OrderedSet()
     super().__init__(story_cls, patterns, separate)
     assert issubclass(self.story_cls, PressBenchmarkStory)

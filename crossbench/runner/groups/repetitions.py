@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Tuple
 
 from typing_extensions import override
 
@@ -46,8 +46,8 @@ class RepetitionsRunGroup(RunGroup):
     self._cache_temperatures_groups: List[CacheTemperaturesRunGroup] = []
     self._cache_temperature_repetitions_groups: Dict[
         str, CacheTemperatureRepetitionsRunGroup] = {}
-    self._story: Optional[Story] = None
-    self._browser: Optional[Browser] = None
+    self._story: Story | None = None
+    self._browser: Browser | None = None
 
   def append(self, group: CacheTemperaturesRunGroup) -> None:
     if self._path is None:

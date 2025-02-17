@@ -61,7 +61,7 @@ class SpeedometerBaseTestCase(
     stories = "default"
     iterations: int = 10
     separate: bool = False
-    custom_benchmark_url: Optional[str] = None
+    custom_benchmark_url: str | None = None
 
   def test_iterations_kwargs(self):
     args = self.Namespace()

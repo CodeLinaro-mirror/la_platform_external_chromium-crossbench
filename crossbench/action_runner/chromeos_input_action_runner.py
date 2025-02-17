@@ -78,7 +78,7 @@ class ChromeOSViewportInfo:
     self._browser_viewable = DisplayRectangle(
         Point(window_offset_x, window_offset_y), visible_width, visible_height)
 
-    self._element_rect: Optional[DisplayRectangle] = None
+    self._element_rect: DisplayRectangle | None = None
     if element_rect:
       self._element_rect = self._dom_rect_to_native_rect(element_rect)
 
@@ -150,7 +150,7 @@ class ChromeOSTouchEvent:
   # The start position in terms of the device's screen resolution
   start_position: Point
   # The end position in terms of the device's screen resolution
-  end_position: Optional[Point] = None
+  end_position: Point | None = None
 
   duration: dt.timedelta = dt.timedelta()
 
@@ -260,8 +260,8 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
   def __init__(self):
     super().__init__()
-    self._touch_device: Optional[TouchDevice] = None
-    self._mouse_process: Optional[subprocess.Popen] = None
+    self._touch_device: TouchDevice | None = None
+    self._mouse_process: subprocess.Popen | None = None
 
     atexit.register(self._kill_mouse_process)
 
@@ -395,7 +395,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
     with browser_platform.NamedTemporaryFile() as script_file:
       browser_platform.set_file_contents(script_file, script)
-      typing_process: Optional[subprocess.Popen] = None
+      typing_process: subprocess.Popen | None = None
       try:
         typing_process = browser_platform.popen(
             "python3", script_file, bufsize=0, stdin=subprocess.PIPE)
@@ -463,7 +463,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
      element_left, element_top, element_width, element_height) = actions.js(
          script, arguments=[selector, scroll_into_view])
 
-    element_rect: Optional[DisplayRectangle] = None
+    element_rect: DisplayRectangle | None = None
 
     if found_element:
       element_rect = DisplayRectangle(

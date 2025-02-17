@@ -61,7 +61,7 @@ class ActionRunner:
   def __init__(self):
     self._listener = ActionRunnerListener()
     # TODO: Don't share state across runs
-    self._info_stack: Optional[exception.TInfoStack] = None
+    self._info_stack: exception.TInfoStack | None = None
 
     self._failure_screenshot_annotations: List[ScreenshotAnnotation] = []
 

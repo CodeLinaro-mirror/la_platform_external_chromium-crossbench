@@ -238,7 +238,7 @@ class BrowserProbeResult(ProbeResult):
                file: Optional[Iterable[pth.AnyPath]] = None,
                **kwargs: Iterable[pth.AnyPath]):
     self._browser_file = file
-    local_file: Optional[Iterable[pth.LocalPath]] = None
+    local_file: Iterable[pth.LocalPath] | None = None
     local_kwargs: Dict[str, Iterable[pth.LocalPath]] = {}
     self._is_remote = result_origin.is_remote
     if self._is_remote:

@@ -86,7 +86,7 @@ class PowerSamplerProbe(Probe):
                samplers: Sequence[SamplerType] = SAMPLERS,
                wait_for_battery: bool = True):
     super().__init__()
-    self._bin_path: Optional[AnyPath] = bin_path
+    self._bin_path: AnyPath | None = bin_path
     if not self._bin_path:
       logging.debug("No default power_sampler binary provided.")
     self._sampling_interval = sampling_interval
@@ -170,9 +170,9 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
   def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._bin_path: AnyPath = probe.find_power_sampler_bin(self.browser)
-    self._active_user_process: Optional[subprocess.Popen] = None
-    self._power_process: Optional[subprocess.Popen] = None
-    self._power_battery_process: Optional[subprocess.Popen] = None
+    self._active_user_process: subprocess.Popen | None = None
+    self._power_process: subprocess.Popen | None = None
+    self._power_battery_process: subprocess.Popen | None = None
     self._power_output: AnyPath = self.result_path.with_suffix(".power.json")
     self._power_battery_output: AnyPath = self.result_path.with_suffix(
         ".power_battery.json")

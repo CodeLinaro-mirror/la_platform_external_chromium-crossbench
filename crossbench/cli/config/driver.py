@@ -10,8 +10,8 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
-from typing_extensions import override
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
@@ -48,10 +48,10 @@ def driver_path(
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
-  path: Optional[AnyPath] = None
-  device_id: Optional[str] = None
-  adb_bin: Optional[AnyPath] = None
-  settings: Optional[immutabledict] = None
+  path: AnyPath | None = None
+  device_id: str | None = None
+  adb_bin: AnyPath | None = None
+  settings: immutabledict | None = None
 
   @classmethod
   def default(cls) -> DriverConfig:
@@ -63,7 +63,7 @@ class DriverConfig(ConfigObject):
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     # Variant 1: $PATH
-    path: Optional[LocalPath] = pth.try_resolve_existing_path(value)
+    path: LocalPath | None = pth.try_resolve_existing_path(value)
     driver_type: BrowserDriverType = BrowserDriverType.default()
     if path:
       if path.stat().st_size == 0:
@@ -93,7 +93,7 @@ class DriverConfig(ConfigObject):
                            platform: plt.Platform) -> DriverConfig:
     """Check for short versions and multiple candidates"""
     logging.debug("Looking for driver candidates: %s", value)
-    candidate: Optional[DriverConfig]
+    candidate: DriverConfig | None = None
     if candidate := cls.try_parse_adb_settings(value, platform):
       return candidate
     if platform.is_macos:

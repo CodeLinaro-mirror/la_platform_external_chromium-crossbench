@@ -101,8 +101,8 @@ class V8LogProbe(ChromiumProbe):
     super().__init__()
     self._profview: bool = profview
     self._js_flags = JSFlags()
-    self._d8_binary: Optional[LocalPath] = d8_binary
-    self._v8_checkout: Optional[LocalPath] = v8_checkout
+    self._d8_binary: LocalPath | None = d8_binary
+    self._v8_checkout: LocalPath | None = v8_checkout
     assert isinstance(log_all,
                       bool), (f"Expected bool value, got log_all={log_all}")
     assert isinstance(prof, bool), f"Expected bool value, got log_all={prof}"

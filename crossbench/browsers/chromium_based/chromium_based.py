@@ -59,7 +59,7 @@ class ChromiumBased(Browser):
                path: pth.AnyPath,
                settings: Optional[Settings] = None):
     super().__init__(label, path, settings=settings)
-    self._stdout_log_file: Optional[TextIO] = None
+    self._stdout_log_file: TextIO | None = None
     assert isinstance(self._flags, ChromeFlags)
 
   @override

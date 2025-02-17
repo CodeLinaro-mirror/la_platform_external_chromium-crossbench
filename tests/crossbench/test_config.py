@@ -56,7 +56,7 @@ class CustomValueEnum(enum.Enum):
 @dataclasses.dataclass(frozen=True)
 class CustomNestedConfigObject(ConfigObject):
   name: str
-  option: Optional[str] = None
+  option: str | None = None
 
   @classmethod
   @override
@@ -84,10 +84,10 @@ class CustomNestedConfigObject(ConfigObject):
 class CustomConfigObject(ConfigObject):
 
   name: str
-  array: Optional[List[str]] = None
-  integer: Optional[int] = None
-  float_field: Optional[float] = None
-  nested: Optional[CustomNestedConfigObject] = None
+  array: List[str] | None = None
+  integer: int | None = None
+  float_field: float | None = None
+  nested: CustomNestedConfigObject | None = None
   choices: str = ""
   generic_enum: GenericEnum = GenericEnum.A
   config_enum: CustomConfigEnum = CustomConfigEnum.A

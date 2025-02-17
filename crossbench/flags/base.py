@@ -89,8 +89,8 @@ class BasicFlags(Freezable, collections.UserDict):
     raw_flags = raw_flags.strip()
     if not raw_flags:
       return cls()
-    flag_parts: List[Tuple[str, Optional[str]]] = []
-    current_end: Optional[int] = None
+    flag_parts: List[Tuple[str, str | None]] = []
+    current_end: int | None = None
     for match in cls._PARSE_RE.finditer(raw_flags):
       if current_end is None:
         if match.start() != 0:
@@ -102,12 +102,12 @@ class BasicFlags(Freezable, collections.UserDict):
       current_end = match.end()
 
       groups = match.groupdict()
-      maybe_flag_name: Optional[str] = groups.get("name")
+      maybe_flag_name: str | None = groups.get("name")
       if not maybe_flag_name:
         raise ValueError(f"Invalid {msg}: {repr(raw_flags)}")
       # Re-assign since pytype doesn't remove the Optional.
       flag_name: str = maybe_flag_name
-      flag_value: Optional[str] = (
+      flag_value: str | None = (
           groups.get("value_single_quotes") or
           groups.get("value_double_quotes") or groups.get("value_no_quotes"))
       if groups.get("equal") and not flag_value:

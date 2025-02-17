@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 from typing_extensions import override
 
@@ -81,8 +81,8 @@ class SelectorConfig(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class PositionConfig(ConfigObject):
-  coordinates: Optional[CoordinatesConfig] = None
-  selector: Optional[SelectorConfig] = None
+  coordinates: CoordinatesConfig | None = None
+  selector: SelectorConfig | None = None
 
   @classmethod
   @override

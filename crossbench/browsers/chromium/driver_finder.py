@@ -109,7 +109,7 @@ class ChromeDriverFinder:
       return False
     logging.info("CHROMEDRIVER Downloading M%s: %s", milestone, listing_url or
                  url)
-    maybe_driver: Optional[pth.LocalPath] = None
+    maybe_driver: pth.LocalPath | None = None
     with tempfile.TemporaryDirectory() as tmp_dir:
       if ".zip" not in url:
         maybe_driver = pth.LocalPath(tmp_dir) / "chromedriver"
@@ -161,12 +161,12 @@ class ChromeDriverFinder:
 
   def _get_cft_url(self, milestone: int) -> Tuple[str, Optional[str]]:
     logging.debug("ChromeDriverFinder: Looking up chrome-for-testing version.")
-    platform_name: Optional[str] = self.CFT_PLATFORM.get(self.host_platform.key)
+    platform_name: str | None = self.CFT_PLATFORM.get(self.host_platform.key)
     if not platform_name:
       raise DriverNotFoundError(
           f"Unsupported platform {self.host_platform.key} for chromedriver.")
     listing_url, version_data = self._get_cft_version_data(milestone)
-    download_url: Optional[str] = None
+    download_url: str | None = None
     if version_data:
       download_url = self._get_cft_driver_download_url(version_data,
                                                        platform_name)
@@ -226,7 +226,7 @@ class ChromeDriverFinder:
         "Looking upe old-style stable version M%s", milestone)
     assert milestone < self.CFT_MIN_MILESTONE
     listing_url = f"{self.PRE_115_STABLE_URL}/index.html"
-    driver_version: Optional[str] = self._get_pre_115_driver_version(milestone)
+    driver_version: str | None = self._get_pre_115_driver_version(milestone)
     if not driver_version:
       return listing_url, None
     if self.host_platform.is_linux:

@@ -146,7 +146,7 @@ class TraceProcessorProbe(Probe):
     ObjectParser.unique_sequence([query.name for query in queries],
                                  name="query names")
     self._queries = tuple(queries)
-    self._trace_processor_bin: Optional[pth.LocalPath] = None
+    self._trace_processor_bin: pth.LocalPath | None = None
     if trace_processor_bin:
       self._trace_processor_bin = PathParser.local_binary_path(
           trace_processor_bin, "trace_processor")

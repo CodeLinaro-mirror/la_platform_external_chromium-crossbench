@@ -160,7 +160,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
 @dataclasses.dataclass
 class ChromeHistogramBucket:
   min: int
-  max: Optional[int]
+  max: int | None
   count: int
 
 
@@ -209,7 +209,7 @@ class ChromeHistogramSample:
 
     bucket_counts: Dict[int, int] = {}
     bucket_maxes: Dict[int, int] = {}
-    prev_min: Optional[int] = None
+    prev_min: int | None = None
     for i, line in enumerate(body.splitlines(), start=1):
       m = re.match(cls._BUCKET_RE, line)
       if not m:
@@ -267,7 +267,7 @@ class ChromeHistogramSample:
     buckets: ChromeHistogramBuckets = []
     for bucket_min, bucket_count in self._bucket_counts.items():
       bucket_count = bucket_count - baseline.bucket_count(bucket_min)
-      bucket_max: Optional[int] = self._bucket_maxes.get(bucket_min)
+      bucket_max: int | None = self._bucket_maxes.get(bucket_min)
       buckets.append(
           ChromeHistogramBucket(bucket_min, bucket_max, bucket_count))
     return buckets
@@ -334,8 +334,8 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
 
   def __init__(self, probe: ChromeHistogramsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._baseline: Optional[Dict[str, ChromeHistogramSample]] = None
-    self._delta: Optional[Dict[str, ChromeHistogramSample]] = None
+    self._baseline: Dict[str, ChromeHistogramSample] | None = None
+    self._delta: Dict[str, ChromeHistogramSample] | None = None
 
   def dump_histograms(self, name: str) -> Dict[str, ChromeHistogramSample]:
     with self.run.actions(

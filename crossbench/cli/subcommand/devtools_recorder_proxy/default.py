@@ -82,8 +82,8 @@ class CrossbenchDevToolsRecorderProxy:
     self._print_cmd_output: bool = False
     self._port: int = self.DEFAULT_PORT
     self._state = StateMachine(State.CONNECTED)
-    self._crossbench_task: Optional[asyncio.Task] = None
-    self._crossbench_process: Optional[Process] = None
+    self._crossbench_task: asyncio.Task | None = None
+    self._crossbench_process: Process | None = None
     self._tmp_json = pth.LocalPath(
         tempfile.mkdtemp("crossbench_proxy")) / "devtools_recorder.json"
 

@@ -306,7 +306,7 @@ class DMGArchiveHelper:
     result = platform.sh_stdout("hdiutil", "attach", "-plist",
                                 archive_path).strip()
     data = plistlib.loads(str.encode(result))
-    dmg_path: Optional[pth.LocalPath] = None
+    dmg_path: pth.LocalPath | None = None
     for item in data["system-entities"]:
       mount_point = item.get("mount-point", None)
       if mount_point:

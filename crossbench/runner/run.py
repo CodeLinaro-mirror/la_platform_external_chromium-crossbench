@@ -86,7 +86,7 @@ class Run(ResultOrigin):
     self._start_datetime = dt.datetime.utcfromtimestamp(0)
     self._timeout = timeout
     self._exceptions = Annotator(throw)
-    self._browser_tmp_dir: Optional[pth.AnyPath] = None
+    self._browser_tmp_dir: pth.AnyPath | None = None
     self._probe_context_manager = ProbeRunContextManager(
         self, self._probe_results)
     self._annotations: Set[RunAnnotation] = set()

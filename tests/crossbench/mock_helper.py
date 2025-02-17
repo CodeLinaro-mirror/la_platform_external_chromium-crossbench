@@ -43,7 +43,7 @@ GIB = 1014**3
 class DownloadMockData:
   url: str
   path: pth.AnyPath
-  data: Optional[bytes] = None
+  data: bytes | None = None
 
 
 class ShResult:
@@ -71,7 +71,7 @@ class MockPlatformMixin:
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
     self._sh_cmds: List[TupleCmdArgs] = []
-    self._expected_sh_cmds: Optional[List[TupleCmdArgs]] = None
+    self._expected_sh_cmds: List[TupleCmdArgs] | None = None
     self._sh_results: List[ShResult] = []
     self._download_results: List[DownloadMockData] = []
     self.file_contents: Dict[pth.AnyPath, List[str]] = (

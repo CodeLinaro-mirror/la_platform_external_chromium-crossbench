@@ -216,7 +216,7 @@ class Runner:
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._timing = timing
-    self._cool_down_threshold: Optional[ThermalStatus] = cool_down_threshold
+    self._cool_down_threshold: ThermalStatus | None = cool_down_threshold
     self._browsers: Tuple[Browser, ...] = tuple(browsers)
     self._validate_browser_labels()
     self._benchmark = benchmark
@@ -241,7 +241,7 @@ class Runner:
     self._cache_temperatures_groups: Tuple[CacheTemperaturesRunGroup, ...] = ()
     self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
-    self._browser_group: Optional[BrowsersRunGroup] = None
+    self._browser_group: BrowsersRunGroup | None = None
     self._create_symlinks: bool = create_symlinks
 
   def _prepare_benchmark(self) -> None:

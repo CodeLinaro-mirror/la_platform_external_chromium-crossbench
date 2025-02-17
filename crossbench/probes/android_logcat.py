@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Type, cast
+from typing import TYPE_CHECKING, Iterable, Tuple, Type, cast
 
 from typing_extensions import override
 
@@ -63,7 +63,7 @@ class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
 
   def __init__(self, probe: LogcatAndroidProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._logcat_start_time: Optional[str] = None
+    self._logcat_start_time: str | None = None
 
   def _get_browser_platform_time(self) -> str:
     return self.browser_platform.sh_stdout("date",

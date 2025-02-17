@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict
 
 from typing_extensions import override
 
@@ -45,11 +45,11 @@ class NetworkSpeedPreset(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class NetworkSpeedConfig(ConfigObject):
-  ts_proxy: Optional[pth.AnyPath] = None
-  rtt_ms: Optional[int] = None
-  in_kbps: Optional[int] = None
-  out_kbps: Optional[int] = None
-  window: Optional[int] = None
+  ts_proxy: pth.AnyPath | None = None
+  rtt_ms: int | None = None
+  in_kbps: int | None = None
+  out_kbps: int | None = None
+  window: int | None = None
 
   @classmethod
   def default(cls) -> NetworkSpeedConfig:

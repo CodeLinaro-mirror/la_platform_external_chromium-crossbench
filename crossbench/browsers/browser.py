@@ -55,11 +55,11 @@ class Browser(abc.ABC):
     self._version: BrowserVersion = UnknownBrowserVersion()
     self._setup_path_and_version(path)
     self._is_running: bool = False
-    self._pid: Optional[int] = None
+    self._pid: int | None = None
     self._probes: OrderedSet[Probe] = OrderedSet()
     self._flags: Flags = self._setup_flags(self._settings)
-    self.log_file: Optional[pth.AnyPath] = None
-    self.cache_dir: Optional[pth.AnyPath] = self._settings.cache_dir
+    self.log_file: pth.AnyPath | None = None
+    self.cache_dir: pth.AnyPath | None = self._settings.cache_dir
     self.clear_cache_dir: bool = True
     self._setup_cache_dir(self._settings)
 

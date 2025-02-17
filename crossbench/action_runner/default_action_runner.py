@@ -12,11 +12,11 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple
 from typing_extensions import override
 
 from crossbench.action_runner.action import all as i_action
-from crossbench.action_runner.default_bond_action_runner import (
-    DefaultBondActionRunner)
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
+from crossbench.action_runner.default_bond_action_runner import \
+    DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
@@ -82,7 +82,7 @@ class DefaultActionRunner(ActionRunner):
       return [elements.length, element[arguments[1]]];
   """
 
-  _bond: Optional[DefaultBondActionRunner] = None
+  _bond: DefaultBondActionRunner | None = None
 
   def get_selector_script(self,
                           selector: str,

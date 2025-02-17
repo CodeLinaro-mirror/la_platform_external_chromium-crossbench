@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from typing_extensions import override
@@ -25,7 +25,7 @@ class DefaultBondActionRunner(BondActionRunner):
 
   def __init__(self, action_runner: ActionRunner):
     self._action_runner: ActionRunner = action_runner
-    self._bond_client: Optional[BondClient] = None
+    self._bond_client: BondClient | None = None
 
   def bond_client(self, run: Run) -> BondClient:
     if not self._bond_client:

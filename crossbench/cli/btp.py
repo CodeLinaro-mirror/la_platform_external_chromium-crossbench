@@ -5,7 +5,7 @@
 
 import argparse
 import logging
-from typing import Dict, Optional, Sequence
+from typing import Dict, Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
@@ -80,7 +80,7 @@ class BTPUtil:
     args = self.parser.parse_args(argv)
 
     probe_config = ProbeListConfig.parse_path(args.probe_config)
-    tp: Optional[TraceProcessorProbe] = None
+    tp: TraceProcessorProbe | None = None
     for probe in probe_config.probes:
       if isinstance(probe, TraceProcessorProbe):
         tp = probe

@@ -81,8 +81,8 @@ class WprReplayNetwork(ReplayNetwork):
                persist_server: bool = False,
                inject_deterministic_script: bool = True):
     super().__init__(archive, traffic_shaper, browser_platform)
-    self._server: Optional[WprReplayServer] = None
-    self._tmp_dir: Optional[AnyPath] = None
+    self._server: WprReplayServer | None = None
+    self._tmp_dir: AnyPath | None = None
     self._persist_server = persist_server
     self._inject_deterministic_script = inject_deterministic_script
     self._ensure_wpr_go(wpr_go_bin)
@@ -215,7 +215,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
-    inject_scripts: Optional[List[AnyPath]] = (
+    inject_scripts: List[AnyPath] | None = (
         None if self.inject_deterministic_script else [])
     return WprReplayServer(
         self.archive_path,
