@@ -743,14 +743,16 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)
 
-  _WM_SIZE_RE = re.compile(r"Physical size: (?P<x>\d+)x(?P<y>\d+)")
+  _DUMPSYS_WINDOW_DISPLAYS_RE = re.compile(r" cur=(?P<x>\d+)x(?P<y>\d+) ")
 
   @override
   def display_resolution(self) -> Tuple[int, int]:
-    wm_size_out = self.sh_stdout("wm", "size")
-    match_result = self._WM_SIZE_RE.match(wm_size_out)
+    displays_out = self.sh_stdout("dumpsys", "window", "displays")
+    match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
     if match_result is None:
-      raise ValueError(f"Could not find display resolution in '{wm_size_out}'")
+      raise ValueError(
+          "Could not find display resolution in "
+          f"'adb shell -s {self.adb.serial_id} dumpsys window displays'")
     x = NumberParser.positive_int(match_result.group("x"))
     y = NumberParser.positive_int(match_result.group("y"))
     return (x, y)

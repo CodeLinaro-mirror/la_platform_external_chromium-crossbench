@@ -478,7 +478,14 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       self.platform.reverse_port_forward(1111, 0)
 
   def test_display_resolution(self):
-    self.expect_adb("shell", "wm size", result="Physical size: 1366x768\n")
+    self.expect_adb(
+        "shell",
+        "dumpsys window displays",
+        result="WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)\n"
+        "Display: mDisplayId=0 (organized)\n"
+        "init=1366x768 136dpi mMinSizeOfResizeableTaskDp=220 "
+        "cur=1366x768 app=1366x768 rng=768x768-1366x1366\n"
+        "deferred=false mLayoutNeeded=false")
     [horizontal, vertical] = self.platform.display_resolution()
     self.assertEqual(horizontal, 1366)
     self.assertEqual(vertical, 768)
