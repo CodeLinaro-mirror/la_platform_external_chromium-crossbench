@@ -226,8 +226,10 @@ class WprBase(abc.ABC):
 
   def _stop_forward_ports(self) -> None:
     if self._platform.is_remote:
-      self._platform.stop_port_forward(self._host_http_port)
-      self._platform.stop_port_forward(self._host_https_port)
+      if self._host_http_port:
+        self._platform.stop_port_forward(self._host_http_port)
+      if self._host_https_port:
+        self._platform.stop_port_forward(self._host_https_port)
 
   def _wait_for_startup(self) -> None:
     assert self._process, "process not started"
