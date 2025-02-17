@@ -79,16 +79,22 @@ class PerfettoProbe(Probe):
         default=pth.AnyPath("tracebox"),
         help="Tracebox binary on the browser device (linux, macos). "
         "Auto downloaded on local devices.")
+    parser.add_argument(
+        "trace_browser_startup",
+        type=bool,
+        default=False,
+        help="Start perfetto tracing before launching the browser.")
     return parser
 
   def __init__(self, textproto: str, perfetto_bin: pth.AnyPath,
-               tracebox_bin: pth.AnyPath):
+               tracebox_bin: pth.AnyPath, trace_browser_startup: bool = False):
     super().__init__()
     if not textproto:
       raise ValueError("Please specify a tracing config")
     self._textproto = textproto
     self._perfetto_bin = perfetto_bin
     self._tracebox_bin = tracebox_bin
+    self._trace_browser_startup = trace_browser_startup
 
   @property
   @override
@@ -97,6 +103,7 @@ class PerfettoProbe(Probe):
         ("textproto", self.textproto),
         ("perfetto_bin", str(self.perfetto_bin)),
         ("tracebox_bin", str(self.tracebox_bin)),
+        ("trace_browser_startup", str(self.trace_browser_startup)),
     )
 
   @property
@@ -110,6 +117,10 @@ class PerfettoProbe(Probe):
   @property
   def tracebox_bin(self) -> pth.AnyPath:
     return self._tracebox_bin
+
+  @property
+  def trace_browser_startup(self) -> bool:
+    return self._trace_browser_startup
 
   @property
   @override
@@ -162,6 +173,8 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
         self.browser_platform.terminate(p["pid"])
     self._setup_validate_bin()
     self._setup_push_perfetto_config()
+    if self.probe.trace_browser_startup:
+      self._start_perfetto()
 
   def _setup_validate_bin(self) -> None:
     binary = self.perfetto_cmd[0]
@@ -188,6 +201,21 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     return (self.probe.perfetto_bin,)
 
   def start(self) -> None:
+    if self.probe.trace_browser_startup:
+      if not self._perfetto_pid:
+        raise RuntimeError("Perfetto was not started")
+      return
+    self._start_perfetto()
+    self.browser.performance_mark("crossbench-probe-perfetto-start")
+
+  def stop(self) -> None:
+    self.browser.performance_mark("crossbench-probe-perfetto-stop")
+    logging.info("PERFETTO: stopping")
+    if not self._perfetto_pid:
+      raise RuntimeError("Perfetto was not started")
+    self._stop_perfetto()
+
+  def _start_perfetto(self) -> None:
     logging.info("PERFETTO: starting")
     cmd: TupleCmdArgs = self.perfetto_cmd + (
         "--background",
@@ -206,14 +234,6 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     self._perfetto_pid = NumberParser.positive_int(
         proc.stdout.decode("utf-8").rstrip(), "perfetto pid")
     atexit.register(self._stop_perfetto)
-    self.browser.performance_mark("crossbench-probe-perfetto-start")
-
-  def stop(self) -> None:
-    self.browser.performance_mark("crossbench-probe-perfetto-stop")
-    logging.info("PERFETTO: stopping")
-    if not self._perfetto_pid:
-      raise RuntimeError("Perfetto was not started")
-    self._stop_perfetto()
 
   def _stop_perfetto(self):
     if not self._perfetto_pid:

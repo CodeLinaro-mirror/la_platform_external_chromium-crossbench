@@ -76,7 +76,8 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield DumpHtmlProbe()
     yield FrequencyProbe.from_config({})
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
-                        pth.LocalPath("tracebox.bin"))
+                        pth.LocalPath("tracebox.bin"),
+                        trace_browser_startup=False)
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
     yield PowerSamplerProbe()
