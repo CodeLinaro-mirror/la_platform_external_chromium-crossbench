@@ -584,8 +584,8 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     )
     for url, result in expected:
       with self.subTest(url=url):
-        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result)
-        parsed = ObjectParser.parse_fuzzy_url(url)
+        self.assertEqual(ObjectParser.fuzzy_url_str(url), result)
+        parsed = ObjectParser.fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result)
 
   def test_parse_fuzzy_url_default_scheme(self):
@@ -596,14 +596,14 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     for url in expected:
       with self.subTest(url=url):
         result_default = f"https://{url}"
-        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result_default)
-        parsed = ObjectParser.parse_fuzzy_url(url)
+        self.assertEqual(ObjectParser.fuzzy_url_str(url), result_default)
+        parsed = ObjectParser.fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result_default)
         result_custom = f"ftp://{url}"
         self.assertEqual(
-            ObjectParser.parse_fuzzy_url_str(url, default_scheme="ftp"),
+            ObjectParser.fuzzy_url_str(url, default_scheme="ftp"),
             result_custom)
-        parsed = ObjectParser.parse_fuzzy_url(url, default_scheme="ftp")
+        parsed = ObjectParser.fuzzy_url(url, default_scheme="ftp")
         self.assertEqual(urlparse.urlunparse(parsed), result_custom)
 
   def test_parse_url(self):
@@ -630,10 +630,10 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     for url, result in expected:
       with self.subTest(url=url):
         self.assertEqual(ObjectParser.url_str(url), result)
-        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result)
+        self.assertEqual(ObjectParser.fuzzy_url_str(url), result)
         parsed = ObjectParser.url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result)
-        parsed_fuzzy = ObjectParser.parse_fuzzy_url(url)
+        parsed_fuzzy = ObjectParser.fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed_fuzzy), result)
 
   def test_parse_url_invalid(self):
@@ -647,9 +647,9 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.httpx_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = ObjectParser.parse_fuzzy_url_str(invalid)
+          _ = ObjectParser.fuzzy_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = ObjectParser.parse_fuzzy_url(invalid)
+          _ = ObjectParser.fuzzy_url(invalid)
 
   def test_parse_httpx_url_str_invalid(self):
     for invalid in ("ftp://foo.com:123/bar", "ssh://test.com"):

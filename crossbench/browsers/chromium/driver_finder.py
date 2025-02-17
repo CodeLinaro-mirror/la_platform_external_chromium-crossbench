@@ -4,14 +4,12 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import re
 import shutil
 import stat
 import tempfile
-import urllib.error
 import zipfile
 from typing import TYPE_CHECKING, Dict, Final, List, Optional, Tuple
 
@@ -186,10 +184,10 @@ class ChromeDriverFinder:
       self, version: BrowserVersion) -> Tuple[str, Optional[Dict]]:
     version_url: str = self.CFT_VERSION_URL.format(version=version.parts_str)
     try:
-      with url_helper.urlopen(version_url) as response:
-        version_data = json.loads(response.read().decode("utf-8"))
-        return (version_url, version_data)
-    except urllib.error.HTTPError as e:
+      response = url_helper.get(version_url)
+      version_data = response.json()
+      return (version_url, version_data)
+    except url_helper.RequestException as e:
       logging.debug("ChromeDriverFinder: "
                     "Precise version download failed %s", e)
       return (version_url, None)
@@ -198,14 +196,13 @@ class ChromeDriverFinder:
                               milestone: int) -> Tuple[str, Optional[Dict]]:
     latest_version_url: str = self.CFT_LATEST_URL.format(major=milestone)
     try:
-      with url_helper.urlopen(latest_version_url) as response:
-        alternative_version = ChromeVersion.parse(
-            response.read().decode("utf-8").strip())
-        logging.debug(
-            "ChromeDriverFinder: Using alternative version %s "
-            "for M%s", alternative_version, milestone)
-        return self._get_cft_precise_version_data(alternative_version)
-    except urllib.error.HTTPError:
+      response = url_helper.get(latest_version_url)
+      alternative_version = ChromeVersion.parse(response.text.strip())
+      logging.debug(
+          "ChromeDriverFinder: Using alternative version %s "
+          "for M%s", alternative_version, milestone)
+      return self._get_cft_precise_version_data(alternative_version)
+    except url_helper.RequestException:
       return (self.CFT_BASE_URL, None)
 
   def _get_cft_driver_download_url(self, version_data,
@@ -257,19 +254,18 @@ class ChromeDriverFinder:
       return self._get_pre_70_driver_version(milestone)
     url = f"{self.PRE_115_STABLE_URL}/LATEST_RELEASE_{milestone}"
     try:
-      with url_helper.urlopen(url) as response:
-        return response.read().decode("utf-8")
-    except urllib.error.HTTPError as e:
-      if e.code != 404:
+      response = url_helper.get(url)
+      return response.text
+    except url_helper.HTTPError as e:
+      if e.response.status_code != 404:
         raise DriverNotFoundError(f"Could not query {url}") from e
       logging.debug("ChromeDriverFinder: Could not load latest release url %s",
                     e)
     return None
 
   def _get_pre_70_driver_version(self, milestone) -> Optional[str]:
-    with url_helper.urlopen(
-        f"{self.PRE_115_STABLE_URL}/2.46/notes.txt") as response:
-      lines: List[str] = response.read().decode("utf-8").splitlines()
+    response = url_helper.get(f"{self.PRE_115_STABLE_URL}/2.46/notes.txt")
+    lines: List[str] = response.text.splitlines()
     for i, line in enumerate(lines):
       if not line.startswith("---"):
         continue
@@ -331,16 +327,16 @@ class ChromeDriverFinder:
             "num": str(dash_limit),
         })
     chromium_base_position = 0
-    with url_helper.urlopen(url) as response:
-      version_infos = list(json.loads(response.read().decode("utf-8")))
-      if not version_infos:
-        raise DriverNotFoundError("Could not find latest version info for "
-                                  f"platform={self.host_platform}")
-      for version_info in version_infos:
-        if version_info["version"] == self.browser.version.parts_str:
-          chromium_base_position = int(
-              version_info["chromium_main_branch_position"])
-          break
+    response = url_helper.get(url)
+    version_infos = list(response.json())
+    if not version_infos:
+      raise DriverNotFoundError("Could not find latest version info for "
+                                f"platform={self.host_platform}")
+    for version_info in version_infos:
+      if version_info["version"] == self.browser.version.parts_str:
+        chromium_base_position = int(
+            version_info["chromium_main_branch_position"])
+        break
 
     if not chromium_base_position and version_infos:
       fallback_version_info = None
@@ -375,8 +371,7 @@ class ChromeDriverFinder:
         "prefix": f"{listing_prefix}/{base_prefix}",
         "maxResults": "10000"
     })
-    with url_helper.urlopen(listing_url) as response:
-      listing = json.loads(response.read().decode("utf-8"))
+    listing = url_helper.get(listing_url).json()
 
     versions: List[Tuple[int, str]] = []
     logging.debug("Filtering %s candidate URLs.", len(listing["items"]))

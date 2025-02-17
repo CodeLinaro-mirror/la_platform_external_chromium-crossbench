@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import contextlib
-import json
 import logging
 import os
 import shutil
@@ -133,14 +132,14 @@ class ChromeDownloader(Downloader):
     logging.debug("LIST ALL VERSIONS for M%s: %s", milestone, url)
     version_urls: List[Tuple[BrowserVersion, str]] = []
     try:
-      with url_helper.urlopen(url) as response:
-        raw_infos = json.loads(response.read().decode("utf-8"))["versions"]
-        version_urls = [
-            self._create_version_url(
-                ChromeVersion(
-                    map(int, info["version"].split(".")), requested_channel))
-            for info in raw_infos
-        ]
+      response = url_helper.get(url, retry=3)
+      raw_infos = response.json()["versions"]
+      version_urls = [
+          self._create_version_url(
+              ChromeVersion(
+                  map(int, info["version"].split(".")), requested_channel))
+          for info in raw_infos
+      ]
     except Exception as e:
       raise ValueError(
           f"Could not find version {self._requested_version} "

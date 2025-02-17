@@ -6,6 +6,7 @@ import datetime as dt
 import enum
 import pathlib
 import unittest
+from typing import List, Tuple
 
 from typing_extensions import override
 
@@ -33,24 +34,35 @@ class WaitTestCase(unittest.TestCase):
 
   def test_range(self):
     durations = list(WaitRange(min=1, max=16, factor=2, max_iterations=5))
-    self.assertListEqual(durations, [
-        dt.timedelta(seconds=1),
-        dt.timedelta(seconds=2),
-        dt.timedelta(seconds=4),
-        dt.timedelta(seconds=8),
-        dt.timedelta(seconds=16)
-    ])
+    self.assertListEqual(durations, [(0, dt.timedelta(seconds=1)),
+                                     (1, dt.timedelta(seconds=2)),
+                                     (2, dt.timedelta(seconds=4)),
+                                     (3, dt.timedelta(seconds=8)),
+                                     (4, dt.timedelta(seconds=16))])
 
   def test_range_with_delay(self):
     durations = list(
         WaitRange(min=1, max=16, factor=2, max_iterations=5, delay=5.5))
     self.assertListEqual(durations, [
-        dt.timedelta(seconds=5.5),
-        dt.timedelta(seconds=1),
-        dt.timedelta(seconds=2),
-        dt.timedelta(seconds=4),
-        dt.timedelta(seconds=8),
-        dt.timedelta(seconds=16)
+        (0, dt.timedelta(seconds=5.5)),
+        (1, dt.timedelta(seconds=1)),
+        (2, dt.timedelta(seconds=2)),
+        (3, dt.timedelta(seconds=4)),
+        (4, dt.timedelta(seconds=8)),
+    ])
+    durations = list(
+        WaitRange(min=1, max=16, factor=2, max_iterations=10, delay=5.5))
+    self.assertListEqual(durations, [
+        (0, dt.timedelta(seconds=5.5)),
+        (1, dt.timedelta(seconds=1)),
+        (2, dt.timedelta(seconds=2)),
+        (3, dt.timedelta(seconds=4)),
+        (4, dt.timedelta(seconds=8)),
+        (5, dt.timedelta(seconds=16)),
+        (6, dt.timedelta(seconds=16)),
+        (7, dt.timedelta(seconds=16)),
+        (8, dt.timedelta(seconds=16)),
+        (9, dt.timedelta(seconds=16)),
     ])
 
   def test_range_extended(self):
@@ -58,24 +70,27 @@ class WaitTestCase(unittest.TestCase):
     self.assertListEqual(
         durations,
         [
-            dt.timedelta(seconds=1),
-            dt.timedelta(seconds=2),
-            dt.timedelta(seconds=4),
-            dt.timedelta(seconds=8),
-            dt.timedelta(seconds=16),
+            (0, dt.timedelta(seconds=1)),
+            (1, dt.timedelta(seconds=2)),
+            (2, dt.timedelta(seconds=4)),
+            (3, dt.timedelta(seconds=8)),
+            (4, dt.timedelta(seconds=16)),
             # After 5 iterations the interval is no longer increased
-            dt.timedelta(seconds=16),
-            dt.timedelta(seconds=16),
-            dt.timedelta(seconds=16),
-            dt.timedelta(seconds=16)
+            (5, dt.timedelta(seconds=16)),
+            (6, dt.timedelta(seconds=16)),
+            (7, dt.timedelta(seconds=16)),
+            (8, dt.timedelta(seconds=16))
         ])
 
   def test_wait_with_backoff(self):
-    data = []
-    delta = 0.0005
-    for time_spent, time_left in WaitRange(
+    data: List[Tuple[dt.timedelta, dt.timedelta]] = []
+    delta = dt.timedelta(seconds=0.0005)
+    expected_i = 0
+    for i, time_spent, time_left in WaitRange(
         min=0.01, max=0.05).wait_with_backoff():
       data.append((time_spent, time_left))
+      self.assertEqual(expected_i, i)
+      expected_i += 1
       if len(data) == 2:
         break
       plt.PLATFORM.sleep(delta)
@@ -84,6 +99,24 @@ class WaitTestCase(unittest.TestCase):
     second_time_spent, second_time_left = data[1]
     self.assertLessEqual(first_time_spent + delta, second_time_spent)
     self.assertGreaterEqual(first_time_left, second_time_left + delta)
+
+  def test_wait_with_backoff_max_iterations(self):
+    i = 0
+    expected_i = 0
+    for i, _, _ in WaitRange(
+        min=0.01, max=0.05, max_iterations=11).wait_with_backoff():
+      self.assertEqual(expected_i, i)
+      expected_i += 1
+    self.assertEqual(i, 10)
+
+  def test_wait_with_backoff_max_iterations_delay(self):
+    i = 0
+    expected_i = 0
+    for i, _, _ in WaitRange(
+        min=0.01, max=0.05, delay=0.1, max_iterations=11).wait_with_backoff():
+      self.assertEqual(expected_i, i)
+      expected_i += 1
+    self.assertEqual(i, 10)
 
 
 class DurationsTestCase(unittest.TestCase):

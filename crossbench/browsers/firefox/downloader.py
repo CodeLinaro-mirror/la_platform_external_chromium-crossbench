@@ -7,13 +7,13 @@ from __future__ import annotations
 import abc
 import os
 import shutil
-import urllib.parse
 from typing import TYPE_CHECKING, Dict, Final, Iterable, Optional, Tuple, Type
 
 from typing_extensions import override
 
 from crossbench.browsers.downloader import DMGArchiveHelper, Downloader
 from crossbench.browsers.firefox.version import FirefoxVersion
+from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
   from crossbench.browsers.version import BrowserVersion
@@ -173,7 +173,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
   def _archive_urls(
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
-    archive_name = urllib.parse.quote(f"Firefox {version.parts_str}.dmg")
+    archive_name = url_helper.quote(f"firefox {version.parts_str}.dmg")
     return ((version, f"{folder_url}/{archive_name}"),)
 
   @override

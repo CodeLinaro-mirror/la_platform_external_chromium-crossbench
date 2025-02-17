@@ -28,14 +28,13 @@ class GetAction(BaseDurationAction):
   @classmethod
   @override
   def parse_str(cls, value: str) -> GetAction:
-    return cls(url=ObjectParser.parse_fuzzy_url_str(value))
+    return cls(url=ObjectParser.fuzzy_url_str(value))
 
   @classmethod
   @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument(
-        "url", type=ObjectParser.parse_fuzzy_url_str, required=True)
+    parser.add_argument("url", type=ObjectParser.fuzzy_url_str, required=True)
     parser.add_argument(
         "duration",
         type=DurationParser.positive_or_zero_duration,

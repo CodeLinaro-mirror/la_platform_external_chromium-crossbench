@@ -326,22 +326,22 @@ class ObjectParser:
   PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
 
   @classmethod
-  def parse_fuzzy_url_str(cls,
-                          value: str,
-                          name: str = "url",
-                          schemes: Sequence[str] = ("http", "https", "about",
-                                                    "file", "data"),
-                          default_scheme: str = "https") -> str:
-    parsed = cls.parse_fuzzy_url(value, name, schemes, default_scheme)
+  def fuzzy_url_str(cls,
+                    value: str,
+                    name: str = "url",
+                    schemes: Sequence[str] = ("http", "https", "about", "file",
+                                              "data"),
+                    default_scheme: str = "https") -> str:
+    parsed = cls.fuzzy_url(value, name, schemes, default_scheme)
     return urlparse.urlunparse(parsed)
 
   @classmethod
-  def parse_fuzzy_url(cls,
-                      value: str,
-                      name: str = "url",
-                      schemes: Sequence[str] = ("http", "https", "about",
-                                                "file", "data"),
-                      default_scheme: str = "https") -> urlparse.ParseResult:
+  def fuzzy_url(cls,
+                value: str,
+                name: str = "url",
+                schemes: Sequence[str] = ("http", "https", "about", "file",
+                                          "data"),
+                default_scheme: str = "https") -> urlparse.ParseResult:
     assert default_scheme, "missing default scheme value"
     value = cls.non_empty_str(value, name)
     if PathParser.PATH_PREFIX.match(value):

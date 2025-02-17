@@ -248,10 +248,9 @@ class WprBase(abc.ABC):
     self._forward_ports()
     time.sleep(0.1)
     try:
-      with self._open_wpr_cmd_url("generate-200") as r:
-        if r.status == 200:
-          return
-    except Exception as e:  # pylint: disable=broad-except
+      self._open_wpr_cmd_url("generate-200")
+      return
+    except url_helper.HTTPError as e:
       logging.debug("Could not query wpr server: %s", e)
     self._raise_startup_failure()
 
@@ -287,10 +286,12 @@ class WprBase(abc.ABC):
       return True
     return False
 
-  def _open_wpr_cmd_url(self, cmd: str):
+  def _open_wpr_cmd_url(self,
+                        cmd: str,
+                        verbose: bool = True) -> url_helper.Response:
     test_url = (
         f"http://{self._host}:{self._host_http_port}/web-page-replay-{cmd}")
-    return url_helper.urlopen(test_url, timeout=1)
+    return url_helper.get(test_url, timeout=1, verbose=verbose)
 
   def stop(self, force_shutdown: bool = False) -> None:
     atexit.unregister(self.stop)
@@ -307,9 +308,8 @@ class WprBase(abc.ABC):
   def _shut_down(self) -> None:
     logging.info("WPR: shutting down recorder.")
     try:
-      with self._open_wpr_cmd_url("command-exit"):
-        pass
-    except IOError:
+      self._open_wpr_cmd_url("command-exit", verbose=False)
+    except url_helper.ConnectionError:
       # The above request always fails because WPR closes the connection
       # without response.
       pass

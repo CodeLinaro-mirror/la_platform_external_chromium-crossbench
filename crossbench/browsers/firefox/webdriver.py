@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import shutil
@@ -166,8 +165,8 @@ class FirefoxDriverFinder:
     return (9999, 9999, 9999)
 
   def _load_releases(self) -> Dict[Tuple[int, ...], Dict]:
-    with url_helper.urlopen(self.RELEASES_URL) as response:
-      releases = json.loads(response.read().decode("utf-8"))
+    response = url_helper.get(self.RELEASES_URL)
+    releases = response.json()
     assert isinstance(releases, list)
     versions = {}
     for release in releases:

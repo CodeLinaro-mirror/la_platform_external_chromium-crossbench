@@ -8,7 +8,6 @@ import dataclasses
 import datetime as dt
 from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Self,
                     Sequence, Tuple, cast)
-from urllib import parse as urlparse
 
 from typing_extensions import override
 
@@ -61,7 +60,7 @@ class PageConfig(ConfigObject):
       url = PAGES[raw_url].url
       label = label or raw_url
     else:
-      url = ObjectParser.parse_fuzzy_url_str(raw_url)
+      url = ObjectParser.fuzzy_url_str(raw_url)
     if len(parts) == 2:
       duration = DurationParser.positive_duration(parts[1])
     return cls.from_url(label, url, duration)
@@ -127,7 +126,7 @@ class PageConfig(ConfigObject):
 
   @property
   def url_label(self) -> str:
-    url = urlparse.urlparse(self.first_url)
+    url = ObjectParser.url(self.first_url)
     if url.scheme == "about":
       return url.path
     if url.scheme == "file":

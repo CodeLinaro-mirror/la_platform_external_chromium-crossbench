@@ -7,13 +7,13 @@ from __future__ import annotations
 import abc
 import dataclasses
 import html
-import urllib.parse
 from argparse import ArgumentTypeError
 from typing import TYPE_CHECKING, Any, Dict
 
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -56,7 +56,7 @@ class SplashScreen:
 
 _BLANK_PAGE_HTML = "<html></html>"
 _BLANK_PAGE_DATA_URL = (
-    f"data:text/html;charset=utf-8,{urllib.parse.quote(_BLANK_PAGE_HTML)}")
+    f"data:text/html;charset=utf-8,{url_helper.quote(_BLANK_PAGE_HTML)}")
 
 class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):
 
@@ -106,7 +106,7 @@ class DetailedSplashScreen(BaseURLSplashScreen):
         self._render_run_details(info),
         "</body></html>",
     ))
-    data_url = f"data:text/html;charset=utf-8,{urllib.parse.quote(page)}"
+    data_url = f"data:text/html;charset=utf-8,{url_helper.quote(page)}"
     return data_url
 
   def _render_properties(self, title: str, properties: Dict[str, Any]) -> str:

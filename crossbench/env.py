@@ -7,15 +7,14 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-import urllib.request
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
-from urllib.parse import urlparse
 
 import colorama
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
-from crossbench.helper import collection_helper
+from crossbench.helper import collection_helper, url_helper
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -136,25 +135,23 @@ class HostEnvironment:
     if self._validation_mode == ValidationMode.SKIP:
       return True
     platform = platform or plt.PLATFORM
-    result = urlparse(url)
+    result = ObjectParser.url(url)
     if result.scheme == "file":
       return platform.exists(result.path)
     if platform.is_remote and result.hostname in ("localhost", "127.0.0.1"):
       # TODO: support remote URL verification, for now we just assume that
       # checking a live site is ok.
       return True
+    if not all([result.scheme in ["http", "https"], result.netloc]):
+      return False
+    if self._validation_mode != ValidationMode.PROMPT:
+      return True
     try:
-      if not all([result.scheme in ["http", "https"], result.netloc]):
-        return False
-      if self._validation_mode != ValidationMode.PROMPT:
-        return True
-      with urllib.request.urlopen(url, timeout=5) as request:
-        if request.getcode() == 200:
-          return True
-        logging.debug("Could not load URL '%s', got %s", url, request)
-    except urllib.error.URLError as e:
-      logging.debug("Could not parse URL '%s' got error: %s", url, e)
-    return False
+      url_helper.get(url, timeout=5)
+      return True
+    except url_helper.HTTPError as e:
+      logging.debug("Could not load URL '%s', got %s", url, e)
+      return False
 
   def _check_system_monitoring(self) -> None:
     # TODO(cbruni): refactor to use list_... and disable_system_monitoring api

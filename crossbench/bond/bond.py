@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-import logging
 from typing import Any, Dict, Mapping, Sequence, Set
 
 import google.auth.transport.requests
@@ -17,6 +16,7 @@ from typing_extensions import override
 
 from crossbench.cli.config.secrets import ServiceAccount
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+from crossbench.helper import url_helper
 from crossbench.parse import NumberParser, ObjectParser
 
 
@@ -147,19 +147,9 @@ class BondClient:
                        url: str,
                        body_json: Any,
                        retry: int = 3) -> requests.Response:
-    attempt = 0
-    while True:
-      try:
-        headers = self._get_request_headers()
-        response = requests.post(url, headers=headers, json=body_json)
-        response.raise_for_status()
-        return response
-      except Exception as e:
-        if attempt < retry:
-          logging.warning("BondClient POST request failed, retrying: %s", e)
-          attempt += 1
-          continue
-        raise e
+    headers = self._get_request_headers()
+    return url_helper.post(url, body_json, headers, retry)
+
 
   def create_meeting(self) -> str:
     request_body_json = {

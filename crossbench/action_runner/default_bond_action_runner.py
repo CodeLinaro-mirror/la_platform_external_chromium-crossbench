@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 
 from typing_extensions import override
 
@@ -13,6 +12,7 @@ from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.bond_base import BondActionRunner
 from crossbench.bond.bond import BondClient
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
@@ -41,7 +41,7 @@ class DefaultBondActionRunner(BondActionRunner):
       self._bond_client = None
 
   def get_current_conference_code(self, browser: Browser) -> str:
-    url = urlparse(browser.current_url)
+    url = ObjectParser.url(browser.current_url)
     if url.hostname != "meet.google.com":
       raise RuntimeError(f"Unsupported URL for Bond action: {url.geturl()}")
     # Conference code is url path without leading '/'
