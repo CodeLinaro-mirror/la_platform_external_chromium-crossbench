@@ -31,6 +31,8 @@ from crossbench.benchmarks.speedometer.speedometer_2_1 import \
     Speedometer21Benchmark
 from crossbench.benchmarks.speedometer.speedometer_3_0 import \
     Speedometer30Benchmark
+from crossbench.benchmarks.speedometer.speedometer_3_1 import \
+    Speedometer31Benchmark
 from tests import test_helper
 
 ALL = (
@@ -49,6 +51,7 @@ ALL = (
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,
+    Speedometer31Benchmark,
     MemoryBenchmark,
 )
 

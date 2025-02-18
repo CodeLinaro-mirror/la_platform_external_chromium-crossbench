@@ -16,9 +16,13 @@ from crossbench.benchmarks.speedometer.speedometer_2_0 import (
 from crossbench.benchmarks.speedometer.speedometer_2_1 import (
     Speedometer21Benchmark, Speedometer21Probe, Speedometer21ProbeContext,
     Speedometer21Story)
+from crossbench.benchmarks.speedometer.speedometer_3 import MeasurementMethod
 from crossbench.benchmarks.speedometer.speedometer_3_0 import (
-    MeasurementMethod, Speedometer30Benchmark, Speedometer30Probe,
-    Speedometer30ProbeContext, Speedometer30Story)
+    Speedometer30Benchmark, Speedometer30Probe, Speedometer30ProbeContext,
+    Speedometer30Story)
+from crossbench.benchmarks.speedometer.speedometer_3_1 import (
+    Speedometer31Benchmark, Speedometer31Probe, Speedometer31ProbeContext,
+    Speedometer31Story)
 from crossbench.browsers.viewport import Viewport
 from tests import test_helper
 from tests.crossbench.benchmarks.speedometer_helper import (
@@ -90,32 +94,7 @@ class Speedometer21TestCase(Speedometer2BaseTestCase):
     return "speedometer_2.1"
 
 
-class Speedometer30TestCase(SpeedometerBaseTestCase):
-
-  @property
-  @override
-  def benchmark_cls(self):
-    return Speedometer30Benchmark
-
-  @property
-  @override
-  def story_cls(self):
-    return Speedometer30Story
-
-  @property
-  @override
-  def probe_cls(self):
-    return Speedometer30Probe
-
-  @property
-  @override
-  def probe_context_cls(self):
-    return Speedometer30ProbeContext
-
-  @property
-  @override
-  def name(self):
-    return "speedometer_3.0"
+class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
 
   @property
   def name_all(self):
@@ -202,7 +181,7 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.name, "speedometer_3.0")
+    self.assertEqual(story.name, self.name)
     self.assertEqual(story.measurement_method, MeasurementMethod.RAF)
     self.assertDictEqual(story.url_params, {})
 
@@ -210,7 +189,7 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.name, "speedometer_3.0")
+    self.assertEqual(story.name, self.name)
     self.assertEqual(story.measurement_method, MeasurementMethod.TIMER)
     self.assertDictEqual(story.url_params, {"measurementMethod": "timer"})
 
@@ -379,9 +358,66 @@ class Speedometer30TestCase(SpeedometerBaseTestCase):
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
 
+class Speedometer30TestCase(Speedometer3BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return Speedometer30Benchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return Speedometer30Story
+
+  @property
+  @override
+  def probe_cls(self):
+    return Speedometer30Probe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return Speedometer30ProbeContext
+
+  @property
+  @override
+  def name(self):
+    return "speedometer_3.0"
+
+
+class Speedometer31TestCase(Speedometer3BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return Speedometer31Benchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return Speedometer31Story
+
+  @property
+  @override
+  def probe_cls(self):
+    return Speedometer31Probe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return Speedometer31ProbeContext
+
+  @property
+  @override
+  def name(self):
+    return "speedometer_3.1"
+
+
 #  Don't expose abstract BaseTestCase to test runner
 del SpeedometerBaseTestCase
 del Speedometer2BaseTestCase
+del Speedometer3BaseTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

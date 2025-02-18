@@ -20,4 +20,5 @@ from crossbench.benchmarks.motionmark import (MotionMark10Benchmark,
                                               MotionMark13Benchmark)
 from crossbench.benchmarks.speedometer import (Speedometer20Benchmark,
                                                Speedometer21Benchmark,
-                                               Speedometer30Benchmark)
+                                               Speedometer30Benchmark,
+                                               Speedometer31Benchmark)

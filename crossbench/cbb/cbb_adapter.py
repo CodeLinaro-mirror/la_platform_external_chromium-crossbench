@@ -36,6 +36,7 @@ press_benchmarks: List[Type[PressBenchmark]] = [
     benchmarks.Speedometer20Benchmark,
     benchmarks.Speedometer21Benchmark,
     benchmarks.Speedometer30Benchmark,
+    benchmarks.Speedometer31Benchmark,
     benchmarks.MotionMark12Benchmark,
     benchmarks.MotionMark13Benchmark,
     benchmarks.JetStream20Benchmark,
