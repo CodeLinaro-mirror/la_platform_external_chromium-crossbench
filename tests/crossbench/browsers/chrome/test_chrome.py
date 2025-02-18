@@ -68,6 +68,11 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
       self.assertIn(field_trial_flag, flags)
       self.assertFalse(flags.no_experiments_flags)
 
+  def test_is_local_build_mock_browser(self):
+    self.assertTrue(self.browsers)
+    for browser in self.browsers:
+      self.assertFalse(browser.is_local_build)
+
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 
   def test_is_apk_helper(self):

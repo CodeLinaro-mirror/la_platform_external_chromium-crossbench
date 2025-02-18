@@ -14,6 +14,8 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.browser_helper import convert_flags_to_label
+from crossbench.browsers.chromium_based import helper
+from crossbench.browsers.version import BrowserVersionChannel
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.types import JsonDict
@@ -64,7 +66,13 @@ class ChromiumBased(Browser):
 
   @override
   def _extract_version(self) -> BrowserVersion:
-    return self.version_cls().parse(self.platform.app_version(self.path))
+    if path := self.path:
+      self._is_local_build = helper.is_in_build_dir(path, self.platform)
+    version = self.version_cls().parse(self.platform.app_version(self.path))
+    # Locally-built chrome versions should not have a channel
+    if self.is_local_build:
+      version = version.with_channel(BrowserVersionChannel.ANY)
+    return version
 
   @override
   def _setup_flags(self, settings: Settings) -> ChromeFlags:

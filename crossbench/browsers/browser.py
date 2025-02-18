@@ -51,6 +51,7 @@ class Browser(abc.ABC):
     self.app_name: str = self.type_name
     self.app_path: pth.AnyPath = pth.AnyPath()
     self._path = pth.AnyPath()
+    self._is_local_build: bool = False
     self._unique_name: str = ""
     self._version: BrowserVersion = UnknownBrowserVersion()
     self._setup_path_and_version(path)
@@ -158,6 +159,10 @@ class Browser(abc.ABC):
   @property
   def driver_path(self) -> Optional[pth.AnyPath]:
     return self._settings.driver_path
+
+  @property
+  def is_local_build(self) -> bool:
+    return self._is_local_build
 
   @property
   def probes(self) -> Iterable[Probe]:

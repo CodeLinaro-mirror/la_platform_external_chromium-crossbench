@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Dict, Final, List, Optional, Tuple
 from crossbench import exception
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chromium import helper
+from crossbench.browsers.chromium_based import helper
 from crossbench.helper import url_helper
 
 if TYPE_CHECKING:

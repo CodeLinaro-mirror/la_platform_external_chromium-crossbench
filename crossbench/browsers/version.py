@@ -250,6 +250,11 @@ class BrowserVersion(abc.ABC):
   def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
     return (self._parts, self._channel)
 
+  def with_channel(self, channel: BrowserVersionChannel) -> Self:
+    if self.channel == channel:
+      return self
+    return type(self)(self.parts, channel, self.version_str)  # pytype: disable=not-instantiable
+
   def __str__(self) -> str:
     if not self._version_str:
       if not self._parts:

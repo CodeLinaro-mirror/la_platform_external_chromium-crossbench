@@ -159,7 +159,6 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     _ = hash(version.key)
     self.assertEqual(version, self.VERSION_CLS.lts(version.parts))
 
-
   def test_parse_stable(self):
     version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
     self.assertEqual(version.channel, BrowserVersionChannel.STABLE)
@@ -277,6 +276,22 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(version_stable.contains(version_beta))
     self.assertTrue(version_beta.contains(version_beta))
     self.assertTrue(version_stable.contains(version_stable))
+
+  def test_with_channel(self):
+    version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
+    self.assertEqual(version.channel, BrowserVersionChannel.STABLE)
+    stable_copy = version.with_channel(BrowserVersionChannel.STABLE)
+    self.assertIs(version, stable_copy)
+
+    alpha_copy = version.with_channel(BrowserVersionChannel.ALPHA)
+    self.assertEqual(alpha_copy.channel, BrowserVersionChannel.ALPHA)
+    self.assertEqual(alpha_copy.parts, version.parts)
+    self.assertEqual(alpha_copy.version_str, version.version_str)
+
+    any_copy = version.with_channel(BrowserVersionChannel.ANY)
+    self.assertFalse(any_copy.has_channel)
+    self.assertEqual(any_copy.parts, version.parts)
+    self.assertEqual(any_copy.version_str, version.version_str)
 
 
 class ChromiumVersionTestCase(_BrowserVersionTestCase):

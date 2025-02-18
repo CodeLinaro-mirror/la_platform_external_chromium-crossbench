@@ -18,11 +18,11 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium import helper
 from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
                                                         DriverNotFoundError)
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
+from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags.base import FlagsT

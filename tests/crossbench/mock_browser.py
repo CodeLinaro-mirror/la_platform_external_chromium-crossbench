@@ -15,10 +15,11 @@ from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
 from typing_extensions import override
 
 from crossbench import plt
-from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
+from crossbench.browsers.all import Chrome, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.version import ChromiumVersion
+from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.version import BrowserVersion
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
@@ -241,7 +242,7 @@ def app_root(platform: plt.Platform) -> pathlib.Path:
   return pathlib.Path("/usr/bin")
 
 
-class MockChromiumBrowser(MockBrowser, metaclass=abc.ABCMeta):
+class MockChromiumBasedBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
   @override
   def _setup_flags(self, settings: Settings) -> ChromeFlags:
@@ -272,10 +273,38 @@ class MockChromiumBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
 
 # Inject MockBrowser into the browser hierarchy for easier testing.
-Chromium.register(MockChromiumBrowser)
+ChromiumBased.register(MockChromiumBasedBrowser)
 
 
-class MockChromeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
+class MockChromium(MockChromiumBasedBrowser):
+  VERSION = "101.22.33.44"
+
+  @classmethod
+  def mock_app_binary(cls,
+                      platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+    if platform.is_macos:
+      return pathlib.Path("Chromium.app/Contents/MacOS/Chromium")
+    if platform.is_win:
+      return pathlib.Path("Google/Chromium/Application/chromium.exe")
+    return pathlib.Path("chromium")
+
+  @classmethod
+  @override
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+    return app_root(platform) / cls.mock_app_binary(platform)
+
+  @property
+  @override
+  def type_name(self) -> str:
+    return "chromium"
+
+  @property
+  @override
+  def attributes(self) -> BrowserAttributes:
+    return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
+
+
+class MockChromeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
   @property
   @override
@@ -306,7 +335,7 @@ class MockChromeStable(MockChromeBrowser):
 
 
 if not TYPE_CHECKING:
-  assert issubclass(MockChromeStable, Chromium)
+  assert issubclass(MockChromeStable, ChromiumBased)
   assert issubclass(MockChromeStable, Chrome)
 
 
@@ -370,7 +399,7 @@ class MockChromeCanary(MockChromeBrowser):
     return app_root(platform) / "google-chrome-canary"
 
 
-class MockEdgeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
+class MockEdgeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
   @property
   @override
@@ -385,7 +414,7 @@ class MockEdgeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
 
 Edge.register(MockEdgeBrowser)
 if not TYPE_CHECKING:
-  assert issubclass(MockEdgeBrowser, Chromium)
+  assert issubclass(MockEdgeBrowser, ChromiumBased)
   assert issubclass(MockEdgeBrowser, Edge)
 
 

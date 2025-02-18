@@ -15,11 +15,11 @@ from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.base import ChromeBaseMixin
-from crossbench.browsers.chromium import helper
 from crossbench.browsers.chromium.webdriver import (
     ChromiumBasedWebDriver, ChromiumWebDriverAndroid,
     ChromiumWebDriverChromeOsSsh, ChromiumWebDriverSsh,
     LocalChromiumWebDriverAndroid)
+from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.webdriver import DriverException
 
 if TYPE_CHECKING:
