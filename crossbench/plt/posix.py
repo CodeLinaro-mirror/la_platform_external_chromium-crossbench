@@ -360,7 +360,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       raise NotADirectoryError(f"Not a directory: {remote_path}")
 
     for name in self.sh_stdout("ls", "-1",
-                               remote_path).rstrip("\n").split("\n"):
+                               remote_path).rstrip("\n").splitlines():
       yield remote_path / name
 
   @override

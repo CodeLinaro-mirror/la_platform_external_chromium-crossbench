@@ -31,6 +31,8 @@ class DownloadsProbe(Probe):
   NAME = "downloads"
   RESULT_LOCATION = ResultLocation.BROWSER
 
+  CHROME_OS_DOWNLOADS_DIR = pth.AnyPath("/home/chronos/user/MyFiles/Downloads")
+
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
@@ -59,6 +61,10 @@ class DownloadsProbe(Probe):
   def get_context(self, run: Run) -> DownloadsProbeContext:
     if run.browser_platform.is_android:
       return AndroidWebDriverDownloadsProbeContext(self, run)
+
+    if run.browser_platform.is_chromeos:
+      return FileWatchDownloadsProbeContext(self, run,
+                                            self.CHROME_OS_DOWNLOADS_DIR)
     raise NotImplementedError(
         f"Probe({self}): Unsupported browser: {run.browser}")
 
@@ -94,8 +100,48 @@ class DownloadsProbeContext(ProbeContext[DownloadsProbe]):
     return downloads_dir
 
   @abc.abstractmethod
-  def download_complete(self,pattern: re.Pattern) -> bool:
+  def download_complete(self, pattern: re.Pattern) -> bool:
     pass
+
+
+class FileWatchDownloadsProbeContext(DownloadsProbeContext):
+
+  def __init__(self, probe: DownloadsProbe, run: Run,
+               downloads_dir: pth.AnyPath) -> None:
+    super().__init__(probe, run)
+    self._downloads_dir: pth.AnyPath = downloads_dir
+    self._existing_downloads: Set[pth.AnyPath] = set()
+    self._results: List[pth.AnyPath] = []
+
+  def downloads(self, include_pending: bool = True) -> Iterable[pth.AnyPath]:
+    downloads = self.browser_platform.iterdir(self._downloads_dir)
+    if include_pending:
+      return downloads
+    return [file for file in downloads if file.suffix != ".crdownload"]
+
+  def start(self) -> None:
+    if self.probe.clear_downloads:
+      for file in self.downloads():
+        self.browser_platform.rm(file)
+      self._existing_downloads = set()
+    else:
+      self._existing_downloads = set(self.downloads())
+
+  def stop(self) -> None:
+    if not self.probe.save_downloads:
+      return
+    for file in self.downloads():
+      if file in self._existing_downloads:
+        continue
+      to_path = self.result_path / file.name
+      self.browser_platform.copy_file(file, to_path)
+      self._results.append(to_path)
+
+  def teardown(self) -> ProbeResult:
+    return self.browser_result(file=self._results)
+
+  def download_complete(self, pattern: re.Pattern) -> bool:
+    return any(pattern.search(file.name) for file in self.downloads())
 
 
 @dataclass(frozen=True)
@@ -173,7 +219,7 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
   def teardown(self) -> ProbeResult:
     return self.browser_result(file=self._results)
 
-  def download_complete(self,pattern: re.Pattern) -> bool:
+  def download_complete(self, pattern: re.Pattern) -> bool:
     downloads = self.downloads(include_pending=False)
     for download in downloads:
       if pattern.search(download.display_name):
