@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from typing_extensions import override
 
 from crossbench import plt
-from crossbench.browsers.chrome.version import ChromeVersion
+from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.helper import fs_helper
 from crossbench.helper.spinner import Spinner
 from crossbench.probes.profiling.context.base import PosixProfilingContext
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
-V8_PERF_PROF_PATH_FLAG_MIN_VERSION = ChromeVersion((118, 0, 5993, 48))
+V8_PERF_PROF_PATH_FLAG_MIN_VERSION = ChromiumVersion((118, 0, 5993, 48))
 PERF_DATA_PATTERN = "*.perf.data"
 JIT_DUMP_PATTERN = "jit-*.dump"
 

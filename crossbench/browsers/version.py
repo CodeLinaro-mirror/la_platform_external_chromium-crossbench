@@ -267,15 +267,19 @@ class BrowserVersion(abc.ABC):
         f"{self.__class__.__name__}"
         f"({self.parts_str}, {self.channel_name}, {repr(self._version_str)})")
 
+  def is_compatible_type(self, other: BrowserVersion) -> bool:
+    return isinstance(other, type(self)) or isinstance(self, type(other))
+
   def __eq__(self, other: Any) -> bool:
-    if not isinstance(other, type(self)):
+    if not self.is_compatible_type(other):
       return False
     return self.key == other.key
 
   def __le__(self, other: Any) -> bool:
-    if not isinstance(other, type(self)):
-      raise TypeError("Cannot compare versions from different browsers: "
-                      f"{self} vs. {other}.")
+    if not self.is_compatible_type(other):
+      raise TypeError("Cannot compare versions from unrelated browsers: "
+                      f"{type(self).__name__} vs. "
+                      f"{type(other).__name__}.")
     if self.is_channel_version and other.is_channel_version:
       return self._channel <= other._channel
     if self.is_channel_version:

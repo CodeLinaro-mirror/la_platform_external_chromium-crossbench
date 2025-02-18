@@ -414,6 +414,54 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
     with self.assertRaises(PartialBrowserVersionError):
       _ = version.patch
 
+  def test_compare_others_eq(self):
+    chromium_version = ChromiumVersion.parse("Chromium 125.1.6416.3")
+    chrome_version = ChromeVersion.parse("Google Chrome 125.1.6416.3")
+    self.assertFalse(chromium_version < chrome_version)
+    self.assertTrue(chromium_version <= chrome_version)
+    self.assertFalse(chrome_version < chromium_version)
+    self.assertTrue(chrome_version <= chromium_version)
+    self.assertEqual(chrome_version, chromium_version)
+
+  def test_compare_others_lt(self):
+    chromium_version = ChromiumVersion.parse("Chromium 100.1.6416.3")
+    chrome_version = ChromeVersion.parse("Google Chrome 125.1.6416.3")
+    self.assertTrue(chromium_version < chrome_version)
+    self.assertTrue(chromium_version <= chrome_version)
+    self.assertFalse(chrome_version < chromium_version)
+    self.assertFalse(chrome_version <= chromium_version)
+    self.assertFalse(chrome_version == chromium_version)
+
+  def test_compare_others_lt_any_channel(self):
+    chromium_version = ChromiumVersion.parse("Chromium 100.1.6416.3 Any")
+    chrome_version = ChromeVersion.parse("Google Chrome 125.1.6416.3 stable")
+    self.assertFalse(chromium_version.has_channel)
+    self.assertTrue(chrome_version.has_channel)
+    self.assertTrue(chromium_version < chrome_version)
+    self.assertTrue(chromium_version <= chrome_version)
+    self.assertFalse(chrome_version < chromium_version)
+    self.assertFalse(chrome_version <= chromium_version)
+    self.assertFalse(chrome_version == chromium_version)
+    # Reverse any / stable:
+    chromium_version = ChromiumVersion.parse("Chromium 100.1.6416.3 stable")
+    chrome_version = ChromeVersion.parse("Google Chrome 125.1.6416.3 Any")
+    self.assertTrue(chromium_version.has_channel)
+    self.assertFalse(chrome_version.has_channel)
+    self.assertTrue(chromium_version < chrome_version)
+    self.assertTrue(chromium_version <= chrome_version)
+    self.assertFalse(chrome_version < chromium_version)
+    self.assertFalse(chrome_version <= chromium_version)
+    self.assertFalse(chrome_version == chromium_version)
+
+  def test_compare_others_incompatible(self):
+    chromium_version = ChromiumVersion.parse("Chromium 125.1.6416.3")
+    safari_version = SafariVersion.parse(
+        SafariBrowserVersionTestCase.STABLE_VERSION_STR)
+    with self.assertRaisesRegex(TypeError, "SafariVersion"):
+      _ = chromium_version < safari_version
+    with self.assertRaisesRegex(TypeError, "SafariVersion"):
+      _ = safari_version < chromium_version
+
 
 class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
   ANY_VERSION_STR = "Google Chrome 115.0.5790.114 Any"
