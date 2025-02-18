@@ -567,6 +567,8 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
     config_dict = ListPagesConfig.parse({"pages": "http://foo.bar.com,23s"})
     config_str = PagesConfig(
         pages=(PageConfig.parse("http://foo.bar.com,23s"),))
+    self.assertIsInstance(config_dict, ListPagesConfig)
+    self.assertIsInstance(config_str, PagesConfig)
     self.assertEqual(config_dict, config_str)
 
   @unittest.skip("Combined pages per line not supported yet")

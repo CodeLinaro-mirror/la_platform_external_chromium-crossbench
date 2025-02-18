@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class ShellProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "setup_cmd",

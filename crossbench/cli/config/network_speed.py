@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Self
 
 from typing_extensions import override
 
@@ -52,19 +52,19 @@ class NetworkSpeedConfig(ConfigObject):
   window: int | None = None
 
   @classmethod
-  def default(cls) -> NetworkSpeedConfig:
-    return NetworkSpeedConfig()
+  def default(cls) -> Self:
+    return cls()
 
   @classmethod
   @override
-  def parse(cls, value: Any, **kwargs) -> NetworkSpeedConfig:
+  def parse(cls, value: Any, **kwargs) -> Self:
     if isinstance(value, NetworkSpeedPreset):
       return cls.parse_preset(value)
     return super().parse(value, **kwargs)
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> NetworkSpeedConfig:
+  def parse_str(cls, value: str) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     if value == "default":
@@ -73,7 +73,7 @@ class NetworkSpeedConfig(ConfigObject):
     return cls.parse_preset(preset)
 
   @classmethod
-  def parse_preset(cls, preset: NetworkSpeedPreset) -> NetworkSpeedConfig:
+  def parse_preset(cls, preset: NetworkSpeedPreset) -> Self:
     if preset == NetworkSpeedPreset.LIVE:
       return cls.default()
     preset_kwargs = ts_proxy_settings.TRAFFIC_SETTINGS[str(preset)]
@@ -81,12 +81,12 @@ class NetworkSpeedConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> NetworkSpeedConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[NetworkSpeedConfig]:
-    parser = ConfigParser(cls, default=NetworkSpeedConfig.default())
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = ConfigParser(cls, default=cls.default())
     parser.add_argument(
         "ts_proxy", type=PathParser.existing_file_path, required=False)
     # See tsproxy.py --help
@@ -114,6 +114,5 @@ class NetworkSpeedConfig(ConfigObject):
     return cls.config_parser().help
 
   @property
-  @override
-  def is_live(self):
+  def is_live(self) -> bool:
     return self == self.default()

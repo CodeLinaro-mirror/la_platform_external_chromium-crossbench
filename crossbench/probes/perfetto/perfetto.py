@@ -8,7 +8,7 @@ import abc
 import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, cast
+from typing import TYPE_CHECKING, Iterable, Self, cast
 
 from typing_extensions import override
 
@@ -26,7 +26,6 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
   from crossbench.plt.base import TupleCmdArgs
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
@@ -61,7 +60,7 @@ class PerfettoProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "textproto",

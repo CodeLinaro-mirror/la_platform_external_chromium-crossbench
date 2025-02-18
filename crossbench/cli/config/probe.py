@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import TYPE_CHECKING, Any, Dict, Final, Type
+from typing import TYPE_CHECKING, Any, Dict, Final, Self, Type
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class ProbeConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> ProbeConfig:
+  def parse_str(cls, value: str) -> Self:
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
@@ -65,13 +65,12 @@ class ProbeConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> ProbeConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     probe_name = ObjectParser.non_empty_str(config.pop("name"), "name")
     return cls.parse_probe_dict(probe_name, config)
 
   @classmethod
-  def parse_probe_dict(cls, probe_name: str, config: Dict[str,
-                                                          Any]) -> ProbeConfig:
+  def parse_probe_dict(cls, probe_name: str, config: Dict[str, Any]) -> Self:
     if probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(probe_cls, config)
     raise cls._unknown_probe_error(probe_name)

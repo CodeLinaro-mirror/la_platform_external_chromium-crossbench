@@ -8,7 +8,7 @@ import atexit
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Self, Sequence, Tuple, Type
 
 from typing_extensions import override
 
@@ -55,7 +55,7 @@ class PowerMetricsProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "sampling_interval",

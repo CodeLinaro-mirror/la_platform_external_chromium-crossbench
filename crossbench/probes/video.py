@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, TextIO, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Self, TextIO, Tuple, Type
 
 from typing_extensions import override
 
@@ -46,7 +46,7 @@ class VideoProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "generate_timestrip",

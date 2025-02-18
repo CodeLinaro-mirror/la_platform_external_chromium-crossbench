@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
-from typing import Final, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Final, Mapping, Optional, Tuple
 
-import crossbench.path as pth
 from crossbench import plt
+
+if TYPE_CHECKING:
+  import crossbench.path as pth
 
 _BASE_STORAGE_URL = (
     "https://commondatastorage.googleapis.com/perfetto-luci-artifacts")

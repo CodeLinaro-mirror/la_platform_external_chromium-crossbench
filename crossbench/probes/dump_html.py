@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import os
-from typing import TYPE_CHECKING, List, Optional, Type
+from typing import TYPE_CHECKING, List, Optional, Self, Type
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class DumpHtmlProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     # TODO: support stop dumps
     return parser

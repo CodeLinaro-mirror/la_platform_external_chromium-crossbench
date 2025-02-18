@@ -45,7 +45,7 @@ class PagesConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> PagesConfig:
+  def parse_str(cls, value: str) -> Self:
     """
     Simple comma-separate config:
     value = URL, [DURATION], ...
@@ -72,18 +72,18 @@ class PagesConfig(ConfigObject):
     return cls.parse_sequence(values)
 
   @classmethod
-  def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> PagesConfig:
+  def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     # Make sure we get errors for invalid files.
     return cls.parse_config_path(path, **kwargs)
 
   @classmethod
-  def parse_other(cls, value: Any, **kwargs) -> PagesConfig:
+  def parse_other(cls, value: Any, **kwargs) -> Self:
     if isinstance(value, (list, tuple)):
       return cls.parse_sequence(value, **kwargs)
     return super().parse_other(value, **kwargs)
 
   @classmethod
-  def parse_sequence(cls, values: Sequence[str]) -> PagesConfig:
+  def parse_sequence(cls, values: Sequence[str]) -> Self:
     """
     Variant a): List of comma-separate URLs
       [ "URL,[DURATION]", ... ]
@@ -97,11 +97,11 @@ class PagesConfig(ConfigObject):
       with exception.annotate_argparsing(
           f"Parsing pages[{index}]: {repr(single_line_config)}"):
         pages.append(PageConfig.parse_str(single_line_config))
-    return PagesConfig(pages=tuple(pages))
+    return cls(pages=tuple(pages))
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> PagesConfig:
+  def parse_dict(cls, config: Dict) -> Self:
     """
     Variant a):
       { "pages": { "LABEL": PAGE_CONFIG }, "secrets": { ... } }
@@ -116,7 +116,7 @@ class PagesConfig(ConfigObject):
       pages_config = ObjectParser.non_empty_dict(config["pages"], "pages")
       with exception.annotate_argparsing("Parsing config 'pages'"):
         pages = cls._parse_pages(pages_config, secrets)
-        return PagesConfig(pages, secrets)
+        return cls(pages, secrets)
     raise exception.UnreachableError()
 
   @classmethod
@@ -130,6 +130,11 @@ class PagesConfig(ConfigObject):
         page = PageConfig.parse(page_config, label=name, secrets=secrets)
         pages.append(page)
     return tuple(pages)
+
+  def __eq__(self, value: object) -> bool:
+    if not isinstance(value, PagesConfig):
+      return False
+    return self.pages == value.pages and self.secrets == value.secrets
 
 
 class DevToolsRecorderPagesConfig(PagesConfig):
@@ -240,13 +245,13 @@ class ListPagesConfig(PagesConfig):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> ListPagesConfig:
+  def parse_str(cls, value: str) -> Self:
     raise argparse.ArgumentTypeError(
         f"URL list file {repr(value)} does not exist.")
 
   @classmethod
-  def parse_path(  # type: ignore
-      cls, path: pth.LocalPath, **kwargs) -> PagesConfig:
+  @override
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     assert not kwargs, f"{cls.__name__} does not support extra kwargs"
     pages: List[PageConfig] = []
     with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
@@ -260,11 +265,11 @@ class ListPagesConfig(PagesConfig):
               logging.warning("Skipping empty line %s", line)
               continue
             pages.append(PageConfig.parse(single_line_config))
-    return PagesConfig(pages=tuple(pages))
+    return cls(pages=tuple(pages))
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> PagesConfig:  # type: ignore
+  def parse_dict(cls, config: Dict) -> Self:
     config = ObjectParser.non_empty_dict(config, "pages")
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:

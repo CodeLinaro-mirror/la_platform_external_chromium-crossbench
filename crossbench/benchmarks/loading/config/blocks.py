@@ -225,7 +225,7 @@ class ActionBlockListConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> ActionBlockListConfig:
+  def parse_str(cls, value: str) -> Self:
     raise NotImplementedError("Cannot create action blocks from strings")
 
   @override

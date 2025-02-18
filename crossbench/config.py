@@ -638,7 +638,7 @@ class _TemplatedConfigParser(ConfigObject):
         value.keys()) in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  def config_parser(cls: Type[Self]) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("template", type=ObjectParser.not_none, required=True)
     parser.add_argument("args", type=template_args, required=False, default={})
@@ -648,16 +648,16 @@ class _TemplatedConfigParser(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> Any:
+  def parse_str(cls, value: str) -> Self:
     raise NotImplementedError("Cannot create templated config from strings")
 
   @classmethod
   @override
-  def parse_dict(cls: Type[Self], config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def parse_and_substitute(cls, value: Any) -> Any:
+  def parse_and_substitute(cls, value: Any) -> Self:
     value = cls.parse(value)
     assert isinstance(value, _TemplatedConfigParser)
     return value.result

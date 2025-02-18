@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import atexit
 import subprocess
-from typing import TYPE_CHECKING, TextIO, Type
+from typing import TYPE_CHECKING, Self, TextIO, Type
 
 from typing_extensions import override
 
@@ -34,7 +34,7 @@ class DTraceProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "script_path", required=True, type=PathParser.non_empty_file_path)

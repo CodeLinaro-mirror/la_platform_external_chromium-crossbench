@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Iterable, Type
+from typing import TYPE_CHECKING, Iterable, Self, Type
 
 from typing_extensions import override
 
@@ -35,7 +35,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "interval",
@@ -91,7 +91,7 @@ class PollingShellProbe(PollingProbe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "cmd",

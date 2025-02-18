@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
+from typing import Optional, Self
 
 from typing_extensions import override
 
@@ -34,7 +34,7 @@ class JSFlags(Flags):
 
   @classmethod
   @override
-  def parse_str(cls, raw_flags: str) -> JSFlags:
+  def parse_str(cls, raw_flags: str) -> Self:
     return cls._parse_str(raw_flags, "--js-flags")
 
   @override

@@ -27,7 +27,7 @@ class GetAction(BaseDurationAction):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> GetAction:
+  def parse_str(cls, value: str) -> Self:
     return cls(url=ObjectParser.fuzzy_url_str(value))
 
   @classmethod

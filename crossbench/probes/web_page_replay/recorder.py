@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -43,7 +43,7 @@ class WebPageReplayProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument("http_port", type=int, default=8080, required=False)
     parser.add_argument("https_port", type=int, default=8081, required=False)

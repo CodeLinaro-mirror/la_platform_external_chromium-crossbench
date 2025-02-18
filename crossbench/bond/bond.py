@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-from typing import Any, Dict, Mapping, Sequence, Set
+from typing import Any, Dict, Mapping, Self, Sequence, Set
 
 import google.auth.transport.requests
 import requests
@@ -44,17 +44,17 @@ class AddBotsConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> AddBotsConfig:
+  def parse_str(cls, value: str) -> Self:
     del value
     raise NotImplementedError("Cannot create AddBotsConfig from string")
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> AddBotsConfig:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[AddBotsConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
         "num_of_bots", type=NumberParser.positive_int, required=True)

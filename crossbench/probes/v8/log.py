@@ -9,7 +9,7 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Iterable, List, Optional, Type, cast
+from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type, cast
 
 from typing_extensions import override
 
@@ -51,7 +51,7 @@ class V8LogProbe(ChromiumProbe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "log_all",

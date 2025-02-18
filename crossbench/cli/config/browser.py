@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Dict, Optional, TextIO, Tuple, cast
+from typing import Any, Dict, Optional, Self, TextIO, Tuple, cast
 
 import hjson
 from typing_extensions import override
@@ -68,13 +68,13 @@ class BrowserConfig(ConfigObject):
       raise ValueError(f"{type(self).__name__}.driver cannot be None.")
 
   @classmethod
-  def default(cls) -> BrowserConfig:
+  def default(cls) -> Self:
     return cls(
         browsers.Chrome.stable_path(plt.PLATFORM), DriverConfig.default())
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> BrowserConfig:
+  def parse_str(cls, value: str) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     path: pth.AnyPathLike | None = None
@@ -94,13 +94,13 @@ class BrowserConfig(ConfigObject):
     return cls(path, driver, network, env)
 
   @classmethod
-  def parse_with_range(cls, value: Any) -> Tuple[BrowserConfig, ...]:
+  def parse_with_range(cls, value: Any) -> Tuple[Self, ...]:
     if isinstance(value, str):
       return cls._parse_with_range(value)
     return (cls.parse(value),)
 
   @classmethod
-  def _parse_with_range(cls, value: str) -> Tuple[BrowserConfig, ...]:
+  def _parse_with_range(cls, value: str) -> Tuple[Self, ...]:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     parts = value.split("...", maxsplit=1)
@@ -291,7 +291,7 @@ class BrowserConfig(ConfigObject):
     return (driver, path, network, env)
 
   @classmethod
-  def parse_text_io(cls, f: TextIO) -> BrowserConfig:
+  def parse_text_io(cls, f: TextIO) -> Self:
     with exception.annotate(f"Loading browser config file: {f.name}"):
       config = {}
       with exception.annotate("Parsing hjson"):
@@ -302,11 +302,11 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> BrowserConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[BrowserConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
         "browser",

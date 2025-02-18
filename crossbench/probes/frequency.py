@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, List, Type
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, List, Self, Type
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
@@ -75,7 +74,7 @@ class FrequencyProbe(EnvModifier):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "cpus",

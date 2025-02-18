@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 import shlex
-from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Sequence,
-                    Tuple, cast)
+from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Self,
+                    Sequence, Tuple, cast)
 
 from typing_extensions import override
 
@@ -64,7 +64,7 @@ class ProfilingProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "js",

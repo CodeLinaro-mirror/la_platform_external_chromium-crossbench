@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Self
 
 from typing_extensions import override
 
@@ -22,7 +22,7 @@ class Secrets(ConfigObject):
   bond: ServiceAccount | None = None
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Secrets]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("google", type=GoogleUsernamePassword)
     parser.add_argument("bond", type=ServiceAccount)
@@ -30,18 +30,19 @@ class Secrets(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> Secrets:
+  def parse_str(cls, value: str) -> Self:
     if value[0] == "{":
       return cls.parse_inline_hjson(value)
     raise NotImplementedError("Cannot create secrets from string")
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Secrets:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
-  def merge(self, fallback: Secrets) -> Secrets:
-    return Secrets(self.google or fallback.google, self.bond or fallback.bond)
+  def merge(self, fallback: Secrets) -> Self:
+    return type(self)(self.google or fallback.google, self.bond or
+                      fallback.bond)
 
 @dataclasses.dataclass(frozen=True)
 class UsernamePassword(ConfigObject):
@@ -49,7 +50,7 @@ class UsernamePassword(ConfigObject):
   password: str
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[UsernamePassword]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
         "username",
@@ -65,12 +66,12 @@ class UsernamePassword(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> UsernamePassword:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
   @override
-  def parse_str(cls, value: str):
+  def parse_str(cls, value: str) -> Self:
     # TODO: maybe support passwd style string format
     raise NotImplementedError("Cannot support")
 
@@ -94,7 +95,7 @@ class ServiceAccount(ConfigObject):
   universe_domain: str
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[ServiceAccount]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("type", type=ObjectParser.non_empty_str, required=True)
     parser.add_argument(
@@ -123,12 +124,12 @@ class ServiceAccount(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> ServiceAccount:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
   @override
-  def parse_str(cls, value: str):
+  def parse_str(cls, value: str) -> Self:
     del value
     raise NotImplementedError("ServiceAccount from string not supported")
 

@@ -80,7 +80,7 @@ class Probe(ProbeResultKey, abc.ABC):
   NAME: str = ""
 
   @classmethod
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     return ProbeConfigParser(cls)
 
   @classmethod

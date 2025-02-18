@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Self, Type, cast
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -59,7 +59,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> DriverConfig:
+  def parse_str(cls, value: str) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     # Variant 1: $PATH
@@ -86,14 +86,14 @@ class DriverConfig(ConfigObject):
         except ValueError as e:
           logging.debug("Parsing short inline driver config failed: %s", e)
           raise original_error from e
-    return DriverConfig(driver_type, path)
+    return cls(driver_type, path)
 
   @classmethod
-  def parse_short_settings(cls, value: str,
-                           platform: plt.Platform) -> DriverConfig:
+  def parse_short_settings(cls: Type[Self], value: str,
+                           platform: plt.Platform) -> Self:
     """Check for short versions and multiple candidates"""
     logging.debug("Looking for driver candidates: %s", value)
-    candidate: DriverConfig | None = None
+    candidate: Self | None = None
     if candidate := cls.try_parse_adb_settings(value, platform):
       return candidate
     if platform.is_macos:
@@ -104,7 +104,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   def try_parse_adb_settings(cls, value: str,
-                             platform: plt.Platform) -> Optional[DriverConfig]:
+                             platform: plt.Platform) -> Optional[Self]:
     candidate_serials: List[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for serial, info in adb_devices(platform).items():
@@ -125,12 +125,11 @@ class DriverConfig(ConfigObject):
       logging.debug("No matching adb devices found.")
       return None
     assert len(candidate_serials) == 1
-    return DriverConfig(
-        BrowserDriverType.ANDROID, device_id=candidate_serials[0])
+    return cls(BrowserDriverType.ANDROID, device_id=candidate_serials[0])
 
   @classmethod
   def try_parse_ios_settings(cls, value: str,
-                             platform: plt.Platform) -> Optional[DriverConfig]:
+                             platform: plt.Platform) -> Optional[Self]:
     candidate_serials: List[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for uuid, device_info in ios_devices(platform).items():
@@ -148,7 +147,7 @@ class DriverConfig(ConfigObject):
       logging.debug("No matching ios devices found.")
       return None
     assert len(candidate_serials) == 1
-    return DriverConfig(BrowserDriverType.IOS, device_id=candidate_serials[0])
+    return cls(BrowserDriverType.IOS, device_id=candidate_serials[0])
 
   @classmethod
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
@@ -162,11 +161,11 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> DriverConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[DriverConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
         "type",

@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import enum
 import json
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Optional, Self, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
 from typing_extensions import override
@@ -93,7 +93,7 @@ class BrowserProfilingProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "moz_profiler_startup_features",

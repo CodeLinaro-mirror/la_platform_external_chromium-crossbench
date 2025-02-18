@@ -10,7 +10,8 @@ import dataclasses
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
+                    Type)
 
 from typing_extensions import override
 
@@ -128,7 +129,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "metrics",

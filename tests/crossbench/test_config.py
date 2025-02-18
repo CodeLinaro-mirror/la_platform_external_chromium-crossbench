@@ -10,7 +10,7 @@ import enum
 import json
 import pathlib
 import unittest
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Self
 from unittest import mock
 
 from immutabledict import immutabledict
@@ -60,7 +60,7 @@ class CustomNestedConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> CustomNestedConfigObject:
+  def parse_str(cls, value: str) -> Self:
     if ":" in value:
       raise ValueError("Invalid Config")
     if not value:
@@ -69,11 +69,11 @@ class CustomNestedConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> CustomNestedConfigObject:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[CustomNestedConfigObject]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=str, required=True)
     parser.add_argument("option", type=str, required=False)

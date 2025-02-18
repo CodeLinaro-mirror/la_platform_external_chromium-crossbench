@@ -8,7 +8,7 @@ import argparse
 import enum
 import logging
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Set, Type
+from typing import TYPE_CHECKING, Dict, Optional, Self, Sequence, Set, Type
 
 from typing_extensions import override
 
@@ -161,7 +161,7 @@ class TracingProbe(ChromiumProbe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "preset",

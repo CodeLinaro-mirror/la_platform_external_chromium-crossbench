@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, Self
 
 from typing_extensions import override
 
@@ -20,7 +20,7 @@ class TabController(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> TabController:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     raise NotImplementedError("Cannot create tab controller from dict")
 
   @classmethod

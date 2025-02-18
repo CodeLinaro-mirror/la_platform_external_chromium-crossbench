@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional,
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Self,
                     TypeAlias)
 
 from typing_extensions import override
@@ -109,13 +109,13 @@ class EnvironmentConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> EnvironmentConfig:
+  def parse_dict(cls, config: Dict[str, Any]) -> Self:
     if "env" in config:
       config = config["env"]
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[EnvironmentConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("browser_allow_background", type=ObjectParser.bool)
     parser.add_argument(

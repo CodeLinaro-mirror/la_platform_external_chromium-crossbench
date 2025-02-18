@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Self
 
 from typing_extensions import override
 
@@ -25,7 +25,7 @@ class CoordinatesConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> CoordinatesConfig:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
@@ -35,7 +35,7 @@ class CoordinatesConfig(ConfigObject):
     raise NotImplementedError("Cannot create CoordinatesConfig from string")
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[CoordinatesConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument("x", type=NumberParser.positive_zero_int, required=True)
@@ -56,18 +56,18 @@ class SelectorConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value) -> SelectorConfig:
+  def parse_str(cls, value) -> Self:
     selector = ObjectParser.non_empty_str(value, "selector")
     return cls(
         selector=selector, required=True, scroll_into_view=False, wait=False)
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> SelectorConfig:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[SelectorConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument(
@@ -86,12 +86,12 @@ class PositionConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value) -> PositionConfig:
+  def parse_str(cls, value) -> Self:
     return cls(selector=SelectorConfig.parse_str(value))
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> PositionConfig:
+  def parse_dict(cls, config: Dict) -> Self:
     selector_parser = SelectorConfig.config_parser()
     if selector_parser.has_all_required_args(config):
       return cls(selector=selector_parser.parse(config))
@@ -104,7 +104,7 @@ class PositionConfig(ConfigObject):
         f"{config} is not a valid coordinate or selector")
 
   @classmethod
-  def from_coordinates(cls, x: int, y: int) -> PositionConfig:
+  def from_coordinates(cls, x: int, y: int) -> Self:
     return cls(coordinates=CoordinatesConfig(x, y))
 
   @classmethod
@@ -112,7 +112,7 @@ class PositionConfig(ConfigObject):
                     selector: str,
                     required: bool = True,
                     scroll_into_view: bool = False,
-                    wait: bool = False) -> PositionConfig:
+                    wait: bool = False) -> Self:
     return cls(
         selector=SelectorConfig(
             selector=selector,

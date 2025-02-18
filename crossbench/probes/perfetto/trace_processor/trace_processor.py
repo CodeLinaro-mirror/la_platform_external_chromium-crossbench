@@ -9,7 +9,8 @@ import dataclasses
 import json
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Self, Tuple,
+                    Type)
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -45,7 +46,7 @@ class TraceProcessorQueryConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> TraceProcessorQueryConfig:
+  def parse_str(cls, value: str) -> Self:
     name = ObjectParser.safe_filename(value)
     sql_path = PathParser.existing_file_path(_QUERIES_DIR / f"{value}.sql",
                                              "sql query")
@@ -54,11 +55,11 @@ class TraceProcessorQueryConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> TraceProcessorQueryConfig:
+  def parse_dict(cls, config: Dict) -> Self:
     return cls.config_parser().parse(config)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[TraceProcessorQueryConfig]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)
     parser.add_argument("sql", type=ObjectParser.non_empty_str, required=True)
@@ -106,7 +107,7 @@ class TraceProcessorProbe(Probe):
 
   @classmethod
   @override
-  def config_parser(cls) -> ProbeConfigParser:
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "batch",

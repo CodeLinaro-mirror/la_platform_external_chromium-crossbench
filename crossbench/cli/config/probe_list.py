@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class ProbeListConfig(ConfigObject):
 
   @classmethod
-  def from_cli_args(cls, args: argparse.Namespace) -> ProbeListConfig:
+  def from_cli_args(cls, args: argparse.Namespace) -> Self:
     with exception.annotate_argparsing():
       config_from_args = cls(args.probe)
       if not args.probe_config:
@@ -69,7 +69,7 @@ class ProbeListConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> ProbeListConfig:
+  def parse_str(cls, value: str) -> Self:
     raise NotImplementedError()
 
   def __init__(self,
@@ -97,9 +97,7 @@ class ProbeListConfig(ConfigObject):
       raise ValueError(f"Duplicate probe: {probe.name}")
     self._probes[probe.name] = probe
 
-  def merge(self,
-            other: ProbeListConfig,
-            should_override: bool = False) -> ProbeListConfig:
+  def merge(self, other: Self, should_override: bool = False) -> Self:
     merged_probes = {probe.name: probe for probe in self.probes}
     for probe in other.probes:
       name = probe.name
@@ -110,5 +108,5 @@ class ProbeListConfig(ConfigObject):
           logging.warning("PROBES: Overriding existing probe %s!", name)
       merged_probes[name] = probe
 
-    merged = ProbeListConfig(probes=merged_probes.values())
+    merged = type(self)(probes=merged_probes.values())
     return merged
