@@ -433,6 +433,11 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def is_port_used(self, port: int) -> bool:
     return bool(self.sh_stdout("ss", "-HOlnt", "sport", "=", f"{port}"))
 
+  def user_id(self) -> int:
+    if self.is_local:
+      return super().user_id()
+    return int(self.sh_stdout("id", "-u").strip())
+
 
 class RemotePosixEnviron(Environ):
 

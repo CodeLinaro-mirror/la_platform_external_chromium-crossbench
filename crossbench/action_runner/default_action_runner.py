@@ -20,6 +20,7 @@ from crossbench.action_runner.default_bond_action_runner import \
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
+from crossbench.probes.downloads import DownloadsProbe, DownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
 from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
@@ -369,3 +370,17 @@ class DefaultActionRunner(ActionRunner):
       return
     assert isinstance(ctx, DumpHtmlProbeContext)
     ctx.dump_html("_".join(self.info_stack) + f"_{suffix}")
+
+  def wait_for_download(self, run: Run,
+                        action: i_action.WaitForDownloadAction) -> None:
+    with run.actions("WaitForDownload", measure=False):
+      ctx = run.find_probe_context(DownloadsProbe)
+      if not ctx:
+        raise RuntimeError("No downloads probe for wait_for_download on "
+                           f"{repr(self.info_stack)}")
+      assert isinstance(ctx, DownloadsProbeContext)
+
+      wait_range = run.wait_range(min_wait=0.2, timeout=action.timeout, delay=0)
+      for _ in wait_range.wait_with_backoff():
+        if ctx.download_complete(action.pattern):
+          return

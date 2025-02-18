@@ -756,3 +756,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     x = NumberParser.positive_int(match_result.group("x"))
     y = NumberParser.positive_int(match_result.group("y"))
     return (x, y)
+
+  def user_id(self) -> int:
+    return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))

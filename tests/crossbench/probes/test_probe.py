@@ -14,6 +14,7 @@ from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.debugger import DebuggerProbe
+from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.env_modifier import EnvModifier
@@ -73,6 +74,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield BrowserProfilingProbe()
     yield DTraceProbe(pth.LocalPath("script.dtrace"))
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
+    yield DownloadsProbe()
     yield DumpHtmlProbe()
     yield FrequencyProbe.from_config({})
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),

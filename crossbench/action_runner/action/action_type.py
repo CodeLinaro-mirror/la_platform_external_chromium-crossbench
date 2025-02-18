@@ -27,6 +27,7 @@ class ActionType(ConfigEnum):
       "Only supported in chromium-based browsers."))
   SCREENSHOT = ("screenshot", "Take a screenshot")
   SWITCH_TAB = ("switch_tab", "Switch the tab that actions are sent to")
+  WAIT_FOR_DOWNLOAD = ("wait_for_download", "wait for a download to complete")
   WAIT_FOR_READY_STATE = ("wait_for_ready_state",
                           "Wait for a specific document.readyState")
   DUMP_HTML = ("dump_html", "Dump the current document's HTML")

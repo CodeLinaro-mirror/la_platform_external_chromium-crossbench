@@ -71,6 +71,10 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
     self.assertGreater(x, 0)
     self.assertGreater(y, 0)
 
+  def test_user_id(self):
+    self.assertGreaterEqual(self.platform.user_id(), 0)
+
+
 del PosixNativePlatformTestCase
 
 if __name__ == "__main__":

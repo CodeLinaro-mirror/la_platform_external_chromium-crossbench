@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import json
+import pathlib
 import tempfile
+from typing import Any, Optional
 import urllib.parse
 
 import pytest
@@ -15,18 +17,37 @@ from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 
 
-def _run_loading_test(browser_config, page_config, test_env) -> None:
-  with tempfile.NamedTemporaryFile() as page_config_file:
-    with open(page_config_file.name, mode="w", encoding="utf-8") as f:
-      json.dump(page_config, f)
+def _run_loading_test(browser_config: str,
+                      page_config: Any,
+                      test_env: Any,
+                      probe_config_file: Optional[pathlib.Path] = None) -> None:
+  with tempfile.NamedTemporaryFile(
+      mode="w", encoding="utf-8") as page_config_file:
+    json.dump(page_config, page_config_file)
+    page_config_file.flush()
 
     cli = CrossBenchCLI()
 
-    cli.run([
+    args = [
         "loading", f"--browser={browser_config}",
         f"--page-config={page_config_file.name}", "--action-runner=android"
-    ] + list(test_env.cq_flags))
+    ] + list(test_env.cq_flags)
 
+    if probe_config_file:
+      args.append(f"--probe-config={probe_config_file}")
+
+    cli.run(args)
+
+
+def _run_loading_test_with_probes(browser_config: str, page_config: Any,
+                                  test_env: Any, probe_config: Any) -> None:
+  with tempfile.NamedTemporaryFile(
+      mode="w", encoding="utf-8") as probe_config_file:
+    json.dump(probe_config, probe_config_file)
+    probe_config_file.flush()
+
+    _run_loading_test(browser_config, page_config, test_env,
+                      pathlib.Path(probe_config_file.name))
 
 @pytest.mark.parametrize("input_source", InputSource)
 def test_click(browser_config, input_source, test_env) -> None:
@@ -144,6 +165,57 @@ def test_scroll(browser_config, test_env) -> None:
   }
 
   _run_loading_test(browser_config, page_config, test_env)
+
+
+def test_download(browser_config, test_env):
+  test_page = urllib.parse.quote("""
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Download Test</title>
+  </head>
+  <body>
+    <a
+      id="download"
+      href="data:text/plain;charset=utf-8,A Car"
+      download="car.txt">
+      Download
+    </a>
+  </body>
+</html>
+""")
+
+  page_config = {
+      "pages": {
+          "DownloadTest": {
+              "actions": [{
+                  "action": "get",
+                  "url": f"data:text/html;charset=utf-8,{test_page}",
+                  "ready_state": "complete"
+              }, {
+                  "action": "click",
+                  "position": "#download",
+              }, {
+                  "action": "wait_for_download",
+                  "timeout": "10s",
+                  "pattern": "car.txt"
+              }]
+          }
+      }
+  }
+
+  probe_config = {
+      "probes": {
+          "downloads": {
+              "clear_downloads": True,
+              "save_downloads": True
+          }
+      }
+  }
+
+  _run_loading_test_with_probes(browser_config, page_config, test_env,
+                                probe_config)
 
 
 if __name__ == "__main__":

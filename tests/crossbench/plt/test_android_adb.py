@@ -490,5 +490,10 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(horizontal, 1366)
     self.assertEqual(vertical, 768)
 
+  def test_user_id(self):
+    self.expect_adb("shell", "am get-current-user", result="10")
+    self.assertEqual(self.platform.user_id(), 10)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

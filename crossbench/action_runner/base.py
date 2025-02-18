@@ -276,3 +276,6 @@ class ActionRunner:
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
     raise ActionNotImplementedError(self, action)
+
+  def wait_for_download(self, run: Run, action: i_action.WaitForDownloadAction):
+    raise ActionNotImplementedError(self, action)

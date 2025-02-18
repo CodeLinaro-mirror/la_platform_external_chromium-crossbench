@@ -942,3 +942,7 @@ class Platform(abc.ABC):
     raise NotImplementedError(
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")
+
+  def user_id(self) -> int:
+    self.assert_is_local()
+    return os.getuid()

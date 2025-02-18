@@ -21,6 +21,8 @@ from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
+from crossbench.action_runner.action.wait_for_download import (
+    WaitForDownloadAction)
 from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
@@ -40,6 +42,7 @@ ACTIONS_TUPLE: Tuple[Type[Action], ...] = (
     SwitchTabAction,
     TextInputAction,
     WaitAction,
+    WaitForDownloadAction,
     WaitForElementAction,
     WaitForReadyStateAction,
 )
