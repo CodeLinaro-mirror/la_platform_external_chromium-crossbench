@@ -357,7 +357,6 @@ class CrossBenchCLI:
         if benchmark_cls.NAME != search_str and search_str not in aliases:
           continue
       benchmark_info = benchmark_cls.describe()
-      benchmark_info["aliases"] = aliases or "None"
       benchmark_info["help"] = f"See `{benchmark_cls.NAME} --help`"
       benchmarks_data[benchmark_cls.NAME] = benchmark_info
     data: Dict[str, Dict[str, Any]] = {

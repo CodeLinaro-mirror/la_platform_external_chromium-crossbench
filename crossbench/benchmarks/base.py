@@ -72,6 +72,8 @@ class Benchmark(abc.ABC):
     return {
         "name":
             cls.NAME,
+        "aliases":
+            cls.aliases() or "None",
         "description":
             "\n".join(txt_helper.wrap_lines(cls.cli_description(), 70)),
         "stories": [],
@@ -466,6 +468,7 @@ class PressBenchmark(SubStoryBenchmark):
     data["url"] = cls.DEFAULT_STORY_CLS.URL
     data["url-official"] = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
     data["url-local"] = cls.DEFAULT_STORY_CLS.URL_LOCAL
+    data["version"] = ".".join(map(str, cls.version()))
     return data
 
   def __init__(self,
