@@ -295,8 +295,10 @@ class MacOSPlatform(PosixPlatform):
             if auto_brightness := display.get("spdisplays_ambient_brightness"):
               return auto_brightness == "spdisplays_yes"
         raise ValueError(
-            "Could not find 'spdisplays_ndrvs' from SPDisplaysDataType")
-    raise ValueError("Could not get 'SPDisplaysDataType' form system profiler")
+            "Could not find 'spdisplays_ndrvs' from SPDisplaysDataType. "
+            f"Output={output}")
+    raise ValueError("Could not get 'SPDisplaysDataType' form system profiler. "
+                     f"Output={output}")
 
   def check_crowdstrike(self, disable: bool = False) -> bool:
     falconctl = self.path(
@@ -383,7 +385,7 @@ class MacOSPlatform(PosixPlatform):
     display_brightness = ctypes.c_float()  # pylint: disable=no-value-for-parameter
     ret = display_services.DisplayServicesGetBrightness(
         main_display, ctypes.byref(display_brightness))
-    assert ret == 0
+    assert ret == 0, f"ret={ret}, display_brightness={display_brightness}"
     return round(display_brightness.value * 100)
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
