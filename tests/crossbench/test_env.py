@@ -10,11 +10,14 @@ from unittest import mock
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.browsers.settings import Settings
 from crossbench.env import (EnvironmentConfig, HostEnvironment, ValidationError,
                             ValidationMode)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import LinuxMockPlatform, MockPlatform
+from tests.crossbench.mock_browser import MockSafari
+from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
+                                          MockPlatform)
 
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
@@ -22,9 +25,10 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
   @override
   def setUp(self):
     super().setUp()
-    self.platform = MockPlatform()
+    self.platform = self.setup_platform()
     self.platform.use_fs = True
-    self.out_dir = pathlib.Path("results/current_benchmark_run_results")
+    self.out_dir = pathlib.Path(
+        "crossbench/results/current_benchmark_run_results")
     self.fs.create_dir(self.out_dir)
     self.mock_runner = mock.Mock(
         platform=plt.PLATFORM,
@@ -32,6 +36,9 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         probes=[],
         browsers=[],
         out_dir=self.out_dir)
+
+  def setup_platform(self):
+    return MockPlatform()
 
   def patch_property(self, target: Any, name: str, **kwargs):
     new_callable = kwargs.pop("new_callable", mock.PropertyMock)
@@ -199,6 +206,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_request_is_headless_false(self):
     self.platform = LinuxMockPlatform()
+    self.platform.use_fs = True
     mock_browser = mock.Mock(
         platform=self.platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
@@ -283,6 +291,45 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
       self.assertIn("custom_binary_a", str(cm.exception))
       self.assertNotIn("custom_binary_b", str(cm.exception))
       mock_which.assert_called()
+
+  def test_file_access_outdir(self):
+    self._check_file_access()
+
+  def _check_file_access(self):
+    out_dir = self.mock_runner.out_dir
+    self.assertTrue(out_dir.exists())
+    env = self.create_env()
+    env.validate()
+    with mock.patch.object(
+        self.platform, "mkdir", side_effect=ValueError("No File Access")):
+      env = self.create_env()
+      with self.assertRaisesRegex(ValidationError, str(out_dir.parent)):
+        env.validate()
+    with mock.patch.object(self.platform, "get_file_contents", side_effect=""):
+      env = self.create_env()
+      with self.assertRaisesRegex(ValidationError, str(out_dir.parent)):
+        env.validate()
+
+  def test_macos_file_access_outdir(self):
+    self.platform = MacOsMockPlatform()
+    self.platform.use_fs = True
+    self._check_file_access()
+
+  def test_macos_safari_cache_dir(self):
+    self.platform = MacOsMockPlatform()
+    self.platform.use_fs = True
+    MockSafari.setup_fs(self.fs, self.platform)
+
+    mock_browser = MockSafari("sf", settings=Settings(platform=self.platform))
+    self.mock_runner.browsers = [mock_browser]
+
+    with mock.patch.object(self.platform, "get_file_contents", side_effect=""):
+      env = self.create_env()
+      with self.assertRaisesRegex(ValidationError, "Safari"):
+        env.validate()
+    # success otherwise
+    env.validate()
+
 
 
 class ValidationModeTestCase(unittest.TestCase):

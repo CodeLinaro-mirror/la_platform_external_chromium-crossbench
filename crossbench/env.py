@@ -390,28 +390,52 @@ class HostEnvironment:
           "Terminal.app does not launch apps in the foreground.\n"
           "Please use iTerm.app for a better experience.")
 
-  def _check_macos_file_access(self) -> None:
-    if not self._platform.is_macos:
-      return
-    # Make sure we can modify Safari's cache dir.
-    cache_dir = (
+  def _check_file_access(self) -> None:
+    if self._platform.is_macos:
+      has_safari = any(
+          browser.attributes.is_safari for browser in self.browsers)
+      if has_safari:
+        self._check_safari_cache_dir_access()
+    self._check_results_dir_access()
+
+  def _check_safari_cache_dir_access(self):
+    safari_cache_dir = (
         self.platform.home() /
         "Library/Containers/com.apple.Safari/Data/Library/Caches")
+    if not self._has_read_write_access(safari_cache_dir):
+      self._file_access_access_warning("Safari's cache directory")
+
+  def _check_results_dir_access(self):
+    out_dir = self._out_dir.parent
+    if self._has_read_write_access(out_dir):
+      return
+    self._file_access_access_warning(f"the parent result dir: {out_dir})")
+
+  def _has_read_write_access(self, test_dir) -> bool:
     try:
-      self.platform.mkdir(cache_dir, exist_ok=True, parents=True)
+      self.platform.mkdir(test_dir, exist_ok=True, parents=True)
       with self.platform.NamedTemporaryFile(
-          prefix="crossbench_file_access_test", dir=cache_dir) as test_file:
+          prefix="crossbench_file_access_test", dir=test_dir) as test_file:
         self.platform.set_file_contents(test_file, test_file.name)
         assert self.platform.get_file_contents(test_file) == test_file.name
         self.platform.rm(test_file)
+        return True
     except Exception as e:  # pylint: disable=broad-except
       logging.debug("Failed file access test: %s", e)
-      term_program = self._platform.environ.get("TERM_PROGRAM",
-                                                "the current terminal App")
-      self.handle_validation_warning(
-          "Could not modify Safari's cache directory.\n"
-          "Likely missing 'Full Disk Access' macOS Privacy & Security "
-          f"permission for {term_program}.")
+      return False
+
+  def _file_access_access_warning(self, dir_name: str) -> None:
+    if not self.platform.is_macos:
+      self.handle_validation_warning(f"Could not modify {dir_name}")
+      return
+
+    term_program = self._platform.environ.get("TERM_PROGRAM",
+                                              "the current terminal App")
+    self.handle_validation_warning(
+        f"Could not modify {dir_name}.\n"
+        "Likely missing 'Full Disk Access' macOS Privacy & Security "
+        f"permission for {term_program}.")
+
 
   def check_browser_focused(self, browser: Browser) -> None:
     if (self._config.browser_allow_background or not browser.pid or
@@ -455,7 +479,7 @@ class HostEnvironment:
     self._check_forbidden_system_process()
     self._check_screen_autobrightness()
     self._check_macos_terminal()
-    self._check_macos_file_access()
+    self._check_file_access()
 
   def check_installed(self,
                       binaries: Iterable[str],
