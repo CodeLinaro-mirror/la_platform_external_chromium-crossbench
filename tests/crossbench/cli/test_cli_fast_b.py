@@ -15,11 +15,11 @@ import hjson
 from crossbench import __version__, plt
 from crossbench.browsers import viewport
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
-from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.env import ValidationMode
 from crossbench.parse import LateArgumentError
 from crossbench.path import AnyPath
@@ -67,7 +67,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with mock.patch.object(
         BrowserVariantsConfig,
         "get_browser_cls", return_value=browser_cls), mock.patch.object(
-            CrossBenchCLI, "_run_benchmark") as run_benchmark:
+            BenchmarkSubcommand, "_run_benchmark") as run_benchmark:
       self.run_cli("loading", f"--browser={browser_bin}",
                    "--urls=http://test.com", "--env-validation=skip", "--",
                    "--chrome-flag1=value1", "--chrome-flag2")
@@ -384,7 +384,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--splash-screen=none")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual([url], browser.url_list)
@@ -395,7 +395,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--splash-screen=minimal")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.settings.splash_screen, SplashScreen.MINIMAL)
         self.assertEqual(len(browser.url_list), 3)
@@ -408,7 +408,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", f"--splash-screen={splash_url}")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIsInstance(browser.settings.splash_screen, URLSplashScreen)
         self.assertEqual(len(browser.url_list), 3)
@@ -428,7 +428,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--viewport=maximized")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.viewport, viewport.Viewport.MAXIMIZED)
         self.assertEqual(len(browser.url_list), 3)
@@ -453,7 +453,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.assertEqual(cli.args.splash_screen, SplashScreen.NONE)
       self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
       self.assertEqual(cli.args.env_validation, ValidationMode.SKIP)
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIs(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual(browser.url_list, [url])
@@ -493,7 +493,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       cli = self.run_cli("loading", f"--urls={url}", "--debug")
       self.assertTrue(cli.args.throw)
       self.assertEqual(cli.args.verbosity, 3)
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(len(browser.url_list), 3)
         self.assertEqual(len(browser.js_flags), 0)

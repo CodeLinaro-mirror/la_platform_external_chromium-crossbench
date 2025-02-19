@@ -388,7 +388,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       for browser in self.browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertFalse(browser.js_flags)
-      config = cli.runner.env.config
+      config = cli.last_subcommand.runner.env.config
       self.assertEqual(config.disk_min_free_space_gib, EnvironmentConfig.IGNORE)
       self.assertEqual(config.screen_brightness_percent, 66)
       self.assertEqual(config.cpu_max_usage_percent, 77)
@@ -424,7 +424,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")
-      browsers = cli.runner.browsers
+      browsers = cli.last_subcommand.runner.browsers
       self.assertEqual(len(browsers), 2)
       self.assertEqual(browsers[0].label, "browser_1")
       self.assertEqual(browsers[1].label, "browser_2")

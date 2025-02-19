@@ -16,6 +16,7 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.network.local_file_server import LocalFileNetwork
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from tests import test_helper
@@ -237,13 +238,14 @@ class CliSlowTestCase(BaseCliTestCase):
 
     def get_browser(self, args: argparse.Namespace):
       session = Settings(
-          platform=self.platform, network=args.network.create(self.platform))
+          platform=self.cli.platform,
+          network=args.network.create(self.cli.platform))
       browsers = [
           mock_browser.MockChromeDev("dev", settings=session),
       ]
       return browsers
 
-    with mock.patch.object(CrossBenchCLI, "_get_browsers", get_browser):
+    with mock.patch.object(BenchmarkSubcommand, "_get_browsers", get_browser):
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")

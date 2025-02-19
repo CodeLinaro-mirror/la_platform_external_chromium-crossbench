@@ -23,11 +23,12 @@ from crossbench.benchmarks.loading.loadline_presets import \
     LoadLineTabletBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
-from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.helper.sleep_preventer import SystemSleepPreventer
+from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
@@ -174,14 +175,42 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     mock_stderr.close()
     return cli, stdout, stderr
 
+  @contextlib.contextmanager
+  def _patch_get_runner(self):
+    with mock.patch.object(
+        BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
+      yield
+
+  def _mock_get_runner(self, args, benchmark, env_config, env_validation_mode,
+                       timing):
+    if not args.out_dir:
+      # Use stable mock out dir
+      args.out_dir = pathlib.Path("/results")
+      assert not args.out_dir.exists()
+    runner_kwargs = Runner.kwargs_from_cli(args)
+    runner = Runner(
+        benchmark=benchmark,
+        env_config=env_config,
+        env_validation_mode=env_validation_mode,
+        timing=timing,
+        **runner_kwargs,
+        # Use custom platform
+        platform=self.platform)
+    return runner
+
+  @contextlib.contextmanager
+  def _patch_sys_exit(self):
+    with mock.patch(
+        "sys.exit", side_effect=SysExitTestException), mock.patch.object(
+            plt, "PLATFORM", self.platform):
+      yield
+
   def run_cli(self,
               *args,
               raises=None,
               enable_logging: bool = False) -> MockCLI:
     cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
-    with mock.patch(
-        "sys.exit", side_effect=SysExitTestException), mock.patch.object(
-            plt, "PLATFORM", self.platform):
+    with self._patch_sys_exit(), self._patch_get_runner():
       if raises:
         with self.assertRaises(raises):
           cli.run(args)
@@ -200,5 +229,5 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=return_value):
+        BenchmarkSubcommand, "_get_browsers", return_value=return_value):
       yield

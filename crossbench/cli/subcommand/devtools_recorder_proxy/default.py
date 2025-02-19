@@ -52,13 +52,12 @@ class CrossbenchDevToolsRecorderProxy:
   DEFAULT_PORT = 44645
 
   @classmethod
-  def add_subcommand(cls, subparsers) -> argparse.ArgumentParser:
+  def add_cli_parser(cls, subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser(
         "devtools-recorder-proxy",
         aliases=["devtools"],
         help=("Starts a local server to communicate with the "
               "DevTools Recorder extension."))
-    parser.set_defaults(subcommand_fn=cls._subcommand)
     parser.add_argument(
         "--disable-token-authentication",
         dest="use_auth_token",
@@ -69,7 +68,7 @@ class CrossbenchDevToolsRecorderProxy:
     return parser
 
   @classmethod
-  def _subcommand(cls, args: argparse.Namespace) -> None:
+  def run_subcommand(cls, args: argparse.Namespace) -> None:
     instance: CrossbenchDevToolsRecorderProxy = cls(
         use_auth_token=args.use_auth_token)
     instance.run()

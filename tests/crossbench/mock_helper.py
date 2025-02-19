@@ -445,20 +445,3 @@ class MockCLI(CrossBenchCLI):
   def __init__(self, *args, **kwargs) -> None:
     self.platform = kwargs.pop("platform")
     super().__init__(*args, **kwargs)
-
-  def _get_runner(self, args, benchmark, env_config, env_validation_mode,
-                  timing):
-    if not args.out_dir:
-      # Use stable mock out dir
-      args.out_dir = pathlib.Path("/results")
-      assert not args.out_dir.exists()
-    runner_kwargs = self.RUNNER_CLS.kwargs_from_cli(args)
-    self.runner = self.RUNNER_CLS(
-        benchmark=benchmark,
-        env_config=env_config,
-        env_validation_mode=env_validation_mode,
-        timing=timing,
-        **runner_kwargs,
-        # Use custom platform
-        platform=self.platform)
-    return self.runner
