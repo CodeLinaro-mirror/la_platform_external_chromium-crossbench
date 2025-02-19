@@ -17,7 +17,6 @@ from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
-from crossbench.parse import PathParser
 from crossbench.path import check_hash
 from crossbench.plt import PLATFORM, Platform
 
@@ -184,8 +183,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
           f"Could not find wpr.go binary on {self.host_platform}")
     if wpr_go_bin.suffix == ".go" and not self.host_platform.which("go"):
       raise ValueError(f"'go' binary not found on {self.host_platform}")
-    self._wpr_go_bin: LocalPath = self.host_platform.local_path(
-        PathParser.binary_path(wpr_go_bin, "wpr.go source"))
+    self._wpr_go_bin: LocalPath = self.host_platform.parse_local_binary_path(
+        wpr_go_bin, "wpr.go source")
 
   @contextlib.contextmanager
   @override
@@ -239,8 +238,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         raise ValueError(f"Can't run .go files on {self.browser_platform}")
     else:
       wpr_go_bin = self._download_prebuilt_wpr()
-    self._wpr_go_bin: LocalPath = self.host_platform.local_path(
-        PathParser.binary_path(wpr_go_bin, "wpr.go binary"))
+    self._wpr_go_bin: LocalPath = self.host_platform.parse_local_binary_path(
+        wpr_go_bin, "wpr.go binary")
 
   def _download_prebuilt_wpr(self) -> LocalPath:
     wpr_cloud_binary = WPR_PREBUILT_LOOKUP[self.browser_platform.key]

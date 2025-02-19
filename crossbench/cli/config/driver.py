@@ -42,7 +42,7 @@ def driver_path(
     return None
   if type.is_remote_driver:
     return PathParser.any_path(value, name)
-  return PathParser.binary_path(value, name)
+  return plt.PLATFORM.parse_local_binary_path(value, name)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -187,7 +187,7 @@ class DriverConfig(ConfigObject):
         help="Device ID / Serial ID / Unique device name")
     parser.add_argument(
         "adb_bin",
-        type=PathParser.binary_path,
+        type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the adb binary, only valid for Android.")
     return parser
 
@@ -228,7 +228,7 @@ class DriverConfig(ConfigObject):
 
   def validate_local(self) -> None:
     if self.path:
-      PathParser.binary_path(self.path)
+      plt.PLATFORM.parse_local_binary_path(self.path)
 
   def validate_android(self) -> None:
     platform = plt.PLATFORM
@@ -248,7 +248,7 @@ class DriverConfig(ConfigObject):
           f"Could not find ADB device with device_id={repr(self.device_id)}. "
           f"Choices are {names}.")
     if self.adb_bin:
-      PathParser.binary_path(self.adb_bin, platform=platform)
+      platform.parse_binary_path(self.adb_bin)
 
   def validate_chromeos(self) -> None:
     platform = self.get_platform()

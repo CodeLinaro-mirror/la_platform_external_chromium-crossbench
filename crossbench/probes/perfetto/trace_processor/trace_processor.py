@@ -23,6 +23,7 @@ from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
@@ -149,7 +150,7 @@ class TraceProcessorProbe(Probe):
     self._queries = tuple(queries)
     self._trace_processor_bin: pth.LocalPath | None = None
     if trace_processor_bin:
-      self._trace_processor_bin = PathParser.local_binary_path(
+      self._trace_processor_bin = plt.PLATFORM.parse_local_binary_path(
           trace_processor_bin, "trace_processor")
 
   @property

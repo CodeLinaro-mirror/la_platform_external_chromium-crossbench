@@ -11,7 +11,6 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.parse import PathParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import ProbeValidationError
@@ -45,7 +44,7 @@ class DebuggerProbe(Probe):
     parser = super().config_parser()
     parser.add_argument(
         "debugger",
-        type=PathParser.binary_path,
+        type=plt.PLATFORM.parse_local_binary_path,
         default=_DEBUGGER_LOOKUP.get(plt.PLATFORM.name,
                                      "debugger probe not supported"),
         help="Set a custom debugger binary. "

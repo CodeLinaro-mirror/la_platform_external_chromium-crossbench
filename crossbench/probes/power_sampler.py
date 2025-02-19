@@ -14,8 +14,9 @@ from typing import TYPE_CHECKING, Optional, Self, Sequence, Tuple, Type
 
 from typing_extensions import override
 
+from crossbench import plt
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
-from crossbench.parse import DurationParser, PathParser
+from crossbench.parse import DurationParser
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import ProbeValidationError
@@ -65,7 +66,7 @@ class PowerSamplerProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument("bin_path", type=PathParser.binary_path)
+    parser.add_argument("bin_path", type=plt.PLATFORM.parse_local_binary_path)
     parser.add_argument(
         "sampling_interval",
         type=DurationParser.positive_duration,

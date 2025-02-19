@@ -48,7 +48,7 @@ class WebPageReplayProbe(Probe):
     parser.add_argument("http_port", type=int, default=8080, required=False)
     parser.add_argument("https_port", type=int, default=8081, required=False)
     parser.add_argument(
-        "wpr_go_bin", type=PathParser.binary_path, required=False)
+        "wpr_go_bin", type=plt.PLATFORM.parse_local_binary_path, required=False)
     parser.add_argument(
         "key_file", type=PathParser.existing_file_path, required=False)
     parser.add_argument(
@@ -85,8 +85,8 @@ class WebPageReplayProbe(Probe):
         wpr_go_bin = host_platform.local_path(local_wpr_path)
     if not wpr_go_bin:
       raise RuntimeError(f"Could not find wpr.go on {host_platform}")
-    self._wpr_go_bin: LocalPath = host_platform.local_path(
-        PathParser.binary_path(wpr_go_bin, "wpr.go"))
+    self._wpr_go_bin: LocalPath = host_platform.parse_local_binary_path(
+        wpr_go_bin, "wpr.go")
 
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
         bin_path=wpr_go_bin,

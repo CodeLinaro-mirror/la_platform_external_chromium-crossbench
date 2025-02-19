@@ -45,7 +45,7 @@ def CheckChange(input_api, output_api, on_commit):
       output_api,
       files_to_check=pylint_file_patterns_to_check,
       pylintrc=".pylintrc",
-      version="2.17")
+      version="3.2")
 
   # ---------------------------------------------------------------------------
   # MyPy:

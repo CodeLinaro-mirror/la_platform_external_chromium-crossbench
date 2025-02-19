@@ -12,15 +12,16 @@ import logging
 import math
 import re
 import shlex
-from typing import (Any, Callable, Dict, Final, Iterable, List, Optional,
-                    Sequence, Type, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable, List,
+                    Optional, Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
 
-import crossbench.plt
 from crossbench import path as pth
 
+if TYPE_CHECKING:
+  from crossbench import plt
 
 def type_str(value: Any) -> str:
   return type(value).__name__
@@ -118,9 +119,9 @@ class PathParser:
   def binary_path(
       cls,
       value: Optional[pth.AnyPathLike],
+      platform: plt.Platform,
       name: str = "binary",
-      platform: Optional[crossbench.plt.Platform] = None) -> pth.AnyPath:
-    platform = platform or crossbench.plt.PLATFORM
+  ) -> pth.AnyPath:
     not_none: pth.AnyPathLike = ObjectParser.not_none(value,
                                                       name)  # type: ignore
     maybe_path: pth.AnyPath = platform.path(not_none)
@@ -142,8 +143,9 @@ class PathParser:
   @classmethod
   def local_binary_path(cls,
                         value: Optional[pth.AnyPathLike],
+                        platform: plt.Platform,
                         name: str = "binary") -> pth.LocalPath:
-    return cast(pth.LocalPath, cls.binary_path(value, name))
+    return cast(pth.LocalPath, cls.binary_path(value, platform, name))
 
   @classmethod
   def json_file_path(cls, value: pth.AnyPathLike) -> pth.LocalPath:

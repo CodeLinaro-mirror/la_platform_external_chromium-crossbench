@@ -385,6 +385,20 @@ class Platform(abc.ABC):
   def sleep(self, seconds: int | float | dt.timedelta) -> None:
     wait.sleep(seconds)
 
+  def parse_binary_path(self,
+                        value: pth.AnyPathLike,
+                        name: str = "value") -> pth.AnyPath:
+    # Helper to avoid circular imports.
+    return parse.PathParser.binary_path(value, self, name)
+
+  def parse_local_binary_path(self,
+                              value: pth.AnyPathLike,
+                              name: str = "value") -> pth.LocalPath:
+    self.assert_is_local()
+    # Helper to avoid circular imports.
+    return parse.PathParser.local_binary_path(value, self, name)
+
+
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if not binary_name:
       raise ValueError("Got empty path")
