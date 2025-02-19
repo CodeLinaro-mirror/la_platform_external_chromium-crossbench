@@ -94,10 +94,10 @@ class AndroidProfilingContext(PosixProfilingContext):
   def setup(self) -> None:
     assert self.browser.platform.is_android, (
         f"Expected Android platform, found {type(self.browser.platform)}.")
-    assert self.browser.attributes.is_chromium_based, (
+    assert self.browser.attributes().is_chromium_based, (
         f"Expected Chromium-based browser, found {type(self.browser)}.")
     if (self.browser.platform.is_android and
-        self.browser.attributes.is_chromium_based):
+        self.browser.attributes().is_chromium_based):
       chromium = cast(ChromiumBased, self.browser)
       # Set `--enable-benchmarking` explicitly for
       # retrieving Renderer PID, if needed.

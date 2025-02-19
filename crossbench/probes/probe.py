@@ -180,7 +180,7 @@ class Probe(ProbeResultKey, abc.ABC):
                      browser: Browser,
                      attributes: BrowserAttributes,
                      message: Optional[str] = None) -> None:
-    if attributes in browser.attributes:
+    if attributes in browser.attributes():
       return
     if not message:
       message = f"Incompatible browser, expected {attributes}"

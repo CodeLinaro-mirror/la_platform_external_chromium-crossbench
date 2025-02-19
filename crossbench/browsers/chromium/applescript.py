@@ -27,8 +27,8 @@ class ChromiumAppleScript(ChromiumBaseMixin, ChromiumBased, AppleScriptBrowser):
   def _setup_window(self) -> None:
     pass
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.APPLESCRIPT)

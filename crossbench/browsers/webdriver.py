@@ -66,9 +66,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._pid: int = 0
     self.log_file: LocalPath | None = None
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER
 
   @property
@@ -306,6 +306,16 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 class RemoteWebDriver(WebDriverBrowser, Browser):
   """Represent a remote WebDriver that has already been started"""
 
+  @classmethod
+  @override
+  def type_name(cls) -> str:
+    return "remote"
+
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
+    return BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE
+
   def __init__(self, label: str, driver: webdriver.Remote) -> None:
     self._private_driver = driver
     super().__init__(label=label, path=None)
@@ -316,15 +326,6 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     parts: Tuple[int, ...] = tuple(map(int, raw_version.split(".")))
     return UnknownBrowserVersion(parts, version_str=raw_version)
 
-  @property
-  @override
-  def type_name(self) -> str:
-    return "remote"
-
-  @property
-  @override
-  def attributes(self) -> BrowserAttributes:
-    return BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE
 
   @override
   def _validate_driver_version(self) -> None:

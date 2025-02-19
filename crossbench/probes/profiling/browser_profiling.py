@@ -126,7 +126,7 @@ class BrowserProfilingProbe(Probe):
     if browser.platform.is_remote:
       raise ProbeValidationError(
           self, f"Only works on local browser, but got {browser}.")
-    attributes = browser.attributes
+    attributes = browser.attributes()
     if attributes.is_chromium_based or attributes.is_safari:
       return
     if attributes.is_firefox:
@@ -142,7 +142,7 @@ class BrowserProfilingProbe(Probe):
                            f"env[{env_var_str}]={browser_env[env_var_str]}")
 
   def get_context(self, run: Run) -> BrowserProfilingProbeContext:
-    attributes = run.browser.attributes
+    attributes = run.browser.attributes()
     if attributes.is_chromium_based:
       return ChromiumWebDriverBrowserProfilerProbeContext(self, run)
     if attributes.is_firefox:
@@ -173,7 +173,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
   @override
   def get_default_result_path(self) -> AnyPath:
     return (super().get_default_result_path().parent /
-            f"{self.browser.type_name}.profile.json")
+            f"{self.browser.type_name()}.profile.json")
 
   @property
   def chromium(self) -> ChromiumBasedWebDriver:

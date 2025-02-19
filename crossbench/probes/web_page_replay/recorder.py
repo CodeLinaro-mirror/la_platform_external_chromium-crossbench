@@ -128,7 +128,7 @@ class WebPageReplayProbe(Probe):
     return "archive.wprgo"
 
   def is_compatible(self, browser: Browser) -> bool:
-    return browser.attributes.is_chromium_based and browser.platform.is_local
+    return browser.attributes().is_chromium_based and browser.platform.is_local
 
   @override
   def get_context_cls(self) -> Type[WprRecorderProbeContext]:

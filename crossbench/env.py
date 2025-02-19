@@ -393,7 +393,7 @@ class HostEnvironment:
   def _check_file_access(self) -> None:
     if self._platform.is_macos:
       has_safari = any(
-          browser.attributes.is_safari for browser in self.browsers)
+          browser.attributes().is_safari for browser in self.browsers)
       if has_safari:
         self._check_safari_cache_dir_access()
     self._check_results_dir_access()

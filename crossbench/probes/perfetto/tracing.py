@@ -288,7 +288,7 @@ class TracingProbe(ChromiumProbe):
 
   @override
   def attach(self, browser: Browser) -> None:
-    assert browser.attributes.is_chromium_based
+    assert browser.attributes().is_chromium_based
     flags = browser.flags
     flags.update(self.CHROMIUM_FLAGS)
     # Force proto file so we can convert it to legacy json as well.

@@ -53,7 +53,7 @@ class SafariAppleScript(Safari, AppleScriptBrowser):
           quit
         end tell""")
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.SAFARI | BrowserAttributes.APPLESCRIPT

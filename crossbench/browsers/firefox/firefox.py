@@ -48,6 +48,16 @@ class Firefox(Browser):
         linux=["firefox-nightly", "firefox-trunk"],
         win=["Firefox Nightly/firefox.exe"])
 
+  @classmethod
+  @override
+  def type_name(cls) -> str:
+    return "firefox"
+
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
+    return BrowserAttributes.FIREFOX
+
   @override
   def _setup_cache_dir(self, settings: Settings) -> None:
     cache_dir = settings.cache_dir
@@ -58,16 +68,6 @@ class Firefox(Browser):
       self.cache_dir: AnyPath = settings.platform.mkdtemp(prefix="firefox")
       self.clear_cache_dir = True
 
-  @property
-  @override
-  def type_name(self) -> str:
-    return "firefox"
-
-  @property
-  @override
-  def attributes(self) -> BrowserAttributes:
-    return BrowserAttributes.FIREFOX
-
   @override
   def _extract_version(self) -> FirefoxVersion:
     return FirefoxVersion.parse(self.platform.app_version(self.path))
@@ -77,7 +77,7 @@ class Firefox(Browser):
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy = self.flags.copy()
     flags_copy.update(session.extra_flags)
-    flags_copy.update(self.network.extra_flags(self.attributes))
+    flags_copy.update(self.network.extra_flags(self.attributes()))
     self._handle_viewport_flags(flags_copy)
     if self.log_file:
       flags_copy["--MOZ_LOG_FILE"] = str(self.log_file)

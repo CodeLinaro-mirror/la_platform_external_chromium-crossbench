@@ -45,17 +45,20 @@ class Safari(Browser):
   def technology_preview_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.path("/Applications/Safari Technology Preview.app")
 
+  @classmethod
+  @override
+  def type_name(cls) -> str:
+    return "safari"
+
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
+    return BrowserAttributes.SAFARI
+
   def __init__(self,
                label: str,
                path: pth.AnyPath,
                settings: Optional[Settings] = None):
-    self._type_name: str = "safari"
-    # TODO: use version object
-    settings = settings or Settings()
-    if path == self.technology_preview_path(settings.platform):
-      # Use a custom type name since safari tech-preview does not have
-      # a different major version.
-      self._type_name = "safari_tp"
     super().__init__(label, path, settings=settings)
     assert self.platform.is_macos, "Safari only works on MacOS"
     self.bundle_name: str = ""
@@ -72,16 +75,6 @@ class Safari(Browser):
     assert self.bundle_name, "Missing bundle_name"
     self.cache_dir = self.platform.home() / (
         f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
-
-  @property
-  @override
-  def type_name(self) -> str:
-    return self._type_name
-
-  @property
-  @override
-  def attributes(self) -> BrowserAttributes:
-    return BrowserAttributes.SAFARI
 
   @override
   def clear_cache(self) -> None:

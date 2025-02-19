@@ -368,7 +368,7 @@ class BrowserVariantsConfig:
     # Expand to full version names
     for browser in self._variants:
       browser.unique_name = (
-          f"{browser.type_name}_{browser.version}_{browser.label}")
+          f"{browser.type_name()}_{browser.version}_{browser.label}")
     if self._has_unique_variant_names():
       return
     logging.info("Got unique browser names and versions, "
@@ -424,12 +424,12 @@ class BrowserVariantsConfig:
         if not value:
           continue
         for browser in self._variants:
-          if not browser.attributes.is_chromium_based:
+          if not browser.attributes().is_chromium_based:
             raise argparse.ArgumentTypeError(
                 f"Used chrome/chromium-specific flags {flag_name} "
                 f"for non-chrome {browser.unique_name}.\n"
                 "Use --browser-config for complex variants.")
-    browser_types = set(browser.type_name for browser in self._variants)
+    browser_types = set(browser.type_name() for browser in self._variants)
     if len(browser_types) == 1:
       return
     if args.driver_path:

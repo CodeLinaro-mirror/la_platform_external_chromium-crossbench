@@ -34,9 +34,9 @@ class EdgeWebDriver(EdgePathMixin, ChromiumBasedWebDriver):
   WEB_DRIVER_OPTIONS = EdgeOptions
   WEB_DRIVER_SERVICE = EdgeService
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "edge"
 
   @override
@@ -51,9 +51,9 @@ class EdgeWebDriver(EdgePathMixin, ChromiumBasedWebDriver):
       service: EdgeService) -> ChromiumDriver:  # type: ignore
     return webdriver.Edge(options=options, service=service)
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return (BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.WEBDRIVER)
 

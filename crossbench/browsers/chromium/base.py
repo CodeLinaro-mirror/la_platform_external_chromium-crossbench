@@ -31,6 +31,6 @@ class ChromiumBaseMixin:
         linux=["google-chromium", "chromium"],
         win=["Google/Chromium/Application/chromium.exe"])
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  def type_name(cls) -> str:
     return "chromium"

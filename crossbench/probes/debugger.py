@@ -116,7 +116,7 @@ class DebuggerProbe(Probe):
   @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
-    assert browser.attributes.is_chromium_based
+    assert browser.attributes().is_chromium_based
     flags = browser.flags
     flags.set("--no-sandbox")
     flags.set("--disable-hang-monitor")

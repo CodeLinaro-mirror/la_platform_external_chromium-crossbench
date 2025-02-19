@@ -13,12 +13,12 @@ from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 
 class Chromium(ChromiumBaseMixin, ChromiumBased):
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "chromium"

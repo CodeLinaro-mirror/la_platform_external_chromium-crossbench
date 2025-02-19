@@ -153,7 +153,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def user_agent(self) -> str:
-    return f"Mock Browser {self.type_name}, {self.VERSION}"
+    return f"Mock Browser {self.type_name()}, {self.VERSION}"
 
   @override
   def show_url(self, url, target: Optional[str] = None) -> None:
@@ -266,9 +266,9 @@ class MockChromiumBasedBrowser(MockBrowser, metaclass=abc.ABCMeta):
   def features(self) -> ChromeFeatures:
     return self.chrome_flags.features
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
 
@@ -293,27 +293,27 @@ class MockChromium(MockChromiumBasedBrowser):
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     return app_root(platform) / cls.mock_app_binary(platform)
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "chromium"
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
 
 class MockChromeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "chrome"
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
 
 
@@ -353,9 +353,9 @@ class MockChromeAndroidStable(MockChromeStable):
   def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.MOBILE)
 
@@ -401,14 +401,14 @@ class MockChromeCanary(MockChromeBrowser):
 
 class MockEdgeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "edge"
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
 
 
@@ -471,14 +471,14 @@ class MockEdgeCanary(MockEdgeBrowser):
 
 class MockSafariBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "safari"
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.SAFARI
 
 
@@ -513,14 +513,14 @@ class MockSafariTechnologyPreview(MockSafariBrowser):
 
 class MockFirefoxBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  @property
+  @classmethod
   @override
-  def type_name(self) -> str:
+  def type_name(cls) -> str:
     return "firefox"
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX
 
 

@@ -466,7 +466,7 @@ class Runner:
     with self._exceptions.annotate("Validating all browsers"):
       for browser in self.browsers:
         with self._exceptions.capture(
-            f"Preparing browser type={browser.type_name} "
+            f"Preparing browser type={browser.type_name()} "
             f"unique_name={browser.unique_name}"):
           self._setup_validate_browser(browser)
 
@@ -494,7 +494,8 @@ class Runner:
       for story in self.stories:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
-          extra_benchmark_flags = self.benchmark.extra_flags(browser.attributes)
+          extra_benchmark_flags = self.benchmark.extra_flags(
+              browser.attributes())
           browser_session = BrowserSessionRunGroup(self.env, self.probes,
                                                    browser,
                                                    extra_benchmark_flags,

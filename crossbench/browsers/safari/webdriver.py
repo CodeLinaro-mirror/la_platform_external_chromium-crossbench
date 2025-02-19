@@ -37,9 +37,9 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     super().__init__(label, path, settings)
     assert self.platform.is_macos
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
 
   @override

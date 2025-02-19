@@ -75,8 +75,8 @@ class ChromeDriverFinder:
 
   def _download(self) -> None:
     milestone = self.browser.version.major
-    logging.info("CHROMEDRIVER Downloading from %s v%s", self.browser.type_name,
-                 milestone)
+    logging.info("CHROMEDRIVER Downloading from %s v%s",
+                 self.browser.type_name(), milestone)
     if self._try_download_cft(milestone):
       return
     if self._try_download_pre_115_stable(milestone):
@@ -85,7 +85,7 @@ class ChromeDriverFinder:
       return
     raise DriverNotFoundError(
         "Please manually compile/download chromedriver for "
-        f"{self.browser.type_name} {self.browser.version}")
+        f"{self.browser.type_name()} {self.browser.version}")
 
   def _try_download_cft(self, milestone: int) -> bool:
     if milestone < self.CFT_MIN_MILESTONE:

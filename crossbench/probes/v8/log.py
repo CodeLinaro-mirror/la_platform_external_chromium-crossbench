@@ -158,7 +158,7 @@ class V8LogProbe(ChromiumProbe):
   @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
-    assert browser.attributes.is_chromium_based, (
+    assert browser.attributes().is_chromium_based, (
         f"Expected chromium-based browser, but got {browser}")
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)

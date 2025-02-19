@@ -293,7 +293,7 @@ return [
     #
     # mAppBounds=Rect(0, 0 - 480, 800)
     browser_main_window_name = self._get_browser_window_name(
-        run.browser.attributes)
+        run.browser.attributes())
 
     raw_window_config = run.browser_platform.sh_stdout("dumpsys", "window",
                                                        "windows")

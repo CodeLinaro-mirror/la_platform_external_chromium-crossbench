@@ -30,9 +30,9 @@ if TYPE_CHECKING:
 
 class FirefoxWebDriver(WebDriverBrowser, Firefox):
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX | BrowserAttributes.WEBDRIVER
 
   @override

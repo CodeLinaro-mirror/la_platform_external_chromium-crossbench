@@ -57,6 +57,6 @@ class ChromeBaseMixin(abc.ABC):
         linux=["google-chrome-canary"],
         win=["Google/Chrome SxS/Application/chrome.exe"])
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  def type_name(cls) -> str:
     return "chrome"

@@ -117,7 +117,7 @@ class Run(ResultOrigin):
   def info_stack(self) -> TInfoStack:
     return (
         f"Run({self.name})",
-        (f"browser={self.browser.type_name} label={self.browser.label} "
+        (f"browser={self.browser.type_name()} label={self.browser.label} "
          f"binary={self.browser.path}"),
         f"story={self.story}",
         f"repetition={self.repetition_name}",

@@ -121,7 +121,7 @@ class ChromiumBased(Browser):
     no_finch_flags = self.flags.no_experiments_flags
     if field_trial_flags and no_finch_flags:
       raise argparse.ArgumentTypeError(
-          f"Conflicting {self.type_name} flags detected: "
+          f"Conflicting {self.type_name()} flags detected: "
           f"{field_trial_flags} vs {no_finch_flags}.\n"
           "Cannot enable and disable finch / field-trials at the same time.")
 
@@ -133,7 +133,7 @@ class ChromiumBased(Browser):
       if maybe_cache_dir:
         cache_dir = pth.AnyPath(maybe_cache_dir)
     if cache_dir is None:
-      self.cache_dir = self.platform.mkdtemp(prefix=self.type_name)
+      self.cache_dir = self.platform.mkdtemp(prefix=self.type_name())
       self.clear_cache_dir = True
     else:
       self.cache_dir = cache_dir
@@ -146,7 +146,7 @@ class ChromiumBased(Browser):
   @property
   def chrome_log_file(self) -> pth.AnyPath:
     assert self.log_file
-    return self.log_file.with_suffix(f".{self.type_name}.log")
+    return self.log_file.with_suffix(f".{self.type_name()}.log")
 
   @property
   @override
@@ -168,7 +168,7 @@ class ChromiumBased(Browser):
     details: JsonDict = super().details_json()
     if self.log_file:
       log = cast(JsonDict, details["log"])
-      log[self.type_name] = str(self.chrome_log_file)
+      log[self.type_name()] = str(self.chrome_log_file)
       log["stdout"] = str(self.stdout_log_file)
     details["js_flags"] = tuple(self.js_flags)
     return details
@@ -181,7 +181,7 @@ class ChromiumBased(Browser):
 
     flags_copy = self.flags.copy()
     flags_copy.update(session.extra_flags)
-    flags_copy.update(self.network.extra_flags(self.attributes))
+    flags_copy.update(self.network.extra_flags(self.attributes()))
     self._handle_viewport_flags(flags_copy)
 
     if len(js_flags_copy):

@@ -41,6 +41,16 @@ class Browser(abc.ABC):
   def default_flags(cls, initial_data: FlagsData = None) -> Flags:
     return Flags(initial_data)
 
+  @classmethod
+  @abc.abstractmethod
+  def type_name(cls) -> str:
+    pass
+
+  @classmethod
+  @abc.abstractmethod
+  def attributes(cls) -> BrowserAttributes:
+    pass
+
   def __init__(self,
                label: str,
                path: Optional[pth.AnyPath] = None,
@@ -48,7 +58,7 @@ class Browser(abc.ABC):
     self._settings = settings or Settings()
     self._platform = self._settings.platform
     self.label: str = label
-    self.app_name: str = self.type_name
+    self.app_name: str = self.type_name()
     self.app_path: pth.AnyPath = pth.AnyPath()
     self._path = pth.AnyPath()
     self._is_local_build: bool = False
@@ -69,14 +79,14 @@ class Browser(abc.ABC):
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
       self._version = self._extract_version()
-      self._unique_name = f"{self.type_name}_{self.label}".lower()
+      self._unique_name = f"{self.type_name()}_{self.label}".lower()
       return
     self._path = self._resolve_binary(path)
     # TODO clean up
     if not self.platform.is_android:
       assert self.path.is_absolute()
     self._version = self._extract_version()
-    self._unique_name = f"{self.type_name}_v{self.version.major}_{self.label}"
+    self._unique_name = f"{self.type_name()}_v{self.version.major}_{self.label}"
 
   def _setup_flags(self, settings: Settings) -> Flags:
     assert not self._settings.js_flags, (
@@ -84,16 +94,6 @@ class Browser(abc.ABC):
     return self.default_flags(settings.flags)
 
   def _setup_cache_dir(self, settings: Settings) -> None:
-    pass
-
-  @property
-  @abc.abstractmethod
-  def type_name(self) -> str:
-    pass
-
-  @property
-  @abc.abstractmethod
-  def attributes(self) -> BrowserAttributes:
     pass
 
   @property
@@ -256,7 +256,7 @@ class Browser(abc.ABC):
   def details_json(self) -> JsonDict:
     return {
         "label": self.label,
-        "browser": self.type_name,
+        "browser": self.type_name(),
         "unique_name": self.unique_name,
         "app_name": self.app_name,
         "version": self.version.parts_str,
@@ -338,7 +338,7 @@ class Browser(abc.ABC):
       self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()
     flags_copy.update(session.extra_flags)
-    flags_copy.update(self.network.extra_flags(self.attributes))
+    flags_copy.update(self.network.extra_flags(self.attributes()))
     flags_copy = self._filter_flags_for_run(flags_copy)
     return tuple(flags_copy)
 
@@ -431,7 +431,7 @@ class Browser(abc.ABC):
     platform_prefix = ""
     if self.platform.is_remote:
       platform_prefix = str(self.platform)
-    return f"{platform_prefix}{self.type_name.capitalize()}:{self.label}"
+    return f"{platform_prefix}{self.type_name().capitalize()}:{self.label}"
 
   def __hash__(self) -> int:
     # Poor-man's hash, browsers should be unique.

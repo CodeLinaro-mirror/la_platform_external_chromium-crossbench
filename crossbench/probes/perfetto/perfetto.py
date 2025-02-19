@@ -128,7 +128,7 @@ class PerfettoProbe(Probe):
 
   @override
   def attach(self, browser: Browser) -> None:
-    assert browser.attributes.is_chromium_based
+    assert browser.attributes().is_chromium_based
     browser.features.enable("EnablePerfettoSystemTracing")
     super().attach(browser)
 

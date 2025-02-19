@@ -53,8 +53,8 @@ class EdgePathMixin:
         linux=[],
         win=["Microsoft/Edge SxS/Application/msedge.exe"])
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  def type_name(cls) -> str:
     return "edge"
 
 
@@ -65,7 +65,7 @@ class Edge(EdgePathMixin, ChromiumBased):
       "--no-first-run",
   )
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED

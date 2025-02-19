@@ -329,7 +329,7 @@ class ProfilingProbe(Probe):
       self._validate_android(env, browser)
     else:
       raise ProbeIncompatibleBrowser(self, browser)
-    if browser.attributes.is_chromium_based:
+    if browser.attributes().is_chromium_based:
       chromium = cast(ChromiumBased, browser)
       self._validate_chromium_based(chromium)
     if self.run_pprof:
@@ -398,7 +398,7 @@ class ProfilingProbe(Probe):
   def _validate_benchmarking_extension_version(self,
                                                browser: ChromiumBased) -> None:
     assert (
-        browser.attributes.is_chromium_based and
+        browser.attributes().is_chromium_based and
         browser.version.major >= 124), (
             "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
             "browser version >= M124 https://crrev.com/c/5374765 is required.")
@@ -426,9 +426,9 @@ class ProfilingProbe(Probe):
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     if browser.platform.is_linux or browser.platform.is_android:
-      assert browser.attributes.is_chromium_based, (
+      assert browser.attributes().is_chromium_based, (
           f"Expected Chromium-based browser, found {type(browser)}.")
-    if browser.attributes.is_chromium_based:
+    if browser.attributes().is_chromium_based:
       chromium = cast(ChromiumBased, browser)
       self._attach_chromium(chromium)
 

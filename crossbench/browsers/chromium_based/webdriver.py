@@ -45,9 +45,9 @@ class ChromiumBasedWebDriver(
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
   UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
 
-  @property
+  @classmethod
   @override
-  def attributes(self) -> BrowserAttributes:
+  def attributes(cls) -> BrowserAttributes:
     return (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.WEBDRIVER)
 
