@@ -294,12 +294,12 @@ class MockChromium(MockChromiumBasedBrowser):
     return app_root(platform) / cls.mock_app_binary(platform)
 
   @classmethod
-  @override
+  # TODO: enable @override again
   def type_name(cls) -> str:
     return "chromium"
 
   @classmethod
-  @override
+  # TODO: enable @override again
   def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
@@ -307,10 +307,12 @@ class MockChromium(MockChromiumBasedBrowser):
 class MockChromeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
   @classmethod
+  # TODO: enable @override again
   def type_name(cls) -> str:
     return "chrome"
 
   @classmethod
+  # TODO: enable @override again
   def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
 

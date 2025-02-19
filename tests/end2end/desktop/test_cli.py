@@ -13,7 +13,7 @@ from unittest import mock
 
 import pytest
 
-import crossbench.browsers.all as browsers
+import crossbench.browsers.all as all_browsers
 from crossbench import plt
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
@@ -150,7 +150,7 @@ def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
     pytest.skip("Skipping test on CQ.")
   platform = plt.PLATFORM
   if not platform.is_macos and (not platform.exists(
-      browsers.Safari.default_path(platform))):
+      all_browsers.Safari.default_path(platform))):
     pytest.skip("Test requires Safari, skipping on non macOS devices.")
   _run_cli(
       "sp2.1",
@@ -357,7 +357,7 @@ def test_loading_playback_firefox(test_env: TestEnv, test_chrome_name) -> None:
   # - Firefox
   platform = plt.PLATFORM
   try:
-    if not platform.exists(browsers.Firefox.default_path(platform)):
+    if not platform.exists(all_browsers.Firefox.default_path(platform)):
       pytest.skip("Test requires Firefox.")
   except Exception:  # pylint: disable=broad-exception-caught
     pytest.skip("Test requires Firefox.")

@@ -736,7 +736,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     # TODO: move browser instance create to separate method.
     # TODO: move --browser-config parsing to BrowserVariantsConfig
     args.browser_config = BrowserVariantsConfig.from_cli_args(args)
-    return args.browser_config.variants
+    browsers = args.browser_config.browsers
+    return browsers
 
   def _get_probes(self, args: argparse.Namespace) -> Sequence[Probe]:
     # TODO: move probe creation to separate method

@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional, Self, TextIO, Tuple, cast
 import hjson
 from typing_extensions import override
 
-import crossbench.browsers.all as browsers
+import crossbench.browsers.all as all_browsers
 from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
@@ -70,7 +70,7 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def default(cls) -> Self:
     return cls(
-        browsers.Chrome.stable_path(plt.PLATFORM), DriverConfig.default())
+        all_browsers.Chrome.stable_path(plt.PLATFORM), DriverConfig.default())
 
   @classmethod
   @override
@@ -213,44 +213,44 @@ class BrowserConfig(ConfigObject):
     if identifier in ("chrome", "chrome-stable", "chr-stable", "chr"):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.AnyPosixPath("com.android.chrome")
-      return browsers.Chrome.stable_path(platform)
+      return all_browsers.Chrome.stable_path(platform)
     if identifier in ("chrome-app"):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.AnyPosixPath("com.google.android.apps.chrome")
     if identifier in ("chrome-beta", "chr-beta"):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.AnyPosixPath("com.chrome.beta")
-      return browsers.Chrome.beta_path(platform)
+      return all_browsers.Chrome.beta_path(platform)
     if identifier in ("chrome-dev", "chr-dev"):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.AnyPosixPath("com.chrome.dev")
-      return browsers.Chrome.dev_path(platform)
+      return all_browsers.Chrome.dev_path(platform)
     if identifier in ("chrome-canary", "chr-canary"):
       if driver_type == BrowserDriverType.ANDROID:
         return pth.AnyPosixPath("com.chrome.canary")
-      return browsers.Chrome.canary_path(platform)
+      return all_browsers.Chrome.canary_path(platform)
     if identifier == "chromium":
       if driver_type == BrowserDriverType.ANDROID:
         return pth.AnyPosixPath("org.chromium.chrome")
-      return browsers.Chromium.default_path(platform)
+      return all_browsers.Chromium.default_path(platform)
     if identifier in ("edge", "edge-stable"):
-      return browsers.Edge.stable_path(platform)
+      return all_browsers.Edge.stable_path(platform)
     if identifier == "edge-beta":
-      return browsers.Edge.beta_path(platform)
+      return all_browsers.Edge.beta_path(platform)
     if identifier == "edge-dev":
-      return browsers.Edge.dev_path(platform)
+      return all_browsers.Edge.dev_path(platform)
     if identifier == "edge-canary":
-      return browsers.Edge.canary_path(platform)
+      return all_browsers.Edge.canary_path(platform)
     if identifier in ("safari", "sf", "safari-stable", "sf-stable"):
-      return browsers.Safari.default_path(platform)
+      return all_browsers.Safari.default_path(platform)
     if identifier in ("safari-technology-preview", "safari-tp", "sf-tp", "tp"):
-      return browsers.Safari.technology_preview_path(platform)
+      return all_browsers.Safari.technology_preview_path(platform)
     if identifier in ("firefox", "firefox-stable", "ff", "ff-stable"):
-      return browsers.Firefox.default_path(platform)
+      return all_browsers.Firefox.default_path(platform)
     if identifier in ("firefox-dev", "firefox-developer-edition", "ff-dev"):
-      return browsers.Firefox.developer_edition_path(platform)
+      return all_browsers.Firefox.developer_edition_path(platform)
     if identifier in ("firefox-nightly", "ff-nightly", "ff-trunk"):
-      return browsers.Firefox.nightly_path(platform)
+      return all_browsers.Firefox.nightly_path(platform)
     return None
 
   @classmethod
