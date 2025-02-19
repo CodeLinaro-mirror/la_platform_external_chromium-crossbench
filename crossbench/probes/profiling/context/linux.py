@@ -45,7 +45,7 @@ class LinuxProfilingContext(PosixProfilingContext):
 
   @property
   def has_perf_prof_path(self) -> bool:
-    return self.browser > V8_PERF_PROF_PATH_FLAG_MIN_VERSION
+    return self.browser.version > V8_PERF_PROF_PATH_FLAG_MIN_VERSION
 
   @override
   def setup(self) -> None:
