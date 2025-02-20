@@ -90,8 +90,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       if len(core_ids) == len(physical_ids):
         pairs = set(zip(core_ids, physical_ids))
         return len(pairs)
-      else:
-        logging.debug("Invalid cpuinfo data: Cannot determine core counts.")
+      logging.debug("Invalid cpuinfo data: Cannot determine core counts.")
 
     # Android doesn't report core-id in cpuinfo, assuming single-threaded
     # CPUs and report physical_cores

@@ -256,10 +256,7 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def is_supported_browser_path(cls, path: pth.AnyPath) -> bool:
     path_str = os.fspath(path).lower()
-    for short_name in SUPPORTED_BROWSER:
-      if short_name in path_str:
-        return True
-    return False
+    return any(short_name in path_str for short_name in SUPPORTED_BROWSER)
 
   @classmethod
   def _parse_inline_short_form(

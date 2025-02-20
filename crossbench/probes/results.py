@@ -322,13 +322,12 @@ class ProbeResultDict:
     for probe_name, results in self._dict.items():
       if isinstance(results, (pth.AnyPath, str)):
         data[probe_name] = str(results)
+      elif results.is_empty:
+        if not probe_name.startswith(INTERNAL_NAME_PREFIX):
+          logging.debug("probe=%s did not produce any data.", probe_name)
+        data[probe_name] = None
       else:
-        if results.is_empty:
-          if not probe_name.startswith(INTERNAL_NAME_PREFIX):
-            logging.debug("probe=%s did not produce any data.", probe_name)
-          data[probe_name] = None
-        else:
-          data[probe_name] = results.to_json()
+        data[probe_name] = results.to_json()
     return data
 
   def all_traces(self) -> Iterable[pth.LocalPath]:

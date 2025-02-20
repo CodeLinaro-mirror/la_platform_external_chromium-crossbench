@@ -33,4 +33,3 @@ def browser_config(device_id, adb_path) -> str:
           "adb_bin": adb_path
       }
   })
-

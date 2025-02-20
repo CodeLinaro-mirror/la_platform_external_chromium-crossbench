@@ -117,7 +117,6 @@ class Firefox(Browser):
                         WebDriverBrowser) and self.viewport.size != (0, 0):
         raise ValueError(f"Browser {self} cannot handle viewport position: "
                          f"{self.viewport.position}")
-    else:
-      if not isinstance(self, WebDriverBrowser):
-        raise ValueError(
-            f"Browser {self} cannot handle viewport mode: {self.viewport}")
+    elif not isinstance(self, WebDriverBrowser):
+      raise ValueError(
+          f"Browser {self} cannot handle viewport mode: {self.viewport}")

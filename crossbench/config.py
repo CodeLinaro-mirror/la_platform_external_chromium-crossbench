@@ -233,24 +233,23 @@ class _ConfigArgParser:
     if self.type is None:
       if self.is_list:
         items.append(("type", "list"))
+    elif self.is_list:
+      items.append(("type", f"List[{self.type.__qualname__}]"))
     else:
-      if self.is_list:
-        items.append(("type", f"List[{self.type.__qualname__}]"))
-      else:
-        items.append(("type", str(self.type.__qualname__)))
+      items.append(("type", str(self.type.__qualname__)))
 
     if self.required:
       items.append(("required", ""))
     elif self.default is None:
       items.append(("default", "not set"))
-    else:
-      if self.is_list:
-        if not self.default:
-          items.append(("default", "[]"))
-        else:
-          items.append(("default", ",".join(map(str, self.default))))
+    elif self.is_list:
+      if not self.default:
+        items.append(("default", "[]"))
       else:
-        items.append(("default", str(self.default)))
+        items.append(("default", ",".join(map(str, self.default))))
+    else:
+      items.append(("default", str(self.default)))
+
     if self.is_enum:
       items.extend(self._enum_help_text())
     elif self.choices:

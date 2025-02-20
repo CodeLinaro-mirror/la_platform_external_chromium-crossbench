@@ -104,8 +104,7 @@ class ProbeListConfig(ConfigObject):
       if name in merged_probes:
         if not should_override:
           raise ValueError(f"Duplicate probe: {name}")
-        else:
-          logging.warning("PROBES: Overriding existing probe %s!", name)
+        logging.warning("PROBES: Overriding existing probe %s!", name)
       merged_probes[name] = probe
 
     merged = type(self)(probes=merged_probes.values())

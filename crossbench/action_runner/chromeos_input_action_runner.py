@@ -438,14 +438,13 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
       self.add_failure_screenshot_annotation(
           ScreenshotPointAnnotation(label="click", point=click_location))
       return (click_location, viewport_info)
-    elif coordinates_config := action.position.coordinates:
+    if coordinates_config := action.position.coordinates:
       viewport_info = self._get_viewport_info(actions, None, False)
       click_location = coordinates_config.point()
       self.add_failure_screenshot_annotation(
           ScreenshotPointAnnotation(label="click", point=click_location))
       return (click_location, viewport_info)
-    else:
-      raise RuntimeError("Missing coordinates")
+    raise RuntimeError("Missing coordinates")
 
   def _get_viewport_info(self,
                          actions: Actions,

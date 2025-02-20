@@ -397,8 +397,7 @@ class ChromeDriverFinder:
     logging.debug("Found candidates: %s", versions)
     logging.debug("chromium_base_position=%s", chromium_base_position)
 
-    for i in range(len(versions)):
-      base, url = versions[i]
+    for i, (base, url) in enumerate(versions):
       if base > chromium_base_position:
         base, url = versions[i - 1]
         return listing_url, url

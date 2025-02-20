@@ -24,7 +24,4 @@ def is_in_build_dir(path: pth.AnyPath, platform: Platform) -> bool:
   # bypass potentially expensive checks
   if "src" not in path.parts:
     return False
-  for parent in path.parents:
-    if is_build_dir(parent, platform):
-      return True
-  return False
+  return any(is_build_dir(parent, platform) for parent in path.parents)

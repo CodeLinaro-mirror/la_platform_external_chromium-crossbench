@@ -96,9 +96,8 @@ class BasicFlags(Freezable, collections.UserDict):
         if match.start() != 0:
           part = raw_flags[:match.start()]
           raise ValueError(f"Invalid {msg} part at pos=0: {repr(part)}")
-      else:
-        if current_end != match.start():
-          raise ValueError(f"Invalid {msg}: could not consume all data")
+      elif current_end != match.start():
+        raise ValueError(f"Invalid {msg}: could not consume all data")
       current_end = match.end()
 
       groups = match.groupdict()

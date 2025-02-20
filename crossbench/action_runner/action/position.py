@@ -130,7 +130,7 @@ class PositionConfig(ConfigObject):
   def to_json(self) -> JsonDict:
     if coordinates := self.coordinates:
       return {"x": coordinates.x, "y": coordinates.y}
-    elif selector := self.selector:
+    if selector := self.selector:
       return {
           "required": selector.required,
           "scroll_into_view": selector.scroll_into_view,

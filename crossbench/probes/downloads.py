@@ -3,14 +3,15 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import abc
-from dataclasses import dataclass
 import re
 import shlex
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, List, Set
 
-from crossbench.parse import ObjectParser
 import crossbench.path as pth
+from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
@@ -221,7 +222,4 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
 
   def download_complete(self, pattern: re.Pattern) -> bool:
     downloads = self.downloads(include_pending=False)
-    for download in downloads:
-      if pattern.search(download.display_name):
-        return True
-    return False
+    return any(pattern.search(download.display_name) for download in downloads)
