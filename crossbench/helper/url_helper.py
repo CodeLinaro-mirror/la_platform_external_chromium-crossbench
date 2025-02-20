@@ -27,12 +27,13 @@ def get(url: str,
         timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
         retry: int = 0,
         verbose: bool = True) -> requests.Response:
-  timeout_seconds = to_seconds(timeout)
-  for i in _retry(timeout, retry):
+  max_request_count = retry + 1
+  request_timeout_seconds = to_seconds(timeout) / max_request_count
+  for i in _retry(retry):
     try:
       if verbose:
         logging.debug("GET: url: %s", url)
-      response = requests.get(url, timeout=timeout_seconds)
+      response = requests.get(url, timeout=request_timeout_seconds)
       response.raise_for_status()
       return response
     except requests.RequestException as e:
@@ -52,11 +53,12 @@ def post(url: str,
          timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
          retry: int = 0,
          verbose: bool = True) -> requests.Response:
-  timeout_seconds = to_seconds(timeout)
-  for i in _retry(timeout, retry):
+  max_request_count = retry + 1
+  request_timeout_seconds = to_seconds(timeout) / max_request_count
+  for i in _retry(retry):
     try:
       response = requests.post(
-          url, headers=headers, json=body_json, timeout=timeout_seconds)
+          url, headers=headers, json=body_json, timeout=request_timeout_seconds)
       response.raise_for_status()
       return response
     except requests.RequestException as e:
@@ -76,10 +78,9 @@ def to_seconds(delta: AnyTime) -> float:
   return delta
 
 
-def _retry(timeout: AnyTime, retry: int) -> Iterator[int]:
+def _retry(retry: int) -> Iterator[int]:
   max_iterations = retry + 1
-  wait_range = wait.WaitRange(
-      min=1, timeout=timeout, max_iterations=max_iterations)
+  wait_range = wait.WaitRange(min=1, max_iterations=max_iterations)
   for i, _, _ in wait_range.wait_with_backoff():
     yield i
 
