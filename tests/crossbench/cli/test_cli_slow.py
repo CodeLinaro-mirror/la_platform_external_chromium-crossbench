@@ -14,7 +14,6 @@ from crossbench import __version__
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.network.local_file_server import LocalFileNetwork
@@ -205,9 +204,7 @@ class CliSlowTestCase(BaseCliTestCase):
     for identifier, browser_cls in items_chunk:
       out_dir = self.out_dir / identifier
       self.assertFalse(out_dir.exists())
-      with mock.patch.object(
-          BrowserVariantsConfig, "get_browser_cls",
-          return_value=browser_cls) as get_browser_cls:
+      with self._patch_get_browser_cls(browser_cls) as get_browser_cls:
         url = "http://test.com"
         self.run_cli("loading", f"--browser={identifier}", f"--urls={url}",
                      "--env-validation=skip", f"--out-dir={out_dir}")
@@ -273,30 +270,27 @@ class CliSlowTestCase(BaseCliTestCase):
     for chrome_flag in ("--js-flags=--no-opt", "--enable-features=Foo",
                         "--disable-features=bar"):
       # Fail for chrome flags for non-chrome browser
-      with self.assertRaises(argparse.ArgumentTypeError), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self.assertRaises(
+          argparse.ArgumentTypeError), self._patch_get_browser_cls(
+              side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--urls=http://test.com",
                      "--env-validation=skip", "--throw", "--browser=firefox",
                      chrome_flag)
       # Fail for mixed browsers and chrome flags
-      with self.assertRaises(argparse.ArgumentTypeError), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self.assertRaises(
+          argparse.ArgumentTypeError), self._patch_get_browser_cls(
+              side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--urls=http://test.com",
                      "--env-validation=skip", "--throw", "--browser=chrome",
                      "--browser=firefox", chrome_flag)
-      with self.assertRaises(argparse.ArgumentTypeError), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self.assertRaises(
+          argparse.ArgumentTypeError), self._patch_get_browser_cls(
+              side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--urls=http://test.com",
                      "--env-validation=skip", "--throw", "--browser=chrome",
                      "--browser=firefox", "--", chrome_flag)
     # Flags for the same type are allowed.
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "--urls=http://test.com", "--env-validation=skip",
                    "--throw", "--browser=chrome", "--browser=chrome-dev", "--",
                    "--js-flags=--no-opt")

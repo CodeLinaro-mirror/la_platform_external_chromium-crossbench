@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import abc
 import argparse
 import contextlib
 import dataclasses
@@ -12,6 +13,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Self,
                     Sequence, Set, TextIO, Tuple, Type, cast)
 
 import hjson
+from typing_extensions import override
 
 import crossbench.browsers.all as all_browsers
 from crossbench import exception
@@ -77,45 +79,13 @@ class BrowserVariantConfig():
   def platform(self) -> plt.Platform:
     return self.settings.platform
 
-class BrowserVariantsConfig:
+
+class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
-  def from_cli_args(cls, args: argparse.Namespace) -> Self:
-    browser_variants = cls()
-
-    if args.browser_config:
-      browser_variants.extend(cls.from_cli_args_browser_config(args))
-
-    if args.browser:
-      browser_variants.extend(cls.from_cli_args_browser(args))
-
-    if browser_variants:
-      return browser_variants
-
-    return cls.default(args)
-
-  @classmethod
-  def from_cli_args_browser_config(cls, args: argparse.Namespace) -> Self:
-    config_variants = cls()
-    with late_argument_type_error_wrapper("--browser-config"):
-      path = args.browser_config.expanduser().absolute()
-      config_variants.parse_config_path(path, args)
-    return config_variants
-
-  @classmethod
-  def from_cli_args_browser(cls, args: argparse.Namespace) -> Self:
-    args_variants = cls()
-    with late_argument_type_error_wrapper("--browser"):
-      args_variants.parse_args(args)
-    return args_variants
-
-  @classmethod
-  def default(cls, args: argparse.Namespace) -> Self:
-    # Make sure we have at least one default browser as variant.
-    default_variants = cls()
-    default_variants.parse_sequence(args, [BrowserConfig.default()])
-    return default_variants
-
+  @abc.abstractmethod
+  def from_cli_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
+    pass
 
   def __init__(self,
                raw_config_data: Optional[Dict[str, Any]] = None,
@@ -149,9 +119,9 @@ class BrowserVariantsConfig:
   def __bool__(self) -> bool:
     return bool(self._variants)
 
-  def extend(self, other: BrowserVariantsConfig) -> None:
+  def extend(self, other: BaseBrowserVariantsConfig) -> None:
     if self is other:
-      raise ValueError("Cannot extend BrowserVariantsConfig with itself.")
+      raise ValueError(f"Cannot extend {type(self)} with itself.")
     self._variants.extend(other.variants)
 
   def _ensure_unique_browser_names(self, browsers: List[Browser]) -> None:
@@ -590,3 +560,48 @@ class BrowserVariantsConfig:
     if not isinstance(network_config, NetworkConfig):
       network_config = NetworkConfig.parse(network_config)
     return network_config.create(browser_platform)
+
+
+class BrowserVariantsConfig(BaseBrowserVariantsConfig):
+
+  @classmethod
+  @override
+  def from_cli_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
+    browser_variants = cls()
+    if args.browser_config:
+      browser_variants.extend(BrowserVariantsConfigDict.from_cli_args(args))
+    if args.browser:
+      browser_variants.extend(BrowserVariantConfigArgs.from_cli_args(args))
+    if browser_variants:
+      return browser_variants
+    return cls.default(args)
+
+  @classmethod
+  def default(cls, args: argparse.Namespace) -> BrowserVariantConfigArgs:
+    # Make sure we have at least one default browser as variant.
+    default_variants = BrowserVariantConfigArgs()
+    default_variants.parse_sequence(args, [BrowserConfig.default()])
+    return default_variants
+
+
+class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
+
+  @classmethod
+  @override
+  def from_cli_args(cls, args: argparse.Namespace) -> Self:
+    config_variants = cls()
+    with late_argument_type_error_wrapper("--browser-config"):
+      path = args.browser_config.expanduser().absolute()
+      config_variants.parse_config_path(path, args)
+    return config_variants
+
+
+class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
+
+  @classmethod
+  @override
+  def from_cli_args(cls, args: argparse.Namespace) -> Self:
+    args_variants = cls()
+    with late_argument_type_error_wrapper("--browser"):
+      args_variants.parse_args(args)
+    return args_variants

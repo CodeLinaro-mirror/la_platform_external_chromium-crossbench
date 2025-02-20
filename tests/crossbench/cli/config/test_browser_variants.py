@@ -32,7 +32,8 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
                                                     ChromiumWebDriverSsh)
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from crossbench.cli.config.browser_variants import (BaseBrowserVariantsConfig,
+                                                    BrowserVariantsConfig)
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
@@ -73,6 +74,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         }
     for _, (_, browser_config) in self.browser_lookup.items():
       self.assertTrue(browser_config.path.exists())
+
+  @contextlib.contextmanager
+  def _patch_get_browser_cls(self,
+                             return_value: Optional[Type[Browser]] = None,
+                             **kwargs):
+    if not kwargs:
+      kwargs["return_value"] = return_value or mock_browser.MockChromeStable
+    with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
+                           **kwargs):
+      yield
 
   def _expect_linux_ssh(self, cmd, **kwargs):
     return self.platform.expect_sh("ssh", "-p", "22", "user@my-linux-machine",
@@ -247,9 +258,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         return mock_browser.MockChromeStable
       raise ValueError("Unknown browser_config")
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
+    with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls), mock.patch(
             "crossbench.plt.android_adb.AndroidAdbPlatform.machine",
             new_callable=mock.PropertyMock,
@@ -729,10 +738,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn(str(chromedriver), str(cm.exception))
 
     self.fs.create_file(chromedriver, st_size=100)
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
+    with self._patch_get_browser_cls(mock_browser.MockChromeStable):
       config = BrowserVariantsConfig(
           variants_config,
           browser_lookup_override=self.browser_lookup,
@@ -947,8 +953,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser=None,
         browser_config=config_file,
         driver_path=None)
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
     self.assertEqual(config.variants[0].browser_cls, browser_cls)
@@ -979,8 +984,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         driver_path=None,
         js_flags=None,
         other_browser_args=[])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
@@ -1001,8 +1005,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="feature_off",
         js_flags=None,
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
@@ -1027,8 +1030,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features=None,
         js_flags=["--max-opt=1"],
         other_browser_args=[])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
@@ -1049,8 +1051,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features=None,
         js_flags=[],
         other_browser_args=["--js-flags=--max-opt=1,--log-all"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
@@ -1074,8 +1075,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="",
         js_flags=[" ", "--max-opt=2,--log-all"],
         other_browser_args=[])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
@@ -1102,8 +1102,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="",
         js_flags=[" ", "--max-opt=2,--log-all"],
         other_browser_args=["--js-flags=--no-turbofan"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
@@ -1131,7 +1130,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="feature_off",
         js_flags=["--max-opt=1", "--max-opt=2,--log-all"],
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
-    with self.patch_get_browser_cls(browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
@@ -1150,15 +1149,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertEqual(browser.flags["--disable-features"], "feature_off")
       self.assertIn("--no-sandbox", browser.flags)
       self.assertEqual(browser.flags["--enable-logging"], "stderr")
-
-  @contextlib.contextmanager
-  def patch_get_browser_cls(self,
-                            return_value: Optional[Type[Browser]] = None,
-                            **kwargs):
-    if not kwargs:
-      kwargs["return_value"] = return_value or mock_browser.MockChromeStable
-    with mock.patch.object(BrowserVariantsConfig, "get_browser_cls", **kwargs):
-      yield
 
   @unittest.skip("Not yet supported")
   def test_from_cli_args_browser_config_js_flags(self):
@@ -1182,7 +1172,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           enable_features=None,
           disable_features=None,
           js_flags=["--max-opt=1,--log-al"])
-      with self.patch_get_browser_cls():
+      with self._patch_get_browser_cls():
         config = BrowserVariantsConfig.from_cli_args(args)
 
     self.assertEqual(len(config.variants), 1)
@@ -1251,11 +1241,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=None,
         other_browser_args=[])
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        return_value=mock_browser.MockChromeStable
-    ), mock.patch(
+    with self._patch_get_browser_cls(mock_browser.MockChromeStable), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
       finder.return_value = mock.Mock(path=ts_proxy_path)
       config = BrowserVariantsConfig.from_cli_args(args,)

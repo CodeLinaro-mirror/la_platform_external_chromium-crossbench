@@ -6,14 +6,12 @@ import argparse
 import json
 import pathlib
 import unittest
-from unittest import mock
 
 import hjson
 
 from crossbench import __version__, plt
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.env import EnvironmentConfig
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -213,7 +211,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn(__version__, stdout)
 
   def test_subcommand_run_subcommand(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
                    "--throw")
@@ -221,11 +219,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_invalid_probe(self):
-    with self.assertRaises(argparse.ArgumentError), self.patch_get_browser():
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli("loading", "--probe=invalid_probe_name", "--throw")
 
   def test_basic_probe_setting(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "--probe=v8.log", f"--urls={url}",
                    "--env-validation=skip", "--throw")
@@ -236,7 +234,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_invalid_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
     config_file.touch()
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentError) as cm:
         self.run_cli("loading", f"--probe-config={config_file}",
@@ -254,7 +252,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
@@ -267,7 +265,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config_data = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentTypeError):
         self.run_cli("loading", f"--probe-config={config_file}",
@@ -283,7 +281,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
@@ -298,7 +296,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
       self.run_cli("loading", f"--probe-config={config_file}",
                    "--urls=http://test.com", "--env-validation=skip", "--throw")
     self.assertIn("invalid probe name", str(cm.exception))
@@ -309,7 +307,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip", "--throw")
@@ -321,7 +319,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip", "--throw")
@@ -358,7 +356,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
@@ -381,7 +379,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")
@@ -417,10 +415,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
         return mock_browser.MockChromeDev
       return mock_browser.MockChromeStable
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        side_effect=mock_get_browser_cls):
+    with self._patch_get_browser_cls(side_effect=mock_get_browser_cls):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")

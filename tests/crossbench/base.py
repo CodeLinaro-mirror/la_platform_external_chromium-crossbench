@@ -10,7 +10,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import Final, List, Optional, Sequence, Tuple
+from typing import Final, List, Optional, Sequence, Tuple, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -23,7 +23,7 @@ from crossbench.benchmarks.loading.loadline_presets import \
     LoadLineTabletBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
@@ -205,6 +205,16 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
             plt, "PLATFORM", self.platform):
       yield
 
+  @contextlib.contextmanager
+  def _patch_get_browser_cls(self,
+                             return_value: Optional[Type[Browser]] = None,
+                             **kwargs):
+    if not kwargs:
+      kwargs["return_value"] = return_value or mock_browser.MockChromeStable
+    with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
+                           **kwargs) as patcher:
+      yield patcher
+
   def run_cli(self,
               *args,
               raises=None,
@@ -218,14 +228,9 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
         cli.run(args)
     return cli
 
-  def mock_chrome_stable(self):
-    return mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        return_value=mock_browser.MockChromeStable)
-
   @contextlib.contextmanager
-  def patch_get_browser(self, return_value: Optional[Sequence[Browser]] = None):
+  def _patch_get_browser(self,
+                         return_value: Optional[Sequence[Browser]] = None):
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(
