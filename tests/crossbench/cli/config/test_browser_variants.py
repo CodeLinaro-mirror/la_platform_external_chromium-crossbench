@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
 import json
 import unittest
-from typing import Dict, Tuple, Type
+from typing import Dict, Optional, Tuple, Type
 from unittest import mock
 
 import hjson
@@ -16,6 +17,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.browser import Browser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.version import ChromeVersion
@@ -1129,8 +1131,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="feature_off",
         js_flags=["--max-opt=1", "--max-opt=2,--log-all"],
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self.patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
@@ -1149,6 +1150,74 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertEqual(browser.flags["--disable-features"], "feature_off")
       self.assertIn("--no-sandbox", browser.flags)
       self.assertEqual(browser.flags["--enable-logging"], "stderr")
+
+  @contextlib.contextmanager
+  def patch_get_browser_cls(self,
+                            return_value: Optional[Type[Browser]] = None,
+                            **kwargs):
+    if not kwargs:
+      kwargs["return_value"] = return_value or mock_browser.MockChromeStable
+    with mock.patch.object(BrowserVariantsConfig, "get_browser_cls", **kwargs):
+      yield
+
+  @unittest.skip("Not yet supported")
+  def test_from_cli_args_browser_config_js_flags(self):
+    browser_config = {
+        "browsers": {
+            "chrome_no_tf": {
+                "flags": ["--js-flags=--no-turbofan"],
+                "path": "chrome"
+            }
+        }
+    }
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        json.dump(browser_config, f)
+
+      args = mock.Mock(
+          network=NetworkConfig.default(),
+          browser=[],
+          browser_config=config_file,
+          driver_path=None,
+          enable_features=None,
+          disable_features=None,
+          js_flags=["--max-opt=1,--log-al"])
+      with self.patch_get_browser_cls():
+        config = BrowserVariantsConfig.from_cli_args(args)
+
+    self.assertEqual(len(config.variants), 1)
+    browser = config.variants[0]
+    self.assertEqual(browser.js_flags.to_dict(), {
+        "--no-turbofan": None,
+        "--max-opt": "1",
+        "--log-all": None
+    })
+
+  def test_from_cli_args_and_config(self):
+    browser_config = {"browsers": {"chrome_no_tf": {"path": "chrome"}}}
+    chrome_stable = BrowserConfig.parse_str("chrome")
+    chrome_dev = BrowserConfig.parse_str("chrome-dev")
+
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        json.dump(browser_config, f)
+
+      args = mock.Mock(
+          network=NetworkConfig.default(),
+          browser=[chrome_dev],
+          browser_config=config_file,
+          driver_path=None,
+          enable_features=None,
+          disable_features=None,
+          js_flags=[],
+          other_browser_args=[])
+      config = BrowserVariantsConfig.from_cli_args(args)
+
+    variants = config.variants
+    self.assertEqual(len(variants), 2)
+    self.assertEqual(variants[0].browser_config, chrome_stable)
+    self.assertEqual(variants[1].browser_config, chrome_dev)
+
 
   def test_from_cli_args_browser_config_network_override(self):
     ts_proxy_path = pth.LocalPath("/tsproxy/tsproxy.py")
