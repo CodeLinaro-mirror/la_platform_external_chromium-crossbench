@@ -4,17 +4,13 @@
 
 from __future__ import annotations
 
-from typing import Type
 from unittest import mock
 
 from typing_extensions import override
 
-from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import ShResult
-from tests.crossbench.base import BaseCrossbenchTestCase
-
 from crossbench import path as pth
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import ShResult
 
 XCTRACE_DEVICES_OUTPUT = ShResult("""
 == Devices ==
@@ -67,7 +63,3 @@ class BaseConfigTestCase(BaseCrossbenchTestCase):
         return_value=pth.LocalPath("adb"))
     adb_patcher.start()
     self.addCleanup(adb_patcher.stop)
-
-  def mock_chrome_stable(self, browser_cls: Type[mock_browser.MockBrowser]):
-    return mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls)

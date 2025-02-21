@@ -33,7 +33,8 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import (BaseBrowserVariantsConfig,
-                                                    BrowserVariantsConfig)
+                                                    BrowserVariantsConfig,
+                                                    BrowserVariantsConfigDict)
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
@@ -145,7 +146,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_sh_chromeos_ssh_browser_instance()
 
     with self.EXAMPLE_REMOTE_CONFIG_PATH.open(encoding="utf-8") as f:
-      config = BrowserVariantsConfig()
+      config = BrowserVariantsConfigDict()
       config.parse_text_io(f, args=self.mock_args)
       browsers = config.browsers
       self.assertEqual(len(browsers), 4)
@@ -174,7 +175,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser=None,
         driver_path=None,
         remote_driver_path=override_driver_path)
-    config = BrowserVariantsConfig()
+    config = BrowserVariantsConfigDict()
 
     self._expect_sh_linux_ssh_browser_config()
     self._expect_sh_linux_ssh_browser_config()
@@ -212,7 +213,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(variants[1].settings.driver_path, override_driver_path)
 
   def test_browser_labels_attributes(self):
-    browsers = BrowserVariantsConfig(
+    browsers = BrowserVariantsConfigDict(
         {
             "browsers": {
                 "chrome-stable-default": {
@@ -269,7 +270,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(variants[1].label, f"{self.platform}_1")
 
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable-label": {
@@ -290,7 +291,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_parse_invalid_browser_type(self):
     for invalid in (None, 1, []):
       with self.assertRaises(ConfigError) as cm:
-        _ = BrowserVariantsConfig(
+        _ = BrowserVariantsConfigDict(
             {
                 "browsers": {
                     "chrome-stable-default": invalid
@@ -311,12 +312,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         return AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform))
       return self.platform
 
-    with self.mock_chrome_stable(
+    with self._patch_get_browser_cls(
         mock_browser.MockChromeAndroidStable), mock.patch.object(
-            BrowserVariantsConfig,
+            BaseBrowserVariantsConfig,
             "_get_browser_platform",
             side_effect=mock_get_browser_platform):
-      variants_config = BrowserVariantsConfig(
+      variants_config = BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable-default": "chrome-stable",
@@ -342,7 +343,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_invalid(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -364,7 +365,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_none(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -384,7 +385,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_duplicate(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -407,13 +408,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_empty(self):
     with self.assertRaises(ConfigError):
-      BrowserVariantsConfig({"other": {}}, args=self.mock_args).variants
+      BrowserVariantsConfigDict({"other": {}}, args=self.mock_args).variants
     with self.assertRaises(ConfigError):
-      BrowserVariantsConfig({"browsers": {}}, args=self.mock_args).variants
+      BrowserVariantsConfigDict({"browsers": {}}, args=self.mock_args).variants
 
   def test_unknown_group(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable": {
@@ -427,7 +428,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_duplicate_group(self):
     with self.assertRaisesRegex(ConfigError, "group1"):
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {}
@@ -442,7 +443,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           args=self.mock_args).browsers
 
   def test_non_list_group(self):
-    BrowserVariantsConfig(
+    BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {}
@@ -457,7 +458,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args).variants
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {}
@@ -475,7 +476,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("flags", str(cm.exception))
 
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {}
@@ -496,7 +497,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_duplicate_flag_variant_value(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -516,7 +517,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_unknown_path(self):
     with self.assertRaises(Exception):
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable": {
@@ -526,7 +527,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           },
           args=self.mock_args).variants
     with self.assertRaises(Exception):
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable": {
@@ -537,7 +538,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           args=self.mock_args).variants
 
   def test_flag_combination_simple(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -563,7 +564,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertDictEqual(browsers[2].flags.to_dict(), {"--foo": "v1"})
 
   def test_flag_list(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": [
@@ -591,7 +592,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertDictEqual(browsers[2].flags.to_dict(), {"-foo": "v1"})
 
   def test_flag_combination(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -611,7 +612,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(config.variants), 3 * 3)
 
   def test_flag_combination_mixed_inline(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "compile-hints-experiment": {
@@ -635,7 +636,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         list(browsers[1].flags))
 
   def test_flag_single_inline(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "browsers": {
                 "chrome-release": {
@@ -651,7 +652,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
 
   def test_flag_combination_mixed_fixed(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "compile-hints-experiment": {
@@ -677,7 +678,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_conflicting_chrome_features(self):
     with self.assertRaises(ConfigError) as cm:
-      _ = BrowserVariantsConfig(
+      _ = BrowserVariantsConfigDict(
           {
               "flags": {
                   "compile-hints-experiment": {
@@ -701,7 +702,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("ConsumeCompileHints", msg)
 
   def test_no_flags(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "browsers": {
                 "chrome-stable": {
@@ -731,7 +732,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         }
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           copy.deepcopy(variants_config),
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args)
@@ -739,7 +740,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     self.fs.create_file(chromedriver, st_size=100)
     with self._patch_get_browser_cls(mock_browser.MockChromeStable):
-      config = BrowserVariantsConfig(
+      config = BrowserVariantsConfigDict(
           variants_config,
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args)
@@ -757,7 +758,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "stable_path",
             return_value=mock_browser.MockChromeStable.mock_app_path()):
 
-      config = BrowserVariantsConfig(
+      config = BrowserVariantsConfigDict(
           {
               "browsers": {
                   "stable": {
@@ -779,7 +780,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_inline_load_safari(self):
     if not plt.PLATFORM.is_macos:
       return
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {"browsers": {
             "safari": {
                 "path": "safari",
@@ -789,7 +790,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertTrue(issubclass(config.variants[0].browser_cls, Safari))
 
   def test_flag_combination_with_fixed(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -833,7 +834,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           f"Unexpected flags for variant[{index}]")
 
   def test_flag_combination_js_flags_with_fixed(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -866,7 +867,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_js_flags_combinations_invalid(self):
     with self.assertRaises(ConfigError) as cm:
-      _ = BrowserVariantsConfig(
+      _ = BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -891,7 +892,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("--js-flags", str(cm.exception))
 
   def test_flag_group_combination(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
