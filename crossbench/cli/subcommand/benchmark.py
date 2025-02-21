@@ -655,14 +655,12 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     if not args.create_symlinks:
       logging.debug("Symlink disabled by command line option")
       return
-    if plt.PLATFORM.is_win:
-      logging.debug("Skipping session_dir symlink on windows.")
-      return
     if not args.out_dir and runner.out_dir.exists():
       self._update_default_results_symlinks(runner)
       self._create_runs_results_symlinks(runner)
 
   def _update_default_results_symlinks(self, runner: Runner) -> None:
+    assert runner.create_symlinks
     results_root = runner.out_dir.parent
     latest_link = results_root / "latest"
     if latest_link.is_symlink():
@@ -674,6 +672,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       logging.error("Could not create %s", latest_link)
 
   def _create_runs_results_symlinks(self, runner: Runner) -> None:
+    assert runner.create_symlinks
     results_root = runner.out_dir.parent
     runs: Tuple[Run, ...] = runner.all_runs
     if not runs:

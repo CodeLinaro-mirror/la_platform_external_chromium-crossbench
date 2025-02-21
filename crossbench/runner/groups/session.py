@@ -300,9 +300,6 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       if not self._create_symlinks:
         logging.debug("Symlink disabled by command line option")
         return
-      if self.host_platform.is_win:
-        logging.debug("Skipping session_dir symlink on windows.")
-        return
       if self.is_single_run:
         # If there is a single run per session we reuse the run-dir.
         self.raw_session_dir.parent.mkdir(parents=True, exist_ok=True)

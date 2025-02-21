@@ -274,6 +274,10 @@ class Run(ResultOrigin):
   def secrets(self) -> Secrets:
     return self.story.secrets.merge(fallback=self.browser.secrets)
 
+  @property
+  def create_symlinks(self) -> bool:
+    return self.runner.create_symlinks
+
   def get_browser_details_json(self) -> JsonDict:
     details_json = self.browser.details_json()
     self.session.add_flag_details(details_json)
@@ -313,6 +317,8 @@ class Run(ResultOrigin):
     browser_dir = self.browser_session.browser_dir
     runs_dir = browser_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
+    if not self.create_symlinks:
+      return
     # Source: BROWSER / "runs" / RUN
     # Target: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP
     run_dir = runs_dir / str(self.index)
@@ -324,8 +330,7 @@ class Run(ResultOrigin):
     session_run_dir = self._out_dir / "session"
     assert not session_run_dir.exists(), (
         f"Cannot setup session dir twice: {session_run_dir}")
-    if self.host_platform.is_win:
-      logging.debug("Skipping session_dir symlink on windows.")
+    if not self.create_symlinks:
       return
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
     # Target: BROWSER / "sessions" / SESSION

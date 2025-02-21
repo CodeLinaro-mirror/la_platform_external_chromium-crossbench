@@ -149,13 +149,20 @@ class Runner:
               ThreadMode.help_text(indent=2)))
 
     out_dir_group = parser.add_argument_group("Output Directory Options")
-    out_dir_group.add_argument(
+    symlink_group = out_dir_group.add_mutually_exclusive_group()
+    symlink_group.add_argument(
         "--no-symlinks",
         "--nosymlinks",
         dest="create_symlinks",
         action="store_false",
-        default=True,
-        help="Do not create symlinks in the output directory.")
+        default=not plt.PLATFORM.is_win,
+        help=("Do not create symlinks in the output directory. "
+              "Disabled by defauly on windows."))
+    symlink_group.add_argument(
+        "--symlinks",
+        dest="create_symlinks",
+        action="store_true",
+        help="Allow create symlinks in the output directory.")
 
     out_dir_xor_group = out_dir_group.add_mutually_exclusive_group()
     out_dir_xor_group.add_argument(
