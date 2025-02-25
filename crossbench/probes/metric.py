@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
-import math
+import statistics
 from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
                     Optional, Sequence, Set, Tuple)
@@ -87,24 +87,26 @@ class Metric:
   @property
   def average(self) -> float:
     assert self._is_numeric
-    return sum(self.values) / len(self.values)
+    if not self.values:
+      return 0
+    return statistics.fmean(self.values)
 
   @property
   def geomean(self) -> float:
     assert self._is_numeric
-    return geomean(self.values)
+    if self.min <= 0:
+      logging.debug("Ignoring negative values for geomean")
+      return 0
+    return statistics.geometric_mean(self.values)
 
   @property
   def stddev(self) -> float:
     assert self._is_numeric
+    if len(self.values) < 2:
+      return 0
     # We're ignoring here any actual distribution of the data and use this as a
     # rough estimate of the quality of the data
-    average = self.average
-    variance = 0.0
-    for value in self.values:
-      variance += (average - value)**2
-    variance /= len(self.values)
-    return math.sqrt(variance)
+    return statistics.stdev(self.values)
 
   def append(self, value: Any) -> None:
     self.values.append(value)
@@ -131,15 +133,6 @@ class Metric:
     if len(set(self.values)) == 1:
       return first_value
     return json_data
-
-
-def geomean(values: Iterable[int | float]) -> float:
-  product: float = 1
-  length: int = 0
-  for value in values:
-    product *= value
-    length += 1
-  return product**(1 / length)
 
 
 def metric_geomean(metric: Metric) -> float:

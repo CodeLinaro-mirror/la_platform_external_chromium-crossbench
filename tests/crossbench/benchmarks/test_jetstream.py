@@ -43,7 +43,8 @@ class JetStreamCSVFormatterTestCase(unittest.TestCase):
         "cdjs/average": 30,
         "cdjs/score": 40,
     })
-    table = JetStreamCSVFormatter(metrics, lambda metric: metric.geomean).table
+    table = JetStreamCSVFormatter(
+        metrics, lambda metric: round(metric.geomean, 10)).table
     self.assertSequenceEqual(table, [
         ("Total/score", "Total", "score", 20.0),
         ("cdjs/score", "cdjs", "score", 40.0),
@@ -61,7 +62,7 @@ class JetStreamCSVFormatterTestCase(unittest.TestCase):
         "Total/score": 20,
     })
     table = JetStreamCSVFormatter(
-        metrics, lambda metric: metric.geomean, sort=False).table
+        metrics, lambda metric: round(metric.geomean, 10), sort=False).table
     self.assertSequenceEqual(table, [
         ("Total/score", "Total", "score", 20.0),
         ("cdjs/score", "cdjs", "score", 40.0),

@@ -4,6 +4,7 @@
 
 import json
 import pathlib
+import sys
 import unittest
 
 from crossbench.probes.metric import CSVFormatter, Metric, MetricsMerger
@@ -90,6 +91,36 @@ class MetricTestCase(unittest.TestCase):
     self.assertEqual(json_data["geomean"], 0)
     self.assertEqual(json_data["average"], 0)
     self.assertEqual(json_data["stddevPercent"], 0)
+
+  def test_sum(self):
+    metric = Metric([1, 3])
+    self.assertEqual(metric.sum, 4)
+    self.assertIsInstance(metric.sum, int)
+
+  def test_average(self):
+    metric = Metric([1, 3])
+    average = metric.average
+    self.assertEqual(average, 2.0)
+    self.assertIsInstance(average, float)
+    self.assertEqual(Metric([0, 0]).average, 0)
+    self.assertEqual(Metric([-1, -1]).average, -1)
+
+  def test_geomean(self):
+    metric = Metric([1, 4])
+    geomean = metric.geomean
+    self.assertEqual(geomean, 2.0)
+    self.assertIsInstance(geomean, float)
+
+    metric = Metric([1.1, 4.1])
+    self.assertLess(geomean, metric.geomean)
+    self.assertIsInstance(metric.geomean, float)
+
+    self.assertEqual(Metric([-1, -1]).geomean, 0)
+
+  def test_geomean_overflow(self):
+    metric = Metric([sys.maxsize] * 20)
+    self.assertLess(0, metric.geomean)
+    self.assertLess(abs(metric.geomean - float(sys.maxsize)), 10**5)
 
 
 class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
@@ -227,7 +258,8 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
     csv = CSVFormatter(
-        merger, lambda metric: metric.geomean, include_parts=False).table
+        merger, lambda metric: round(metric.geomean, 10),
+        include_parts=False).table
     self.assertListEqual(csv, [
         ("a/a/a", 1.0),
         ("a/a/b", 2.0),
@@ -238,7 +270,8 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
     csv = CSVFormatter(
-        merger, lambda metric: metric.geomean, include_parts=True).table
+        merger, lambda metric: round(metric.geomean, 10),
+        include_parts=True).table
     self.assertListEqual(csv, [
         ("a/a/a", "a", "a", "a", 1.0),
         ("a/a/b", "a", "a", "b", 2.0),
@@ -274,7 +307,8 @@ class CSVFormatterTestCase(unittest.TestCase):
         "cdjs/average": 30,
         "cdjs/score": 40,
     })
-    table = CSVFormatter(metrics, lambda metric: metric.geomean).table
+    table = CSVFormatter(metrics,
+                         lambda metric: round(metric.geomean, 10)).table
     self.assertSequenceEqual(table, [
         ("Total/average", "Total", "average", 10.0),
         ("Total/score", "Total", "score", 20.0),

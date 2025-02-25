@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import json
 import logging
+import statistics
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
                     Tuple, Type, cast)
@@ -17,8 +18,7 @@ from crossbench.benchmarks.base import PressBenchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
-from crossbench.probes.metric import (CSVFormatter, Metric, MetricsMerger,
-                                      geomean)
+from crossbench.probes.metric import CSVFormatter, Metric, MetricsMerger
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
@@ -176,7 +176,7 @@ class JetStreamProbeContext(JsonResultProbeContext):
         accumulated_metrics[metric].append(value)
     total: Dict[str, float] = {}
     for metric, values in accumulated_metrics.items():
-      total[metric] = geomean(values)
+      total[metric] = statistics.geometric_mean(values)
     return total
 
 
