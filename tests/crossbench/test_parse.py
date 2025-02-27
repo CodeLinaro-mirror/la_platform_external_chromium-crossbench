@@ -158,6 +158,26 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
       ObjectParser.non_empty_str("")
     self.assertIn("empty", str(cm.exception))
 
+  def test_parse_str_or_file_contents(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
+      ObjectParser.str_or_file_contents("")
+    self.assertEqual(
+        ObjectParser.str_or_file_contents("some data"), "some data")
+    self.assertEqual(ObjectParser.str_or_file_contents("test.txt"), "test.txt")
+
+  def test_parse_str_or_file_contents_file(self):
+    path = pathlib.Path("./test.txt")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, str(path)):
+      ObjectParser.str_or_file_contents(path)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, str(path)):
+      ObjectParser.str_or_file_contents("./test.txt")
+    self.fs.create_file(path, contents="test file contents")
+    self.assertEqual(
+        ObjectParser.str_or_file_contents(path), "test file contents")
+    self.assertEqual(ObjectParser.str_or_file_contents(str(path)), "test.txt")
+    self.assertEqual(
+        ObjectParser.str_or_file_contents("./test.txt"), "test file contents")
+
   def test_parse_httpx_url_str(self):
     for valid in ("http://foo.com", "https://foo.com", "http://localhost:800"):
       self.assertEqual(ObjectParser.httpx_url_str(valid), valid)

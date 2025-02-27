@@ -909,15 +909,15 @@ class Platform(abc.ABC):
     # pylint: disable=unused-argument
     return True
 
-  def download_to(self, url: str, path: pth.LocalPath) -> pth.LocalPath:
+  def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
     self.assert_is_local()
     logging.debug("DOWNLOAD: %s\n       TO: %s", url, path)
-    assert not path.exists(), f"Download destination {path} exists already."
+    assert not self.exists(path), f"Download destination {path} exists already."
     try:
       urllib.request.urlretrieve(url, path)
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
       raise OSError(f"Could not load {url}") from e
-    assert path.exists(), (
+    assert self.exists(path), (
         f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
     return path
 

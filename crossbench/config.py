@@ -405,7 +405,7 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
-    return PathParser.PATH_PREFIX.match(value) is not None
+    return PathParser.value_has_path_prefix(value)
 
   def __post_init__(self) -> None:
     self.validate()

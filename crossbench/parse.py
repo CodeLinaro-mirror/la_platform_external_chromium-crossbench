@@ -35,6 +35,10 @@ class PathParser:
                            r")(\\|/)[^\\/]")
 
   @classmethod
+  def value_has_path_prefix(cls, value: str) -> bool:
+    return cls.PATH_PREFIX.match(value) is not None
+
+  @classmethod
   def path(cls,
            value: Optional[pth.AnyPathLike],
            name: str = "value") -> pth.LocalPath:
@@ -304,6 +308,15 @@ class ObjectParser:
     return value
 
   @classmethod
+  def str_or_file_contents(cls, value: Any, name: str = "value") -> str:
+    if isinstance(value, str):
+      str_value: str = cls.non_empty_str(value, name=name)
+      if not PathParser.value_has_path_prefix(str_value):
+        return str_value
+    path = PathParser.file_path(value, name=name)
+    return cls.non_empty_str(path.read_text(encoding="utf-8"), name=name)
+
+  @classmethod
   def url_str(cls,
               value: str,
               name: str = "url",
@@ -346,7 +359,7 @@ class ObjectParser:
                 default_scheme: str = "https") -> urlparse.ParseResult:
     assert default_scheme, "missing default scheme value"
     value = cls.non_empty_str(value, name)
-    if PathParser.PATH_PREFIX.match(value):
+    if PathParser.value_has_path_prefix(value):
       value = f"file://{value}"
     else:
       parsed = cls.base_url(value)

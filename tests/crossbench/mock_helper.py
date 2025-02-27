@@ -90,7 +90,7 @@ class MockPlatformMixin:
                       data: Optional[bytes] = None):
     self._download_results.append(DownloadMockData(url, path, data))
 
-  def download_to(self, url: str, path: pth.LocalPath) -> pth.LocalPath:
+  def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
     assert self._download_results, (
         f"No more download test data, but requested: {url}")
     provided_data = self._download_results.pop()

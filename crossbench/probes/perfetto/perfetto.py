@@ -15,7 +15,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.helper import fs_helper
 from crossbench.helper.wait import WaitRange
-from crossbench.parse import NumberParser, PathParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
@@ -64,7 +64,7 @@ class PerfettoProbe(Probe):
     parser = super().config_parser()
     parser.add_argument(
         "textproto",
-        type=str,
+        type=ObjectParser.str_or_file_contents,
         help=("Serialized perfetto configuration. "
               "See probe instructions for more details"))
     parser.add_argument(
