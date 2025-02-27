@@ -28,7 +28,7 @@ _MAC_TRACE_TEMPLATE_PATH: Final[pth.LocalPath] = pth.LocalPath(
 _XPATH_EXPRESSION: Final[str] = (
     "//trace-toc/run/data/table["
     "@category=\"PointsOfInterest\" and @schema=\"os-signpost\"]|"
-    "//trace-toc/run/data/table[@schema=\"time-profile\"]")
+    "//trace-toc/run/data/table[@schema=\"cpu-profile\"]")
 
 
 class MacOSProfilingContext(PosixProfilingContext):
