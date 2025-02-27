@@ -130,9 +130,10 @@ class Metric:
       return json_data
     # Try to simplify repeated non-numeric values
     first_value = self.values[0]
-    if len(set(self.values)) == 1:
-      return first_value
-    return json_data
+    for value in self.values[1:]:
+      if value != first_value:
+        return json_data
+    return first_value
 
 
 def metric_geomean(metric: Metric) -> float:

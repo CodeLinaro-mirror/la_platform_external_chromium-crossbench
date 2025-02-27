@@ -187,6 +187,41 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertListEqual(data["a/ab"].values, [2, 2])
     self.assertListEqual(data["b"].values, [3, 3])
     self.assertListEqual(data["c/cc/ccc"].values, [4, 4])
+    json_data = merger.to_json()
+    self.assertListEqual(json_data["a/aa"]["values"], [1, 1])
+    self.assertListEqual(json_data["a/ab"]["values"], [2, 2])
+    self.assertListEqual(json_data["b"]["values"], [3, 3])
+    self.assertListEqual(json_data["c/cc/ccc"]["values"], [4, 4])
+
+  def test_repeated_non_numeric(self):
+    merger = MetricsMerger()
+    input_data = {"a": {"aa": "a.aa", "ab": "a.ab"}}
+    merger.add(input_data)
+    merger.add(input_data)
+    data = merger.data
+    self.assertEqual(len(data), 2)
+    self.assertListEqual(data["a/aa"].values, ["a.aa", "a.aa"])
+    self.assertListEqual(data["a/ab"].values, ["a.ab", "a.ab"])
+    json_data = merger.to_json()
+    self.assertDictEqual(json_data, {"a/aa": "a.aa", "a/ab": "a.ab"})
+
+  def test_repeated_non_numeric_nested(self):
+    merger = MetricsMerger()
+    input_data = {"a": {"aa": "a.aa", "ab": {"cccA": "cccA", "cccB": "cccB"}}}
+    merger.add(input_data)
+    merger.add(input_data)
+    data = merger.data
+    self.assertEqual(len(data), 3)
+    self.assertListEqual(data["a/aa"].values, ["a.aa", "a.aa"])
+    self.assertListEqual(data["a/ab/cccA"].values, ["cccA", "cccA"])
+    self.assertListEqual(data["a/ab/cccB"].values, ["cccB", "cccB"])
+    json_data = merger.to_json()
+    self.assertDictEqual(json_data, {
+        "a/aa": "a.aa",
+        "a/ab/cccA": "cccA",
+        "a/ab/cccB": "cccB"
+    })
+
 
   BASIC_NESTED_DATA = {
       "a": {
