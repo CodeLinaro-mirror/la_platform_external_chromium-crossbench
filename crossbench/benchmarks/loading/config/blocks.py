@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
+import functools
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
                     Self, Sequence, Tuple, cast)
 
@@ -53,11 +54,14 @@ class ActionBlock(ConfigObject):
       cls,
       config: Dict[str, Any],
       label: Optional[str] = None,
-      index: Optional[int] = None) -> Self:
-    return cls.config_parser().parse(config, label=label, index=index)
+      index: Optional[int] = None,
+      **kwargs) -> Self:
+    return cls.config_parser().parse(config, label=label, index=index, **kwargs)
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  @override
+  @functools.cache
+  def config_parser(cls) -> ConfigParser[Self]:  # type: ignore #override
     parser = ConfigParser(cls)
     parser.add_argument("label", type=cls._parse_block_label, default="default")
     parser.add_argument(
@@ -193,7 +197,7 @@ class ActionBlockListConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "blocks")
 
     def block_config_data_gen():

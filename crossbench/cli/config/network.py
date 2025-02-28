@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, Dict, Optional, Self
+from typing import TYPE_CHECKING, Any, Optional, Self
 
 from typing_extensions import override
 
@@ -57,6 +57,7 @@ class NetworkConfig(ConfigObject):
     return cls(type=type or NetworkType.LIVE)
 
   @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls, default=cls.default())
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
@@ -158,11 +159,6 @@ class NetworkConfig(ConfigObject):
   @classmethod
   def parse_wpr_archive_url(cls, url: str) -> Self:
     return cls(type=NetworkType.WPR, url=url)
-
-  @classmethod
-  @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
-    return cls.config_parser().parse(config, **kwargs)
 
   @override
   def validate(self) -> None:

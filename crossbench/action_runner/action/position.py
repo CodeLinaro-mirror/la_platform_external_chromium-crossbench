@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import TYPE_CHECKING, Dict, Self
+import functools
+from typing import TYPE_CHECKING, Dict, Self, Type
 
 from typing_extensions import override
 
@@ -25,17 +26,15 @@ class CoordinatesConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Self:
-    return cls.config_parser().parse(config)
-
-  @classmethod
-  @override
   def parse_str(cls, value):
     del value
     raise NotImplementedError("Cannot create CoordinatesConfig from string")
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  @override
+  @functools.lru_cache(maxsize=1)
+  def config_parser(
+      cls: Type[CoordinatesConfig]) -> ConfigParser[CoordinatesConfig]:
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument("x", type=NumberParser.positive_zero_int, required=True)
@@ -63,11 +62,8 @@ class SelectorConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Self:
-    return cls.config_parser().parse(config)
-
-  @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  @functools.lru_cache(maxsize=1)
+  def config_parser(cls: Type[SelectorConfig]) -> ConfigParser[SelectorConfig]:
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument(
@@ -91,7 +87,7 @@ class PositionConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Self:
+  def parse_dict(cls, config: Dict, **kwargs) -> Self:
     selector_parser = SelectorConfig.config_parser()
     if selector_parser.has_all_required_args(config):
       return cls(selector=selector_parser.parse(config))

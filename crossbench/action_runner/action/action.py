@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Dict, Self, Type
+import functools
+import json
+from typing import TYPE_CHECKING, Any, Dict, Self, Type, TypeVar
 
 from typing_extensions import override
 
@@ -46,6 +48,9 @@ ACTION_TIMEOUT = dt.timedelta(seconds=20)
 # Lazily initialized Action class lookup.
 ACTIONS: Dict[ActionType, Type[Action]] = {}
 
+# TODO: remove once pytype is fixed/replaced since it gets confused with Self
+# annotations on classmethods with decorators.
+ActionT = TypeVar("ActionT", bound="Action")
 
 class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ActionType = ActionType.GET
@@ -57,7 +62,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
     action_cls: Type[Self] = ACTIONS[action_type]  # type: ignore
     # Drop _ACTION_TYPE_CONFIG_PARSER arguments/aliases and avoid warnings
@@ -67,12 +72,14 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 
     with exception.annotate_argparsing(
         f"Parsing Action details  ...{{ action: \"{action_type}\", ...}}:"):
-      action = action_cls.config_parser().parse(config)
+      action = action_cls.config_parser().parse(config, **kwargs)
     assert isinstance(action, cls), f"Expected {cls} but got {type(action)}"
     return action
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  @override
+  @functools.cache
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = ConfigParser(cls)
     parser.add_argument("index", type=NumberParser.positive_zero_int, default=0)
     parser.add_argument(
@@ -122,3 +129,6 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     if isinstance(other, Action):
       return self.to_json() == other.to_json()
     return False
+
+  def __hash__(self) -> int:
+    return hash(json.dumps(self.to_json()))

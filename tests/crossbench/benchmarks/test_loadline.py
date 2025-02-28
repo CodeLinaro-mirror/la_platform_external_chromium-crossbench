@@ -28,6 +28,11 @@ from tests.crossbench.benchmarks.helper import SubStoryTestCase
 class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
 
   @override
+  def setUp(self):
+    super().setUp()
+    self.setup_loadline_config()
+
+  @override
   def story_filter(  # pylint: disable=arguments-differ
       self,
       patterns: Sequence[str],
@@ -53,6 +58,18 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     # TODO: preload the story names from the config files
     stories = self.story_filter(["default"]).stories
     self.assertFalse(stories)
+
+  def test_get_pages_config(self):
+    config = self.benchmark_cls.get_pages_config()
+    # Ensure it's cached
+    self.assertIs(config, self.benchmark_cls.get_pages_config())
+
+  def test_get_pages_config_variants(self):
+    configs = [
+        LoadLineTabletBenchmark.get_pages_config(),
+        LoadLinePhoneBenchmark.get_pages_config()
+    ]
+    self.assertNotEqual(configs[0], configs[1])
 
 
 class TestLoadLineTabletBenchmark(BaseLoadLineBenchmarkTestCase):

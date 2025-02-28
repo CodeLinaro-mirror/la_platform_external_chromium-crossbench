@@ -242,10 +242,13 @@ class CliSlowTestCase(BaseCliTestCase):
       ]
       return browsers
 
-    with mock.patch.object(BenchmarkSubcommand, "_get_browsers", get_browser):
+    with (mock.patch.object(BenchmarkSubcommand, "_get_browsers", get_browser),
+          mock.patch.object(LocalFileNetwork, "_open_local_file_server") as
+          mock_network_open):
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
+      mock_network_open.assert_called_once()
       for browser in browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         assert isinstance(browser.network, LocalFileNetwork)

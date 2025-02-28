@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class WaitAction(DurationAction):
   TYPE: ActionType = ActionType.WAIT
 
+
   @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.wait(run, self)

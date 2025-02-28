@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Self, Tuple
+import functools
+from typing import TYPE_CHECKING, Tuple, Type
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.base_duration import BaseDurationAction
 from crossbench.benchmarks.loading.input_source import InputSource
 
@@ -23,7 +24,8 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def config_parser(cls) -> ConfigParser[Self]:
+  @functools.cache
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
         "source", type=InputSource.parse, default=InputSource.JS)

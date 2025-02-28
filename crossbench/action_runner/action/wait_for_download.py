@@ -5,10 +5,14 @@
 from __future__ import annotations
 
 import datetime as dt
+import functools
 import re
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Type
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action
+from typing_extensions import override
+
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.config import ConfigParser
 from crossbench.parse import ObjectParser
@@ -22,7 +26,9 @@ class WaitForDownloadAction(Action):
   TYPE: ActionType = ActionType.WAIT_FOR_DOWNLOAD
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  @override
+  @functools.lru_cache(maxsize=1)
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
         "pattern",

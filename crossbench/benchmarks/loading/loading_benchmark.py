@@ -318,7 +318,11 @@ class LoadingBenchmark(SubStoryBenchmark):
     return super().stories_from_cli_args(args)
 
   @classmethod
-  def get_pages_config(cls, args: argparse.Namespace) -> Optional[PagesConfig]:
+  def get_pages_config(cls,
+                       args: Optional[argparse.Namespace] = None
+                      ) -> Optional[PagesConfig]:
+    if not args:
+      raise ValueError("Missing args")
     if global_config := args.config:
       # TODO: migrate --config to an already parsed hjson/json dict
       config_file = global_config

@@ -15,11 +15,9 @@ from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
 from typing_extensions import override
 
 from crossbench import plt
-from crossbench.browsers.all import Chrome, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.version import ChromiumVersion
-from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.version import BrowserVersion
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
@@ -272,10 +270,6 @@ class MockChromiumBasedBrowser(MockBrowser, metaclass=abc.ABCMeta):
     return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
 
-# Inject MockBrowser into the browser hierarchy for easier testing.
-ChromiumBased.register(MockChromiumBasedBrowser)
-
-
 class MockChromium(MockChromiumBasedBrowser):
   VERSION = "101.22.33.44"
 
@@ -317,11 +311,6 @@ class MockChromeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
     return BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
 
 
-Chrome.register(MockChromeBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockChromeBrowser, Chrome)
-
-
 class MockChromeStable(MockChromeBrowser):
 
   @classmethod
@@ -332,11 +321,6 @@ class MockChromeStable(MockChromeBrowser):
     if platform.is_win:
       return app_root(platform) / "Google/Chrome/Application/chrome.exe"
     return app_root(platform) / "google-chrome"
-
-
-if not TYPE_CHECKING:
-  assert issubclass(MockChromeStable, ChromiumBased)
-  assert issubclass(MockChromeStable, Chrome)
 
 
 class MockChromeAndroidStable(MockChromeStable):
@@ -412,12 +396,6 @@ class MockEdgeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
     return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
 
 
-Edge.register(MockEdgeBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockEdgeBrowser, ChromiumBased)
-  assert issubclass(MockEdgeBrowser, Edge)
-
-
 class MockEdgeStable(MockEdgeBrowser):
 
   @classmethod
@@ -482,11 +460,6 @@ class MockSafariBrowser(MockBrowser, metaclass=abc.ABCMeta):
     return BrowserAttributes.SAFARI
 
 
-Safari.register(MockSafariBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockSafariBrowser, Safari)
-
-
 class MockSafari(MockSafariBrowser):
 
   @classmethod
@@ -522,11 +495,6 @@ class MockFirefoxBrowser(MockBrowser, metaclass=abc.ABCMeta):
   @override
   def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX
-
-
-Firefox.register(MockFirefoxBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockFirefoxBrowser, Firefox)
 
 
 class MockFirefox(MockFirefoxBrowser):

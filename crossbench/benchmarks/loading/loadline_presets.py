@@ -132,6 +132,8 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   PROBES = (LoadLineProbe,)
   DEFAULT_REPETITIONS = 100
 
+  _page_config: PagesConfig | None = None
+
   @classmethod
   @override
   def requires_separate(cls, args: argparse.Namespace) -> bool:
@@ -155,9 +157,13 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
     pass
 
   @classmethod
+  @override
   def get_pages_config(
       cls, args: Optional[argparse.Namespace] = None) -> PagesConfig:
-    return PagesConfig.parse(cls.default_pages_config_path())
+    # Use manual caching, since args is not hashable.
+    if cls._page_config is None:
+      cls._page_config = PagesConfig.parse(cls.default_pages_config_path())
+    return cls._page_config
 
   @classmethod
   @override

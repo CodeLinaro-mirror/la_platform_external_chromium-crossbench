@@ -109,12 +109,13 @@ class EnvironmentConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     if "env" in config:
       config = config["env"]
-    return cls.config_parser().parse(config)
+    return super().parse_dict(config, **kwargs)
 
   @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("browser_allow_background", type=ObjectParser.bool)

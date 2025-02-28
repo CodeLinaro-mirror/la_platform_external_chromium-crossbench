@@ -56,10 +56,6 @@ class TraceProcessorQueryConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Self:
-    return cls.config_parser().parse(config)
-
-  @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)

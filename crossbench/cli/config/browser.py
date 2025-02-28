@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Dict, Optional, Self, TextIO, Tuple, cast
+from typing import Any, Optional, Self, TextIO, Tuple, cast
 
 import hjson
 from typing_extensions import override
@@ -299,10 +299,6 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
-    return cls.config_parser().parse(config)
-
-  @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(

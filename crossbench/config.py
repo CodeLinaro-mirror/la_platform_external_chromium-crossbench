@@ -10,6 +10,7 @@ import collections
 import collections.abc
 import dataclasses
 import enum
+import functools
 import inspect
 import json
 import logging
@@ -334,13 +335,13 @@ class _ConfigArgParser:
           f"additional depending arguments, but got: {depending_kwargs}")
 
   def parse_list_data(self, data: Any,
-                      depending_kwargs: Dict[str, Any]) -> List[Any]:
+                      depending_kwargs: Dict[str, Any]) -> Tuple[Any]:
     if isinstance(data, str):
       data = data.split(",")
     if not isinstance(data, (list, tuple)):
       raise ValueError(f"{self.cls_name}.{self.name}: "
                        f"Expected sequence got {type(data).__name__}")
-    return [self.parse_data(value, depending_kwargs) for value in data]
+    return tuple(self.parse_data(value, depending_kwargs) for value in data)
 
   def parse_data(self, data: Any, depending_kwargs: Dict[str, Any]) -> Any:
     if self.is_enum:
@@ -513,8 +514,13 @@ class ConfigObject(abc.ABC):
     raise exception.UnreachableError()
 
   @classmethod
-  @abc.abstractmethod
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls: Type[Self], config: Dict[str, Any], **kwargs) -> Self:
+    parser: ConfigParser[Self] = cls.config_parser()
+    result: Self = parser.parse(config, **kwargs)
+    return result
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[Self]:
     raise NotImplementedError()
 
 
@@ -539,11 +545,11 @@ class _PrimitiveConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     result: Dict[str, Any] = {}
 
     for key, value in config.items():
-      result[key] = _PrimitiveConfigObject.parse(value).value
+      result[key] = _PrimitiveConfigObject.parse(value, **kwargs).value
 
     return cls(result)
 
@@ -637,6 +643,7 @@ class _TemplatedConfigParser(ConfigObject):
         value.keys()) in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT
 
   @classmethod
+  @override
   def config_parser(cls: Type[Self]) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("template", type=ObjectParser.not_none, required=True)
@@ -649,11 +656,6 @@ class _TemplatedConfigParser(ConfigObject):
   @override
   def parse_str(cls, value: str) -> Self:
     raise NotImplementedError("Cannot create templated config from strings")
-
-  @classmethod
-  @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
-    return cls.config_parser().parse(config)
 
   @classmethod
   def parse_and_substitute(cls, value: Any) -> Self:
@@ -977,6 +979,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def summary(self) -> str:
     return self.doc.splitlines()[0]
 
+  @functools.lru_cache(maxsize=1)
   def __str__(self) -> str:
     parts: List[str] = []
     doc_string = self.doc

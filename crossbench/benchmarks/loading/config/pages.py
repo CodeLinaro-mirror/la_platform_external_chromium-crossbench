@@ -101,7 +101,7 @@ class PagesConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Self:
+  def parse_dict(cls, config: Dict, **kwargs) -> Self:
     """
     Variant a):
       { "pages": { "LABEL": PAGE_CONFIG }, "secrets": { ... } }
@@ -146,7 +146,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config)
     with exception.annotate_argparsing("Loading DevTools recording file"):
       title = ObjectParser.non_empty_str(config["title"], "title")
@@ -269,7 +269,7 @@ class ListPagesConfig(PagesConfig):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict) -> Self:
+  def parse_dict(cls, config: Dict, **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "pages")
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:

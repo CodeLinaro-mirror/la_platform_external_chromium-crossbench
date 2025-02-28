@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import unittest
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, ACTIONS,
+                                                    Action)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
@@ -15,8 +16,9 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
-from crossbench.action_runner.action.position import (
-    CoordinatesConfig, PositionConfig, SelectorConfig)
+from crossbench.action_runner.action.position import (CoordinatesConfig,
+                                                      PositionConfig,
+                                                      SelectorConfig)
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
@@ -32,6 +34,21 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ActionTestCase(CrossbenchFakeFsTestCase):
+
+  def test_action_type_lookup(self):
+    for action_type in ActionType:
+      action_cls = ACTIONS[action_type]
+      self.assertTrue(issubclass(action_cls, Action))
+      # Ensure that all Action subclasses have cached config_parser for
+      # efficiently parsing larger page configs with many actions:
+      # - Use  @functools.cache for base classes
+      # - Use  @functools.lru_cache(maxsize=1) for leaf classes
+      self.assertIs(action_cls.config_parser().cls, action_cls)
+      self.assertIs(
+          action_cls.config_parser(), action_cls.config_parser(),
+          f"{action_cls}: missing "
+          "@functools.lru_cache decorator on config_parser() method")
+      self.assertIs(action_cls.TYPE, action_type)
 
   def test_parse_get_default(self):
     config_dict = {"action": "get", "url": "http://crossben.ch"}

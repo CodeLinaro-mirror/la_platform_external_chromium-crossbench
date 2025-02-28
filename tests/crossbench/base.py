@@ -85,9 +85,6 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
       self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    self.fs.add_real_directory(
-        LoadLineTabletBenchmark.default_network_config_path().parent,
-        lazy_read=not test_helper.is_google_env())
     if test_helper.is_google_env():
       self.fs.add_real_directory("/build/cas")
     self.browsers: List[mock_browser.MockBrowser] = [
@@ -121,6 +118,11 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         probe=[],
         other_browser_args=[],
         driver_logging=False)
+
+  def setup_loadline_config(self):
+    self.fs.add_real_directory(
+        LoadLineTabletBenchmark.default_network_config_path().parent,
+        lazy_read=not test_helper.is_google_env())
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
@@ -159,6 +161,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     patcher = mock.patch("textwrap.wrap", side_effect=mock_wrap)
     self.addCleanup(patcher.stop)
     patcher.start()
+
+    self.setup_loadline_config()
 
   def run_cli_output(self,
                      *args,

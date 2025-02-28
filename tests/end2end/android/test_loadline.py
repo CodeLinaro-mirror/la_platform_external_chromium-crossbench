@@ -19,7 +19,6 @@ from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from tests import test_helper
 from tests.test_helper import TestEnv
 
-
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
 
@@ -145,7 +144,7 @@ def test_loadline_default(device_id, adb_path, benchmark_type,
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
   cli.run([
       benchmark_type, f"--browser={browser_config}", "--repeat=1", "--throw",
-      f"--out-dir={out_dir}"
+      f"--out-dir={out_dir}", "--debug"
   ] + list(test_env.cq_flags))
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check the total score here.

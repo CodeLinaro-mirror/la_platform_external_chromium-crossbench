@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import Any, Dict, Iterator, Self
+from typing import Iterator
 
 from typing_extensions import override
 
@@ -17,11 +17,6 @@ from crossbench.parse import NumberParser
 class TabController(ConfigObject):
   multiple_tabs: bool
   is_forever: bool
-
-  @classmethod
-  @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
-    raise NotImplementedError("Cannot create tab controller from dict")
 
   @classmethod
   @override

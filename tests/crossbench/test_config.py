@@ -69,10 +69,6 @@ class CustomNestedConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
-    return cls.config_parser().parse(config)
-
-  @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=str, required=True)
@@ -132,13 +128,8 @@ class CustomConfigObject(ConfigObject):
         "integer": NumberParser.positive_int(integer, "integer"),
     }
 
-
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> CustomConfigObject:
-    return cls.config_parser().parse(config, **kwargs)
-
-  @classmethod
   def config_parser(cls) -> ConfigParser[CustomConfigObject]:
     parser = cls.base_config_parser()
     parser.add_argument(

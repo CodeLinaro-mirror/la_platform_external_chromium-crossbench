@@ -54,7 +54,7 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> CPUFrequencyMap:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> CPUFrequencyMap:
     if _WILDCARD_CONFIG_KEY in config:
       return WildcardCPUFrequencyMap(config)
     return ExplicitCPUFrequencyMap(config)

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Dict, Self
+from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
@@ -22,6 +22,7 @@ class Secrets(ConfigObject):
   bond: ServiceAccount | None = None
 
   @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("google", type=GoogleUsernamePassword)
@@ -35,11 +36,6 @@ class Secrets(ConfigObject):
       return cls.parse_inline_hjson(value)
     raise NotImplementedError("Cannot create secrets from string")
 
-  @classmethod
-  @override
-  def parse_dict(cls, config: Dict) -> Self:
-    return cls.config_parser().parse(config)
-
   def merge(self, fallback: Secrets) -> Self:
     return type(self)(self.google or fallback.google, self.bond or
                       fallback.bond)
@@ -50,6 +46,7 @@ class UsernamePassword(ConfigObject):
   password: str
 
   @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
@@ -63,11 +60,6 @@ class UsernamePassword(ConfigObject):
         type=ObjectParser.any_str,
         required=True)
     return parser
-
-  @classmethod
-  @override
-  def parse_dict(cls, config: Dict) -> Self:
-    return cls.config_parser().parse(config)
 
   @classmethod
   @override
@@ -95,6 +87,7 @@ class ServiceAccount(ConfigObject):
   universe_domain: str
 
   @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("type", type=ObjectParser.non_empty_str, required=True)
@@ -121,11 +114,6 @@ class ServiceAccount(ConfigObject):
     parser.add_argument(
         "universe_domain", type=ObjectParser.non_empty_str, required=True)
     return parser
-
-  @classmethod
-  @override
-  def parse_dict(cls, config: Dict) -> Self:
-    return cls.config_parser().parse(config)
 
   @classmethod
   @override

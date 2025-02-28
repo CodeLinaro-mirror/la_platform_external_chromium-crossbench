@@ -83,13 +83,15 @@ class PageConfig(ConfigObject):
       cls,
       config: Dict[str, Any],
       label: Optional[str] = None,
-      secrets: Optional[Secrets] = None) -> Self:
+      secrets: Optional[Secrets] = None,
+      **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "story actions or blocks")
     page_config = cls.config_parser().parse(
-        config, label=label, secrets=secrets)
+        config, label=label, secrets=secrets, **kwargs)
     return page_config
 
   @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("label", type=ObjectParser.non_empty_str)

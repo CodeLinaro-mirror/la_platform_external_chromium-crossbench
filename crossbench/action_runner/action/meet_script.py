@@ -5,9 +5,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Self
+import functools
+from typing import TYPE_CHECKING, Type
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
+from typing_extensions import override
+
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.bond import BondAction
 from crossbench.parse import ObjectParser
@@ -26,7 +29,9 @@ class MeetScriptAction(BondAction):
   TYPE: ActionType = ActionType.MEET_SCRIPT
 
   @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
+  @override
+  @functools.lru_cache(maxsize=1)
+  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
         "script", type=ObjectParser.non_empty_str, required=True)

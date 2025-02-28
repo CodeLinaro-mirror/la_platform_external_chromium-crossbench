@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, Dict, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
@@ -81,10 +81,6 @@ class NetworkSpeedConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
-    return cls.config_parser().parse(config)
-
-  @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls, default=cls.default())
     parser.add_argument(

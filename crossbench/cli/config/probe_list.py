@@ -51,7 +51,7 @@ class ProbeListConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any]) -> Self:
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     # Support global configs with {"probes": ...}
     if "probes" in config:
       config = config["probes"]
