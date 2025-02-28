@@ -357,6 +357,8 @@ class NativePlatformTestCase(unittest.TestCase):
       self.platform.chmod(tmp_file, mode)
       self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
 
+  @unittest.skipIf(
+      test_helper.is_google_env(), "Source directory is readonly")
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
       try:
@@ -368,6 +370,8 @@ class NativePlatformTestCase(unittest.TestCase):
         if self.platform.is_local:
           self.platform.set_cache_dir(DEFAULT_CACHE_DIR)
 
+  @unittest.skipIf(
+      test_helper.is_google_env(), "Source directory is readonly")
   def test_default_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -378,6 +382,8 @@ class NativePlatformTestCase(unittest.TestCase):
     finally:
       self.platform.rm(cache_dir, dir=True, missing_ok=True)
 
+  @unittest.skipIf(
+      test_helper.is_google_env(), "Source directory is readonly")
   def test_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -516,11 +522,14 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
   def test_which(self):
     ls_bin = self.platform.which("ls")
     self.assertIsNotNone(ls_bin)
-    known_binary = self.platform.which(self.known_binary)
-    self.assertIsNotNone(known_binary)
-    self.assertNotEqual(ls_bin, known_binary)
-    self.assertTrue(self.platform.exists(ls_bin))
-    self.assertTrue(self.platform.exists(known_binary))
+    # self.known_binary is "python3", which does not exist on google3,
+    # as google3 has its own mechanism to start python scripts.
+    if not test_helper.is_google_env():
+      known_binary = self.platform.which(self.known_binary)
+      self.assertIsNotNone(known_binary)
+      self.assertNotEqual(ls_bin, known_binary)
+      self.assertTrue(self.platform.exists(ls_bin))
+      self.assertTrue(self.platform.exists(known_binary))
 
   def test_system_details(self):
     details = self.platform.system_details()
