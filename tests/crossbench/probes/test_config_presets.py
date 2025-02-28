@@ -34,10 +34,8 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.real_config_dir = test_helper.config_dir()
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench.path])
-    if test_helper.is_google_env():
-      self.fs.add_real_directory("/build/cas")
-    self.fs.add_real_directory(test_helper.crossbench_dir() /
-                               "probes/perfetto/trace_processor/queries")
+    self._add_real_directory(test_helper.crossbench_dir() /
+                             "probes/perfetto/trace_processor/queries")
     self.set_up_required_paths()
 
   def set_up_required_paths(self):
@@ -53,8 +51,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
   def _test_parse_config_dir(self,
                              real_config_dir: pathlib.Path) -> List[Probe]:
     probes = []
-    self.fs.add_real_directory(
-        real_config_dir, lazy_read=not test_helper.is_google_env())
+    self._add_real_directory(real_config_dir)
     for probe_config in real_config_dir.glob("**/*.config.hjson"):
       with ChangeCWD(probe_config.parent):
         probes += self._parse_config(probe_config)
@@ -74,6 +71,27 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
       self.assertFalse(probe.is_attached)
     return probes
 
+  def _add_real_directory(self, path: crossbench.path.LocalPathLike) -> None:
+    self.fs.add_real_directory(
+        path, lazy_read=not test_helper.is_google_env())
+    if test_helper.is_google_env():
+      # On google3, all files have been replaced by symlinks. The link targets
+      # must be added in order for these symlinks to resolve.
+      for child in path.glob("**/*"):
+        if child.is_symlink():
+          link_target = child.readlink()
+          if not link_target.exists():
+            self.fs.add_real_file(link_target)
+
+  def _add_real_file(self, path: crossbench.path.LocalPathLike) -> None:
+    self.fs.add_real_file(path)
+    if test_helper.is_google_env() and path.is_symlink():
+      # On google3, all files have been replaced by symlinks. The link targets
+      # must be added in order for these symlinks to resolve.
+      link_target = path.readlink()
+      if not link_target.exists():
+        self.fs.add_real_file(link_target)
+
   def test_parse_example_configs(self):
     probe_config_presets = self.real_config_dir / "probe"
     probes = self._test_parse_config_dir(probe_config_presets)
@@ -86,7 +104,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
 
   def test_parse_loadline_configs(self):
     probe_config = LoadLineTabletBenchmark.default_probe_config_path()
-    self.fs.add_real_file(probe_config)
+    self._add_real_file(probe_config)
     probes = ProbeListConfig.parse_path(probe_config).probes
     self.assertTrue(probes)
 

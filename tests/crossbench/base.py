@@ -85,8 +85,6 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
       self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    if test_helper.is_google_env():
-      self.fs.add_real_directory("/build/cas")
     self.browsers: List[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
@@ -120,9 +118,18 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         driver_logging=False)
 
   def setup_loadline_config(self):
+    config_dir = LoadLineTabletBenchmark.default_network_config_path().parent
     self.fs.add_real_directory(
-        LoadLineTabletBenchmark.default_network_config_path().parent,
+        config_dir,
         lazy_read=not test_helper.is_google_env())
+    if test_helper.is_google_env():
+      # On google3, all files have been replaced by symlinks. The link targets
+      # must be added in order for these symlinks to resolve.
+      for child in config_dir.glob("**/*"):
+        if child.is_symlink():
+          link_target = child.readlink()
+          if not link_target.exists():
+            self.fs.add_real_file(link_target)
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
