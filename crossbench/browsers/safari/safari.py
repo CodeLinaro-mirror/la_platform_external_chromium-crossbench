@@ -75,17 +75,17 @@ class Safari(Browser):
     assert self.bundle_name, "Missing bundle_name"
     self.cache_dir = self.platform.home() / (
         f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
-
-  @override
-  def clear_cache(self) -> None:
     logging.info("CLEAR CACHE: %s", self)
-    assert self.cache_dir, "Missing cache dir"
     if not self.platform.exists(self.cache_dir.parent):
       logging.warning("Could not find existing config dir for %s.", self)
       return
     self.platform.rm(self.cache_dir, dir=True, missing_ok=True)
     # This magic wait lowers safaridriver startup failures.
     self.platform.sleep(0.5)
+
+  @override
+  def clear_cache(self) -> None:
+    pass
 
   @override
   def _extract_version(self) -> SafariVersion:

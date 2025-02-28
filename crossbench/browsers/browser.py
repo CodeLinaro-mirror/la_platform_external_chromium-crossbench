@@ -284,7 +284,6 @@ class Browser(abc.ABC):
   def setup(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running, (
         "Previously used browser was not correctly stopped.")
-    self.clear_cache()
     self.start(session)
     assert self._is_running
 
@@ -315,8 +314,8 @@ class Browser(abc.ABC):
 
   def clear_cache(self) -> None:
     if self.clear_cache_dir and self.cache_dir:
+      logging.debug("Clearing cache dir %s", self.cache_dir)
       self.platform.rm(self.cache_dir, missing_ok=True, dir=True)
-      self.platform.mkdir(self.cache_dir, parents=True)
 
   @abc.abstractmethod
   def start(self, session: BrowserSessionRunGroup) -> None:
@@ -351,6 +350,7 @@ class Browser(abc.ABC):
       self.force_quit()
     finally:
       self._pid = None
+    self.clear_cache()
 
   def force_quit(self) -> None:
     if not self._is_running:

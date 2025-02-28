@@ -133,7 +133,13 @@ class ChromiumBased(Browser):
       if maybe_cache_dir:
         cache_dir = pth.AnyPath(maybe_cache_dir)
     if cache_dir is None:
-      self.cache_dir = self.platform.mkdtemp(prefix=self.type_name())
+      temp_dir = None
+      # On Android, not all apps have permission to write to /data/local/tmp.
+      # We use a folder on external storage instead.
+      if self.platform.is_android:
+        temp_dir = "/storage/emulated/0/Documents"
+      self.cache_dir = self.platform.mkdtemp(prefix=self.type_name(),
+                                             dir=temp_dir)
       self.clear_cache_dir = True
     else:
       self.cache_dir = cache_dir

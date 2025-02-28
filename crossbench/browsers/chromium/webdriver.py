@@ -97,9 +97,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
-  # TODO: implement setting a clean profile on android
   UNSUPPORTED_FLAGS: Tuple[str, ...] = (
-      "--user-data-dir",
       "--disable-sync",
       "--window-size",
       "--window-position",
@@ -166,6 +164,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     options.add_experimental_option("androidPackage", self.android_package)
     options.add_experimental_option("androidDeviceSerial",
                                     self.platform.adb.serial_id)
+    options.add_experimental_option("androidKeepAppDataDir", True)
     return options
 
   def setup_binary(self) -> None:
