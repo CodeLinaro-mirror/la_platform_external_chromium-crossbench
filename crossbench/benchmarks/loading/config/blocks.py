@@ -234,13 +234,7 @@ class ActionBlockListConfig(ConfigObject):
     if not self.blocks:
       raise ValueError("Missing action blocks.")
     ObjectParser.non_empty_sequence(self.blocks, "blocks")
-    found_get = False
     for index, block in enumerate(self.blocks):
       if index != block.index:
         raise ValueError(
             f"blocks[{index}].index should be {index}, but got {block.index}")
-      found_get |= any(
-          action.TYPE in (ActionType.GET, ActionType.MEET_CREATE)
-          for action in block)
-    if not found_get:
-      raise ValueError("Expected at least one get action in one of the blocks.")

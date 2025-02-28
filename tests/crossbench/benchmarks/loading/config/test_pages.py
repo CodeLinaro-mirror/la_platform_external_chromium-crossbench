@@ -137,19 +137,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       PagesConfig.parse(config_data)
     self.assertIn("empty", str(cm.exception).lower())
 
-  def test_parse_empty_missing_get_action(self):
-    config_data = {
-        "pages": {
-            "Google Story": [{
-                "action": "wait",
-                "duration": 5
-            }]
-        }
-    }
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      PagesConfig.parse(config_data)
-    self.assertIn("get", str(cm.exception).lower())
-
   def test_example(self):
     config_data = {
         "pages": {
@@ -314,16 +301,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
           PagesConfig.parse_dict(config_dict)
-
-  def test_missing_get_action_scenario(self):
-    with self.assertRaises(argparse.ArgumentTypeError):
-      PagesConfig.parse_dict(
-          {"pages": {
-              "TEST": [{
-                  "action": "wait",
-                  "duration": 5.0
-              }]
-          }})
 
   def test_get_action_durations(self):
     durations = [

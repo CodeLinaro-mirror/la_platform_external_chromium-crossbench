@@ -135,11 +135,6 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.first_url, "https://cnn")
     self.assertEqual(len(config.blocks), 1)
 
-  def test_parse_actions_no_get(self):
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      PageConfig.parse([{"action": "click", "selector": "#foo"}])
-    self.assertIn("get", str(cm.exception))
-
   def test_parse_action_sequence(self):
     config = PageConfig.parse([{
         "action": "get",
