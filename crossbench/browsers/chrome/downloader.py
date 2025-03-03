@@ -44,13 +44,13 @@ class ChromeDownloader(Downloader):
       ("android", "arm64"): "android",
   }
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, **kwargs) -> None:
     self._gsutil: pth.AnyPath | None = None
     super().__init__(*args, **kwargs)
 
   @classmethod
   @override
-  def is_valid_version(cls, path_or_identifier: str):
+  def is_valid_version(cls, path_or_identifier: str) -> bool:
     return ChromeVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
@@ -205,7 +205,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform):
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     if browser_platform.is_linux and browser_platform.is_x64:
       platform_name = "linux64"
@@ -270,7 +270,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform):
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
     platform_name = "mac-universal"
@@ -372,7 +372,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform):
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_android, (
         f"{type(self)} can only be used on Android")
@@ -529,7 +529,7 @@ class ChromeDownloaderWin(ChromeDownloader):
     return cls._is_valid(path_or_identifier, browser_platform)
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform):
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
     platform_name = "win64-clang"

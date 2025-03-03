@@ -33,7 +33,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   def __init__(self,
                label: str,
                path: AnyPath,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings)
     assert self.platform.is_macos
 
@@ -155,7 +155,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
           end tell""")
 
   @override
-  def force_quit(self):
+  def force_quit(self) -> None:
     try:
       super().force_quit()
     finally:

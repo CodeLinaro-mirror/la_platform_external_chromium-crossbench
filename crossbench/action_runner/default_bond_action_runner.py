@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 class DefaultBondActionRunner(BondActionRunner):
 
-  def __init__(self, action_runner: ActionRunner):
+  def __init__(self, action_runner: ActionRunner) -> None:
     self._action_runner: ActionRunner = action_runner
     self._bond_client: BondClient | None = None
 
@@ -35,7 +35,7 @@ class DefaultBondActionRunner(BondActionRunner):
       self._bond_client = BondClient(secret)
     return self._bond_client
 
-  def teardown(self):
+  def teardown(self) -> None:
     if self._bond_client:
       self._bond_client.teardown()
       self._bond_client = None
@@ -48,7 +48,7 @@ class DefaultBondActionRunner(BondActionRunner):
     return url.path[1:]
 
   @override
-  def meet_create(self, run: Run, action: i_action.MeetCreateAction):
+  def meet_create(self, run: Run, action: i_action.MeetCreateAction) -> None:
     bond_client = self.bond_client(run)
     conference_code = bond_client.create_meeting()
     if action.bots:
@@ -58,7 +58,7 @@ class DefaultBondActionRunner(BondActionRunner):
         run,
         GetAction(url, ready_state=ReadyState.COMPLETE, target=action.target))
 
-  def meet_script(self, run: Run, action: i_action.MeetScriptAction):
+  def meet_script(self, run: Run, action: i_action.MeetScriptAction) -> None:
     conference_code = self.get_current_conference_code(run.browser)
     bond_client = self.bond_client(run)
     bond_client.run_script(conference_code, action.script)

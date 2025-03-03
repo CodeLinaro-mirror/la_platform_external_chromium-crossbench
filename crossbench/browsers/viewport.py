@@ -64,7 +64,7 @@ class Viewport:
                height: int = 1000,
                x: int = 10,
                y: int = 50,
-               mode: ViewportMode = ViewportMode.SIZE):
+               mode: ViewportMode = ViewportMode.SIZE) -> None:
     self._width = width
     self._height = height
     self._x = x

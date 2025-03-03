@@ -22,12 +22,14 @@ if TYPE_CHECKING:
 
 class CombinedPage(Page):
 
-  def __init__(self,
-               pages: Iterable[Page],
-               name: str = "combined",
-               playback: PlaybackController = PlaybackController.default(),
-               tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta()):
+  def __init__(
+      self,
+      pages: Iterable[Page],
+      name: str = "combined",
+      playback: PlaybackController = PlaybackController.default(),
+      tabs: TabController = TabController.default(),
+      about_blank_duration: dt.timedelta = dt.timedelta()
+  ) -> None:
     self._pages = tuple(pages)
     assert self._pages, "No sub-pages provided for CombinedPage"
     assert len(self._pages) >= 1, "Combined Page needs at least one page"

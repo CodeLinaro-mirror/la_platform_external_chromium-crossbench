@@ -102,9 +102,11 @@ class BrowserProfilingProbe(Probe):
         default=[])
     return parser
 
-  def __init__(self,
-               moz_profiler_startup_features: Optional[
-                   List[MozProfilerStartupFeatures]] = None):
+  def __init__(
+      self,
+      moz_profiler_startup_features: Optional[
+          List[MozProfilerStartupFeatures]] = None
+  ) -> None:
     super().__init__()
     self._moz_profiler_startup_features: List[
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []

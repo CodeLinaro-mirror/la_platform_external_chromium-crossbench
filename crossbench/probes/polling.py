@@ -126,7 +126,7 @@ class PollingProbeContext(ProbeContext[PollingProbe]):
 class CMDPoller(threading.Thread):
 
   def __init__(self, platform: plt.Platform, cmd: Iterable[CmdArg],
-               interval: dt.timedelta, path: LocalPath):
+               interval: dt.timedelta, path: LocalPath) -> None:
     super().__init__()
     self._platform = platform
     self._cmd: TupleCmdArgs = tuple(cmd)

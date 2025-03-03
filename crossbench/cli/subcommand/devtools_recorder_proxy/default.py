@@ -143,7 +143,8 @@ class CrossbenchDevToolsRecorderProxy:
     logging.debug("SEND Response: %s", response_json)
     await self._websocket.send(response_json)
 
-  async def _handle_message(self, message) -> Optional[Tuple[Response, Any]]:
+  async def _handle_message(
+      self, message: bytearray | bytes | str) -> Optional[Tuple[Response, Any]]:
     logging.debug("RECEIVE Message: %s", message)
     try:
       payload: Dict[str, Any] = json.loads(message)

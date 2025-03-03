@@ -40,7 +40,7 @@ class LogcatAndroidProbe(Probe):
         help="Filter specifications are a series of <tag>[:priority]")
     return parser
 
-  def __init__(self, filterspec: Iterable[str]):
+  def __init__(self, filterspec: Iterable[str]) -> None:
     super().__init__()
     self._filterspec = tuple(filterspec)
 
@@ -69,7 +69,7 @@ class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
     return self.browser_platform.sh_stdout("date",
                                            "+%Y-%m-%d %H:%M:%S").rstrip()
 
-  def _log_to_logcat(self, msg: str):
+  def _log_to_logcat(self, msg: str) -> None:
     self.browser_platform.sh("log", "-t", "crossbench", msg)
 
   @property

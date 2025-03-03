@@ -64,7 +64,7 @@ class Run(ResultOrigin):
                index: int,
                name: Optional[str] = None,
                timeout: dt.timedelta = dt.timedelta(),
-               throw: bool = False):
+               throw: bool = False) -> None:
     super().__init__()
     self._state = StateMachine(State.INITIAL)
     self._runner = runner
@@ -299,7 +299,7 @@ class Run(ResultOrigin):
       self._probe_context_manager.setup(self.probes, is_dry_run)
     self._log_setup()
 
-  def setup_selenium_options(self, options: ArgOptions):
+  def setup_selenium_options(self, options: ArgOptions) -> None:
     # TODO: move explicitly to session.
     self._probe_context_manager.setup_selenium_options(options)
 
@@ -379,7 +379,7 @@ class Run(ResultOrigin):
       if self.is_success:
         self._run_success_validation()
 
-  def _run_splashscreen(self):
+  def _run_splashscreen(self) -> None:
     with self.actions("SplashScreen") as actions:
       display_data = SplashScreenData(self.is_warmup, self.browser,
                                       self.details_json())
@@ -451,11 +451,11 @@ class Run(ResultOrigin):
     for probe in self.probes:
       probe.log_run_result(self)
 
-  def log_failure(self):
+  def log_failure(self) -> None:
     assert not self.is_success
     self._exceptions.log(f"❗ RUN {self.index+1} GOT ERRORS", separator="-")
 
-  def log_annotations(self):
+  def log_annotations(self) -> None:
     if not self._annotations:
       return
     logging.info("- " * 40)
@@ -468,7 +468,7 @@ class Run(ResultOrigin):
 
 class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
 
-  def __init__(self, run: Run, probe_results: ProbeResultDict):
+  def __init__(self, run: Run, probe_results: ProbeResultDict) -> None:
     super().__init__(run, probe_results)
 
   @property
@@ -478,7 +478,7 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
   def get_probe_context(self, probe: Probe) -> Optional[ProbeContext]:
     return probe.get_context(self.run)
 
-  def setup_selenium_options(self, options: ArgOptions):
+  def setup_selenium_options(self, options: ArgOptions) -> None:
     for probe_context in self._probe_contexts.values():
       probe_context.setup_selenium_options(options)
 

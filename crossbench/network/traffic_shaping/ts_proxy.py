@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, TypeVar
+from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Self, TypeVar
 
 from typing_extensions import override
 
@@ -45,12 +45,12 @@ class TsProxyServerError(Exception):
   """Catch-all exception for tsProxy Server."""
 
 
-_PORT_RE = re.compile(r"Started Socks5 proxy server on "
-                      r"(?P<host>[^:]*):"
-                      r"(?P<port>\d+)")
+_PORT_RE: re.Pattern[str] = re.compile(r"Started Socks5 proxy server on "
+                                       r"(?P<host>[^:]*):"
+                                       r"(?P<port>\d+)")
 
 
-def parse_ts_socks_proxy_port(output_line):
+def parse_ts_socks_proxy_port(output_line) -> Optional[int]:
   if match := _PORT_RE.match(output_line):
     return int(match.group("port"))
   return None
@@ -76,7 +76,7 @@ class TsProxyServer:
                in_kbps: Optional[int] = None,
                out_kbps: Optional[int] = None,
                window: Optional[int] = None,
-               verbose: bool = True):
+               verbose: bool = True) -> None:
     self._platform = platform
     self._proc: TsProxyProcess | None = None
     self._ts_proxy_path = PathParser.existing_file_path(ts_proxy_path)
@@ -109,12 +109,13 @@ class TsProxyServer:
   def is_running(self) -> bool:
     return self._proc is not None
 
-  def set_traffic_settings(self,
-                           rtt_ms: Optional[int] = None,
-                           in_kbps: Optional[int] = None,
-                           out_kbps: Optional[int] = None,
-                           window: Optional[int] = None,
-                           timeout=ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+  def set_traffic_settings(
+      self,
+      rtt_ms: Optional[int] = None,
+      in_kbps: Optional[int] = None,
+      out_kbps: Optional[int] = None,
+      window: Optional[int] = None,
+      timeout: int = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     assert self._proc, "ts_proxy is not running."
     self._proc.set_traffic_settings(rtt_ms, in_kbps, out_kbps, window, timeout)
 
@@ -160,11 +161,11 @@ class TsProxyServer:
     self._proc = None
     return err
 
-  def __enter__(self):
+  def __enter__(self) -> Self:
     self.start()
     return self
 
-  def __exit__(self, unused_exc_type, unused_exc_val, unused_exc_tb):
+  def __exit__(self, unused_exc_type, unused_exc_val, unused_exc_tb) -> None:
     self.stop()
 
 
@@ -326,12 +327,13 @@ class TsProxyProcess:
         break
     return command_output
 
-  def set_traffic_settings(self,
-                           rtt_ms: Optional[int] = None,
-                           in_kbps: Optional[int] = None,
-                           out_kbps: Optional[int] = None,
-                           window: Optional[int] = None,
-                           timeout=ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+  def set_traffic_settings(
+      self,
+      rtt_ms: Optional[int] = None,
+      in_kbps: Optional[int] = None,
+      out_kbps: Optional[int] = None,
+      window: Optional[int] = None,
+      timeout: float | int = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     if rtt_ms is not None and self._rtt_ms != rtt_ms:
       assert rtt_ms >= 0, f"Invalid rtt value: {rtt_ms}"
       self._send_command(f"set rtt {rtt_ms}", timeout)
@@ -373,7 +375,7 @@ class TsProxyTrafficShaper(TrafficShaper):
                rtt_ms: Optional[int] = None,
                in_kbps: Optional[int] = None,
                out_kbps: Optional[int] = None,
-               window: Optional[int] = None):
+               window: Optional[int] = None) -> None:
     super().__init__(browser_platform)
     if not ts_proxy_path:
       if maybe_ts_proxy_path := TsProxyFinder(self.host_platform).path:
@@ -416,7 +418,7 @@ class TsProxyTrafficShaper(TrafficShaper):
         "rtt_ms": self._ts_proxy.rtt_ms,
         "in_kbps": self._ts_proxy.in_kbps,
         "out_kbps": self._ts_proxy.out_kbps,
-        "window": self._ts_proxy.window
+        "window": self._ts_proxy.window,
     }
     try:
       logging.info("TRAFFIC SHAPING: Pausing")
@@ -425,7 +427,8 @@ class TsProxyTrafficShaper(TrafficShaper):
       yield None
     finally:
       logging.info("TRAFFIC SHAPING: Restoring settings")
-      self._ts_proxy.set_traffic_settings(**old_settings)
+      self._ts_proxy.set_traffic_settings(
+          **old_settings, timeout=ts_proxy_settings.DEFAULT_TIMEOUT)
 
   def _create_remapping_ts_proxy(self, network) -> TsProxyServer:
     return TsProxyServer(

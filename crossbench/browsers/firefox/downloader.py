@@ -64,7 +64,7 @@ class FirefoxDownloader(Downloader):
             path.name.endswith(cls.ARCHIVE_SUFFIX))
 
   def __init__(self, version_identifier: str | LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform):
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert not platform_name
     firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(browser_platform.key)

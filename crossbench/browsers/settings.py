@@ -25,19 +25,21 @@ if TYPE_CHECKING:
 class Settings:
   """Container object for browser agnostic settings."""
 
-  def __init__(self,
-               flags: Optional[FlagsData] = None,
-               js_flags: Optional[FlagsData] = None,
-               cache_dir: Optional[pth.AnyPath] = None,
-               network: Optional[Network] = None,
-               driver_path: Optional[pth.AnyPath] = None,
-               viewport: Optional[Viewport] = None,
-               splash_screen: Optional[SplashScreen] = None,
-               platform: Optional[plt.Platform] = None,
-               secrets: Secrets = Secrets(),
-               driver_logging: bool = False,
-               wipe_system_user_data: bool = False,
-               http_request_timeout: dt.timedelta = dt.timedelta()):
+  def __init__(
+      self,
+      flags: Optional[FlagsData] = None,
+      js_flags: Optional[FlagsData] = None,
+      cache_dir: Optional[pth.AnyPath] = None,
+      network: Optional[Network] = None,
+      driver_path: Optional[pth.AnyPath] = None,
+      viewport: Optional[Viewport] = None,
+      splash_screen: Optional[SplashScreen] = None,
+      platform: Optional[plt.Platform] = None,
+      secrets: Secrets = Secrets(),
+      driver_logging: bool = False,
+      wipe_system_user_data: bool = False,
+      http_request_timeout: dt.timedelta = dt.timedelta()
+  ) -> None:
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)
     self._cache_dir = cache_dir

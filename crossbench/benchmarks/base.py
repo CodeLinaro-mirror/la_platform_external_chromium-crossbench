@@ -275,7 +275,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                story_cls: Type[PressBenchmarkStoryT],
                patterns: Sequence[str],
                separate: bool = False,
-               url: Optional[str] = None):
+               url: Optional[str] = None) -> None:
     self.url: str | None = url
     self._selected_names: OrderedSet[str] = OrderedSet()
     super().__init__(story_cls, patterns, separate)
@@ -473,7 +473,7 @@ class PressBenchmark(SubStoryBenchmark):
 
   def __init__(self,
                stories: Sequence[Story],
-               custom_url: Optional[str] = None):
+               custom_url: Optional[str] = None) -> None:
     super().__init__(stories)
     self.custom_url = custom_url
     if custom_url:

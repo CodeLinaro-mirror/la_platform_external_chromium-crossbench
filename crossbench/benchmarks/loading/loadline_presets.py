@@ -32,8 +32,8 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
-CONFIG_DIR = config.config_dir()
-LOADLINE_DIR = CONFIG_DIR / "benchmark" / "loadline"
+CONFIG_DIR: pth.LocalPath = config.config_dir()
+LOADLINE_DIR: pth.LocalPath = CONFIG_DIR / "benchmark" / "loadline"
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.

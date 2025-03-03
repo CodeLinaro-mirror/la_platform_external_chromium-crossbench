@@ -26,7 +26,7 @@ class Story(abc.ABC):
   def __init__(self,
                name: str,
                duration: dt.timedelta = dt.timedelta(seconds=15),
-               secrets: Optional[Secrets] = None):
+               secrets: Optional[Secrets] = None) -> None:
     assert name, "Invalid page name"
     self._name = safe_filename(name)
     self._duration = duration

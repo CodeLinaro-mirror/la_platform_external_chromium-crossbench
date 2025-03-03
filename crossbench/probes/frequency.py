@@ -68,7 +68,7 @@ class FrequencyProbe(EnvModifier):
   IS_GENERAL_PURPOSE = True
   PRODUCES_DATA = False
 
-  def __init__(self, cpus: CPUFrequencyMap):
+  def __init__(self, cpus: CPUFrequencyMap) -> None:
     super().__init__()
     self._cpu_frequency_map: CPUFrequencyMap = cpus
 

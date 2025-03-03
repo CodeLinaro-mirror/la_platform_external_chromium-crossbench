@@ -33,10 +33,11 @@ SCRIPTS_DIR = pth.LocalPath(__file__).parent / "chromeos_scripts"
 
 class ChromeOSViewportInfo:
 
-  def __init__(self, device_pixel_ratio, window_outer_width, window_inner_width,
-               window_inner_height, screen_width, screen_height,
-               screen_avail_width, screen_avail_height, window_offset_x,
-               window_offset_y,
+  def __init__(self, device_pixel_ratio: float, window_outer_width: int,
+               window_inner_width: int, window_inner_height: int,
+               screen_width: int, screen_height: int, screen_avail_width: int,
+               screen_avail_height: int, window_offset_x: int,
+               window_offset_y: int,
                element_rect: Optional[DisplayRectangle]) -> None:
     # The actual screen width and height in pixels.
     # Corrects for any zoom/scaling factors.
@@ -258,14 +259,14 @@ E: <time> 0000 0000 0
 
 class ChromeOSInputActionRunner(DefaultActionRunner):
 
-  def __init__(self):
+  def __init__(self) -> None:
     super().__init__()
     self._touch_device: TouchDevice | None = None
     self._mouse_process: subprocess.Popen | None = None
 
     atexit.register(self._kill_mouse_process)
 
-  def _kill_mouse_process(self):
+  def _kill_mouse_process(self) -> None:
     if self._mouse_process:
       self._mouse_process.kill()
       self._mouse_process.wait()
@@ -446,10 +447,11 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
       return (click_location, viewport_info)
     raise RuntimeError("Missing coordinates")
 
-  def _get_viewport_info(self,
-                         actions: Actions,
-                         selector: Optional[str],
-                         scroll_into_view=False) -> ChromeOSViewportInfo:
+  def _get_viewport_info(
+      self,
+      actions: Actions,
+      selector: Optional[str],
+      scroll_into_view: bool = False) -> ChromeOSViewportInfo:
 
     script = ""
     if selector:

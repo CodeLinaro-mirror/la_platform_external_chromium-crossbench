@@ -68,17 +68,17 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
                *args,
                directory: Optional[str] = None,
                extra_headers: Optional[Mapping[str, str]] = None,
-               **kwargs):
+               **kwargs) -> None:
     self._extra_headers: immutabledict[str, str] = (
         immutabledict(extra_headers) if extra_headers else immutabledict())
     super().__init__(*args, directory=directory, **kwargs)
 
-  def end_headers(self):
+  def end_headers(self) -> None:
     if self._extra_headers:
       self._send_custom_headers()
     super().end_headers()
 
-  def _send_custom_headers(self):
+  def _send_custom_headers(self) -> None:
     for key, value in self._extra_headers.items():
       self.send_header(key, value)
 
@@ -91,7 +91,7 @@ class LocalFileNetwork(Network):
                path: LocalPath,
                url: Optional[str],
                traffic_shaper: Optional[TrafficShaper] = None,
-               browser_platform: Optional[plt.Platform] = None):
+               browser_platform: Optional[plt.Platform] = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
     self._path = path
     self._host, self._port = self._parse_url(url)
@@ -134,7 +134,7 @@ class LocalFileNetwork(Network):
     message = email.parser.BytesParser().parsebytes(header_file.read_bytes())
     return immutabledict(message)
 
-  def _validate_extra_headers(self):
+  def _validate_extra_headers(self) -> None:
     for key, value in self._extra_headers.items():
       if key.lower() in _CONFLICTING_EXTRA_HEADERS:
         logging.error(

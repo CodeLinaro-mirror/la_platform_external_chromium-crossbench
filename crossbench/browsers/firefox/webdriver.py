@@ -90,7 +90,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
 class FirefoxDriverFinder:
   RELEASES_URL = "https://api.github.com/repos/mozilla/geckodriver/releases"
 
-  def __init__(self, browser: FirefoxWebDriver):
+  def __init__(self, browser: FirefoxWebDriver) -> None:
     self.browser = browser
     self.platform = browser.platform
     self.extension = ""

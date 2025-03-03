@@ -69,7 +69,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   def __init__(self,
                label: str,
                path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     assert settings, "Android browser needs custom settings and platform"
     self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
     self._previous_command_line_contents: str | None = None
@@ -172,7 +172,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self.platform.adb.grant_permissions(self.android_package)
 
 
-  def _setup_window(self):
+  def _setup_window(self) -> None:
     logging.debug("%s: Skipping viewport settings %s on %s",
                   type(self).__name__, self.viewport, self)
 
@@ -192,7 +192,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   def __init__(self,
                label: str,
                path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     if self.is_apk_helper(path):
       raise ValueError(
           "Locally built chrome version needs package, got empty path")

@@ -38,8 +38,7 @@ class WPRCloudBinary:
   file_hash: str
 
   @property
-  @override
-  def url(self):
+  def url(self) -> str:
     return f"{WPR_BASE_URL}/wpr_go_{self.file_hash}"
 
 
@@ -78,7 +77,7 @@ class WprReplayNetwork(ReplayNetwork):
                wpr_go_bin: Optional[LocalPath] = None,
                browser_platform: Platform = PLATFORM,
                persist_server: bool = False,
-               inject_deterministic_script: bool = True):
+               inject_deterministic_script: bool = True) -> None:
     super().__init__(archive, traffic_shaper, browser_platform)
     self._server: WprReplayServer | None = None
     self._tmp_dir: AnyPath | None = None
@@ -124,7 +123,7 @@ class WprReplayNetwork(ReplayNetwork):
     with super().open(session):
       yield self
 
-  def _ensure_server_started(self, session: BrowserSessionRunGroup):
+  def _ensure_server_started(self, session: BrowserSessionRunGroup) -> None:
     log_dir = session.browser_dir if self._persist_server else session.out_dir
     if not self._server or not self._persist_server:
       self._server = self._create_server(log_dir)
@@ -174,7 +173,7 @@ class WprReplayNetwork(ReplayNetwork):
 class LocalWprReplayNetwork(WprReplayNetwork):
 
   @override
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> None:
     if not wpr_go_bin:
       if local_wpr_go := WprGoToolFinder(self.host_platform).path:
         wpr_go_bin = self.host_platform.local_path(local_wpr_go)
@@ -231,7 +230,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     return platform.is_android or platform.is_chromeos
 
   @override
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> None:
     assert RemoteWprReplayNetwork.is_compatible(self.browser_platform)
     if wpr_go_bin:
       if wpr_go_bin.suffix == ".go":

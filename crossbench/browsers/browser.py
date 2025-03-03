@@ -54,7 +54,7 @@ class Browser(abc.ABC):
   def __init__(self,
                label: str,
                path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     self._settings = settings or Settings()
     self._platform = self._settings.platform
     self.label: str = label
@@ -437,5 +437,5 @@ class Browser(abc.ABC):
     # Poor-man's hash, browsers should be unique.
     return hash(id(self))
 
-  def performance_mark(self, name: str):
+  def performance_mark(self, name: str) -> None:
     self.js("performance.mark(arguments[0]);", arguments=[name])

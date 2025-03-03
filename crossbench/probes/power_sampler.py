@@ -85,7 +85,7 @@ class PowerSamplerProbe(Probe):
                bin_path: Optional[AnyPath] = None,
                sampling_interval: dt.timedelta = dt.timedelta(),
                samplers: Sequence[SamplerType] = SAMPLERS,
-               wait_for_battery: bool = True):
+               wait_for_battery: bool = True) -> None:
     super().__init__()
     self._bin_path: AnyPath | None = bin_path
     if not self._bin_path:
@@ -149,7 +149,8 @@ class PowerSamplerProbe(Probe):
         return maybe_path
     raise self.missing_power_sampler_error(browser_platform, maybe_build_dir)
 
-  def missing_power_sampler_error(self, browser_platform, maybe_build_dir):
+  def missing_power_sampler_error(self, browser_platform,
+                                  maybe_build_dir) -> ProbeValidationError:
     is_build_dir = browser_platform.is_file(maybe_build_dir / "args.gn")
     if not is_build_dir:
       maybe_build_dir = browser_platform.path(

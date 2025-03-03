@@ -116,7 +116,7 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
 
 class WildcardCPUFrequencyMap(CPUFrequencyMap):
 
-  def __init__(self, frequencies: Dict):
+  def __init__(self, frequencies: Dict) -> None:
     if len(frequencies) != 1:
       raise argparse.ArgumentTypeError(
           f"A wildcard ({_WILDCARD_CONFIG_KEY}) in "
@@ -143,7 +143,7 @@ class WildcardCPUFrequencyMap(CPUFrequencyMap):
 
 class ExplicitCPUFrequencyMap(CPUFrequencyMap):
 
-  def __init__(self, frequencies: Dict):
+  def __init__(self, frequencies: Dict) -> None:
     typed_map: Dict[str, FrequencyType] = {}
     for k, v in frequencies.items():
       with exception.annotate_argparsing(f"Parsing cpu frequency: {k}, {v}"):

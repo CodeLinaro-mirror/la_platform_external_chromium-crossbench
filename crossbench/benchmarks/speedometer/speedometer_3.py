@@ -251,7 +251,7 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
                measurement_method: Optional[MeasurementMethod] = None,
                viewport: Optional[vp.Viewport] = None,
                shuffle_seed: ShuffleSeedT = None,
-               url: Optional[str] = None):
+               url: Optional[str] = None) -> None:
     self._sync_wait = DurationParser.positive_or_zero_duration(
         sync_wait or dt.timedelta(0), "sync_wait")
     self._sync_warmup = DurationParser.positive_or_zero_duration(
@@ -388,7 +388,7 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
                sync_wait: Optional[dt.timedelta] = None,
                sync_warmup: Optional[dt.timedelta] = None,
                viewport: Optional[vp.Viewport] = None,
-               shuffle_seed: ShuffleSeedT = None):
+               shuffle_seed: ShuffleSeedT = None) -> None:
     self.measurement_method = measurement_method
     self.sync_wait = sync_wait
     self.sync_warmup = sync_warmup
@@ -442,7 +442,7 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
   def __init__(self,
                stories: Sequence[Story],
                custom_url: Optional[str] = None,
-               detailed_metrics: bool = False):
+               detailed_metrics: bool = False) -> None:
     self._detailed_metrics = detailed_metrics
     super().__init__(stories, custom_url)
 

@@ -30,7 +30,7 @@ class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
   pass
 
 
-IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
+IOS_UUID_RE: re.Pattern[str] = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 
 
 def driver_path(
@@ -187,7 +187,7 @@ class DriverConfig(ConfigObject):
         help="Path to the adb binary, only valid for Android.")
     return parser
 
-  def __post_init__(self):
+  def __post_init__(self) -> None:
     if not self.type:
       raise ValueError(f"{type(self).__name__}.type cannot be None.")
     try:

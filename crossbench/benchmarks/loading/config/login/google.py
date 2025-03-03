@@ -62,14 +62,14 @@ class GoogleLogin(PresetLoginBlock):
       else:
         self._standard_login(action, secret)
 
-  def _standard_login(self, action, secret):
+  def _standard_login(self, action: Actions, secret) -> None:
     self._submit_login_field(action, "Enter your password", secret.password,
                              "passwordNext")
     action.wait_js_condition(
         "return document.URL.startsWith('https://myaccount.google.com');", 0.2,
         10)
 
-  def _test_account_login(self, action, secret):
+  def _test_account_login(self, action: Actions, secret) -> None:
     self._submit_login_field(action, "Enter trusted contact\\’s email",
                              secret.password, "verifycontactNext")
     # TODO: handle account passkey setup, for now each test account needs a

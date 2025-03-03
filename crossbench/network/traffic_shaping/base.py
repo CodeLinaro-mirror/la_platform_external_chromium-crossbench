@@ -23,7 +23,7 @@ TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
 class TrafficShaper(abc.ABC):
 
-  def __init__(self, browser_platform: Platform):
+  def __init__(self, browser_platform: Platform) -> None:
     self._browser_platform = browser_platform
     self._is_running = False
 

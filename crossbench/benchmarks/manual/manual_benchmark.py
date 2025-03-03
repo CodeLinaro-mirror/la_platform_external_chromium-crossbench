@@ -29,7 +29,7 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
   STORY_NAME = "manual"
 
   def __init__(self, start_after: Optional[dt.timedelta],
-               run_for: Optional[dt.timedelta]):
+               run_for: Optional[dt.timedelta]) -> None:
     self._start_after = start_after
     self._run_for = run_for
     duration = ((start_after or dt.timedelta()) +

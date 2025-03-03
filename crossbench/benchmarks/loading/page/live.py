@@ -97,5 +97,5 @@ assert not PAGE_LIST, "PAGE_LIST was already initialized."
 PAGE_LIST.extend(LIVE_PAGES)
 
 PAGES: Dict[str, LivePage] = {page.name: page for page in LIVE_PAGES}
-PAGE_LIST_SMALL = (PAGES["facebook"], PAGES["maps"], PAGES["timesofindia"],
-                   PAGES["cnn"])
+PAGE_LIST_SMALL: Tuple[LivePage, ...] = (PAGES["facebook"], PAGES["maps"],
+                                         PAGES["timesofindia"], PAGES["cnn"])

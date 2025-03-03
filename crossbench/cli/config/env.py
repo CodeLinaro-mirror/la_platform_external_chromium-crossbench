@@ -179,10 +179,11 @@ _config_strict = EnvironmentConfig(
     browser_allow_existing_process=False,
     require_probes=True,
 )
-_config_battery = _config_strict.merge(
+_config_battery: EnvironmentConfig = _config_strict.merge(
     EnvironmentConfig(power_use_battery=True))
-_config_power = _config_strict.merge(EnvironmentConfig(power_use_battery=False))
-_config_catan = _config_strict.merge(
+_config_power: EnvironmentConfig = _config_strict.merge(
+    EnvironmentConfig(power_use_battery=False))
+_config_catan: EnvironmentConfig = _config_strict.merge(
     EnvironmentConfig(
         screen_brightness_percent=65,
         system_forbidden_process_names=["terminal", "iterm2"],

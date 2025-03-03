@@ -45,7 +45,7 @@ class WaitForElementAction(Action):
                expected_count: int,
                or_more: bool,
                timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0):
+               index: int = 0) -> None:
     self._selector = selector
     self._expected_count = expected_count
     self._or_more = or_more

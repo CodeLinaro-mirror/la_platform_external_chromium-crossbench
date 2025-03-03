@@ -7,12 +7,14 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
 
 from crossbench.helper.durations import TimeScope
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from types import TracebackType
+
   from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.exception import ExceptionAnnotationScope
@@ -33,14 +35,15 @@ class Actions(TimeScope):
 
   _max_end_datetime: dt.datetime
 
-  def __init__(self,
-               message: str,
-               run: Run,
-               runner: Optional[Runner] = None,
-               browser: Optional[Browser] = None,
-               verbose: bool = False,
-               measure: bool = True,
-               timeout: dt.timedelta = dt.timedelta()):
+  def __init__(
+      self,
+      message: str,
+      run: Run,
+      runner: Optional[Runner] = None,
+      browser: Optional[Browser] = None,
+      verbose: bool = False,
+      measure: bool = True,
+      timeout: dt.timedelta = dt.timedelta()) -> None:
     assert message, "Actions need a name"
     super().__init__(message)
     self._exception_annotation: ExceptionAnnotationScope = run.exceptions.info(
@@ -77,7 +80,9 @@ class Actions(TimeScope):
       sys.stdout.write(f"   {self._message.ljust(30)}\r")
     return self
 
-  def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
+  def __exit__(self, exc_type: Optional[Type[BaseException]],
+               exc_value: Optional[BaseException],
+               exc_traceback: Optional[TracebackType]) -> None:
     self._is_active = False
     self._exception_annotation.__exit__(exc_type, exc_value, exc_traceback)
     super().__exit__(exc_type, exc_value, exc_traceback)

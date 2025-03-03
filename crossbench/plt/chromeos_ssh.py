@@ -28,7 +28,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   AUTOLOGIN_PATH = pth.AnyPosixPath("/usr/local/autotest/bin/autologin.py")
   DEVTOOLS_PORT_PATH = pth.AnyPosixPath("/home/chronos/DevToolsActivePort")
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
     self._username: str | None = None
     # `/tmp` on ChromeOS is mounted with `noexec` flag.

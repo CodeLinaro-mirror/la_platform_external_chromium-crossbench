@@ -43,12 +43,14 @@ NETWORK_PRESETS: str = "|".join(
     re.escape(preset.value) for preset in NetworkSpeedPreset)  # pytype: disable=missing-parameter
 ENV_PRESETS: str = "|".join(re.escape(preset) for preset in ENV_CONFIG_PRESETS)
 
-SHORT_FORM_RE = re.compile(r"((?P<driver>\w{3,}):)??"
-                           r"(?P<path>([A-Z]:[/\\])?[^:]+)"
-                           f"(:(?P<network>{NETWORK_PRESETS}))?"
-                           f"(:(?P<env>{ENV_PRESETS}))?")
-ANDROID_PACKAGE_RE = re.compile(r"[a-z]+(\.[a-z]+){2,}")
-VERSION_FOR_RANGE_RE = re.compile(r"(?P<prefix>[^\d]*)(?P<milestone>\d+)")
+SHORT_FORM_RE: re.Pattern[str] = re.compile(
+    r"((?P<driver>\w{3,}):)??"
+    r"(?P<path>([A-Z]:[/\\])?[^:]+)"
+    f"(:(?P<network>{NETWORK_PRESETS}))?"
+    f"(:(?P<env>{ENV_PRESETS}))?")
+ANDROID_PACKAGE_RE: re.Pattern[str] = re.compile(r"[a-z]+(\.[a-z]+){2,}")
+VERSION_FOR_RANGE_RE: re.Pattern[str] = re.compile(
+    r"(?P<prefix>[^\d]*)(?P<milestone>\d+)")
 
 
 @dataclasses.dataclass(frozen=True)

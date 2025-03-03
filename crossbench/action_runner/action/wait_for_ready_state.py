@@ -37,7 +37,7 @@ class WaitForReadyStateAction(Action):
   def __init__(self,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                ready_state: ReadyState = ReadyState.COMPLETE,
-               index: int = 0):
+               index: int = 0) -> None:
     self._ready_state = ready_state
     super().__init__(timeout, index)
 

@@ -37,7 +37,7 @@ class MultiException(ValueError):
   are automatically added to active ExceptionAnnotator in an
   ExceptionAnnotationScope."""
 
-  def __init__(self, message: str, exceptions: ExceptionAnnotator):
+  def __init__(self, message: str, exceptions: ExceptionAnnotator) -> None:
     super().__init__(message)
     self.exceptions: ExceptionAnnotator = exceptions
 
@@ -337,8 +337,9 @@ class ArgumentTypeMultiException(MultiException, argparse.ArgumentTypeError):
   pass
 
 
-def annotate_argparsing(*stack_entries: str,
-                        exceptions: TExceptionTypes = (Exception,)):
+def annotate_argparsing(
+    *stack_entries: str, exceptions: TExceptionTypes = (Exception,)
+) -> ExceptionAnnotationScope:
   """Use this to annotate argument parsing-related code blocks to get more
   readable annotated exception back.
   - Wraps multiple exception in an ArgumentTypeMultiException

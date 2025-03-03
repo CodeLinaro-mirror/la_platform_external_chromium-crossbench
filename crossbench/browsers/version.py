@@ -50,7 +50,7 @@ class BrowserVersionChannel(_BrowserVersionChannelMixin, enum.Enum):
 
 class BrowserVersionParseError(ValueError):
 
-  def __init__(self, name: str, msg: str, version: str):
+  def __init__(self, name: str, msg: str, version: str) -> None:
     self._version = version
     super().__init__(f"Invalid {name} {repr(version)}: {msg}")
 
@@ -63,7 +63,7 @@ class BrowserVersionNoChannelError(ValueError):
   pass
 
 
-_VERSION_DIGITS_ONLY_RE = re.compile(r"\d+(\.\d+)*")
+_VERSION_DIGITS_ONLY_RE: re.Pattern[str] = re.compile(r"\d+(\.\d+)*")
 
 
 @functools.total_ordering

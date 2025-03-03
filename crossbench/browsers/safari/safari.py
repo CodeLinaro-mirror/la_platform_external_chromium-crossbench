@@ -58,7 +58,7 @@ class Safari(Browser):
   def __init__(self,
                label: str,
                path: pth.AnyPath,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings=settings)
     assert self.platform.is_macos, "Safari only works on MacOS"
     self.bundle_name: str = ""

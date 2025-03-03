@@ -56,7 +56,7 @@ class ChromeHistogramMetric(abc.ABC):
 
 class ChromeHistogramCountMetric(ChromeHistogramMetric):
 
-  def __init__(self, histogram_name: str):
+  def __init__(self, histogram_name: str) -> None:
     super().__init__(f"{histogram_name}_count", histogram_name)
 
   @override
@@ -67,7 +67,7 @@ class ChromeHistogramCountMetric(ChromeHistogramMetric):
 
 class ChromeHistogramMeanMetric(ChromeHistogramMetric):
 
-  def __init__(self, histogram_name: str):
+  def __init__(self, histogram_name: str) -> None:
     super().__init__(f"{histogram_name}_mean", histogram_name)
 
   @override
@@ -78,7 +78,7 @@ class ChromeHistogramMeanMetric(ChromeHistogramMetric):
 
 class ChromeHistogramPercentileMetric(ChromeHistogramMetric):
 
-  def __init__(self, histogram_name: str, percentile: int):
+  def __init__(self, histogram_name: str, percentile: int) -> None:
     super().__init__(f"{histogram_name}_p{percentile}", histogram_name)
     self._percentile = percentile
 
@@ -88,7 +88,7 @@ class ChromeHistogramPercentileMetric(ChromeHistogramMetric):
     return delta.diff_percentile(baseline, self._percentile)
 
 
-PERCENTILE_METRIC_RE = re.compile(r"^p(\d+)$")
+PERCENTILE_METRIC_RE: re.Pattern[str] = re.compile(r"^p(\d+)$")
 
 
 def parse_histogram_metrics(value: Any,
@@ -237,7 +237,7 @@ class ChromeHistogramSample:
                mean: Optional[float] = 0,
                flags: int = 0,
                bucket_counts: Optional[Dict[int, int]] = None,
-               bucket_maxes: Optional[Dict[int, int]] = None):
+               bucket_maxes: Optional[Dict[int, int]] = None) -> None:
     self._name = name
     self._count = count
     self._mean = mean

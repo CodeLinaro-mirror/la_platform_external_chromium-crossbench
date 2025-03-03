@@ -234,7 +234,7 @@ class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
   def __init__(self,
                stories: Sequence[Story],
                custom_url: Optional[str] = None,
-               detailed_metrics: bool = False):
+               detailed_metrics: bool = False) -> None:
     self._detailed_metrics = detailed_metrics
     super().__init__(stories, custom_url)
 

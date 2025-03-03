@@ -51,22 +51,22 @@ class BrowserDriverType(StrEnumWithHelp):
     raise argparse.ArgumentTypeError(f"Unknown driver type: {repr(value)}")
 
   @property
-  def is_remote_driver(self):
+  def is_remote_driver(self) -> bool:
     if self in (BrowserDriverType.CHROMEOS_SSH, BrowserDriverType.LINUX_SSH):
       return True
     return False
 
   @property
-  def is_local_driver(self):
+  def is_local_driver(self) -> bool:
     return not self.is_remote_driver
 
   @property
-  def is_remote_browser(self):
+  def is_remote_browser(self) -> bool:
     if self in (BrowserDriverType.ANDROID, BrowserDriverType.CHROMEOS_SSH,
                 BrowserDriverType.LINUX_SSH):
       return True
     return False
 
   @property
-  def is_local_browser(self):
+  def is_local_browser(self) -> bool:
     return not self.is_remote_browser

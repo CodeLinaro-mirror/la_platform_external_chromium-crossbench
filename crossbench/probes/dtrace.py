@@ -40,7 +40,7 @@ class DTraceProbe(Probe):
         "script_path", required=True, type=PathParser.non_empty_file_path)
     return parser
 
-  def __init__(self, script_path: LocalPath):
+  def __init__(self, script_path: LocalPath) -> None:
     super().__init__()
     self._script_path = script_path.resolve()
 

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class RemotePlatformMixin:
 
-  def __init__(self, host_platform: Platform):
+  def __init__(self, host_platform: Platform) -> None:
     super().__init__()
     self._host_platform: Platform = host_platform
 
@@ -48,10 +48,10 @@ class RemotePopen(subprocess.Popen):
   def __init__(self,
                platform: Platform,
                args: ListCmdArgs,
-               bufsize=-1,
+               bufsize: int = -1,
                stdout=None,
                stderr=None,
-               stdin=None):
+               stdin=None) -> None:
     self._platform: Platform = platform
     assert self._platform.is_remote, (
         f"Cannot create remote process on local platform {self._platform}")

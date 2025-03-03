@@ -38,7 +38,7 @@ class InteractivePage(Page):
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta(),
                run_login: bool = True,
-               run_setup: bool = True):
+               run_setup: bool = True) -> None:
     assert name, "missing name"
     self._name: str = name
     assert isinstance(blocks, tuple)

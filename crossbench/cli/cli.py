@@ -187,7 +187,8 @@ class CrossBenchCLI:
     self.parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}")
 
-  def _setup_subparsers(self):
+  def _setup_subparsers(
+      self) -> argparse._SubParsersAction[CrossBenchArgumentParser]:
     subparsers = self.parser.add_subparsers(
         title="Subcommands",
         dest="subcommand",

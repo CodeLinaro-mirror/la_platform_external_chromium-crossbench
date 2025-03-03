@@ -196,23 +196,25 @@ class ProfilingProbe(Probe):
               "details."))
     return parser
 
-  def __init__(self,
-               js: bool = True,
-               v8_interpreted_frames: bool = True,
-               pprof: bool = True,
-               cleanup: CleanupMode = CleanupMode.AUTO,
-               browser_process: bool = False,
-               spare_renderer_process: bool = False,
-               target: TargetMode = TargetMode.BROWSER_APP_ONLY,
-               pin_renderer_main_core: Optional[int] = None,
-               call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
-               frequency: Optional[int | str] = None,
-               clockid: Optional[str] = None,
-               count: Optional[int] = None,
-               cpu: Sequence[int] = (),
-               events: Sequence[str] = (),
-               grouped_events: Sequence[str] = (),
-               add_counters: Sequence[str] = ()):
+  def __init__(
+      self,
+      js: bool = True,
+      v8_interpreted_frames: bool = True,
+      pprof: bool = True,
+      cleanup: CleanupMode = CleanupMode.AUTO,
+      browser_process: bool = False,
+      spare_renderer_process: bool = False,
+      target: TargetMode = TargetMode.BROWSER_APP_ONLY,
+      pin_renderer_main_core: Optional[int] = None,
+      call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
+      frequency: Optional[int | str] = None,
+      clockid: Optional[str] = None,
+      count: Optional[int] = None,
+      cpu: Sequence[int] = (),
+      events: Sequence[str] = (),
+      grouped_events: Sequence[str] = (),
+      add_counters: Sequence[str] = ()
+  ) -> None:
     super().__init__()
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
@@ -447,7 +449,7 @@ class ProfilingProbe(Probe):
     # Disable sandbox to write profiling data
     browser.flags.set("--no-sandbox")
 
-  def _set_renderer_cmd_prefix(self, browser):
+  def _set_renderer_cmd_prefix(self, browser) -> None:
     assert not browser.platform.is_remote, (
         "Copying renderer command prefix to remote platform is "
         "not implemented yet")
@@ -491,7 +493,7 @@ class ProfilingProbe(Probe):
     for i, run in enumerate(filtered_runs):
       self._log_run_result_summary(run, i)
 
-  def _log_results_overview(self, filtered_runs):
+  def _log_results_overview(self, filtered_runs) -> None:
     if len(filtered_runs) <= 1:
       return
     if any(run.browser_platform.is_macos for run in filtered_runs):

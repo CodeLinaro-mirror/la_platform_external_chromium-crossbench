@@ -87,11 +87,11 @@ class DefaultActionRunner(ActionRunner):
 
   def get_selector_script(self,
                           selector: str,
-                          check_element_exists=False,
-                          scroll_into_view=False,
-                          check_element_rect=False,
-                          click=False,
-                          return_on_success=False) -> Tuple[str, str]:
+                          check_element_exists: bool = False,
+                          scroll_into_view: bool = False,
+                          check_element_rect: bool = False,
+                          click: bool = False,
+                          return_on_success: bool = False) -> Tuple[str, str]:
     # TODO: support more selector types
 
     script: str = ""
@@ -138,7 +138,7 @@ class DefaultActionRunner(ActionRunner):
         """, 0.2, timeout.total_seconds())
 
   @override
-  def teardown(self, run: Run):
+  def teardown(self, run: Run) -> None:
     del run
     if self._bond:
       self._bond.teardown()

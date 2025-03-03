@@ -43,7 +43,7 @@ class MacOSProfilingContext(PosixProfilingContext):
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
-  def _start_xctrace(self, pid: Optional[int] = None):
+  def _start_xctrace(self, pid: Optional[int] = None) -> None:
     assert self.browser_platform.is_file(_MAC_TRACE_TEMPLATE_PATH), (
         f"Didn't find {_MAC_TRACE_TEMPLATE_PATH}")
 

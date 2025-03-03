@@ -146,7 +146,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
   def __init__(self,
                substories: Sequence[str] = (),
                iterations: Optional[int] = None,
-               url: Optional[str] = None):
+               url: Optional[str] = None) -> None:
     self._iterations: int = NumberParser.positive_int(
         iterations or self.DEFAULT_ITERATIONS,
         "iteration count",
@@ -288,7 +288,7 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
                patterns: Sequence[str],
                separate: bool = False,
                url: Optional[str] = None,
-               iterations: Optional[int] = None):
+               iterations: Optional[int] = None) -> None:
     self.iterations = iterations
     assert issubclass(story_cls, SpeedometerStory)
     super().__init__(story_cls, patterns, separate, url)

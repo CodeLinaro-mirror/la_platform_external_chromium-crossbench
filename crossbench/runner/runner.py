@@ -217,7 +217,7 @@ class Runner:
                cool_down_threshold: Optional[ThermalStatus] = None,
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
-               create_symlinks: bool = True):
+               create_symlinks: bool = True) -> None:
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
@@ -279,7 +279,7 @@ class Runner:
     # so all other probes have data by the time we write the results summary.
     assert isinstance(self._probes[0], ResultsSummaryProbe)
 
-  def _attach_internal_probes(self):
+  def _attach_internal_probes(self) -> None:
     for probe_cls in all_probes.NON_CONFIGURABLE_INTERNAL_PROBES:
       default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
       self._attach_default_probe(default_probe)

@@ -66,7 +66,8 @@ class TraceProcessorQueryConfig(ConfigObject):
 class CrossbenchTraceUriResolver(TraceUriResolver):
   PREFIX = "crossbench"
 
-  def __init__(self, traces: Iterable[Run] | TraceProcessorProbeContext):
+  def __init__(self,
+               traces: Iterable[Run] | TraceProcessorProbeContext) -> None:
 
     def metadata(run: Run) -> Dict[str, str]:
       return {
@@ -137,7 +138,7 @@ class TraceProcessorProbe(Probe):
                batch: bool,
                metrics: Iterable[str],
                queries: Iterable[TraceProcessorQueryConfig],
-               trace_processor_bin: Optional[pth.LocalPath] = None):
+               trace_processor_bin: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
     self._batch = batch
     self._metrics = tuple(metrics)
@@ -337,7 +338,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
           zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
     return LocalProbeResult(trace=(self.merged_trace_path,))
 
-  def _maybe_run_tp(self):
+  def _maybe_run_tp(self) -> ProbeResult:
     if not self.probe.needs_tp_run:
       return LocalProbeResult()
 
@@ -373,5 +374,5 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       return LocalProbeResult(json=files)
 
   @property
-  def merged_trace_path(self):
+  def merged_trace_path(self) -> pth.LocalPath:
     return self.local_result_path / "merged_trace.zip"

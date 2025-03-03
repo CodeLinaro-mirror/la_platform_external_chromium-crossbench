@@ -61,7 +61,7 @@ class Downloader(abc.ABC):
 
   def __init__(self, archive_path_or_version_identifier: str | pth.LocalPath,
                browser_type: str, platform_name: str,
-               browser_platform: Platform):
+               browser_platform: Platform) -> None:
     assert browser_type, "Missing browser_type"
     self._browser_type = browser_type
     self._browser_platform = browser_platform
@@ -141,7 +141,7 @@ class Downloader(abc.ABC):
     self._install_archive(self._archive_path)
     return self._installed_app_path()
 
-  def _try_download_version_archive(self):
+  def _try_download_version_archive(self) -> bool:
     if self._archive_path.exists():
       return False
     archive_version, archive_url = self._find_archive_url()

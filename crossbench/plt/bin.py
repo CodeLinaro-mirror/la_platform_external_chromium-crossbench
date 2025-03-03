@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 class BinaryNotFoundError(RuntimeError):
 
-  def __init__(self, binary: Binary, platform: Platform):
+  def __init__(self, binary: Binary, platform: Platform) -> None:
     self.binary = binary
     self.platform = platform
     super().__init__(self._create_message())
@@ -33,7 +33,7 @@ class BinaryNotFoundError(RuntimeError):
 
 class UnsupportedPlatformError(BinaryNotFoundError):
 
-  def __init__(self, binary: Binary, platform: Platform, expected: str):
+  def __init__(self, binary: Binary, platform: Platform, expected: str) -> None:
     self.expected_platform_name: str = expected
     super().__init__(binary, platform)
 
@@ -135,7 +135,7 @@ class Binary:
 
 class PosixBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, posix=name)
 
   @override
@@ -146,7 +146,7 @@ class PosixBinary(Binary):
 
 class MacOsBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, macos=name)
 
   @override
@@ -157,7 +157,7 @@ class MacOsBinary(Binary):
 
 class LinuxBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, linux=name)
 
   @override
@@ -168,7 +168,7 @@ class LinuxBinary(Binary):
 
 class AndroidBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, android=name)
 
   @override
@@ -179,7 +179,7 @@ class AndroidBinary(Binary):
 
 class WinBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyWindowsPath(name).name, win=name)
 
   @override
@@ -190,7 +190,7 @@ class WinBinary(Binary):
 
 class ChromeOSBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, chromeos=name)
 
   @override

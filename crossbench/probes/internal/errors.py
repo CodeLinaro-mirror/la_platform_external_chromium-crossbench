@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Type
+from typing import TYPE_CHECKING, Iterable, Type
 
 from typing_extensions import override
 
@@ -16,10 +16,11 @@ from crossbench.probes.results import EmptyProbeResult
 if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
+  from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
-  from crossbench.types import Json
+  from crossbench.types import Json, JsonList
 
 
 class ErrorsProbe(InternalJsonResultProbe):
@@ -43,9 +44,9 @@ class ErrorsProbe(InternalJsonResultProbe):
     return self._merge_group(
         group, (story_group.results for story_group in group.story_groups))
 
-  def _merge_group(self, group,
+  def _merge_group(self, group: RunGroup,
                    results_iter: Iterable[ProbeResultDict]) -> ProbeResult:
-    merged_errors: List[Dict[str, Any]] = []
+    merged_errors: JsonList = []
 
     for results in results_iter:
       result = results[self]

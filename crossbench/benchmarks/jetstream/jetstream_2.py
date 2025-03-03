@@ -108,7 +108,7 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
   def __init__(self,
                substories: Sequence[str] = (),
                iterations: Optional[int] = None,
-               url: Optional[str] = None):
+               url: Optional[str] = None) -> None:
     self._iterations: int | None = iterations
     if iterations is not None:
       self._iterations = NumberParser.positive_int(
@@ -211,7 +211,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
                patterns: Sequence[str],
                separate: bool = False,
                url: Optional[str] = None,
-               iterations: Optional[int] = None):
+               iterations: Optional[int] = None) -> None:
     self.iterations = iterations
     assert issubclass(story_cls, JetStream2Story)
     super().__init__(story_cls, patterns, separate, url)

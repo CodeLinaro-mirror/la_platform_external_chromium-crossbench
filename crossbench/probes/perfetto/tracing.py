@@ -8,7 +8,7 @@ import argparse
 import enum
 import logging
 import sys
-from typing import TYPE_CHECKING, Dict, Optional, Self, Sequence, Set, Type
+from typing import FrozenSet, TYPE_CHECKING, Dict, Optional, Self, Sequence, Set, Type
 
 from typing_extensions import override
 
@@ -26,13 +26,13 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
 
 # TODO: go over these again and clean the categories.
-MINIMAL_CONFIG = frozenset((
+MINIMAL_CONFIG: FrozenSet[str] = frozenset((
     "blink.user_timing",
     "toplevel",
     "v8",
     "v8.execute",
 ))
-DEVTOOLS_TRACE_CONFIG = frozenset((
+DEVTOOLS_TRACE_CONFIG: FrozenSet[str] = frozenset((
     "blink.console",
     "blink.user_timing",
     "devtools.timeline",
@@ -50,7 +50,7 @@ DEVTOOLS_TRACE_CONFIG = frozenset((
     "toplevel",
     "v8.execute",
 ))
-V8_TRACE_CONFIG = frozenset((
+V8_TRACE_CONFIG: FrozenSet[str] = frozenset((
     "blink",
     "blink.user_timing",
     "browser",
@@ -86,7 +86,7 @@ V8_TRACE_CONFIG = frozenset((
     "v8.execute",
     "wayland",
 ))
-V8_GC_STATS_TRACE_CONFIG = V8_TRACE_CONFIG | frozenset(
+V8_GC_STATS_TRACE_CONFIG: FrozenSet[str] = V8_TRACE_CONFIG | frozenset(
     ("disabled-by-default-v8.gc_stats",))
 
 TRACE_PRESETS: Dict[str, frozenset[str]] = {

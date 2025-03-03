@@ -314,7 +314,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
                                                  timeout=5)
       self._record_process = None
 
-  def _convert_to_constant_framerate(self):
+  def _convert_to_constant_framerate(self) -> None:
     # On some platforms (android for certain) we get VFR videos which confuse
     # the next video extraction / conversion steps.
     vrf_video_result = (

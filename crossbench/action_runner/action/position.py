@@ -26,7 +26,7 @@ class CoordinatesConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value):
+  def parse_str(cls, value: str):
     del value
     raise NotImplementedError("Cannot create CoordinatesConfig from string")
 
@@ -55,7 +55,7 @@ class SelectorConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value) -> Self:
+  def parse_str(cls, value: str) -> Self:
     selector = ObjectParser.non_empty_str(value, "selector")
     return cls(
         selector=selector, required=True, scroll_into_view=False, wait=False)
@@ -82,7 +82,7 @@ class PositionConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value) -> Self:
+  def parse_str(cls, value: str) -> Self:
     return cls(selector=SelectorConfig.parse_str(value))
 
   @classmethod

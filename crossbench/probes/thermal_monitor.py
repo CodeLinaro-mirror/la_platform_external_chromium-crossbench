@@ -32,7 +32,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
-THERMAL_STATUS_RE = re.compile(r"Thermal Status: (?P<status>\d+)")
+THERMAL_STATUS_RE: re.Pattern[str] = re.compile(
+    r"Thermal Status: (?P<status>\d+)")
 COOLDOWN_WAIT_RANGE = WaitRange(
     min=dt.timedelta(seconds=1), timeout=dt.timedelta(minutes=5))
 
@@ -70,7 +71,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
 
   def __init__(self,
                cool_down_time: dt.timedelta = dt.timedelta(),
-               threshold: Optional[ThermalStatus] = None):
+               threshold: Optional[ThermalStatus] = None) -> None:
     super().__init__()
     self._threshold: ThermalStatus | None = threshold
     self._cool_down_time: dt.timedelta = cool_down_time

@@ -44,7 +44,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return self.sh_stdout("uname", "-r").strip()
 
   @functools.lru_cache(maxsize=1)
-  def _raw_machine_arch(self):
+  def _raw_machine_arch(self) -> str:
     if self.is_local:
       return super()._raw_machine_arch()
     return self.sh_stdout("uname", "-m").strip()
@@ -363,7 +363,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       yield remote_path / name
 
   @override
-  def chmod(self, path: pth.AnyPathLike, mode: int):
+  def chmod(self, path: pth.AnyPathLike, mode: int) -> None:
     if self.is_local:
       super().chmod(path, mode)
     else:
@@ -372,7 +372,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       self.sh("chmod", oct_mode, self.path(path))
 
   @override
-  def send_signal(self, process: ProcessLike, signal: Signals):
+  def send_signal(self, process: ProcessLike, signal: Signals) -> None:
     if self.is_local:
       super().send_signal(process, signal)
       return
@@ -474,7 +474,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
   @override
   def popen(self,
             *args: CmdArg,
-            bufsize=-1,
+            bufsize: int = -1,
             shell: bool = False,
             stdout=None,
             stderr=None,

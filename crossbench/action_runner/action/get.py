@@ -53,7 +53,7 @@ class GetAction(BaseDurationAction):
                timeout: dt.timedelta = ACTION_TIMEOUT,
                ready_state: ReadyState = ReadyState.ANY,
                target: WindowTarget = WindowTarget.SELF,
-               index: int = 0):
+               index: int = 0) -> None:
     if not url:
       raise ValueError(f"{self}.url is missing")
     self._url: str = url

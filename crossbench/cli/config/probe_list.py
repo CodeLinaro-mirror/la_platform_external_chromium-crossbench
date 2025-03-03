@@ -72,9 +72,11 @@ class ProbeListConfig(ConfigObject):
   def parse_str(cls, value: str) -> Self:
     raise NotImplementedError()
 
-  def __init__(self,
-               probe_configs: Iterable[ProbeConfig] = tuple(),
-               probes: Iterable[Probe] = tuple()):
+  def __init__(
+      self,
+      probe_configs: Iterable[ProbeConfig] = tuple(),
+      probes: Iterable[Probe] = tuple()
+  ) -> None:
     self._probes: Dict[str, Probe] = {}
     if not probe_configs and not probes:
       return

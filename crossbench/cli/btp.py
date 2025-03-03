@@ -26,7 +26,8 @@ DEFAULT_CONFIG_PATH = (
     ROOT_DIR / "config" / "benchmark" / "loadline" / "probe_config.hjson")
 
 class MergedTraceUriResolver(TraceUriResolver):
-  def __init__(self, result_path: pth.LocalPath):
+
+  def __init__(self, result_path: pth.LocalPath) -> None:
 
     def metadata(path) -> Dict[str, str]:
       parts = str(path).split("/")
@@ -47,7 +48,8 @@ class MergedTraceUriResolver(TraceUriResolver):
     return self._resolved
 
 class BTPUtil:
-  def __init__(self):
+
+  def __init__(self) -> None:
     self.parser = CrossBenchArgumentParser(
       description=("Runs trace processor queries in a batch mode on existing "
                    "benchmark results, without re-running the benchmark "
@@ -76,7 +78,7 @@ class BTPUtil:
         help=("Name of the query to compute (the query must be present in the "
               "trace_processor/queries/ dir). Repeat for multiple queries."))
 
-  def run(self, argv: Sequence[str]):
+  def run(self, argv: Sequence[str]) -> None:
     args = self.parser.parse_args(argv)
 
     probe_config = ProbeListConfig.parse_path(args.probe_config)

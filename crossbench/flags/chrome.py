@@ -200,7 +200,7 @@ class ChromeFlags(Flags):
       del filtered["--enable-benchmarking"]
     return filtered
 
-  def enable_benchmarking_extension(self):
+  def enable_benchmarking_extension(self) -> None:
     if self.field_trial_flags:
       self.set("--enable-benchmarking", "enable-field-trial-config")
     else:
@@ -319,7 +319,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     for flag_name, features_str in self.items():
       yield f"{flag_name}={features_str}"
 
-  def __bool__(self):
+  def __bool__(self) -> bool:
     return bool(self._enabled) or bool(self._disabled)
 
   def __str__(self) -> str:

@@ -58,7 +58,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def __init__(self,
                label: str,
                path: Optional[AnyPath] = None,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings)
     self._driver_path: AnyPath | None = self._settings.driver_path
     self._driver_log_file: LocalPath | None = None

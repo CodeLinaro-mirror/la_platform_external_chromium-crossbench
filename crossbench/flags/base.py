@@ -22,7 +22,7 @@ class Freezable:
     self._frozen = False
     super().__init__(*args, **kwargs)
 
-  def __hash__(self):
+  def __hash__(self) -> int:
     self.freeze()
     return hash(str(self))
 
@@ -210,7 +210,7 @@ class BasicFlags(Freezable, collections.UserDict):
     filtered_flags = {k: v for k, v in self.items() if k in flag_names_set}
     return self.__class__(filtered_flags)
 
-  def contains_without_value(self, key: str):
+  def contains_without_value(self, key: str) -> bool:
     return key in self.data and self.data[key] is None
 
   def _describe(self, flag_name: str) -> str:

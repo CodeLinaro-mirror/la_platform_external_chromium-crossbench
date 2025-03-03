@@ -77,7 +77,7 @@ class WebPageReplayProbe(Probe):
                key_file: Optional[LocalPath] = None,
                cert_file: Optional[LocalPath] = None,
                use_test_root_certificate: bool = False,
-               record_setup: bool = True):
+               record_setup: bool = True) -> None:
     super().__init__()
     host_platform = plt.PLATFORM
     if not wpr_go_bin:

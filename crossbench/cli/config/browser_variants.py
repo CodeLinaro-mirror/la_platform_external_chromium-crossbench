@@ -87,8 +87,9 @@ class BaseBrowserVariantsConfig(abc.ABC):
   def from_cli_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
     pass
 
-  def __init__(self,
-               browser_lookup_override: Optional[BrowserLookupTableT] = None):
+  def __init__(
+      self,
+      browser_lookup_override: Optional[BrowserLookupTableT] = None) -> None:
     self.flags_config: FlagsConfig = FlagsConfig()
     self._variants: List[BrowserVariantConfig] = []
     self._unique_labels: Set[str] = set()
@@ -175,7 +176,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
     self._unique_labels.add(label)
     return True
 
-  def _validate_flags(self, browser_name: str, flag_group_names: List[str]):
+  def _validate_flags(self, browser_name: str,
+                      flag_group_names: List[str]) -> None:
     if isinstance(flag_group_names, str):
       flag_group_names = [flag_group_names]
     if not isinstance(flag_group_names, list):
@@ -391,7 +393,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
   def __init__(self,
                raw_config_data: Optional[Dict[str, Any]] = None,
                browser_lookup_override: Optional[BrowserLookupTableT] = None,
-               args: Optional[argparse.Namespace] = None):
+               args: Optional[argparse.Namespace] = None) -> None:
     super().__init__(browser_lookup_override)
     if raw_config_data:
       assert args, "args object needed when loading from dict."

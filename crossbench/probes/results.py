@@ -40,7 +40,7 @@ class ProbeResult(abc.ABC):
                url: Optional[Iterable[str]] = None,
                file: Optional[Iterable[pth.LocalPath]] = None,
                trace: Optional[Iterable[pth.LocalPath]] = None,
-               **kwargs: Iterable[pth.LocalPath]):
+               **kwargs: Iterable[pth.LocalPath]) -> None:
     self._url_list: Tuple[str, ...] = ()
     if url:
       self._url_list = ObjectParser.unique_sequence(
@@ -91,7 +91,7 @@ class ProbeResult(abc.ABC):
               tmp_files: Dict[str, OrderedSet[pth.LocalPath]],
               files: Iterable[pth.LocalPath],
               suffix: Optional[str] = None,
-              allow_duplicates=False) -> None:
+              allow_duplicates: bool = False) -> None:
     for file in files:
       self._append(
           tmp_files, file, suffix=suffix, allow_duplicates=allow_duplicates)
@@ -236,7 +236,7 @@ class BrowserProbeResult(ProbeResult):
                result_origin: ProbeResultOrigin,
                url: Optional[Iterable[str]] = None,
                file: Optional[Iterable[pth.AnyPath]] = None,
-               **kwargs: Iterable[pth.AnyPath]):
+               **kwargs: Iterable[pth.AnyPath]) -> None:
     self._browser_file = file
     local_file: Iterable[pth.LocalPath] | None = None
     local_kwargs: Dict[str, Iterable[pth.LocalPath]] = {}

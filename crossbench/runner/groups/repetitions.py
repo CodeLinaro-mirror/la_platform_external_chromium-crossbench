@@ -41,7 +41,7 @@ class RepetitionsRunGroup(RunGroup):
             group=lambda _: cls(throw),
             sort_key=None).values())
 
-  def __init__(self, throw: bool = False):
+  def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._cache_temperatures_groups: List[CacheTemperaturesRunGroup] = []
     self._cache_temperature_repetitions_groups: Dict[
@@ -120,7 +120,7 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
 
   def __init__(self,
                repetitions_group: RepetitionsRunGroup,
-               throw: bool = False):
+               throw: bool = False) -> None:
     super().__init__(throw)
     self._repetitions_group = repetitions_group
     self._set_path(repetitions_group.path)

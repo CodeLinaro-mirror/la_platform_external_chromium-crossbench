@@ -21,7 +21,7 @@ PROCESS_NOT_FOUND_EXCEPTIONS: Final = (psutil.NoSuchProcess,
 
 def terminate_gracefully(platform: Platform,
                          process: ProcessLike,
-                         timeout=1,
+                         timeout: int = 1,
                          signal: Optional[Signals] = None) -> None:
   """Graceful process termination
     1. Send the provided signal or SIGTERM by default

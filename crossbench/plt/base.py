@@ -414,7 +414,7 @@ class Platform(abc.ABC):
     return self._binary_lookup_override.get(os.fspath(binary_name))
 
   def set_binary_lookup_override(self, binary_name: pth.AnyPathLike,
-                                 new_path: Optional[pth.AnyPath]):
+                                 new_path: Optional[pth.AnyPath]) -> None:
     name = os.fspath(binary_name)
     if new_path is None:
       prev_result = self._binary_lookup_override.pop(name, None)
@@ -447,7 +447,7 @@ class Platform(abc.ABC):
     finally:
       self.set_binary_lookup_override(binary_name, prev_override)
 
-  def send_signal(self, process: ProcessLike, signal: Signals):
+  def send_signal(self, process: ProcessLike, signal: Signals) -> None:
     self.assert_is_local()
     if isinstance(process, int):
       os.kill(process, signal.value)
@@ -462,7 +462,7 @@ class Platform(abc.ABC):
 
   def terminate_gracefully(self,
                            process: ProcessLike,
-                           timeout=1,
+                           timeout: int = 1,
                            signal: Optional[Signals] = None) -> None:
     proc_helper.terminate_gracefully(self, process, timeout, signal)
 
@@ -795,7 +795,7 @@ class Platform(abc.ABC):
     # TODO: support remotely
     return self.local_path(path).glob(pattern)
 
-  def chmod(self, path: pth.AnyPathLike, mode: int):
+  def chmod(self, path: pth.AnyPathLike, mode: int) -> None:
     self.local_path(path).chmod(mode)
 
   def file_size(self, path: pth.AnyPathLike) -> int:
@@ -838,7 +838,7 @@ class Platform(abc.ABC):
 
   def popen(self,
             *args: CmdArg,
-            bufsize=-1,
+            bufsize: int = -1,
             shell: bool = False,
             stdout=None,
             stderr=None,

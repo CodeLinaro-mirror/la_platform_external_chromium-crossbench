@@ -23,10 +23,10 @@ from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
 from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
 
-_WPR_PORT_RE = re.compile(r".*Starting server on "
-                          r"(?P<protocol>http|https)://"
-                          r"(?P<host>[^:]+):"
-                          r"(?P<port>\d+)")
+_WPR_PORT_RE: re.Pattern[str] = re.compile(r".*Starting server on "
+                                           r"(?P<protocol>http|https)://"
+                                           r"(?P<host>[^:]+):"
+                                           r"(?P<port>\d+)")
 
 
 class WprStartupError(RuntimeError):
@@ -49,7 +49,7 @@ class WprBase(abc.ABC):
                key_file: Optional[AnyPath] = None,
                cert_file: Optional[AnyPath] = None,
                log_path: Optional[LocalPath] = None,
-               platform: Platform = PLATFORM):
+               platform: Platform = PLATFORM) -> None:
     self._platform: Platform = platform
     self._process: subprocess.Popen | None = None
     self._log_path: LocalPath | None = None
@@ -202,7 +202,7 @@ class WprBase(abc.ABC):
     if not self._process:
       raise WprStartupError(f"Could not start {type(self).__name__}")
 
-  def _handle_startup_error(self):
+  def _handle_startup_error(self) -> None:
     logging.error("WPR: Could not start %s", type(self).__name__)
     if not self._log_path or not self._log_path.exists():
       return
@@ -354,7 +354,7 @@ class WprReplayServer(WprBase):
                log_path: Optional[LocalPath] = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
-               platform: Platform = PLATFORM):
+               platform: Platform = PLATFORM) -> None:
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
     self._rules_file: AnyPath | None = None

@@ -82,7 +82,8 @@ class AppendDebuggerProbeAction(argparse.Action):
 
 class BenchmarkSubcommand(CrossbenchSubcommand):
 
-  def __init__(self, cli: CrossBenchCLI, benchmark_cls: Type[Benchmark]):
+  def __init__(self, cli: CrossBenchCLI,
+               benchmark_cls: Type[Benchmark]) -> None:
     self._benchmark_cls = benchmark_cls
     self._runner_cls: Type[Runner] = Runner
     self._runner: Runner | None = None
@@ -751,6 +752,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     with exception.annotate_argparsing(
         f"Parsing {benchmark_cls.NAME} arguments"):
       return benchmark_cls.from_cli_args(args)
+    raise exception.UnreachableError()
 
   def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:
     del args

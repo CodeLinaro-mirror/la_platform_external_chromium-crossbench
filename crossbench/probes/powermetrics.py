@@ -67,7 +67,7 @@ class PowerMetricsProbe(Probe):
 
   def __init__(self,
                sampling_interval: dt.timedelta = dt.timedelta(),
-               samplers: Sequence[SamplerType] = SAMPLERS):
+               samplers: Sequence[SamplerType] = SAMPLERS) -> None:
     super().__init__()
     self._sampling_interval = sampling_interval
     if sampling_interval.total_seconds() < 0:

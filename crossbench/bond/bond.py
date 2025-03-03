@@ -128,7 +128,7 @@ class BondClient:
   _credentials: service_account.Credentials
   _meetings_with_bots: Set[str]
 
-  def __init__(self, secret: ServiceAccount):
+  def __init__(self, secret: ServiceAccount) -> None:
     self._credentials = service_account.Credentials.from_service_account_info(
         secret.to_json(), scopes=[SCOPE])
     self._meetings_with_bots = set()
@@ -181,7 +181,7 @@ class BondClient:
     self._meetings_with_bots.add(conference_code)
     return bot_ids
 
-  def run_script(self, conference_code: str, script: str):
+  def run_script(self, conference_code: str, script: str) -> None:
     request_body_json = {
         "script": script,
         "conference": {
@@ -191,7 +191,7 @@ class BondClient:
     self._post_with_retry(f"{ENDPOINT}/v1/conference/{conference_code}/script",
                           request_body_json)
 
-  def remove_all_bots(self, conference_code: str):
+  def remove_all_bots(self, conference_code: str) -> None:
     request_body_json = {
         "conference": {
             "conference_code": conference_code,
@@ -203,7 +203,7 @@ class BondClient:
         f"{ENDPOINT}/v1/conference/{conference_code}/bots:remove",
         request_body_json)
 
-  def teardown(self):
+  def teardown(self) -> None:
     for conference_code in self._meetings_with_bots:
       self.remove_all_bots(conference_code)
     self._meetings_with_bots = set()

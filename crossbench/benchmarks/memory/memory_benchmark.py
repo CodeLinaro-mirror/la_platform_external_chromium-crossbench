@@ -120,7 +120,7 @@ class MemoryProbeContext(ActionRunnerListener,
   def to_json(self, actions: Actions) -> JsonDict:
     return {"alive_tab_count": self._tab_count - 1}
 
-  def _increment_tab_count(self):
+  def _increment_tab_count(self) -> None:
     self._tab_count += 1
 
   def _record_navigation_time(self, run: Run) -> None:
@@ -155,7 +155,7 @@ class MemoryProbeContext(ActionRunnerListener,
               "is: %s ", run.browser, self._tab_count - 1)
           raise StopStoryException("Found a page that has been reloaded.")
 
-  def _check_error_msg(self, e: Exception):
+  def _check_error_msg(self, e: Exception) -> bool:
     if isinstance(e, selenium.common.exceptions.WebDriverException
                  ) and "page crash" in str(e):
       return True

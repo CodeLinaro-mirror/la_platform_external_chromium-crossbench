@@ -26,7 +26,8 @@ if TYPE_CHECKING:
 
 
 GS_PREFIX = "gs://"
-GSUTIL_LS_MD5_RE = re.compile(r"Hash \(md5\):\s*([A-Za-z0-9+/]+)=*")
+GSUTIL_LS_MD5_RE: re.Pattern[str] = re.compile(
+    r"Hash \(md5\):\s*([A-Za-z0-9+/]+)=*")
 
 ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
@@ -37,7 +38,7 @@ class ReplayNetwork(Network):
   def __init__(self,
                archive: pth.LocalPath | str,
                traffic_shaper: Optional[TrafficShaper] = None,
-               browser_platform: Optional[plt.Platform] = None):
+               browser_platform: Optional[plt.Platform] = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
     self._archive_path = self._ensure_archive(archive)
 

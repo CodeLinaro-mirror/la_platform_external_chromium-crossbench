@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 class ChromeDriverFinder:
   driver_path: pth.LocalPath
 
-  def __init__(self, browser: ChromiumBasedWebDriver):
+  def __init__(self, browser: ChromiumBasedWebDriver) -> None:
     self.browser = browser
     self.platform: Platform = browser.platform
     self.host_platform: Platform = browser.platform.host_platform

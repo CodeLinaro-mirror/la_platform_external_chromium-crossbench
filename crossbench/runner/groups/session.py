@@ -204,7 +204,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     assert isinstance(details_json["flags"], tuple)
     details_json["flags"] += tuple(self._extra_flags)
 
-  def setup_selenium_options(self, options: ArgOptions):
+  def setup_selenium_options(self, options: ArgOptions) -> None:
     # Using only the first run, since all runs need to have the same probes.
     self.first_run.setup_selenium_options(options)
 
@@ -378,7 +378,7 @@ class ProbeSessionContextManager(ProbeContextManager[BrowserSessionRunGroup,
                                                      ProbeSessionContext]):
 
   def __init__(self, session: BrowserSessionRunGroup,
-               probe_results: ProbeResultDict):
+               probe_results: ProbeResultDict) -> None:
     super().__init__(session, probe_results)
 
   def get_probe_context(self, probe: Probe) -> Optional[ProbeSessionContext]:

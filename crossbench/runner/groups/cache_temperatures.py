@@ -38,7 +38,7 @@ class CacheTemperaturesRunGroup(RunGroup):
             group=lambda _: cls(throw),
             sort_key=None).values())
 
-  def __init__(self, throw: bool = False):
+  def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._runs: List[Run] = []
     self._story: Story | None = None

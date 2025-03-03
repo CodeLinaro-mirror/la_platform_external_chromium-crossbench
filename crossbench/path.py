@@ -24,7 +24,7 @@ LocalPosixPath: TypeAlias = pathlib.PosixPath
 
 LocalPathLike: TypeAlias = str | LocalPath
 
-_UNSAFE_FILENAME_CHARS_RE = re.compile(r"[^a-zA-Z0-9+\-_.]")
+_UNSAFE_FILENAME_CHARS_RE: re.Pattern[str] = re.compile(r"[^a-zA-Z0-9+\-_.]")
 
 
 def safe_filename(name: str) -> str:

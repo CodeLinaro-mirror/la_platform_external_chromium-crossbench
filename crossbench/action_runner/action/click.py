@@ -50,7 +50,7 @@ class ClickAction(InputSourceAction):
                duration: dt.timedelta = dt.timedelta(),
                verify: Optional[str] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0):
+               index: int = 0) -> None:
     self._position = position
     self._verify = verify
     super().__init__(source, duration, timeout, index)

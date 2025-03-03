@@ -85,8 +85,11 @@ class PerfettoProbe(Probe):
         help="Start perfetto tracing before launching the browser.")
     return parser
 
-  def __init__(self, textproto: str, perfetto_bin: pth.AnyPath,
-               tracebox_bin: pth.AnyPath, trace_browser_startup: bool = False):
+  def __init__(self,
+               textproto: str,
+               perfetto_bin: pth.AnyPath,
+               tracebox_bin: pth.AnyPath,
+               trace_browser_startup: bool = False) -> None:
     super().__init__()
     if not textproto:
       raise ValueError("Please specify a tracing config")
@@ -234,7 +237,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
         proc.stdout.decode("utf-8").rstrip(), "perfetto pid")
     atexit.register(self._stop_perfetto)
 
-  def _stop_perfetto(self):
+  def _stop_perfetto(self) -> None:
     if not self._perfetto_pid:
       return
     atexit.unregister(self._stop_perfetto)
@@ -280,7 +283,7 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
         self._probe).with_name("perfetto.trace.pb")
 
   @override
-  def setup(self):
+  def setup(self) -> None:
     super().setup()
     self._tracebox_proc = self._setup_tracebox()
 

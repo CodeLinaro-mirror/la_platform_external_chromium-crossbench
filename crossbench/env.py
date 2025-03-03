@@ -18,7 +18,7 @@ from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.path import LocalPath
+  from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import CmdArg, Platform
   from crossbench.probes.probe import Probe
 
@@ -58,7 +58,7 @@ class HostEnvironment:
                probes: Iterable[Probe],
                repetitions: int,
                config: Optional[EnvironmentConfig] = None,
-               validation_mode: ValidationMode = ValidationMode.THROW):
+               validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     self._wait_until = dt.datetime.now()
     self._config = config or EnvironmentConfig()
     self._out_dir = out_dir
@@ -398,20 +398,20 @@ class HostEnvironment:
         self._check_safari_cache_dir_access()
     self._check_results_dir_access()
 
-  def _check_safari_cache_dir_access(self):
+  def _check_safari_cache_dir_access(self) -> None:
     safari_cache_dir = (
         self.platform.home() /
         "Library/Containers/com.apple.Safari/Data/Library/Caches")
     if not self._has_read_write_access(safari_cache_dir):
       self._file_access_access_warning("Safari's cache directory")
 
-  def _check_results_dir_access(self):
+  def _check_results_dir_access(self) -> None:
     out_dir = self._out_dir.parent
     if self._has_read_write_access(out_dir):
       return
     self._file_access_access_warning(f"the parent result dir: {out_dir})")
 
-  def _has_read_write_access(self, test_dir) -> bool:
+  def _has_read_write_access(self, test_dir: AnyPathLike) -> bool:
     try:
       self.platform.mkdir(test_dir, exist_ok=True, parents=True)
       with self.platform.NamedTemporaryFile(

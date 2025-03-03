@@ -28,7 +28,7 @@ class ActionTypeConfigParser(ConfigParser):
   Action Configs. This way we can pop the 'value' or 'type' key from the
   config dict."""
 
-  def __init__(self):
+  def __init__(self) -> None:
     super().__init__(
         ActionType, unused_properties_mode=UnusedPropertiesMode.IGNORE)
     self.add_argument(
@@ -88,7 +88,9 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
         default=ACTION_TIMEOUT)
     return parser
 
-  def __init__(self, timeout: dt.timedelta = ACTION_TIMEOUT, index: int = 0):
+  def __init__(self,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
     self._timeout: dt.timedelta = timeout
     self._index = index
     self.validate()
