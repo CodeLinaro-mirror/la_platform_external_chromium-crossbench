@@ -4,11 +4,12 @@
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import functools
 import logging
-from typing import (Any, Dict, Final, Iterable, List, Optional, Self, Sequence,
-                    Set, Tuple, Type)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
+                    Self, Sequence, Set, Tuple, Type)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -18,12 +19,18 @@ from crossbench import exception
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.flags.base import Flags
+from crossbench.flags.chrome import ChromeFlags
+from crossbench.flags.js_flags import JSFlags
 from crossbench.parse import ObjectParser
+
+if TYPE_CHECKING:
+  from crossbench.flags.base import FlagsData
+
 
 DEFAULT_LABEL: Final[str] = "default"
 
 
-def _parse_flags(flag_data) -> Flags:
+def _parse_flags(flag_data: str | list | tuple | FlagsData | None) -> Flags:
   if not flag_data:
     return Flags().freeze()
   if isinstance(flag_data, str):
@@ -208,17 +215,31 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
     return cls(variants)
 
   @classmethod
-  def parse_args(cls, args: Iterable[str]) -> Self:
-    arg_groups = {}
-    current_label: str | None = None
-    current_flags = []
-    for arg in args:
-      flag = arg
-      current_flags.append(flag)
-    if not current_label:
-      assert DEFAULT_LABEL not in arg_groups
-      arg_groups[DEFAULT_LABEL] = current_flags
-    return cls.parse(arg_groups)
+  def parse_args(cls, args: argparse.Namespace) -> Self:
+    args_config = cls.config_from_args_flags(args)
+    return cls.parse(args_config)
+
+  @classmethod
+  def config_from_args_flags(
+      cls, args: argparse.Namespace) -> Dict[str, List[str] | str | None]:
+    initial_flags = ChromeFlags(_parse_flags(args.other_browser_args))
+    if args.enable_features:
+      initial_flags["--enable-features"] = args.enable_features
+    if args.disable_features:
+      initial_flags["--disable-features"] = args.disable_features
+    if args.enable_field_trial_config is True:
+      initial_flags.set("--enable-field-trial-config")
+    if args.enable_field_trial_config is False:
+      initial_flags.set("--disable-field-trial-config")
+
+    args_config: Dict[str, List[str] | str | None] = dict(initial_flags.items())
+    if args.js_flags:
+      # Create a variant for every js flag:
+      args_config["--js-flags"] = [
+          str(JSFlags.parse(flags)) for flags in args.js_flags
+      ]
+    return args_config
+
 
   def product(self, *args: Self) -> Self:
     return functools.reduce(lambda a, b: a.inner_product(b), args, self)

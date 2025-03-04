@@ -434,19 +434,93 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
       group_a.product(group_b)
     self.assertIn("different previous value", str(cm.exception))
 
-  def test_inline_groups_1(self):
-    group_inline = FlagsGroupConfig.parse_args(("--foo=1",))
+  def mock_args(self, **kwargs):
+    args = argparse.Namespace(
+        browser=kwargs.pop("browser", []),
+        browser_config=kwargs.pop("browser_config", None),
+        enable_features=kwargs.pop("enable_features", []),
+        disable_features=kwargs.pop("disable_features", []),
+        js_flags=kwargs.pop("js_flags", []),
+        enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
+        other_browser_args=kwargs.pop("other_browser_args", []))
+    assert not kwargs, f"got unused kwargss: {kwargs}"
+    return args
+
+  def test_parse_args_other_browser_args_1(self):
+    args = self.mock_args(other_browser_args=("--foo=1",))
+    group_args = FlagsGroupConfig.parse_args(args)
     group_a = FlagsGroupConfig.parse(("--foo=1",))
     group_b = FlagsGroupConfig.parse("--foo=1")
+    self.assertEqual(group_args, group_a)
+    self.assertEqual(group_args, group_b)
+
+  def test_parse_args_other_browser_args_2(self):
+    args = self.mock_args(other_browser_args=("--foo=1", "--bar"))
+    group_inline = FlagsGroupConfig.parse_args(args)
+    raw_flags = "--foo=1 --bar"
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
     self.assertEqual(group_inline, group_a)
     self.assertEqual(group_inline, group_b)
 
-  def test_inline_groups_2(self):
-    group_inline = FlagsGroupConfig.parse_args(("--foo=1", "--bar"))
-    group_a = FlagsGroupConfig.parse(("--foo=1 --bar"))
-    group_b = FlagsGroupConfig.parse("--foo=1 --bar")
+  def test_parse_args_features(self):
+    args = self.mock_args(
+        other_browser_args=("--foo=1", "--bar"),
+        enable_features="Feature1",
+        disable_features="Feature2")
+    group_inline = FlagsGroupConfig.parse_args(args)
+    raw_flags = ("--foo=1 --bar"
+                 " --enable-features=Feature1 --disable-features=Feature2")
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
     self.assertEqual(group_inline, group_a)
     self.assertEqual(group_inline, group_b)
+
+  def test_parse_args_enable_field_trials(self):
+    args = self.mock_args(enable_field_trial_config=True)
+    group_inline = FlagsGroupConfig.parse_args(args)
+    raw_flags = "--enable-field-trial-config"
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+
+  def test_parse_args_disable_field_trials(self):
+    args = self.mock_args(enable_field_trial_config=False)
+    group_inline = FlagsGroupConfig.parse_args(args)
+    raw_flags = "--disable-field-trial-config"
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+
+  def test_parse_args_js_flags_1(self):
+    args = self.mock_args(js_flags=["--max-opt=1,--log-all"])
+    group_inline = FlagsGroupConfig.parse_args(args)
+    raw_flags = "--js-flags='--max-opt=1,--log-all'"
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+
+  def test_parse_args_js_flags_2(self):
+    args = self.mock_args(js_flags=["--max-opt=1", "--log-all"])
+    group_inline = FlagsGroupConfig.parse_args(args)
+    group_a = FlagsGroupConfig.parse(
+        ("--js-flags=--max-opt=1", "--js-flags=--log-all"))
+    self.assertEqual(group_inline, group_a)
+
+  def test_parse_args_combined(self):
+    args = self.mock_args(
+        other_browser_args=("--bar"),
+        enable_features="Feature1",
+        js_flags=["--max-opt=1", "--log-all"])
+    group_inline = FlagsGroupConfig.parse_args(args)
+    group_a = FlagsGroupConfig.parse(
+        ("--bar --enable-features=Feature1 --js-flags=--max-opt=1",
+         "--bar --enable-features=Feature1 --js-flags=--log-all"))
+    self.assertEqual(group_inline, group_a)
+
 
 
 
