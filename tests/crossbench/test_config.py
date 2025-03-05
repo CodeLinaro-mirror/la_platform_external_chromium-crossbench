@@ -221,7 +221,10 @@ class ConfigParserTestCase(unittest.TestCase):
     with self.assertRaises(ValueError):
       self.parser.add_argument("any", type=None, depends_on=("other",))
 
-    with self.assertRaises(ValueError):
+    with self.assertRaises((ValueError, TypeError)):
+      # Raises ValueError on Python 3.11 because depends_on is not allowed.
+      # Raises TypeError on Python 3.12 because GenericEnum can't be called
+      # with multiple parameters.
       self.parser.add_argument("enum", type=GenericEnum, depends_on=("other",))
     with self.assertRaises(ValueError):
       self.parser.add_argument("enum", type=ConfigEnum, depends_on=("other",))
