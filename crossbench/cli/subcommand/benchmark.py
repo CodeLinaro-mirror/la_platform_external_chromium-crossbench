@@ -91,7 +91,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
   @property
   def runner(self) -> Runner:
-    assert self._runner, "No runnner"
+    assert self._runner, "No runner"
     return self._runner
 
   @override
@@ -122,7 +122,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--cool-down-threshold",
         type=ThermalStatus.parse,
         help=("Pause execution when the device reaches this thermal status. "
-              "Exucution resumes once the status drops below the threshold. "
+              "Execution resumes once the status drops below the threshold. "
               "Only available on Android."))
     cooldown_group.add_argument(
         "--cool-down-time",
