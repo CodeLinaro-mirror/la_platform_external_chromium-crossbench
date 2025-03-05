@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 from typing import TYPE_CHECKING, Iterable, List, Optional
 
 import sqlalchemy
@@ -31,8 +32,8 @@ class ResultsDB:
     if db_file:
       init_tables = not db_file.exists()
       engine_url = f"sqlite:///{self._db_file}"
-
-    self._engine = sqlalchemy.create_engine(engine_url, echo=True)
+    is_debug_logging = logging.getLogger().isEnabledFor(logging.DEBUG)
+    self._engine = sqlalchemy.create_engine(engine_url, echo=is_debug_logging)
     if init_tables:
       BaseRecord.metadata.create_all(self._engine)
 
