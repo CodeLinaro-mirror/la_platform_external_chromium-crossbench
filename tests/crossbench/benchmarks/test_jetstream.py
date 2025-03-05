@@ -16,9 +16,9 @@ from crossbench.benchmarks.jetstream.jetstream_2_1 import (
 from crossbench.benchmarks.jetstream.jetstream_2_2 import (
     JetStream22Benchmark, JetStream22Probe, JetStream22ProbeContext,
     JetStream22Story)
-from crossbench.benchmarks.jetstream.jetstream_3_0 import (
-    JetStream30Benchmark, JetStream30Probe, JetStream30ProbeContext,
-    JetStream30Story)
+from crossbench.benchmarks.jetstream.jetstream_main import (
+    JetStreamMainBenchmark, JetStreamMainProbe, JetStreamMainProbeContext,
+    JetStreamMainStory)
 from crossbench.probes.metric import MetricsMerger
 from tests import test_helper
 # Only import module to avoid exposing the abstract test classes to the runner.
@@ -155,31 +155,31 @@ class JetStream22TestCase(jetstream_helper.JetStream2BaseTestCase):
     return "jetstream_2.2"
 
 
-class JetStream30TestCase(jetstream_helper.JetStream3BaseTestCase):
+class JetStreamMainTestCase(jetstream_helper.JetStream3BaseTestCase):
 
   @property
   @override
   def benchmark_cls(self):
-    return JetStream30Benchmark
+    return JetStreamMainBenchmark
 
   @property
   @override
   def story_cls(self):
-    return JetStream30Story
+    return JetStreamMainStory
 
   @property
   @override
   def probe_cls(self):
-    return JetStream30Probe
+    return JetStreamMainProbe
 
   @property
   @override
   def probe_context_cls(self):
-    return JetStream30ProbeContext
+    return JetStreamMainProbeContext
 
   @property
   def name(self):
-    return "jetstream_3.0"
+    return "jetstream_main"
 
 
 if __name__ == "__main__":

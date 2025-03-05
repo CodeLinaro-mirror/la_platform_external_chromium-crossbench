@@ -23,6 +23,9 @@ from crossbench.benchmarks.speedometer.speedometer_3_0 import (
 from crossbench.benchmarks.speedometer.speedometer_3_1 import (
     Speedometer31Benchmark, Speedometer31Probe, Speedometer31ProbeContext,
     Speedometer31Story)
+from crossbench.benchmarks.speedometer.speedometer_main import (
+    SpeedometerMainBenchmark, SpeedometerMainProbe, SpeedometerMainProbeContext,
+    SpeedometerMainStory)
 from crossbench.browsers.viewport import Viewport
 from tests import test_helper
 from tests.crossbench.benchmarks.speedometer_helper import (
@@ -414,10 +417,38 @@ class Speedometer31TestCase(Speedometer3BaseTestCase):
     return "speedometer_3.1"
 
 
+class SpeedometeMainTestCase(Speedometer3BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return SpeedometerMainBenchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return SpeedometerMainStory
+
+  @property
+  @override
+  def probe_cls(self):
+    return SpeedometerMainProbe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return SpeedometerMainProbeContext
+
+  @property
+  @override
+  def name(self):
+    return "speedometer_main"
+
 #  Don't expose abstract BaseTestCase to test runner
 del SpeedometerBaseTestCase
 del Speedometer2BaseTestCase
 del Speedometer3BaseTestCase
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

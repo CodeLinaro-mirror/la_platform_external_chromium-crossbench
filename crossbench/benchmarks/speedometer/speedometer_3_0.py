@@ -13,6 +13,7 @@ from crossbench.benchmarks.speedometer.speedometer_3 import (
     Speedometer3Story)
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.base import VersionParts
   from crossbench.benchmarks.speedometer.speedometer import ProbeClsTupleT
 
 
@@ -49,7 +50,7 @@ class Speedometer30Benchmark(Speedometer3Benchmark):
 
   @classmethod
   @override
-  def version(cls) -> Tuple[int, ...]:
+  def version(cls) -> VersionParts:
     return (3, 0)
 
   @classmethod

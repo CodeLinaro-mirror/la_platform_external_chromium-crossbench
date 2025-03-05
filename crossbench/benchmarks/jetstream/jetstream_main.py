@@ -1,10 +1,10 @@
-# Copyright 2024 The Chromium Authors
+# Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 from __future__ import annotations
 
-from typing import Tuple, Type
+from typing import TYPE_CHECKING, Tuple, Type
 
 from typing_extensions import override
 
@@ -14,25 +14,28 @@ from crossbench.benchmarks.jetstream.jetstream_3 import (JetStream3Benchmark,
                                                          JetStream3Story,
                                                          ProbeClsTupleT)
 
+if TYPE_CHECKING:
+  from crossbench.benchmarks.base import VersionParts
 
-class JetStream30Probe(JetStream3Probe):
+
+class JetStreamMainProbe(JetStream3Probe):
   __doc__ = JetStream3Probe.__doc__
-  NAME: str = "jetstream_3.0"
+  NAME: str = "jetstream_main"
 
   @override
-  def get_context_cls(self) -> Type[JetStream30ProbeContext]:
-    return JetStream30ProbeContext
+  def get_context_cls(self) -> Type[JetStreamMainProbeContext]:
+    return JetStreamMainProbeContext
 
 
-class JetStream30ProbeContext(JetStream3ProbeContext):
+class JetStreamMainProbeContext(JetStream3ProbeContext):
   pass
 
 
-class JetStream30Story(JetStream3Story):
+class JetStreamMainStory(JetStream3Story):
   __doc__ = JetStream3Story.__doc__
-  NAME: str = "jetstream_3.0"
-  URL: str = "https://chromium-workloads.web.app/jetstream/v3.0/"
-  URL_OFFICIAL: str = "https://browserbench.org/JetStream3.0/"
+  NAME: str = "jetstream_main"
+  URL: str = "https://chromium-workloads.web.app/jetstream/main/"
+  URL_OFFICIAL: str = "https://chromium-workloads.web.app/jetstream/main/"
   SUBSTORIES: Tuple[str, ...] = (
       "WSL",
       "UniPoker",
@@ -120,21 +123,16 @@ class JetStream30Story(JetStream3Story):
   )
 
 
-class JetStream30Benchmark(JetStream3Benchmark):
+class JetStreamMainBenchmark(JetStream3Benchmark):
   """
-  Benchmark runner for JetStream 3.0.
+  Benchmark runner for the JetStream main developement vresion.
   """
 
-  NAME: str = "jetstream_3.0"
-  DEFAULT_STORY_CLS = JetStream30Story
-  PROBES: ProbeClsTupleT = (JetStream30Probe,)
+  NAME: str = "jetstream_main"
+  DEFAULT_STORY_CLS = JetStreamMainStory
+  PROBES: ProbeClsTupleT = (JetStreamMainProbe,)
 
   @classmethod
   @override
-  def version(cls) -> Tuple[int, ...]:
-    return (3, 0)
-
-  @classmethod
-  @override
-  def aliases(cls) -> Tuple[str, ...]:
-    return ("js3", "jetstream_3") + super().aliases()
+  def version(cls) -> VersionParts:
+    return ("main",)

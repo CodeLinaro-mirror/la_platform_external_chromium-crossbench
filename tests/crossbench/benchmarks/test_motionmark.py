@@ -19,6 +19,12 @@ from crossbench.benchmarks.motionmark.motionmark_1_2 import (
 from crossbench.benchmarks.motionmark.motionmark_1_3 import (
     MotionMark13Benchmark, MotionMark13Probe, MotionMark13ProbeContext,
     MotionMark13Story)
+from crossbench.benchmarks.motionmark.motionmark_1_3_1 import (
+    MotionMark131Benchmark, MotionMark131Probe, MotionMark131ProbeContext,
+    MotionMark131Story)
+from crossbench.benchmarks.motionmark.motionmark_main import (
+    MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
+    MotionMarkMainStory)
 from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -225,6 +231,52 @@ class MotionMark13TestCase(MotionMark1BaseTestCase):
   @override
   def probe_context_cls(self):
     return MotionMark13ProbeContext
+
+
+class MotionMark131TestCase(MotionMark1BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return MotionMark131Benchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return MotionMark131Story
+
+  @property
+  @override
+  def probe_cls(self):
+    return MotionMark131Probe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return MotionMark131ProbeContext
+
+
+class MotionMarkMainTestCase(MotionMark1BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return MotionMarkMainBenchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return MotionMarkMainStory
+
+  @property
+  @override
+  def probe_cls(self):
+    return MotionMarkMainProbe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return MotionMarkMainProbeContext
 
 
 del MotionMark1BaseTestCase

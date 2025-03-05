@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional,
-                    Sequence, Tuple, Type, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
+                    Tuple, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -378,6 +378,8 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     return self.story_cls.from_names(names, separate=separate, url=self.url)
 
 
+VersionParts: TypeAlias = Tuple[str] | Tuple[int, ...]
+
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS = PressBenchmarkStoryFilter
   DEFAULT_STORY_CLS: Type[
@@ -395,20 +397,29 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @abc.abstractmethod
-  def version(cls) -> Tuple[int, ...]:
+  def version(cls) -> VersionParts:
     raise NotImplementedError()
 
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    version = [str(v) for v in cls.version()]
+    raw_version: VersionParts = cls.version()
+    is_branch_version = (
+        len(raw_version) == 1 and isinstance(raw_version[0], str))
+    if not is_branch_version:
+      assert (all((isinstance(part, int)) for part in raw_version)), (
+          "All version parts should be integers.")
+    version = [str(v) for v in raw_version]
     assert version, "Expected non-empty version tuple."
     version_names = []
     dot_version = ".".join(version)
     for name in (cls.short_base_name(), cls.base_name()):
       assert name, "Expected non-empty base name."
-      version_names.append(f"{name}{dot_version}")
-      version_names.append(f"{name}_{dot_version}")
+      if not is_branch_version:
+        version_names.append(f"{name}{dot_version}")
+      version_name = f"{name}_{dot_version}"
+      if version_name != cls.NAME:
+        version_names.append(version_name)
     return tuple(version_names)
 
   @classmethod

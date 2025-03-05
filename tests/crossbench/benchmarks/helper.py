@@ -15,12 +15,10 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   @property
   @abc.abstractmethod
-  @override
-  def benchmark_cls(self):
+  def benchmark_cls(self) -> Type[benchmark.Benchmark]:
     pass
 
   @property
-  @override
   def story_cls(self):
     return self.benchmark_cls.DEFAULT_STORY_CLS
 
@@ -33,6 +31,9 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   def test_describe(self):
     self.assertIsInstance(self.benchmark_cls.describe(), dict)
+
+  def test_aliases(self):
+    self.assertNotIn(self.benchmark_cls.NAME, self.benchmark_cls.aliases())
 
 
 class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):

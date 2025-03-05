@@ -27,6 +27,13 @@ class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running
   as part of the presubmit"""
 
+  def get_test_subcommands(self, benchmark_cls) -> Tuple[str, ...]:
+    subcommands = (benchmark_cls.NAME,)
+    # Only test one alias for speeding up testing:
+    if aliases := benchmark_cls.aliases():
+      subcommands = subcommands + (aliases[0],)
+    return subcommands
+
   def test_subcommand_help_part_1(self):
     self.verify_subcommand_help(0)
 
@@ -59,7 +66,7 @@ class CliSlowTestCase(BaseCliTestCase):
 
   def verify_subcommand_help(self, chunk: int):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
-      subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
+      subcommands = self.get_test_subcommands(benchmark_cls)
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "--help")
@@ -101,7 +108,7 @@ class CliSlowTestCase(BaseCliTestCase):
 
   def verify_subcommand_help_subcommand(self, chunk: int):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
-      subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
+      subcommands = self.get_test_subcommands(benchmark_cls)
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "help")
@@ -143,7 +150,7 @@ class CliSlowTestCase(BaseCliTestCase):
 
   def verify_subcommand_describe_subcommand(self, chunk: int):
     for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
-      subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
+      subcommands = self.get_test_subcommands(benchmark_cls)
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "describe")

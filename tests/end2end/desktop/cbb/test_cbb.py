@@ -80,6 +80,14 @@ def test_speedometer_21(test_env: TestEnv, webdriver):
   run_benchmark(test_env, webdriver, benchmarks.Speedometer21Benchmark)
 
 
+def test_speedometer_30(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.Speedometer30Benchmark)
+
+
+def test_speedometer_31(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.Speedometer31Benchmark)
+
+
 def test_motionmark_12(test_env: TestEnv, webdriver):
   run_benchmark(test_env, webdriver, benchmarks.MotionMark12Benchmark)
 
@@ -88,12 +96,20 @@ def test_motionmark_13(test_env: TestEnv, webdriver):
   run_benchmark(test_env, webdriver, benchmarks.MotionMark13Benchmark)
 
 
+def test_motionmark_131(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.MotionMark131Benchmark)
+
+
 def test_jetstream_20(test_env: TestEnv, webdriver):
   run_benchmark(test_env, webdriver, benchmarks.JetStream20Benchmark)
 
 
 def test_jetstream_21(test_env: TestEnv, webdriver):
   run_benchmark(test_env, webdriver, benchmarks.JetStream21Benchmark)
+
+
+def test_jetstream_22(test_env: TestEnv, webdriver):
+  run_benchmark(test_env, webdriver, benchmarks.JetStream22Benchmark)
 
 
 if __name__ == "__main__":

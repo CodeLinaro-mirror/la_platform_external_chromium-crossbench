@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -14,6 +14,8 @@ from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Story,
                                                          ProbeClsTupleT)
 
+if TYPE_CHECKING:
+  from crossbench.benchmarks.base import VersionParts
 
 class JetStream21Probe(JetStream2Probe):
   __doc__ = JetStream2Probe.__doc__
@@ -46,5 +48,5 @@ class JetStream21Benchmark(JetStream2Benchmark):
 
   @classmethod
   @override
-  def version(cls) -> Tuple[int, ...]:
+  def version(cls) -> VersionParts:
     return (2, 1)

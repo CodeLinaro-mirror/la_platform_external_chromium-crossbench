@@ -63,6 +63,7 @@ class SpeedometerBaseTestCase(
     separate: bool = False
     custom_benchmark_url: str | None = None
 
+
   def test_iterations_kwargs(self):
     args = self.Namespace()
     self.benchmark_cls.from_cli_args(args)

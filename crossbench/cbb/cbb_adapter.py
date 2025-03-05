@@ -33,16 +33,22 @@ if TYPE_CHECKING:
   from crossbench.stories.story import Story
 
 press_benchmarks: List[Type[PressBenchmark]] = [
+    # Speedometer:
     benchmarks.Speedometer20Benchmark,
     benchmarks.Speedometer21Benchmark,
     benchmarks.Speedometer30Benchmark,
     benchmarks.Speedometer31Benchmark,
+    benchmarks.SpeedometerMainBenchmark,
+    # MotionMark:
     benchmarks.MotionMark12Benchmark,
     benchmarks.MotionMark13Benchmark,
+    benchmarks.MotionMark131Benchmark,
+    benchmarks.MotionMarkMainBenchmark,
+    # JetStream:
     benchmarks.JetStream20Benchmark,
     benchmarks.JetStream21Benchmark,
     benchmarks.JetStream22Benchmark,
-    benchmarks.JetStream30Benchmark,
+    benchmarks.JetStreamMainBenchmark,
 ]
 
 press_benchmarks_dict: Dict[str, Type[PressBenchmark]] = {

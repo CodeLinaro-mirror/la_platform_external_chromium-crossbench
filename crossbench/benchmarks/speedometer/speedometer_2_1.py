@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Type
+from typing import TYPE_CHECKING, Tuple, Type
 
 from typing_extensions import override
 
@@ -13,6 +13,8 @@ from crossbench.benchmarks.speedometer.speedometer import (ProbeClsTupleT,
 from crossbench.benchmarks.speedometer.speedometer_2 import (
     Speedometer2Probe, Speedometer2ProbeContext, Speedometer2Story)
 
+if TYPE_CHECKING:
+  from crossbench.benchmarks.base import VersionParts
 
 class Speedometer21Probe(Speedometer2Probe):
   NAME: str = "speedometer_2.1"
@@ -43,7 +45,7 @@ class Speedometer21Benchmark(SpeedometerBenchmark):
 
   @classmethod
   @override
-  def version(cls) -> Tuple[int, ...]:
+  def version(cls) -> VersionParts:
     return (2, 1)
 
   @classmethod

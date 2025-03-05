@@ -120,23 +120,33 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
 class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
+      # JetStream:
       benchmarks.JetStream20Benchmark,
       benchmarks.JetStream21Benchmark,
       benchmarks.JetStream22Benchmark,
-      benchmarks.JetStream30Benchmark,
+      benchmarks.JetStreamMainBenchmark,
+      # Loading:
       benchmarks.LoadingBenchmark,
+      # LoadLine:
       benchmarks.LoadLinePhoneBenchmark,
       benchmarks.LoadLineTabletBenchmark,
+      # Manual:
       benchmarks.ManualBenchmark,
+      # Memory:
       benchmarks.MemoryBenchmark,
+      # Motionmark
       benchmarks.MotionMark10Benchmark,
       benchmarks.MotionMark11Benchmark,
       benchmarks.MotionMark12Benchmark,
       benchmarks.MotionMark13Benchmark,
+      benchmarks.MotionMark131Benchmark,
+      benchmarks.MotionMarkMainBenchmark,
+      # Speedometer:
       benchmarks.Speedometer20Benchmark,
       benchmarks.Speedometer21Benchmark,
       benchmarks.Speedometer30Benchmark,
       benchmarks.Speedometer31Benchmark,
+      benchmarks.SpeedometerMainBenchmark,
   )
 
   RUNNER_CLS: Type[Runner] = Runner
