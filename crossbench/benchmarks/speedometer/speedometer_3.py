@@ -233,7 +233,7 @@ SPEEDOMETER_3_STORY_DATA = {
 
 class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   __doc__ = SpeedometerStory.__doc__
-  URL_LOCAL: str = "http://127.0.0.1:7000"
+  URL_LOCAL: str = "http://127.0.0.1:8080"
   SUBSTORIES: Tuple[str, ...] = tuple(SPEEDOMETER_3_STORY_DATA.keys())
 
   @classmethod
