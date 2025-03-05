@@ -106,7 +106,8 @@ class JetStream2BaseTestCase(
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     with mock.patch.object(
         HostEnvironment, "validate_url", return_value=True) as cm:
       runner.run()

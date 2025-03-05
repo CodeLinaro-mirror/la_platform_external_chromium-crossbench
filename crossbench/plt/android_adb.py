@@ -503,18 +503,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     # TODO figure out
     return 1.0
 
-  @functools.lru_cache(maxsize=1)
-  @override
-  def python_details(self) -> JsonDict:
-    # Python is not available on android.
-    return {}
-
-  @functools.lru_cache(maxsize=1)
-  @override
-  def os_details(self) -> JsonDict:
-    # TODO: add more info
-    return {"version": self.version}
-
   def app_path_to_package(self, app_path: pth.AnyPathLike) -> str:
     path = self.path(app_path)
     parts = path.parts
@@ -694,42 +682,39 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         "usage": "n/a",
         "total usage": "n/a",
         "system load": "n/a",
-        "max frequency": "n/a",
         "min frequency": "n/a",
+        "max frequency": "n/a",
         "current frequency": "n/a",
     }
 
   _GETPROP_RE = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
 
+  @functools.lru_cache(maxsize=1)
+  @override
+  def system_details(self) -> Dict[str, Any]:
+    system_details = super().system_details()
+    system_details.update({
+        "Android": self._getprop_system_details(),
+    })
+    return system_details
+
   def _getprop_system_details(self) -> Dict[str, Any]:
-    details = super().system_details()
     properties: Dict[str, str] = {}
     for line in self.adb.shell_stdout("getprop").strip().splitlines():
       result = self._GETPROP_RE.fullmatch(line)
       if result:
         properties[result.group("key")] = result.group("value")
-    details["android"] = properties
-    return details
+    return properties
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def python_details(self) -> JsonDict:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
-        "machine": self.sh_stdout("uname", "-m").split()[0],
-        "os": {
-            "system": self.sh_stdout("uname", "-s").split()[0],
-            "release": self.sh_stdout("uname", "-r").split()[0],
-            "version": self.sh_stdout("uname", "-v").split()[0],
-            "platform": "n/a",
-        },
-        "python": {
             "version": "n/a",
             "bits": "n/a",
-        },
-        "CPU": self.cpu_details(),
-        "Android": self._getprop_system_details(),
     }
+
 
   @property
   @override

@@ -105,9 +105,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().cpu_details()
     return {
+        "info": self.cpu,
         "physical cores": self.cpu_cores(logical=False),
         "logical cores": self.cpu_cores(logical=True),
-        "info": self.cpu,
+        "min frequency": "n/a",
+        "max frequency": "n/a",
+        "current frequency": "n/a",
     }
 
   @functools.lru_cache(maxsize=1)

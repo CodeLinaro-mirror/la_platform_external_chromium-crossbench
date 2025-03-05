@@ -262,11 +262,17 @@ class Platform(abc.ABC):
             psutil.getloadavg(),
         "info":
             self.cpu,
+        "min frequency":
+            "N/A",
+        "max frequency":
+            "N/A",
+        "current frequency":
+            "N/A",
     }
     if cpu_freq := self._cpu_freq():
       details.update({
-          "max frequency": f"{cpu_freq.max:.2f}Mhz",
           "min frequency": f"{cpu_freq.min:.2f}Mhz",
+          "max frequency": f"{cpu_freq.max:.2f}Mhz",
           "current frequency": f"{cpu_freq.current:.2f}Mhz",
       })
     return details

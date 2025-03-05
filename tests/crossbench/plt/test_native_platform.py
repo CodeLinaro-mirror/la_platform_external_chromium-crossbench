@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import os
 import pathlib
 import signal
@@ -534,6 +535,31 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
   def test_system_details(self):
     details = self.platform.system_details()
     self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+
+  def test_os_details(self):
+    details = self.platform.os_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertIn("system", details)
+    self.assertIn("release", details)
+    self.assertIn("version", details)
+
+  def test_cpu_details(self):
+    details = self.platform.cpu_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertIn("info", details)
+    self.assertIn("physical cores", details)
+    self.assertIn("logical cores", details)
+    self.assertIn("min frequency", details)
+    self.assertIn("max frequency", details)
+
+  def test_python_details(self):
+    details = self.platform.python_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertIn("version", details)
 
   def test_search_binary(self):
     result_path = self.platform.search_binary(pathlib.Path("ls"))

@@ -236,7 +236,8 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         browsers or self.browsers,
         benchmark or self.benchmark,
         platform=self.platform,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
 
   def single_story_runner(self,
                           browser: Optional[Browser] = None,
@@ -244,4 +245,9 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     browsers = [browser or self.mock_chrome_dev]
     benchmark = MockBenchmark([self.stories[0]])
     return Runner(
-        self.out_dir, browsers, benchmark, platform=self.platform, throw=throw)
+        self.out_dir,
+        browsers,
+        benchmark,
+        platform=self.platform,
+        throw=throw,
+        in_memory_result_db=True)

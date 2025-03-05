@@ -210,7 +210,8 @@ class TestPageLoadBenchmark(SubStoryTestCase):
         env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     runner.run()
     self.assertTrue(runner.is_success)
     self.assertTrue(self.browsers[0].did_run)

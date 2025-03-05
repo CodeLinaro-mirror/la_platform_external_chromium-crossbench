@@ -190,7 +190,8 @@ class SpeedometerBaseTestCase(
         platform=self.platform,
         repetitions=repetitions,
         warmup_repetitions=warmup_repetitions,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
     cm.assert_called_once()

@@ -74,6 +74,10 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
   def test_user_id(self):
     self.assertGreaterEqual(self.platform.user_id(), 0)
 
+  def test_android_system_details(self):
+    details = self.platform.system_details()
+    self.assertIn("Android", details)
+
 
 del PosixNativePlatformTestCase
 

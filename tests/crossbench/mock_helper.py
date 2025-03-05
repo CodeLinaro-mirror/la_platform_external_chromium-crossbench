@@ -65,6 +65,7 @@ class ShResult:
   def success(self) -> bool:
     return self._success
 
+
 class MockPlatformMixin:
 
   def __init__(self, *args, is_battery_powered=False, **kwargs):
@@ -83,6 +84,14 @@ class MockPlatformMixin:
     self.popens: List[MockPopen] = []
     self.mkdir_calls: int = 0
     super().__init__(*args, **kwargs)
+
+  def os_details(self):
+    return {
+        "system": "mock os system",
+        "release": "mock os release",
+        "version": "mock os version",
+        "platform": "mock os platform",
+    }
 
   def expect_download(self,
                       url: str,

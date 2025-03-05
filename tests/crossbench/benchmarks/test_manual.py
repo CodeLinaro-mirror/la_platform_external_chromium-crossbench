@@ -62,7 +62,8 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
-        throw=True)
+        throw=True,
+        in_memory_result_db=True)
 
     with self.assertLogs(level="INFO") as cm:
       runner.run()

@@ -28,6 +28,7 @@ from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 from crossbench.probes.thermal_monitor import ThermalStatus
+from crossbench.results_db.db import ResultsDB
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
     CacheTemperaturesRunGroup
@@ -217,7 +218,8 @@ class Runner:
                cool_down_threshold: Optional[ThermalStatus] = None,
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
-               create_symlinks: bool = True) -> None:
+               create_symlinks: bool = True,
+               in_memory_result_db: bool = False) -> None:
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
@@ -245,6 +247,10 @@ class Runner:
                                 env_validation_mode)
     self._attach_default_probes(additional_probes)
     self._prepare_benchmark()
+    if in_memory_result_db:
+      self._results_db = ResultsDB()
+    else:
+      self._results_db = ResultsDB(self.out_dir / "results.db")
     self._cache_temperatures_groups: Tuple[CacheTemperaturesRunGroup, ...] = ()
     self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
     self._story_groups: Tuple[StoriesRunGroup, ...] = ()
@@ -383,6 +389,10 @@ class Runner:
     return set(browser.platform for browser in self.browsers)
 
   @property
+  def results_db(self) -> ResultsDB:
+    return self._results_db
+
+  @property
   def all_runs(self) -> Tuple[Run, ...]:
     return tuple(self._all_runs)
 
@@ -467,6 +477,7 @@ class Runner:
     with self._exceptions.annotate(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)
+    self._results_db.setup_runs(self._all_runs)
 
   def _setup_validate_browsers(self) -> None:
     logging.info("🌐 SETUP %d BROWSER(S)", len(self.browsers))

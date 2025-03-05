@@ -59,7 +59,8 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
         repetitions=repetitions,
         warmup_repetitions=warmup_repetitions,
         cache_temperatures=cache_temperatures,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     return runner
 
   def get_non_empty_json_results(self, runner: Runner,

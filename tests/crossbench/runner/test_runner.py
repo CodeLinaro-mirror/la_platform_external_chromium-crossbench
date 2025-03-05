@@ -5,8 +5,8 @@
 import json
 import pathlib
 import unittest
-from unittest import mock
 from typing import TYPE_CHECKING
+from unittest import mock
 
 from typing_extensions import override
 
@@ -28,6 +28,7 @@ from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
                                             MockPlatform, MockProbe,
                                             MockProbeContext, MockRun,
                                             MockRunner)
+
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
@@ -403,7 +404,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         self.out_dir, [MockChromeDev("chrome-dev-2")],
         self.benchmark,
         platform=self.platform,
-        throw=True)
+        throw=True,
+        in_memory_result_db=True)
     runs_b = list(runner_b.get_runs())
     self.assertNotEqual(runs_a[0].runner, runs_b[0].runner)
     with self.assertRaises(AssertionError) as cm:
@@ -519,7 +521,11 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     # 2 runs, same story, different browsers
     benchmark = MockBenchmark(stories=[self.stories[0]])
     runner = Runner(
-        self.out_dir, self.browsers, benchmark, platform=self.platform)
+        self.out_dir,
+        self.browsers,
+        benchmark,
+        platform=self.platform,
+        in_memory_result_db=True)
     runs = tuple(runner.get_runs())
     thread = RunThreadGroup(runs)
     failing_session, successful_session = thread.browser_sessions

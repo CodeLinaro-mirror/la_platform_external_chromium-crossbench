@@ -206,7 +206,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
         timing=timing,
         **runner_kwargs,
         # Use custom platform
-        platform=self.platform)
+        platform=self.platform,
+        in_memory_result_db=True)
     return runner
 
   @contextlib.contextmanager

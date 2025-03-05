@@ -38,6 +38,7 @@ if TYPE_CHECKING:
   from crossbench.env import HostEnvironment
   from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
+  from crossbench.results_db.db import ResultsDB
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
   from crossbench.runner.timing import AnyTimeUnit
@@ -202,6 +203,10 @@ class Run(ResultOrigin):
   @override
   def runner(self) -> Runner:
     return self._runner
+
+  @property
+  def results_db(self) -> ResultsDB:
+    return self.runner.results_db
 
   @property
   def benchmark(self) -> Benchmark:

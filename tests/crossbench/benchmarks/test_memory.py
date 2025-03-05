@@ -86,7 +86,8 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
 
     runner.run()
     assert runner.is_success
