@@ -125,8 +125,9 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     return self.url
 
   @property
-  def substories(self) -> List[str]:
-    return list(self._substories)
+  @override
+  def substories(self) -> Tuple[str, ...]:
+    return tuple(self._substories)
 
   @property
   def has_default_substories(self) -> bool:

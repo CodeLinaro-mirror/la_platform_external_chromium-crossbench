@@ -456,10 +456,10 @@ class HostEnvironment:
 
   def validate(self) -> None:
     logging.info("-" * 80)
+    message = "🌤️  VALIDATE ENVIRONMENT"
     if self._validation_mode == ValidationMode.SKIP:
-      logging.info("VALIDATE ENVIRONMENT: SKIP")
+      logging.info("%s: SKIP", message)
       return
-    message = "VALIDATE ENVIRONMENT"
     if self._validation_mode != ValidationMode.WARN:
       message += " (--env-validation=warn for soft warnings)"
     message += ": %s"

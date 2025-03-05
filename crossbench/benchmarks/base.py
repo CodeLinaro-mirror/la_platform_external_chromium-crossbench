@@ -192,6 +192,12 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def create_stories(self, separate: bool) -> Sequence[StoryT]:
     pass
 
+  def log_stories(self, stories: Sequence[StoryT]) -> None:
+    substory_names = [name for story in stories for name in story.substories]
+    stories_str = ", ".join(substory_names)
+    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s", len(stories),
+                 len(substory_names), stories_str)
+
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS: Type[StoryFilter] = StoryFilter  # type: ignore
@@ -368,10 +374,10 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
   @override
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
-    logging.info("📚 SELECTED STORIES: %s",
-                 str(list(map(str, self._selected_names))))
     names = list(self._selected_names)
-    return self.create_stories_from_names(names, separate)
+    stories = self.create_stories_from_names(names, separate)
+    self.log_stories(stories)
+    return stories
 
   def create_stories_from_names(
       self, names: List[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:

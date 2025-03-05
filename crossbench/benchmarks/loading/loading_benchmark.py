@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
@@ -244,11 +243,11 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
-    logging.info("📚 SELECTED STORIES: %s", str(list(map(str, self.stories))))
     if not separate and len(self.stories) > 1:
       combined_name = "_".join(page.name for page in self.stories)
       self.stories = (CombinedPage(self.stories, combined_name,
                                    self._args.playback, self._args.tabs),)
+    self.log_stories(self.stories)
     return self.stories
 
 

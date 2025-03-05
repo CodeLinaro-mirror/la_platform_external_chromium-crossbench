@@ -330,7 +330,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
-    logging.info("📚 SELECTED STORIES: %s", ", ".join(map(str, self.stories)))
+    self.log_stories(self.stories)
     return self.stories
 
 

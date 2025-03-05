@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Tuple
 
 from typing_extensions import override
 
@@ -50,6 +50,12 @@ class CombinedPage(Page):
   @property
   def pages(self) -> Iterable[Page]:
     return self._pages
+
+  @property
+  @override
+  def substories(self) -> Tuple[str, ...]:
+    return tuple(
+        substory for page in self._pages for substory in page.substories)
 
   @property
   @override

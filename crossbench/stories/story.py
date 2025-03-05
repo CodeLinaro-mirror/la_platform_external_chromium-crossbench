@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 from crossbench.cli.config.secrets import Secrets
 from crossbench.path import safe_filename
@@ -38,6 +38,10 @@ class Story(abc.ABC):
   @property
   def name(self) -> str:
     return self._name
+
+  @property
+  def substories(self) -> Tuple[str, ...]:
+    return (self.name,)
 
   @property
   def duration(self) -> dt.timedelta:

@@ -148,6 +148,27 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     self._test_run(stories)
     self._assert_urls_loaded([story.url for story in PAGE_LIST])
 
+  def test_substories_single(self):
+    page = LivePage("test", "https://test.com", dt.timedelta(seconds=5))
+    self.assertSequenceEqual(page.substories, ["test"])
+
+  def test_substories_combined(self):
+    page = CombinedPage(PAGE_LIST)
+    self.assertSequenceEqual(page.substories,
+                             [story.name for story in PAGE_LIST])
+    page_0 = LivePage("test_0", "https://test.com/1", dt.timedelta(seconds=5))
+    page_1 = LivePage("test_1", "https://test.com/1", dt.timedelta(seconds=5))
+    page = CombinedPage([page_0, page_1])
+    self.assertSequenceEqual(page.substories, ["test_0", "test_1"])
+
+  def test_substories_nested(self):
+    page_0 = LivePage("test_0", "https://test.com/1", dt.timedelta(seconds=5))
+    page_1 = LivePage("test_1", "https://test.com/1", dt.timedelta(seconds=5))
+    page_2 = CombinedPage([page_0, page_1])
+    page_3 = LivePage("test_3", "https://test.com/3", dt.timedelta(seconds=5))
+    page = CombinedPage([page_2, page_3])
+    self.assertSequenceEqual(page.substories, ["test_0", "test_1", "test_3"])
+
   def test_run_default(self):
     stories = PAGE_LIST
     self._test_run(stories)
