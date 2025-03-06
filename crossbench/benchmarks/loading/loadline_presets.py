@@ -117,8 +117,10 @@ class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
 
   @override
   def start_story_run(self) -> None:
+    benchmark_type = ("loadline-phone" if "phone" in self.probe.benchmark.NAME
+                      else "loadline-tablet")
     self.browser.performance_mark(
-        f"LoadLine/{self.probe.benchmark.NAME}/{self.run.story.name}")
+        f"LoadLine/{benchmark_type}/{self.run.story.name}")
 
   def stop(self) -> None:
     pass
@@ -171,8 +173,29 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
     return tuple(page.any_label for page in cls.get_pages_config().pages)
 
 
+class LoadLinePhoneBenchmark(LoadLineBenchmark):
+  """LoadLine benchmark for phones.
+  """
+  NAME = "loadline-phone"
+
+  @classmethod
+  @override
+  def default_pages_config_path(cls) -> pth.LocalPath:
+    return pth.LocalPath(LOADLINE_DIR) / "page_config_phone.hjson"
+
+  @classmethod
+  @override
+  def default_network_config_path(cls) -> pth.LocalPath:
+    return pth.LocalPath(LOADLINE_DIR) / "network_config_phone.hjson"
+
+  @classmethod
+  @override
+  def aliases(cls) -> Tuple[str, ...]:
+    return ("loading-phone", "load-phone", "ld-phone")
+
+
 class LoadLineTabletBenchmark(LoadLineBenchmark):
-  """LoadLine benchmark for tablet.
+  """LoadLine benchmark for tablets.
   """
   NAME = "loadline-tablet"
 
@@ -198,22 +221,65 @@ class LoadLineTabletBenchmark(LoadLineBenchmark):
     return Flags(["--request-desktop-sites"])
 
 
-class LoadLinePhoneBenchmark(LoadLineBenchmark):
-  """LoadLine benchmark for phones.
+class LoadLinePhoneDebugBenchmark(LoadLinePhoneBenchmark):
+  """LoadLine benchmark for phones, with more tracing categories, for easier
+  performance analysis.
   """
-  NAME = "loadline-phone"
+  NAME = "loadline-phone-debug"
+  DEFAULT_REPETITIONS = 1
 
   @classmethod
   @override
-  def default_pages_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "page_config_phone.hjson"
-
-  @classmethod
-  @override
-  def default_network_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "network_config_phone.hjson"
+  def default_probe_config_path(cls) -> pth.LocalPath:
+    return (pth.LocalPath(LOADLINE_DIR) /
+                "probe_config_experimental_lightweight.hjson")
 
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-phone", "load-phone", "ld-phone")
+    return ("loading-phone-debug", "load-phone-debug", "ld-phone-debug")
+
+
+class LoadLineTabletDebugBenchmark(LoadLineTabletBenchmark):
+  """LoadLine benchmark for tablets, with more tracing categories, for easier
+  performance analysis.
+  """
+  NAME = "loadline-tablet-debug"
+  DEFAULT_REPETITIONS = 1
+
+  @classmethod
+  @override
+  def default_probe_config_path(cls) -> pth.LocalPath:
+    return (pth.LocalPath(LOADLINE_DIR) /
+                "probe_config_experimental_lightweight.hjson")
+
+  @classmethod
+  @override
+  def aliases(cls) -> Tuple[str, ...]:
+    return ("loading-tablet-debug", "load-tablet-debug", "ld-tablet-debug")
+
+
+class LoadLinePhoneFastBenchmark(LoadLinePhoneBenchmark):
+  """LoadLine benchmark for phones, with less repetitions, for faster local
+  experiments.
+  """
+  NAME = "loadline-phone-fast"
+  DEFAULT_REPETITIONS = 10
+
+  @classmethod
+  @override
+  def aliases(cls) -> Tuple[str, ...]:
+    return ("loading-phone-fast", "load-phone-fast", "ld-phone-fast")
+
+
+class LoadLineTabletFastBenchmark(LoadLineTabletBenchmark):
+  """LoadLine benchmark for tablets, with less repetitions, for faster local
+  experiments.
+  """
+  NAME = "loadline-tablet-fast"
+  DEFAULT_REPETITIONS = 10
+
+  @classmethod
+  @override
+  def aliases(cls) -> Tuple[str, ...]:
+    return ("loading-tablet-fast", "load-tablet-fast", "ld-tablet-fast")

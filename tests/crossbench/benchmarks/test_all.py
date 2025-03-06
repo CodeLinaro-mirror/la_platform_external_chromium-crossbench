@@ -15,7 +15,12 @@ from crossbench.benchmarks.jetstream.jetstream_main import \
     JetStreamMainBenchmark
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.loadline_presets import (
-    LoadLinePhoneBenchmark, LoadLineTabletBenchmark)
+    LoadLinePhoneBenchmark,
+    LoadLinePhoneDebugBenchmark,
+    LoadLinePhoneFastBenchmark,
+    LoadLineTabletBenchmark,
+    LoadLineTabletDebugBenchmark,
+    LoadLineTabletFastBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
@@ -48,7 +53,11 @@ ALL = (
     JetStream22Benchmark,
     JetStreamMainBenchmark,
     LoadLinePhoneBenchmark,
+    LoadLinePhoneDebugBenchmark,
+    LoadLinePhoneFastBenchmark,
     LoadLineTabletBenchmark,
+    LoadLineTabletDebugBenchmark,
+    LoadLineTabletFastBenchmark,
     ManualBenchmark,
     MotionMark10Benchmark,
     MotionMark11Benchmark,
