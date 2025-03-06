@@ -11,6 +11,7 @@ from crossbench.action_runner.action.action import (ACTION_TIMEOUT, ACTIONS,
                                                     Action)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.close_tab import CloseTabAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
@@ -798,17 +799,35 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "switch_tab",
     }
-    action = SwitchTabAction.parse_dict(config_dict)
+    with self.assertRaisesRegex(ValueError, "tab_index, title, or url"):
+      SwitchTabAction.parse_dict(config_dict)
 
-    self.assertEqual(action.TYPE, ActionType.SWITCH_TAB)
-    self.assertEqual(action.tab_index, None)
-    self.assertEqual(action.title, None)
-    self.assertEqual(action.url, None)
+  def test_parse_close_tab_all_args(self):
+    config_dict = {
+        "action": "close_tab",
+        "tab_index": 17,
+        "title": "^Example.*",
+        "url": "http(s)?://example.com"
+    }
+    action = CloseTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.CLOSE_TAB)
+    self.assertEqual(action.tab_index, 17)
+    self.assertEqual(action.title.pattern, "^Example.*")
+    self.assertEqual(action.url.pattern, "http(s)?://example.com")
     action.validate()
 
-    action_2 = SwitchTabAction.parse_dict(action.to_json())
+    action_2 = CloseTabAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
+
+  def test_parse_close_tab_no_args(self):
+    config_dict = {
+        "action": "close_tab",
+    }
+
+    with self.assertRaisesRegex(ValueError, "tab_index, title, or url"):
+      CloseTabAction.parse_dict(config_dict)
 
   def test_parse_wait_for_ready_state(self):
     config_dict = {

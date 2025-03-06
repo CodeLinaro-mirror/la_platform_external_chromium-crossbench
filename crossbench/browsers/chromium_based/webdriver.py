@@ -217,7 +217,7 @@ class ChromiumBasedWebDriver(
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
-  ) -> None:
+  ) -> str:
     driver = self._private_driver
     original_handle = driver.current_window_handle
     for _ in wait.wait_with_backoff(timeout):
@@ -230,7 +230,7 @@ class ChromiumBasedWebDriver(
       if tab_index is not None:
         handles = [driver.window_handles[tab_index]]
       else:
-        handles = driver.window_handles[i + 1:] + driver.window_handles[:i]
+        handles = driver.window_handles[i:] + driver.window_handles[:i]
 
       for handle in handles:
         driver.switch_to.window(handle)
@@ -240,7 +240,7 @@ class ChromiumBasedWebDriver(
         if url is not None:
           if url.match(driver.current_url) is None:
             continue
-        return
+        return handle
     error = "No new tab found"
     if title is not None:
       error += f" with title matching {repr(title.pattern)}"
@@ -249,6 +249,27 @@ class ChromiumBasedWebDriver(
     if tab_index is not None:
       error += f" with tab_index matching {tab_index}"
     raise RuntimeError(error)
+
+  @override
+  def close_tab(
+      self,
+      title: Optional[re.Pattern] = None,
+      url: Optional[re.Pattern] = None,
+      tab_index: Optional[int] = None,
+      timeout: dt.timedelta = dt.timedelta(seconds=0)
+  ) -> None:
+    driver = self._private_driver
+    original_handle = driver.current_window_handle
+
+    tab_to_close = self.switch_tab(title, url, tab_index, timeout)
+    driver.close()
+
+    if tab_to_close != original_handle:
+      driver.switch_to.window(original_handle)
+    else:
+      # When a tab closes itself, arbitrarily default
+      # to switching to the first tab.
+      driver.switch_to.window(driver.window_handles[0])
 
   @property
   def current_url(self) -> str:

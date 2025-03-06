@@ -1,4 +1,4 @@
-# Copyright 2024 The Chromium Authors
+# Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class SwitchTabAction(BaseTabAction):
-  TYPE: ActionType = ActionType.SWITCH_TAB
+class CloseTabAction(BaseTabAction):
+  TYPE: ActionType = ActionType.CLOSE_TAB
 
   @classmethod
   @override
@@ -31,4 +31,4 @@ class SwitchTabAction(BaseTabAction):
 
   @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.switch_tab(run, self)
+    action_runner.close_tab(run, self)
