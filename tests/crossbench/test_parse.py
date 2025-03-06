@@ -471,6 +471,34 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     file.touch()
     self.assertEqual(file, PathParser.path(file))
 
+  def test_parse_any_path_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.any_path("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.any_path(None)
+
+  def test_parse_any_path(self):
+    folder = pathlib.Path("folder")
+    folder_pure = pathlib.PurePath(folder)
+    self.assertEqual(folder_pure, PathParser.any_path(folder))
+    folder.mkdir()
+    self.assertEqual(folder_pure, PathParser.any_path(folder))
+    file = pathlib.Path("file")
+    file_pure = pathlib.PurePath(file)
+    self.assertEqual(file_pure, PathParser.any_path(file))
+    file.touch()
+    self.assertEqual(file_pure, PathParser.any_path(file))
+
+  def test_parse_optional_any_path_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.optional_any_path("")
+
+  def test_parse_optional_any_path(self):
+    self.assertIsNone(PathParser.optional_any_path(None))
+    folder = pathlib.Path("folder")
+    folder_pure = pathlib.PurePath(folder)
+    self.assertEqual(folder_pure, PathParser.optional_any_path(folder))
+
   def test_parse_bool_success(self):
     self.assertIs(ObjectParser.bool("true"), True)
     self.assertIs(ObjectParser.bool("True"), True)
@@ -493,6 +521,22 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     for invalid in (None, "False", "false", "True", "true"):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.bool(invalid, strict=True)
+
+  def test_parse_optional_bool(self):
+    self.assertIsNone(ObjectParser.optional_bool(None))
+    self.assertIs(ObjectParser.optional_bool("true"), True)
+    self.assertIs(ObjectParser.optional_bool("false"), False)
+
+  def test_parse_optional_bool_invalid(self):
+    for invalid in (1, 0, "1", "0", "", [], tuple()):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        ObjectParser.optional_bool(invalid)
+        ObjectParser.optional_bool(invalid, strict=True)
+
+  def test_parse_optional_bool_invalid_strict(self):
+    for invalid in ("False", "false", "True", "true"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        ObjectParser.optional_bool(invalid, strict=True)
 
   def test_parse_sh_cmd(self):
     self.assertListEqual(ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])

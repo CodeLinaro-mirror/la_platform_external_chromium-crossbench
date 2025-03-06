@@ -75,7 +75,7 @@ class ChromiumBased(Browser):
     return version
 
   @override
-  def _setup_flags(self, settings: Settings) -> ChromeFlags:
+  def _init_flags(self, settings: Settings) -> ChromeFlags:
     flags: Flags = settings.flags
     js_flags: Flags = settings.js_flags
     self._flags = self.default_flags(self.DEFAULT_FLAGS)
@@ -126,24 +126,39 @@ class ChromiumBased(Browser):
           "Cannot enable and disable finch / field-trials at the same time.")
 
   @override
-  def _setup_cache_dir(self, settings: Settings) -> None:
-    cache_dir = settings.cache_dir
-    if cache_dir is None:
-      maybe_cache_dir = self._flags.get("--user-data-dir", None)
-      if maybe_cache_dir:
-        cache_dir = pth.AnyPath(maybe_cache_dir)
-    if cache_dir is None:
-      temp_dir = None
+  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+    # See documentation for more details:
+    # https://chromium.googlesource.com/chromium/src/+/main/docs/user_data_dir.md
+    # We only deal with the user-data-dir here and ignore the user-cache-dir.
+    user_data_dir = self.settings.cache_dir
+    if flag_user_data_dir := self._flags.get("--user-data-dir", None):
+      if user_data_dir and str(user_data_dir) != str(flag_user_data_dir):
+        raise ValueError("Conflicting cache_dir from "
+                         f"settings.cache_dir={repr(str(user_data_dir))} and "
+                         f"--user-data-dir={repr(str(flag_user_data_dir))}")
+      return pth.AnyPath(flag_user_data_dir)
+
+    if user_data_dir:
+      return user_data_dir
+
+    temp_dir = None
+    if self.platform.is_android:
       # On Android, not all apps have permission to write to /data/local/tmp.
       # We use a folder on external storage instead.
-      if self.platform.is_android:
-        temp_dir = "/storage/emulated/0/Documents"
-      self.cache_dir = self.platform.mkdtemp(prefix=self.type_name(),
-                                             dir=temp_dir)
-      self.clear_cache_dir = True
-    else:
-      self.cache_dir = cache_dir
-      self.clear_cache_dir = False
+      # This does not affect the user-cache-dir which needs to be cleared
+      # separately.
+      temp_dir = "/storage/emulated/0/Documents"
+    # Using a temp-dir on macos also forces the user-cache-dir to be there.
+    user_data_dir = self.platform.mkdtemp(
+        prefix=f"{self.type_name()}_", dir=temp_dir)
+    return user_data_dir
+
+  @property
+  def user_data_dir(self) -> Optional[pth.AnyPath]:
+    # On chromium-based browsers we can have two separate caching dirs:
+    # - user-data-dir containing all profile data
+    # - cache-dir containing profile independent caches
+    return self._cache_dir
 
   @property
   def is_headless(self) -> bool:

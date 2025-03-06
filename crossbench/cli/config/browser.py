@@ -26,7 +26,7 @@ from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvironmentConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.parse import NumberParser, PathParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 
 SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
 
@@ -62,6 +62,9 @@ class BrowserConfig(ConfigObject):
   # browser config.
   network: NetworkConfig | None = None
   env: EnvironmentConfig | None = None
+
+  cache_dir: pth.AnyPath | None = None
+  clear_cache: bool | None = None
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -312,6 +315,17 @@ class BrowserConfig(ConfigObject):
     parser.add_argument(
         "driver", type=DriverConfig, default=DriverConfig.default())
     parser.add_argument("network", type=NetworkConfig)
+    parser.add_argument(
+        "cache_dir",
+        aliases=("browser_cache", "browser_cache_dir"),
+        type=PathParser.optional_any_path,
+        default=None)
+    parser.add_argument(
+        "clear_cache",
+        aliases=("clear_cache_dir", "clear_browser_cache",
+                 "clear_browser_cache_dir"),
+        type=ObjectParser.optional_bool,
+        default=None)
     return parser
 
   @property

@@ -145,6 +145,13 @@ class PathParser:
     raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
 
   @classmethod
+  def optional_any_path(
+      cls, value: Optional[pth.AnyPathLike]) -> Optional[pth.AnyPath]:
+    if value is None:
+      return None
+    return cls.any_path(value)
+
+  @classmethod
   def local_binary_path(cls,
                         value: Optional[pth.AnyPathLike],
                         platform: plt.Platform,
@@ -406,6 +413,15 @@ class ObjectParser:
     return parsed
 
   @classmethod
+  def optional_bool(cls,
+                    value: Any,
+                    name: str = "value",
+                    strict: bool = False) -> Optional[bool]:
+    if value is None:
+      return None
+    return cls.bool(value, name, strict)
+
+  @classmethod
   def bool(cls, value: Any, name: str = "value", strict: bool = False) -> bool:
     if isinstance(value, bool):
       return value
@@ -417,6 +433,7 @@ class ObjectParser:
         return False
     raise argparse.ArgumentTypeError(
         f"Expected bool {name} but got {type_str(value)}: {repr(value)}")
+
 
   @classmethod
   def not_none(cls, value: Optional[NotNoneT], name: str = "value") -> NotNoneT:

@@ -124,7 +124,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
-    assert not self._is_running
+    super().start(session)
     # Start process directly
     startup_flags = self._get_browser_flags_for_session(session)
     self._log_browser_start(startup_flags)

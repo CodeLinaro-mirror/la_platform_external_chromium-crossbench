@@ -291,7 +291,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _setup_browser(self) -> None:
     self._state.expect(State.SETUP)
-    self.browser.setup_binary()
+    self.browser.setup()
 
   def _setup_session_dir(self) -> None:
     self._state.expect(State.SETUP)
@@ -340,7 +340,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     with self.measure("browser-setup"):
       try:
         # pytype somehow gets the package path wrong here, disabling for now.
-        self._browser.setup(self)
+        self._browser.start(self)
+        assert self._browser.is_running, "Browser did not start up correctly"
       except Exception as e:
         logging.debug("Browser setup failed: %s", e)
         # Clean up half-setup browser instances

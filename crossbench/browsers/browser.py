@@ -12,7 +12,6 @@ import shlex
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
@@ -64,37 +63,36 @@ class Browser(abc.ABC):
     self._is_local_build: bool = False
     self._unique_name: str = ""
     self._version: BrowserVersion = UnknownBrowserVersion()
-    self._setup_path_and_version(path)
+    self._init_path_and_version(path)
     self._is_running: bool = False
     self._pid: int | None = None
     self._probes: OrderedSet[Probe] = OrderedSet()
-    self._flags: Flags = self._setup_flags(self._settings)
+    self._flags: Flags = self._init_flags(self._settings)
     self.log_file: pth.AnyPath | None = None
-    self.cache_dir: pth.AnyPath | None = self._settings.cache_dir
-    self.clear_cache_dir: bool = True
-    self._setup_cache_dir(self._settings)
+    # Optional location of the browser's main cache dir.
+    # If set and settings.clear_cache, this should be cleared before and after
+    # running the browser.
+    # For chrome browsers this corresponds to the user-data-dir.
+    self._cache_dir: pth.AnyPath | None = None
 
-  def _setup_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
+  def _init_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
     if not path:
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
       self._version = self._extract_version()
       self._unique_name = f"{self.type_name()}_{self.label}".lower()
       return
-    self._path = self._resolve_binary(path)
+    self._path = self._init_resolve_binary(path)
     # TODO clean up
     if not self.platform.is_android:
       assert self.path.is_absolute()
     self._version = self._extract_version()
     self._unique_name = f"{self.type_name()}_v{self.version.major}_{self.label}"
 
-  def _setup_flags(self, settings: Settings) -> Flags:
+  def _init_flags(self, settings: Settings) -> Flags:
     assert not self._settings.js_flags, (
         f"{self} doesn't support custom js_flags")
     return self.default_flags(settings.flags)
-
-  def _setup_cache_dir(self, settings: Settings) -> None:
-    pass
 
   @property
   def platform(self) -> plt.Platform:
@@ -139,12 +137,14 @@ class Browser(abc.ABC):
     return self._settings
 
   @property
-  @override
+  def clear_cache_dir(self) -> bool:
+    return self._settings.clear_cache_dir
+
+  @property
   def viewport(self) -> Viewport:
     return self._settings.viewport
 
   @viewport.setter
-  @override
   def viewport(self, value: Viewport) -> None:
     self._settings.viewport = value
 
@@ -217,6 +217,10 @@ class Browser(abc.ABC):
   def is_remote(self) -> bool:
     return self.platform.is_remote
 
+  @property
+  def cache_dir(self) -> Optional[pth.AnyPath]:
+    return self._cache_dir
+
   def set_log_file(self, path: pth.AnyPath) -> None:
     self.log_file = path
 
@@ -229,18 +233,18 @@ class Browser(abc.ABC):
   def driver_log_file(self) -> Optional[pth.LocalPath]:
     return None
 
-  def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     path = self.platform.absolute(path)
     assert self.platform.exists(path), f"Binary at path={path} does not exist."
     self.app_path = path
     self.app_name = self.app_path.stem
     if self.platform.is_macos:
-      path = self._resolve_macos_binary(path)
+      path = self._init_resolve_macos_binary(path)
     assert self.platform.is_file(path), (
         f"Binary at path={path} is not a file.")
     return path
 
-  def _resolve_macos_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _init_resolve_macos_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     assert self.platform.is_macos
     candidate = self.platform.search_binary(path)
     if not candidate or not self.platform.is_file(candidate):
@@ -269,6 +273,10 @@ class Browser(abc.ABC):
         "log": {}
     }
 
+  def validate(self):
+    self.validate_flags()
+    self.validate_binary()
+
   def validate_flags(self) -> None:
     """ Helper method is called from the Runner before any Runs / Sessions
     have started."""
@@ -277,15 +285,15 @@ class Browser(abc.ABC):
     """ Helper method is called from the Runner before any Runs / Sessions
     have started."""
 
-  def setup_binary(self) -> None:
+  def setup(self) -> None:
+    assert not self._is_running, "setup() called in wrong order."
+    self._setup_binary()
+    assert not self._cache_dir
+    self._cache_dir = self._setup_cache_dir()
+
+  def _setup_binary(self) -> None:
     """ This helper is called in the setup steps of each Session.
     This can be used to install a custom binary on remote devices. """
-
-  def setup(self, session: BrowserSessionRunGroup) -> None:
-    assert not self._is_running, (
-        "Previously used browser was not correctly stopped.")
-    self.start(session)
-    assert self._is_running
 
   def is_logged_in(self,
                    secret: UsernamePassword,
@@ -312,14 +320,23 @@ class Browser(abc.ABC):
   def _extract_version(self) -> BrowserVersion:
     pass
 
-  def clear_cache(self) -> None:
-    if self.clear_cache_dir and self.cache_dir:
-      logging.debug("Clearing cache dir %s", self.cache_dir)
-      self.platform.rm(self.cache_dir, missing_ok=True, dir=True)
-
   @abc.abstractmethod
-  def start(self, session: BrowserSessionRunGroup) -> None:
+  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
     pass
+
+  def _teardown_cache_dir(self) -> None:
+    self._clear_cache(self._cache_dir)
+
+  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
+    if self.clear_cache_dir and cache_dir:
+      logging.debug("CLEAR CACHE: %s", cache_dir)
+      self.platform.rm(cache_dir, missing_ok=True, dir=True)
+    self._cache_dir = None
+
+  def start(self, session: BrowserSessionRunGroup) -> None:
+    del session
+    assert not self._is_running, (
+        "Previously used browser was not correctly stopped.")
 
   def _log_browser_start(self,
                          args: Tuple[str, ...],
@@ -350,7 +367,7 @@ class Browser(abc.ABC):
       self.force_quit()
     finally:
       self._pid = None
-    self.clear_cache()
+      self._teardown_cache_dir()
 
   def force_quit(self) -> None:
     if not self._is_running:

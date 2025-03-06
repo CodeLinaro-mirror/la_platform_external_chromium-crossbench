@@ -107,7 +107,6 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.expected_is_logged_in: List[UsernamePassword] = []
     self.invoked_js: List[JsInvocation] = []
     self.did_run: bool = False
-    self.clear_cache_dir: bool = False
     self.tab_handler_generator = self._tab_handler_generator()
     self.tab_list: List[int] = [next(self.tab_handler_generator)]
     self._current_url: str = ""
@@ -130,7 +129,11 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.expected_is_logged_in.append(secret)
 
   @override
-  def clear_cache(self) -> None:
+  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+    return None
+
+  @override
+  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
     pass
 
   @override
@@ -243,7 +246,7 @@ def app_root(platform: plt.Platform) -> pathlib.Path:
 class MockChromiumBasedBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
   @override
-  def _setup_flags(self, settings: Settings) -> ChromeFlags:
+  def _init_flags(self, settings: Settings) -> ChromeFlags:
     flags = ChromeFlags(settings.flags)
     flags.js_flags.update(settings.js_flags)
     return flags
@@ -334,7 +337,7 @@ class MockChromeAndroidStable(MockChromeStable):
     return cast(AndroidAdbPlatform, self._platform)
 
   @override
-  def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
   @classmethod

@@ -116,9 +116,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
     self._expect_linux_ssh(
         "/path/to/google/chrome --version", result="102.22.33.44")
-    self._expect_linux_ssh("env")
-    self._expect_linux_ssh("'[' -d /tmp ']'")
-    self._expect_linux_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
 
   def _expect_sh_chromeos_ssh_browser_config(self):
     self._expect_chromeos_ssh("'[' -e /usr/local/autotest/bin/autologin.py ']'")
@@ -130,7 +127,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh(
         "/opt/google/chrome/chrome --version", result="125.0.6422.60")
-    self._expect_chromeos_ssh("mktemp -d /usr/local/tmp/chrome.XXXXXXXXXXX")
 
   def test_parse_remote_browser_config_template(self):
     self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
@@ -1354,6 +1350,105 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     mock_method.assert_called_once()
     config = BrowserConfig(browser=pth.AnyPath("chrome"), driver=driver)
     self.assertIs(variants.get_browser_cls(config), ChromeWebDriverChromeOsSsh)
+
+  def test_cache_dir_empty(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": None
+            }
+        }
+    }
+    self.assertIsNone(args.browser_cache_dir)
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertIsNone(browser.settings.cache_dir)
+
+    args.browser_cache_dir = "/var/tmp/override/cache"
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "/var/tmp/override/cache")
+
+  def test_cache_dir(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": "foo/bar/cache"
+            }
+        }
+    }
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+    args.browser_cache_dir = "/var/tmp/override/cache"
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "/var/tmp/override/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+  def test_clear_cache_dir(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": "foo/bar/cache",
+                "clear_cache_dir": False,
+            }
+        }
+    }
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertIsNone(args.clear_browser_cache_dir)
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertFalse(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = False
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertFalse(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = True
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+  def test_clear_cache_dir_override_positive(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": "foo/bar/cache",
+                "clear_cache_dir": True,
+            }
+        }
+    }
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertIsNone(args.clear_browser_cache_dir)
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = False
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertFalse(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = True
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
 
 
 if __name__ == "__main__":

@@ -59,33 +59,15 @@ class Safari(Browser):
                label: str,
                path: pth.AnyPath,
                settings: Optional[Settings] = None) -> None:
+    self.bundle_name: str = ""
     super().__init__(label, path, settings=settings)
     assert self.platform.is_macos, "Safari only works on MacOS"
-    self.bundle_name: str = ""
 
-  def _setup_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
-    super()._setup_path_and_version(path)
+  def _init_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
+    super()._init_path_and_version(path)
     assert self.path
     self.bundle_name = self.path.stem.replace(" ", "")
-
-  @override
-  def _setup_cache_dir(self, settings: Settings) -> None:
-    assert settings.cache_dir is None, (
-        "Cannot set custom cache dir for Safari")
-    assert self.bundle_name, "Missing bundle_name"
-    self.cache_dir = self.platform.home() / (
-        f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
-    logging.info("CLEAR CACHE: %s", self)
-    if not self.platform.exists(self.cache_dir.parent):
-      logging.warning("Could not find existing config dir for %s.", self)
-      return
-    self.platform.rm(self.cache_dir, dir=True, missing_ok=True)
-    # This magic wait lowers safaridriver startup failures.
-    self.platform.sleep(0.5)
-
-  @override
-  def clear_cache(self) -> None:
-    pass
+    assert self.bundle_name
 
   @override
   def _extract_version(self) -> SafariVersion:
@@ -94,3 +76,22 @@ class Safari(Browser):
     driver_version = self.platform.app_version(
         find_safaridriver(self.path, self.platform))
     return SafariVersion.parse(f"{app_version} {driver_version}")
+
+  @override
+  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+    assert self.settings.cache_dir is None, (
+        "Cannot set custom cache dir for Safari")
+    assert self.bundle_name, "Missing bundle_name"
+    cache_dir = self.platform.home() / (
+        f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
+    if not self.platform.exists(cache_dir.parent):
+      logging.warning("Could not find existing config dir for %s.", self)
+      return None
+    self._clear_cache(cache_dir)
+    return cache_dir
+
+  @override
+  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
+    super()._clear_cache(cache_dir)
+    # This magic wait lowers safaridriver startup failures.
+    self.platform.sleep(0.5)

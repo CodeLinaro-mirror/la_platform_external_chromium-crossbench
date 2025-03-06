@@ -98,6 +98,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
+    super().start(session)
     assert self._driver_path
     if timeout := self.http_request_timeout:
       logging.debug("Setting http request timeout to %s", timeout)
@@ -326,7 +327,6 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     parts: Tuple[int, ...] = tuple(map(int, raw_version.split(".")))
     return UnknownBrowserVersion(parts, version_str=raw_version)
 
-
   @override
   def _validate_driver_version(self) -> None:
     pass
@@ -341,7 +341,11 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     raise NotImplementedError()
 
   @override
-  def setup_binary(self) -> None:
+  def _setup_binary(self) -> None:
+    pass
+
+  @override
+  def _setup_cache_dir(self):
     pass
 
   def validate_binary(self) -> None:

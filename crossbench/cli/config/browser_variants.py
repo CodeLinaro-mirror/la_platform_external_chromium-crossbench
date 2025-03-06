@@ -332,7 +332,15 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if not self._is_valid_browser_path(browser_config):
       raise ConfigError(f"Browser binary does not exist: {browser_config.path}")
     assert label
+    browser_cache_dir = args.browser_cache_dir or browser_config.cache_dir
+    clear_cache_dir: bool | None = args.clear_browser_cache_dir
+    if clear_cache_dir is None:
+      clear_cache_dir = browser_config.clear_cache
+    if clear_cache_dir is None:
+      clear_cache_dir = True
     settings = Settings(
+        cache_dir=browser_cache_dir,
+        clear_cache_dir=clear_cache_dir,
         flags=flags,
         network=network,
         driver_path=self._get_driver_path(args, browser_config),
@@ -515,6 +523,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       flag_data = {"inline": inline_flags}
       flag_groups.append(FlagsGroupConfig.parse_dict(flag_data))
     return flag_groups
+
 
 class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
 

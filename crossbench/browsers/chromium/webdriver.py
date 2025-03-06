@@ -94,7 +94,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
         AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
     return cast(AndroidAdbPlatform, self._platform)
 
-  def _resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
   UNSUPPORTED_FLAGS: Tuple[str, ...] = (
@@ -167,12 +167,13 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     options.add_experimental_option("androidKeepAppDataDir", True)
     return options
 
-  def setup_binary(self) -> None:
-    super().setup_binary()
+  @override
+  def _setup_binary(self) -> None:  # pytype: disable=override-error
+    super()._setup_binary()
     self.platform.adb.grant_permissions(self.android_package)
 
-
-  def _setup_window(self) -> None:
+  @override
+  def _setup_window(self) -> None:  # pytype: disable=override-error
     logging.debug("%s: Skipping viewport settings %s on %s",
                   type(self).__name__, self.viewport, self)
 
@@ -222,8 +223,8 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     return immutabledict(package_info)
 
   @override
-  def setup_binary(self) -> None:
-    super().setup_binary()
+  def _setup_binary(self) -> None:
+    super()._setup_binary()
     self.host_platform.sh_stdout(self.path, "install",
                                  f"--device={self.platform.serial_id}")
 

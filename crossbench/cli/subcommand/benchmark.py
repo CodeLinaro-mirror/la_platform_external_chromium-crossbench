@@ -314,11 +314,37 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
     browser_group.add_argument(
         "--wipe-system-user-data",
-        dest="wipe_system_user_data",
         default=False,
         action="store_true",
         help="Clear user data at the beginning of the test "
-        "(be careful using it).")
+        "(Android-only, be careful using it).")
+    browser_group.add_argument(
+        "--browser-cache-dir",
+        "--browser-cache",
+        "--user-data-dir",
+        type=pth.AnyPath,
+        help="Set an explicit browser cache dir")
+
+    browser_cache_group = subparser.add_argument_group(
+        "Browser Options: Caches",
+        "By default tmp caches are auto-created and cleared at startup.")
+    cache_options = browser_cache_group.add_mutually_exclusive_group()
+    cache_options.add_argument(
+        "--keep-browser-cache",
+        "--no-clear-browser-cache",
+        dest="clear_browser_cache_dir",
+        action="store_false",
+        default=None,
+        help=("Do not clear the browser cache dir after every run. "
+              "This will affect performance and leak user data across runs."))
+    cache_options.add_argument(
+        "--clear-browser-cache",
+        "--clear-browser-cache-dir",
+        dest="clear_browser_cache_dir",
+        action="store_true",
+        help=("Force clear browser cache dir (default). "
+              "Use this flag to override browser config values"))
+
     browser_group.add_argument(
         "--http-request-timeout",
         type=DurationParser.positive_or_zero_duration,
