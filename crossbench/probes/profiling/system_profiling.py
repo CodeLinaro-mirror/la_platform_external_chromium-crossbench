@@ -417,8 +417,8 @@ class ProfilingProbe(Probe):
       # Converting xctrace to pprof is not supported on macos
       return
     try:
-      if gcertstatus := browser.platform.which("gcertstatus"):
-        browser.platform.sh(gcertstatus)
+      if gcertstatus := host_platform.which("gcertstatus"):
+        host_platform.sh(gcertstatus)
         return
       env.handle_warning("Could not find gcertstatus")
     except plt.SubprocessError:
