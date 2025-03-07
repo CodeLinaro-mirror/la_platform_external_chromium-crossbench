@@ -164,7 +164,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     options.add_experimental_option("androidPackage", self.android_package)
     options.add_experimental_option("androidDeviceSerial",
                                     self.platform.adb.serial_id)
-    options.add_experimental_option("androidKeepAppDataDir", True)
+    if not self.clear_cache_dir:
+      options.add_experimental_option("androidKeepAppDataDir", True)
     return options
 
   @override
