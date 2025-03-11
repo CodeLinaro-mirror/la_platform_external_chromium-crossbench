@@ -17,7 +17,7 @@ from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
-  from typing import Optional, Tuple
+  from typing import List, Optional, Tuple
 
   from crossbench.flags.chrome import ChromeFlags
   from crossbench.plt.base import ListCmdArgs
@@ -28,8 +28,9 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   AUTOLOGIN_PATH = pth.AnyPosixPath("/usr/local/autotest/bin/autologin.py")
   DEVTOOLS_PORT_PATH = pth.AnyPosixPath("/home/chronos/DevToolsActivePort")
 
-  def __init__(self, *args, **kwargs) -> None:
+  def __init__(self, *args, enable_arc: bool = False, **kwargs) -> None:
     super().__init__(*args, **kwargs)
+    self._enable_arc: bool = enable_arc
     self._username: str | None = None
     # `/tmp` on ChromeOS is mounted with `noexec` flag.
     # Instead, we use `/usr/local/tmp`, which allows executions of binaries.
@@ -45,6 +46,10 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     return self._username
 
   @property
+  def enable_arc(self) -> bool:
+    return self._enable_arc
+
+  @property
   @override
   def is_chromeos(self) -> bool:
     return True
@@ -53,14 +58,28 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
                                browser_flags: Optional[Tuple[str, ...]] = None,
                                username: Optional[str] = None,
                                password: Optional[str] = None) -> int:
+    disable_extensions_flag: str = "--disable-extensions"
+
+    flags_for_session: List[str] = []
+
+    if browser_flags:
+      flags_for_session = list(browser_flags)
+
     try:
       args: ListCmdArgs = [self.AUTOLOGIN_PATH]
+      if self.enable_arc:
+        if disable_extensions_flag in flags_for_session:
+          logging.warning(
+              "'%s' is not compatible with ARC."
+              " Proceeding without this flag.", disable_extensions_flag)
+          flags_for_session.remove(disable_extensions_flag)
+        args.append("--arc")
       if username and password:
         self._username = username
         args.extend(("-u", username, "-p", password))
-      if browser_flags:
+      if flags_for_session:
         args.append("--")
-        args.extend(browser_flags)
+        args.extend(flags_for_session)
       autologin_output = self.sh(
           *args, stdout=subprocess.PIPE,
           stderr=subprocess.STDOUT).stdout.decode("utf-8")

@@ -305,12 +305,20 @@ class DriverConfig(ConfigObject):
     ssh_user = ObjectParser.non_empty_str(
         self.settings.get("ssh_user"), "ssh user")
     if self.type == BrowserDriverType.CHROMEOS_SSH:
+
+      try:
+        enable_arc = ObjectParser.bool(
+            self.settings.get("enable_arc"), "enable arc", strict=True)
+      except argparse.ArgumentTypeError:
+        enable_arc = False
+
       return ChromeOsSshPlatform(
           plt.PLATFORM,
           host=host,
           port=port,
           ssh_port=ssh_port,
-          ssh_user=ssh_user)
+          ssh_user=ssh_user,
+          enable_arc=enable_arc)
     return plt.LinuxSshPlatform(
         plt.PLATFORM,
         host=host,

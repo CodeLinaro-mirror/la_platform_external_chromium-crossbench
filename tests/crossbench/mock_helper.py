@@ -62,6 +62,10 @@ class ShResult:
     return self._result
 
   @property
+  def stdout(self) -> bytes:
+    return self.result
+
+  @property
   def success(self) -> bool:
     return self._success
 
@@ -280,9 +284,10 @@ class MockPlatformMixin:
          quiet: bool = False,
          check: bool = True):
     del capture_output, stderr, stdin, stdout
-    self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, check=check)
+    result = self.sh_stdout(
+        *args, shell=shell, quiet=quiet, env=env, check=check)
     # TODO: Generalize this in the future, to mimic failing `sh` calls.
-    return subprocess.CompletedProcess(args, 0)
+    return subprocess.CompletedProcess(args, 0, stdout=result.encode("utf-8"))
 
   def popen(self,
             *args: CmdArg,

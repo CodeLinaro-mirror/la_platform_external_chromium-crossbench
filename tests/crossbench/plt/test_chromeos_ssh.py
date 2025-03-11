@@ -19,12 +19,16 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   @override
   def setUp(self) -> None:
     super().setUp()
+    self._init_platform()
+
+  def _init_platform(self, enable_arc=False):
     self.platform = ChromeOsSshPlatform(
         self.mock_platform,
         host=self.HOST,
         port=self.PORT,
         ssh_port=self.SSH_PORT,
-        ssh_user=self.SSH_USER)
+        ssh_user=self.SSH_USER,
+        enable_arc=enable_arc)
 
   def test_name(self):
     self.assertEqual(self.platform.name, "chromeos_ssh")
@@ -63,6 +67,47 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     [horizontal, vertical] = self.platform.display_resolution()
     self.assertEqual(horizontal, 1366)
     self.assertEqual(vertical, 768)
+
+  def test_create_debugging_session(self):
+    expected_port = 80
+
+    self._expect_sh_ssh(
+        "/usr/local/autotest/bin/autologin.py -u username -p password")
+    self._expect_sh_ssh(
+        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+    port = self.platform.create_debugging_session(
+        browser_flags=(), username="username", password="password")
+
+    self.assertEqual(port, expected_port)
+
+  def test_create_debugging_session_arc(self):
+    self._init_platform(enable_arc=True)
+    expected_port = 80
+
+    self._expect_sh_ssh(
+        "/usr/local/autotest/bin/autologin.py --arc -u username -p password")
+    self._expect_sh_ssh(
+        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+    port = self.platform.create_debugging_session(
+        browser_flags=(), username="username", password="password")
+
+    self.assertEqual(port, expected_port)
+
+  def test_create_debugging_session_arc_removes_disable_extensions(self):
+    self._init_platform(enable_arc=True)
+    expected_port = 80
+
+    self._expect_sh_ssh("/usr/local/autotest/bin/autologin.py --arc"
+                        " -u username -p password -- --another-flag")
+    self._expect_sh_ssh(
+        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+    port = self.platform.create_debugging_session(
+        browser_flags=("--disable-extensions", "--another-flag"),
+        username="username",
+        password="password")
+
+    self.assertEqual(port, expected_port)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
