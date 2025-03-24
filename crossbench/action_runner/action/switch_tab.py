@@ -32,3 +32,10 @@ class SwitchTabAction(BaseTabAction):
   @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.switch_tab(run, self)
+
+  @override
+  def validate(self) -> None:
+    super().validate()
+
+    if not self.title and not self.url and self.tab_index is None:
+      raise ValueError("One of tab_index, title, or url is required.")

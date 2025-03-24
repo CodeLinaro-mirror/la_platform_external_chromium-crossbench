@@ -260,8 +260,11 @@ class ChromiumBasedWebDriver(
   ) -> None:
     driver = self._private_driver
     original_handle = driver.current_window_handle
+    tab_to_close = original_handle
 
-    tab_to_close = self.switch_tab(title, url, tab_index, timeout)
+    if title or url or (tab_index is not None):
+      tab_to_close = self.switch_tab(title, url, tab_index, timeout)
+
     driver.close()
 
     if tab_to_close != original_handle:

@@ -825,9 +825,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "close_tab",
     }
+    action = CloseTabAction.parse_dict(config_dict)
 
-    with self.assertRaisesRegex(ValueError, "tab_index, title, or url"):
-      CloseTabAction.parse_dict(config_dict)
+    self.assertEqual(action.TYPE, ActionType.CLOSE_TAB)
+    self.assertFalse(action.tab_index)
+    self.assertFalse(action.title)
+    self.assertFalse(action.url)
+    action.validate()
+
+    action_2 = CloseTabAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
 
   def test_parse_wait_for_ready_state(self):
     config_dict = {

@@ -63,13 +63,6 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
     return self._tab_index
 
   @override
-  def validate(self) -> None:
-    super().validate()
-
-    if not self.title and not self.url and not self.tab_index:
-      raise ValueError("One of tab_index, title, or url is required.")
-
-  @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     if self._tab_index:
