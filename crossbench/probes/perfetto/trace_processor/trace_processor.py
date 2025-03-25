@@ -59,7 +59,8 @@ class TraceProcessorQueryConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)
-    parser.add_argument("sql", type=ObjectParser.non_empty_str, required=True)
+    parser.add_argument(
+        "sql", type=ObjectParser.str_or_file_contents, required=True)
     return parser
 
 
