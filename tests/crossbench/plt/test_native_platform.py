@@ -5,22 +5,30 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import os
 import pathlib
+import signal
+import socket
+import stat
 import sys
 import tempfile
 import unittest
 
-from crossbench import compat, plt
-from crossbench.plt.base import DEFAULT_CACHE_DIR
+from typing_extensions import override
+
+from crossbench import plt
+from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 
 
 class NativePlatformTestCase(unittest.TestCase):
 
+  @override
   def setUp(self):
     self.platform: plt.Platform = plt.PLATFORM
+    self.known_binary = "python3"
 
   def test_sleep(self):
     self.platform.sleep(0)
@@ -80,46 +88,51 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertIn("empty", str(cm.exception))
 
   def test_cat(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      file = pathlib.Path(tmp_dirname) / "test.txt"
-      with file.open("w") as f:
-        f.write("a b c d e f 11")
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      file = tmp_dir / "test.txt"
+      self.platform.set_file_contents(file, "a b c d e f 11")
       result = self.platform.cat(file)
       self.assertEqual(result, "a b c d e f 11")
 
   def test_cat_bytes(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      file = pathlib.Path(tmp_dirname) / "test.data"
-      with file.open("wb") as f:
-        f.write(b"a b c d e f 11")
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      file = tmp_dir / "test.data"
+      self.platform.set_file_contents(file, "a b c d e f 11")
       result = self.platform.cat_bytes(file)
       self.assertEqual(result, b"a b c d e f 11")
 
   def test_mkdir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      path = pathlib.Path(tmp_dirname) / "foo" / "bar"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      path = tmp_dir / "foo" / "bar"
       self.assertFalse(self.platform.exists(path))
       self.platform.mkdir(path)
-      self.assertTrue(path.is_dir())
+      self.assertTrue(self.platform.is_dir(path))
+      if self.platform.is_local:
+        self.assertTrue(pathlib.Path(path).is_dir())
 
   def test_rm_file(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      path = pathlib.Path(tmp_dirname) / "foo.txt"
-      path.touch()
-      self.assertTrue(path.is_file())
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      path = tmp_dir / "foo.txt"
+      self.platform.touch(path)
+      self.assertTrue(self.platform.is_file(path))
+      if self.platform.is_local:
+        self.assertTrue(pathlib.Path(path).is_file())
       self.platform.rm(path)
       self.assertFalse(self.platform.exists(path))
 
   def test_rm_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      path = pathlib.Path(tmp_dirname) / "foo" / "bar"
-      path.mkdir(parents=True, exist_ok=False)
-      self.assertTrue(path.is_dir())
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      path = tmp_dir / "foo" / "bar"
+      self.platform.mkdir(path, parents=True, exist_ok=False)
+      self.assertTrue(self.platform.is_dir(path))
+      if self.platform.is_local:
+        self.assertTrue(path.is_dir())
       with self.assertRaises(Exception):
         self.platform.rm(path.parent)
       self.platform.rm(path.parent, dir=True)
       self.assertFalse(self.platform.exists(path))
-      self.assertFalse(path.parent.exists())
+      if self.platform.is_local:
+        self.assertFalse(pathlib.Path(path).parent.exists())
 
   def test_mkdtemp(self):
     result = self.platform.mkdtemp(prefix="a_custom_prefix")
@@ -129,11 +142,10 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertFalse(self.platform.exists(result))
 
   def test_mkdtemp_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       result = self.platform.mkdtemp(dir=tmp_dir)
       self.assertTrue(self.platform.is_dir(result))
-      self.assertTrue(compat.is_relative_to(result, tmp_dir))
+      self.assertTrue(result.is_relative_to(tmp_dir))
     self.assertFalse(self.platform.exists(result))
 
   def test_mktemp(self):
@@ -144,40 +156,48 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertFalse(self.platform.exists(result))
 
   def test_mktemp_dir(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       result = self.platform.mktemp(dir=tmp_dir)
       self.assertTrue(self.platform.is_file(result))
-      self.assertTrue(compat.is_relative_to(result, tmp_dir))
+      self.assertTrue(result.is_relative_to(tmp_dir))
     self.assertFalse(self.platform.exists(result))
 
   def test_exists(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       self.assertTrue(self.platform.exists(tmp_dir))
       self.assertFalse(self.platform.exists(tmp_dir / "foo"))
 
   def test_touch(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
-      self.assertFalse(tmp_file.exists())
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
+      if self.platform.is_local:
+        self.assertFalse(tmp_file.exists())
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.touch(tmp_file)
-      self.assertTrue(tmp_file.exists())
+      if self.platform.is_local:
+        self.assertTrue(tmp_file.exists())
       self.assertTrue(self.platform.exists(tmp_file))
-      self.assertEqual(tmp_file.stat().st_size, 0)
+      if self.platform.is_local:
+        self.assertEqual(tmp_file.stat().st_size, 0)
 
   def test_rename(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
       tmp_file_renamed = tmp_file.with_name("test_renamed.txt")
       self.platform.touch(tmp_file)
-      self.assertTrue(tmp_file.exists())
-      self.assertFalse(tmp_file_renamed.exists())
+      if self.platform.is_local:
+        self.assertTrue(tmp_file.exists())
+        self.assertFalse(tmp_file_renamed.exists())
+      self.assertTrue(self.platform.exists(tmp_file))
+      self.assertFalse(self.platform.exists(tmp_file_renamed))
+
       result = self.platform.rename(tmp_file, tmp_file_renamed)
       self.assertEqual(result, tmp_file_renamed)
-      self.assertFalse(tmp_file.exists())
-      self.assertTrue(tmp_file_renamed.exists())
+      if self.platform.is_local:
+        self.assertFalse(tmp_file.exists())
+        self.assertTrue(tmp_file_renamed.exists())
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.assertTrue(self.platform.exists(tmp_file_renamed))
 
   def test_default_tmp_dir(self):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
@@ -190,9 +210,9 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertFalse(self.platform.exists(path))
 
   def test_copy(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      src_file = pathlib.Path(tmp_dirname) / "src.txt"
-      dst_file = pathlib.Path(tmp_dirname) / "dst.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      src_file = tmp_dir / "src.txt"
+      dst_file = tmp_dir / "dst.txt"
       with self.assertRaises(ValueError) as cm:
         self.assertFalse(self.platform.exists(src_file))
         self.platform.copy(src_file, dst_file)
@@ -200,16 +220,52 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(src_file))
       self.assertFalse(self.platform.exists(dst_file))
 
-      src_file.write_text("some data")
+      self.platform.set_file_contents(src_file, "some data")
       self.assertTrue(self.platform.exists(src_file))
       self.platform.copy(src_file, dst_file)
       self.assertTrue(self.platform.exists(src_file))
       self.assertTrue(self.platform.exists(dst_file))
       self.assertEqual(self.platform.cat(src_file), "some data")
       self.assertEqual(self.platform.cat(dst_file), "some data")
+      # Copying the same file should have no effect:
+      self.platform.copy(src_file, src_file)
+      self.platform.copy(dst_file, dst_file)
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
+
+  def test_copy_dir(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      src_file = tmp_dir / "src/file.txt"
+      dst_file = tmp_dir / "dst/file.txt"
+      src_dir = src_file.parent
+      dst_dir = dst_file.parent
+      with self.assertRaises(ValueError) as cm:
+        self.assertFalse(self.platform.exists(src_dir))
+        self.platform.copy(src_dir, dst_dir)
+      self.assertIn(str(src_dir), str(cm.exception))
+      self.assertFalse(self.platform.exists(src_dir))
+      self.assertFalse(self.platform.exists(dst_dir))
+
+      self.platform.mkdir(src_dir)
+      self.platform.set_file_contents(src_file, "some data")
+      self.assertTrue(self.platform.exists(src_file))
+
+      self.platform.copy(src_dir, dst_dir)
+      self.assertTrue(self.platform.exists(src_file))
+      self.assertTrue(self.platform.exists(dst_file))
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
+      # Copying the same file should have no effect:
+      self.platform.copy(src_dir, src_dir)
+      self.platform.copy(dst_dir, dst_dir)
+      self.assertEqual(self.platform.cat(src_file), "some data")
+      self.assertEqual(self.platform.cat(dst_file), "some data")
 
   def test_home(self):
-    self.assertEqual(self.platform.home(), pathlib.Path.home())
+    if self.platform.is_local:
+      self.assertEqual(self.platform.home(), pathlib.Path.home())
+    else:
+      self.assertTrue(self.platform.is_dir(self.platform.home()))
 
   def test_absolute_absolute(self):
     if self.platform.is_win:
@@ -230,8 +286,7 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_glob(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       self.assertFalse(list(self.platform.glob(tmp_dir, "*")))
       a = tmp_dir / "a"
       b = tmp_dir / "b"
@@ -242,8 +297,8 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_set_file_contents(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_file = pathlib.Path(tmp_dirname) / "test.txt"
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.mkdir(tmp_file.parent)
       self.platform.touch(tmp_file)
@@ -256,7 +311,7 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_set_file_contents_dir(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    with tempfile.TemporaryDirectory() as tmp_dirname:
+    with self.platform.TemporaryDirectory() as tmp_dirname:
       self.assertTrue(self.platform.is_dir(tmp_dirname))
       tmp_dir_path = self.platform.path(tmp_dirname)
       self.assertTrue(self.platform.is_dir(tmp_dir_path))
@@ -265,8 +320,7 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertIn(tmp_dir_path.name, str(cm.exception))
 
   def test_path_tests(self):
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-      tmp_dir = pathlib.Path(tmp_dirname)
+    with self.platform.TemporaryDirectory() as tmp_dir:
       self.assertTrue(self.platform.exists(tmp_dir))
       self.assertTrue(self.platform.is_dir(tmp_dir))
       self.assertFalse(self.platform.is_file(tmp_dir))
@@ -289,18 +343,36 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.is_dir(bar_file))
       self.assertTrue(self.platform.is_file(bar_file))
 
+  def test_chmod(self):
+    if self.platform.is_remote:
+      return
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.set_file_contents(tmp_file, "")
+      mode = 0o400
+      self.platform.chmod(tmp_file, mode)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      mode = 0o600
+      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.platform.chmod(tmp_file, mode)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+
+  @unittest.skipIf(
+      test_helper.is_google_env(), "Source directory is readonly")
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
       try:
         self.platform.set_cache_dir(tmp_dir)
-        cache_dir = self.platform.local_cache_dir("test")
+        cache_dir = self.platform.cache_dir("test")
         self.assertTrue(self.platform.is_dir(cache_dir))
         self.assertEqual(cache_dir.parent, tmp_dir)
       finally:
-        self.platform.rm(cache_dir, dir=True, missing_ok=True)
         if self.platform.is_local:
           self.platform.set_cache_dir(DEFAULT_CACHE_DIR)
 
+  @unittest.skipIf(
+      test_helper.is_google_env(), "Source directory is readonly")
   def test_default_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -311,6 +383,8 @@ class NativePlatformTestCase(unittest.TestCase):
     finally:
       self.platform.rm(cache_dir, dir=True, missing_ok=True)
 
+  @unittest.skipIf(
+      test_helper.is_google_env(), "Source directory is readonly")
   def test_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -327,6 +401,8 @@ class NativePlatformTestCase(unittest.TestCase):
   def test_processes(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
+    if self.platform.is_win:
+      self.skipTest("Too Slow on windows")
     processes = self.platform.processes(["name"])
     self.assertTrue(processes)
     for process_info in processes:
@@ -361,6 +437,37 @@ class NativePlatformTestCase(unittest.TestCase):
     process_info = self.platform.process_children(os.getpid(), recursive=True)
     self.assertIsInstance(process_info, list)
 
+  def test_get_free_port(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    self.assertGreater(port, 0)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.bind(("localhost", port))
+      self.assertNotEqual(port, self.platform.get_free_port())
+
+  def test_is_port_used(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    self.assertFalse(self.platform.is_port_used(port))
+    with socket.create_server(("localhost", port)):
+      self.assertTrue(self.platform.is_port_used(port))
+
+  def test_wait_for_port(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    with self.assertRaises(TimeoutError):
+      self.platform.wait_for_port(port, timeout=dt.timedelta(seconds=0.01))
+
+  def test_wait_for_port_active(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    port = self.platform.get_free_port()
+    with socket.create_server(("localhost", port)):
+      self.platform.wait_for_port(port, timeout=dt.timedelta(seconds=0.01))
+
   @unittest.skipIf(
       not plt.PLATFORM.which("python3"), reason="python3 not installed")
   def test_binary_lookup_override(self):
@@ -368,7 +475,7 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
     self.assertIsNone(self.platform.which(test_binary))
     # Use an arbitrary existing binary for testing.
-    override_binary = self.platform.which("python3")
+    override_binary = self.platform.which(self.known_binary)
     self.assertTrue(override_binary)
     with self.platform.override_binary(test_binary, override_binary):
       self.assertEqual(self.platform.which(test_binary), override_binary)
@@ -379,11 +486,22 @@ class NativePlatformTestCase(unittest.TestCase):
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
     self.assertIsNone(self.platform.which(test_binary))
 
+  def test_signals(self):
+    for signal_name in dir(self.platform.signals):
+      if not signal_name.startswith("SIG"):
+        continue
+      value = getattr(self.platform.signals, signal_name)
+      native_value = getattr(signal, signal_name)
+      self.assertEqual(value, native_value,
+                       f"Mismatching values for {signal_name}")
+
+
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class PosixNativePlatformTestCase(NativePlatformTestCase):
   platform: PosixPlatform
 
+  @override
   def setUp(self):
     super().setUp()
     assert isinstance(plt.PLATFORM, PosixPlatform)
@@ -405,15 +523,43 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
   def test_which(self):
     ls_bin = self.platform.which("ls")
     self.assertIsNotNone(ls_bin)
-    bash_bin = self.platform.which("bash")
-    self.assertIsNotNone(bash_bin)
-    self.assertNotEqual(ls_bin, bash_bin)
-    self.assertTrue(pathlib.Path(ls_bin).exists())
-    self.assertTrue(pathlib.Path(bash_bin).exists())
+    # self.known_binary is "python3", which does not exist on google3,
+    # as google3 has its own mechanism to start python scripts.
+    if not test_helper.is_google_env():
+      known_binary = self.platform.which(self.known_binary)
+      self.assertIsNotNone(known_binary)
+      self.assertNotEqual(ls_bin, known_binary)
+      self.assertTrue(self.platform.exists(ls_bin))
+      self.assertTrue(self.platform.exists(known_binary))
 
   def test_system_details(self):
     details = self.platform.system_details()
     self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+
+  def test_os_details(self):
+    details = self.platform.os_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertIn("system", details)
+    self.assertIn("release", details)
+    self.assertIn("version", details)
+
+  def test_cpu_details(self):
+    details = self.platform.cpu_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertIn("info", details)
+    self.assertIn("physical cores", details)
+    self.assertIn("logical cores", details)
+    self.assertIn("min frequency", details)
+    self.assertIn("max frequency", details)
+
+  def test_python_details(self):
+    details = self.platform.python_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertIn("version", details)
 
   def test_search_binary(self):
     result_path = self.platform.search_binary(pathlib.Path("ls"))
@@ -423,10 +569,10 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
 
   def test_search_binary_posix_lookup_override(self):
     path = pathlib.Path("ls")
-    override = self.platform.which("cp")
-    with self.platform.override_binary(path, override):
+    overridden_binary = self.platform.which("cp")
+    with self.platform.override_binary(path, overridden_binary):
       result_path = self.platform.search_binary(path)
-      self.assertEqual(result_path, override)
+      self.assertEqual(result_path, overridden_binary)
       self.assertTrue(self.platform.exists(result_path))
 
     result_path_2 = self.platform.search_binary(path)
@@ -440,7 +586,20 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     self.assertIn("PATH", env)
     self.assertTrue(list(env))
 
+  def test_environ_set_property_fails_on_remote(self):
+    if self.platform.is_local:
+      return
+    env = self.platform.environ
+    custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
+    self.assertNotIn(custom_key, env)
+    with self.assertRaises(Exception):
+      env[custom_key] = 1234
+    with self.assertRaises(Exception):
+      env[custom_key] = "1234"
+
   def test_environ_set_property(self):
+    if self.platform.is_remote:
+      return
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
@@ -461,24 +620,87 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     version = self.platform.app_version(python_path)
     self.assertTrue(version)
 
+  def test_shell_piping(self):
+    with self.platform.NamedTemporaryFile() as file:
+      result = self.platform.sh_stdout(
+          f"echo 'test data' > {file} && cat {file}", shell=True)
+      self.assertEqual(result, "test data\n")
+
+  def test_simple_shell_status_ok(self):
+    self.platform.sh("ls", shell=False)
+    self.platform.sh("ls && ls", shell=True)
+    self.assertTrue(self.platform.sh_stdout("ls", shell=False))
+    self.assertTrue(self.platform.sh_stdout("ls && ls", shell=True))
+
+  def test_simple_shell_fail(self):
+    with self.assertRaises(SubprocessError):
+      self.platform.sh("ls", "path/to/invalid/test/crossbench/dir", shell=False)
+    with self.assertRaises(SubprocessError):
+      self.platform.sh(
+          "ls path/to/invalid/test/crossbench/dir && ls", shell=True)
+    with self.assertRaises(SubprocessError):
+      self.platform.sh_stdout(
+          "ls", "path/to/invalid/test/crossbench/dir", shell=False)
+    with self.assertRaises(SubprocessError):
+      self.platform.sh_stdout(
+          "ls path/to/invalid/test/crossbench/dir && ls", shell=True)
+
+  def test_simple_shell_fail_ignore(self):
+    self.platform.sh(
+        "ls", "path/to/invalid/test/crossbench/dir", shell=False, check=False)
+    self.platform.sh(
+        "ls path/to/invalid/test/crossbench/dir && ls", shell=True, check=False)
+    self.assertEqual(
+        self.platform.sh_stdout(
+            "ls",
+            "path/to/invalid/test/crossbench/dir",
+            shell=False,
+            check=False), "")
+    self.assertEqual(
+        self.platform.sh_stdout(
+            "ls path/to/invalid/test/crossbench/dir && ls",
+            shell=True,
+            check=False), "")
+
+  def test_popen_watch(self):
+    # TODO: implement mock remote popen
+    if self.platform.is_remote:
+      self.skipTest("Missing remote platform popen")
+      return
+    popen = None
+    try:
+      popen = self.platform.popen("sleep", "5")
+      self.assertTrue(popen.pid)
+      self.assertTrue(self.platform.host_platform.process_info(popen.pid))
+    finally:
+      popen.kill()
+
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
   @property
+  @override
   def host_platform(self):
     return plt.PLATFORM
 
+  @property
   def is_remote(self) -> bool:
     return True
 
+  @override
   def local_path(self, path):
     # override to bypass is_local checks
     return pathlib.Path(path)
 
+  @override
   def sh(self, *args, **kwargs):
     return plt.PLATFORM.sh(*args, **kwargs)
 
+  @override
   def sh_stdout(self, *args, **kwargs):
     return plt.PLATFORM.sh_stdout(*args, **kwargs)
+
+  def push(self, from_path, to_path):
+    return self.copy_file(from_path, to_path)
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
@@ -487,6 +709,7 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   This test fakes this by temporarily changing the current PLATFORM's is_remote
   getter to return True"""
 
+  @override
   def setUp(self):
     super().setUp()
     self.platform = MockRemotePosixPlatform()
@@ -504,11 +727,22 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   def test_cpu_usage(self):
     raise self.skipTest("Not supported on remote platforms")
 
+  def test_chmod(self):
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_dir = pathlib.Path(tmp_dirname)
+      tmp_file = tmp_dir / "test.txt"
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.touch(tmp_file)
+      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.platform.chmod(tmp_file, 0o755)
+      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
 class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
   platform: plt.MacOSPlatform
 
+  @override
   def setUp(self):
     super().setUp()
     assert isinstance(plt.PLATFORM, plt.MacOSPlatform)
@@ -529,8 +763,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(binary.name, "Safari")
 
   def test_search_app_binary_override(self):
-    override = pathlib.Path("/System/Applications/Calendar.app")
-    with self.platform.override_binary("Safari.app", override):
+    overridden_binary = pathlib.Path("/System/Applications/Calendar.app")
+    with self.platform.override_binary("Safari.app", overridden_binary):
       binary = self.platform.search_binary(pathlib.Path("Safari.app"))
       self.assertIsNotNone(binary)
       self.assertTrue(self.platform.is_file(binary))
@@ -552,8 +786,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertTrue(self.platform.is_dir(binary))
 
   def test_search_app_override(self):
-    override = pathlib.Path("/System/Applications/Calendar.app")
-    with self.platform.override_binary("Safari.app", override):
+    overridden_binary = pathlib.Path("/System/Applications/Calendar.app")
+    with self.platform.override_binary("Safari.app", overridden_binary):
       binary = self.platform.search_app(pathlib.Path("Safari.app"))
       self.assertIsNotNone(binary)
       self.assertTrue(self.platform.exists(binary))
@@ -561,14 +795,15 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
       self.assertEqual(binary.name, "Calendar.app")
 
   def test_app_version_app(self):
-    app = self.platform.search_app(pathlib.Path("Safari.app"))
+    app = pathlib.Path(self.platform.search_app(pathlib.Path("Safari.app")))
     self.assertIsNotNone(app)
     self.assertTrue(app.is_dir())
     version = self.platform.app_version(app)
     self.assertRegex(version, r"[0-9]+\.[0-9]+")
 
   def test_app_version_app_binary(self):
-    binary = self.platform.search_binary(pathlib.Path("Safari.app"))
+    binary = pathlib.Path(
+        self.platform.search_binary(pathlib.Path("Safari.app")))
     self.assertIsNotNone(binary)
     self.assertTrue(binary.is_file())
     version = self.platform.app_version(binary)
@@ -605,6 +840,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertFalse(self.platform.is_remote)
 
   def test_set_main_screen_brightness(self):
+    if test_helper.is_on_swarming():
+      self.skipTest("Skipping this to run in CQ due to crbug.com/396417022.")
     prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
     plt.PLATFORM.set_main_display_brightness(brightness_level)
@@ -614,6 +851,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(prev_level, plt.PLATFORM.get_main_display_brightness())
 
   def test_check_autobrightness(self):
+    if test_helper.is_on_swarming():
+      self.skipTest("Skipping this to run in CQ due to crbug.com/396405604.")
     self.platform.check_autobrightness()
 
   def test_exec_apple_script(self):
@@ -638,6 +877,7 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
 class WinNativePlatformTestCase(NativePlatformTestCase):
   platform: plt.WinPlatform
 
+  @override
   def setUp(self):
     super().setUp()
     assert isinstance(plt.PLATFORM, plt.WinPlatform)
@@ -650,13 +890,15 @@ class WinNativePlatformTestCase(NativePlatformTestCase):
   def test_search_binary(self):
     with self.assertRaises(ValueError):
       self.platform.search_binary(pathlib.Path("does not exist"))
-    path = self.platform.search_binary(
-        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+    path = pathlib.Path(
+        self.platform.search_binary(
+            pathlib.Path("Windows NT/Accessories/wordpad.exe")))
     self.assertTrue(path and path.exists())
 
   def test_app_version(self):
-    path = self.platform.search_binary(
-        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+    path = pathlib.Path(
+        self.platform.search_binary(
+            pathlib.Path("Windows NT/Accessories/wordpad.exe")))
     self.assertTrue(path and path.exists())
     version = self.platform.app_version(path)
     self.assertIsNotNone(version)

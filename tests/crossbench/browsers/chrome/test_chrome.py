@@ -4,20 +4,24 @@
 
 import argparse
 
+from typing_extensions import override
+
+from crossbench import path as pth
+from crossbench.browsers.chrome.version import ChromeVersion
+from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
+                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.settings import Settings
+from crossbench.flags.chrome import ChromeFlags
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
 
-from crossbench import path as pth
-from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
-                                                  LocalChromeWebDriverAndroid)
-from crossbench.browsers.settings import Settings
-
 
 class ChromeWebDriverForTesting(ChromeWebDriver):
 
-  def _extract_version(self) -> str:
-    return mock_browser.MockChromeStable.VERSION
+  @override
+  def _extract_version(self) -> ChromeVersion:
+    return ChromeVersion.parse(mock_browser.MockChromeStable.VERSION)
 
 
 class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
@@ -53,15 +57,21 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
     self.assertNotIn("--disable-field-trial-config", browser_field_trial.flags)
 
   def test_auto_disabling_field_trials_all(self):
-    for field_trial_flag in ChromeWebDriver.FIELD_TRIAL_FLAGS:
+    for field_trial_flag in ChromeFlags.FIELD_TRIAL_FLAGS:
+      if field_trial_flag == "--enable-benchmarking":
+        continue
       browser = ChromeWebDriverForTesting(
           label="browser-label",
           path=mock_browser.MockChromeStable.mock_app_path(),
           settings=Settings(flags=[field_trial_flag], platform=self.platform))
-      flags = browser.flags
-      for no_experiment_flag in ChromeWebDriver.NO_EXPERIMENTS_FLAGS:
-        self.assertNotIn(no_experiment_flag, flags)
+      flags: ChromeFlags = browser.flags
+      self.assertIn(field_trial_flag, flags)
+      self.assertFalse(flags.no_experiments_flags)
 
+  def test_is_local_build_mock_browser(self):
+    self.assertTrue(self.browsers)
+    for browser in self.browsers:
+      self.assertFalse(browser.is_local_build)
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 

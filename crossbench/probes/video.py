@@ -7,14 +7,15 @@ from __future__ import annotations
 import atexit
 import logging
 import os
-import signal
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Optional, TextIO, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Self, TextIO, Tuple, Type
 
-from crossbench import helper
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeMissingDataError)
+from typing_extensions import override
+
+from crossbench.helper import collection_helper
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
+from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
@@ -44,7 +45,8 @@ class VideoProbe(Probe):
   FRAMERATE = 60
 
   @classmethod
-  def config_parser(cls) -> ProbeConfigParser:
+  @override
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "generate_timestrip",
@@ -68,6 +70,7 @@ class VideoProbe(Probe):
     self._merge_runs = merge_runs
 
   @property
+  @override
   def result_path_name(self) -> str:
     return f"{self.name}.mp4"
 
@@ -79,6 +82,7 @@ class VideoProbe(Probe):
   def merge_runs(self) -> bool:
     return self._merge_runs
 
+  @override
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
     if env.repetitions > 10:
@@ -117,9 +121,11 @@ class VideoProbe(Probe):
             f"Viewport size for {browser} is {viewport}, "
             f"which differs from first viewport {first_viewport}. ")
 
-  def get_context(self, run: Run) -> VideoProbeContext:
-    return VideoProbeContext(self, run)
+  @override
+  def get_context_cls(self) -> Type[VideoProbeContext]:
+    return VideoProbeContext
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     if not self.merge_runs:
       return LocalProbeResult()
@@ -136,7 +142,7 @@ class VideoProbe(Probe):
     group_files = [video_file]
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
-    video_file_inputs: List[Union[str, LocalPath]] = []
+    video_file_inputs: List[str | LocalPath] = []
     for run in runs:
       video_file_inputs += ["-i", run.results[self].file_list[0]]
     draw_text = ("fontfile='/Library/Fonts/Arial.ttf':"
@@ -163,6 +169,7 @@ class VideoProbe(Probe):
 
     return LocalProbeResult(file=group_files)
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """Merge story videos from multiple browser/configurations"""
     if not self.merge_runs:
@@ -170,8 +177,10 @@ class VideoProbe(Probe):
     groups = list(group.repetitions_groups)
     if len(groups) <= 1:
       return EmptyProbeResult()
-    grouped: Dict[Story, List[RepetitionsRunGroup]] = helper.group_by(
-        groups, key=lambda repetitions_group: repetitions_group.story)
+    grouped: Dict[Story,
+                  List[RepetitionsRunGroup]] = collection_helper.group_by(
+                      groups,
+                      key=lambda repetitions_group: repetitions_group.story)
 
     result_dir = group.get_local_probe_result_path(self)
     result_dir = result_dir / result_dir.stem
@@ -222,8 +231,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def __init__(self, probe: VideoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._record_process: Optional[subprocess.Popen] = None
-    self._recorder_log_file: Optional[TextIO] = None
+    self._record_process: subprocess.Popen | None = None
+    self._recorder_log_file: TextIO | None = None
 
   def start(self) -> None:
     browser = self.run.browser
@@ -271,9 +280,11 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       # The mac screencapture stops on the first (arbitrary) input.
       self._record_process.communicate(input=b"stop")
     elif self.browser_platform.is_android:
-      self._record_process.send_signal(signal.SIGINT)
+      assert not self._record_process.poll(), ("screencapture stopped early. ")
+      self.browser_platform.send_signal(
+          self._record_process, signal=self.browser_platform.signals.SIGINT)
     else:
-      self._record_process.terminate()
+      self.browser_platform.terminate(self._record_process)
 
   def teardown(self) -> ProbeResult:
     assert self._record_process, "Screen recorder stopped early."
@@ -299,10 +310,11 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      helper.wait_and_kill(self._record_process, timeout=5)
+      self.browser_platform.terminate_gracefully(self._record_process,
+                                                 timeout=5)
       self._record_process = None
 
-  def _convert_to_constant_framerate(self):
+  def _convert_to_constant_framerate(self) -> None:
     # On some platforms (android for certain) we get VFR videos which confuse
     # the next video extraction / conversion steps.
     vrf_video_result = (

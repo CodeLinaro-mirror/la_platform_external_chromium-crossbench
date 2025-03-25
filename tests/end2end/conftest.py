@@ -4,37 +4,54 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import pathlib
+import re
 import sys
 import tempfile
-from typing import Optional
+from typing import Iterator, Optional
+from unittest import mock
 
+import psutil
 import pytest
+from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers import all as browsers
+from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.chromium.chromium import Chromium
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.parse import PathParser
 from crossbench.path import LocalPath
-from tests import test_helper
+from crossbench.plt.android_adb import adb_devices
+from crossbench.plt.bin import Binaries, BinaryNotFoundError
+from tests.test_helper import TestEnv
+
+WIN_APP_SUFFIX = [".exe", ".bat"]
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
-
+ADB_DEVICE_ID_FLAG = "--adb-device-id"
+ADB_PATH_FLAG = "--adb-path"
+CAS_ARCHIVE_FLAG = "--cas-archive"
+TEST_BROWSER_FLAG = "--test-browser-path"
+TEST_DRIVER_FLAG = "--test-driver-path"
+TEST_GSUTIL_FLAG = "--test-gsutil-path"
 
 def pytest_addoption(parser):
   parser.addoption(
-      "--test-browser-path",
-      "--browserpath",
-      default=None,
-      type=PathParser.path)
+      TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)
   parser.addoption(
-      "--test-driver-path", "--driverpath", default=None, type=PathParser.path)
+      TEST_DRIVER_FLAG, "--driverpath", default=None, type=PathParser.path)
   parser.addoption(
-      "--test-gsutil-path", "--gustilpath", default=None, type=PathParser.path)
-  parser.addoption("--adb-device-id", default=None, type=str)
+      TEST_GSUTIL_FLAG, "--gsutilpath", default=None, type=PathParser.path)
+  parser.addoption(ADB_DEVICE_ID_FLAG, default=None, type=str)
   parser.addoption("--adb-path", default=None, type=str)
   parser.addoption("--ignore-tests", default=None, type=str)
+  parser.addoption(CAS_ARCHIVE_FLAG, default=None, type=str)
 
 
 def pytest_xdist_auto_num_workers(config):
@@ -46,25 +63,27 @@ def pytest_xdist_auto_num_workers(config):
 
 def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
   app_path = request.config.getoption(option_key)
-  if app_path and plt.PLATFORM.is_win and app_path.suffix != ".exe":
-    return app_path.parent / (app_path.name + ".exe")
+  if app_path and plt.PLATFORM.is_win and app_path.suffix not in WIN_APP_SUFFIX:
+    if (app_path.parent / (app_path.name + ".bat")).exists():
+      return app_path.parent / (app_path.name + ".bat")
+    if (app_path.parent / (app_path.name + ".exe")).exists():
+      return app_path.parent / (app_path.name + ".exe")
   return app_path
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def driver_path(request) -> Optional[pathlib.Path]:
-  maybe_driver_path: Optional[LocalPath] = _get_app_path(
-      request, "--test-driver-path")
+  maybe_driver_path: LocalPath | None = _get_app_path(request, TEST_DRIVER_FLAG)
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
     assert maybe_driver_path.exists()
   return maybe_driver_path
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def browser_path(request) -> Optional[pathlib.Path]:
-  maybe_browser_path: Optional[pathlib.Path] = _get_app_path(
-      request, "--test-browser-path")
+  maybe_browser_path: pathlib.Path | None = _get_app_path(
+      request, TEST_BROWSER_FLAG)
   if maybe_browser_path:
     logging.info("browser path: %s", maybe_browser_path)
     assert maybe_browser_path.exists()
@@ -78,71 +97,143 @@ def browser_path(request) -> Optional[pathlib.Path]:
     return None
 
 
+def is_browser_path_chromium(browser_path) -> bool:
+  # We support local/infra built chrome and chromium versions in the tests
+  # However, the rest of crossbench is fairly strict in that regard, so we
+  # manually patch the default Chrome version to match whatever flavour
+  # (chrome or chromium) we want to use.
+  if not browser_path:
+    return False
+  version_str = plt.PLATFORM.app_version(browser_path)
+  return "chromium" in version_str.lower()
+
+
+@pytest.fixture(scope="session")
+def test_chrome_name(browser_path) -> str:
+  if is_browser_path_chromium(browser_path):
+    return "chromium"
+  return "chrome-stable"
+
+
+def session_patch_chrome_driver_finder(driver_path, browser_path):
+  if not driver_path:
+    yield
+    return
+
+  class MockChromeDriverFinder(ChromeDriverFinder):
+
+    @override
+    def download(self):
+      if self.browser.path == browser_path:
+        # The CQ uses the latest canary, which might not have a easily publicly
+        # accessible chromedriver available.
+        return driver_path
+      return super().download()
+
+  with mock.patch(
+      "crossbench.browsers.chromium_based.webdriver.ChromeDriverFinder",
+      new=MockChromeDriverFinder):
+    yield
+
+
 @pytest.fixture(scope="session", autouse=True)
-def gsutil_path(request) -> pathlib.Path:
-  maybe_gsutil_path: Optional[pathlib.Path] = _get_app_path(
-      request, "--test-gsutil-path")
-  if maybe_gsutil_path:
-    logging.info("gsutil path: %s", maybe_gsutil_path)
-    assert maybe_gsutil_path.exists()
-    return maybe_gsutil_path
-  logging.info("Trying default gsutil path for local runs.")
-  return default_gsutil_path()
+def session_patch_chrome_stable(browser_path):
+  if is_browser_path_chromium(browser_path):
+    with mock.patch.object(Chromium, "default_path", return_value=browser_path):
+      yield
+      return
+  with mock.patch.object(Chrome, "stable_path", return_value=browser_path):
+    yield
+
+
+@contextlib.contextmanager
+def mock_patch_chrome_stable(browser_path):
+  is_chromium = is_browser_path_chromium(browser_path)
+  original_get_browser_cls = BrowserVariantsConfig.get_browser_cls
+
+  def mock_get_browser_cls(browser_config: BrowserConfig):
+    nonlocal is_chromium
+    path_str = str(browser_config.path).lower()
+    if "chrome" not in path_str and "chromium" not in path_str:
+      return original_get_browser_cls(browser_config)
+    if is_chromium:
+      return BrowserVariantsConfig.get_chromium_browser_cls(browser_config)
+    return BrowserVariantsConfig.get_chrome_browser_cls(browser_config)
+
+  with mock.patch.object(
+      Chrome, "stable_path", return_value=browser_path), mock.patch.object(
+          BrowserVariantsConfig,
+          "get_browser_cls",
+          side_effect=mock_get_browser_cls):
+    yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def gsutil_path(request) -> Iterator[pathlib.Path]:
+  if custom_gsutil := _get_app_path(request, TEST_GSUTIL_FLAG):
+    logging.info("gsutil path: %s", custom_gsutil)
+    assert custom_gsutil.exists()
+    with plt.PLATFORM.override_binary("gsutil", custom_gsutil):
+      yield custom_gsutil
+  else:
+    logging.info("Trying default gsutil path for local runs.")
+    yield default_gsutil_path()
 
 
 def default_gsutil_path() -> pathlib.Path:
-  if maybe_gsutil_path := plt.PLATFORM.which("gsutil"):
-    maybe_gsutil_path = plt.PLATFORM.local_path(maybe_gsutil_path)
-    assert maybe_gsutil_path, "could not find fallback gsutil"
-    assert maybe_gsutil_path.exists()
-    return maybe_gsutil_path
+  if gsutil_path := plt.PLATFORM.which("gsutil"):
+    gsutil_path = plt.PLATFORM.local_path(gsutil_path)
+    assert gsutil_path, "could not find fallback gsutil"
+    assert gsutil_path.exists()
+    return gsutil_path
   pytest.skip(f"Could not find gsutil on {plt.PLATFORM}")
   return pathlib.Path()
 
 
 @pytest.fixture
-def output_dir():
-  with tempfile.TemporaryDirectory() as tmpdirname:
-    yield pathlib.Path(tmpdirname)
+def test_env(request):
+  test_name = re.sub(r"[\[\]\\/*?:\"<>|]", "_", request.node.name)
+  maybe_cas_archive: str | None = request.config.getoption(CAS_ARCHIVE_FLAG)
+  if maybe_cas_archive:
+    cas_test_env = TestEnv(pathlib.Path(maybe_cas_archive), test_name)
+    yield cas_test_env
+    cas_test_env.remove_non_result()
+  else:
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+      tmp_test_env = TestEnv(pathlib.Path(tmp_dirname), test_name)
+      yield tmp_test_env
+      if plt.PLATFORM.is_win:
+        for proc in psutil.process_iter():
+          if "chromedriver" in proc.name().lower():
+            proc.kill()
 
 
 @pytest.fixture(scope="session")
-def root_dir() -> pathlib.Path:
-  return test_helper.root_dir()
-
-
-@pytest.fixture
-def cache_dir(output_dir) -> pathlib.Path:
-  path = output_dir / "cache"
-  assert not path.exists()
-  path.mkdir()
-  return path
-
-
-@pytest.fixture
-def archive_dir(output_dir) -> pathlib.Path:
-  path = output_dir / "archive"
-  assert not path.exists()
-  return path
-
-
-@pytest.fixture(scope="session", autouse=True)
-def device_id(request) -> Optional[str]:
-  maybe_device_id: Optional[str] = request.config.getoption(
-      "--adb-device-id")
+def device_id(request, adb_path) -> Optional[str]:
+  maybe_device_id: str | None = request.config.getoption(ADB_DEVICE_ID_FLAG)
   if maybe_device_id:
     logging.info("adb device id: %s", maybe_device_id)
     return maybe_device_id
+  if adb_path:
+    devices = adb_devices(plt.PLATFORM, adb_path)
+    if len(devices) == 1:
+      device_id, _ = devices.popitem()
+      logging.info("Auto selecting android device: %s", device_id)
+      return device_id
   logging.info("No Android device detected.")
   return None
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def adb_path(request) -> Optional[str]:
-  maybe_adb_path: Optional[str] = request.config.getoption(
-      "--adb-path")
+  maybe_adb_path: str | None = request.config.getoption(ADB_PATH_FLAG)
   if maybe_adb_path:
     logging.info("adb path: %s", maybe_adb_path)
     return maybe_adb_path
-  logging.info("No custom adb path.")
-  return None
+  try:
+    adb_path = Binaries.ADB.resolve(plt.PLATFORM)
+    logging.info("Using default local adb: %s", adb_path)
+    return str(adb_path)
+  except BinaryNotFoundError:
+    logging.info("No custom adb path.")
+    return None

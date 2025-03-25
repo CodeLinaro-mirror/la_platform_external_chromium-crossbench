@@ -10,6 +10,7 @@ import unittest
 
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
+from crossbench.action_runner.action.get import GetAction
 from tests import test_helper
 
 
@@ -107,6 +108,8 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config_1.first_url, "http://test.com/0")
     self.assertEqual(len(config_1.blocks), 1)
     self.assertEqual(len(tuple(config_1.actions())), 2)
+    self.assertIsInstance(config_1.blocks[0].actions[0], GetAction)
+    self.assertIsInstance(config_1.blocks[0].actions[1], GetAction)
     self.assertEqual(config_1.blocks[0].actions[0].url, "http://test.com/0")
     self.assertEqual(config_1.blocks[0].actions[1].url,
                      "http://test.com/0,123s")
@@ -131,11 +134,6 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.any_label, "cnn")
     self.assertEqual(config.first_url, "https://cnn")
     self.assertEqual(len(config.blocks), 1)
-
-  def test_parse_actions_no_get(self):
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      PageConfig.parse([{"action": "click", "selector": "#foo"}])
-    self.assertIn("get", str(cm.exception))
 
   def test_parse_action_sequence(self):
     config = PageConfig.parse([{

@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Type
+
+from typing_extensions import override
 
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeContext
@@ -14,7 +16,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
-  from crossbench.runner.run import Run
 
 
 class V8BuiltinsPGOProbe(ChromiumProbe):
@@ -24,15 +25,16 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
   """
   NAME = "v8.builtins.pgo"
 
+  @override
   def attach(self, browser: Browser) -> None:
-    assert browser.attributes.is_chromium_based, (
-        "Expected Chromium-based browser.")
     super().attach(browser)
     browser.js_flags.set("--allow-natives-syntax")
 
-  def get_context(self, run: Run) -> V8BuiltinsPGOProbeContext:
-    return V8BuiltinsPGOProbeContext(self, run)
+  @override
+  def get_context_cls(self) -> Type[V8BuiltinsPGOProbeContext]:
+    return V8BuiltinsPGOProbeContext
 
+  @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (run.results[self].file for run in group.runs)
@@ -40,6 +42,7 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
         inputs=result_files, output=merged_result_path)
     return LocalProbeResult(file=(result_file,))
 
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (g.results[self].file for g in group.repetitions_groups)
@@ -49,8 +52,9 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
 
 
 class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
-  _pgo_counters: Optional[str] = None
+  _pgo_counters: str | None = None
 
+  @override
   def setup(self) -> None:
     pass
 

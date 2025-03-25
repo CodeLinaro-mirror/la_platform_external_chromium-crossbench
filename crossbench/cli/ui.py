@@ -2,15 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import contextlib
 import datetime as dt
 import logging
 import sys
-from typing import Iterator
+import threading
+from typing import TYPE_CHECKING, Iterator, Optional, Tuple, Type
 
 import colorama
 
-from crossbench import helper
+if TYPE_CHECKING:
+  from types import TracebackType
 
 colorama.init()
 
@@ -39,10 +43,14 @@ class ColoredLogFormatter(logging.Formatter):
     formatter = logging.Formatter(log_fmt)
     return formatter.format(record)
 
-  def formatException(self, ei) -> str:
+  def formatException(
+      self,
+      ei: Tuple[Type[BaseException], BaseException, Optional[TracebackType]]
+      | Tuple[None, ...]
+  ) -> str:
     return ""
 
-  def formatStack(self, stack_info) -> str:
+  def formatStack(self, stack_info: str) -> str:
     return ""
 
 
@@ -55,5 +63,18 @@ def timer(msg: str = "Elapsed Time") -> Iterator[None]:
     indent = colorama.Cursor.FORWARD() * 3
     sys.stdout.write(f"{indent}{msg}: {delta}\r")
 
-  with helper.RepeatTimer(interval=0.25, function=print_timer):
+  with RepeatTimer(interval=0.25, function=print_timer):
     yield
+
+
+class RepeatTimer(threading.Timer):
+
+  def run(self) -> None:
+    while not self.finished.wait(self.interval):
+      self.function(*self.args, **self.kwargs)
+
+  def __enter__(self, *args, **kwargs) -> None:
+    self.start()
+
+  def __exit__(self, *args, **kwargs) -> None:
+    self.cancel()

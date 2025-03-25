@@ -5,20 +5,23 @@
 from __future__ import annotations
 
 import contextlib
-import json
 import logging
+import os
+import shutil
 import tempfile
 import zipfile
 from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
-                    Type, Union, cast)
+                    Type, cast)
 
-from crossbench import helper
+from typing_extensions import override
+
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.downloader import (DMGArchiveHelper, Downloader,
                                             IncompatibleVersionError,
                                             RPMArchiveHelper)
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
+from crossbench.helper import url_helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import SubprocessError
 
@@ -41,12 +44,13 @@ class ChromeDownloader(Downloader):
       ("android", "arm64"): "android",
   }
 
-  def __init__(self, *args, **kwargs):
-    self._gsutil: Optional[pth.AnyPath] = None
+  def __init__(self, *args, **kwargs) -> None:
+    self._gsutil: pth.AnyPath | None = None
     super().__init__(*args, **kwargs)
 
   @classmethod
-  def is_valid_version(cls, path_or_identifier: str):
+  @override
+  def is_valid_version(cls, path_or_identifier: str) -> bool:
     return ChromeVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
@@ -59,6 +63,7 @@ class ChromeDownloader(Downloader):
             path.name.endswith(cls.ARCHIVE_SUFFIX))
 
   @classmethod
+  @override
   def _get_loader_cls(cls,
                       browser_platform: Platform) -> Type[ChromeDownloader]:
     if browser_platform.is_macos:
@@ -73,6 +78,7 @@ class ChromeDownloader(Downloader):
         "Downloading chrome is only supported on linux and macOS, "
         f"but not on {browser_platform.name} {browser_platform.machine}")
 
+  @override
   def _pre_check(self) -> None:
     super()._pre_check()
     if not self._requested_version:
@@ -91,12 +97,15 @@ class ChromeDownloader(Downloader):
     assert self._gsutil, "gsutil not be found."
     return self._gsutil
 
+  @override
   def _requested_version_validation(self) -> None:
     pass
 
+  @override
   def _parse_version(self, version_identifier: str) -> BrowserVersion:
     return ChromeVersion.parse_unique(version_identifier)
 
+  @override
   def _find_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
     # Quick probe for complete versions
     if self._requested_version.is_complete:
@@ -123,14 +132,14 @@ class ChromeDownloader(Downloader):
     logging.debug("LIST ALL VERSIONS for M%s: %s", milestone, url)
     version_urls: List[Tuple[BrowserVersion, str]] = []
     try:
-      with helper.urlopen(url) as response:
-        raw_infos = json.loads(response.read().decode("utf-8"))["versions"]
-        version_urls = [
-            self._create_version_url(
-                ChromeVersion(
-                    map(int, info["version"].split(".")), requested_channel))
-            for info in raw_infos
-        ]
+      response = url_helper.get(url, retry=3)
+      raw_infos = response.json()["versions"]
+      version_urls = [
+          self._create_version_url(
+              ChromeVersion(
+                  map(int, info["version"].split(".")), requested_channel))
+          for info in raw_infos
+      ]
     except Exception as e:
       raise ValueError(
           f"Could not find version {self._requested_version} "
@@ -173,6 +182,7 @@ class ChromeDownloader(Downloader):
           return archive_version, archive_url
     return self._requested_version, None
 
+  @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     self.host_platform.sh(self.gsutil, "cp", archive_url, tmp_dir)
     archive_candidates = list(tmp_dir.glob("*"))
@@ -182,20 +192,20 @@ class ChromeDownloader(Downloader):
     candidate = archive_candidates[0]
     assert not self._archive_path.exists(), (
         f"Archive was already downloaded: {self._archive_path}")
-    candidate.replace(self._archive_path)
+    shutil.move(os.fspath(candidate), os.fspath(self._archive_path))
 
 
 class ChromeDownloaderLinux(ChromeDownloader):
   ARCHIVE_SUFFIX: str = ".rpm"
 
   @classmethod
+  @override
   def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     if browser_platform.is_linux and browser_platform.is_x64:
       platform_name = "linux64"
@@ -205,14 +215,20 @@ class ChromeDownloaderLinux(ChromeDownloader):
     super().__init__(version_identifier, "chrome", platform_name,
                      browser_platform)
 
+  @override
   def _installed_app_path(self) -> pth.LocalPath:
     dir_name = "chrome-unstable"
     if self._requested_version.is_stable or self._requested_version.is_unknown:
       dir_name = "chrome"
     if self._requested_version.is_beta:
       dir_name = "chrome-beta"
+    if self._requested_version.is_alpha:
+      dir_name = "chrome-unstable"
+    if self._requested_version.is_pre_alpha:
+      dir_name = "chrome-canary"
     return self._extracted_path() / "opt/google" / dir_name / "chrome"
 
+  @override
   def _archive_urls(
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
@@ -226,14 +242,17 @@ class ChromeDownloaderLinux(ChromeDownloader):
             f"{folder_url}google-chrome-beta-{parts_str}-1.x86_64.rpm")
     if version.is_beta:
       return (beta,)
-    dev = (ChromeVersion.alpha(parts),
+    dev = (ChromeVersion.dev(parts),
            f"{folder_url}google-chrome-unstable-{parts_str}-1.x86_64.rpm")
     if version.is_alpha:
       return (dev,)
+    canary = (ChromeVersion.canary(parts),
+              f"{folder_url}google-chrome-canary-{parts_str}-1.x86_64.rpm")
     if version.is_pre_alpha:
-      raise ValueError(f"Canary not supported on linux: {version}")
-    return (stable, beta, dev)
+      return (canary,)
+    return (stable, beta, dev, canary)
 
+  @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
     RPMArchiveHelper.extract(self.host_platform, archive_path, extracted_path)
@@ -245,19 +264,20 @@ class ChromeDownloaderMacOS(ChromeDownloader):
   MIN_MAC_ARM64_MILESTONE: Final[int] = 87
 
   @classmethod
+  @override
   def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
     platform_name = "mac-universal"
     super().__init__(version_identifier, "chrome", platform_name,
                      browser_platform)
 
+  @override
   def _requested_version_validation(self) -> None:
     assert self._browser_platform.is_macos
     major_version: int = self._requested_version.major
@@ -267,6 +287,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
           "Native Mac arm64/m1 Chrome version is available with M87, "
           f"but requested M{major_version}.")
 
+  @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     assert self._browser_platform.is_macos
     if self._browser_platform.is_arm64 and (self._requested_version.major
@@ -276,6 +297,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
           f"but requested {self._requested_version} is too old.")
     super()._download_archive(archive_url, tmp_dir)
 
+  @override
   def _archive_urls(
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
@@ -290,23 +312,26 @@ class ChromeDownloaderMacOS(ChromeDownloader):
             f"{folder_url}GoogleChromeBeta-{version_str}.dmg")
     if version.is_beta:
       return (beta,)
-    dev = (ChromeVersion.alpha(parts),
+    dev = (ChromeVersion.dev(parts),
            f"{folder_url}GoogleChromeDev-{version_str}.dmg")
     if version.is_alpha:
       return (dev,)
-    canary = (ChromeVersion.pre_alpha(parts),
+    canary = (ChromeVersion.canary(parts),
               f"{folder_url}GoogleChromeCanary-{version_str}.dmg")
     if version.is_pre_alpha:
       return (canary,)
     return (stable, beta, dev, canary)
 
+  @override
   def _extracted_path(self) -> pth.LocalPath:
     # TODO: support local vs remote
     return self._installed_app_path()
 
+  @override
   def _installed_app_path(self) -> pth.LocalPath:
     return self._out_dir / f"Google Chrome {self._requested_version}.app"
 
+  @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
     if archive_path.suffix == ".dmg":
@@ -341,13 +366,13 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   }
 
   @classmethod
+  @override
   def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_android, (
         f"{type(self)} can only be used on Android")
@@ -362,11 +387,13 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   def adb(self) -> Adb:
     return cast(AndroidAdbPlatform, self._browser_platform).adb
 
+  @override
   def _pre_check(self) -> None:
     super()._pre_check()
     assert self._browser_platform.is_android, (
         f"Expected android but got {self._browser_platform}")
 
+  @override
   def _requested_version_validation(self) -> None:
     assert self._browser_platform.is_android
     # TODO: support custom android builds
@@ -375,6 +402,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     else:
       self._platform_name = self.ARM_64_HIGH_BUILD
 
+  @override
   def _installed_app_version(self, app_path: pth.LocalPath) -> BrowserVersion:
     raw_version = self._browser_platform.app_version(app_path)
     channel = BrowserVersionChannel.STABLE
@@ -385,6 +413,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
         break
     return ChromeVersion.parse(raw_version, channel)
 
+  @override
   def _archive_urls(
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
@@ -416,9 +445,11 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     #   return "Monochrome"
     return "TrichromeChromeGoogle6432"
 
+  @override
   def _extracted_path(self) -> pth.LocalPath:
     return self._archive_path
 
+  @override
   def _installed_app_path(self) -> pth.LocalPath:
     for channel, (package_name, _) in self.CHANNEL_PACKAGE_LOOKUP.items():
       if channel in self._archive_url:
@@ -427,6 +458,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     package_name, _ = self.CHANNEL_PACKAGE_LOOKUP["Stable"]
     return pth.LocalPath(package_name)
 
+  @override
   def _find_matching_installed_version(self) -> Optional[pth.LocalPath]:
     # TODO: we should use aapt and read the package name directly from
     # the apk: `aapt dump badging <path-to-apk> | grep package:\ name`
@@ -446,6 +478,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
         logging.debug("Ignoring installed package %s: %s", package_name, e)
     return None
 
+  @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     super()._download_archive(archive_url, tmp_dir)
     if "TrichromeChromeGoogle" not in archive_url:
@@ -472,6 +505,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
       yield lib_url, lib_tmp_dir
     self._archive_path = main_archive_path
 
+  @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
     # TODO: move browser installation to browser startup to allow
     # multiple versions on android in a single crossbench invocation
@@ -489,19 +523,20 @@ class ChromeDownloaderWin(ChromeDownloader):
   STORAGE_URL: str = "gs://chrome-unsigned/desktop-5c0tCh/"
 
   @classmethod
+  @override
   def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: Union[str, pth.LocalPath],
-               browser_type: str, platform_name: str,
-               browser_platform: Platform):
+  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
+               platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
     platform_name = "win64-clang"
     super().__init__(version_identifier, "chrome", platform_name,
                      browser_platform)
 
+  @override
   def _archive_urls(
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
@@ -510,13 +545,16 @@ class ChromeDownloaderWin(ChromeDownloader):
               f"{folder_url}{self.ARCHIVE_STEM}.zip")
     return (stable,)
 
+  @override
   def _extracted_path(self) -> pth.LocalPath:
     # TODO: support local vs remote
     return self._out_dir / f"Google Chrome {self._requested_version}"
 
+  @override
   def _installed_app_path(self) -> pth.LocalPath:
     return self._extracted_path() / "chrome.exe"
 
+  @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
     tmp_path = self.host_platform.mkdtemp()

@@ -1,8 +1,10 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file
+# found in the LICENSE file.
 
 from typing import Optional
+
+from typing_extensions import override
 
 from crossbench.browsers.browser import Browser
 from crossbench.flags.base import Flags
@@ -12,6 +14,7 @@ from tests.crossbench.runner.helper import BaseRunnerTestCase
 
 class BaseRunGroupTestCase(BaseRunnerTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self.root_dir = self.out_dir / "custom"

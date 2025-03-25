@@ -7,8 +7,10 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING
 
+from typing_extensions import override
+
 from crossbench.probes.polling import PollingProbe
-from crossbench.probes.probe import ProbeValidationError
+from crossbench.probes.probe_error import ProbeValidationError
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -28,6 +30,7 @@ class SystemStatsProbe(PollingProbe):
       self, interval: dt.timedelta = dt.timedelta(seconds=0.1)) -> None:
     super().__init__(self.CMD, interval)
 
+  @override
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if not (browser.platform.is_linux or browser.platform.is_macos):

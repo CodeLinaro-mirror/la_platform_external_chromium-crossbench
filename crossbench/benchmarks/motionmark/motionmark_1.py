@@ -9,13 +9,15 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
-from crossbench.benchmarks.base import BenchmarkProbeMixin
+from typing_extensions import override
+
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
-from crossbench.helper import update_url_query
+from crossbench.helper import url_helper
 from crossbench.probes.helper import Flatten
-from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import Metric, MetricsMerger
 from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
@@ -43,31 +45,29 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   MotionMark-specific Probe.
   Extracts all MotionMark times and scores.
   """
-  JS = """
-    return window.benchmarkRunnerClient.results.results;
-  """
 
-  def to_json(self, actions: Actions) -> Json:
-    return actions.js(self.JS)
+  @abc.abstractmethod
+  @override
+  def get_context_cls(self) -> Type[MotionMark1ProbeContext]:
+    pass
 
-  def flatten_json_data(self, json_data: List) -> Json:
-    assert isinstance(json_data, list) and len(json_data) == 1, (
-        "Motion12MarkProbe requires a results list.")
-    return Flatten(json_data[0], key_fn=_clean_up_path_segments).data
-
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
         story_group.results[self].json
         for story_group in group.repetitions_groups)
     return self.write_group_result(group, merged)
 
+  @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
         self.merge_browsers_csv_list(group))
 
+  @override
   def log_run_result(self, run: Run) -> None:
     self._log_result(run.results, single_result=True)
 
+  @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_result(group.results, single_result=False)
 
@@ -90,6 +90,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
       else:
         self._log_result_metrics(data)
 
+  @override
   def _extract_result_metrics_table(self, metrics: Dict[str, Any],
                                     table: Dict[str, List[str]]) -> None:
     for metric_key, metric in metrics.items():
@@ -105,6 +106,22 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   def _valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")
     return len(parts) == 2 or parts[-1] == "score"
+
+
+class MotionMark1ProbeContext(JsonResultProbeContext):
+  JS = """
+    return window.benchmarkRunnerClient.results.results;
+  """
+
+  @override
+  def to_json(self, actions: Actions) -> Json:
+    return actions.js(self.JS)
+
+  @override
+  def flatten_json_data(self, json_data: List) -> Json:
+    assert isinstance(json_data, list) and len(json_data) == 1, (
+        "Motion12MarkProbe requires a results list.")
+    return Flatten(json_data[0], key_fn=_clean_up_path_segments).data
 
 
 class MotionMark1Story(PressBenchmarkStory):
@@ -210,10 +227,12 @@ class MotionMark1Story(PressBenchmarkStory):
   READY_JS: str = "return true;"
 
   @classmethod
+  @override
   def default_story_names(cls) -> Tuple[str, ...]:
     return cls.ALL_STORIES["MotionMark"]
 
   @property
+  @override
   def substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=35)
 
@@ -223,11 +242,13 @@ class MotionMark1Story(PressBenchmarkStory):
 
   def prepare_test_url(self) -> str:
     if (url_params := self.url_params) or not self.has_default_substories:
-      updated_url = update_url_query(f"{self.url}/developer.html", url_params)
+      updated_url = url_helper.update_url_query(f"{self.url}/developer.html",
+                                                url_params)
       logging.info("CUSTOM URL: %s", updated_url)
       return updated_url
     return self.url
 
+  @override
   def setup(self, run: Run) -> None:
     test_url = self.prepare_test_url()
     use_developer_url = test_url != self.url

@@ -7,10 +7,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import pathlib
 import unittest
 from typing import Any
 from urllib import parse as urlparse
+
+from typing_extensions import override
 
 from crossbench.parse import (DurationParser, NumberParser, ObjectParser,
                               PathParser)
@@ -134,6 +137,7 @@ class DurationParserTestCase(unittest.TestCase):
 
 class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self):
     super().setUp()
     self._json_test_data = {"int": 1, "array": [1, "2"]}
@@ -154,6 +158,26 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
       ObjectParser.non_empty_str("")
     self.assertIn("empty", str(cm.exception))
 
+  def test_parse_str_or_file_contents(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
+      ObjectParser.str_or_file_contents("")
+    self.assertEqual(
+        ObjectParser.str_or_file_contents("some data"), "some data")
+    self.assertEqual(ObjectParser.str_or_file_contents("test.txt"), "test.txt")
+
+  def test_parse_str_or_file_contents_file(self):
+    path = pathlib.Path("./test.txt")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, str(path)):
+      ObjectParser.str_or_file_contents(path)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, str(path)):
+      ObjectParser.str_or_file_contents("./test.txt")
+    self.fs.create_file(path, contents="test file contents")
+    self.assertEqual(
+        ObjectParser.str_or_file_contents(path), "test file contents")
+    self.assertEqual(ObjectParser.str_or_file_contents(str(path)), "test.txt")
+    self.assertEqual(
+        ObjectParser.str_or_file_contents("./test.txt"), "test file contents")
+
   def test_parse_httpx_url_str(self):
     for valid in ("http://foo.com", "https://foo.com", "http://localhost:800"):
       self.assertEqual(ObjectParser.httpx_url_str(valid), valid)
@@ -165,38 +189,88 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
   def test_parse_any_int(self):
     self.assertEqual(NumberParser.any_int("-123456"), -123456)
     self.assertEqual(NumberParser.any_int(-123456), -123456)
+    self.assertEqual(NumberParser.any_int(float(-123456)), -123456)
     self.assertEqual(NumberParser.any_int("-1"), -1)
     self.assertEqual(NumberParser.any_int(-1), -1)
+    self.assertEqual(NumberParser.any_int(float(-1)), -1)
     self.assertEqual(NumberParser.any_int("0"), 0)
     self.assertEqual(NumberParser.any_int(0), 0)
+    self.assertEqual(NumberParser.any_int(float(0)), 0)
     self.assertEqual(NumberParser.any_int("1"), 1)
     self.assertEqual(NumberParser.any_int(1), 1)
     self.assertEqual(NumberParser.any_int("123456"), 123456)
     self.assertEqual(NumberParser.any_int(123456), 123456)
 
+  def test_parse_any_int_strict(self):
+    self.assertEqual(NumberParser.any_int(float(0), parse_str=False), 0)
+    self.assertEqual(NumberParser.any_int(1, parse_str=False), 1)
+
   def test_parse_any_int_invalid(self):
-    for invalid in ("", "-1.2", "1.2", "100.001", "Nan", "inf", "-inf",
-                    "invalid"):
+    for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
+                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
+                    None):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.any_int(invalid)
 
+  def test_parse_any_int_invalid_strict(self):
+    for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
+                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
+                    None):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = NumberParser.any_int(invalid, parse_str=False)
+
   def test_parse_positive_int(self):
     self.assertEqual(NumberParser.positive_int("1"), 1)
+    self.assertEqual(NumberParser.positive_int(1), 1)
     self.assertEqual(NumberParser.positive_int("123"), 123)
+    self.assertEqual(NumberParser.positive_int(123), 123)
 
-  def test_parse_positive_int_ivalid(self):
-    for invalid in ("", "0", "-1", "-1.2", "1.2", "Nan", "inf", "-inf",
-                    "invalid"):
-      with self.assertRaises(argparse.ArgumentTypeError):
+  def test_parse_positive_int_invalid(self):
+    for invalid in ("", "0", 0, "-1", -1, "-1.2", -1.2, "1.2", 1.2, "Nan",
+                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
+                    None):
+      with self.assertRaises(
+          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
         _ = NumberParser.positive_int(invalid)
+
+  def test_parse_int_range(self):
+    self.assertEqual(NumberParser.int_range(min=0, max=10)("1"), 1)
+    self.assertEqual(NumberParser.int_range(min=0, max=10)(1), 1)
+    self.assertEqual(NumberParser.int_range(min=0, max=200)("123"), 123)
+    self.assertEqual(NumberParser.int_range(min=0, max=200)(123), 123)
+    self.assertEqual(NumberParser.int_range(min=-100, max=200)("-12"), -12)
+    self.assertEqual(NumberParser.int_range(min=-100, max=200)(-12), -12)
+
+  def test_parse_int_range_invalid(self):
+    with self.assertRaises(AssertionError):
+      NumberParser.int_range(1, 1)
+    with self.assertRaises(AssertionError):
+      NumberParser.int_range(10, 1)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1, 10)(-2)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1, 10)(11)
+
+  def test_parse_positive_int_invalid_strict(self):
+    for invalid in ("", "0", 0, "1", "-1", -1, float(-1), "-1.2", -1.2, "1.2",
+                    1.2, "Nan", math.nan, "inf", math.inf, "-inf", -math.inf,
+                    "invalid", None):
+      with self.assertRaises(
+          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
+        _ = NumberParser.positive_int(invalid, parse_str=False)
 
   def test_parse_positive_zero_int(self):
     self.assertEqual(NumberParser.positive_zero_int("1"), 1)
+    self.assertEqual(NumberParser.positive_zero_int(1), 1)
+    self.assertEqual(NumberParser.positive_zero_int(float(1)), 1)
     self.assertEqual(NumberParser.positive_zero_int("0"), 0)
+    self.assertEqual(NumberParser.positive_zero_int(0), 0)
 
   def test_parse_positive_zero_int_invalid(self):
-    for invalid in ("", "-1", "-1.2", "1.2", "NaN", "inf", "-inf", "invalid"):
-      with self.assertRaises(argparse.ArgumentTypeError):
+    for invalid in ("", "-1", -1, "-1.2", -1.2, "1.2", 1.2, "NaN", math.nan,
+                    "inf", math.inf, "-inf", -math.inf, "invalid", None):
+      with self.assertRaises(
+          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
         _ = NumberParser.positive_zero_int(invalid)
 
   def test_parse_any_float(self):
@@ -222,10 +296,34 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.positive_zero_float("0.0"), 0.0)
     self.assertEqual(NumberParser.positive_zero_float("1.23"), 1.23)
 
-  def test_parse_positive_zero_float_invlid(self):
+  def test_parse_positive_zero_float_invalid(self):
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.positive_zero_float(invalid)
+
+  def test_parse_float_range(self):
+    self.assertEqual(NumberParser.float_range(min=1, max=2)("1"), 1.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)(1), 1.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)("0"), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)(0), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)("0.0"), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=1)(0.0), 0.0)
+    self.assertEqual(NumberParser.float_range(min=0, max=11)("1.23"), 1.23)
+    self.assertEqual(NumberParser.float_range(min=0, max=11)(1.23), 1.23)
+    self.assertEqual(NumberParser.float_range(min=-2, max=11)("-1.1"), -1.1)
+    self.assertEqual(NumberParser.float_range(min=-2, max=11)(-1.1), -1.1)
+
+  def test_parse_float_range_invalid(self):
+    with self.assertRaises(AssertionError):
+      NumberParser.float_range(1, 1)
+    with self.assertRaises(AssertionError):
+      NumberParser.float_range(10, 1.0)
+    with self.assertRaises(AssertionError):
+      NumberParser.float_range(-10.1, -11.0)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1.1, 10.1)(-1.2)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.int_range(-1.1, 10.1)(10.2)
 
   def test_parse_port_number(self):
     self.assertEqual(NumberParser.port_number(1), 1)
@@ -373,6 +471,34 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     file.touch()
     self.assertEqual(file, PathParser.path(file))
 
+  def test_parse_any_path_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.any_path("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.any_path(None)
+
+  def test_parse_any_path(self):
+    folder = pathlib.Path("folder")
+    folder_pure = pathlib.PurePath(folder)
+    self.assertEqual(folder_pure, PathParser.any_path(folder))
+    folder.mkdir()
+    self.assertEqual(folder_pure, PathParser.any_path(folder))
+    file = pathlib.Path("file")
+    file_pure = pathlib.PurePath(file)
+    self.assertEqual(file_pure, PathParser.any_path(file))
+    file.touch()
+    self.assertEqual(file_pure, PathParser.any_path(file))
+
+  def test_parse_optional_any_path_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.optional_any_path("")
+
+  def test_parse_optional_any_path(self):
+    self.assertIsNone(PathParser.optional_any_path(None))
+    folder = pathlib.Path("folder")
+    folder_pure = pathlib.PurePath(folder)
+    self.assertEqual(folder_pure, PathParser.optional_any_path(folder))
+
   def test_parse_bool_success(self):
     self.assertIs(ObjectParser.bool("true"), True)
     self.assertIs(ObjectParser.bool("True"), True)
@@ -381,10 +507,36 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertIs(ObjectParser.bool("False"), False)
     self.assertIs(ObjectParser.bool(False), False)
 
+  def test_parse_bool_success_strict(self):
+    self.assertIs(ObjectParser.bool(True, strict=True), True)
+    self.assertIs(ObjectParser.bool(False, strict=True), False)
+
   def test_parse_bool_invalid(self):
     for invalid in (1, 0, "1", "0", "", None, [], tuple()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.bool(invalid)
+        ObjectParser.bool(invalid, strict=True)
+
+  def test_parse_bool_invalid_strict(self):
+    for invalid in (None, "False", "false", "True", "true"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        ObjectParser.bool(invalid, strict=True)
+
+  def test_parse_optional_bool(self):
+    self.assertIsNone(ObjectParser.optional_bool(None))
+    self.assertIs(ObjectParser.optional_bool("true"), True)
+    self.assertIs(ObjectParser.optional_bool("false"), False)
+
+  def test_parse_optional_bool_invalid(self):
+    for invalid in (1, 0, "1", "0", "", [], tuple()):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        ObjectParser.optional_bool(invalid)
+        ObjectParser.optional_bool(invalid, strict=True)
+
+  def test_parse_optional_bool_invalid_strict(self):
+    for invalid in ("False", "false", "True", "true"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        ObjectParser.optional_bool(invalid, strict=True)
 
   def test_parse_sh_cmd(self):
     self.assertListEqual(ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])
@@ -491,11 +643,13 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("localhost:8123/77/", "https://localhost:8123/77/"),
         ("localhost:8123/bar", "https://localhost:8123/bar"),
         ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+        ("data:text/html,this is some data",
+         "data:text/html,this is some data"),
     )
     for url, result in expected:
       with self.subTest(url=url):
-        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result)
-        parsed = ObjectParser.parse_fuzzy_url(url)
+        self.assertEqual(ObjectParser.fuzzy_url_str(url), result)
+        parsed = ObjectParser.fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result)
 
   def test_parse_fuzzy_url_default_scheme(self):
@@ -506,14 +660,14 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     for url in expected:
       with self.subTest(url=url):
         result_default = f"https://{url}"
-        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result_default)
-        parsed = ObjectParser.parse_fuzzy_url(url)
+        self.assertEqual(ObjectParser.fuzzy_url_str(url), result_default)
+        parsed = ObjectParser.fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result_default)
         result_custom = f"ftp://{url}"
         self.assertEqual(
-            ObjectParser.parse_fuzzy_url_str(url, default_scheme="ftp"),
+            ObjectParser.fuzzy_url_str(url, default_scheme="ftp"),
             result_custom)
-        parsed = ObjectParser.parse_fuzzy_url(url, default_scheme="ftp")
+        parsed = ObjectParser.fuzzy_url(url, default_scheme="ftp")
         self.assertEqual(urlparse.urlunparse(parsed), result_custom)
 
   def test_parse_url(self):
@@ -534,14 +688,16 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("https://localhost:8123/", "https://localhost:8123/"),
         ("http://localhost:8123/bar", "http://localhost:8123/bar"),
         ("https://localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+        ("data:text/html,this is some data",
+         "data:text/html,this is some data"),
     )
     for url, result in expected:
       with self.subTest(url=url):
         self.assertEqual(ObjectParser.url_str(url), result)
-        self.assertEqual(ObjectParser.parse_fuzzy_url_str(url), result)
+        self.assertEqual(ObjectParser.fuzzy_url_str(url), result)
         parsed = ObjectParser.url(url)
         self.assertEqual(urlparse.urlunparse(parsed), result)
-        parsed_fuzzy = ObjectParser.parse_fuzzy_url(url)
+        parsed_fuzzy = ObjectParser.fuzzy_url(url)
         self.assertEqual(urlparse.urlunparse(parsed_fuzzy), result)
 
   def test_parse_url_invalid(self):
@@ -555,9 +711,9 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.httpx_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = ObjectParser.parse_fuzzy_url_str(invalid)
+          _ = ObjectParser.fuzzy_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
-          _ = ObjectParser.parse_fuzzy_url(invalid)
+          _ = ObjectParser.fuzzy_url(invalid)
 
   def test_parse_httpx_url_str_invalid(self):
     for invalid in ("ftp://foo.com:123/bar", "ssh://test.com"):

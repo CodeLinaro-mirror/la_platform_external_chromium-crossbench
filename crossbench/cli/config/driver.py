@@ -6,16 +6,16 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import enum
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Self, Type, cast
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
-from crossbench import compat
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
@@ -26,80 +26,44 @@ if TYPE_CHECKING:
   from crossbench.path import AnyPath, LocalPath
 
 
-@enum.unique
-class BrowserDriverType(compat.StrEnumWithHelp):
-  WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
-  APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
-  ANDROID = ("Android",
-             "Use Webdriver for android. Allows to specify additional settings")
-  IOS = ("iOS", "Placeholder, unsupported at the moment")
-  LINUX_SSH = ("Remote Linux",
-               "Use remote webdriver and execute commands via SSH")
-  CHROMEOS_SSH = ("Remote ChromeOS",
-                  "Use remote ChromeDriver and execute commands via SSH")
-
-  @classmethod
-  def default(cls) -> BrowserDriverType:
-    return cls.WEB_DRIVER
-
-  @classmethod
-  def parse(cls, value: Any) -> BrowserDriverType:
-    if isinstance(value, cls):
-      return value
-    if value == "":
-      return BrowserDriverType.default()
-    value = ObjectParser.non_empty_str(value, "driver_type")
-    identifier = value.lower()
-    if identifier in ("selenium", "webdriver"):
-      return BrowserDriverType.WEB_DRIVER
-    if identifier in ("applescript", "osa"):
-      return BrowserDriverType.APPLE_SCRIPT
-    if identifier in ("android", "adb"):
-      return BrowserDriverType.ANDROID
-    if identifier in ("iphone", "ios"):
-      return BrowserDriverType.IOS
-    if identifier == "ssh":
-      return BrowserDriverType.LINUX_SSH
-    if identifier == "chromeos-ssh":
-      return BrowserDriverType.CHROMEOS_SSH
-    raise argparse.ArgumentTypeError(f"Unknown driver type: {repr(value)}")
-
-  @property
-  def is_remote(self):
-    if self.name in ("ANDROID", "CHROMEOS_SSH", "LINUX_SSH"):
-      return True
-    return False
-
-  @property
-  def is_local(self):
-    return not self.is_remote
-
-
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
   pass
 
 
-IOS_UUID_RE = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
+IOS_UUID_RE: re.Pattern[str] = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
+
+
+def driver_path(
+    value: Optional[pth.AnyPathLike],
+    type: BrowserDriverType,  #pylint: disable=redefined-builtin
+    name: str = "driver path"
+) -> Optional[pth.AnyPath]:
+  if not value:
+    return None
+  if type.is_remote_driver:
+    return PathParser.any_path(value, name)
+  return plt.PLATFORM.parse_local_binary_path(value, name)
 
 
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
   type: BrowserDriverType = BrowserDriverType.default()
-  path: Optional[AnyPath] = None
-  device_id: Optional[str] = None
-  adb_bin: Optional[AnyPath] = None
-  settings: Optional[immutabledict] = None
+  path: AnyPath | None = None
+  device_id: str | None = None
+  adb_bin: AnyPath | None = None
+  settings: immutabledict | None = None
 
   @classmethod
   def default(cls) -> DriverConfig:
     return cls(BrowserDriverType.default())
 
   @classmethod
-  def parse_str(cls, value: str) -> DriverConfig:
+  @override
+  def parse_str(cls, value: str) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     # Variant 1: $PATH
-    path: Optional[LocalPath] = pth.try_resolve_existing_path(value)
+    path: LocalPath | None = pth.try_resolve_existing_path(value)
     driver_type: BrowserDriverType = BrowserDriverType.default()
     if path:
       if path.stat().st_size == 0:
@@ -122,14 +86,14 @@ class DriverConfig(ConfigObject):
         except ValueError as e:
           logging.debug("Parsing short inline driver config failed: %s", e)
           raise original_error from e
-    return DriverConfig(driver_type, path)
+    return cls(driver_type, path)
 
   @classmethod
-  def parse_short_settings(cls, value: str,
-                           platform: plt.Platform) -> DriverConfig:
+  def parse_short_settings(cls: Type[Self], value: str,
+                           platform: plt.Platform) -> Self:
     """Check for short versions and multiple candidates"""
     logging.debug("Looking for driver candidates: %s", value)
-    candidate: Optional[DriverConfig]
+    candidate: Self | None = None
     if candidate := cls.try_parse_adb_settings(value, platform):
       return candidate
     if platform.is_macos:
@@ -140,7 +104,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   def try_parse_adb_settings(cls, value: str,
-                             platform: plt.Platform) -> Optional[DriverConfig]:
+                             platform: plt.Platform) -> Optional[Self]:
     candidate_serials: List[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for serial, info in adb_devices(platform).items():
@@ -161,12 +125,11 @@ class DriverConfig(ConfigObject):
       logging.debug("No matching adb devices found.")
       return None
     assert len(candidate_serials) == 1
-    return DriverConfig(
-        BrowserDriverType.ANDROID, device_id=candidate_serials[0])
+    return cls(BrowserDriverType.ANDROID, device_id=candidate_serials[0])
 
   @classmethod
   def try_parse_ios_settings(cls, value: str,
-                             platform: plt.Platform) -> Optional[DriverConfig]:
+                             platform: plt.Platform) -> Optional[Self]:
     candidate_serials: List[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for uuid, device_info in ios_devices(platform).items():
@@ -184,7 +147,7 @@ class DriverConfig(ConfigObject):
       logging.debug("No matching ios devices found.")
       return None
     assert len(candidate_serials) == 1
-    return DriverConfig(BrowserDriverType.IOS, device_id=candidate_serials[0])
+    return cls(BrowserDriverType.IOS, device_id=candidate_serials[0])
 
   @classmethod
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
@@ -197,21 +160,17 @@ class DriverConfig(ConfigObject):
       return re.compile(re.escape(maybe_pattern))
 
   @classmethod
-  def parse_dict(cls, config: Dict[str, Any]) -> DriverConfig:
-    return cls.config_parser().parse(config)
-
-  @classmethod
-  def config_parser(cls) -> ConfigParser[DriverConfig]:
-    parser = ConfigParser("DriverConfig parser", cls)
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = ConfigParser(cls)
     parser.add_argument(
         "type",
         type=BrowserDriverType.parse,
         default=BrowserDriverType.default())
-    # TODO: likely distinguish between local and remote driver path
     parser.add_argument(
         "path",
-        type=PathParser.binary_path,
-        required=False,
+        type=driver_path,
+        depends_on=("type",),
         help="Path to the driver executable")
     parser.add_argument(
         "settings",
@@ -224,12 +183,11 @@ class DriverConfig(ConfigObject):
         help="Device ID / Serial ID / Unique device name")
     parser.add_argument(
         "adb_bin",
-        type=PathParser.binary_path,
-        required=False,
+        type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the adb binary, only valid for Android.")
     return parser
 
-  def __post_init__(self):
+  def __post_init__(self) -> None:
     if not self.type:
       raise ValueError(f"{type(self).__name__}.type cannot be None.")
     try:
@@ -241,12 +199,13 @@ class DriverConfig(ConfigObject):
 
   @property
   def is_remote(self) -> bool:
-    return self.type.is_remote
+    return self.type.is_remote_driver
 
   @property
   def is_local(self) -> bool:
-    return self.type.is_local
+    return self.type.is_local_driver
 
+  @override
   def validate(self) -> None:
     if self.type == BrowserDriverType.ANDROID:
       self.validate_android()
@@ -260,6 +219,12 @@ class DriverConfig(ConfigObject):
       # the ChromeOS validation function validates the "client".
       # Consider moving this logic elsewhere in the future.
       self.validate_chromeos()
+    if self.is_local:
+      self.validate_local()
+
+  def validate_local(self) -> None:
+    if self.path:
+      plt.PLATFORM.parse_local_binary_path(self.path)
 
   def validate_android(self) -> None:
     platform = plt.PLATFORM
@@ -279,7 +244,7 @@ class DriverConfig(ConfigObject):
           f"Could not find ADB device with device_id={repr(self.device_id)}. "
           f"Choices are {names}.")
     if self.adb_bin:
-      PathParser.binary_path(self.adb_bin, platform=platform)
+      platform.parse_binary_path(self.adb_bin)
 
   def validate_chromeos(self) -> None:
     platform = self.get_platform()
@@ -321,21 +286,39 @@ class DriverConfig(ConfigObject):
       return self.get_ssh_platform()
     return plt.PLATFORM
 
+  def _parse_ssh_platform_driver_port(self) -> int:
+    port = None
+    if settings := self.settings:
+      port = settings.get("port")
+    if port in (None, 0):
+      # The driver port is allowed to be 0 on ssh platforms. If so, we will
+      # automatically start chromedriver.
+      return 0
+    return NumberParser.port_number(port)
+
   def get_ssh_platform(self) -> plt.Platform:
     assert self.settings
     host = ObjectParser.non_empty_str(self.settings.get("host"), "host")
-    port = NumberParser.port_number(self.settings.get("port"), "port")
+    port = self._parse_ssh_platform_driver_port()
     ssh_port = NumberParser.port_number(
         self.settings.get("ssh_port"), "ssh port")
     ssh_user = ObjectParser.non_empty_str(
         self.settings.get("ssh_user"), "ssh user")
     if self.type == BrowserDriverType.CHROMEOS_SSH:
+
+      try:
+        enable_arc = ObjectParser.bool(
+            self.settings.get("enable_arc"), "enable arc", strict=True)
+      except argparse.ArgumentTypeError:
+        enable_arc = False
+
       return ChromeOsSshPlatform(
           plt.PLATFORM,
           host=host,
           port=port,
           ssh_port=ssh_port,
-          ssh_user=ssh_user)
+          ssh_user=ssh_user,
+          enable_arc=enable_arc)
     return plt.LinuxSshPlatform(
         plt.PLATFORM,
         host=host,

@@ -9,6 +9,7 @@ from typing import Optional
 
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.chromeos_input_action_runner import (
     SCRIPTS_DIR, ChromeOSInputActionRunner, ChromeOSTouchEvent,
@@ -25,7 +26,7 @@ from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform)
+                                          LinuxMockPlatform, MockPopen, MockFd)
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
@@ -365,10 +366,6 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     path = SCRIPTS_DIR / "query_touch_device.py"
     self.fs.create_file(path, contents="query_touch_device")
 
-    self.platform.expect_sh("env")
-    self.platform.expect_sh("[", "-d", "/tmp", "]")
-    self.platform.expect_sh("mktemp", "/tmp/None.XXXXXXXXXXX")
-
     path = SCRIPTS_DIR / "get_window_positions.js"
     self.fs.create_file(path, contents="get_window_positions")
 
@@ -381,7 +378,14 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.browser.expect_js(expected_js=expected_js)
 
     for _ in range(touch_count):
-      self.platform.expect_sh("evemu-play --insert-slot0 /dev/input/event0 < .")
+      self.platform.expect_sh(
+          "mktemp",
+          "/usr/local/tmp/None.XXXXXXXXXXX",
+          result="/usr/local/tmp/None.RANDOM")
+      self.platform.expect_sh("evemu-play --insert-slot0 /dev/input/event0 <"
+                              " /usr/local/tmp/None.RANDOM")
+      self.platform.expect_sh("[", "-e", "/usr/local/tmp/None.RANDOM", "]")
+      self.platform.expect_sh("rm", "/usr/local/tmp/None.RANDOM")
 
   def expect_mouse_click(
       self,
@@ -397,13 +401,29 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     path = SCRIPTS_DIR / "mouse.py"
     self.fs.create_file(path, contents="mouse")
 
+    self.platform.expect_sh(
+        "mktemp",
+        "/usr/local/tmp/None.XXXXXXXXXXX",
+        result="/usr/local/tmp/None.RANDOM")
+    self.platform.expect_sh("python3", "/usr/local/tmp/None.RANDOM", "1920",
+                            "1080")
+    self.platform.expect_sh("[", "-e", "/usr/local/tmp/None.RANDOM", "]")
+    self.platform.expect_sh("rm", "/usr/local/tmp/None.RANDOM")
+
+    mouse_process_stdin: MockFd = MockFd()
+    mouse_process_stdout: MockFd = MockFd()
+
+    mouse_process_stdout.read_returns.append("0\n".encode("utf-8"))
+
     if clicked_coordinates:
-      self.platform.expect_sh("env")
-      self.platform.expect_sh("[", "-d", "/tmp", "]")
-      self.platform.expect_sh("mktemp", "/tmp/None.XXXXXXXXXXX")
-      self.platform.expect_sh("python3", ".", "1920", "1080",
-                              click_duration.total_seconds(),
-                              clicked_coordinates.x, clicked_coordinates.y)
+      mouse_process_stdin.expected_writes.append(
+          f"{click_duration.total_seconds()}\n"
+          f"{clicked_coordinates.x}\n{clicked_coordinates.y}\n".encode("utf-8"))
+      mouse_process_stdout.read_returns.append("0\n".encode("utf-8"))
+
+    mock_mouse_process: MockPopen = MockPopen(mouse_process_stdout,
+                                              mouse_process_stdin)
+    self.platform.popens.append(mock_mouse_process)
 
   def assert_coordinates_touched(
       self,
@@ -426,7 +446,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertEqual(actual_playback, str(expected_event))
 
   def test_click_touch_coordinates(self):
-    click_action = ClickAction(InputSource.TOUCH, x=50, y=50)
+    click_action = ClickAction(
+        InputSource.TOUCH, position=PositionConfig.from_coordinates(x=50, y=50))
 
     self.expect_touch_setup(expected_js=self._NO_ELEMENT_JS_RESULT)
 
@@ -435,7 +456,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assert_coordinates_touched(Point(50, 50))
 
   def test_click_mouse_coordinates(self):
-    click_action = ClickAction(InputSource.MOUSE, x=50, y=50)
+    click_action = ClickAction(
+        InputSource.MOUSE, position=PositionConfig.from_coordinates(x=50, y=50))
 
     self.expect_mouse_click(
         expected_js=self._NO_ELEMENT_JS_RESULT,
@@ -447,7 +469,9 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     click_duration = dt.timedelta(seconds=100)
 
     click_action = ClickAction(
-        InputSource.TOUCH, x=50, y=50, duration=click_duration)
+        InputSource.TOUCH,
+        position=PositionConfig.from_coordinates(x=50, y=50),
+        duration=click_duration)
 
     self.expect_touch_setup(expected_js=self._NO_ELEMENT_JS_RESULT)
 
@@ -459,7 +483,9 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     click_duration = dt.timedelta(seconds=100)
 
     click_action = ClickAction(
-        InputSource.MOUSE, x=50, y=50, duration=click_duration)
+        InputSource.MOUSE,
+        position=PositionConfig.from_coordinates(x=50, y=50),
+        duration=click_duration)
 
     self.expect_mouse_click(
         expected_js=self._NO_ELEMENT_JS_RESULT,
@@ -470,7 +496,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_touch_selector_non_existent_element_raises(self):
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=True)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
     self.expect_touch_setup(
         touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
@@ -480,17 +507,21 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_mouse_selector_non_existent_element_raises(self):
     click_action = ClickAction(
-        InputSource.MOUSE, selector="div[]", required=True)
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
-    self.expect_mouse_click(
-        expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
+    path = SCRIPTS_DIR / "get_window_positions.js"
+    self.fs.create_file(path, contents="get_window_positions")
+
+    self.browser.expect_js(expected_js=self._NO_ELEMENT_JS_RESULT)
 
     with self.assertRaisesRegex(ElementNotFoundError, "matching DOM"):
       self.run_action(click_action)
 
   def test_click_touch_selector_non_required_element_success(self):
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=False)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=False))
 
     self.expect_touch_setup(
         touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
@@ -499,7 +530,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_mouse_selector_non_required_element_success(self):
     click_action = ClickAction(
-        InputSource.MOUSE, selector="div[]", required=False)
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(selector="div[]", required=False))
 
     self.expect_mouse_click(
         expected_js=self._NO_ELEMENT_JS_RESULT, clicked_coordinates=None)
@@ -509,7 +541,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def test_click_touch_selector_success(self):
 
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=True)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
     self.expect_touch_setup(
         expected_js=JsInvocation(result=[
@@ -537,7 +570,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def test_click_mouse_selector_success(self):
 
     click_action = ClickAction(
-        InputSource.MOUSE, selector="div[]", required=True)
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
     self.expect_mouse_click(
         expected_js=JsInvocation(result=[
@@ -558,6 +592,34 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
             8,  # element height
         ]),
         clicked_coordinates=Point(8, 10))
+
+    self.run_action(click_action)
+
+  def test_click_wait_timeout_required(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=True, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+
+    self.expect_touch_setup(
+        touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
+
+    with self.assertRaises(TimeoutError):
+      self.run_action(click_action)
+
+  def test_click_wait_timeout_unrequired(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=False, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+
+    self.expect_touch_setup(
+        touch_count=0, expected_js=self._NO_ELEMENT_JS_RESULT)
+    self.browser.expect_js(self._NO_ELEMENT_JS_RESULT)
 
     self.run_action(click_action)
 
@@ -590,14 +652,14 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(960, 1080), Point(960, 980), scroll_duration)
+        Point(960, 972), Point(960, 872), scroll_duration)
 
   def test_scroll_touch_window_multi_step_success(self):
 
     scroll_duration: dt.timedelta = dt.timedelta(seconds=2)
 
     scroll_action = ScrollAction(
-        InputSource.TOUCH, distance=2000, duration=scroll_duration)
+        InputSource.TOUCH, distance=1600, duration=scroll_duration)
 
     self.expect_touch_setup(
         expected_js=JsInvocation(result=[
@@ -622,9 +684,11 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(960, 1080), Point(960, 0), scroll_duration * (1080 / 2000))
+        Point(960, 972), Point(960, 108),
+        scroll_duration * ((972 - 108) / 1600))
     self.assert_coordinates_touched(
-        Point(960, 1080), Point(960, 160), scroll_duration * (920 / 2000))
+        Point(960, 972), Point(960, 236),
+        scroll_duration * ((972 - 236) / 1600))
 
   def test_scroll_touch_selector_required_not_found_raises(self):
     scroll_action = ScrollAction(
@@ -722,7 +786,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(35, 620), Point(35, 520), scroll_duration)
+        Point(35, 560), Point(35, 460), scroll_duration)
 
 
 if __name__ == "__main__":

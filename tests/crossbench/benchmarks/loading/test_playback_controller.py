@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import unittest
+from unittest import mock
 
 from crossbench.benchmarks.loading.playback_controller import (
     ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
@@ -96,6 +97,25 @@ class PlaybackControllerTestCase(unittest.TestCase):
     iterations = sum(
         1 for _ in PlaybackController.timeout(dt.timedelta(milliseconds=0.1)))
     self.assertGreaterEqual(iterations, 1)
+
+  def test_timeout_mocked(self):
+    controller = PlaybackController.timeout(dt.timedelta(seconds=1))
+    now = dt.datetime.now()
+    with mock.patch(
+        "crossbench.benchmarks.loading.playback_controller.dt") as mock_dt:
+      mock_dt.datetime.now.return_value = now
+      iterator = iter(controller)
+      for _ in range(100):
+        next(iterator)
+      mock_dt.datetime.now.return_value = now + dt.timedelta(seconds=0.9)
+      for _ in range(100):
+        next(iterator)
+      mock_dt.datetime.now.return_value = now + dt.timedelta(seconds=1)
+      for _ in range(100):
+        next(iterator)
+      mock_dt.datetime.now.return_value = now + dt.timedelta(seconds=1.1)
+      with self.assertRaises(StopIteration):
+        next(iterator)
 
   def test_forever(self):
     count = 0

@@ -29,6 +29,8 @@ class ActionBlockTestCase(unittest.TestCase):
     self.assertEqual(len(block), 1)
     self.assertTupleEqual(tuple(block), (action,))
     self.assertEqual(block.duration, dt.timedelta(seconds=3))
+    self.assertTrue(hash(block))
+    self.assertSetEqual({block}, {block, block})
 
     block = ActionBlock.parse(block.to_json())
     self.assertTrue(bool(block))
@@ -45,6 +47,8 @@ class ActionBlockTestCase(unittest.TestCase):
     self.assertEqual(len(block), 2)
     self.assertTupleEqual(tuple(block), (action_1, action_2))
     self.assertEqual(block.duration, dt.timedelta(seconds=3))
+    self.assertTrue(hash(block))
+    self.assertSetEqual({block}, {block, block})
 
     block = ActionBlock.parse(block.to_json())
     self.assertTrue(bool(block))
