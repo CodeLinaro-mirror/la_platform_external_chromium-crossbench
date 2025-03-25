@@ -21,7 +21,7 @@ import crossbench.exception
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
-from crossbench.browsers.edge.edge import EdgePathMixin
+from crossbench.browsers.edge.base import EdgeBaseMixin
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
   from crossbench import plt
 
 
-class EdgeWebDriver(EdgePathMixin, ChromiumBasedWebDriver):
+class EdgeWebDriver(EdgeBaseMixin, ChromiumBasedWebDriver):
 
   WEB_DRIVER_OPTIONS = EdgeOptions
   WEB_DRIVER_SERVICE = EdgeService
