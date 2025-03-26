@@ -13,6 +13,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
 
 from typing_extensions import override
 
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter
 from crossbench.benchmarks.jetstream.jetstream import (JetStreamBenchmark,
                                                        JetStreamProbe,
@@ -142,7 +143,10 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
   @override
   def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
-      actions.show_url(self.get_run_url(run))
+      actions.show_url(
+          url=self.get_run_url(run),
+          ready_state=ReadyState.COMPLETE,
+          timeout=dt.timedelta(seconds=10))
       if self._substories != self.SUBSTORIES:
         actions.wait_js_condition(("return JetStream && JetStream.benchmarks "
                                    "&& JetStream.benchmarks.length > 0;"), 0.1,

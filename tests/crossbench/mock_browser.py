@@ -110,6 +110,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.tab_handler_generator = self._tab_handler_generator()
     self.tab_list: List[int] = [next(self.tab_handler_generator)]
     self._current_url: str = ""
+    self._default_js_return = None
 
   def expect_js(
       self,
@@ -180,6 +181,9 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
         JsInvocation(
             result=None, script=script, arguments=arguments, timeout=timeout))
 
+    if self._default_js_return:
+      return self._default_js_return
+
     if self.expected_js is None:
       return None
 
@@ -229,6 +233,9 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def set_current_url(self, url: str) -> None:
     self._current_url = url
+
+  def set_default_js_return(self, return_val: Any) -> None:
+    self._default_js_return = return_val
 
   @property
   def current_url(self) -> str:

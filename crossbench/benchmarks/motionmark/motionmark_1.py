@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from typing_extensions import override
 
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.helper import url_helper
@@ -253,7 +254,10 @@ class MotionMark1Story(PressBenchmarkStory):
     test_url = self.prepare_test_url()
     use_developer_url = test_url != self.url
     with run.actions("Setup") as actions:
-      actions.show_url(test_url)
+      actions.show_url(
+          url=test_url,
+          ready_state=ReadyState.COMPLETE,
+          timeout=dt.timedelta(seconds=10))
       self._setup_wait_until_ready(actions, use_developer_url)
       if use_developer_url:
         self._setup_filter_stories(actions)

@@ -223,6 +223,10 @@ class TestPageLoadBenchmark(SubStoryTestCase):
 
   def _test_run(self, stories, throw: bool = False):
     benchmark = self.benchmark_cls(stories)
+
+    for browser in self.browsers:
+      browser.set_default_js_return(True)
+
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

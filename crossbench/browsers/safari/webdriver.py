@@ -111,7 +111,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
                           session: BrowserSessionRunGroup) -> SafariOptions:
     options = SafariOptions()
     # Don't wait for document-ready.
-    options.set_capability("pageLoadStrategy", "eager")
+    options.set_capability("pageLoadStrategy", "none")
 
     args = self._get_browser_flags_for_session(session)
     for arg in args:

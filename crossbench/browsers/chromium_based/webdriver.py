@@ -149,7 +149,7 @@ class ChromiumBasedWebDriver(
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
-    options.set_capability("pageLoadStrategy", "eager")
+    options.set_capability("pageLoadStrategy", "none")
     for arg in args:
       options.add_argument(arg)
     options.binary_location = os.fspath(self.path)

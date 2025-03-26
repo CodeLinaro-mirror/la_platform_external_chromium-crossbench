@@ -9,6 +9,7 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
 
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.helper.durations import TimeScope
 from crossbench.parse import ObjectParser
 
@@ -135,7 +136,23 @@ class Actions(TimeScope):
       if success_condition(result):
         return
 
-  def show_url(self, url: str, target: Optional[str] = None) -> None:
+  def wait_for_ready_state(self, ready_state: ReadyState,
+                           timeout: dt.timedelta) -> None:
+    # Make sure we also finish if readyState jumps directly
+    # from "loading" to "complete"
+    self.wait_js_condition(
+        f"""
+          let state = document.readyState;
+          return state === '{ready_state}' || state === "complete";
+        """, 0.2, timeout.total_seconds())
+
+  def show_url(
+      self,
+      url: str,
+      target: Optional[str] = None,
+      ready_state: ReadyState = ReadyState.ANY,
+      timeout: dt.timedelta = dt.timedelta()
+  ) -> None:
     self._assert_is_active()
     if target and target in ("_blank", "_parent", "_top"):
       # TODO: use target in the driver instead.
@@ -144,6 +161,9 @@ class Actions(TimeScope):
       if target not in (None, "_self", "_new_tab", "_new_window"):
         raise ValueError(f"Invalid target: {target}")
       self._browser.show_url(url, target=target)
+
+    if ready_state != ReadyState.ANY:
+      self.wait_for_ready_state(ready_state, timeout)
 
   def wait(self,
            time: AnyTimeUnit = dt.timedelta(seconds=1),

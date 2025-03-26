@@ -127,16 +127,6 @@ class DefaultActionRunner(ActionRunner):
       self._bond = DefaultBondActionRunner(self)
     return self._bond
 
-  def _wait_for_ready_state(self, actions: Actions, ready_state: ReadyState,
-                            timeout: dt.timedelta) -> None:
-    # Make sure we also finish if readyState jumps directly
-    # from "loading" to "complete"
-    actions.wait_js_condition(
-        f"""
-          let state = document.readyState;
-          return state === '{ready_state}' || state === "complete";
-        """, 0.2, timeout.total_seconds())
-
   @override
   def teardown(self, run: Run) -> None:
     del run
@@ -150,10 +140,10 @@ class DefaultActionRunner(ActionRunner):
     expected_end_time = start_time + action.duration.total_seconds()
 
     with run.actions(f"Get {action.url}", measure=False) as actions:
-      actions.show_url(action.url, str(action.target))
+      actions.show_url(action.url, str(action.target), action.ready_state,
+                       action.timeout)
 
       if action.ready_state != ReadyState.ANY:
-        self._wait_for_ready_state(actions, action.ready_state, action.timeout)
         return
       # Wait for the given duration from the start of the action.
       wait_time_seconds = expected_end_time - time.time()
@@ -293,7 +283,7 @@ class DefaultActionRunner(ActionRunner):
                            action: i_action.WaitForReadyStateAction) -> None:
     with run.actions(
         f"Wait for ready state {action.ready_state}", measure=False) as actions:
-      self._wait_for_ready_state(actions, action.ready_state, action.timeout)
+      actions.wait_for_ready_state(action.ready_state, action.timeout)
 
   @override
   def inject_new_document_script(

@@ -70,8 +70,14 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
     for _ in range(repetitions):
       for _ in stories:
         for browser in self.browsers:
+          # wait for ready state
+          browser.expect_js(result=True)
           # Record navigation time
           browser.expect_js(result="1000")
+
+          # wait for ready state
+          browser.expect_js(result=True)
+          # Record navigation time
           browser.expect_js(result="1001")
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)

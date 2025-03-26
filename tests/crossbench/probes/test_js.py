@@ -49,6 +49,8 @@ class TestJSProbe(GenericProbeTestCase):
         js_side_effects=[
             # setup:
             None,
+            # wait for ready state
+            True,
             # js:
             {
                 "metric1": 1.1,
