@@ -45,17 +45,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
     driver_path = self.out_dir / "driver"
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(str(driver_path))
-    self.assertIn(str(driver_path), str(cm.exception))
+    self.assertIn("/driver", str(cm.exception))
 
     self.fs.create_file(driver_path)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(str(driver_path))
     message = str(cm.exception)
-    self.assertIn(str(driver_path), message)
+    self.assertIn("/driver", message)
     self.assertIn("empty", message)
 
   def test_parse_driver_path(self):
-    chromedriver_path = self.out_dir / "chromedriver"
+    chromedriver_path = (self.out_dir / "chromedriver").resolve()
     self.fs.create_file(chromedriver_path, st_size=100)
     driver = DriverConfig.parse(str(chromedriver_path))
     self.assertEqual(str(driver.path), str(chromedriver_path))
@@ -64,6 +64,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
     driver_2 = DriverConfig.parse(config)
     self.assertEqual(driver_2.path, chromedriver_path)
     self.assertEqual(driver, driver_2)
+
+  def test_parse_driver_path_unresolved(self):
+    chromedriver_path = self.out_dir / "chromedriver"
+    expected_chromedriver_path = r".*\/chromedriver"
+    self.fs.create_file(chromedriver_path, st_size=100)
+    driver = DriverConfig.parse(str(chromedriver_path))
+    self.assertRegex(str(driver.path), expected_chromedriver_path)
+
+    config = {"path": str(chromedriver_path)}
+    driver_2 = DriverConfig.parse(config)
+    self.assertRegex(str(driver_2.path), expected_chromedriver_path)
 
   def test_parse_dict_device_id_conflict(self):
     self.platform.sh_results = []

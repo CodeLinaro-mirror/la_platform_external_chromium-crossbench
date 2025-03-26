@@ -453,7 +453,7 @@ class ConfigObject(abc.ABC):
       # TODO(346197734): use parse_url here
       return cls.parse_str(value, **kwargs)
     try:
-      maybe_path = pth.LocalPath(value).expanduser()
+      maybe_path = pth.LocalPath(value).resolve()
       if cls.is_valid_path(maybe_path):
         return cls.parse_path(maybe_path, **kwargs)
       if cls.value_has_path_prefix(value):
