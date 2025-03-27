@@ -9,9 +9,11 @@ import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple
 
-from crossbench import helper
+from typing_extensions import override
+
 from crossbench.benchmarks.base import Benchmark
 from crossbench.cli.ui import timer
+from crossbench.helper import input_helper
 from crossbench.parse import DurationParser
 from crossbench.stories.story import Story
 
@@ -27,13 +29,14 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
   STORY_NAME = "manual"
 
   def __init__(self, start_after: Optional[dt.timedelta],
-               run_for: Optional[dt.timedelta]):
+               run_for: Optional[dt.timedelta]) -> None:
     self._start_after = start_after
     self._run_for = run_for
     duration = ((start_after or dt.timedelta()) +
                 (run_for or dt.timedelta(seconds=30)))
     super().__init__(self.STORY_NAME, duration)
 
+  @override
   def setup(self, run: Run) -> None:
     if self._start_after is None:
       logging.info("-" * 80)
@@ -44,7 +47,7 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
       logging.critical(
           "The browser has launched. Measurement will start in %s" +
           " (or press enter to start immediately)", self._start_after)
-      helper.input_with_timeout(timeout=self._start_after)
+      input_helper.input_with_timeout(timeout=self._start_after)
     logging.info("Starting Manual Benchmark...")
 
   def run(self, run: Run) -> None:
@@ -66,10 +69,11 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
       logging.critical(
           "Measurement has started. The browser will close in %s" +
           " (or press enter to close immediately)", self._run_for)
-      helper.input_with_timeout(timeout=self._run_for)
+      input_helper.input_with_timeout(timeout=self._run_for)
 
 
   @classmethod
+  @override
   def all_story_names(cls) -> Tuple[str, ...]:
     return (ManualStory.STORY_NAME,)
 
@@ -90,6 +94,7 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
     super().__init__([ManualStory(start_after=start_after, run_for=run_for)])
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
   ) -> CrossBenchArgumentParser:
@@ -97,18 +102,17 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
     parser.add_argument(
         "--start-after",
         help="How long to wait until measurement starts",
-        required=False,
         type=DurationParser.positive_or_zero_duration)
     parser.add_argument(
         "--run-for",
         "--stop-after",
         "--duration",
         help="How long to run measurement for",
-        required=False,
         type=DurationParser.positive_duration)
     return parser
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["start_after"] = args.start_after

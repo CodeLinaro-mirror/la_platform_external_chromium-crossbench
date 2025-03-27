@@ -10,13 +10,16 @@ import copy
 import dataclasses
 import pathlib
 from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
-                    Union, cast)
+                    cast)
+
+from typing_extensions import override
 
 from crossbench import plt
-from crossbench.browsers.all import Chrome, Chromium, Edge, Firefox, Safari
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
+from crossbench.browsers.version import BrowserVersion
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
@@ -26,7 +29,8 @@ if TYPE_CHECKING:
   import datetime as dt
   import re
 
-  from crossbench.cli.config.secrets import Secret
+  from crossbench import path as pth
+  from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsData
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -34,15 +38,17 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class JsInvocation:
   result: Any
-  script: Optional[Union[str, re.Pattern]] = None
-  arguments: Optional[List[Any]] = None
-  timeout: Optional[dt.timedelta] = None
+  script: str | re.Pattern | None = None
+  arguments: List[Any] | None = None
+  timeout: dt.timedelta | None = None
 
 
 class MockNetwork(Network):
 
   @contextlib.contextmanager
-  def open(self, session: BrowserSessionRunGroup) -> Iterator[Network]:
+  @override
+  def open(self: MockNetwork,
+           session: BrowserSessionRunGroup) -> Iterator[MockNetwork]:
     with super().open(session):
       assert session.browser.network is self
       yield self
@@ -81,6 +87,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
       fs.create_file(bin_path)
 
   @classmethod
+  @override
   def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
     return ChromeFlags(initial_data)
 
@@ -97,12 +104,12 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     super().__init__(label, path, settings=settings)
     self.url_list: List[str] = []
     self.expected_js: List[JsInvocation] = []
-    self.expected_is_logged_in: List[Secret] = []
+    self.expected_is_logged_in: List[UsernamePassword] = []
     self.invoked_js: List[JsInvocation] = []
     self.did_run: bool = False
-    self.clear_cache_dir: bool = False
     self.tab_handler_generator = self._tab_handler_generator()
     self.tab_list: List[int] = [next(self.tab_handler_generator)]
+    self._current_url: str = ""
 
   def expect_js(
       self,
@@ -118,31 +125,42 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def was_js_invoked(self, script: str) -> bool:
     return any(script is invoked_js.script for invoked_js in self.invoked_js)
 
-  def expect_is_logged_in(self, secret: Secret) -> None:
+  def expect_is_logged_in(self, secret: UsernamePassword) -> None:
     self.expected_is_logged_in.append(secret)
 
-  def clear_cache(self) -> None:
+  @override
+  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+    return None
+
+  @override
+  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
     pass
 
+  @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     assert not self._is_running
     self._is_running = True
     self.did_run = True
 
+  @override
   def force_quit(self) -> None:
     if not self._is_running:
       return
     self._is_running = False
 
-  def _extract_version(self) -> str:
-    return self.VERSION
+  @override
+  def _extract_version(self) -> BrowserVersion:
+    return ChromiumVersion.parse(self.VERSION)
 
+  @override
   def user_agent(self) -> str:
-    return f"Mock Browser {self.type_name}, {self.VERSION}"
+    return f"Mock Browser {self.type_name()}, {self.VERSION}"
 
+  @override
   def show_url(self, url, target: Optional[str] = None) -> None:
     self.url_list.append(url)
 
+  @override
   def current_window_id(self) -> str:
     return str(self.tab_list[-1])
 
@@ -152,9 +170,11 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
       yield tab_handler
       tab_handler += 1
 
+  @override
   def switch_to_new_tab(self) -> None:
     self.tab_list.append(next(self.tab_handler_generator))
 
+  @override
   def js(self, script, timeout: Optional[dt.timedelta] = None, arguments=()):
     self.invoked_js.append(
         JsInvocation(
@@ -195,14 +215,25 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     # Return copies to avoid leaking data between repetitions.
     return copy.deepcopy(expectation.result)
 
-  def is_logged_in(self, secret: Secret, strict: bool = False) -> bool:
+  @override
+  def is_logged_in(self,
+                   secret: UsernamePassword,
+                   strict: bool = False) -> bool:
     for login in self.expected_is_logged_in:
-      if login.type == secret.type:
+      if type(login) is type(secret):
         if login.username == secret.username:
           return True
         if strict:
           raise RuntimeError("Secret mismatch")
     return False
+
+  def set_current_url(self, url: str) -> None:
+    self._current_url = url
+
+  @property
+  def current_url(self) -> str:
+    return self._current_url
+
 
 def app_root(platform: plt.Platform) -> pathlib.Path:
   if platform.is_macos:
@@ -212,9 +243,10 @@ def app_root(platform: plt.Platform) -> pathlib.Path:
   return pathlib.Path("/usr/bin")
 
 
-class MockChromiumBrowser(MockBrowser, metaclass=abc.ABCMeta):
+class MockChromiumBasedBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  def _setup_flags(self, settings: Settings) -> ChromeFlags:
+  @override
+  def _init_flags(self, settings: Settings) -> ChromeFlags:
     flags = ChromeFlags(settings.flags)
     flags.js_flags.update(settings.js_flags)
     return flags
@@ -226,41 +258,66 @@ class MockChromiumBrowser(MockBrowser, metaclass=abc.ABCMeta):
     return chrome_flags
 
   @property
+  @override
   def js_flags(self) -> JSFlags:
     return self.chrome_flags.js_flags
 
   @property
+  @override
   def features(self) -> ChromeFeatures:
     return self.chrome_flags.features
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
 
-# Inject MockBrowser into the browser hierarchy for easier testing.
-Chromium.register(MockChromiumBrowser)
+class MockChromium(MockChromiumBasedBrowser):
+  VERSION = "101.22.33.44"
+
+  @classmethod
+  def mock_app_binary(cls,
+                      platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+    if platform.is_macos:
+      return pathlib.Path("Chromium.app/Contents/MacOS/Chromium")
+    if platform.is_win:
+      return pathlib.Path("Google/Chromium/Application/chromium.exe")
+    return pathlib.Path("chromium")
+
+  @classmethod
+  @override
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+    return app_root(platform) / cls.mock_app_binary(platform)
+
+  @classmethod
+  # TODO: enable @override again
+  def type_name(cls) -> str:
+    return "chromium"
+
+  @classmethod
+  # TODO: enable @override again
+  def attributes(cls) -> BrowserAttributes:
+    return BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
 
 
-class MockChromeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
+class MockChromeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  # TODO: enable @override again
+  def type_name(cls) -> str:
     return "chrome"
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  # TODO: enable @override again
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-
-
-Chrome.register(MockChromeBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockChromeBrowser, Chrome)
 
 
 class MockChromeStable(MockChromeBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome.app"
@@ -269,25 +326,23 @@ class MockChromeStable(MockChromeBrowser):
     return app_root(platform) / "google-chrome"
 
 
-if not TYPE_CHECKING:
-  assert issubclass(MockChromeStable, Chromium)
-  assert issubclass(MockChromeStable, Chrome)
-
-
 class MockChromeAndroidStable(MockChromeStable):
 
   @property
+  @override
   def platform(self) -> AndroidAdbPlatform:
     assert isinstance(
         self._platform,
         AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
     return cast(AndroidAdbPlatform, self._platform)
 
-  def _resolve_binary(self, path: pathlib.Path) -> pathlib.Path:
+  @override
+  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
             | BrowserAttributes.MOBILE)
 
@@ -296,6 +351,7 @@ class MockChromeBeta(MockChromeBrowser):
   VERSION = "101.22.33.44"
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome Beta.app"
@@ -308,6 +364,7 @@ class MockChromeDev(MockChromeBrowser):
   VERSION = "102.22.33.44"
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome Dev.app"
@@ -320,6 +377,7 @@ class MockChromeCanary(MockChromeBrowser):
   VERSION = "103.22.33.44"
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome Canary.app"
@@ -328,26 +386,23 @@ class MockChromeCanary(MockChromeBrowser):
     return app_root(platform) / "google-chrome-canary"
 
 
-class MockEdgeBrowser(MockChromiumBrowser, metaclass=abc.ABCMeta):
+class MockEdgeBrowser(MockChromiumBasedBrowser, metaclass=abc.ABCMeta):
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  @override
+  def type_name(cls) -> str:
     return "edge"
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
-
-
-Edge.register(MockEdgeBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockEdgeBrowser, Chromium)
-  assert issubclass(MockEdgeBrowser, Edge)
 
 
 class MockEdgeStable(MockEdgeBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge.app"
@@ -360,6 +415,7 @@ class MockEdgeBeta(MockEdgeBrowser):
   VERSION = "101.22.33.44"
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge Beta.app"
@@ -372,6 +428,7 @@ class MockEdgeDev(MockEdgeBrowser):
   VERSION = "102.22.33.44"
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge Dev.app"
@@ -384,6 +441,7 @@ class MockEdgeCanary(MockEdgeBrowser):
   VERSION = "103.22.33.44"
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge Canary.app"
@@ -394,23 +452,21 @@ class MockEdgeCanary(MockEdgeBrowser):
 
 class MockSafariBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  @override
+  def type_name(cls) -> str:
     return "safari"
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.SAFARI
-
-
-Safari.register(MockSafariBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockSafariBrowser, Safari)
 
 
 class MockSafari(MockSafariBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Safari.app"
@@ -422,6 +478,7 @@ class MockSafari(MockSafariBrowser):
 class MockSafariTechnologyPreview(MockSafariBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Safari Technology Preview.app"
@@ -432,23 +489,21 @@ class MockSafariTechnologyPreview(MockSafariBrowser):
 
 class MockFirefoxBrowser(MockBrowser, metaclass=abc.ABCMeta):
 
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  @override
+  def type_name(cls) -> str:
     return "firefox"
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX
-
-
-Firefox.register(MockFirefoxBrowser)
-if not TYPE_CHECKING:
-  assert issubclass(MockFirefoxBrowser, Firefox)
 
 
 class MockFirefox(MockFirefoxBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Firefox.app"
@@ -460,6 +515,7 @@ class MockFirefox(MockFirefoxBrowser):
 class MockFirefoxDeveloperEdition(MockFirefoxBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Firefox Developer Edition.app"
@@ -471,6 +527,7 @@ class MockFirefoxDeveloperEdition(MockFirefoxBrowser):
 class MockFirefoxNightly(MockFirefoxBrowser):
 
   @classmethod
+  @override
   def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
     if platform.is_macos:
       return app_root(platform) / "Firefox Nightly.app"

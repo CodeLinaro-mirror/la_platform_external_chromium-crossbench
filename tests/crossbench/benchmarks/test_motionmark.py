@@ -8,15 +8,24 @@ import csv
 from typing import Optional, Type
 from unittest import mock
 
-from crossbench.benchmarks.motionmark.motionmark_1 import (MotionMark1Benchmark,
-                                                           MotionMark1Probe,
-                                                           MotionMark1Story)
+from typing_extensions import override
+
+from crossbench.benchmarks.motionmark.motionmark_1 import (
+    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
+    MotionMark1Story)
 from crossbench.benchmarks.motionmark.motionmark_1_2 import (
-    MotionMark12Benchmark, MotionMark12Probe, MotionMark12Story)
+    MotionMark12Benchmark, MotionMark12Probe, MotionMark12ProbeContext,
+    MotionMark12Story)
 from crossbench.benchmarks.motionmark.motionmark_1_3 import (
-    MotionMark13Benchmark, MotionMark13Probe, MotionMark13Story)
-from crossbench.env import (HostEnvironment, HostEnvironmentConfig,
-                            ValidationMode)
+    MotionMark13Benchmark, MotionMark13Probe, MotionMark13ProbeContext,
+    MotionMark13Story)
+from crossbench.benchmarks.motionmark.motionmark_1_3_1 import (
+    MotionMark131Benchmark, MotionMark131Probe, MotionMark131ProbeContext,
+    MotionMark131Story)
+from crossbench.benchmarks.motionmark.motionmark_main import (
+    MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
+    MotionMarkMainStory)
+from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -27,17 +36,24 @@ class MotionMark1BaseTestCase(
 
   @property
   @abc.abstractmethod
+  @override
   def benchmark_cls(self) -> Type[MotionMark1Benchmark]:
     pass
 
   @property
   @abc.abstractmethod
+  @override
   def story_cls(self) -> Type[MotionMark1Story]:
     pass
 
   @property
   @abc.abstractmethod
   def probe_cls(self) -> Type[MotionMark1Probe]:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def probe_context_cls(self) -> Type[MotionMark1ProbeContext]:
     pass
 
 
@@ -141,11 +157,12 @@ class MotionMark1BaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     with mock.patch.object(
         HostEnvironment, "validate_url", return_value=True) as cm:
       runner.run()
@@ -154,7 +171,7 @@ class MotionMark1BaseTestCase(
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
-      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
+      self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
     with (self.out_dir /
           f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
@@ -174,31 +191,93 @@ class MotionMark1BaseTestCase(
 class MotionMark12TestCase(MotionMark1BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return MotionMark12Benchmark
 
   @property
+  @override
   def story_cls(self):
     return MotionMark12Story
 
   @property
+  @override
   def probe_cls(self):
     return MotionMark12Probe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return MotionMark12ProbeContext
 
 
 class MotionMark13TestCase(MotionMark1BaseTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return MotionMark13Benchmark
 
   @property
+  @override
   def story_cls(self):
     return MotionMark13Story
 
   @property
+  @override
   def probe_cls(self):
     return MotionMark13Probe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return MotionMark13ProbeContext
+
+
+class MotionMark131TestCase(MotionMark1BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return MotionMark131Benchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return MotionMark131Story
+
+  @property
+  @override
+  def probe_cls(self):
+    return MotionMark131Probe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return MotionMark131ProbeContext
+
+
+class MotionMarkMainTestCase(MotionMark1BaseTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return MotionMarkMainBenchmark
+
+  @property
+  @override
+  def story_cls(self):
+    return MotionMarkMainStory
+
+  @property
+  @override
+  def probe_cls(self):
+    return MotionMarkMainProbe
+
+  @property
+  @override
+  def probe_context_cls(self):
+    return MotionMarkMainProbeContext
 
 
 del MotionMark1BaseTestCase

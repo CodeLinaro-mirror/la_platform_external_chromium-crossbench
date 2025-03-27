@@ -11,10 +11,12 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Type
 from unittest import mock
 
-from crossbench.benchmarks.speedometer.speedometer import (SpeedometerBenchmark,
-                                                           SpeedometerProbe,
-                                                           SpeedometerStory)
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from typing_extensions import override
+
+from crossbench.benchmarks.speedometer.speedometer import (
+    SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
+    SpeedometerStory)
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -24,17 +26,24 @@ class SpeedometerBaseTestCase(
 
   @property
   @abc.abstractmethod
+  @override
   def benchmark_cls(self) -> Type[SpeedometerBenchmark]:
     pass
 
   @property
   @abc.abstractmethod
+  @override
   def story_cls(self) -> Type[SpeedometerStory]:
     pass
 
   @property
   @abc.abstractmethod
   def probe_cls(self) -> Type[SpeedometerProbe]:
+    pass
+
+  @property
+  @abc.abstractmethod
+  def probe_context_cls(self) -> Type[SpeedometerProbeContext]:
     pass
 
   @property
@@ -49,18 +58,19 @@ class SpeedometerBaseTestCase(
 
   @dataclass
   class Namespace(argparse.Namespace):
-    stories = "all"
+    stories = "default"
     iterations: int = 10
     separate: bool = False
-    custom_benchmark_url: Optional[str] = None
+    custom_benchmark_url: str | None = None
+
 
   def test_iterations_kwargs(self):
     args = self.Namespace()
     self.benchmark_cls.from_cli_args(args)
-    with self.assertRaises(TypeError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       args.iterations = "-10"  # pytype: disable=annotation-type-mismatch
       self.benchmark_cls.from_cli_args(args)
-    with self.assertRaises(TypeError):
+    with self.assertRaises(argparse.ArgumentTypeError):
       args.iterations = "1234"  # pytype: disable=annotation-type-mismatch
       benchmark = self.benchmark_cls.from_cli_args(args)
     args.iterations = 1234
@@ -165,7 +175,7 @@ class SpeedometerBaseTestCase(
           browser.expect_js()
           # Wait until done
           browser.expect_js(result=True)
-          browser.expect_js(result=speedometer_probe_results)
+          browser.expect_js(result=json.dumps(speedometer_probe_results))
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
@@ -175,12 +185,13 @@ class SpeedometerBaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
         warmup_repetitions=warmup_repetitions,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
     cm.assert_called_once()
@@ -198,7 +209,7 @@ class SpeedometerBaseTestCase(
       urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
         self.assertEqual(len(urls), expected_num_urls)
-      self.assertTrue(browser.was_js_invoked(self.probe_cls.JS))
+      self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
       self.assertListEqual(browser.expected_js, [])
 
     with self.assertLogs(level="INFO") as cm:
@@ -300,6 +311,7 @@ class SpeedometerBaseTestCase(
 
 
 class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
+
   EXAMPLE_STORY_DATA = {
       "tests": {
           "Adding100Items": {
@@ -327,6 +339,7 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
       "total": 121.40000000596046
   }
 
+  @override
   def _generate_test_probe_results(self, iterations, story):
     return [{
         "tests": {

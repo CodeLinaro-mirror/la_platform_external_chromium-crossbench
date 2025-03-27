@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import sys
 
@@ -22,19 +23,27 @@ if REPO_DIR not in sys.path:
 
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]
-  ignore_tests = []
+  more_flags = []
   parser = argparse.ArgumentParser()
   parser.add_argument("--ignore-tests", required=False)
   parser.add_argument("--adb-device-id", required=False)
+  parser.add_argument("--test-gsutil-path", required=False)
   args, _ = parser.parse_known_args()
   if args.ignore_tests:
     subfolders = args.ignore_tests.split(",")
-    ignore_tests = [f"--ignore={END2END_TEST_DIR / x}" for x in subfolders]
+    more_flags.extend([f"--ignore={END2END_TEST_DIR / x}" for x in subfolders])
   elif not args.adb_device_id:
-    ignore_tests = [f"--ignore={END2END_TEST_DIR / 'android'}"]
+    more_flags.append(f"--ignore={END2END_TEST_DIR / 'android'}")
+  if args.test_gsutil_path:
+    more_flags.append(f"--test-gsutil-path={args.test_gsutil_path}")
+    current_path = os.environ["PATH"]
+    new_path = pathlib.Path(args.test_gsutil_path).parent / "python-bin"
+    updated_path = f"'{current_path}:{new_path}'"
+    os.environ["PATH"] = updated_path
+    os.environ["DEPOT_TOOLS_UPDATE"] = "0"
   return_code = pytest.main([
-      "--exitfirst", "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG",
-      "-o", "log_cli=True", "-rs",
+      "--verbose", "--numprocesses=1", "--log-cli-level=DEBUG", "-o",
+      "log_cli=True", "-rs",
       str(END2END_TEST_DIR), *pass_through_args
-  ] + ignore_tests)
+  ] + more_flags)
   sys.exit(return_code)

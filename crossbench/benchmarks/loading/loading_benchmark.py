@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import logging
 from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
                     Type)
 
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from typing_extensions import override
+
 from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.loading.config.pages import (
@@ -49,6 +49,7 @@ class LoadingPageFilter(StoryFilter[Page]):
   stories: Sequence[Page]
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = super().add_cli_parser(parser)
@@ -158,6 +159,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "for more details.")
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
@@ -172,6 +174,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     self._args: argparse.Namespace = args
     super().__init__(story_cls, patterns, separate)
 
+  @override
   def process_all(self, patterns: Sequence[str]) -> None:
     name_or_url_list = patterns
     if len(name_or_url_list) == 1:
@@ -203,8 +206,9 @@ class LoadingPageFilter(StoryFilter[Page]):
     for page_config in config.pages:
       stories.append(cls._story_from_config(args, page_config, use_labels))
 
-    if use_labels:
+    if not use_labels:
       # Double check that the urls are unique
+
       urls = set(page_config.first_url for page_config in config.pages)
       if len(urls) != len(config.pages):
         raise argparse.ArgumentTypeError(
@@ -233,20 +237,21 @@ class LoadingPageFilter(StoryFilter[Page]):
       return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
     return InteractivePage(label, config.blocks, config.setup, config.login,
-                           config.secrets.as_dict(), playback, tabs,
+                           config.secrets, playback, tabs,
                            args.about_blank_duration, args.run_login,
                            args.run_setup)
 
+  @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
-    logging.info("SELECTED STORIES: %s", str(list(map(str, self.stories))))
     if not separate and len(self.stories) > 1:
       combined_name = "_".join(page.name for page in self.stories)
       self.stories = (CombinedPage(self.stories, combined_name,
                                    self._args.playback, self._args.tabs),)
+    self.log_stories(self.stories)
     return self.stories
 
 
-class PageLoadBenchmark(SubStoryBenchmark):
+class LoadingBenchmark(SubStoryBenchmark):
   """
   Benchmark runner for loading pages.
 
@@ -266,16 +271,17 @@ class PageLoadBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS = LoadingPageFilter
 
   @classmethod
+  @override
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
   ) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers, aliases)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
-
     parser.add_argument(
         "--action-runner",
         type=ActionRunnerConfig.parse,
-        help="Set the action runner for interactive pages.")
+        help="Set the action runner for interactive pages.",
+        required=False)
     return parser
 
   @classmethod
@@ -283,6 +289,7 @@ class PageLoadBenchmark(SubStoryBenchmark):
     return args.separate
 
   @classmethod
+  @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     has_default_stories: bool = args.stories and args.stories == "default"
     if config := cls.get_pages_config(args):
@@ -310,7 +317,11 @@ class PageLoadBenchmark(SubStoryBenchmark):
     return super().stories_from_cli_args(args)
 
   @classmethod
-  def get_pages_config(cls, args: argparse.Namespace) -> Optional[PagesConfig]:
+  def get_pages_config(cls,
+                       args: Optional[argparse.Namespace] = None
+                      ) -> Optional[PagesConfig]:
+    if not args:
+      raise ValueError("Missing args")
     if global_config := args.config:
       # TODO: migrate --config to an already parsed hjson/json dict
       config_file = global_config
@@ -326,27 +337,34 @@ class PageLoadBenchmark(SubStoryBenchmark):
     return args.pages_config
 
   @classmethod
+  @override
   def aliases(cls) -> Tuple[str, ...]:
     return ("load", "ld")
 
   @classmethod
+  @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["action_runner"] = args.action_runner
     return kwargs
 
   @classmethod
+  @override
   def all_story_names(cls) -> Sequence[str]:
     return sorted(LivePage.all_story_names())
 
   def __init__(self,
                stories: Sequence[Page],
                action_runner: Optional[ActionRunner] = None) -> None:
-    self._action_runner = action_runner or BasicActionRunner()
+    self._action_runner = action_runner
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories)
 
   @property
-  def action_runner(self) -> ActionRunner:
+  def action_runner(self) -> Optional[ActionRunner]:
     return self._action_runner
+
+  @action_runner.setter
+  def action_runner(self, action_runner: Optional[ActionRunner]) -> None:
+    self._action_runner = action_runner

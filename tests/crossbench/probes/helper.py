@@ -7,11 +7,11 @@ from __future__ import annotations
 import copy
 import json
 from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Sequence,
-                    Tuple, Union)
+                    Tuple)
 
-from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -23,8 +23,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
 
   def create_runner(self,
                     stories: Sequence[Page],
-                    js_side_effects: Union[List[Any], Callable[[Page],
-                                                               List[Any]]],
+                    js_side_effects: List[Any] | Callable[[Page], List[Any]],
                     separate: bool = False,
                     repetitions: int = 3,
                     warmup_repetitions: int = 0,
@@ -48,19 +47,20 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    benchmark = PageLoadBenchmark(stories)  # pytype: disable=not-instantiable
+    benchmark = LoadingBenchmark(stories)  # pytype: disable=not-instantiable
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
         warmup_repetitions=warmup_repetitions,
         cache_temperatures=cache_temperatures,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     return runner
 
   def get_non_empty_json_results(self, runner: Runner,

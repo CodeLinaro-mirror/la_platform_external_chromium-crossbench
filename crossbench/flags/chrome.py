@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Dict, Iterable, Iterator, Optional, Tuple
+from typing import Dict, Final, Iterable, Iterator, Optional, Tuple
 
 from ordered_set import OrderedSet
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData, Freezable
@@ -24,6 +25,29 @@ class ChromeFlags(Flags):
   --enable-blink-features/--disable-blink-features
   """
   _JS_FLAG = "--js-flags"
+
+  # All flags that might affect how finch / field-trials are loaded.
+  FIELD_TRIAL_FLAGS: Final[Tuple[str, ...]] = (
+      "--force-fieldtrials",
+      "--variations-server-url",
+      "--variations-insecure-server-url",
+      "--variations-test-seed-path",
+      "--enable-field-trial-config",
+      "--disable-variations-safe-mode",
+      # The benchmarking flag without value is a no-experiment flag. However,
+      # when used as '--enable-benchmarking=enable-field-trial-config' it
+      # works with experiments.
+      "--enable-benchmarking",
+  )
+
+  NO_EXPERIMENTS_FLAGS: Final[Tuple[str, ...]] = (
+      "--no-experiments",
+      # The benchmarking flag without value is a no-experiment flag. However,
+      # when used as '--enable-benchmarking=enable-field-trial-config' it
+      # works with experiments.
+      "--enable-benchmarking",
+      "--disable-field-trial-config",
+  )
 
   def __init__(self, initial_data: FlagsData = None) -> None:
     self._features = ChromeFeatures()
@@ -52,10 +76,11 @@ class ChromeFlags(Flags):
       return self._blink_features.disabled_str()
     return super().__getitem__(key)
 
+  @override
   def _set(self,
            flag_name: str,
            flag_value: Optional[str] = None,
-           override: bool = False) -> None:
+           should_override: bool = False) -> None:
     self.assert_not_frozen()
     # pylint: disable=signature-differs
     if flag_name == ChromeFeatures.ENABLE_FLAG:
@@ -81,15 +106,16 @@ class ChromeFlags(Flags):
     elif flag_name == self._JS_FLAG:
       if flag_value is None:
         raise ValueError(f"{self._JS_FLAG} cannot be None")
-      self._set_js_flag(flag_value, override)
+      self._set_js_flag(flag_value, should_override)
     else:
       flag_value = self._verify_flag(flag_name, flag_value)
-      super()._set(flag_name, flag_value, override)
+      super()._set(flag_name, flag_value, should_override)
 
-  def _set_js_flag(self, raw_js_flags: str, override: bool) -> None:
+  def _set_js_flag(self, raw_js_flags: str, should_override: bool) -> None:
     new_js_flags = JSFlags(self._js_flags)
     for js_flag_name, js_flag_value in JSFlags.parse(raw_js_flags).items():
-      new_js_flags.set(js_flag_name, js_flag_value, override=override)
+      new_js_flags.set(
+          js_flag_name, js_flag_value, should_override=should_override)
     self._js_flags.update(new_js_flags)
 
   def _verify_flag(self, name: str, value: Optional[str]) -> Optional[str]:
@@ -151,6 +177,36 @@ class ChromeFlags(Flags):
   def js_flags(self) -> JSFlags:
     return self._js_flags
 
+  def has_enable_benchmarking_field_trials(self):
+    # Enable the benchmarking extension with field trial configs which
+    # requires a special value. See `ShouldUseFieldTrialTestingConfig()`.
+    # https://crsrc.org/c/components/variations/service/variations_field_trial_creator_base.cc;l=138;drc=27d34700b83f381c62e3a348de2e6dfdc08364b8
+    return self.get("--enable-benchmarking") == "enable-field-trial-config"
+
+  @property
+  def field_trial_flags(self) -> ChromeFlags:
+    filtered = self.filtered(self.FIELD_TRIAL_FLAGS)
+    if "--enable-benchmarking" in self and (
+        not self.has_enable_benchmarking_field_trials()):
+      del filtered["--enable-benchmarking"]
+    return filtered
+
+  @property
+  def no_experiments_flags(self) -> ChromeFlags:
+    filtered = self.filtered(self.NO_EXPERIMENTS_FLAGS)
+    # Special case for --enable-benchmarking which disables field trials
+    # by default, unless it has a "enable-field-trial-config" value.
+    if self.has_enable_benchmarking_field_trials():
+      del filtered["--enable-benchmarking"]
+    return filtered
+
+  def enable_benchmarking_extension(self) -> None:
+    if self.field_trial_flags:
+      self.set("--enable-benchmarking", "enable-field-trial-config")
+    else:
+      self.set("--enable-benchmarking")
+
+  @override
   def merge(self, other: FlagsData) -> None:
     if not isinstance(other, ChromeFlags):
       other = ChromeFlags(other)
@@ -163,7 +219,8 @@ class ChromeFlags(Flags):
   def base_items(self) -> Iterable[Tuple[str, Optional[str]]]:
     yield from super().items()
 
-  def items(self) -> Iterable[Tuple[str, Optional[str]]]:
+  @override
+  def items(self) -> Iterable[Tuple[str, Optional[str]]]:  # type: ignore
     yield from self.base_items()
     if self._js_flags:
       yield (self._JS_FLAG, str(self.js_flags))
@@ -181,7 +238,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
 
   def __init__(self) -> None:
     super().__init__()
-    self._enabled: Dict[str, Optional[str]] = {}
+    self._enabled: Dict[str, str | None] = {}
     self._disabled: OrderedSet[str] = OrderedSet()
 
   @property
@@ -262,7 +319,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     for flag_name, features_str in self.items():
       yield f"{flag_name}={features_str}"
 
-  def __bool__(self):
+  def __bool__(self) -> bool:
     return bool(self._enabled) or bool(self._disabled)
 
   def __str__(self) -> str:
@@ -283,6 +340,7 @@ class ChromeFeatures(ChromeBaseFeatures):
   ENABLE_FLAG: str = "--enable-features"
   DISABLE_FLAG: str = "--disable-features"
 
+  @override
   def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
     parts = feature.split("<")
     if len(parts) == 2:
@@ -309,6 +367,7 @@ class ChromeBlinkFeatures(ChromeBaseFeatures):
   ENABLE_FLAG: str = "--enable-blink-features"
   DISABLE_FLAG: str = "--disable-blink-features"
 
+  @override
   def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
     if "<" in feature or ":" in feature:
       raise ValueError("blink features do not have params, "

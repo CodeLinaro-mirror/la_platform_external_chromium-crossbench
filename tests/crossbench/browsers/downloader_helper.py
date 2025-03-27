@@ -8,12 +8,15 @@ import abc
 import pathlib
 from unittest import mock
 
+from typing_extensions import override
+
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
   __test__ = False
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.platform = mock.Mock(

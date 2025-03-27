@@ -7,6 +7,8 @@ from __future__ import annotations
 import abc
 import pathlib
 
+from typing_extensions import override
+
 from crossbench.browsers.firefox.downloader import (FirefoxDownloader,
                                                     FirefoxDownloaderLinux,
                                                     FirefoxDownloaderMacOS,
@@ -72,6 +74,7 @@ class AbstractFirefoxDownloaderTestCase(
 class BasicFirefoxDownloaderLinuxTestCase(AbstractFirefoxDownloaderTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.platform.is_linux = True
@@ -88,6 +91,7 @@ class BasicFirefoxDownloaderLinuxTestCase(AbstractFirefoxDownloaderTestCase):
 class BasicFirefoxDownloaderMacOSTestCase(AbstractFirefoxDownloaderTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.platform.is_macos = True

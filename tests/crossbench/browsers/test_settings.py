@@ -14,6 +14,7 @@ from crossbench.browsers.viewport import Viewport
 from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.flags.js_flags import JSFlags
+from tests import test_helper
 
 
 class SettingsTestCase(unittest.TestCase):
@@ -23,10 +24,12 @@ class SettingsTestCase(unittest.TestCase):
     self.assertEqual(settings.flags, Flags())
     self.assertEqual(settings.js_flags, Flags())
     self.assertIsNone(settings.cache_dir)
+    self.assertTrue(settings.clear_cache_dir)
     self.assertEqual(settings.viewport, Viewport.DEFAULT)
     self.assertIsNone(settings.driver_path)
     self.assertEqual(settings.splash_screen, SplashScreen.DEFAULT)
     self.assertTrue(settings.network.is_live)
+    self.assertFalse(settings.wipe_system_user_data)
     self.assertEqual(settings.platform, plt.PLATFORM)
 
   def test_custom(self):
@@ -36,6 +39,7 @@ class SettingsTestCase(unittest.TestCase):
         flags,
         js_flags,
         cache_dir=pth.LocalPath("cache"),
+        clear_cache_dir=False,
         viewport=Viewport.FULLSCREEN,
         driver_path=pth.LocalPath("driver"),
         splash_screen=SplashScreen.DETAILED,
@@ -43,6 +47,7 @@ class SettingsTestCase(unittest.TestCase):
     self.assertEqual(settings.flags, flags)
     self.assertEqual(settings.js_flags, js_flags)
     self.assertEqual(settings.cache_dir, pth.LocalPath("cache"))
+    self.assertFalse(settings.clear_cache_dir)
     self.assertEqual(settings.viewport, Viewport.FULLSCREEN)
     self.assertEqual(settings.driver_path, pth.LocalPath("driver"))
     self.assertEqual(settings.splash_screen, SplashScreen.DETAILED)
@@ -88,3 +93,7 @@ class SettingsTestCase(unittest.TestCase):
     with self.assertRaises(ValueError) as cm:
       _ = Settings(flags, js_flags=Flags({"--js-two": "js-2"}))
     self.assertIn("js-flags", str(cm.exception))
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

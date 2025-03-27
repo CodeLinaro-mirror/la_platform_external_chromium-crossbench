@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Type
 
-from crossbench import helper
-from crossbench.browsers.chromium.chromium import Chromium
+from typing_extensions import override
+
+from crossbench.helper import fs_helper
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeContext
 from crossbench.probes.result_location import ResultLocation
@@ -17,7 +18,6 @@ from crossbench.probes.results import (BrowserProbeResult, LocalProbeResult,
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.path import AnyPath
-  from crossbench.runner.run import Run
 
 
 class V8TurbolizerProbe(ChromiumProbe):
@@ -29,15 +29,15 @@ class V8TurbolizerProbe(ChromiumProbe):
   NAME = "v8.turbolizer"
   RESULT_LOCATION = ResultLocation.BROWSER
 
+  @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
-    assert isinstance(browser, Chromium)
-    chromium = cast(Chromium, browser)
-    chromium.flags.set("--no-sandbox")
-    chromium.js_flags.set("--trace-turbo")
+    browser.flags.set("--no-sandbox")
+    browser.js_flags.set("--trace-turbo")
 
-  def get_context(self, run: Run) -> V8TurbolizerProbeContext:
-    return V8TurbolizerProbeContext(self, run)
+  @override
+  def get_context_cls(self) -> Type[V8TurbolizerProbeContext]:
+    return V8TurbolizerProbeContext
 
 
 class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
@@ -50,6 +50,7 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
     self.browser_platform.mkdir(turbolizer_log_dir, exist_ok=True)
     return turbolizer_log_dir
 
+  @override
   def setup(self) -> None:
     js_flags = self.session.extra_js_flags
     js_flags["--trace-turbo-path"] = str(self.results_dir)
@@ -69,5 +70,5 @@ class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
     local_log_dir = result.file
     assert local_log_dir.is_dir()
     # Sort files locally after transferring them.
-    log_files = helper.sort_by_file_size(local_log_dir.glob("*"))
+    log_files = fs_helper.sort_by_file_size(local_log_dir.glob("*"))
     return LocalProbeResult(file=log_files)

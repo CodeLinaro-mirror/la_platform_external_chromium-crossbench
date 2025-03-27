@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import abc
+import atexit
 import collections.abc
 import contextlib
+import dataclasses
 import datetime as dt
 import functools
 import inspect
@@ -16,33 +18,40 @@ import pathlib
 import platform as py_platform
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generator,
-                    Iterable, Iterator, List, Mapping, Optional, Sequence,
-                    Tuple, Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
+                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
+                    TypeAlias)
 
 import psutil
 
+from crossbench import parse
 from crossbench import path as pth
+from crossbench.helper import wait
+from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
+from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from asyncio.subprocess import Process
+  from subprocess import Popen
+
+  from crossbench.plt.signals import AnySignals, Signals
   from crossbench.types import JsonDict
+  ProcessLike: TypeAlias = Popen | Process | int
 
-
-CmdArg = pth.AnyPathLike
-ListCmdArgs = List[CmdArg]
-TupleCmdArgs = Tuple[CmdArg, ...]
-CmdArgs = Union[ListCmdArgs, TupleCmdArgs]
-
+CmdArg: TypeAlias = pth.AnyPathLike
+SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
+ListCmdArgs: TypeAlias = List[CmdArg]
+TupleCmdArgs: TypeAlias = Tuple[CmdArg, ...]
+CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass
@@ -84,8 +93,12 @@ class SubprocessError(subprocess.CalledProcessError):
     return f"{self.platform}: {super_str}\nstderr:{self.stderr.decode()}"
 
 
-_IGNORED_PROCESS_EXCEPTIONS: Final = (psutil.NoSuchProcess, psutil.AccessDenied,
-                                      psutil.ZombieProcess)
+@dataclasses.dataclass
+class CPUFreqInfo:
+  min: float
+  max: float
+  current: float
+
 
 DEFAULT_CACHE_DIR = pth.LocalPath(__file__).parents[2] / "cache"
 
@@ -94,9 +107,7 @@ class Platform(abc.ABC):
 
   def __init__(self) -> None:
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
-    self._cache_dir: Optional[pth.AnyPath] = None
-    if self.is_local:
-      self._cache_dir = DEFAULT_CACHE_DIR
+    self._cache_dir_root: pth.AnyPath | None = None
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -105,6 +116,11 @@ class Platform(abc.ABC):
     caller = inspect.stack()[1].function
     raise RuntimeError(f"{type(self).__name__}.{caller}(...) is not supported "
                        "on remote platform")
+
+  @property
+  @abc.abstractmethod
+  def signals(self) -> Type[AnySignals]:
+    pass
 
   @property
   @abc.abstractmethod
@@ -125,6 +141,13 @@ class Platform(abc.ABC):
   @abc.abstractmethod
   def cpu(self) -> str:
     pass
+
+  @functools.lru_cache(maxsize=2)
+  def cpu_cores(self, logical: bool) -> int:
+    self.assert_is_local()
+    if cores := psutil.cpu_count(logical=logical):
+      return cores
+    return 0
 
   @property
   def full_version(self) -> str:
@@ -158,6 +181,7 @@ class Platform(abc.ABC):
       return MachineArch.ARM_32
     raise NotImplementedError(f"Unsupported machine type: {raw}")
 
+  @functools.lru_cache(maxsize=1)
   def _raw_machine_arch(self) -> str:
     self.assert_is_local()
     return py_platform.machine()
@@ -220,6 +244,84 @@ class Platform(abc.ABC):
     if not status:
       return False
     return not status.power_plugged
+
+  @functools.lru_cache(maxsize=1)
+  def cpu_details(self) -> Dict[str, Any]:
+    self.assert_is_local()
+    details = {
+        "physical cores":
+            self.cpu_cores(logical=False),
+        "logical cores":
+            self.cpu_cores(logical=True),
+        "usage":
+            psutil.cpu_percent(  # pytype: disable=attribute-error
+                percpu=True, interval=0.1),
+        "total usage":
+            psutil.cpu_percent(),
+        "system load":
+            psutil.getloadavg(),
+        "info":
+            self.cpu,
+        "min frequency":
+            "N/A",
+        "max frequency":
+            "N/A",
+        "current frequency":
+            "N/A",
+    }
+    if cpu_freq := self._cpu_freq():
+      details.update({
+          "min frequency": f"{cpu_freq.min:.2f}Mhz",
+          "max frequency": f"{cpu_freq.max:.2f}Mhz",
+          "current frequency": f"{cpu_freq.current:.2f}Mhz",
+      })
+    return details
+
+  def _cpu_freq(self) -> Optional[CPUFreqInfo]:
+    self.assert_is_local()
+    cpu_freq = psutil.cpu_freq()
+    return CPUFreqInfo(cpu_freq.min, cpu_freq.max, cpu_freq.current)
+
+
+  @functools.lru_cache(maxsize=1)
+  def system_details(self) -> Dict[str, Any]:
+    return {
+        "machine": str(self.machine),
+        "os": self.os_details(),
+        "python": self.python_details(),
+        "CPU": self.cpu_details(),
+    }
+
+  @functools.lru_cache(maxsize=1)
+  def os_details(self) -> JsonDict:
+    self.assert_is_local()
+    return {
+        "system": py_platform.system(),
+        "release": py_platform.release(),
+        "version": py_platform.version(),
+        "platform": py_platform.platform(),
+    }
+
+  @functools.lru_cache(maxsize=1)
+  def python_details(self) -> JsonDict:
+    self.assert_is_local()
+    return {
+        "version": py_platform.python_version(),
+        "bits": 64 if sys.maxsize > 2**32 else 32,
+    }
+
+  def get_relative_cpu_speed(self) -> float:
+    return 1
+
+  def is_thermal_throttled(self) -> bool:
+    return self.get_relative_cpu_speed() < 1
+
+  def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
+    return psutil.disk_usage(str(self.local_path(path)))
+
+  def cpu_usage(self) -> float:
+    self.assert_is_local()
+    return 1 - psutil.cpu_times_percent().idle / 100
 
   def _search_executable(
       self,
@@ -286,20 +388,29 @@ class Platform(abc.ABC):
     This can be false on linux without $DISPLAY, true an all other platforms."""
     return True
 
-  def sleep(self, seconds: Union[int, float, dt.timedelta]) -> None:
-    if isinstance(seconds, dt.timedelta):
-      seconds = seconds.total_seconds()
-    if seconds == 0:
-      return
-    logging.debug("WAIT %ss", seconds)
-    time.sleep(seconds)
+  def sleep(self, seconds: int | float | dt.timedelta) -> None:
+    wait.sleep(seconds)
+
+  def parse_binary_path(self,
+                        value: pth.AnyPathLike,
+                        name: str = "value") -> pth.AnyPath:
+    # Helper to avoid circular imports.
+    return parse.PathParser.binary_path(value, self, name)
+
+  def parse_local_binary_path(self,
+                              value: pth.AnyPathLike,
+                              name: str = "value") -> pth.LocalPath:
+    self.assert_is_local()
+    # Helper to avoid circular imports.
+    return parse.PathParser.local_binary_path(value, self, name)
+
 
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if not binary_name:
       raise ValueError("Got empty path")
     self.assert_is_local()
-    if override := self.lookup_binary_override(binary_name):
-      return override
+    if binary_override := self.lookup_binary_override(binary_name):
+      return binary_override
     if result := shutil.which(os.fspath(binary_name)):
       return self.path(result)
     return None
@@ -309,7 +420,7 @@ class Platform(abc.ABC):
     return self._binary_lookup_override.get(os.fspath(binary_name))
 
   def set_binary_lookup_override(self, binary_name: pth.AnyPathLike,
-                                 new_path: Optional[pth.AnyPath]):
+                                 new_path: Optional[pth.AnyPath]) -> None:
     name = os.fspath(binary_name)
     if new_path is None:
       prev_result = self._binary_lookup_override.pop(name, None)
@@ -324,7 +435,7 @@ class Platform(abc.ABC):
     self._binary_lookup_override[name] = new_path
 
   @contextlib.contextmanager
-  def override_binary(self, binary: Union[pth.AnyPathLike, Binary],
+  def override_binary(self, binary: pth.AnyPathLike | Binary,
                       result: Optional[pth.AnyPath]):
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):
@@ -342,6 +453,49 @@ class Platform(abc.ABC):
     finally:
       self.set_binary_lookup_override(binary_name, prev_override)
 
+  def send_signal(self, process: ProcessLike, signal: Signals) -> None:
+    self.assert_is_local()
+    if isinstance(process, int):
+      os.kill(process, signal.value)
+    else:
+      process.send_signal(signal.value)
+
+  def terminate(self, process: ProcessLike) -> None:
+    self._handle_process_tree(process, lambda process: process.terminate())
+
+  def kill(self, process: ProcessLike) -> None:
+    self._handle_process_tree(process, lambda process: process.kill())
+
+  def terminate_gracefully(self,
+                           process: ProcessLike,
+                           timeout: int = 1,
+                           signal: Optional[Signals] = None) -> None:
+    proc_helper.terminate_gracefully(self, process, timeout, signal)
+
+  def process_pid(self, process: ProcessLike) -> int:
+    if isinstance(process, int):
+      return process
+    if isinstance(process, RemotePopen):
+      assert self.is_remote, (
+          f"Cannot access remote process {process} on local platform {self}")
+      return process.remote_pid
+    return process.pid
+
+  def _handle_process_tree(self, process: ProcessLike,
+                           callback: Callable[[psutil.Process], None]) -> None:
+    self.assert_is_local()
+    try:
+      pid: int = self.process_pid(process)
+      ps_process = psutil.Process(pid)
+      for child_process in ps_process.children(recursive=True):
+        try:
+          callback(child_process)
+        except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
+          pass
+      callback(ps_process)
+    except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
+      pass
+
   def processes(self,
                 attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     # TODO(cbruni): support remote platforms
@@ -355,7 +509,7 @@ class Platform(abc.ABC):
       try:
         if proc.name().lower() in process_name_list:
           return proc.name()
-      except _IGNORED_PROCESS_EXCEPTIONS:
+      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
         pass
     return None
 
@@ -366,7 +520,7 @@ class Platform(abc.ABC):
     # TODO(cbruni): support remote platforms
     try:
       process = psutil.Process(parent_pid)
-    except _IGNORED_PROCESS_EXCEPTIONS:
+    except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return []
     return self._collect_process_dict(process.children(recursive=recursive))
 
@@ -376,28 +530,21 @@ class Platform(abc.ABC):
     for process in process_iterator:
       try:
         process_info_list.append(process.as_dict())
-      except _IGNORED_PROCESS_EXCEPTIONS:
+      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
         pass
     return process_info_list
 
-  def process_info(self, pid: int) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
+      pid = self.process_pid(process)
       return psutil.Process(pid).as_dict()
-    except _IGNORED_PROCESS_EXCEPTIONS:
+    except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 
   def foreground_process(self) -> Optional[Dict[str, Any]]:
     return None
-
-  def terminate(self, proc_pid: int) -> None:
-    self.assert_is_local()
-    # TODO(cbruni): support remote platforms
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-      proc.terminate()
-    process.terminate()
 
   @property
   def default_tmp_dir(self) -> pth.AnyPath:
@@ -405,8 +552,10 @@ class Platform(abc.ABC):
     return self.path(tempfile.gettempdir())
 
   def port_forward(self, local_port: int, remote_port: int) -> int:
+    """ Forwards a device remote_port to a local port."""
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
+    parse.NumberParser.port_number(local_port, "local_port")
     self.assert_is_local()
     return local_port
 
@@ -415,8 +564,10 @@ class Platform(abc.ABC):
     self.assert_is_local()
 
   def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
+    """ Forwards a local port to a device port."""
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
+    parse.NumberParser.port_number(remote_port, "remote_port")
     self.assert_is_local()
     return remote_port
 
@@ -424,31 +575,58 @@ class Platform(abc.ABC):
     del remote_port
     self.assert_is_local()
 
+  def is_port_used(self, port: int) -> bool:
+    self.assert_is_local()
+    for conn in psutil.net_connections(kind="inet"):
+      if conn.status == psutil.CONN_LISTEN and conn.laddr:
+        if conn.laddr.port == port:
+          return True
+    return False
+
+  def wait_for_port(self, port: int, timeout: dt.timedelta) -> None:
+    for _ in wait.wait_with_backoff(timeout):
+      if self.is_port_used(port):
+        break
+
+  def get_free_port(self) -> int:
+    self.assert_is_local()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+      s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      s.bind(("localhost", 0))
+      return s.getsockname()[1]
+
   def local_cache_dir(self, name: Optional[str] = None) -> pth.LocalPath:
     return self.local_path(self.cache_dir(name))
 
   def cache_dir(self, name: Optional[str] = None) -> pth.AnyPath:
-    assert self._cache_dir, "missing cache dir"
+    if self._cache_dir_root is None:
+      self._cache_dir_root = self._lazy_setup_cache_dir()
+    assert self._cache_dir_root, "missing cache dir"
     if not name:
-      dir = self._cache_dir
+      dir = self._cache_dir_root
     else:
-      dir = self._cache_dir / pth.safe_filename(name)
+      dir = self._cache_dir_root / pth.safe_filename(name)
     self.mkdir(dir, parents=True, exist_ok=True)
     return dir
 
+  def _lazy_setup_cache_dir(self) -> pth.AnyPath:
+    if self.is_local and DEFAULT_CACHE_DIR:
+      return self.local_path(DEFAULT_CACHE_DIR)
+    tmp_cache_dir = self.default_tmp_dir / "crossbench_cache"
+    atexit.register(self.rm, tmp_cache_dir, dir=True, missing_ok=True)
+    return tmp_cache_dir
+
   def set_cache_dir(self, path: pth.AnyPath) -> None:
-    self._cache_dir = path
-    self.mkdir(path, parents=True, exist_ok=True)
+    self._cache_dir_root = self.path(path)
+    self.mkdir(path, parents=True)
 
   def cat(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     """Meow! I return the file contents as a str."""
-    with self.local_path(file).open(encoding=encoding) as f:
-      return f.read()
+    return self.local_path(file).read_text(encoding=encoding)
 
   def cat_bytes(self, file: pth.AnyPathLike) -> bytes:
     """Hiss! I return the file contents as bytes."""
-    with self.local_path(file).open("rb") as f:
-      return f.read()
+    return self.local_path(file).read_bytes()
 
   def get_file_contents(self,
                         file: pth.AnyPathLike,
@@ -459,8 +637,7 @@ class Platform(abc.ABC):
                         file: pth.AnyPathLike,
                         data: str,
                         encoding: str = "utf-8") -> None:
-    with self.local_path(file).open("w", encoding=encoding) as f:
-      f.write(data)
+    self.local_path(file).write_text(data, encoding)
 
   def pull(self, from_path: pth.AnyPath,
            to_path: pth.LocalPath) -> pth.LocalPath:
@@ -489,16 +666,18 @@ class Platform(abc.ABC):
                to_path: pth.AnyPathLike) -> pth.AnyPath:
     from_path = self.local_path(from_path)
     to_path = self.local_path(to_path)
-    self.mkdir(to_path.parent, parents=True, exist_ok=True)
-    shutil.copytree(os.fspath(from_path), os.fspath(to_path))
+    if from_path != to_path:
+      self.mkdir(to_path.parent, parents=True, exist_ok=True)
+      shutil.copytree(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
   def copy_file(self, from_path: pth.AnyPathLike,
                 to_path: pth.AnyPathLike) -> pth.AnyPath:
     from_path = self.local_path(from_path)
     to_path = self.local_path(to_path)
-    self.mkdir(to_path.parent, parents=True, exist_ok=True)
-    shutil.copy2(os.fspath(from_path), os.fspath(to_path))
+    if from_path != to_path:
+      self.mkdir(to_path.parent, parents=True, exist_ok=True)
+      shutil.copy2(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
   def rm(self,
@@ -545,12 +724,16 @@ class Platform(abc.ABC):
   def absolute(self, path: pth.AnyPathLike) -> pth.AnyPath:
     """Convert an arbitrary path to a platform-specific absolute path"""
     platform_path: pth.AnyPath = self.path(path)
-    if platform_path.is_absolute():
-      return platform_path
     if self.is_local:
       return self.local_path(platform_path).absolute()
+    if platform_path.is_absolute():
+      return platform_path
     raise RuntimeError(
         f"Converting relative to absolute paths is not supported on {self}")
+
+  def is_absolute(self, path: pth.AnyPathLike) -> bool:
+    path = self.path(path)
+    return path.is_absolute()
 
   def home(self) -> pth.AnyPath:
     return pathlib.Path.home()
@@ -569,8 +752,7 @@ class Platform(abc.ABC):
       self,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_file: LocalPath = self.host_platform.local_path(
-        self.host_platform.mktemp(prefix, dir))
+    tmp_file: pth.AnyPath = self.mktemp(prefix, dir)
     try:
       yield tmp_file
     finally:
@@ -619,6 +801,9 @@ class Platform(abc.ABC):
     # TODO: support remotely
     return self.local_path(path).glob(pattern)
 
+  def chmod(self, path: pth.AnyPathLike, mode: int) -> None:
+    self.local_path(path).chmod(mode)
+
   def file_size(self, path: pth.AnyPathLike) -> int:
     # TODO: support remotely
     return self.local_path(path).stat().st_size
@@ -652,9 +837,14 @@ class Platform(abc.ABC):
         check=check)
     return completed_process.stdout
 
+  def validate_shell_args(self, args: TupleCmdArgs, shell: bool) -> None:
+    if shell and len(args) != 1:
+      raise ValueError("Expected single sh arg with shell=True, "
+                       f"but got: {args}")
+
   def popen(self,
             *args: CmdArg,
-            bufsize=-1,
+            bufsize: int = -1,
             shell: bool = False,
             stdout=None,
             stderr=None,
@@ -662,6 +852,7 @@ class Platform(abc.ABC):
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
     self.assert_is_local()
+    self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", os.getcwd())
@@ -685,6 +876,7 @@ class Platform(abc.ABC):
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     self.assert_is_local()
+    self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", os.getcwd())
@@ -723,81 +915,15 @@ class Platform(abc.ABC):
     # pylint: disable=unused-argument
     return True
 
-  def get_relative_cpu_speed(self) -> float:
-    return 1
-
-  def is_thermal_throttled(self) -> bool:
-    return self.get_relative_cpu_speed() < 1
-
-  def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
-    return psutil.disk_usage(str(self.local_path(path)))
-
-  def cpu_usage(self) -> float:
-    self.assert_is_local()
-    return 1 - psutil.cpu_times_percent().idle / 100
-
-  def cpu_details(self) -> Dict[str, Any]:
-    self.assert_is_local()
-    details = {
-        "physical cores":
-            psutil.cpu_count(logical=False),
-        "logical cores":
-            psutil.cpu_count(logical=True),
-        "usage":
-            psutil.cpu_percent(  # pytype: disable=attribute-error
-                percpu=True, interval=0.1),
-        "total usage":
-            psutil.cpu_percent(),
-        "system load":
-            psutil.getloadavg(),
-        "info":
-            self.cpu,
-    }
-    try:
-      cpu_freq = psutil.cpu_freq()
-    except FileNotFoundError as e:
-      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
-      return details
-    details.update({
-        "max frequency": f"{cpu_freq.max:.2f}Mhz",
-        "min frequency": f"{cpu_freq.min:.2f}Mhz",
-        "current frequency": f"{cpu_freq.current:.2f}Mhz",
-    })
-    return details
-
-  def system_details(self) -> Dict[str, Any]:
-    return {
-        "machine": str(self.machine),
-        "os": self.os_details(),
-        "python": self.python_details(),
-        "CPU": self.cpu_details(),
-    }
-
-  def os_details(self) -> JsonDict:
-    self.assert_is_local()
-    return {
-        "system": py_platform.system(),
-        "release": py_platform.release(),
-        "version": py_platform.version(),
-        "platform": py_platform.platform(),
-    }
-
-  def python_details(self) -> JsonDict:
-    self.assert_is_local()
-    return {
-        "version": py_platform.python_version(),
-        "bits": 64 if sys.maxsize > 2**32 else 32,
-    }
-
-  def download_to(self, url: str, path: pth.LocalPath) -> pth.LocalPath:
+  def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
     self.assert_is_local()
     logging.debug("DOWNLOAD: %s\n       TO: %s", url, path)
-    assert not path.exists(), f"Download destination {path} exists already."
+    assert not self.exists(path), f"Download destination {path} exists already."
     try:
       urllib.request.urlretrieve(url, path)
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
       raise OSError(f"Could not load {url}") from e
-    assert path.exists(), (
+    assert self.exists(path), (
         f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
     return path
 
@@ -831,3 +957,12 @@ class Platform(abc.ABC):
     # TODO: support screen coordinates
     raise NotImplementedError(
         "'screenshot' is only available on MacOS for now")
+
+  def display_resolution(self) -> Tuple[int, int]:
+    raise NotImplementedError(
+        "'display_resolution' is only available on Android and ChromeOS for "
+        "now")
+
+  def user_id(self) -> int:
+    self.assert_is_local()
+    return os.getuid()

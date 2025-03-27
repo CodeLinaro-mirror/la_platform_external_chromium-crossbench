@@ -6,11 +6,13 @@ import argparse
 import copy
 import csv
 
+from typing_extensions import override
+
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.memory.memory_benchmark import (
     MemoryBenchmark, MemoryBenchmarkStoryFilter, MemoryProbe)
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -19,10 +21,12 @@ from tests.crossbench.benchmarks import helper
 class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return MemoryBenchmark
 
   @property
+  @override
   def story_cls(self):
     return MemoryBenchmarkStoryFilter
 
@@ -78,11 +82,12 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
 
     runner.run()
     assert runner.is_success
