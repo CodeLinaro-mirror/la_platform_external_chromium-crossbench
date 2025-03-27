@@ -27,9 +27,7 @@ if TYPE_CHECKING:
 def _default_success_condition(js_result: Any) -> bool:
   if js_result is True:
     return True
-
   ObjectParser.bool(js_result, strict=True)
-
   return False
 
 class Actions(TimeScope):

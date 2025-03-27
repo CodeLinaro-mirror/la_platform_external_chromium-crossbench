@@ -40,8 +40,15 @@ class Secrets(ConfigObject):
     return type(self)(self.google or fallback.google, self.bond or
                       fallback.bond)
 
+
+class Secret(ConfigObject):
+
+  @property
+  def is_interactive(self) -> bool:
+    return False
+
 @dataclasses.dataclass(frozen=True)
-class UsernamePassword(ConfigObject):
+class UsernamePassword(Secret):
   username: str
   password: str
 
@@ -63,9 +70,23 @@ class UsernamePassword(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> Self:
+  def parse_str(cls, value: str) -> UsernamePassword:
+    if value == "interactive":
+      return InteractiveUsernamePassword()
     # TODO: maybe support passwd style string format
     raise NotImplementedError("Cannot support")
+
+
+class InteractiveUsernamePassword(UsernamePassword):
+  """Interactive secret that defers the input to the user so we can 
+  live test the login process. """
+
+  def __init__(self):
+    super().__init__("", "")
+
+  @property
+  def is_interactive(self) -> bool:
+    return True
 
 
 class GoogleUsernamePassword(UsernamePassword):
@@ -73,7 +94,7 @@ class GoogleUsernamePassword(UsernamePassword):
 
 
 @dataclasses.dataclass(frozen=True)
-class ServiceAccount(ConfigObject):
+class ServiceAccount(Secret):
   type: str
   project_id: str
   private_key_id: str
