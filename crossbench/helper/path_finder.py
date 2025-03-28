@@ -343,7 +343,7 @@ class WprGoToolFinder(BaseCrossbenchBinaryToolFinder):
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
-    return pth.AnyPath("third_party/catapult/web_page_replay_go/src/wpr.go")
+    return pth.AnyPath("third_party/webpagereplay/src/wpr.go")
 
   @classmethod
   @override
