@@ -34,14 +34,13 @@ class V8LogProbeTestCase(unittest.TestCase):
           "prof": False,
           "profview": False
       })
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "profview"):
       # profview needs prof
       V8LogProbe.from_config({
           "log_all": False,
           "prof": False,
           "profview": True
       })
-    self.assertIn("profview", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError):
       V8LogProbe.from_config({"log_all": []})
     with self.assertRaises(argparse.ArgumentTypeError):

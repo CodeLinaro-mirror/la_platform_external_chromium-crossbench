@@ -10,20 +10,24 @@ import logging
 from collections.abc import Generator
 from typing import TYPE_CHECKING, Iterable, Tuple
 
+from typing_extensions import override
+
 from crossbench import plt
-from crossbench.helper import DurationMeasureContext, Durations
+from crossbench.decor.target_protocol import DecoratorTargetProtocol
 from crossbench.probes.result_location import ResultLocation
+from crossbench.runner.probe_result_origin import ProbeResultOrigin
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.exception import (Annotator, ExceptionAnnotationScope,
                                     TExceptionTypes)
+  from crossbench.helper.durations import DurationMeasureContext, Durations
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
 
-class ResultOrigin(abc.ABC):
+class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
   """Base class for Run and BrowserSession, both places where
   probe results can be placed."""
 
@@ -32,6 +36,7 @@ class ResultOrigin(abc.ABC):
     return self.browser_platform.is_local
 
   @property
+  @override
   def is_remote(self) -> bool:
     return self.browser_platform.is_remote
 
@@ -66,10 +71,12 @@ class ResultOrigin(abc.ABC):
         f"Cannot access on runner on {type(self).__name__}")
 
   @property
+  @override
   def host_platform(self) -> plt.Platform:
     return self.browser.host_platform
 
   @property
+  @override
   def browser_platform(self) -> plt.Platform:
     return self.browser.platform
 
@@ -92,7 +99,8 @@ class ResultOrigin(abc.ABC):
   def exception_info(self, *stack_entries: str) -> ExceptionAnnotationScope:
     return self.exceptions.info(*stack_entries)
 
-  def exception_handler(
+  @override
+  def exception_capture(
       self, *stack_entries: str, exceptions: TExceptionTypes = (Exception,)
   ) -> ExceptionAnnotationScope:
     return self.exceptions.capture(*stack_entries, exceptions=exceptions)

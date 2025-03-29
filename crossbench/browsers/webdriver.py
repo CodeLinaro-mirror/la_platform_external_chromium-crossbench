@@ -10,15 +10,18 @@ import logging
 import os
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, cast
 
 import selenium.common.exceptions
 import urllib3
 from selenium import webdriver
 from selenium.webdriver.remote.remote_connection import RemoteConnection
+from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
+from crossbench.probes.internal.browser.driver_log import BrowserDriverLogProbe
 from crossbench.types import JsonDict
 
 if TYPE_CHECKING:
@@ -49,29 +52,30 @@ class DriverException(RuntimeError):
 
 
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
+  # TODO: properly annotate this lazily initialized instance variable.
   _private_driver: webdriver.Remote
-  _driver_path: Optional[AnyPath]
-  _driver_pid: int
-  _pid: int
-  log_file: Optional[LocalPath]
 
   def __init__(self,
                label: str,
                path: Optional[AnyPath] = None,
-               settings: Optional[Settings] = None):
+               settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings)
-    self._driver_path = self._settings.driver_path
+    self._driver_path: AnyPath | None = self._settings.driver_path
+    self._driver_log_file: LocalPath | None = None
+    self._driver_pid: int = 0
+    self._pid: int = 0
+    self.log_file: LocalPath | None = None
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER
 
   @property
-  def driver_log_file(self) -> LocalPath:
-    log_file = self.log_file
-    assert log_file
-    return log_file.with_suffix(".driver.log")
+  def driver_log_file(self) -> Optional[LocalPath]:
+    return self._driver_log_file
 
+  @override
   def validate_binary(self) -> None:
     super().validate_binary()
     self._driver_path = self.platform.absolute(self._find_driver())
@@ -87,18 +91,21 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def _validate_driver_version(self) -> None:
     pass
 
+  @override
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
     self._validate_driver_version()
 
+  @override
   def start(self, session: BrowserSessionRunGroup) -> None:
+    super().start(session)
     assert self._driver_path
     if timeout := self.http_request_timeout:
       logging.debug("Setting http request timeout to %s", timeout)
       RemoteConnection.set_timeout(timeout.total_seconds())
     try:
       self._private_driver = self._start_driver(session, self._driver_path)
-    except selenium.common.exceptions.SessionNotCreatedException as e:
+    except selenium.common.exceptions.WebDriverException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e
     self._is_running = True
@@ -146,11 +153,21 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       timeouts.page_load = timing.timeout_timedelta(page_load).total_seconds()
     self._private_driver.timeouts = timeouts
 
+  def _setup_driver_log_file(self) -> LocalPath:
+    log_file = self.log_file
+    assert log_file, "Missing browser log file"
+    self._driver_log_file = log_file.with_suffix(".driver.log")
+    assert self._driver_log_file.name == BrowserDriverLogProbe.NAME, (
+        f"Expected driver log file name {BrowserDriverLogProbe.NAME}, "
+        f"but got: {self._driver_log_file}")
+    return self._driver_log_file
+
   def _setup_window(self) -> None:
     # Force main window to foreground.
     self._private_driver.switch_to.window(
         self._private_driver.current_window_handle)
-    if self.viewport.is_headless:
+    if (self.viewport.is_headless or
+        not self._private_driver.capabilities["setWindowRect"]):
       return
     if self.viewport.is_fullscreen:
       self._private_driver.fullscreen_window()
@@ -166,20 +183,21 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                     driver_path: AnyPath) -> webdriver.Remote:
     pass
 
+  @override
   def details_json(self) -> JsonDict:
     details: JsonDict = super().details_json()
     log = cast(JsonDict, details["log"])
-    if self.log_file:
+    if self.driver_log_file:
       log["driver"] = os.fspath(self.driver_log_file)
     return details
 
+  @override
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
       if target in ("_self", None):
-        handles = self._private_driver.window_handles
-        assert handles, "Browser has no more opened windows."
-        self._private_driver.switch_to.window(handles[-1])
+        # Do the navigation in the active tab.
+        pass
       elif target == "_new_tab":
         self._private_driver.switch_to.new_window("tab")
       elif target == "_new_window":
@@ -192,9 +210,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         self._wrap_webdriver_exception(e, msg, url)
       raise
 
+  @override
   def switch_to_new_tab(self) -> None:
     self._private_driver.switch_to.new_window("tab")
 
+  @override
   def screenshot(self, path: LocalPath) -> None:
     if not self._private_driver.get_screenshot_as_file(path.as_posix()):
       raise DriverException(
@@ -212,6 +232,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
           f"Browser failed to load URL={url}. "
           f"The device is not connected to the internet.", self) from e
 
+  @override
   def js(
       self,
       script: str,
@@ -241,11 +262,15 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
             urllib3.exceptions.MaxRetryError) as e:
       logging.debug("%s: Got errors while closing all tabs: {%s}", self, e)
 
+  @override
   def quit(self) -> None:
-    assert self._is_running
-    self.close_all_tabs()
-    self.force_quit()
+    try:
+      assert self._is_running
+      self.close_all_tabs()
+    finally:
+      super().quit()
 
+  @override
   def force_quit(self) -> None:
     if getattr(self, "_private_driver", None) is None or not self._is_running:
       return
@@ -282,48 +307,57 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 class RemoteWebDriver(WebDriverBrowser, Browser):
   """Represent a remote WebDriver that has already been started"""
 
-  def __init__(self, label: str, driver: webdriver.Remote) -> None:
-    super().__init__(label=label, path=None)
-    self._private_driver = driver
-    self.version: str = driver.capabilities["browserVersion"]
-    self.major_version: int = int(self.version.split(".")[0])
-
-  @property
-  def type_name(self) -> str:
+  @classmethod
+  @override
+  def type_name(cls) -> str:
     return "remote"
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE
 
+  def __init__(self, label: str, driver: webdriver.Remote) -> None:
+    self._private_driver = driver
+    super().__init__(label=label, path=None)
+
+  @override
+  def _extract_version(self) -> BrowserVersion:
+    raw_version: str = self._private_driver.capabilities["browserVersion"]
+    parts: Tuple[int, ...] = tuple(map(int, raw_version.split(".")))
+    return UnknownBrowserVersion(parts, version_str=raw_version)
+
+  @override
   def _validate_driver_version(self) -> None:
     pass
 
-  def _extract_version(self) -> str:
-    raise NotImplementedError()
-
+  @override
   def _find_driver(self) -> LocalPath:
     raise NotImplementedError()
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: AnyPath) -> webdriver.Remote:
     raise NotImplementedError()
 
-  def setup_binary(self) -> None:
+  @override
+  def _setup_binary(self) -> None:
     pass
 
+  @override
+  def _setup_cache_dir(self):
+    pass
+
+  def validate_binary(self) -> None:
+    pass
+
+  @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Driver has already been started. We just need to mark it as running.
     self._is_running = True
-    if self.viewport.is_fullscreen:
-      self._private_driver.fullscreen_window()
-    elif self.viewport.is_maximized:
-      self._private_driver.maximize_window()
-    else:
-      self._private_driver.set_window_position(self.viewport.x, self.viewport.y)
-      self._private_driver.set_window_size(self.viewport.width,
-                                           self.viewport.height)
+    self._setup_window()
 
+  @override
   def quit(self) -> None:
     # External code that started the driver is responsible for shutting it down.
     self._is_running = False

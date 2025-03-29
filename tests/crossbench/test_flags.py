@@ -64,7 +64,7 @@ class TestFlags(unittest.TestCase):
     self.assertIsNone(flags["--bar"])
     with self.assertRaises(ValueError):
       flags.set("--bar", "v3")
-    flags.set("--bar", "v4", override=True)
+    flags.set("--bar", "v4", should_override=True)
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v4")
 
@@ -117,7 +117,7 @@ class TestFlags(unittest.TestCase):
       flags.update({"--bar": "v2"})
     self.assertEqual(flags["--foo"], "v1")
     self.assertIsNone(flags["--bar"])
-    flags.update({"--bar": "v2"}, override=True)
+    flags.update({"--bar": "v2"}, should_override=True)
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v2")
     self.assertTrue(flags)
@@ -213,9 +213,30 @@ class TestFlags(unittest.TestCase):
     self.assertFalse(self.CLASS())
     self.assertTrue(self.CLASS.parse("--foo --bar"))
 
+  def test_filtered(self):
+    self.assertFalse(self.CLASS().filtered([]))
+    self.assertFalse(self.CLASS.parse("--foo --bar").filtered([]))
+    self.assertEqual(
+        self.CLASS.parse("--foo --bar").filtered(["--foo"]),
+        self.CLASS.parse("--foo"))
+    self.assertEqual(
+        self.CLASS.parse("--foo --bar").filtered(["--bar"]),
+        self.CLASS.parse("--bar"))
+    self.assertEqual(
+        self.CLASS.parse("--foo --bar=1").filtered(["--bar"]),
+        self.CLASS.parse("--bar=1"))
+    self.assertEqual(
+        self.CLASS.parse("--foo --bar").filtered(["--foo", "--bar"]),
+        self.CLASS.parse("--foo --bar"))
+    self.assertEqual(
+        self.CLASS.parse("--foo --bar").filtered(["--bar", "--foo"]),
+        self.CLASS.parse("--foo --bar"))
+    self.assertEqual(
+        self.CLASS.parse("--foo=0 --bar").filtered(["--bar", "--foo"]),
+        self.CLASS.parse("--foo=0 --bar"))
+
 
 class TestChromeFlags(TestFlags):
-
   CLASS = ChromeFlags
 
   def test_js_flags(self):
@@ -600,8 +621,76 @@ class TestChromeFlags(TestFlags):
     for chrome_flag in KNOWN_CHROME_FLAGS:
       self.assertNotIn(chrome_flag, KNOWN_JS_FLAGS)
 
-class TestJSFlags(TestFlags):
+  def test_field_trial_flags(self):
+    empty = self.CLASS()
+    self.assertFalse(empty.field_trial_flags)
+    some_flags = self.CLASS(("--foo", "--bar"))
+    self.assertFalse(some_flags.field_trial_flags)
+    field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
+    self.assertEqual(
+        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+    field_trials.set("--enable-benchmarking")
+    self.assertEqual(
+        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+    field_trials.set(
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
+    self.assertEqual(
+        str(field_trials.field_trial_flags), "--enable-field-trial-config "
+        "--enable-benchmarking=enable-field-trial-config")
 
+  def test_no_experiments_flags(self):
+    empty = self.CLASS()
+    self.assertFalse(empty.no_experiments_flags)
+    some_flags = self.CLASS(("--foo", "--bar"))
+    self.assertFalse(some_flags.no_experiments_flags)
+    field_trials = self.CLASS(("--disable-field-trial-config", "--foo"))
+    self.assertEqual(
+        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+    field_trials.set("--enable-benchmarking")
+    self.assertEqual(
+        str(field_trials.no_experiments_flags),
+        "--disable-field-trial-config --enable-benchmarking")
+    field_trials.set(
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
+    self.assertEqual(
+        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+
+  def test_set_enable_benchmarking_extension(self):
+    flags = self.CLASS()
+    flags.enable_benchmarking_extension()
+    self.assertEqual(str(flags), "--enable-benchmarking")
+
+    flags = self.CLASS.parse("--foo")
+    flags.enable_benchmarking_extension()
+    self.assertEqual(str(flags), "--foo --enable-benchmarking")
+
+    flags = self.CLASS.parse("--enable-benchmarking")
+    flags.enable_benchmarking_extension()
+    self.assertEqual(str(flags), "--enable-benchmarking")
+
+    flags = self.CLASS.parse("--enable-benchmarking=enable-field-trial-config")
+    flags.enable_benchmarking_extension()
+    self.assertEqual(
+        str(flags), "--enable-benchmarking=enable-field-trial-config")
+
+    flags = self.CLASS.parse("--enable-field-trial-config")
+    flags.enable_benchmarking_extension()
+    self.assertEqual(
+        str(flags), "--enable-field-trial-config "
+        "--enable-benchmarking=enable-field-trial-config")
+
+    flags = self.CLASS.parse("--foo --enable-field-trial-config --bar")
+    flags.enable_benchmarking_extension()
+    self.assertEqual(
+        str(flags), "--foo --enable-field-trial-config --bar "
+        "--enable-benchmarking=enable-field-trial-config")
+
+
+class TestJSFlags(TestFlags):
   CLASS = JSFlags
 
   def test_invalid_js_flags(self):
@@ -650,13 +739,13 @@ class TestJSFlags(TestFlags):
     self.assertIsNone(flags["--foo"])
     self.assertIsNone(flags["--no-bar"])
 
-    flags.set("--no-foo", override=True)
+    flags.set("--no-foo", should_override=True)
     self.assertNotIn("--foo", flags)
     self.assertIn("--no-foo", flags)
     self.assertNotIn("--bar", flags)
     self.assertIn("--no-bar", flags)
 
-    flags.set("--bar", override=True)
+    flags.set("--bar", should_override=True)
     self.assertNotIn("--foo", flags)
     self.assertIn("--no-foo", flags)
     self.assertIn("--bar", flags)

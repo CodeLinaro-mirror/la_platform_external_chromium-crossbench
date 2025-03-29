@@ -12,14 +12,16 @@ import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import psutil
+from typing_extensions import override
 
-from crossbench import helper, plt
+from crossbench import plt
 from crossbench.browsers.browser import Browser
-from crossbench.env import HostEnvironment, ValidationError
+from crossbench.env import ValidationError
 
 if TYPE_CHECKING:
   import datetime as dt
 
+  from crossbench.env import HostEnvironment
   from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -115,12 +117,14 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
                                                  **kwargs)
     return self.platform.exec_apple_script(wrapper_script, *args)
 
+  @override
   def validate_env(self, env: HostEnvironment) -> None:
     super().validate_env(env)
     self._check_system_events_allowed(env)
 
+  @override
   def start(self, session: BrowserSessionRunGroup) -> None:
-    assert not self._is_running
+    super().start(session)
     # Start process directly
     startup_flags = self._get_browser_flags_for_session(session)
     self._log_browser_start(startup_flags)
@@ -169,6 +173,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   def _setup_window(self) -> None:
     pass
 
+  @override
   def js(
       self,
       script: str,
@@ -184,6 +189,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
       raise AppleScript.JavaScriptFromAppleScriptException(result)
     return result
 
+  @override
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     if target not in (None, "_self"):
       raise NotImplementedError(
@@ -191,6 +197,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     self._exec_apple_script(self.APPLE_SCRIPT_SET_URL, url=url)
     self.platform.sleep(0.5)
 
+  @override
   def quit(self) -> None:
     self._exec_apple_script("quit")
-    helper.wait_and_kill(self._browser_process)
+    self.platform.terminate_gracefully(self._browser_process)

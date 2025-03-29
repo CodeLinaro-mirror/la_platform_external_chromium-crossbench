@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import dataclasses
 
+from typing import Tuple
 from typing_extensions import Self
 
 from crossbench.benchmarks.loading.point import Point
 
+SCROLL_BOUNDS_OFFSET_FACTOR: float = 0.1
 
 @dataclasses.dataclass(frozen=False)
 # Represents a rectangular section of the device's display.
@@ -37,6 +39,38 @@ class DisplayRectangle:
     return DisplayRectangle(
         Point(self.origin.x + other.origin.x, self.origin.y + other.origin.y),
         self.width, self.height)
+
+  def get_scrollable_area(self) -> Tuple[int, int, int]:
+    scrollable_top = self.top
+    scrollable_bottom = self.bottom
+    max_swipe_distance = scrollable_bottom - scrollable_top
+
+    trim_amount = int(round(max_swipe_distance * SCROLL_BOUNDS_OFFSET_FACTOR))
+
+    scrollable_top += trim_amount
+    scrollable_bottom -= trim_amount
+
+    return (scrollable_top, scrollable_bottom,
+            scrollable_bottom - scrollable_top)
+
+  # Returns the sub-rectangle of |other| that exists within |self|.
+  # |other| must have the same reference origin as |self|.
+  def intersection(self, other: Self) -> DisplayRectangle:
+    assert other.left < self.right and other.top < self.bottom, (
+        "Rectangles do not intersect. Maybe you need to add 'scroll_into_view'."
+    )
+
+    width: int = other.width
+
+    if other.right > self.right:
+      width = self.right - other.left
+
+    height: int = other.height
+
+    if other.bottom > self.bottom:
+      height = self.bottom - other.top
+
+    return DisplayRectangle(other.origin, width, height)
 
   @property
   def left(self) -> int:

@@ -1,16 +1,20 @@
-name: "crossbench"
-description:
-    "Crossbench is a cross-browser/cross-benchmark runner to extract "
-    "performance numbers."
+# This project was upgraded with external_updater.
+# Usage: tools/external_updater/updater.sh update external/chromium-crossbench
+# For more info, check https://cs.android.com/android/platform/superproject/main/+/main:tools/external_updater/README.md
 
+name: "crossbench"
+description: "Crossbench is a cross-browser/cross-benchmark runner to extract performance numbers."
 third_party {
+  license_type: NOTICE
+  last_upgrade_date {
+    year: 2025
+    month: 3
+    day: 25
+  }
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/crossbench"
+    version: "64ee2d5026c0c4c7b9794c885d4a0e196d3ff726"
     primary_source: true
-    version: "49340d5b69d458f1496edc23064dd9969b2033fa"
   }
-  version: "49340d5b69d458f1496edc23064dd9969b2033fa"
-  last_upgrade_date { year: 2024 month: 11 day: 11 }
-  license_type: NOTICE
 }

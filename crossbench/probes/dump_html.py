@@ -5,18 +5,19 @@
 from __future__ import annotations
 
 import datetime as dt
-
 import os
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional, Self, Type
 
-from crossbench.path import AnyPath
+from typing_extensions import override
+
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
-from crossbench.runner.groups.browsers import BrowsersRunGroup
-from crossbench.runner.groups.repetitions import RepetitionsRunGroup
-from crossbench.runner.run import Run
+
+if TYPE_CHECKING:
+  from crossbench.path import AnyPath
+  from crossbench.probes.results import ProbeResult
+  from crossbench.runner.run import Run
 
 
 class DumpHtmlProbe(Probe):
@@ -27,21 +28,18 @@ class DumpHtmlProbe(Probe):
   RESULT_LOCATION = ResultLocation.LOCAL
 
   @classmethod
-  def config_parser(cls) -> ProbeConfigParser:
+  @override
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     # TODO: support stop dumps
     return parser
 
-  def get_context(self, run: Run) -> DumpHtmlProbeContext:
-    return DumpHtmlProbeContext(self, run)
+  @override
+  def get_context_cls(self) -> Type[DumpHtmlProbeContext]:
+    return DumpHtmlProbeContext
 
-  def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
-    # TODO: implement
-    return EmptyProbeResult()
-
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    # TODO: implement
-    return EmptyProbeResult()
+  # TODO: implement merge_repetitions()
+  # TODO: implement merge_browsers()
 
 
 class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
@@ -50,6 +48,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     super().__init__(probe, run)
     self._results: List[AnyPath] = []
 
+  @override
   def get_default_result_path(self) -> AnyPath:
     dump_dir = super().get_default_result_path()
     os.mkdir(dump_dir)
@@ -67,11 +66,11 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     path = self.result_path / f"{label}.html"
     html = self.browser.js("return document.children[0].outerHTML",
                            dt.timedelta(seconds=10))
-    with open(path, "w", encoding="utf-8") as dump_file:
-      dump_file.write(html)
+    self.host_platform.set_file_contents(path, html)
     self._results.append(path)
 
+  @override
   def teardown(self) -> ProbeResult:
     if not self.browser_platform.is_dir(self.result_path):
-      return EmptyProbeResult()
+      return self.empty_result()
     return self.browser_result(file=tuple(self._results))

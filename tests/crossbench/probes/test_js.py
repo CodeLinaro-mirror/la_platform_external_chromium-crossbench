@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 from crossbench.benchmarks.loading.page.live import LivePage
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.js import JSProbe
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase

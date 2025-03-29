@@ -3,10 +3,11 @@
 # found in the LICENSE file.
 
 import argparse
+import enum
 import unittest
 
-from crossbench import compat
 from crossbench.probes.probe import Probe, ProbeConfigParser
+from crossbench.str_enum_with_help import StrEnumWithHelp
 from tests import test_helper
 
 
@@ -140,12 +141,12 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("int_list", type=int, is_list=True, default=[111, 222])
     kwargs = parser.kwargs_from_config({})
-    self.assertDictEqual(kwargs, {"int_list": [111, 222]})
+    self.assertDictEqual(kwargs, {"int_list": (111, 222)})
 
     config_data = {"int_list": [0, 1]}
     kwargs = parser.kwargs_from_config(config_data)
     self.assertDictEqual(config_data, {"int_list": [0, 1]})
-    self.assertDictEqual(kwargs, {"int_list": [0, 1]})
+    self.assertDictEqual(kwargs, {"int_list": (0, 1)})
 
   def test_custom_type(self):
     parser = ProbeConfigParser(MockProbe)
@@ -183,7 +184,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_enum_type(self):
 
-    class MyEnum(compat.StrEnum):
+    class MyEnum(enum.StrEnum):
       ONE = "one"
       TWO = "two"
 
@@ -214,7 +215,7 @@ class ProbeConfigTestCase(unittest.TestCase):
 
   def test_enum_with_help(self):
 
-    class MyEnum(compat.StrEnumWithHelp):
+    class MyEnum(StrEnumWithHelp):
       ONE = ("oneX", "the one help")
       TWO = ("twoX", "the two help")
 
