@@ -675,6 +675,26 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     finally:
       popen.kill()
 
+  def test_display_details(self):
+    displays = self.platform.display_details()
+    if not self.platform.has_display:
+      self.assertFalse(displays)
+      return
+    self.assertTrue(displays)
+    self.assertTrue(json.dumps(displays))
+    for display in displays:
+      resolution = display.get("resolution")
+      self.assertEqual(len(resolution), 2)
+      self.assertGreater(resolution[0], 0)
+      self.assertGreater(resolution[1], 0)
+      refresh_rate = display.get("refresh_rate")
+      if refresh_rate != -1.0:
+        self.assertGreater(refresh_rate, 0)
+    # cached
+    displays_2 = self.platform.display_details()
+    self.assertIs(displays, displays_2)
+
+
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
   @property

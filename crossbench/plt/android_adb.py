@@ -25,6 +25,7 @@ ANDROID_PERMISSIONS = ["POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO"]
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
+  from crossbench.plt.display_info import DisplayInfo
   from crossbench.types import JsonDict
 
 
@@ -715,7 +716,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
             "bits": "n/a",
     }
 
-
   @property
   @override
   def is_battery_powered(self) -> bool:
@@ -729,6 +729,10 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self.sh("screencap", "-p", result_path)
 
   _DUMPSYS_WINDOW_DISPLAYS_RE = re.compile(r" cur=(?P<x>\d+)x(?P<y>\d+) ")
+
+  @functools.lru_cache(maxsize=1)
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    return ({"resolution": self.display_resolution(), "refresh_rate": -1},)
 
   @override
   def display_resolution(self) -> Tuple[int, int]:

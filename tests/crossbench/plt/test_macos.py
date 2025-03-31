@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import plistlib
+import textwrap
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
@@ -167,6 +168,77 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
       plistlib.dump({}, f)
     with self.assertRaisesRegex(ValueError, "binaries"):
       self.platform.search_binary(app_path)
+
+  def test_display_details(self):
+    system_profiler_output = textwrap.dedent("""{
+        "SPDisplaysDataType" : [
+          {
+            "_name" : "Apple M1 Max",
+            "spdisplays_mtlgpufamilysupport" : "spdisplays_metal3",
+            "spdisplays_ndrvs" : [
+              {
+                "_name" : "Color LCD",
+                "_spdisplays_display-product-id" : "b123",
+                "_spdisplays_display-serial-number" : "f12345",
+                "_spdisplays_display-vendor-id" : "12",
+                "_spdisplays_display-week" : "0",
+                "_spdisplays_display-year" : "0",
+                "_spdisplays_displayID" : "1",
+                "_spdisplays_pixels" : "3456 x 2234",
+                "_spdisplays_resolution" : "1728 x 1117 @ 60.00Hz",
+                "spdisplays_ambient_brightness" : "spdisplays_no",
+                "spdisplays_connection_type" : "spdisplays_internal",
+                "spdisplays_display_type" : "spdisplays_built-in-liquid-retina-xdr",
+                "spdisplays_main" : "spdisplays_yes",
+                "spdisplays_mirror" : "spdisplays_off",
+                "spdisplays_online" : "spdisplays_yes",
+                "spdisplays_pixelresolution" : "spdisplays_3456x2234Retina"
+              },
+              {
+                "_name" : "External LCD",
+                "_spdisplays_display-product-id" : "c123",
+                "_spdisplays_display-serial-number" : "e123456",
+                "_spdisplays_display-vendor-id" : "13",
+                "_spdisplays_display-week" : "1",
+                "_spdisplays_display-year" : "2020",
+                "_spdisplays_displayID" : "2",
+                "_spdisplays_pixels" : "6720 x 3780",
+                "_spdisplays_resolution" : "3360 x 1890 @ 30.00Hz",
+                "spdisplays_mirror" : "spdisplays_off",
+                "spdisplays_online" : "spdisplays_yes",
+                "spdisplays_pixelresolution" : "6720 x 3780",
+                "spdisplays_resolution" : "3360 x 1890 @ 30.00Hz",
+                "spdisplays_rotation" : "spdisplays_supported"
+              }
+            ],
+            "spdisplays_vendor" : "sppci_vendor_Apple",
+            "sppci_bus" : "spdisplays_builtin",
+            "sppci_cores" : "32",
+            "sppci_device_type" : "spdisplays_gpu",
+            "sppci_model" : "Apple M1"
+          }
+        ]
+      }""")
+    self.platform.expect_sh(
+        "system_profiler",
+        "-json",
+        "SPDisplaysDataType",
+        result=system_profiler_output)
+    displays = self.platform.display_details()
+    self.assertEqual(len(displays), 2)
+    self.assertDictEqual(displays[0], {
+        "resolution": (1728, 1117),
+        "refresh_rate": 60
+    })
+    self.assertDictEqual(displays[1], {
+        "resolution": (3360, 1890),
+        "refresh_rate": 30
+    })
+    self.assertTupleEqual(
+        self.platform.display_resolution(),
+        (1728, 1117),
+    )
+
 
 
 if __name__ == "__main__":

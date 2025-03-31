@@ -13,17 +13,59 @@ import re
 import socket
 import traceback as tb
 from subprocess import SubprocessError
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Tuple, Type
 
 import psutil
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.parse import NumberParser
 from crossbench.plt.posix import PosixPlatform
 from crossbench.plt.signals import MacOSSignals
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CPUFreqInfo
+  from crossbench.plt.display_info import DisplayInfo
+
+DISPLAY_NDRV_RE = re.compile(
+    "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")
+
+
+def parse_display_ndrvs(spdisplays_ndrvs: Dict) -> Iterator[DisplayInfo]:
+  """
+  Parses `system_profiler SPDisplaysDataType` output.
+  "SPDisplaysDataType" : [
+    {
+      ...
+      "spdisplays_ndrvs" : [
+        {
+          ...
+          "_spdisplays_resolution" : "1728 x 1117 @ 60.00Hz",
+          "spdisplays_ambient_brightness" : "spdisplays_no",
+          "spdisplays_pixelresolution" : "spdisplays_3456x2234Retina"
+          ...
+        },
+        {
+          ...
+          "_spdisplays_resolution" : "3360 x 1890 @ 30.00Hz",
+          "spdisplays_pixelresolution" : "6720 x 3780",
+          "spdisplays_resolution" : "3360 x 1890 @ 30.00Hz",
+          ...
+        }
+      ],
+      ...
+    }
+  ]
+  """
+  for spdisplay_ndrv in spdisplays_ndrvs:
+    # Use virtual pixel resolution of the monitor:
+    freq_str = spdisplay_ndrv.get("_spdisplays_resolution", "")
+    if match := DISPLAY_NDRV_RE.search(freq_str):
+      yield {
+          "resolution": (NumberParser.positive_int(match.group("resX")),
+                         NumberParser.positive_int(match.group("resY"))),
+          "refresh_rate": NumberParser.positive_float(match.group("freq")),
+      }
 
 
 class MacOSPlatform(PosixPlatform):
@@ -112,6 +154,19 @@ class MacOSPlatform(PosixPlatform):
             self.sh_stdout("sysctl", "hw"),
     })
     return details
+
+  @functools.lru_cache(maxsize=1)
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    display_info_raw = self.sh_stdout("system_profiler", "-json",
+                                      "SPDisplaysDataType").strip()
+    display_info = json.loads(display_info_raw)
+    if spdisplays_data := display_info.get("SPDisplaysDataType"):
+      if spdisplays_ndrvs := spdisplays_data[0].get("spdisplays_ndrvs"):
+        return tuple(parse_display_ndrvs(spdisplays_ndrvs))
+    return tuple()
+
+  def display_resolution(self) -> Tuple[int, int]:
+    return self.display_details()[0]["resolution"]
 
   def _cpu_freq(self) -> Optional[CPUFreqInfo]:
     if self.is_remote:

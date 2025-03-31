@@ -97,6 +97,24 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_adb("shell", "dumpsys battery", result=dumpsys_battery_output)
     self.assertTrue(self.platform.is_battery_powered)
 
+  def test_display_details(self):
+    dumpsys_window_output = textwrap.dedent("""
+      WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)
+        Display: mDisplayId=0 (organized)
+          init=1080x2400 480dpi mMinSizeOfResizeableTaskDp=220 cur=1080x2400 app=1080x2256 rng=1080x1008-2256x2184
+          deferred=false mLayoutNeeded=false mTouchExcludeRegion=SkRegion((0,0,1080,2400))
+
+        mLastOrientationSource=WindowedMagnification:0:31@1234567
+     """)
+    self.expect_adb(
+        "shell", "dumpsys window displays", result=dumpsys_window_output)
+    result = self.platform.display_details()
+    self.assertEqual(len(result), 1)
+    self.assertDictEqual(result[0], {
+        "resolution": (1080, 2400),
+        "refresh_rate": -1
+    })
+
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
 

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import subprocess
@@ -19,8 +20,8 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 if TYPE_CHECKING:
   from typing import List, Optional, Tuple
 
-  from crossbench.flags.chrome import ChromeFlags
   from crossbench.plt.base import ListCmdArgs
+  from crossbench.plt.display_info import DisplayInfo
 
 
 class ChromeOsSshPlatform(LinuxSshPlatform):
@@ -96,6 +97,12 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screenshot", result_path)
+
+  @functools.lru_cache(maxsize=1)
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    # TODO(405995421): add refresh rate and potentially support multiple
+    # displays.
+    return ({"resolution": self.display_resolution(), "refresh_rate": -1},)
 
   @override
   def display_resolution(self) -> Tuple[int, int]:

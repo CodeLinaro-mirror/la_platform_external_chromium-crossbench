@@ -10,6 +10,7 @@ from unittest import mock
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
+from crossbench.plt.linux import parse_display_xrandr
 from tests import test_helper
 from tests.crossbench.mock_helper import (LinuxMockPlatform,
                                           RemoteLinuxMockPlatform)
@@ -46,6 +47,27 @@ class LinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     mock_cpu_count.return_value = 6
     self.assertEqual(self.platform.cpu_cores(logical=False), 6)
     self.assertEqual(mock_cpu_count.call_count, 2)
+
+  def test_parse_display_xrandr(self):
+    xrandr_output = textwrap.dedent("""
+      Screen 0: minimum 64 x 64, current 1728 x 946, maximum 32767 x 32767
+      DUMMY0 connected primary 1728x946+0+0 456mm x 249mm
+        1024x768      60.00  
+        800x600       60.32    56.25  
+        640x480       59.94  
+        1600x1200_60  60.00  
+        1600x1200_120 120.00  
+        CRD_78       120.00*+
+      DUMMY1 disconnected
+        5120x1440_120 120.00  
+        2160x3840_120 120.00  
+      """)
+    parsed = tuple(parse_display_xrandr(xrandr_output))
+    self.assertEqual(len(parsed), 1)
+    self.assertDictEqual(parsed[0], {
+        "resolution": (1728, 946),
+        "refresh_rate": 120.0
+    })
 
 
 class RemoteLinuxMockPlatformTestCase(LinuxMockPlatformTestCase):

@@ -23,7 +23,6 @@ import subprocess
 import sys
 import tempfile
 import urllib.error
-import urllib.parse
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
   from asyncio.subprocess import Process
   from subprocess import Popen
 
+  from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.types import JsonDict
   ProcessLike: TypeAlias = Popen | Process | int
@@ -290,6 +290,7 @@ class Platform(abc.ABC):
         "os": self.os_details(),
         "python": self.python_details(),
         "CPU": self.cpu_details(),
+        "display": self.display_details()
     }
 
   @functools.lru_cache(maxsize=1)
@@ -309,6 +310,11 @@ class Platform(abc.ABC):
         "version": py_platform.python_version(),
         "bits": 64 if sys.maxsize > 2**32 else 32,
     }
+
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    # TODO: implement on more platforms
+    return tuple()
+
 
   def get_relative_cpu_speed(self) -> float:
     return 1
