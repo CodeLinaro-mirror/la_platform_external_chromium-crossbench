@@ -46,6 +46,12 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertEqual(queries[1].name, inline_name)
     self.assertEqual(queries[1].sql, inline_sql)
 
+    self.assertEqual(len(probe.module_paths), 2)
+    self.assertRegex(
+        str(probe.module_paths[0]),
+        r".*\/crossbench\/probes\/perfetto\/trace_processor\/modules\/ext")
+    self.assertEqual(str(probe.module_paths[1]), "/my_project/modules/ext")
+
   def test_query_config_duplicate_name_raises(self):
     with self.assertRaisesRegex(ArgumentTypeError,
                                 "Unexpected duplicates in query names"):

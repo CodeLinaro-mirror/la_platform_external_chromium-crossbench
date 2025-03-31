@@ -130,6 +130,12 @@ class TraceProcessorProbe(Probe):
         help="Name of query to be run (under probes/trace_processor/queries) "
         "or { name: str, sql: str } containing the name and SQL query to run")
     parser.add_argument(
+        "module_paths",
+        type=pth.LocalPath,
+        is_list=True,
+        default=tuple(),
+        help="Additional paths to include as trace processor modules.")
+    parser.add_argument(
         "trace_processor_bin",
         type=PathParser.local_binary_path,
         help="Path to the trace_processor binary")
@@ -139,6 +145,7 @@ class TraceProcessorProbe(Probe):
                batch: bool,
                metrics: Iterable[str],
                queries: Iterable[TraceProcessorQueryConfig],
+               module_paths: Iterable[pth.LocalPath],
                trace_processor_bin: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
     self._batch = batch
@@ -146,6 +153,7 @@ class TraceProcessorProbe(Probe):
     ObjectParser.unique_sequence([query.name for query in queries],
                                  name="query names")
     self._queries = tuple(queries)
+    self._module_paths = tuple([_MODULES_DIR]) + tuple(module_paths)
     self._trace_processor_bin: pth.LocalPath | None = None
     if trace_processor_bin:
       self._trace_processor_bin = plt.PLATFORM.parse_local_binary_path(
@@ -162,6 +170,10 @@ class TraceProcessorProbe(Probe):
   @property
   def queries(self) -> Tuple[TraceProcessorQueryConfig, ...]:
     return self._queries
+
+  @property
+  def module_paths(self) -> Tuple[pth.LocalPath, ...]:
+    return self._module_paths
 
   @property
   def has_work(self) -> bool:
@@ -181,10 +193,11 @@ class TraceProcessorProbe(Probe):
 
   @property
   def tp_config(self) -> TraceProcessorConfig:
-    extra_flags = [
-        "--add-sql-module",
-        _MODULES_DIR,
-    ]
+    extra_flags = []
+
+    for module_path in self.module_paths:
+      extra_flags.append("--add-sql-module")
+      extra_flags.append(str(module_path))
 
     return TraceProcessorConfig(
         bin_path=self.trace_processor_bin,
