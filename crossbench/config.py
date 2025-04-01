@@ -439,7 +439,7 @@ class ConfigObject(abc.ABC):
         result = cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
         return result
       return cls.parse_dict(value, **kwargs)
-    if not value:
+    if value is None:
       raise ConfigError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pth.LocalPath):
       return cls.parse_path(value, **kwargs)
@@ -452,14 +452,15 @@ class ConfigObject(abc.ABC):
     if cls.is_valid_url(value):
       # TODO(346197734): use parse_url here
       return cls.parse_str(value, **kwargs)
-    try:
-      maybe_path = pth.LocalPath(value).resolve()
-      if cls.is_valid_path(maybe_path):
-        return cls.parse_path(maybe_path, **kwargs)
-      if cls.value_has_path_prefix(value):
-        return cls.parse_unknown_path(maybe_path, **kwargs)
-    except OSError:
-      pass
+    if value:
+      try:
+        maybe_path = pth.LocalPath(value).resolve()
+        if cls.is_valid_path(maybe_path):
+          return cls.parse_path(maybe_path, **kwargs)
+        if cls.value_has_path_prefix(value):
+          return cls.parse_unknown_path(maybe_path, **kwargs)
+      except OSError:
+        pass
     return cls.parse_str(value, **kwargs)
 
   @classmethod

@@ -338,7 +338,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
   def test_parse_click_invalid_selector(self):
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict({"action": "click", "selector": ""})
-    self.assertIn("Empty config value", str(cm.exception))
+    self.assertIn("Non-empty", str(cm.exception))
 
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict({"action": "click", "position": {"selector": ""}})

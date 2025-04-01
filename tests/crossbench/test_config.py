@@ -54,6 +54,31 @@ class CustomValueEnum(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
+class CustomBoolConfigObject(ConfigObject):
+  boolean: bool
+
+  @classmethod
+  @override
+  def parse_str(cls, value: str) -> Self:
+    raise ValueError("Only bool values are supported")
+
+  @classmethod
+  @override
+  def parse_other(cls, value: Any) -> Self:
+    if not isinstance(value, bool):
+      raise ValueError("Only bool values are supported")
+
+    return cls(boolean=value)
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = ConfigParser(cls)
+    parser.add_argument("boolean", type=ObjectParser.bool, required=True)
+    return parser
+
+
+@dataclasses.dataclass(frozen=True)
 class CustomNestedConfigObject(ConfigObject):
   name: str
   option: str | None = None
@@ -310,6 +335,11 @@ class ConfigParserTestCase(unittest.TestCase):
     self.assertTrue(
         config_parser.has_all_required_args({"name_alias": "a name"}))
     self.assertFalse(config_parser.has_all_required_args({"integer": 1}))
+
+  def test_parse_bool_false(self):
+    config = CustomBoolConfigObject.parse(False)
+    assert isinstance(config, CustomBoolConfigObject)
+    self.assertFalse(config.boolean)
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
