@@ -148,9 +148,8 @@ class JetStream2Story(PressBenchmarkStory, metaclass=abc.ABCMeta):
           ready_state=ReadyState.COMPLETE,
           timeout=dt.timedelta(seconds=10))
       if self._substories != self.SUBSTORIES:
-        actions.wait_js_condition(("return JetStream && JetStream.benchmarks "
-                                   "&& JetStream.benchmarks.length > 0;"), 0.1,
-                                  10)
+        actions.wait_js_condition(
+            "return globalThis?.JetStream?.benchmarks?.length > 0;", 0.1, 10)
         actions.js(
             """
         let benchmarks = arguments[0];
