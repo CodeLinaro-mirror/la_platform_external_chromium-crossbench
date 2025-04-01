@@ -555,6 +555,12 @@ class _PrimitiveConfigObject(ConfigObject):
 
   @classmethod
   def parse_other(cls, value: Any) -> Self:
+    if isinstance(value, Iterable):
+      result = []
+      for value_entry in value:
+        result.append(_PrimitiveConfigObject.parse(value_entry).value)
+      return cls(result)
+
     return cls(value)
 
 

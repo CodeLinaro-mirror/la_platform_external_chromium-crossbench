@@ -1094,6 +1094,24 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
 
+  def test_parse_templated_config_filepaths_in_template_list(self):
+    template_dir = pathlib.Path("/templates")
+    template_dir.mkdir()
+
+    template_path = template_dir / "template.hjson"
+    template = {"name": "$[NAME]", "array": ["./test_file"]}
+
+    with template_path.open("w", encoding="utf-8") as f:
+      json.dump(template, f)
+
+    config = {"template": str(template_path), "args": {"NAME": "name"}}
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.name, "name")
+    self.assertEqual(config.array[0], "/templates/test_file")
+
 
 class ConfigEnumTestCase(unittest.TestCase):
 
