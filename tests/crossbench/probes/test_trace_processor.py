@@ -101,6 +101,17 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.sql,
                      "select * from slice where slice.name = 'comment'")
 
+  def test_query_with_replacements(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "comment",
+        "sql": "'replace me'",
+        "replacements": {
+            "replace me": "new value"
+        }
+    })
+    self.assertEqual(query.name, "comment")
+    self.assertEqual(query.sql, "'new value'")
+
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
   def test_merge_browsers(self):

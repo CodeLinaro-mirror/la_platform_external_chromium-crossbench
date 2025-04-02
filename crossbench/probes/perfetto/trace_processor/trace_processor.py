@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import collections
-import dataclasses
 import json
 import logging
 import zipfile
@@ -25,6 +24,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.replacements import Replacements
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -40,11 +40,7 @@ _QUERIES_DIR = pth.LocalPath(__file__).parent / "queries"
 _MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
 
 
-@dataclasses.dataclass(frozen=True)
 class TraceProcessorQueryConfig(ConfigObject):
-  name: str
-  sql: str
-
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
@@ -61,7 +57,25 @@ class TraceProcessorQueryConfig(ConfigObject):
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)
     parser.add_argument(
         "sql", type=ObjectParser.str_or_file_contents, required=True)
+    parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
+
+  @property
+  def name(self) -> str:
+    return self._name
+
+  @property
+  def sql(self) -> str:
+    return self._sql
+
+  def __init__(self,
+               name: str,
+               sql: str,
+               replacements: Optional[Replacements] = None) -> None:
+    self._name = name
+    self._sql = sql
+    if replacements:
+      self._sql = replacements.apply(self._sql)
 
 
 class CrossbenchTraceUriResolver(TraceUriResolver):
