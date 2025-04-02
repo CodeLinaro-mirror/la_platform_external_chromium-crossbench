@@ -492,6 +492,18 @@ class ConfigObject(abc.ABC):
   @classmethod
   def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     # TODO: this should be redirected to parse_config_path
+
+    # _PrimitiveConfigObject will always parse paths as strings
+    # directly and end up calling parse_unknown_path unless they
+    # point to a .hjson config file. In these cases the paths
+    # will be correctly parsed in their final class later so
+    # calling parse_unknown_path is not necessarily an
+    # indication of a bad path.
+    if cls is not _PrimitiveConfigObject:
+      logging.warning(
+          "Parsing value as unknown path. "
+          "This probably means the supplied path is incorrect: %s",
+          str(path))
     return cls.parse_str(str(path), **kwargs)
 
   @classmethod
