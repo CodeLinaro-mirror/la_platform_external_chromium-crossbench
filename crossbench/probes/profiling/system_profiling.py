@@ -515,7 +515,7 @@ class ProfilingProbe(Probe):
     if not perf_files:
       return
     largest_perf_file = perf_files[-1]
-    logging.critical("    %s : %s", largest_perf_file,
+    logging.critical("    %s [%s]", largest_perf_file,
                      fs_helper.get_file_size(largest_perf_file))
     if len(perf_files) <= 1:
       return

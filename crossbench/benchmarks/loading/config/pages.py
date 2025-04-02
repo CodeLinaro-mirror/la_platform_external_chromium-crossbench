@@ -47,8 +47,10 @@ class PagesConfig(ConfigObject):
   @override
   def parse_str(cls, value: str) -> Self:
     """
-    Simple comma-separate config:
-    value = URL, [DURATION], ...
+    Variant 1: Full inline hjson:
+      { ... }
+    Variant 2: Simple comma-separate config:
+      value = URL, [DURATION], ...
     """
     value = ObjectParser.non_empty_str(value)
     if value[0] == "{":

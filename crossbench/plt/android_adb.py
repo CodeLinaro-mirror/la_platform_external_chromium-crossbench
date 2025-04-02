@@ -287,8 +287,12 @@ class Adb:
     return adb_devices(self._host_platform, self._adb_bin)
 
   def forward(self, local: int, remote: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout(
-        "forward", f"{protocol}:{local}", f"{protocol}:{remote}")
+    stdout = self._adb_stdout("forward", f"{protocol}:{local}",
+                              f"{protocol}:{remote}").strip()
+    if not stdout:
+      used_ports = self._adb_stdout("forward", "--list")
+      raise ValueError(
+          f"Could not setup port-forwarding, ports in use:\n{used_ports}")
     local_port = NumberParser.port_number(stdout, "local_port")
     return local_port
 
@@ -296,8 +300,12 @@ class Adb:
     self._adb("forward", "--remove", f"{protocol}:{local}")
 
   def reverse(self, remote: int, local: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout(
-        "reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
+    stdout = self._adb_stdout("reverse", f"{protocol}:{remote}",
+                              f"{protocol}:{local}").strip()
+    if not stdout:
+      used_ports = self._adb_stdout("reverse", "--list")
+      raise ValueError("Could not setup reverse port-forwarding, "
+                       f"ports in use:\n{used_ports}")
     remote_port = NumberParser.port_number(stdout, "remote_port")
     return remote_port
 

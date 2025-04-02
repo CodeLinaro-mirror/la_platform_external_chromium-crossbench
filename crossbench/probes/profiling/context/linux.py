@@ -266,6 +266,6 @@ def linux_perf_probe_pprof(
     logging.info("PPROF (with js-symbols):")
   else:
     logging.info("PPROF (no js-symbols):")
-  logging.info("  linux-perf:   %s %s", perf_data_file.name, size)
+  logging.info("  linux-perf:   %s [%s]", perf_data_file.name, size)
   logging.info("  pprof result: %s", url)
   return url
