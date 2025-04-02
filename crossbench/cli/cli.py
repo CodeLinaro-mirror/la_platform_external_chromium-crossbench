@@ -308,6 +308,8 @@ class CrossBenchCLI:
     if not self._enable_logging:
       logging.getLogger().setLevel(logging.CRITICAL)
       return
+    if hasattr(sys.stdout, "reconfigure"):
+      sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
     self._console_handler = logging.StreamHandler(sys.stderr)
     self._console_handler.addFilter(logging.Filter("root"))
     self._console_handler.setLevel(logging.INFO)

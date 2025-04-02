@@ -68,3 +68,14 @@ deps = {
     'condition': 'not build_with_chromium',
   }
 }
+
+hooks = [
+  {
+    'name': 'vpython3_common',
+    'pattern': '.',
+    'action': [ 'vpython3',
+                '-vpython-spec', '.vpython3',
+                '-vpython-tool', 'install',
+    ],
+  },
+]
