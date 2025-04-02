@@ -19,6 +19,8 @@ from typing_extensions import override
 import crossbench
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.action_runner.action.wait_for_ready_state import \
+    WaitForReadyStateAction
 from crossbench.benchmarks.loading.loadline_presets import \
     LoadLineTabletBenchmark
 from crossbench.browsers.browser import Browser
@@ -155,6 +157,14 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     super().setUp()
 
     # tabulate and textwrap can be slow for tests, let's mock them out.
+    self.setup_tabulate_patcher()
+    self.setup_wrap_patcher()
+
+    self.setup_wait_for_ready_state_patcher()
+
+    self.setup_loadline_config()
+
+  def setup_tabulate_patcher(self) -> None:
     def mock_tabulate(table, *args, **kwargs):
       del args, kwargs
       return str(table)
@@ -163,6 +173,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
+  def setup_wrap_patcher(self) -> None:
     def mock_wrap(text, *args, **kwargs):
       del args, kwargs
       return [text]
@@ -171,7 +182,11 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
-    self.setup_loadline_config()
+  def setup_wait_for_ready_state_patcher(self):
+    patcher = mock.patch.object(
+        WaitForReadyStateAction, "run_with", return_value=True)
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
   def run_cli_output(self,
                      *args,

@@ -53,6 +53,12 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(config.pages), 1)
     page_config = config.pages[0]
     self.assertEqual(page_config.first_url, "http://a.com")
+    blocks = page_config.blocks
+    self.assertEqual(len(blocks), 1)
+    actions = blocks[0].actions
+    self.assertEqual(len(actions), 2)
+    self.assertEqual(actions[0].TYPE, ActionType.GET)
+    self.assertEqual(actions[1].TYPE, ActionType.WAIT_FOR_READY_STATE)
 
   def test_parse_single_with_duration(self):
     config = PagesConfig.parse("http://a.com,123s")

@@ -41,10 +41,8 @@ class LivePage(InteractivePage):
   ) -> None:
     assert url, "Invalid page url"
     self.url: str = url
-    get_duration = duration - WaitForReadyStateAction().duration
     blocks = (ActionBlock(
-        actions=(GetAction(self.url, get_duration),
-                 WaitForReadyStateAction())),)
+        actions=(GetAction(self.url, duration), WaitForReadyStateAction())),)
     super().__init__(
         name,
         blocks=blocks,
