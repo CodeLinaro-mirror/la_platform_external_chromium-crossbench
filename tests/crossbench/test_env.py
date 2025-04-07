@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import datetime as dt
 import pathlib
 import unittest
 from typing import Any
@@ -442,6 +443,22 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         return_value=mock.Mock(free=1.7 * gib)) as mock_disk_usage:
       env.validate()
       mock_disk_usage.assert_called_once()
+
+  def test_system_min_uptime(self):
+    env = self.create_env(
+        EnvironmentConfig(system_min_uptime=dt.timedelta(minutes=10)),
+        validation_mode=ValidationMode.THROW)
+    with mock.patch.object(
+        self.platform, "uptime",
+        return_value=dt.timedelta(minutes=11)) as mock_uptime:
+      env.validate()
+      mock_uptime.assert_called_once()
+    with mock.patch.object(
+        self.platform, "uptime",
+        return_value=dt.timedelta(minutes=1)) as mock_uptime:
+      with self.assertRaises(ValidationError):
+        env.validate()
+      mock_uptime.assert_called_once()
 
 
 class ValidationModeTestCase(unittest.TestCase):

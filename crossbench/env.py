@@ -237,6 +237,17 @@ class HostEnvironment:
           f"Relative speed is {cpu_speed}, "
           f"but expected at least {min_relative_speed}.")
 
+  def _check_system_min_uptime(self) -> None:
+    min_uptime = self._config.system_min_uptime
+    if min_uptime is EnvironmentConfig.IGNORE:
+      return
+    if uptime := self._platform.uptime():
+      if uptime < min_uptime:
+        self.handle_validation_warning(
+            f"Expected min system uptime {min_uptime} but got {uptime}. "
+            "The OS might not be ready for a clean measurement.")
+
+
   def _check_forbidden_system_process(self) -> None:
     # Verify that no terminals are running.
     # They introduce too much overhead. (As measured with powermetrics)
@@ -247,7 +258,7 @@ class HostEnvironment:
         system_forbidden_process_names)
     if process_found:
       self.handle_validation_warning(
-          f"Process:{process_found} found."
+          f"Process:{process_found} found. "
           "Make sure not to have a terminal opened. Use SSH.")
 
   def _check_screen_autobrightness(self) -> None:
@@ -470,6 +481,7 @@ class HostEnvironment:
     self._check_cpu_usage()
     self._check_cpu_temperature()
     self._check_cpu_power_mode()
+    self._check_system_min_uptime()
     self._check_running_binaries()
     self._check_screen_brightness()
     self._check_headless()

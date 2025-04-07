@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import unittest
 
 import hjson
@@ -79,6 +80,7 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(low.merge(default).cpu_min_relative_speed, 0.5)
 
     self.assertEqual(high.merge(low).cpu_min_relative_speed, 1)
+    self.assertEqual(low.merge(high).cpu_min_relative_speed, 1)
 
   def test_combine_max_float_value(self):
     default = EnvironmentConfig()
@@ -97,6 +99,34 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(low.merge(default).cpu_max_usage_percent, 0)
 
     self.assertEqual(high.merge(low).cpu_max_usage_percent, 0)
+    self.assertEqual(low.merge(high).cpu_max_usage_percent, 0)
+
+  def test_combine_max_duration(self):
+    default = EnvironmentConfig()
+    self.assertIsNone(default.system_min_uptime)
+
+    high = EnvironmentConfig(system_min_uptime=dt.timedelta(minutes=10))
+    self.assertEqual(high.system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        high.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        default.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        high.merge(default).system_min_uptime, dt.timedelta(minutes=10))
+
+    low = EnvironmentConfig(system_min_uptime=dt.timedelta(minutes=1))
+    self.assertEqual(low.system_min_uptime, dt.timedelta(minutes=1))
+    self.assertEqual(low.merge(low).system_min_uptime, dt.timedelta(minutes=1))
+    self.assertEqual(
+        default.merge(low).system_min_uptime, dt.timedelta(minutes=1))
+    self.assertEqual(
+        low.merge(default).system_min_uptime, dt.timedelta(minutes=1))
+
+    self.assertEqual(
+        low.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        high.merge(low).system_min_uptime, dt.timedelta(minutes=10))
+
 
   def test_parse_example_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"

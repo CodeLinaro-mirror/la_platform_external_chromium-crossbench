@@ -575,8 +575,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       args.network = NetworkConfig.default()
 
   def _process_env_args(self, args) -> None:
-    if network_config := args.env_config:
-      args.env = network_config
+    if env_config := args.env_config:
+      args.env = env_config
     elif args.env:
       pass
     else:

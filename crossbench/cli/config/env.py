@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import datetime as dt
 import enum
 from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Self,
                     TypeAlias)
@@ -13,7 +14,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Self,
 from typing_extensions import override
 
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.parse import NumberParser, ObjectParser
+from crossbench.parse import DurationParser, NumberParser, ObjectParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
@@ -71,6 +72,16 @@ def merge_str_list(name: str, left: Optional[List[str]],
   return left + right
 
 
+def merge_duration_max(name: str, left: Optional[dt.timedelta],
+                       right: Optional[dt.timedelta]) -> Optional[dt.timedelta]:
+  del name
+  if not left:
+    return right
+  if not right:
+    return left
+  return max(left, right)
+
+
 ENV_CONFIG_PRESETS: Dict[str, "EnvironmentConfig"] = {}
 
 
@@ -90,6 +101,7 @@ class EnvironmentConfig(ConfigObject):
   screen_brightness_percent: int | None = IGNORE
   system_allow_monitoring: bool | None = IGNORE
   system_forbidden_process_names: List[str] | None = IGNORE
+  system_min_uptime: dt.timedelta | None = IGNORE
 
   @classmethod
   def default(cls) -> EnvironmentConfig:
@@ -146,6 +158,8 @@ class EnvironmentConfig(ConfigObject):
     parser.add_argument("system_allow_monitoring", type=ObjectParser.bool)
     parser.add_argument(
         "system_forbidden_process_names", type=str, is_list=True)
+    parser.add_argument(
+        "system_min_uptime", type=DurationParser.positive_or_zero_duration)
     return parser
 
   def merge(self, other: EnvironmentConfig) -> EnvironmentConfig:
@@ -162,6 +176,7 @@ class EnvironmentConfig(ConfigObject):
         "screen_brightness_percent": merge_number_max,
         "system_allow_monitoring": merge_bool,
         "system_forbidden_process_names": merge_str_list,
+        "system_min_uptime": merge_duration_max
     }
     kwargs = {}
     for name, merger in mergers.items():
@@ -178,7 +193,7 @@ _config_strict = EnvironmentConfig(
     system_allow_monitoring=False,
     browser_allow_existing_process=False,
     require_probes=True,
-)
+    system_min_uptime=dt.timedelta(minutes=5))
 _config_battery: EnvironmentConfig = _config_strict.merge(
     EnvironmentConfig(power_use_battery=True))
 _config_power: EnvironmentConfig = _config_strict.merge(
