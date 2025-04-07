@@ -495,6 +495,10 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertEqual(value, native_value,
                        f"Mismatching values for {signal_name}")
 
+  def test_uptime(self):
+    uptime: dt.timedelta = self.platform.uptime()
+    self.assertLess(0, uptime.total_seconds())
+
 
 
 @unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import logging
 import os
@@ -47,18 +48,62 @@ class WinPlatform(Platform):
     # TODO: implement
     return ""
 
+  def cmd_stdout(self, *args, **kwargs) -> str:
+    cmd = ["cmd", "/c", *args]
+    return self.sh_stdout(*cmd, **kwargs)
+
+  def powershell_stdout(self, *args, **kwargs) -> str:
+    cmd = ["powershell", "-c", *args]
+    return self.sh_stdout(*cmd, **kwargs)
+
+
   @functools.cached_property
   @override
   def version(self) -> str:  #pylint: disable=invalid-overridden-method
-    return self.sh_stdout("cmd", "/c", "ver").strip()
+    return self.cmd_stdout("ver").strip()
 
   @functools.cached_property
   @override
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
-    return self.sh_stdout(
-      "powershell", "-c",
-      "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
+    return self.powershell_stdout(
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
     ).strip().splitlines()[2].strip()
+
+  @override
+  def uptime(self) -> dt.timedelta:
+    """Parse powershell last boot time time-span into a timedelta object.
+    Example Output:
+    Days              : 14
+    Hours             : 2
+    Minutes           : 19
+    Seconds           : 54
+    Milliseconds      : 978
+    Ticks             : 12179949789862
+    TotalDays         : 14.0971641086366
+    TotalHours        : 338.331938607278
+    TotalMinutes      : 20299.9163164367
+    TotalSeconds      : 1217994.9789862
+    TotalMilliseconds : 1217994978.9862
+    """
+    uptime_output = self.powershell_stdout(
+        "(New-TimeSpan -Start ("
+        "Get-CimInstance Win32_OperatingSystem).LastBootUpTime"
+        ")")
+    results = {}
+    for line in uptime_output.splitlines():
+      line = line.strip()
+      if not line:
+        continue
+      unit, value = line.split(":", maxsplit=1)
+      unit = unit.strip()
+      value_f: float = float(value)
+      results[unit] = value_f
+    return dt.timedelta(
+        days=results["Days"],
+        hours=results["Hours"],
+        minutes=results["Minutes"],
+        seconds=results["Seconds"],
+        milliseconds=results["Milliseconds"])
 
   @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:

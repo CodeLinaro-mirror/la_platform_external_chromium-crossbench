@@ -98,7 +98,7 @@ class RemoteLinuxMockPlatformTestCase(LinuxMockPlatformTestCase):
       """)
 
   def expect_sh_cpu_info(self, cpu_info):
-    self.platform.expect_sh(
+    self.expect_sh(
         "grep",
         "-E",
         "processor|core id|physical id",

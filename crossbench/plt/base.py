@@ -322,6 +322,10 @@ class Platform(abc.ABC):
   def is_thermal_throttled(self) -> bool:
     return self.get_relative_cpu_speed() < 1
 
+  @abc.abstractmethod
+  def uptime(self) -> dt.timedelta:
+    pass
+
   def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     return psutil.disk_usage(str(self.local_path(path)))
 

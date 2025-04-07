@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import argparse
+import datetime as dt
 import pathlib
 import unittest
 from unittest import mock
@@ -140,3 +141,16 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
     self.assertIsInstance(abs_path, pth.AnyPosixPath)
     self.assertTrue(abs_path.is_absolute())
     self.assertTrue(self.platform.is_absolute(abs_path))
+
+  def test_uptime(self):
+    self.expect_sh(
+        "uptime",
+        result="12:25  up  3:26, 2 users, load averages: 4.27 4.29 4.80\n")
+    uptime = self.platform.uptime()
+    self.assertEqual(uptime, dt.timedelta(hours=3, minutes=26))
+    self.expect_sh(
+        "uptime",
+        result=("12:54:27 up 5 days,  2:48,  3 users,  "
+                "load average: 1.62, 2.15, 2.07\n"))
+    uptime = self.platform.uptime()
+    self.assertEqual(uptime, dt.timedelta(days=5, hours=2, minutes=48))

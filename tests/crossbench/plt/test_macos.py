@@ -219,7 +219,7 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
           }
         ]
       }""")
-    self.platform.expect_sh(
+    self.expect_sh(
         "system_profiler",
         "-json",
         "SPDisplaysDataType",

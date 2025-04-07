@@ -5,9 +5,11 @@
 from __future__ import annotations
 
 import abc
+import datetime as dt
 import functools
 import logging
 import pathlib
+import re
 import shlex
 import subprocess
 from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, List,
@@ -138,6 +140,38 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
           "bits": int(self.sh_stdout(python3, "-c", self._PY_VERSION).strip())
       }
     return {"version": "unknown", "bits": 64}
+
+  UPTIME_RE = re.compile(r"up\s+"
+                         r"(?:(?P<days>\d+)\s+days?,\s*)?"
+                         r"(?:"
+                         r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
+                         r"(?:(?P<mins_only>\d+)\s+min)"
+                         r")")
+
+  @override
+  def uptime(self) -> dt.timedelta:
+    """Parse posix uptime output into a timedelta object.
+    Example Output:
+    12:25  up  3:26, 2 users, load averages: 4.27 4.29 4.80
+    """
+    uptime_output = self.sh_stdout("uptime")
+    match = self.UPTIME_RE.search(uptime_output)
+    if not match:
+      return dt.timedelta()
+
+    groups = match.groupdict()
+    days = int(groups.get("days") or 0)
+    hours = int(groups.get("hm_hours") or 0)
+    minutes_hm = int(groups.get("hm_mins") or 0)
+    minutes_only = int(groups.get("mins_only") or 0)
+    minutes = minutes_hm or minutes_only
+
+    try:
+      delta = dt.timedelta(days=days, hours=hours, minutes=minutes)
+      return delta
+    except ValueError:
+      return dt.timedelta()
+
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
