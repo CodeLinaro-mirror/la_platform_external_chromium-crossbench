@@ -260,7 +260,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "crossbench.plt.android_adb.AndroidAdbPlatform.machine",
             new_callable=mock.PropertyMock,
             return_value=plt.MachineArch.ARM_64):
-      variants = BrowserVariantsConfig.from_cli_args(args).variants
+      variants = BrowserVariantsConfig.parse_args(args).variants
     self.assertEqual(len(variants), 2)
     self.assertEqual(variants[0].label, "android.arm64.remote_0")
     self.assertEqual(variants[1].label, f"{self.platform}_1")
@@ -951,7 +951,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_config=config_file,
         driver_path=None)
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     self.assertEqual(len(config.variants), 1)
     self.assertEqual(config.variants[0].browser_cls, browser_cls)
     browser = config.browsers[0]
@@ -982,7 +982,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=None,
         other_browser_args=[])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
     browser = browsers[0]
@@ -1003,7 +1003,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=None,
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
     browser = browsers[0]
@@ -1028,7 +1028,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=["--max-opt=1"],
         other_browser_args=[])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
     browser = browsers[0]
@@ -1049,7 +1049,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=[],
         other_browser_args=["--js-flags=--max-opt=1,--log-all"])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 1)
     browser = browsers[0]
@@ -1073,7 +1073,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=[" ", "--max-opt=2,--log-all"],
         other_browser_args=[])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
     browser_0 = browsers[0]
@@ -1100,7 +1100,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=[" ", "--max-opt=2,--log-all"],
         other_browser_args=["--js-flags=--no-turbofan"])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
     browser_0 = browsers[0]
@@ -1128,7 +1128,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=["--max-opt=1", "--max-opt=2,--log-all"],
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
     with self._patch_get_browser_cls(browser_cls):
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 2)
     browser_0 = browsers[0]
@@ -1170,7 +1170,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           disable_features=None,
           js_flags=["--max-opt=1,--log-al"])
       with self._patch_get_browser_cls():
-        config = BrowserVariantsConfig.from_cli_args(args)
+        config = BrowserVariantsConfig.parse_args(args)
 
     self.assertEqual(len(config.variants), 1)
     browser = config.variants[0]
@@ -1198,7 +1198,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           disable_features=None,
           js_flags=[],
           other_browser_args=[])
-      config = BrowserVariantsConfig.from_cli_args(args)
+      config = BrowserVariantsConfig.parse_args(args)
 
     variants = config.variants
     self.assertEqual(len(variants), 2)
@@ -1241,7 +1241,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     with self._patch_get_browser_cls(mock_browser.MockChromeStable), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
       finder.return_value = mock.Mock(path=ts_proxy_path)
-      config = BrowserVariantsConfig.from_cli_args(args,)
+      config = BrowserVariantsConfig.parse_args(args,)
     browsers = config.browsers
     self.assertEqual(len(browsers), 3)
     browser_1, browser_2, browser_3 = browsers  # pylint: disable=unbalanced-tuple-unpacking

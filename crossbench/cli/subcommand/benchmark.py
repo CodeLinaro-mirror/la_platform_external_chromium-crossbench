@@ -761,7 +761,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
     # TODO: move browser instance create to separate method.
     # TODO: move --browser-config parsing to BrowserVariantsConfig
-    args.browser_config = BrowserVariantsConfig.from_cli_args(args)
+    args.browser_config = BrowserVariantsConfig.parse_args(args)
     browsers = args.browser_config.browsers
     return browsers
 

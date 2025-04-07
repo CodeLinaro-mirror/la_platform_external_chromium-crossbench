@@ -50,6 +50,12 @@ class TestFlags(unittest.TestCase):
     self.assertEqual(flags["--foo"], "v1")
     self.assertEqual(flags["--bar"], "v2")
 
+  def test_clear(self):
+    flags = self.CLASS({"--foo": "v1", "--bar": "v2"})
+    self.assertTrue(flags)
+    flags.clear()
+    self.assertFalse(flags)
+
   def test_set(self):
     flags = self.CLASS()
     flags["--foo"] = "v1"
@@ -136,13 +142,31 @@ class TestFlags(unittest.TestCase):
     })
     self.assertEqual(str(flags), "--flag1=value1 --flag2 --flag3=value3")
 
-  def test_merge(self):
+  def test_merge_dict(self):
+    flags = self.CLASS({"--foo": "v1", "--bar": None})
+    flags.merge({"--other": "v3"})
+    self.assertEqual(flags["--foo"], "v1")
+    self.assertIsNone(flags["--bar"])
+    self.assertEqual(flags["--other"], "v3")
+    self.assertEqual(len(flags), 3)
+
+  def test_merge_conflict(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
     with self.assertRaises(ValueError):
       flags.merge({"--bar": "v2"})
     self.assertEqual(flags["--foo"], "v1")
     self.assertIsNone(flags["--bar"])
-    self.assertTrue(flags)
+    self.assertEqual(len(flags), 2)
+
+  def test_merge_empty(self):
+    flags = self.CLASS({"--foo": "v1", "--bar": None})
+    flags.merge(self.CLASS())
+    self.assertEqual(flags["--foo"], "v1")
+    self.assertIsNone(flags["--bar"])
+    self.assertEqual(len(flags), 2)
+    empty = self.CLASS()
+    empty.merge(self.CLASS())
+    self.assertFalse(empty)
 
   def test_parse_single(self):
     flags = self.CLASS.parse("--foo")
@@ -267,8 +291,7 @@ class TestChromeFlags(TestFlags):
     })
     self.assertNotIn("--js-flags", flags)
     self.assertTrue(flags)
-    with self.assertRaises(ValueError):
-      flags["--js-flags"] = None
+    flags["--js-flags"] = None
     self.assertNotIn("--js-flags", flags)
     self.assertFalse(flags.js_flags)
     flags["--js-flags"] = ""
@@ -277,6 +300,14 @@ class TestChromeFlags(TestFlags):
     flags["--js-flags"] = "  "
     self.assertNotIn("--js-flags", flags)
     self.assertFalse(flags.js_flags)
+
+  def test_reset_js_flags(self):
+    flags = self.CLASS()
+    flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
+    js_flags = flags.js_flags
+    self.assertTrue(js_flags)
+    flags["--js-flags"] = None
+    self.assertFalse(js_flags)
 
   def test_set_js_flags_invalid(self):
     flags = self.CLASS()
@@ -343,29 +374,40 @@ class TestChromeFlags(TestFlags):
     self.assertEqual(features.disabled, set(("F3", "F4")))
     self.assertEqual(flags["--disable-blink-features"], "F3,F4")
 
-  def test_features_invalid_none(self):
+  def test_features_none(self):
     flags = self.CLASS()
     features = flags.features
     self.assertFalse(features)
     self.assertTrue(features.is_empty)
-    with self.assertRaises(ValueError):
-      flags["--disable-features"] = None
+    flags["--disable-features"] = None
     self.assertFalse(features)
     self.assertTrue(features.is_empty)
-    with self.assertRaises(ValueError):
-      flags["--enable-features"] = None
+    flags["--enable-features"] = None
     self.assertFalse(features)
     self.assertTrue(features.is_empty)
 
-  def test_blink_features_invalid_none(self):
+  def test_features_reset_none(self):
+    flags = self.CLASS()
+    features = flags.features
+    flags["--enable-features"] = "F1,F2"
+    flags["--disable-features"] = "F3,F4"
+    self.assertEqual(features.enabled, {"F1": None, "F2": None})
+    self.assertEqual(features.disabled, set(("F3", "F4")))
+
+    flags["--enable-features"] = None
+    self.assertFalse(features.enabled)
+    self.assertEqual(features.disabled, set(("F3", "F4")))
+
+    flags["--disable-features"] = None
+    self.assertFalse(features)
+
+  def test_blink_features_none(self):
     flags = self.CLASS()
     features = flags.blink_features
     self.assertTrue(features.is_empty)
-    with self.assertRaises(ValueError):
-      flags["--disable-blink-features"] = None
+    flags["--disable-blink-features"] = None
     self.assertTrue(features.is_empty)
-    with self.assertRaises(ValueError):
-      flags["--enable-blink-features"] = None
+    flags["--enable-blink-features"] = None
     self.assertNotIn("--enable-blink-features", flags)
     self.assertTrue(features.is_empty)
 

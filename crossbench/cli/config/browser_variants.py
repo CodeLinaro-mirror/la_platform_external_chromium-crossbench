@@ -30,7 +30,6 @@ from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.flags.base import Flags
-from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.network.base import Network
 from crossbench.parse import LateArgumentError, ObjectParser
@@ -84,7 +83,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def from_cli_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
+  def parse_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
     pass
 
   def __init__(
@@ -268,41 +267,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
                             browser_config: BrowserConfig) -> plt.Platform:
     return browser_config.get_platform()
 
-  def _extract_chrome_flags(self,
-                            args: argparse.Namespace) -> List[ChromeFlags]:
-    initial_flags = ChromeFlags()
-
-    if args.enable_features:
-      initial_flags["--enable-features"] = args.enable_features
-    if args.disable_features:
-      initial_flags["--disable-features"] = args.disable_features
-    if args.enable_field_trial_config is True:
-      initial_flags.set("--enable-field-trial-config")
-    if args.enable_field_trial_config is False:
-      initial_flags.set("--disable-field-trial-config")
-
-    flags_sets = [initial_flags]
-    if not args.js_flags:
-      return flags_sets
-
-    def copy_and_set_js_flags(flags: ChromeFlags,
-                              js_flags_str: str) -> ChromeFlags:
-      flags = flags.copy()
-      if not js_flags_str.strip():
-        assert not flags.js_flags
-      else:
-        for js_flag in js_flags_str.split(","):
-          js_flag_name, js_flag_value = Flags.split(js_flag.lstrip())
-          flags.js_flags.set(js_flag_name, js_flag_value)
-      return flags
-
-    flags_sets = [
-        copy_and_set_js_flags(flags, js_flags_str)
-        for flags in flags_sets
-        for js_flags_str in args.js_flags
-    ]
-    return flags_sets
-
   def _config_for_maybe_downloaded_binary(self,
                                browser_config: BrowserConfig) -> BrowserConfig:
     path_or_identifier = browser_config.browser
@@ -369,12 +333,12 @@ class BrowserVariantsConfig(BaseBrowserVariantsConfig):
 
   @classmethod
   @override
-  def from_cli_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
+  def parse_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
     browser_variants = cls()
     if args.browser_config:
-      browser_variants.extend(BrowserVariantsConfigDict.from_cli_args(args))
+      browser_variants.extend(BrowserVariantsConfigDict.parse_args(args))
     if args.browser:
-      browser_variants.extend(BrowserVariantConfigArgs.from_cli_args(args))
+      browser_variants.extend(BrowserVariantConfigArgs.parse_args(args))
     if browser_variants:
       return browser_variants
     return cls.default(args)
@@ -391,7 +355,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
 
   @classmethod
   @override
-  def from_cli_args(cls, args: argparse.Namespace) -> Self:
+  def parse_args(cls, args: argparse.Namespace) -> Self:
     config_variants = cls()
     with late_argument_type_error_wrapper("--browser-config"):
       path = args.browser_config.expanduser().absolute()
@@ -480,8 +444,6 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       with exception.annotate_argparsing("Creating network config"):
         network_config = browser_config.network or args.network
         network = self._get_browser_network(network_config, browser_platform)
-      # TODO: move the browser instantiation to a separate step and only
-      # create BrowserConfig objects first.
       self._append_variant(args, label, browser_cls, browser_config,
                            browser_flags, browser_platform, network)
 
@@ -498,6 +460,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     with exception.annotate(
         f"Expand browsers[{repr(browser_name)}].flags into full variants"):
       flag_variants = flag_variants.product(*flag_groups)
+
     return flag_variants
 
   def _parse_browser_flags(self, browser_name: str,
@@ -529,14 +492,11 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
 
   @classmethod
   @override
-  def from_cli_args(cls, args: argparse.Namespace) -> Self:
+  def parse_args(cls, args: argparse.Namespace) -> Self:
     args_variants = cls()
     with late_argument_type_error_wrapper("--browser"):
-      args_variants.parse_args(args)
+      args_variants.parse_sequence(args, args.browser)
     return args_variants
-
-  def parse_args(self, args: argparse.Namespace) -> None:
-    self.parse_sequence(args, args.browser)
 
   def parse_sequence(self, args: argparse.Namespace,
                      browsers: Sequence[BrowserConfig]) -> None:
@@ -551,8 +511,7 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
     assert browser_config, "Expected non-empty BrowserConfig."
     browser_config = self._config_for_maybe_downloaded_binary(browser_config)
     browser_cls: Type[Browser] = self.get_browser_cls(browser_config)
-    flags_sets: List[Flags] = [browser_cls.default_flags()]
-    flags_sets = self._extend_flags_sets(args, flags_sets, browser_cls)
+    args_variants = FlagsGroupConfig.parse_args(args)
 
     browser_platform = self._get_browser_platform(browser_config)
     with exception.annotate_argparsing("Creating network config"):
@@ -560,9 +519,10 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
       network = self._get_browser_network(network_config, browser_platform)
 
     name = f"{browser_platform}_{len(self._unique_labels)}"
-    for flags in flags_sets:
+    for flag_variant in args_variants:
       label: str = name
-      if len(flags_sets) > 1:
+      flags: Flags = flag_variant.flags
+      if len(args_variants) > 1:
         label = self._flags_to_label(label, flags)
       browser_variant = self._append_variant(args, label, browser_cls,
                                              browser_config, flags,
@@ -570,28 +530,10 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
       logging.info("🌐 SELECTED BROWSER: name=%s path='%s' ",
                    browser_variant.label, browser_variant.path)
 
-  def _extend_flags_sets(self, args: argparse.Namespace,
-                         flags_sets: List[Flags],
-                         browser_cls: Type[Browser]) -> List[Flags]:
-    if browser_cls.attributes().is_chromium_based:
-      assert all(isinstance(flags, ChromeFlags) for flags in flags_sets)
-      # Add chrome flags:
-      extra_flag_sets = self._extract_chrome_flags(args)
-      flags_sets = [
-          flags.merge_copy(extra_flags)
-          for flags in flags_sets
-          for extra_flags in extra_flag_sets
-      ]
-    # Add genertic browser args:
-    for flag_str in args.other_browser_args:
-      flag_name, flag_value = Flags.split(flag_str)
-      for flags in flags_sets:
-        flags.set(flag_name, flag_value)
-
-    return flags_sets
-
   def _verify_browser_flags(self, args: argparse.Namespace) -> None:
-    for chrome_flags in self._extract_chrome_flags(args):
+    args_variants = FlagsGroupConfig.parse_args(args)
+    for flag_variant in args_variants:
+      chrome_flags = flag_variant.flags
       for flag_name, value in chrome_flags.items():
         if not value:
           continue

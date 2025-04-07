@@ -85,28 +85,33 @@ class ChromeFlags(Flags):
     # pylint: disable=signature-differs
     if flag_name == ChromeFeatures.ENABLE_FLAG:
       if flag_value is None:
-        raise ValueError(f"{ChromeFeatures.ENABLE_FLAG} cannot be None")
-      for feature in flag_value.split(","):
-        self._features.enable(feature)
+        self._features.clear_enabled()
+      else:
+        for feature in flag_value.split(","):
+          self._features.enable(feature)
     elif flag_name == ChromeFeatures.DISABLE_FLAG:
       if flag_value is None:
-        raise ValueError(f"{ChromeFeatures.DISABLE_FLAG} cannot be None")
-      for feature in flag_value.split(","):
-        self._features.disable(feature)
+        self._features.clear_disabled()
+      else:
+        for feature in flag_value.split(","):
+          self._features.disable(feature)
     elif flag_name == ChromeBlinkFeatures.ENABLE_FLAG:
       if flag_value is None:
-        raise ValueError(f"{ChromeBlinkFeatures.ENABLE_FLAG} cannot be None")
-      for feature in flag_value.split(","):
-        self._blink_features.enable(feature)
+        self.blink_features.clear_enabled()
+      else:
+        for feature in flag_value.split(","):
+          self._blink_features.enable(feature)
     elif flag_name == ChromeBlinkFeatures.DISABLE_FLAG:
       if flag_value is None:
-        raise ValueError(f"{ChromeBlinkFeatures.DISABLE_FLAG} cannot be None")
-      for feature in flag_value.split(","):
-        self._blink_features.disable(feature)
+        self.blink_features.clear_disabled()
+      else:
+        for feature in flag_value.split(","):
+          self._blink_features.disable(feature)
     elif flag_name == self._JS_FLAG:
       if flag_value is None:
-        raise ValueError(f"{self._JS_FLAG} cannot be None")
-      self._set_js_flag(flag_value, should_override)
+        self._js_flags.clear()
+      else:
+        self._set_js_flag(flag_value, should_override)
     else:
       flag_value = self._verify_flag(flag_name, flag_value)
       super()._set(flag_name, flag_value, should_override)
@@ -290,6 +295,14 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
       raise ValueError(
           f"Cannot disable previously enabled feature={repr(name)}")
     self._disabled.add(name)
+
+  def clear_enabled(self):
+    self.assert_not_frozen()
+    self._enabled = {}
+
+  def clear_disabled(self):
+    self.assert_not_frozen()
+    self._disabled = OrderedSet()
 
   def update(self, other: ChromeBaseFeatures) -> None:
     if not isinstance(other, type(self)):

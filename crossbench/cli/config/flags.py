@@ -44,6 +44,7 @@ def _parse_flags_sequence(flag_data: Iterable) -> Flags:
   split_flags = (Flags.split(flag) for flag in flag_data)
   return Flags(split_flags).freeze()
 
+
 @dataclasses.dataclass(frozen=True)
 class FlagsVariantConfig:
   label: str
@@ -217,6 +218,9 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
   @classmethod
   def parse_args(cls, args: argparse.Namespace) -> Self:
     args_config = cls.config_from_args_flags(args)
+    if not args_config:
+      # Special case empty args: we should have an empty group config
+      return cls((FlagsVariantConfig(DEFAULT_LABEL),))
     return cls.parse(args_config)
 
   @classmethod
@@ -233,11 +237,15 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
       initial_flags.set("--disable-field-trial-config")
 
     args_config: Dict[str, List[str] | str | None] = dict(initial_flags.items())
+    base_js_flags = initial_flags.js_flags
     if args.js_flags:
       # Create a variant for every js flag:
-      args_config["--js-flags"] = [
-          str(JSFlags.parse(flags)) for flags in args.js_flags
-      ]
+      merged_js_flags: List[JSFlags] = []
+      for flags in args.js_flags:
+        js_flags = JSFlags.parse(flags)
+        js_flags.update(base_js_flags)
+        merged_js_flags.append(js_flags)
+      args_config["--js-flags"] = list(map(str, merged_js_flags))
     return args_config
 
 
