@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Tuple, Type
 
 from typing_extensions import override
 
@@ -52,3 +52,8 @@ class Speedometer31Benchmark(Speedometer3Benchmark):
   @override
   def version(cls) -> VersionParts:
     return (3, 1)
+
+  @classmethod
+  @override
+  def aliases(cls) -> Tuple[str, ...]:
+    return ("sp3", "speedometer_3") + super().aliases()
