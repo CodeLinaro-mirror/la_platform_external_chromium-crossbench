@@ -210,6 +210,9 @@ return [
           return
 
         self.add_failure_screenshot_annotation(
+            ScreenshotRectAnnotation(
+                label="Chrome viewport", rect=viewport_info.chrome_window))
+        self.add_failure_screenshot_annotation(
             ScreenshotRectAnnotation(label=selector_config.selector, rect=rect))
         coordinates = Point(rect.mid_x, rect.mid_y)
 
