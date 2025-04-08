@@ -171,6 +171,9 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   @override
   def _setup_binary(self) -> None:  # pytype: disable=override-error
     super()._setup_binary()
+    self._setup_binary_permissions()
+
+  def _setup_binary_permissions(self) -> None:
     self.platform.adb.grant_permissions(self.android_package)
 
   @override

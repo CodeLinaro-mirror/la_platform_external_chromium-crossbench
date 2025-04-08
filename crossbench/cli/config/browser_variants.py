@@ -201,6 +201,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
     path_str = str(browser_config.path).lower()
     if "safari" in path_str:
       return cls.get_safari_browser_cls(browser_config)
+    if "webview" in path_str:
+      return all_browsers.WebviewBrowser
     if "chrome" in path_str:
       return cls.get_chrome_browser_cls(browser_config)
     if "chromium" in path_str:

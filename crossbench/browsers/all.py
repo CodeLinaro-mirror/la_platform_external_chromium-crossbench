@@ -27,3 +27,4 @@ from crossbench.browsers.safari.applescript import SafariAppleScript
 from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.safari.webdriver import (SafariWebDriver,
                                                   SafariWebdriverIOS)
+from crossbench.browsers.webview.browser import WebviewBrowser
