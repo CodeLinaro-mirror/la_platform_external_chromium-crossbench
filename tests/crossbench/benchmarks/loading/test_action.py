@@ -25,6 +25,8 @@ from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
+from crossbench.action_runner.action.wait_for_condition import \
+    WaitForConditionAction
 from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
@@ -485,6 +487,23 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict(config_dict)
     self.assertIn("text", str(cm.exception))
+
+  def test_parse_wait_for_condition(self):
+    config_dict = {
+        "action": "wait_for_condition",
+        "condition": "return maybe",
+    }
+    action = WaitForConditionAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_CONDITION)
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.condition, "return maybe")
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = WaitForConditionAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
 
   def test_parse_wait_for_element(self):
     config_dict = {

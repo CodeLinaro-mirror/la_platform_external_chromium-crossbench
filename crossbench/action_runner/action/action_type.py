@@ -19,6 +19,8 @@ class ActionType(ConfigEnum):
   SWIPE = ("swipe", "Swipe on screen")
   TEXT_INPUT = ("text_input", "Type printable characters at a"
                 "specified speed.")
+  WAIT_FOR_CONDITION = ("wait_for_condition",
+                        "Wait until JS condition becomes true")
   WAIT_FOR_ELEMENT = ("wait_for_element",
                       "Wait until element appears on the page")
   INJECT_NEW_DOCUMENT_SCRIPT = ("inject_new_document_script", (

@@ -279,6 +279,13 @@ class DefaultActionRunner(ActionRunner):
           timeout=action.timeout)
 
   @override
+  def wait_for_condition(self, run: Run,
+                         action: i_action.WaitForConditionAction) -> None:
+    with run.actions("WaitForConditionAction", measure=False) as actions:
+      actions.wait_js_condition(
+          action.condition, min_wait=0.1, timeout=action.timeout)
+
+  @override
   def wait_for_ready_state(self, run: Run,
                            action: i_action.WaitForReadyStateAction) -> None:
     with run.actions(

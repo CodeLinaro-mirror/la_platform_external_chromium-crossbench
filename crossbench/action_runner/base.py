@@ -169,6 +169,10 @@ class ActionRunner:
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
     raise ActionNotImplementedError(self, action)
 
+  def wait_for_condition(self, run: Run,
+                         action: i_action.WaitForConditionAction) -> None:
+    raise ActionNotImplementedError(self, action)
+
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
     raise ActionNotImplementedError(self, action)
