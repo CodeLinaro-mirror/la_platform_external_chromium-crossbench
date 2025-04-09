@@ -85,6 +85,11 @@ class ChromiumBased(Browser):
       # The --allow-background-interventions flag should have no value.
       assert self._flags.get("--allow-background-interventions") is None
     else:
+      logging.warning(
+          "Disabling background interventions for chromium based browser. "
+          "Tests that rely on correct tab discarding or prioritization "
+          "behavior may not work as expected. Add "
+          "--allow-background-interventions to bypass this.")
       self._flags.update(self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS)
 
     # Explicitly disable field-trials by default on all chrome flavours:
