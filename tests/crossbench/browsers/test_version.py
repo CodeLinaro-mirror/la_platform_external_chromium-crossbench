@@ -294,6 +294,18 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertEqual(any_copy.version_str, version.version_str)
 
 
+  def test_sorting(self):
+    version_a = self.VERSION_CLS.any((90, 0, 4947, 3))
+    version_b = self.VERSION_CLS.any((100, 0, 4947, 3))
+    version_c = self.VERSION_CLS.any((120, 0, 4947, 2))
+    sorted_list = [version_a, version_b, version_c]
+    self.assertListEqual(sorted([version_a, version_c, version_b]), sorted_list)
+    self.assertListEqual(sorted([version_c, version_a, version_b]), sorted_list)
+    self.assertListEqual(sorted([version_c, version_b, version_a]), sorted_list)
+    self.assertListEqual(sorted([version_b, version_c, version_a]), sorted_list)
+
+
+
 class ChromiumVersionTestCase(_BrowserVersionTestCase):
   ANY_VERSION_STR = ""
   LTS_VERSION_STR = ""
@@ -371,6 +383,7 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(self.parse("Chromium 125"), self.parse("125"))
     self.assertEqual(self.parse("Chromium 125"), self.parse("125 Stable"))
     self.assertEqual(self.parse("Chromium 125"), self.parse("125 stable"))
+
 
   def test_parse_partial_milestone(self):
     version = self.parse("Chromium 125")
@@ -806,6 +819,21 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertTrue(channel_beta.contains(channel_beta))
     self.assertFalse(milestone_125_stable.contains(channel_beta))
     self.assertFalse(milestone_125_beta.contains(channel_beta))
+
+  def test_parse_milestone_variants_channel(self):
+    for channel in ("canary", "dev", "beta", "stable", "extended"):
+      version = self.parse(f"Chrome M125 {channel}")
+      self.assertEqual(version, self.parse(f"Chrome M125 {channel}"))
+      self.assertEqual(version, self.parse(f"M125 {channel}"))
+      self.assertEqual(version, self.parse(f"m125 {channel}"))
+      self.assertEqual(version, self.parse(f"125 {channel}"))
+
+  def test_parse_latest_milestone(self):
+    for channel in ("canary", "dev", "beta", "stable", "extended"):
+      version = self.parse(f"Chrome {channel}")
+      self.assertEqual(self.parse(f"Chrome latest {channel}"), version)
+      self.assertEqual(self.parse(f"Chrome-latest-{channel}"), version)
+      self.assertEqual(self.parse(f"chr-latest-{channel}"), version)
 
 
 class ChromeForTestingBrowserVersionTestCase(ChromeBrowserVersionTestCase):

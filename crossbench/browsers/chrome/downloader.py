@@ -113,7 +113,6 @@ class ChromeDownloader(Downloader):
     return self._find_milestone_archive_url()
 
   def _find_milestone_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
-    milestone: int = self._requested_version.major
     platform = self.VERSION_URL_PLATFORM_LOOKUP.get(self._browser_platform.key)
     if not platform:
       raise ValueError(f"Unsupported platform {self._browser_platform}")
@@ -125,11 +124,18 @@ class ChromeDownloader(Downloader):
       requested_channel = self._requested_version.channel
       channel_filter = f"channel={self._requested_version.channel_name}"
 
+    milestone_filter: str = ""
+    label: str = str(requested_channel)
+    if not self._requested_version.is_channel_version:
+      milestone: int = self._requested_version.major
+      label = f"M{milestone}"
+      milestone_filter = f"version>={milestone},version<{milestone+1}"
+
     url = self.VERSION_URL.format(
         platform=platform,
         channel="all",
-        filter=f"version>={milestone},version<{milestone+1},{channel_filter}&")
-    logging.debug("LIST ALL VERSIONS for M%s: %s", milestone, url)
+        filter=f"{milestone_filter},{channel_filter}&")
+    logging.debug("LIST ALL VERSIONS for %s: %s", label, url)
     version_urls: List[Tuple[BrowserVersion, str]] = []
     try:
       response = url_helper.get(url, retry=3)
@@ -165,7 +171,7 @@ class ChromeDownloader(Downloader):
   def _filter_candidate_urls(
       self, versions_urls: List[Tuple[BrowserVersion, str]]
   ) -> Tuple[BrowserVersion, Optional[str]]:
-    versions_urls.sort(key=lambda x: x[1], reverse=True)
+    versions_urls.sort(key=lambda version_url: version_url[0], reverse=True)
     # Iterate from new to old version and and the first one that is older or
     # equal than the requested version.
     for version, url in versions_urls:
@@ -280,21 +286,18 @@ class ChromeDownloaderMacOS(ChromeDownloader):
   @override
   def _requested_version_validation(self) -> None:
     assert self._browser_platform.is_macos
+    if self._requested_version.is_channel_version:
+      return
     major_version: int = self._requested_version.major
     if (self._browser_platform.is_arm64 and
         (major_version < self.MIN_MAC_ARM64_MILESTONE)):
       raise ValueError(
-          "Native Mac arm64/m1 Chrome version is available with M87, "
-          f"but requested M{major_version}.")
+          "Chrome Arm64 Apple Silicon is only available starting with M87, "
+          f"but requested {self._requested_version} is too old.")
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
-    assert self._browser_platform.is_macos
-    if self._browser_platform.is_arm64 and (self._requested_version.major
-                                            < self.MIN_MAC_ARM64_MILESTONE):
-      raise ValueError(
-          "Chrome Arm64 Apple Silicon is only available starting with M87, "
-          f"but requested {self._requested_version} is too old.")
+    self._requested_version_validation()
     super()._download_archive(archive_url, tmp_dir)
 
   @override

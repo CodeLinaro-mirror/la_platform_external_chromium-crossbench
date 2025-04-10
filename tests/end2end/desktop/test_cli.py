@@ -122,6 +122,7 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
       "sp2.1",
       "--browser=chrome-M113",
       "--browser=chrome-111.0.5563.110",
+      "--browser=chrome-latest-dev",
       "--headless",
       "--iterations=1",
       "--env-validation=skip",
@@ -130,7 +131,7 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
       test_env=test_env)
 
   browser_dirs = _get_browser_dirs(test_env.results_dir)
-  assert len(browser_dirs) == 2
+  assert len(browser_dirs) == 3
   v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert not v8_log_files
 

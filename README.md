@@ -91,6 +91,8 @@ Multi-browser example:
 |`--browser=./out/Release/chrome`| Use a locally compiled chrome version. Any path to a chrome binary will work. |
 |`--browser=chrome-m123`| Download the latest M123 chrome stable release and install it locally |
 |`--browser=chrome-M123-canary`| Download the latest M123 chrome canary release and install it locally |
+|`--browser=chrome-latest`| Download the latest chrome stable release and install it locally |
+|`--browser=chrome-latest-canary`| Download the latest chrome canary release and install it locally |
 |`--browser=chrome-125.0.6422.112`| Download and install a specific stable chrome version. |
 |`--browser=chrome-125.0.6422.112-dev`| Download and install a specific dev chrome version. |
 |`--browser=chrome-M100...M123`| Download and install a range of 24 different chrome stable milestones. |
