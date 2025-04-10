@@ -158,6 +158,8 @@ class ChromeFlags(Flags):
     if name in ("--disable-blink-feature", "--disabled-blink-feature",
                 "--disabled-blink-features"):
       return "--disable-blink-features"
+    if name in ("--enable-field-trials", "--enable-field-trials-config"):
+      return "--enable-field-trial-config"
     return None
 
   def _find_js_flag(self, name: str) -> Optional[str]:

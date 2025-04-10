@@ -614,6 +614,7 @@ class TestChromeFlags(TestFlags):
         ])
 
   def test_flag_typos_enable_features(self):
+    # Check misspelled flags warnings
     for invalid_flag in ("--enable-feature", "--enabled-feature",
                          "--enabled-features"):
       with self.assertLogs(level="ERROR") as cm:
@@ -629,6 +630,31 @@ class TestChromeFlags(TestFlags):
       output = "\n".join(cm.output)
       self.assertIn(invalid_flag, output)
       self.assertIn("--disable-features", output)
+
+    for invalid_flag in ("--enable-blink-feature", "--enabled-blink-feature",
+                         "--enabled-blink-features"):
+      with self.assertLogs(level="ERROR") as cm:
+        self.CLASS({invalid_flag: "feature_1"})
+      output = "\n".join(cm.output)
+      self.assertIn(invalid_flag, output)
+      self.assertIn("--enable-blink-features", output)
+
+    for invalid_flag in ("--disable-blink-feature", "--disabled-blink-feature",
+                         "--disabled-blink-features"):
+      with self.assertLogs(level="ERROR") as cm:
+        self.CLASS({invalid_flag: "feature_1"})
+      output = "\n".join(cm.output)
+      self.assertIn(invalid_flag, output)
+      self.assertIn("--disable-blink-features", output)
+
+    for invalid_flag in ("--enable-field-trials",
+                         "--enable-field-trials-config"):
+      with self.assertLogs(level="ERROR") as cm:
+        self.CLASS({invalid_flag: ""})
+      output = "\n".join(cm.output)
+      self.assertIn(invalid_flag, output)
+      self.assertIn("--enable-field-trial-config", output)
+
 
   def test_flag_typos_enable_blink_features(self):
     for invalid_flag in ("--enable-blink-feature", "--enabled-blink-feature",
