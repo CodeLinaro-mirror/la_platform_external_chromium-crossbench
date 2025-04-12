@@ -5,31 +5,68 @@
 import argparse
 import json
 import pathlib
-from typing import Dict, List, Type
+from typing import Dict, List, Tuple, Type
 from unittest import mock
 
 import hjson
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 from crossbench import __version__
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.driver import BrowserDriverType
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.network.local_file_server import LocalFileNetwork
-from crossbench.probes import internal
+from crossbench.probes.internal.summary import ResultsSummaryProbe
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 
 class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running
   as part of the presubmit"""
 
-  def test_subcommand_help(self):
-    for benchmark_cls in CrossBenchCLI.BENCHMARKS:
-      subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
+  def get_test_subcommands(self, benchmark_cls) -> Tuple[str, ...]:
+    subcommands = (benchmark_cls.NAME,)
+    # Only test one alias for speeding up testing:
+    if aliases := benchmark_cls.aliases():
+      subcommands = subcommands + (aliases[0],)
+    return subcommands
+
+  def test_subcommand_help_part_1(self):
+    self.verify_subcommand_help(0)
+
+  def test_subcommand_help_part_2(self):
+    self.verify_subcommand_help(1)
+
+  def test_subcommand_help_part_3(self):
+    self.verify_subcommand_help(2)
+
+  def test_subcommand_help_part_4(self):
+    self.verify_subcommand_help(3)
+
+  def test_subcommand_help_part_5(self):
+    self.verify_subcommand_help(4)
+
+  def test_subcommand_help_part_6(self):
+    self.verify_subcommand_help(5)
+
+  def test_subcommand_help_part_7(self):
+    self.verify_subcommand_help(6)
+
+  def test_subcommand_help_part_8(self):
+    self.verify_subcommand_help(7)
+
+  def test_subcommand_help_part_9(self):
+    self.verify_subcommand_help(8)
+
+  def test_subcommand_help_part_10(self):
+    self.verify_subcommand_help(9)
+
+  def verify_subcommand_help(self, chunk: int):
+    for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
+      subcommands = self.get_test_subcommands(benchmark_cls)
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "--help")
@@ -39,9 +76,39 @@ class CliSlowTestCase(BaseCliTestCase):
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
 
-  def test_subcommand_help_subcommand(self):
-    for benchmark_cls in CrossBenchCLI.BENCHMARKS:
-      subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
+  def test_subcommand_help_subcommand_part_1(self):
+    self.verify_subcommand_help_subcommand(0)
+
+  def test_subcommand_help_subcommand_part_2(self):
+    self.verify_subcommand_help_subcommand(1)
+
+  def test_subcommand_help_subcommand_part_3(self):
+    self.verify_subcommand_help_subcommand(2)
+
+  def test_subcommand_help_subcommand_part_4(self):
+    self.verify_subcommand_help_subcommand(3)
+
+  def test_subcommand_help_subcommand_part_5(self):
+    self.verify_subcommand_help_subcommand(4)
+
+  def test_subcommand_help_subcommand_part_6(self):
+    self.verify_subcommand_help_subcommand(5)
+
+  def test_subcommand_help_subcommand_part_7(self):
+    self.verify_subcommand_help_subcommand(6)
+
+  def test_subcommand_help_subcommand_part_8(self):
+    self.verify_subcommand_help_subcommand(7)
+
+  def test_subcommand_help_subcommand_part_9(self):
+    self.verify_subcommand_help_subcommand(8)
+
+  def test_subcommand_help_subcommand_part_10(self):
+    self.verify_subcommand_help_subcommand(10)
+
+  def verify_subcommand_help_subcommand(self, chunk: int):
+    for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
+      subcommands = self.get_test_subcommands(benchmark_cls)
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "help")
@@ -51,9 +118,39 @@ class CliSlowTestCase(BaseCliTestCase):
         self.assertFalse(stderr)
         self.assertIn("--env-validation ENV_VALIDATION", stdout)
 
-  def test_subcommand_describe_subcommand(self):
-    for benchmark_cls in CrossBenchCLI.BENCHMARKS:
-      subcommands = (benchmark_cls.NAME,) + benchmark_cls.aliases()
+  def test_subcommand_describe_subcommand_part_1(self):
+    self.verify_subcommand_describe_subcommand(0)
+
+  def test_subcommand_describe_subcommand_part_2(self):
+    self.verify_subcommand_describe_subcommand(1)
+
+  def test_subcommand_describe_subcommand_part_3(self):
+    self.verify_subcommand_describe_subcommand(2)
+
+  def test_subcommand_describe_subcommand_part_4(self):
+    self.verify_subcommand_describe_subcommand(3)
+
+  def test_subcommand_describe_subcommand_part_5(self):
+    self.verify_subcommand_describe_subcommand(4)
+
+  def test_subcommand_describe_subcommand_part_6(self):
+    self.verify_subcommand_describe_subcommand(5)
+
+  def test_subcommand_describe_subcommand_part_7(self):
+    self.verify_subcommand_describe_subcommand(6)
+
+  def test_subcommand_describe_subcommand_part_8(self):
+    self.verify_subcommand_describe_subcommand(7)
+
+  def test_subcommand_describe_subcommand_part_9(self):
+    self.verify_subcommand_describe_subcommand(8)
+
+  def test_subcommand_describe_subcommand_part_10(self):
+    self.verify_subcommand_describe_subcommand(9)
+
+  def verify_subcommand_describe_subcommand(self, chunk: int):
+    for benchmark_cls in CrossBenchCLI.BENCHMARKS[chunk::10]:
+      subcommands = self.get_test_subcommands(benchmark_cls)
       for subcommand in subcommands:
         with self.assertRaises(SysExitTestException) as cm:
           self.run_cli(subcommand, "describe")
@@ -63,7 +160,19 @@ class CliSlowTestCase(BaseCliTestCase):
         output = stderr + stdout
         self.assertIn("See `describe benchmark ", output)
 
-  def test_browser_identifiers(self):
+  def test_browser_identifiers_part_1(self):
+    self.verify_browser_identifiers(0)
+
+  def test_browser_identifiers_part_2(self):
+    self.verify_browser_identifiers(1)
+
+  def test_browser_identifiers_part_3(self):
+    self.verify_browser_identifiers(2)
+
+  def test_browser_identifiers_part_4(self):
+    self.verify_browser_identifiers(3)
+
+  def verify_browser_identifiers(self, chunk: int):
     browsers: Dict[str, Type[mock_browser.MockBrowser]] = {
         "chrome": mock_browser.MockChromeStable,
         "chrome-stable": mock_browser.MockChromeStable,
@@ -97,19 +206,18 @@ class CliSlowTestCase(BaseCliTestCase):
           "tp": mock_browser.MockSafariTechnologyPreview,
       })
 
-    for identifier, browser_cls in browsers.items():
+    items_chunk: List[Tuple[str, Type[mock_browser.MockBrowser]]] = list(
+        browsers.items())[chunk::4]
+    for identifier, browser_cls in items_chunk:
       out_dir = self.out_dir / identifier
       self.assertFalse(out_dir.exists())
-      with mock.patch.object(
-          BrowserVariantsConfig, "get_browser_cls",
-          return_value=browser_cls) as get_browser_cls:
+      with self._patch_get_browser_cls(browser_cls) as get_browser_cls:
         url = "http://test.com"
         self.run_cli("loading", f"--browser={identifier}", f"--urls={url}",
                      "--env-validation=skip", f"--out-dir={out_dir}")
         self.assertTrue(out_dir.exists())
         get_browser_cls.assert_called_once()
-        result_files = list(
-            out_dir.glob(f"**/{internal.ResultsSummaryProbe.NAME}.json"))
+        result_files = list(out_dir.glob(f"**/{ResultsSummaryProbe.NAME}.json"))
         result_file = result_files[1]
         with result_file.open(encoding="utf-8") as f:
           results = json.load(f)
@@ -134,16 +242,20 @@ class CliSlowTestCase(BaseCliTestCase):
 
     def get_browser(self, args: argparse.Namespace):
       session = Settings(
-          platform=self.platform, network=args.network.create(self.platform))
+          platform=self.cli.platform,
+          network=args.network.create(self.cli.platform))
       browsers = [
           mock_browser.MockChromeDev("dev", settings=session),
       ]
       return browsers
 
-    with mock.patch.object(CrossBenchCLI, "_get_browsers", get_browser):
+    with (mock.patch.object(BenchmarkSubcommand, "_get_browsers", get_browser),
+          mock.patch.object(LocalFileNetwork, "_open_local_file_server") as
+          mock_network_open):
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
+      mock_network_open.assert_called_once()
       for browser in browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         assert isinstance(browser.network, LocalFileNetwork)
@@ -161,37 +273,34 @@ class CliSlowTestCase(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
     for chrome_flag in ("--js-flags=--no-opt", "--enable-features=Foo",
                         "--disable-features=bar"):
       # Fail for chrome flags for non-chrome browser
-      with self.assertRaises(argparse.ArgumentTypeError), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self.assertRaises(
+          argparse.ArgumentTypeError), self._patch_get_browser_cls(
+              side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--urls=http://test.com",
                      "--env-validation=skip", "--throw", "--browser=firefox",
                      chrome_flag)
       # Fail for mixed browsers and chrome flags
-      with self.assertRaises(argparse.ArgumentTypeError), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self.assertRaises(
+          argparse.ArgumentTypeError), self._patch_get_browser_cls(
+              side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--urls=http://test.com",
                      "--env-validation=skip", "--throw", "--browser=chrome",
                      "--browser=firefox", chrome_flag)
-      with self.assertRaises(argparse.ArgumentTypeError), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self.assertRaises(
+          argparse.ArgumentTypeError), self._patch_get_browser_cls(
+              side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--urls=http://test.com",
                      "--env-validation=skip", "--throw", "--browser=chrome",
                      "--browser=firefox", "--", chrome_flag)
     # Flags for the same type are allowed.
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "--urls=http://test.com", "--env-validation=skip",
                    "--throw", "--browser=chrome", "--browser=chrome-dev", "--",
                    "--js-flags=--no-opt")

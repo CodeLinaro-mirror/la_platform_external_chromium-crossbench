@@ -123,7 +123,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(annotator), 0)
     self.assertListEqual(annotator.to_json(), [])
     with mock.patch("logging.error") as logging_mock:
-      annotator.log()
+      annotator.log("custom title")
     # No exceptions => no error output
     logging_mock.assert_not_called()
 
@@ -139,7 +139,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(serialized), 1)
     self.assertEqual(serialized[0]["title"], str(exception))
     with mock.patch("logging.debug") as logging_mock:
-      annotator.log()
+      annotator.log("custom title")
     logging_mock.assert_has_calls([mock.call(exception)])
 
   def test_handle_rethrow(self):
@@ -184,10 +184,11 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     except ValueError as e:
       annotator.append(e)
     with self.assertLogs(level="ERROR") as cm:
-      annotator.log()
+      annotator.log("CUSTOM TITLE")
     output = "\n".join(cm.output)
     self.assertIn("info 1", output)
     self.assertIn("info 2", output)
+    self.assertIn("CUSTOM TITLE", output)
     self.assertIn("custom message", output)
 
   def test_handle_keyboard_interrupt(self):

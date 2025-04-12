@@ -12,15 +12,16 @@ import logging
 import math
 import re
 import shlex
-from typing import (Any, Dict, Final, Iterable, List, Optional, Sequence, Type,
-                    TypeVar, Union, cast)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable, List,
+                    Optional, Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
 
 from crossbench import path as pth
-from crossbench import plt
 
+if TYPE_CHECKING:
+  from crossbench import plt
 
 def type_str(value: Any) -> str:
   return type(value).__name__
@@ -34,12 +35,19 @@ class PathParser:
                            r")(\\|/)[^\\/]")
 
   @classmethod
-  def path(cls, value: pth.AnyPathLike, name: str = "value") -> pth.LocalPath:
-    value = ObjectParser.not_none(value, "path")
-    if not value:
+  def value_has_path_prefix(cls, value: str) -> bool:
+    return cls.PATH_PREFIX.match(value) is not None
+
+  @classmethod
+  def path(cls,
+           value: Optional[pth.AnyPathLike],
+           name: str = "value") -> pth.LocalPath:
+    path_value: pth.AnyPathLike = ObjectParser.not_none(value,
+                                                        "path")  # type: ignore
+    if not path_value:
       raise argparse.ArgumentTypeError("Invalid empty path.")
     try:
-      path = pth.LocalPath(value).expanduser()
+      path = pth.LocalPath(path_value).expanduser()
     except RuntimeError as e:
       raise argparse.ArgumentTypeError(
           f"Invalid Path {name} {repr(value)}': {e}") from e
@@ -112,34 +120,43 @@ class PathParser:
     return path
 
   @classmethod
-  def binary_path(cls,
-                  value: Optional[pth.AnyPathLike],
-                  name: str = "binary",
-                  platform: Optional[plt.Platform] = None) -> pth.AnyPath:
-    platform = platform or plt.PLATFORM
-    maybe_path = platform.path(ObjectParser.not_none(value, name))
+  def binary_path(
+      cls,
+      value: Optional[pth.AnyPathLike],
+      platform: plt.Platform,
+      name: str = "binary",
+  ) -> pth.AnyPath:
+    not_none: pth.AnyPathLike = ObjectParser.not_none(value,
+                                                      name)  # type: ignore
+    maybe_path: pth.AnyPath = platform.path(not_none)
     if platform.is_file(maybe_path):
       return maybe_path
-    maybe_bin = platform.search_binary(maybe_path)
-    if not maybe_bin:
-      raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
-    return maybe_bin
+    if maybe_bin := platform.search_binary(maybe_path):
+      return maybe_bin
+    raise argparse.ArgumentTypeError(f"Unknown binary: {value}")
 
   @classmethod
   def any_path(cls,
                value: Optional[pth.AnyPathLike],
                name: str = "value") -> pth.AnyPath:
     """Parse a path than can be on a local or remote file system."""
-    some_value: pth.AnyPathLike = ObjectParser.not_none(value, name)
-    if not some_value:
-      raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
-    return pth.AnyPath(some_value)
+    if some_value := ObjectParser.not_none(value, name):
+      return pth.AnyPath(some_value)  # type: ignore
+    raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
+
+  @classmethod
+  def optional_any_path(
+      cls, value: Optional[pth.AnyPathLike]) -> Optional[pth.AnyPath]:
+    if value is None:
+      return None
+    return cls.any_path(value)
 
   @classmethod
   def local_binary_path(cls,
                         value: Optional[pth.AnyPathLike],
+                        platform: plt.Platform,
                         name: str = "binary") -> pth.LocalPath:
-    return cast(pth.LocalPath, cls.binary_path(value, name))
+    return cast(pth.LocalPath, cls.binary_path(value, platform, name))
 
   @classmethod
   def json_file_path(cls, value: pth.AnyPathLike) -> pth.LocalPath:
@@ -167,7 +184,7 @@ class PathParser:
 
 
 EnumT = TypeVar("EnumT", bound=enum.Enum)
-NotNoneT = TypeVar("NotNoneT", bound=Any)
+NotNoneT = TypeVar("NotNoneT")
 SequenceT = TypeVar("SequenceT", bound=Sequence)
 
 
@@ -175,7 +192,7 @@ class ObjectParser:
 
   @classmethod
   def enum(cls, label: str, enum_cls: Type[EnumT], data: Any,
-           choices: Union[Type[EnumT], Iterable[EnumT]]) -> EnumT:
+           choices: Type[EnumT] | Iterable[EnumT]) -> EnumT:
     try:
       # Try direct conversion, relying on the Enum._missing_ hook:
       enum_value = enum_cls(data)
@@ -272,7 +289,7 @@ class ObjectParser:
 
   @classmethod
   def non_empty_sequence(cls, value: Any, name: str = "value") -> Sequence[Any]:
-    sequence_value = cls.sequence(value)
+    sequence_value = cls.sequence(value, name)
     if not sequence_value:
       raise argparse.ArgumentTypeError(
           f"Expected {name} to be a non-empty sequence.")
@@ -296,6 +313,15 @@ class ObjectParser:
     if not value:
       raise argparse.ArgumentTypeError(f"Non-empty string {name} expected.")
     return value
+
+  @classmethod
+  def str_or_file_contents(cls, value: Any, name: str = "value") -> str:
+    if isinstance(value, str):
+      str_value: str = cls.non_empty_str(value, name=name)
+      if not PathParser.value_has_path_prefix(str_value):
+        return str_value
+    path = PathParser.file_path(value, name=name)
+    return cls.non_empty_str(path.read_text(encoding="utf-8"), name=name)
 
   @classmethod
   def url_str(cls,
@@ -322,25 +348,25 @@ class ObjectParser:
   PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
 
   @classmethod
-  def parse_fuzzy_url_str(cls,
-                          value: str,
-                          name: str = "url",
-                          schemes: Sequence[str] = ("http", "https", "about",
-                                                    "file"),
-                          default_scheme: str = "https") -> str:
-    parsed = cls.parse_fuzzy_url(value, name, schemes, default_scheme)
+  def fuzzy_url_str(cls,
+                    value: str,
+                    name: str = "url",
+                    schemes: Sequence[str] = ("http", "https", "about", "file",
+                                              "data"),
+                    default_scheme: str = "https") -> str:
+    parsed = cls.fuzzy_url(value, name, schemes, default_scheme)
     return urlparse.urlunparse(parsed)
 
   @classmethod
-  def parse_fuzzy_url(cls,
-                      value: str,
-                      name: str = "url",
-                      schemes: Sequence[str] = ("http", "https", "about",
-                                                "file"),
-                      default_scheme: str = "https") -> urlparse.ParseResult:
+  def fuzzy_url(cls,
+                value: str,
+                name: str = "url",
+                schemes: Sequence[str] = ("http", "https", "about", "file",
+                                          "data"),
+                default_scheme: str = "https") -> urlparse.ParseResult:
     assert default_scheme, "missing default scheme value"
     value = cls.non_empty_str(value, name)
-    if PathParser.PATH_PREFIX.match(value):
+    if PathParser.value_has_path_prefix(value):
       value = f"file://{value}"
     else:
       parsed = cls.base_url(value)
@@ -371,7 +397,7 @@ class ObjectParser:
             f"but got {repr(parsed.scheme)} for url {repr(value)}")
       if port := parsed.port:
         _ = NumberParser.port_number(port, f"{name} port")
-      if scheme in ("file", "about"):
+      if scheme in ("file", "about", "data"):
         return parsed
       hostname = parsed.hostname
       if not hostname:
@@ -387,14 +413,24 @@ class ObjectParser:
     return parsed
 
   @classmethod
-  def bool(cls, value: Any, name: str = "value") -> bool:
+  def optional_bool(cls,
+                    value: Any,
+                    name: str = "value",
+                    strict: bool = False) -> Optional[bool]:
+    if value is None:
+      return None
+    return cls.bool(value, name, strict)
+
+  @classmethod
+  def bool(cls, value: Any, name: str = "value", strict: bool = False) -> bool:
     if isinstance(value, bool):
       return value
     value = str(value).lower()
-    if value == "true":
-      return True
-    if value == "false":
-      return False
+    if not strict:
+      if value == "true":
+        return True
+      if value == "false":
+        return False
     raise argparse.ArgumentTypeError(
         f"Expected bool {name} but got {type_str(value)}: {repr(value)}")
 
@@ -446,6 +482,10 @@ class ObjectParser:
       return re.compile(cls.any_str(value, name))
     except re.error as e:
       raise argparse.ArgumentTypeError(f"Invalid regexp {name}: {value}") from e
+
+  @classmethod
+  def safe_filename(cls, value: Any, name: str = "safe filename") -> str:
+    return pth.safe_filename(cls.non_empty_str(value, name))
 
 
 _MAX_LEN = 70
@@ -499,15 +539,45 @@ class NumberParser:
       raise argparse.ArgumentTypeError(f"Invalid {name}: {repr(value)}") from e
 
   @classmethod
-  def positive_zero_float(cls, value: Any, name: str = "float") -> float:
+  def positive_float(cls, value: Any, name: str = "float") -> float:
     value_f = cls.any_float(value, name)
-    if not math.isfinite(value_f) or value_f < 0:
+    if not math.isfinite(value_f) or value_f <= 0:
       raise argparse.ArgumentTypeError(
-          f"Expected {name} >= 0, but got: {value_f}")
+          f"Expected {name} > 0, but got: {value_f}")
     return value_f
 
   @classmethod
-  def any_int(cls, value: Any, name: str = "value") -> int:
+  def positive_zero_float(cls, value: Any, name: str = "float") -> float:
+    return cls.float_range(0.0, math.inf, name=name)(value)
+
+  @classmethod
+  def float_range(  # pylint: disable=redefined-builtin
+      cls,
+      min: float = 0.0,
+      max: float = math.inf,
+      name: str = "float") -> Callable[[Any], float]:
+    assert min < max, f"Expected min={min} to be less than max={max}"
+
+    def float_ranged(value: Any) -> float:
+      value_f = cls.any_float(value, name)
+      if not math.isfinite(value_f) or value_f < min or max < value_f:
+        raise argparse.ArgumentTypeError(
+            f"Expected {min} <= {name} <= {max}, but got: {value_f}")
+      return value_f
+
+    return float_ranged
+
+  @classmethod
+  def any_int(cls,
+              value: Any,
+              name: str = "value",
+              parse_str: bool = True) -> int:
+    if (not parse_str and
+        isinstance(value, str)) or (not isinstance(value, (int, float, str))):
+      raise argparse.ArgumentTypeError(
+          f"Expected integer {name}, but got {type_str(value)}: {repr(value)}")
+    if isinstance(value, float) and not value.is_integer():
+      raise argparse.ArgumentTypeError(f"Invalid integer {name}: {repr(value)}")
     try:
       return int(value)
     except ValueError as e:
@@ -515,28 +585,47 @@ class NumberParser:
           f"Invalid integer {name}: {repr(value)}") from e
 
   @classmethod
-  def positive_zero_int(cls, value: Any, name: str = "value") -> int:
-    value_i = cls.any_int(value, name)
-    if value_i < 0:
-      raise argparse.ArgumentTypeError(
-          f"Expected integer {name} >= 0, but got: {value_i}")
-    return value_i
+  def positive_zero_int(cls,
+                        value: Any,
+                        name: str = "value",
+                        parse_str: bool = True) -> int:
+    return cls.int_range(0.0, name=name, parse_str=parse_str)(value)
 
   @classmethod
-  def positive_int(cls, value: Any, name: str = "value") -> int:
-    value_i = cls.any_int(value, name)
+  def positive_int(cls,
+                   value: Any,
+                   name: str = "value",
+                   parse_str: bool = True) -> int:
+    value_i = cls.any_int(value, name, parse_str)
     if not math.isfinite(value_i) or value_i <= 0:
       raise argparse.ArgumentTypeError(
           f"Expected integer {name} > 0, but got: {value_i}")
     return value_i
 
   @classmethod
-  def port_number(cls, value: Any, name: str = "port") -> int:
-    port = cls.any_int(value, name)
-    if 1 <= port <= 65535:
-      return port
-    raise argparse.ArgumentTypeError(
-        f"Invalid Port: expected 1 <= {name} <= 65535, but got: {repr(port)}")
+  def int_range(  # pylint: disable=redefined-builtin
+      cls,
+      min: float = 0.0,
+      max: float = math.inf,
+      name: str = "value",
+      parse_str: bool = True) -> Callable[[Any], int]:
+    assert min < max, f"Expected min={min} to be less than max={max}"
+
+    def int_ranged(value: Any) -> int:
+      value_i = cls.any_int(value, name, parse_str)
+      if not math.isfinite(value_i) or value_i < min or max < value_i:
+        raise argparse.ArgumentTypeError(
+            f"Expected integer {min} <= {name} <= {max}, but got: {value_i}")
+      return value_i
+
+    return int_ranged
+
+  @classmethod
+  def port_number(cls,
+                  value: Any,
+                  name: str = "port",
+                  parse_str: bool = True) -> int:
+    return cls.int_range(1, 65535, name, parse_str)(value)
 
 
 class LateArgumentError(argparse.ArgumentTypeError):

@@ -7,20 +7,25 @@ from __future__ import annotations
 import plistlib
 
 from pyfakefs.fake_filesystem import OSType
+from typing_extensions import override
 
 from crossbench import path as pth
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
-from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
+from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
+                                         BasePosixMockPlatformTestCase)
 
 
-class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
+class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
+                                BasePosixMockPlatformTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.fs.os = OSType.MACOS
 
+  @override
   def mock_platform_setup(self) -> None:
     self.mock_platform = MacOsMockPlatform()
     self.platform = self.mock_platform
@@ -32,12 +37,28 @@ class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertTrue(self.platform.is_macos)
 
   def test_app_version_non_existing(self):
+    app_path = pth.AnyPosixPath("/Applications/Google Chrome.app")
+    self.assertFalse(self.platform.exists(app_path))
+    with self.assertRaisesRegex(ValueError, "not exist"):
+      self.platform.app_version(app_path)
     app_path = pth.AnyPath("/Applications/Google Chrome.app")
     self.assertFalse(self.platform.exists(app_path))
     with self.assertRaisesRegex(ValueError, "not exist"):
       self.platform.app_version(app_path)
 
-  def test_app_version_binary(self):
+  def test_app_version_binary_any_path(self):
+    app_path = pth.AnyPosixPath("/opt/homebrew/bin/brew")
+    self.fs.create_file(app_path, st_size=100)
+    self.expect_sh(app_path, "--version", result="111.22.3")
+    self.assertEqual(self.platform.app_version(app_path), "111.22.3")
+
+  def test_app_version_binary_local_path(self):
+    app_path = pth.LocalPath("/opt/homebrew/bin/brew")
+    self.fs.create_file(app_path, st_size=100)
+    self.expect_sh(app_path, "--version", result="111.22.3")
+    self.assertEqual(self.platform.app_version(app_path), "111.22.3")
+
+  def test_app_version_binary_posix_path(self):
     app_path = pth.AnyPath("/opt/homebrew/bin/brew")
     self.fs.create_file(app_path, st_size=100)
     self.expect_sh(app_path, "--version", result="111.22.3")
@@ -67,8 +88,23 @@ class MacOsMockPlatformTestCase(BasePosixMockPlatformTestCase):
       self.platform.app_version(app_path)
 
     with info_plist.open("wb") as f:
-      plistlib.dump({"CFBundleShortVersionString": "129.9.6668.103"}, f)
-    self.assertEqual(self.platform.app_version(app_path), "129.9.6668.103")
+      plistlib.dump(
+          {
+              "CFBundleShortVersionString": "129.9.6668.103",
+              "CFBundleDisplayName": "Google Chrome",
+          }, f)
+    self.assertEqual(
+        self.platform.app_version(app_path), "Google Chrome 129.9.6668.103")
+
+    with info_plist.open("wb") as f:
+      plistlib.dump(
+          {
+              "CFBundleShortVersionString": "129.9.6668.103",
+              # CFBundleDisplayName is missing but CFBundleName is there.
+              "CFBundleName": "Google Chrome",
+          }, f)
+    self.assertEqual(
+        self.platform.app_version(app_path), "Google Chrome 129.9.6668.103")
 
   def test_app_version_binary_inside_app(self):
     binary_path = pth.LocalPath("/Applications/Safari Technology Preview.app/"

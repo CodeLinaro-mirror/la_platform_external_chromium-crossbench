@@ -9,7 +9,7 @@ from typing import Dict
 import hjson
 import pytest
 
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.chrome_histograms import (ChromeHistogramMetric,
                                                  ChromeHistogramSample,
                                                  ChromeHistogramsProbe,
@@ -179,3 +179,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         "Startup.FirstWebContents.NonEmptyPaint3_p50",
         "Startup.FirstWebContents.NonEmptyPaint3_p90",
     ])
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

@@ -11,10 +11,16 @@ from ordered_set import OrderedSet
 from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
-from crossbench.benchmarks.jetstream.jetstream_3_0 import JetStream30Benchmark
-from crossbench.benchmarks.loading.loading_benchmark import PageLoadBenchmark
+from crossbench.benchmarks.jetstream.jetstream_main import \
+    JetStreamMainBenchmark
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.loadline_presets import (
-    LoadLinePhoneBenchmark, LoadLineTabletBenchmark)
+    LoadLinePhoneBenchmark,
+    LoadLinePhoneDebugBenchmark,
+    LoadLinePhoneFastBenchmark,
+    LoadLineTabletBenchmark,
+    LoadLineTabletDebugBenchmark,
+    LoadLineTabletFastBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
@@ -25,30 +31,46 @@ from crossbench.benchmarks.motionmark.motionmark_1_2 import \
     MotionMark12Benchmark
 from crossbench.benchmarks.motionmark.motionmark_1_3 import \
     MotionMark13Benchmark
+from crossbench.benchmarks.motionmark.motionmark_1_3_1 import \
+    MotionMark131Benchmark
+from crossbench.benchmarks.motionmark.motionmark_main import \
+    MotionMarkMainBenchmark
 from crossbench.benchmarks.speedometer.speedometer_2_0 import \
     Speedometer20Benchmark
 from crossbench.benchmarks.speedometer.speedometer_2_1 import \
     Speedometer21Benchmark
 from crossbench.benchmarks.speedometer.speedometer_3_0 import \
     Speedometer30Benchmark
+from crossbench.benchmarks.speedometer.speedometer_3_1 import \
+    Speedometer31Benchmark
+from crossbench.benchmarks.speedometer.speedometer_main import \
+    SpeedometerMainBenchmark
 from tests import test_helper
 
 ALL = (
     JetStream20Benchmark,
     JetStream21Benchmark,
     JetStream22Benchmark,
-    JetStream30Benchmark,
+    JetStreamMainBenchmark,
     LoadLinePhoneBenchmark,
+    LoadLinePhoneDebugBenchmark,
+    LoadLinePhoneFastBenchmark,
     LoadLineTabletBenchmark,
+    LoadLineTabletDebugBenchmark,
+    LoadLineTabletFastBenchmark,
     ManualBenchmark,
     MotionMark10Benchmark,
     MotionMark11Benchmark,
     MotionMark12Benchmark,
     MotionMark13Benchmark,
-    PageLoadBenchmark,
+    MotionMark131Benchmark,
+    MotionMarkMainBenchmark,
+    LoadingBenchmark,
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,
+    Speedometer31Benchmark,
+    SpeedometerMainBenchmark,
     MemoryBenchmark,
 )
 
@@ -75,8 +97,8 @@ class AllBenchmarksTestCase(unittest.TestCase):
       if benchmark_cls is MemoryBenchmark:
         continue
       if issubclass(benchmark_cls,
-                    PageLoadBenchmark) and (benchmark_cls
-                                            is not PageLoadBenchmark):
+                    LoadingBenchmark) and (benchmark_cls
+                                           is not LoadingBenchmark):
         continue
       self.assertNotIn(benchmark_cls.DEFAULT_STORY_CLS, seen_story_classes)
       seen_story_classes.add(benchmark_cls.DEFAULT_STORY_CLS)

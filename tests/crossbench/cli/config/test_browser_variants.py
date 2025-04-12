@@ -5,23 +5,22 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
 import json
 import unittest
-from typing import Dict, Tuple, Type
+from typing import Dict, Optional, Tuple, Type
 from unittest import mock
 
 import hjson
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.browser import Browser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
                                                   ChromeWebDriverAndroid,
                                                   ChromeWebDriverChromeOsSsh,
@@ -33,10 +32,19 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
                                                     ChromiumWebDriverSsh)
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.cli.config.browser_variants import (BaseBrowserVariantsConfig,
+                                                    BrowserVariantsConfig,
+                                                    BrowserVariantsConfigDict)
+from crossbench.cli.config.driver import DriverConfig
+from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
+from crossbench.helper.cwd import ChangeCWD
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
+                                              BaseConfigTestCase)
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
 
 
 class TestBrowserVariantsConfig(BaseConfigTestCase):
@@ -47,6 +55,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   EXAMPLE_REMOTE_CONFIG_PATH = (
       test_helper.config_dir() / "doc/remote_browser.config.hjson")
 
+  @override
   def setUp(self):
     super().setUp()
     self.browser_lookup: Dict[str, Tuple[
@@ -66,6 +75,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         }
     for _, (_, browser_config) in self.browser_lookup.items():
       self.assertTrue(browser_config.path.exists())
+
+  @contextlib.contextmanager
+  def _patch_get_browser_cls(self,
+                             return_value: Optional[Type[Browser]] = None,
+                             **kwargs):
+    if not kwargs:
+      kwargs["return_value"] = return_value or mock_browser.MockChromeStable
+    with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
+                           **kwargs):
+      yield
 
   def _expect_linux_ssh(self, cmd, **kwargs):
     return self.platform.expect_sh("ssh", "-p", "22", "user@my-linux-machine",
@@ -88,47 +107,109 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertGreaterEqual(len(config.flags_config), 1)
     self.assertGreaterEqual(len(config.variants), 1)
 
-  def test_parse_remote_browser_config_template(self):
-    if not self.EXAMPLE_REMOTE_CONFIG_PATH.exists():
-      raise unittest.SkipTest(
-          f"Test file {self.EXAMPLE_REMOTE_CONFIG_PATH} does not exist")
-    self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
-
+  def _expect_sh_linux_ssh_browser_config(self):
     self._expect_linux_ssh("uname -m", result="arm64")
+
+  def _expect_sh_linux_ssh_browser_instance(self):
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
     self._expect_linux_ssh("'[' -f /path/to/google/chrome ']'")
     self._expect_linux_ssh("'[' -e /path/to/google/chrome ']'")
     self._expect_linux_ssh(
         "/path/to/google/chrome --version", result="102.22.33.44")
-    self._expect_linux_ssh("env")
-    self._expect_linux_ssh("'[' -d /tmp ']'")
-    self._expect_linux_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
 
+  def _expect_sh_chromeos_ssh_browser_config(self):
     self._expect_chromeos_ssh("'[' -e /usr/local/autotest/bin/autologin.py ']'")
     self._expect_chromeos_ssh("uname -m", result="arm64")
+
+  def _expect_sh_chromeos_ssh_browser_instance(self):
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh("'[' -f /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh("'[' -e /opt/google/chrome/chrome ']'")
     self._expect_chromeos_ssh(
         "/opt/google/chrome/chrome --version", result="125.0.6422.60")
-    self._expect_chromeos_ssh("env")
-    self._expect_chromeos_ssh("'[' -d /tmp ']'")
-    self._expect_chromeos_ssh("mktemp -d /tmp/chrome.XXXXXXXXXXX")
+
+  def test_parse_remote_browser_config_template(self):
+    self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
+
+    self._expect_sh_linux_ssh_browser_config()
+    self._expect_sh_linux_ssh_browser_config()
+    self._expect_sh_chromeos_ssh_browser_config()
+    self._expect_sh_chromeos_ssh_browser_config()
+
+    self._expect_sh_linux_ssh_browser_instance()
+    self._expect_sh_linux_ssh_browser_instance()
+    self._expect_sh_chromeos_ssh_browser_instance()
+    self._expect_sh_chromeos_ssh_browser_instance()
 
     with self.EXAMPLE_REMOTE_CONFIG_PATH.open(encoding="utf-8") as f:
-      config = BrowserVariantsConfig()
+      config = BrowserVariantsConfigDict()
       config.parse_text_io(f, args=self.mock_args)
-      self.assertEqual(len(config.variants), 2)
-      for variant in config.variants:
+      browsers = config.browsers
+      self.assertEqual(len(browsers), 4)
+      for variant in browsers:
         self.assertTrue(variant.platform.is_remote)
         self.assertTrue(variant.platform.is_linux)
-      self.assertEqual(config.variants[0].platform.name, "linux_ssh")
-      self.assertEqual(config.variants[1].platform.name, "chromeos_ssh")
-      self.assertEqual(config.variants[0].version, "102.22.33.44")
-      self.assertEqual(config.variants[1].version, "125.0.6422.60")
+
+      self.assertIsNone(browsers[0].driver_path)
+      self.assertEqual(str(browsers[1].driver_path), "/path/to/chromedriver")
+      self.assertIsNone(browsers[2].driver_path)
+      self.assertEqual(str(browsers[3].driver_path), "/path/to/chromedriver")
+
+      self.assertEqual(browsers[0].platform.name, "linux_ssh")
+      self.assertEqual(browsers[1].platform.name, "linux_ssh")
+      self.assertEqual(browsers[2].platform.name, "chromeos_ssh")
+      self.assertEqual(browsers[3].platform.name, "chromeos_ssh")
+      self.assertEqual(browsers[0].version.parts_str, "102.22.33.44")
+      self.assertEqual(browsers[1].version.parts_str, "102.22.33.44")
+      self.assertEqual(browsers[2].version.parts_str, "125.0.6422.60")
+      self.assertEqual(browsers[3].version.parts_str, "125.0.6422.60")
+
+  def test_parse_remote_browser_config_template_override_driver_path(self):
+    override_driver_path = pth.AnyPosixPath("/path/to/override/chromedriver")
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=None,
+        driver_path=None,
+        remote_driver_path=override_driver_path)
+    config = BrowserVariantsConfigDict()
+
+    self._expect_sh_linux_ssh_browser_config()
+    self._expect_sh_linux_ssh_browser_config()
+    config_dict = {
+        "browsers": {
+            "linux-ssh-chrome-auto-start-driver": {
+                "path": "/path/to/google/chrome",
+                "driver": {
+                    "type": "ssh",
+                    "path": "/path/to/chromedriver",
+                    "settings": {
+                        "host": "my-linux-machine",
+                        "ssh_port": 22,
+                        "ssh_user": "user"
+                    }
+                }
+            },
+            "linux-ssh-chrome-auto-start-driver-no-path": {
+                "path": "/path/to/google/chrome",
+                "driver": {
+                    "type": "ssh",
+                    "settings": {
+                        "host": "my-linux-machine",
+                        "ssh_port": 22,
+                        "ssh_user": "user"
+                    }
+                }
+            },
+        }
+    }
+    config.parse_dict(config_dict, args)
+    variants = config.variants
+    self.assertEqual(len(variants), 2)
+    self.assertEqual(variants[0].settings.driver_path, override_driver_path)
+    self.assertEqual(variants[1].settings.driver_path, override_driver_path)
 
   def test_browser_labels_attributes(self):
-    browsers = BrowserVariantsConfig(
+    browsers = BrowserVariantsConfigDict(
         {
             "browsers": {
                 "chrome-stable-default": {
@@ -174,20 +255,18 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         return mock_browser.MockChromeStable
       raise ValueError("Unknown browser_config")
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
+    with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls), mock.patch(
             "crossbench.plt.android_adb.AndroidAdbPlatform.machine",
             new_callable=mock.PropertyMock,
             return_value=plt.MachineArch.ARM_64):
-      browsers = BrowserVariantsConfig.from_cli_args(args).variants
-    self.assertEqual(len(browsers), 2)
-    self.assertEqual(browsers[0].label, "android.arm64.remote_0")
-    self.assertEqual(browsers[1].label, f"{self.platform}_1")
+      variants = BrowserVariantsConfig.from_cli_args(args).variants
+    self.assertEqual(len(variants), 2)
+    self.assertEqual(variants[0].label, "android.arm64.remote_0")
+    self.assertEqual(variants[1].label, f"{self.platform}_1")
 
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable-label": {
@@ -208,7 +287,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_parse_invalid_browser_type(self):
     for invalid in (None, 1, []):
       with self.assertRaises(ConfigError) as cm:
-        _ = BrowserVariantsConfig(
+        _ = BrowserVariantsConfigDict(
             {
                 "browsers": {
                     "chrome-stable-default": invalid
@@ -229,12 +308,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         return AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform))
       return self.platform
 
-    with self.mock_chrome_stable(
+    with self._patch_get_browser_cls(
         mock_browser.MockChromeAndroidStable), mock.patch.object(
-            BrowserVariantsConfig,
+            BaseBrowserVariantsConfig,
             "_get_browser_platform",
             side_effect=mock_get_browser_platform):
-      browsers = BrowserVariantsConfig(
+      variants_config = BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable-default": "chrome-stable",
@@ -246,18 +325,21 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               }
           },
           browser_lookup_override=self.browser_lookup,
-          args=self.mock_args).variants
-    self.assertEqual(len(browsers), 3)
-    self.assertEqual(browsers[0].label, "chrome-stable-default")
-    self.assertEqual(browsers[1].label, "chrome-stable-adb")
-    self.assertEqual(browsers[2].label, "chrome-stable-adb2")
-    self.assertIsInstance(browsers[0], mock_browser.MockChromeStable)
-    self.assertIsInstance(browsers[1], mock_browser.MockChromeAndroidStable)
-    self.assertIsInstance(browsers[2], mock_browser.MockChromeAndroidStable)
+          args=self.mock_args)
+      variants = variants_config.variants
+    self.assertEqual(len(variants), 3)
+    self.assertEqual(variants[0].label, "chrome-stable-default")
+    self.assertEqual(variants[1].label, "chrome-stable-adb")
+    self.assertEqual(variants[2].label, "chrome-stable-adb2")
+    self.assertEqual(variants[0].browser_cls, mock_browser.MockChromeStable)
+    self.assertEqual(variants[1].browser_cls,
+                     mock_browser.MockChromeAndroidStable)
+    self.assertEqual(variants[2].browser_cls,
+                     mock_browser.MockChromeAndroidStable)
 
   def test_flag_combination_invalid(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -279,7 +361,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_none(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -299,7 +381,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_duplicate(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -322,13 +404,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_empty(self):
     with self.assertRaises(ConfigError):
-      BrowserVariantsConfig({"other": {}}, args=self.mock_args).variants
+      BrowserVariantsConfigDict({"other": {}}, args=self.mock_args).variants
     with self.assertRaises(ConfigError):
-      BrowserVariantsConfig({"browsers": {}}, args=self.mock_args).variants
+      BrowserVariantsConfigDict({"browsers": {}}, args=self.mock_args).variants
 
   def test_unknown_group(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable": {
@@ -341,8 +423,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("unknown-flag-group", str(cm.exception))
 
   def test_duplicate_group(self):
-    with self.assertRaises(ConfigError):
-      BrowserVariantsConfig(
+    with self.assertRaisesRegex(ConfigError, "group1"):
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {}
@@ -354,10 +436,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                   }
               }
           },
-          args=self.mock_args).variants
+          args=self.mock_args).browsers
 
   def test_non_list_group(self):
-    BrowserVariantsConfig(
+    BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {}
@@ -372,7 +454,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args).variants
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {}
@@ -390,7 +472,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("flags", str(cm.exception))
 
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {}
@@ -411,7 +493,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_duplicate_flag_variant_value(self):
     with self.assertRaises(ConfigError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -431,7 +513,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_unknown_path(self):
     with self.assertRaises(Exception):
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable": {
@@ -441,7 +523,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           },
           args=self.mock_args).variants
     with self.assertRaises(Exception):
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           {
               "browsers": {
                   "chrome-stable": {
@@ -452,7 +534,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           args=self.mock_args).variants
 
   def test_flag_combination_simple(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -471,14 +553,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browsers = config.variants
     self.assertEqual(len(browsers), 3)
     for browser in browsers:
-      assert isinstance(browser, mock_browser.MockChromeStable)
+      self.assertEqual(browser.browser_cls, mock_browser.MockChromeStable)
       self.assertDictEqual(browser.js_flags.to_dict(), {})
     self.assertDictEqual(browsers[0].flags.to_dict(), {})
     self.assertDictEqual(browsers[1].flags.to_dict(), {"--foo": None})
     self.assertDictEqual(browsers[2].flags.to_dict(), {"--foo": "v1"})
 
   def test_flag_list(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": [
@@ -499,14 +581,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browsers = config.variants
     self.assertEqual(len(browsers), 3)
     for browser in browsers:
-      assert isinstance(browser, mock_browser.MockChromeStable)
+      self.assertEqual(browser.browser_cls, mock_browser.MockChromeStable)
       self.assertDictEqual(browser.js_flags.to_dict(), {})
     self.assertDictEqual(browsers[0].flags.to_dict(), {})
     self.assertDictEqual(browsers[1].flags.to_dict(), {"--foo": None})
     self.assertDictEqual(browsers[2].flags.to_dict(), {"-foo": "v1"})
 
   def test_flag_combination(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -526,7 +608,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(config.variants), 3 * 3)
 
   def test_flag_combination_mixed_inline(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "compile-hints-experiment": {
@@ -550,7 +632,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         list(browsers[1].flags))
 
   def test_flag_single_inline(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "browsers": {
                 "chrome-release": {
@@ -566,7 +648,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
 
   def test_flag_combination_mixed_fixed(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "compile-hints-experiment": {
@@ -592,7 +674,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_conflicting_chrome_features(self):
     with self.assertRaises(ConfigError) as cm:
-      _ = BrowserVariantsConfig(
+      _ = BrowserVariantsConfigDict(
           {
               "flags": {
                   "compile-hints-experiment": {
@@ -616,7 +698,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("ConsumeCompileHints", msg)
 
   def test_no_flags(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "browsers": {
                 "chrome-stable": {
@@ -631,13 +713,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args)
     self.assertEqual(len(config.variants), 2)
     browser_0 = config.variants[0]
-    assert isinstance(browser_0, mock_browser.MockChromeStable)
-    self.assertEqual(browser_0.app_path,
-                     mock_browser.MockChromeStable.mock_app_path())
+    self.assertEqual(browser_0.browser_cls, mock_browser.MockChromeStable)
     browser_1 = config.variants[1]
-    assert isinstance(browser_1, mock_browser.MockChromeDev)
-    self.assertEqual(browser_1.app_path,
-                     mock_browser.MockChromeDev.mock_app_path())
+    self.assertEqual(browser_1.browser_cls, mock_browser.MockChromeDev)
 
   def test_custom_driver(self):
     chromedriver = pth.LocalPath("path/to/chromedriver")
@@ -650,37 +728,33 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         }
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      BrowserVariantsConfig(
+      BrowserVariantsConfigDict(
           copy.deepcopy(variants_config),
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args)
     self.assertIn(str(chromedriver), str(cm.exception))
 
     self.fs.create_file(chromedriver, st_size=100)
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        return_value=mock_browser.MockChromeStable):
-      config = BrowserVariantsConfig(
+    with self._patch_get_browser_cls(mock_browser.MockChromeStable):
+      config = BrowserVariantsConfigDict(
           variants_config,
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args)
     self.assertTrue(variants_config["browsers"]["chrome-stable"])
     self.assertEqual(len(config.variants), 1)
     browser_0 = config.variants[0]
-    assert isinstance(browser_0, mock_browser.MockChromeStable)
-    self.assertEqual(browser_0.app_path,
-                     mock_browser.MockChromeStable.mock_app_path())
+    self.assertEqual(browser_0.browser_cls, mock_browser.MockChromeStable)
 
   def test_inline_flags(self):
     with mock.patch.object(
-        ChromeWebDriver, "_extract_version",
-        return_value="101.22.333.44"), mock.patch.object(
+        ChromeWebDriver,
+        "_extract_version",
+        return_value=ChromeVersion.parse("101.22.333.44")), mock.patch.object(
             Chrome,
             "stable_path",
             return_value=mock_browser.MockChromeStable.mock_app_path()):
 
-      config = BrowserVariantsConfig(
+      config = BrowserVariantsConfigDict(
           {
               "browsers": {
                   "stable": {
@@ -690,28 +764,29 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               }
           },
           args=self.mock_args)
-      self.assertEqual(len(config.variants), 1)
-      browser = config.variants[0]
+      browsers = config.browsers
+      self.assertEqual(len(browsers), 1)
+      browser = browsers[0]
       # TODO: Fix once app lookup is cleaned up
       self.assertEqual(browser.app_path,
                        mock_browser.MockChromeStable.mock_app_path())
-      self.assertEqual(browser.version, "101.22.333.44")
+      self.assertEqual(browser.version.parts_str, "101.22.333.44")
       self.assertEqual(browser.flags["--foo"], "bar")
 
   def test_inline_load_safari(self):
     if not plt.PLATFORM.is_macos:
       return
-    with mock.patch.object(Safari, "_extract_version", return_value="16.0"):
-      config = BrowserVariantsConfig(
-          {"browsers": {
-              "safari": {
-                  "path": "safari",
-              }
-          }}, args=self.mock_args)
-      self.assertEqual(len(config.variants), 1)
+    config = BrowserVariantsConfigDict(
+        {"browsers": {
+            "safari": {
+                "path": "safari",
+            }
+        }}, args=self.mock_args)
+    self.assertEqual(len(config.variants), 1)
+    self.assertTrue(issubclass(config.variants[0].browser_cls, Safari))
 
   def test_flag_combination_with_fixed(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -732,10 +807,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args)
     self.assertEqual(len(config.variants), 3 * 3)
-    for browser in config.variants:
-      assert isinstance(browser, mock_browser.MockChromeStable)
-      self.assertEqual(browser.app_path,
-                       mock_browser.MockChromeStable.mock_app_path())
+    for variant in config.variants:
+      self.assertEqual(variant.browser_cls, mock_browser.MockChromeStable)
       expected_flags = (
           "--always_1=true --always_2=true --always_3=true",
           "--bar --always_1=true --always_2=true --always_3=true",
@@ -757,7 +830,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           f"Unexpected flags for variant[{index}]")
 
   def test_flag_combination_js_flags_with_fixed(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -779,10 +852,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args)
     self.assertEqual(len(config.variants), 3)
-    for browser in config.variants:
-      assert isinstance(browser, mock_browser.MockChromeStable)
-      self.assertEqual(browser.app_path,
-                       mock_browser.MockChromeStable.mock_app_path())
+    for variant in config.variants:
+      self.assertEqual(variant.browser_cls, mock_browser.MockChromeStable)
     expected_flags = (
         "--bar=v1 --foo=w2",
         "--bar=v1 --foo=w2 --js-flags=--max-opt=1,--trace-ic",
@@ -792,7 +863,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_flag_combination_js_flags_combinations_invalid(self):
     with self.assertRaises(ConfigError) as cm:
-      _ = BrowserVariantsConfig(
+      _ = BrowserVariantsConfigDict(
           {
               "flags": {
                   "group1": {
@@ -817,7 +888,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("--js-flags", str(cm.exception))
 
   def test_flag_group_combination(self):
-    config = BrowserVariantsConfig(
+    config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
@@ -866,13 +937,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    browser_bin = browser_cls.mock_app_path().with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin),}}}
-    config_file = pth.LocalPath("config.hjson")
+    config_file = pth.LocalPath("config/config.hjson")
+    config_file.parent.mkdir()
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
@@ -881,22 +950,25 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser=None,
         browser_config=config_file,
         driver_path=None)
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
     self.assertEqual(len(config.variants), 1)
-    browser = config.variants[0]
+    self.assertEqual(config.variants[0].browser_cls, browser_cls)
+    browser = config.browsers[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.app_path, browser_bin)
+
+  def test_from_cli_args_browser_config_relative_path(self):
+    some_dir = pth.LocalPath("custom/test/dir")
+    some_dir.mkdir(parents=True)
+    with ChangeCWD(some_dir):
+      self.test_from_cli_args_browser_config()
 
   def test_from_cli_args_browser(self):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    browser_bin = browser_cls.mock_app_path().with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
     args = mock.Mock(
         network=NetworkConfig.default(),
@@ -909,11 +981,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         driver_path=None,
         js_flags=None,
         other_browser_args=[])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
-    self.assertEqual(len(config.variants), 1)
-    browser = config.variants[0]
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 1)
+    browser = browsers[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.app_path, browser_bin)
 
@@ -930,11 +1002,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="feature_off",
         js_flags=None,
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
-    self.assertEqual(len(config.variants), 1)
-    browser = config.variants[0]
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 1)
+    browser = browsers[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertFalse(browser.js_flags)
     self.assertEqual(browser.flags["--enable-features"], "feature_on")
@@ -955,11 +1027,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features=None,
         js_flags=["--max-opt=1"],
         other_browser_args=[])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
-    self.assertEqual(len(config.variants), 1)
-    browser = config.variants[0]
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 1)
+    browser = browsers[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.js_flags.to_dict(), {"--max-opt": "1"})
 
@@ -976,14 +1048,69 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features=None,
         js_flags=[],
         other_browser_args=["--js-flags=--max-opt=1,--log-all"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
-    self.assertEqual(len(config.variants), 1)
-    browser = config.variants[0]
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 1)
+    browser = browsers[0]
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.js_flags.to_dict(), {
         "--max-opt": "1",
+        "--log-all": None
+    })
+
+  def test_from_cli_args_browser_multiple_js_flags_empty_base(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features="",
+        disable_features="",
+        js_flags=[" ", "--max-opt=2,--log-all"],
+        other_browser_args=[])
+    with self._patch_get_browser_cls(browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 2)
+    browser_0 = browsers[0]
+    self.assertIsInstance(browser_0, browser_cls)
+    self.assertEqual(browser_0.js_flags.to_dict(), {})
+    browser_1 = browsers[1]
+    self.assertIsInstance(browser_1, browser_cls)
+    self.assertEqual(browser_1.js_flags.to_dict(), {
+        "--max-opt": "2",
+        "--log-all": None
+    })
+
+  def test_from_cli_args_browser_multiple_js_flags_empty_base_defaults(self):
+    browser_cls = mock_browser.MockChromeStable
+    args = mock.Mock(
+        network=NetworkConfig.default(),
+        browser=[
+            BrowserConfig.parse_str("chrome"),
+        ],
+        browser_config=None,
+        driver_path=None,
+        enable_features="",
+        disable_features="",
+        js_flags=[" ", "--max-opt=2,--log-all"],
+        other_browser_args=["--js-flags=--no-turbofan"])
+    with self._patch_get_browser_cls(browser_cls):
+      config = BrowserVariantsConfig.from_cli_args(args)
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 2)
+    browser_0 = browsers[0]
+    self.assertIsInstance(browser_0, browser_cls)
+    self.assertEqual(browser_0.js_flags.to_dict(), {"--no-turbofan": None})
+    browser_1 = browsers[1]
+    self.assertIsInstance(browser_1, browser_cls)
+    self.assertEqual(browser_1.js_flags.to_dict(), {
+        "--no-turbofan": None,
+        "--max-opt": "2",
         "--log-all": None
     })
 
@@ -1000,14 +1127,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         disable_features="feature_off",
         js_flags=["--max-opt=1", "--max-opt=2,--log-all"],
         other_browser_args=["--no-sandbox", "--enable-logging=stderr"])
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls", return_value=browser_cls):
+    with self._patch_get_browser_cls(browser_cls):
       config = BrowserVariantsConfig.from_cli_args(args)
-    self.assertEqual(len(config.variants), 2)
-    browser_0 = config.variants[0]
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 2)
+    browser_0 = browsers[0]
     self.assertIsInstance(browser_0, browser_cls)
     self.assertEqual(browser_0.js_flags.to_dict(), {"--max-opt": "1"})
-    browser_1 = config.variants[1]
+    browser_1 = browsers[1]
     self.assertIsInstance(browser_1, browser_cls)
     self.assertEqual(browser_1.js_flags.to_dict(), {
         "--max-opt": "2",
@@ -1019,6 +1146,65 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertEqual(browser.flags["--disable-features"], "feature_off")
       self.assertIn("--no-sandbox", browser.flags)
       self.assertEqual(browser.flags["--enable-logging"], "stderr")
+
+  @unittest.skip("Not yet supported")
+  def test_from_cli_args_browser_config_js_flags(self):
+    browser_config = {
+        "browsers": {
+            "chrome_no_tf": {
+                "flags": ["--js-flags=--no-turbofan"],
+                "path": "chrome"
+            }
+        }
+    }
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        json.dump(browser_config, f)
+
+      args = mock.Mock(
+          network=NetworkConfig.default(),
+          browser=[],
+          browser_config=config_file,
+          driver_path=None,
+          enable_features=None,
+          disable_features=None,
+          js_flags=["--max-opt=1,--log-al"])
+      with self._patch_get_browser_cls():
+        config = BrowserVariantsConfig.from_cli_args(args)
+
+    self.assertEqual(len(config.variants), 1)
+    browser = config.variants[0]
+    self.assertEqual(browser.js_flags.to_dict(), {
+        "--no-turbofan": None,
+        "--max-opt": "1",
+        "--log-all": None
+    })
+
+  def test_from_cli_args_and_config(self):
+    browser_config = {"browsers": {"chrome_no_tf": {"path": "chrome"}}}
+    chrome_stable = BrowserConfig.parse_str("chrome")
+    chrome_dev = BrowserConfig.parse_str("chrome-dev")
+
+    with self.platform.NamedTemporaryFile() as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
+        json.dump(browser_config, f)
+
+      args = mock.Mock(
+          network=NetworkConfig.default(),
+          browser=[chrome_dev],
+          browser_config=config_file,
+          driver_path=None,
+          enable_features=None,
+          disable_features=None,
+          js_flags=[],
+          other_browser_args=[])
+      config = BrowserVariantsConfig.from_cli_args(args)
+
+    variants = config.variants
+    self.assertEqual(len(variants), 2)
+    self.assertEqual(variants[0].browser_config, chrome_stable)
+    self.assertEqual(variants[1].browser_config, chrome_dev)
+
 
   def test_from_cli_args_browser_config_network_override(self):
     ts_proxy_path = pth.LocalPath("/tsproxy/tsproxy.py")
@@ -1052,16 +1238,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         js_flags=None,
         other_browser_args=[])
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        return_value=mock_browser.MockChromeStable
-    ), mock.patch(
+    with self._patch_get_browser_cls(mock_browser.MockChromeStable), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
       finder.return_value = mock.Mock(path=ts_proxy_path)
       config = BrowserVariantsConfig.from_cli_args(args,)
-    self.assertEqual(len(config.variants), 3)
-    browser_1, browser_2, browser_3 = config.variants  # pylint: disable=unbalanced-tuple-unpacking
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 3)
+    browser_1, browser_2, browser_3 = browsers  # pylint: disable=unbalanced-tuple-unpacking
     # Browser 1 provides an explicit default override:
     self.assertTrue(browser_1.network.is_live)
     self.assertTrue(browser_1.network.traffic_shaper.is_live)
@@ -1167,6 +1350,105 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     mock_method.assert_called_once()
     config = BrowserConfig(browser=pth.AnyPath("chrome"), driver=driver)
     self.assertIs(variants.get_browser_cls(config), ChromeWebDriverChromeOsSsh)
+
+  def test_cache_dir_empty(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": None
+            }
+        }
+    }
+    self.assertIsNone(args.browser_cache_dir)
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertIsNone(browser.settings.cache_dir)
+
+    args.browser_cache_dir = "/var/tmp/override/cache"
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "/var/tmp/override/cache")
+
+  def test_cache_dir(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": "foo/bar/cache"
+            }
+        }
+    }
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+    args.browser_cache_dir = "/var/tmp/override/cache"
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "/var/tmp/override/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+  def test_clear_cache_dir(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": "foo/bar/cache",
+                "clear_cache_dir": False,
+            }
+        }
+    }
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertIsNone(args.clear_browser_cache_dir)
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertFalse(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = False
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertFalse(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = True
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+  def test_clear_cache_dir_override_positive(self):
+    args = self.mock_args
+    config_data = {
+        "browsers": {
+            "chrome-release": {
+                "path": "chrome-stable",
+                "cache_dir": "foo/bar/cache",
+                "clear_cache_dir": True,
+            }
+        }
+    }
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertIsNone(args.clear_browser_cache_dir)
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = False
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertFalse(browser.settings.clear_cache_dir)
+
+    args.clear_browser_cache_dir = True
+    config = BrowserVariantsConfigDict(config_data, args=args)
+    browser = config.variants[0]
+    self.assertEqual(str(browser.settings.cache_dir), "foo/bar/cache")
+    self.assertTrue(browser.settings.clear_cache_dir)
 
 
 if __name__ == "__main__":

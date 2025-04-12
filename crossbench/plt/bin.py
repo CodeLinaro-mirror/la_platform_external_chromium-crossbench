@@ -5,17 +5,21 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Iterable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Tuple, TypeAlias
+
+from typing_extensions import override
 
 from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
+  BinaryLookup: TypeAlias = pth.AnyPathLike | Iterable[pth.AnyPathLike]
+
 
 
 class BinaryNotFoundError(RuntimeError):
 
-  def __init__(self, binary: Binary, platform: Platform):
+  def __init__(self, binary: Binary, platform: Platform) -> None:
     self.binary = binary
     self.platform = platform
     super().__init__(self._create_message())
@@ -29,16 +33,14 @@ class BinaryNotFoundError(RuntimeError):
 
 class UnsupportedPlatformError(BinaryNotFoundError):
 
-  def __init__(self, binary: Binary, platform: Platform, expected: str):
+  def __init__(self, binary: Binary, platform: Platform, expected: str) -> None:
     self.expected_platform_name: str = expected
     super().__init__(binary, platform)
 
+  @override
   def _create_message(self) -> str:
     return (f"Could not find binary '{self.binary}' on {self.platform}. "
             f"Only supported on {self.expected_platform_name}")
-
-
-BinaryLookup = Union[pth.AnyPathLike, Iterable[pth.AnyPathLike]]
 
 
 class Binary:
@@ -53,7 +55,8 @@ class Binary:
                linux: Optional[BinaryLookup] = None,
                android: Optional[BinaryLookup] = None,
                macos: Optional[BinaryLookup] = None,
-               win: Optional[BinaryLookup] = None) -> None:
+               win: Optional[BinaryLookup] = None,
+               chromeos: Optional[BinaryLookup] = None) -> None:
     self._name = name
     self._default = self._convert(default)
     self._posix = self._convert(posix)
@@ -62,7 +65,8 @@ class Binary:
     self._macos = self._convert(macos)
     self._win = self._convert(win)
     self._validate_win()
-    if not any((default, posix, linux, android, macos, win)):
+    self._chromeos = self._convert(chromeos)
+    if not any((chromeos, default, posix, linux, android, macos, win)):
       raise ValueError("At least one platform binary must be provided")
 
   def _convert(self,
@@ -90,7 +94,7 @@ class Binary:
   def __str__(self) -> str:
     return self._name
 
-  @functools.lru_cache(maxsize=None)  # pylint: disable=method-cache-max-size-none
+  @functools.cache  # pylint: disable=method-cache-max-size-none
   def resolve_cached(self, platform: Platform) -> pth.AnyPath:
     return self.resolve(platform)
 
@@ -103,6 +107,8 @@ class Binary:
     raise BinaryNotFoundError(self, platform)
 
   def platform_path(self, platform: Platform) -> Tuple[pth.AnyPath, ...]:
+    if self._chromeos and platform.is_chromeos:
+      return self._chromeos
     if self._linux and platform.is_linux:
       return self._linux
     if self._android and platform.is_android:
@@ -129,9 +135,10 @@ class Binary:
 
 class PosixBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, posix=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
       raise UnsupportedPlatformError(self, platform, "posix")
@@ -139,9 +146,10 @@ class PosixBinary(Binary):
 
 class MacOsBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, macos=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_macos:
       raise UnsupportedPlatformError(self, platform, "macos")
@@ -149,9 +157,10 @@ class MacOsBinary(Binary):
 
 class LinuxBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, linux=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_posix:
       raise UnsupportedPlatformError(self, platform, "linux")
@@ -159,9 +168,10 @@ class LinuxBinary(Binary):
 
 class AndroidBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, android=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_android:
       raise UnsupportedPlatformError(self, platform, "android")
@@ -169,15 +179,28 @@ class AndroidBinary(Binary):
 
 class WinBinary(Binary):
 
-  def __init__(self, name: pth.AnyPathLike):
+  def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyWindowsPath(name).name, win=name)
 
+  @override
   def _validate_platform(self, platform: Platform) -> None:
     if not platform.is_win:
       raise UnsupportedPlatformError(self, platform, "windows")
 
 
+class ChromeOSBinary(Binary):
+
+  def __init__(self, name: pth.AnyPathLike) -> None:
+    super().__init__(pth.AnyPosixPath(name).name, chromeos=name)
+
+  @override
+  def _validate_platform(self, platform: Platform) -> None:
+    if not platform.is_chromeos:
+      raise UnsupportedPlatformError(self, platform, "chromeos")
+
+
 class Binaries:
+  ADB = Binary("adb", default="adb", win="adb.exe")
   CPIO = LinuxBinary("cpio")
   FFMPEG = Binary("ffmpeg", posix="ffmpeg")
   GCERTSTATUS = Binary("gcertstatus", posix="gcertstatus")
@@ -192,6 +215,10 @@ class Binaries:
   RPM2CPIO = LinuxBinary("rpm2cpio")
   SIMPLEPERF = AndroidBinary("simpleperf")
   XCTRACE = MacOsBinary("xctrace")
+  CHROMEDRIVER = Binary(
+      "chromedriver",
+      chromeos="/usr/local/chromedriver/chromedriver",
+      linux="chromedriver")
 
 
 class Browsers:

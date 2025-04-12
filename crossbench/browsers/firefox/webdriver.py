@@ -4,24 +4,25 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from typing_extensions import override
 
-from crossbench import exception, helper
+from crossbench import exception
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.firefox.firefox import Firefox
 from crossbench.browsers.webdriver import WebDriverBrowser
+from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -29,14 +30,17 @@ if TYPE_CHECKING:
 
 class FirefoxWebDriver(WebDriverBrowser, Firefox):
 
-  @property
-  def attributes(self) -> BrowserAttributes:
+  @classmethod
+  @override
+  def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.FIREFOX | BrowserAttributes.WEBDRIVER
 
+  @override
   def _find_driver(self) -> pth.AnyPath:
     finder = FirefoxDriverFinder(self)
     return finder.download()
 
+  @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
     return self._start_firefox_driver(session, driver_path)
@@ -46,7 +50,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     assert not self._is_running
     assert self.log_file
     options = FirefoxOptions()
-    options.set_capability("browserVersion", str(self.major_version))
+    options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "eager")
     args = self._get_browser_flags_for_session(session)
@@ -59,23 +63,24 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
       options.profile = FirefoxProfile(self.cache_dir)
     self._log_browser_start(args, driver_path)
     service_args: List[str] = []
-    log_path: Optional[str] = None
+    driver_log_path: str | None = None
     if self._settings.driver_logging:
+      # TODO: Separate browser from driver logging
       service_args += ["--log", "debug"]
-      log_path = os.fspath(self.driver_log_file)
+      driver_log_path = os.fspath(self._setup_driver_log_file())
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(
         executable_path=os.fspath(driver_path),
-        log_path=log_path,
+        log_output=driver_log_path,  # type: ignore
+        # TODO: remove after upgrading the vpython selenium version.
+        log_path=driver_log_path,
         service_args=service_args,
         env=env_copy)
-    # TODO support remote platforms:
-    service.log_file = self.host_platform.local_path(self.stdout_log_file).open(
-        "w", encoding="utf-8")
     driver = webdriver.Firefox(options=options, service=service)
     return driver
 
+  @override
   def _validate_driver_version(self) -> None:
     # TODO
     # version = self.platform.sh_stdout(self._driver_path, "--version")
@@ -85,7 +90,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
 class FirefoxDriverFinder:
   RELEASES_URL = "https://api.github.com/repos/mozilla/geckodriver/releases"
 
-  def __init__(self, browser: FirefoxWebDriver):
+  def __init__(self, browser: FirefoxWebDriver) -> None:
     self.browser = browser
     self.platform = browser.platform
     self.extension = ""
@@ -93,7 +98,7 @@ class FirefoxDriverFinder:
       self.extension = ".exe"
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path = (
-        cache_dir / f"geckodriver-{self.browser.major_version}{self.extension}")
+        cache_dir / f"geckodriver-{self.browser.version.major}{self.extension}")
 
   def download(self) -> pth.LocalPath:
     if not self.driver_path.exists():
@@ -143,7 +148,7 @@ class FirefoxDriverFinder:
     return url, archive_type
 
   def _get_driver_version(self) -> Tuple[int, int, int]:
-    version = self.browser.major_version
+    version = self.browser.version.major
     # See https://firefox-source-docs.mozilla.org/testing/geckodriver/Support.html
     if version < 52:
       raise ValueError(f"Firefox {version} is too old for geckodriver.")
@@ -160,8 +165,8 @@ class FirefoxDriverFinder:
     return (9999, 9999, 9999)
 
   def _load_releases(self) -> Dict[Tuple[int, ...], Dict]:
-    with helper.urlopen(self.RELEASES_URL) as response:
-      releases = json.loads(response.read().decode("utf-8"))
+    response = url_helper.get(self.RELEASES_URL)
+    releases = response.json()
     assert isinstance(releases, list)
     versions = {}
     for release in releases:

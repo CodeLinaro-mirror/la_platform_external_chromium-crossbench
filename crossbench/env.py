@@ -4,141 +4,26 @@
 
 from __future__ import annotations
 
-import dataclasses
 import datetime as dt
-import enum
 import logging
 import os
-import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Optional, Tuple, Union)
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 import colorama
 
-from crossbench import compat, helper, plt
+from crossbench import plt
+from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
+from crossbench.helper import collection_helper, url_helper
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.path import LocalPath
+  from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import CmdArg, Platform
   from crossbench.probes.probe import Probe
 
-
-def merge_bool(name: str, left: Optional[bool],
-               right: Optional[bool]) -> Optional[bool]:
-  if left is None:
-    return right
-  if right is None:
-    return left
-  if left != right:
-    raise ValueError(f"Conflicting merge values for {name}: "
-                     f"{left} vs. {right}")
-  return left
-
-
-Number = Union[float, int]
-
-
-def merge_number_max(name: str, left: Optional[Number],
-                     right: Optional[Number]) -> Optional[Number]:
-  del name
-  if left is None:
-    return right
-  if right is None:
-    return left
-  return max(left, right)
-
-
-def merge_number_min(name: str, left: Optional[Number],
-                     right: Optional[Number]) -> Optional[Number]:
-  del name
-  if left is None:
-    return right
-  if right is None:
-    return left
-  return min(left, right)
-
-
-def merge_str_list(name: str, left: Optional[List[str]],
-                   right: Optional[List[str]]) -> Optional[List[str]]:
-  del name
-  if left is None:
-    return right
-  if right is None:
-    return left
-  return left + right
-
-
-@dataclasses.dataclass(frozen=True)
-class HostEnvironmentConfig:
-  IGNORE = None
-
-  disk_min_free_space_gib: Optional[float] = IGNORE
-  power_use_battery: Optional[bool] = IGNORE
-  screen_brightness_percent: Optional[int] = IGNORE
-  cpu_max_usage_percent: Optional[float] = IGNORE
-  cpu_min_relative_speed: Optional[float] = IGNORE
-  system_allow_monitoring: Optional[bool] = IGNORE
-  browser_allow_existing_process: Optional[bool] = IGNORE
-  browser_allow_background: Optional[bool] = IGNORE
-  browser_is_headless: Optional[bool] = IGNORE
-  require_probes: Optional[bool] = IGNORE
-  system_forbidden_process_names: Optional[List[str]] = IGNORE
-  screen_allow_autobrightness: Optional[bool] = IGNORE
-
-  def merge(self, other: HostEnvironmentConfig) -> HostEnvironmentConfig:
-    mergers: Dict[str, Callable[[str, Any, Any], Any]] = {
-        "disk_min_free_space_gib": merge_number_max,
-        "power_use_battery": merge_bool,
-        "screen_brightness_percent": merge_number_max,
-        "cpu_max_usage_percent": merge_number_min,
-        "cpu_min_relative_speed": merge_number_max,
-        "system_allow_monitoring": merge_bool,
-        "browser_allow_existing_process": merge_bool,
-        "browser_allow_background": merge_bool,
-        "browser_is_headless": merge_bool,
-        "require_probes": merge_bool,
-        "system_forbidden_process_names": merge_str_list,
-        "screen_allow_autobrightness": merge_bool,
-    }
-    kwargs = {}
-    for name, merger in mergers.items():
-      self_value = getattr(self, name)
-      other_value = getattr(other, name)
-      kwargs[name] = merger(name, self_value, other_value)
-    return HostEnvironmentConfig(**kwargs)
-
-
-@enum.unique
-class ValidationMode(compat.StrEnumWithHelp):
-  THROW = ("throw", "Strict mode, throw and abort on env issues")
-  PROMPT = ("prompt", "Prompt to accept potential env issues")
-  WARN = ("warn", "Only display a warning for env issue")
-  SKIP = ("skip", "Don't perform any env validation")
-
-
 class ValidationError(Exception):
   pass
-
-
-_config_default = HostEnvironmentConfig()
-_config_strict = HostEnvironmentConfig(
-    cpu_max_usage_percent=98,
-    cpu_min_relative_speed=1,
-    system_allow_monitoring=False,
-    browser_allow_existing_process=False,
-    require_probes=True,
-)
-_config_battery = _config_strict.merge(
-    HostEnvironmentConfig(power_use_battery=True))
-_config_power = _config_strict.merge(
-    HostEnvironmentConfig(power_use_battery=False))
-_config_catan = _config_strict.merge(
-    HostEnvironmentConfig(
-        screen_brightness_percent=65,
-        system_forbidden_process_names=["terminal", "iterm2"],
-        screen_allow_autobrightness=False))
 
 STALE_RESULT_ICONS = {
     75: "👻",
@@ -165,13 +50,6 @@ class HostEnvironment:
     fail:     Fast-fail on mismatch
   """
 
-  CONFIGS = {
-      "default": _config_default,
-      "strict": _config_strict,
-      "battery": _config_battery,
-      "power": _config_power,
-      "catan": _config_catan,
-  }
 
   def __init__(self,
                platform: Platform,
@@ -179,10 +57,10 @@ class HostEnvironment:
                browsers: Iterable[Browser],
                probes: Iterable[Probe],
                repetitions: int,
-               config: Optional[HostEnvironmentConfig] = None,
-               validation_mode: ValidationMode = ValidationMode.THROW):
+               config: Optional[EnvironmentConfig] = None,
+               validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     self._wait_until = dt.datetime.now()
-    self._config = config or HostEnvironmentConfig()
+    self._config = config or EnvironmentConfig()
     self._out_dir = out_dir
     self._browsers = tuple(browsers)
     self._probes = tuple(probes)
@@ -203,7 +81,7 @@ class HostEnvironment:
     return self._browsers
 
   @property
-  def config(self) -> HostEnvironmentConfig:
+  def config(self) -> EnvironmentConfig:
     return self._config
 
   @property
@@ -253,33 +131,35 @@ class HostEnvironment:
 
   def validate_url(self,
                    url: str,
-                   platform: plt.Platform = plt.PLATFORM) -> bool:
+                   platform: Optional[plt.Platform] = None) -> bool:
     if self._validation_mode == ValidationMode.SKIP:
       return True
-    result = urlparse(url)
+    platform = platform or plt.PLATFORM
+    result = ObjectParser.url(url)
     if result.scheme == "file":
       return platform.exists(result.path)
     if platform.is_remote and result.hostname in ("localhost", "127.0.0.1"):
       # TODO: support remote URL verification, for now we just assume that
       # checking a live site is ok.
       return True
+    if not all([result.scheme in ["http", "https"], result.netloc]):
+      return False
+    if self._validation_mode != ValidationMode.PROMPT:
+      return True
     try:
-      if not all([result.scheme in ["http", "https"], result.netloc]):
-        return False
-      if self._validation_mode != ValidationMode.PROMPT:
-        return True
-      with urllib.request.urlopen(url, timeout=5) as request:
-        if request.getcode() == 200:
-          return True
-        logging.debug("Could not load URL '%s', got %s", url, request)
-    except urllib.error.URLError as e:
-      logging.debug("Could not parse URL '%s' got error: %s", url, e)
-    return False
+      url_helper.get(url, timeout=5)
+      return True
+    except url_helper.HTTPError as e:
+      logging.debug("Could not load URL '%s', got %s", url, e)
+      return False
 
   def _check_system_monitoring(self) -> None:
     # TODO(cbruni): refactor to use list_... and disable_system_monitoring api
     if self._platform.is_macos:
-      self._check_crowdstrike()
+      any_browser_on_macos = any(
+          browser.platform.is_macos for browser in self.browsers)
+      if any_browser_on_macos:
+        self._check_crowdstrike()
 
   def _check_crowdstrike(self) -> None:
     """Crowdstrike security monitoring (for googlers go/crowdstrike-falcon) can
@@ -307,7 +187,7 @@ class HostEnvironment:
 
   def _check_disk_space(self) -> None:
     limit = self._config.disk_min_free_space_gib
-    if limit is HostEnvironmentConfig.IGNORE:
+    if limit is EnvironmentConfig.IGNORE:
       return
     # Check the remaining disk space on the FS where we write the results.
     usage = self._platform.disk_usage(self._out_dir)
@@ -318,7 +198,7 @@ class HostEnvironment:
 
   def _check_power(self) -> None:
     use_battery = self._config.power_use_battery
-    if use_battery is HostEnvironmentConfig.IGNORE:
+    if use_battery is EnvironmentConfig.IGNORE:
       return
     battery_probes = []
     # Certain probes may require battery power:
@@ -338,7 +218,7 @@ class HostEnvironment:
 
   def _check_cpu_usage(self) -> None:
     max_cpu_usage = self._config.cpu_max_usage_percent
-    if max_cpu_usage is HostEnvironmentConfig.IGNORE:
+    if max_cpu_usage is EnvironmentConfig.IGNORE:
       return
     cpu_usage_percent = round(100 * self._platform.cpu_usage(), 1)
     if cpu_usage_percent > max_cpu_usage:
@@ -348,7 +228,7 @@ class HostEnvironment:
 
   def _check_cpu_temperature(self) -> None:
     min_relative_speed = self._config.cpu_min_relative_speed
-    if min_relative_speed is HostEnvironmentConfig.IGNORE:
+    if min_relative_speed is EnvironmentConfig.IGNORE:
       return
     cpu_speed = self._platform.get_relative_cpu_speed()
     if cpu_speed < min_relative_speed:
@@ -361,7 +241,7 @@ class HostEnvironment:
     # Verify that no terminals are running.
     # They introduce too much overhead. (As measured with powermetrics)
     system_forbidden_process_names = self._config.system_forbidden_process_names
-    if system_forbidden_process_names is HostEnvironmentConfig.IGNORE:
+    if system_forbidden_process_names is EnvironmentConfig.IGNORE:
       return
     process_found = self._platform.process_running(
         system_forbidden_process_names)
@@ -386,14 +266,22 @@ class HostEnvironment:
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:
       return
-    grouped_browsers: Dict[plt.Platform, List[Browser]] = helper.group_by(
-        self.browsers, key=lambda browser: browser.platform)
+    grouped_browsers: Dict[plt.Platform,
+                           List[Browser]] = collection_helper.group_by(
+                               self.browsers,
+                               key=lambda browser: browser.platform)
     for platform, browsers in grouped_browsers.items():
       self._check_running_binaries_on_platform(platform, browsers)
 
   def _check_running_binaries_on_platform(
       self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
-    browser_binaries: Dict[str, List[Browser]] = helper.group_by(
+    # On Android, an app's process lifetime is not controlled by the user or
+    # the app itself. OS can start/terminate processes in the background, so
+    # we don't check for those.
+    if platform.is_android:
+      return
+
+    browser_binaries: Dict[str, List[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):
@@ -430,7 +318,7 @@ class HostEnvironment:
 
   def _check_screen_brightness(self) -> None:
     brightness = self._config.screen_brightness_percent
-    if brightness is HostEnvironmentConfig.IGNORE:
+    if brightness is EnvironmentConfig.IGNORE:
       return
     assert 0 <= brightness <= 100, f"Invalid brightness={brightness}"
     self._platform.set_main_display_brightness(brightness)
@@ -443,7 +331,7 @@ class HostEnvironment:
   def _check_headless(self) -> None:
     # TODO: migrate to full viewport support
     requested_headless = self._config.browser_is_headless
-    if requested_headless is HostEnvironmentConfig.IGNORE:
+    if requested_headless is EnvironmentConfig.IGNORE:
       return
     if self._platform.is_linux and not requested_headless:
       # Check that the system can run browsers with a UI.
@@ -467,7 +355,7 @@ class HostEnvironment:
         raise ValidationError(
             f"Probe='{probe.NAME}' validation failed: {e}") from e
     require_probes = self._config.require_probes
-    if require_probes is HostEnvironmentConfig.IGNORE:
+    if require_probes is EnvironmentConfig.IGNORE:
       return
     if self._config.require_probes and not self._probes:
       self.handle_validation_warning("No probes specified.")
@@ -502,6 +390,53 @@ class HostEnvironment:
           "Terminal.app does not launch apps in the foreground.\n"
           "Please use iTerm.app for a better experience.")
 
+  def _check_file_access(self) -> None:
+    if self._platform.is_macos:
+      has_safari = any(
+          browser.attributes().is_safari for browser in self.browsers)
+      if has_safari:
+        self._check_safari_cache_dir_access()
+    self._check_results_dir_access()
+
+  def _check_safari_cache_dir_access(self) -> None:
+    safari_cache_dir = (
+        self.platform.home() /
+        "Library/Containers/com.apple.Safari/Data/Library/Caches")
+    if not self._has_read_write_access(safari_cache_dir):
+      self._file_access_access_warning("Safari's cache directory")
+
+  def _check_results_dir_access(self) -> None:
+    out_dir = self._out_dir.parent
+    if self._has_read_write_access(out_dir):
+      return
+    self._file_access_access_warning(f"the parent result dir: {out_dir})")
+
+  def _has_read_write_access(self, test_dir: AnyPathLike) -> bool:
+    try:
+      self.platform.mkdir(test_dir, exist_ok=True, parents=True)
+      with self.platform.NamedTemporaryFile(
+          prefix="crossbench_file_access_test", dir=test_dir) as test_file:
+        self.platform.set_file_contents(test_file, test_file.name)
+        assert self.platform.get_file_contents(test_file) == test_file.name
+        self.platform.rm(test_file)
+        return True
+    except Exception as e:  # pylint: disable=broad-except
+      logging.debug("Failed file access test: %s", e)
+      return False
+
+  def _file_access_access_warning(self, dir_name: str) -> None:
+    if not self.platform.is_macos:
+      self.handle_validation_warning(f"Could not modify {dir_name}")
+      return
+
+    term_program = self._platform.environ.get("TERM_PROGRAM",
+                                              "the current terminal App")
+    self.handle_validation_warning(
+        f"Could not modify {dir_name}.\n"
+        "Likely missing 'Full Disk Access' macOS Privacy & Security "
+        f"permission for {term_program}.")
+
+
   def check_browser_focused(self, browser: Browser) -> None:
     if (self._config.browser_allow_background or not browser.pid or
         browser.viewport.is_headless):
@@ -521,10 +456,10 @@ class HostEnvironment:
 
   def validate(self) -> None:
     logging.info("-" * 80)
+    message = "🌤️  VALIDATE ENVIRONMENT"
     if self._validation_mode == ValidationMode.SKIP:
-      logging.info("VALIDATE ENVIRONMENT: SKIP")
+      logging.info("%s: SKIP", message)
       return
-    message = "VALIDATE ENVIRONMENT"
     if self._validation_mode != ValidationMode.WARN:
       message += " (--env-validation=warn for soft warnings)"
     message += ": %s"
@@ -544,6 +479,7 @@ class HostEnvironment:
     self._check_forbidden_system_process()
     self._check_screen_autobrightness()
     self._check_macos_terminal()
+    self._check_file_access()
 
   def check_installed(self,
                       binaries: Iterable[str],

@@ -7,8 +7,11 @@ import pathlib
 import unittest
 from typing import Optional, Tuple
 
+from typing_extensions import override
+
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
@@ -24,7 +27,8 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
+from tests.crossbench.action_runner.action_runner_test_case import \
+    ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
 from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
                                           LinuxMockPlatform, MockAdb)
@@ -112,6 +116,7 @@ class ViewportInfoTestCase(unittest.TestCase):
 class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.host_platform = LinuxMockPlatform()
@@ -148,12 +153,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         "dumpsys",
         "window",
         "windows",
-        "|",
-        "grep",
-        "-E",
-        "-A100",
-        "chrome.Main",
-        result=(f"mAppBounds=Rect({app_bounds.left}, "
+        result=(f"chrome.Main\n"
+                f"mAppBounds=Rect({app_bounds.left}, "
                 f"{app_bounds.top} - {app_bounds.right}, {app_bounds.bottom})"))
 
     if not window_inner_height:
@@ -190,30 +191,35 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_text_input_zero_duration(self):
     self.platform.expect_sh("input", "keyboard", "text", "Some%ssample%stext")
-
     text_input_action = TextInputAction(InputSource.KEYBOARD, dt.timedelta(),
                                         "Some sample text")
-
+    self.assertFalse(self.runner.mock_waits)
     self.run_action(text_input_action)
+    self.assertFalse(self.runner.mock_waits)
+
 
   def test_text_input_non_zero_duration(self):
     text_input_action = TextInputAction(InputSource.KEYBOARD,
                                         dt.timedelta(seconds=1), "aaa")
-
     for _ in range(3):
       self.platform.expect_sh("input", "keyboard", "text", "a")
-
+    self.assertFalse(self.runner.mock_waits)
     self.run_action(text_input_action)
+    self.assertTrue(self.runner.mock_waits)
 
   def test_click_touch_coordinates(self):
-    click_action = ClickAction(InputSource.TOUCH, x=100, y=200)
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_coordinates(x=100, y=200))
 
     self.platform.expect_sh("input", "tap", "100", "200")
 
     self.run_action(click_action)
 
   def test_click_mouse_coordinates(self):
-    click_action = ClickAction(InputSource.MOUSE, x=100, y=200)
+    click_action = ClickAction(
+        InputSource.MOUSE,
+        position=PositionConfig.from_coordinates(x=100, y=200))
 
     self.platform.expect_sh("input", "mouse", "tap", "100", "200")
 
@@ -221,7 +227,9 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_mouse_non_zero_duration_fails(self):
     click_action = ClickAction(
-        InputSource.MOUSE, duration=dt.timedelta(seconds=1), x=0, y=0)
+        InputSource.MOUSE,
+        duration=dt.timedelta(seconds=1),
+        position=PositionConfig.from_coordinates(x=0, y=0))
 
     with self.assertRaises(InputSourceNotImplementedError) as cm:
       self.run_action(click_action)
@@ -229,7 +237,9 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_touch_non_zero_duration_fails(self):
     click_action = ClickAction(
-        InputSource.TOUCH, duration=dt.timedelta(seconds=1), x=0, y=0)
+        InputSource.TOUCH,
+        duration=dt.timedelta(seconds=1),
+        position=PositionConfig.from_coordinates(x=0, y=0))
 
     with self.assertRaises(InputSourceNotImplementedError) as cm:
       self.run_action(click_action)
@@ -237,18 +247,18 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_selector_passes_selector_string(self):
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=False)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=False))
 
     self.expect_action_setup(found_element=False, js_args=["div[]", False])
 
     self.run_action(click_action)
 
-  def test_click_selector_scroll_into_viwe_passes_scroll_true(self):
+  def test_click_selector_scroll_into_view_passes_scroll_true(self):
     click_action = ClickAction(
         InputSource.TOUCH,
-        selector="div[]",
-        required=False,
-        scroll_into_view=True)
+        position=PositionConfig.from_selector(
+            selector="div[]", required=False, scroll_into_view=True))
 
     self.expect_action_setup(found_element=False, js_args=["div[]", True])
 
@@ -256,7 +266,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_selector_non_existant_element_raises(self):
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=True)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
     self.expect_action_setup(found_element=False)
 
@@ -266,7 +277,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_touch_selector_non_required_element_success(self):
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=False)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=False))
 
     self.expect_action_setup(found_element=False)
 
@@ -274,7 +286,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_mouse_selector_non_required_element_success(self):
     click_action = ClickAction(
-        InputSource.MOUSE, selector="div[]", required=False)
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(selector="div[]", required=False))
 
     self.expect_action_setup(found_element=False)
 
@@ -282,7 +295,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_touch_selector_success(self):
     click_action = ClickAction(
-        InputSource.TOUCH, selector="div[]", required=True)
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
     self.expect_action_setup(
         found_element=True,
@@ -295,7 +309,8 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_mouse_selector_success(self):
     click_action = ClickAction(
-        InputSource.MOUSE, selector="div[]", required=True)
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
 
     self.expect_action_setup(
         found_element=True,
@@ -303,6 +318,32 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         element_bounds=DisplayRectangle(Point(20, 40), 10, 10))
 
     self.platform.expect_sh("input", "mouse", "tap", "25", "45")
+
+    self.run_action(click_action)
+
+  def test_click_wait_timeout_required(self):
+    click_action = ClickAction(
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=True, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+    self.browser.expect_js(JsInvocation(arguments=("#selector",), result=False))
+
+    with self.assertRaises(TimeoutError):
+      self.run_action(click_action)
+
+  def test_click_wait_timeout_unrequired(self):
+    click_action = ClickAction(
+        InputSource.MOUSE,
+        position=PositionConfig.from_selector(
+            selector="#selector", required=False, wait=True),
+        # Set timeout to 0.1 to timeout after 1 call to wait_for_element_impl.
+        timeout=dt.timedelta(seconds=0.1))
+    self.browser.expect_js(JsInvocation(arguments=("#selector",), result=False))
+
+    # We continue to execute the click even after the wait fails.
+    self.expect_action_setup(found_element=False)
 
     self.run_action(click_action)
 
@@ -333,7 +374,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         window_inner_height=200,
         window_inner_width=200)
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "50", "1000")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "40", "1000")
 
     self.run_action(scroll_action)
 
@@ -343,7 +384,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
 
-    self.platform.expect_sh("input", "swipe", "5", "10", "5", "9", "1000")
+    self.platform.expect_sh("input", "swipe", "5", "9", "5", "8", "1000")
 
     self.run_action(scroll_action)
 
@@ -353,17 +394,17 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
 
-    self.platform.expect_sh("input", "swipe", "5", "0", "5", "1", "1000")
+    self.platform.expect_sh("input", "swipe", "5", "1", "5", "2", "1000")
 
     self.run_action(scroll_action)
 
   def test_scroll_window_scrolls_window_bounds(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=100)
+    scroll_action = ScrollAction(InputSource.TOUCH, distance=80)
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "1000")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "10", "1000")
 
     self.run_action(scroll_action)
 
@@ -376,20 +417,20 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
         element_bounds=DisplayRectangle(Point(10, 10), 80, 80))
 
-    self.platform.expect_sh("input", "swipe", "50", "90", "50", "80", "1000")
+    self.platform.expect_sh("input", "swipe", "50", "82", "50", "72", "1000")
 
     self.run_action(scroll_action)
 
   def test_scroll_touch_duration_single_scroll(self):
     scroll_action = ScrollAction(
         InputSource.TOUCH,
-        distance=100,
+        distance=80,
         duration=dt.timedelta(milliseconds=3000))
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "3000")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "10", "3000")
 
     self.run_action(scroll_action)
 
@@ -399,10 +440,10 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
 
-    for _ in range(9):
-      self.platform.expect_sh("input", "swipe", "50", "100", "50", "0", "100")
+    for _ in range(12):
+      self.platform.expect_sh("input", "swipe", "50", "90", "50", "10", "80")
 
-    self.platform.expect_sh("input", "swipe", "50", "100", "50", "1", "99")
+    self.platform.expect_sh("input", "swipe", "50", "90", "50", "51", "39")
 
     self.run_action(scroll_action)
 

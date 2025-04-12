@@ -2,15 +2,24 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from argparse import ArgumentTypeError
 import json
 import unittest
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
+from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
+from crossbench.probes.perfetto.trace_processor.trace_processor import TraceProcessorQueryConfig
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
+
+
+def read_query_sql(name: str) -> str:
+  return (test_helper.crossbench_dir() /
+          "probes/perfetto/trace_processor/queries" /
+          f"{name}.sql").read_text("utf-8")
 
 
 class TraceProcessorProbeTestCase(unittest.TestCase):
@@ -25,7 +34,66 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertEqual(len(probes), 2)
     probe = probes[0]
     self.assertIsInstance(probe, TraceProcessorProbe)
+    assert isinstance(probe, TraceProcessorProbe)
+    queries = probe.queries
+    self.assertEqual(len(queries), 2)
+    speedometer_cpu_time_sql = read_query_sql("speedometer_cpu_time")
+    self.assertEqual(queries[0].name, "speedometer_cpu_time")
+    self.assertEqual(queries[0].sql, speedometer_cpu_time_sql)
 
+    inline_name = "my_query"
+    inline_sql = "select dur from slice where slice.name = 'my_slice'"
+    self.assertEqual(queries[1].name, inline_name)
+    self.assertEqual(queries[1].sql, inline_sql)
+
+  def test_query_config_duplicate_name_raises(self):
+    with self.assertRaisesRegex(ArgumentTypeError,
+                                "Unexpected duplicates in query names"):
+      TraceProcessorProbe.from_config({
+          "queries": [
+              "loadline/benchmark_score",
+              {
+                  "name": "loadline_benchmark_score",
+                  "sql": "select * from slice where slice.name = 'comment'",
+              },
+          ],
+      })
+
+
+class TraceProcessorQueryConfigTestCase(unittest.TestCase):
+
+  def test_invalid_name_raises(self):
+    with self.assertRaisesRegex(ArgumentTypeMultiException,
+                                "sql query path does not exist"):
+      TraceProcessorQueryConfig.parse("not_an_actual_query")
+
+  def test_file_query(self):
+    query = TraceProcessorQueryConfig.parse("speedometer_cpu_time")
+    self.assertEqual(query.name, "speedometer_cpu_time")
+    self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time"))
+
+  def test_file_query_name_escaped(self):
+    query = TraceProcessorQueryConfig.parse("loadline/benchmark_score")
+    self.assertEqual(query.name, "loadline_benchmark_score")
+    self.assertEqual(query.sql, read_query_sql("loadline/benchmark_score"))
+
+  def test_inline_query(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "comment",
+        "sql": "select * from slice where slice.name = 'comment'",
+    })
+    self.assertEqual(query.name, "comment")
+    self.assertEqual(query.sql,
+                     "select * from slice where slice.name = 'comment'")
+
+  def test_inline_query_name_escaped(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "//comment//",
+        "sql": "select * from slice where slice.name = 'comment'",
+    })
+    self.assertEqual(query.name, "__comment__")
+    self.assertEqual(query.sql,
+                     "select * from slice where slice.name = 'comment'")
 
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 

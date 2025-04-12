@@ -5,11 +5,15 @@
 import json
 import pathlib
 import unittest
+from typing import TYPE_CHECKING
 from unittest import mock
 
-from crossbench import compat
+from typing_extensions import override
+
 from crossbench.browsers.browser import Browser
+from crossbench.browsers.webdriver import RemoteWebDriver
 from crossbench.env import HostEnvironment
+from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.probes import all as all_probes
@@ -25,6 +29,8 @@ from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
                                             MockProbeContext, MockRun,
                                             MockRunner)
 
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
 
 # Skip strict type checks for better mocking
 # pytype: disable=wrong-arg-types
@@ -43,6 +49,7 @@ class TestThreadModeTestCase(unittest.TestCase):
         create_symlinks=True,
         throw=True)
 
+  @override
   def setUp(self) -> None:
     self.platform_a = MockPlatform("platform a")
     self.platform_b = MockPlatform("platform b")
@@ -53,7 +60,7 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.runner = MockRunner()
     self.root_dir = pathlib.Path()
     self.env = self.runner.env
-    self.probes = []
+    self.probes: list[Probe] = []
     self.runs = (
         MockRun(self.runner, self.create_session(self.browser_a_1, 1), "run 1"),
         MockRun(self.runner, self.create_session(self.browser_a_2, 2), "run 2"),
@@ -120,6 +127,13 @@ class TestThreadModeTestCase(unittest.TestCase):
       self.assertEqual(group.index, index)
 
 
+class FailingMockProbeContext(MockProbeContext):
+
+  @override
+  def setup(self):
+    raise CustomException("failing setup")
+
+
 class RunnerTestCase(BaseRunnerTestCase):
 
   def test_default_instance(self):
@@ -131,7 +145,8 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertTrue(runner.exceptions.is_success)
     default_probes = list(runner.default_probes)
     self.assertListEqual(list(runner.probes), default_probes)
-    self.assertEqual(len(default_probes), len(all_probes.INTERNAL_PROBES))
+    self.assertEqual(
+        len(default_probes), len(all_probes.DEFAULT_INTERNAL_PROBES))
     self.assertEqual(len(runner.runs), 0)
     # no runs => is_success == false
     self.assertFalse(runner.is_success)
@@ -151,7 +166,8 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertTrue(runner.is_success)
     for run in runner.runs:
       self.assertTrue(run.is_success)
-      self.assertEqual(len(run.results), len(all_probes.INTERNAL_PROBES))
+      self.assertEqual(
+          len(run.results), len(all_probes.DEFAULT_INTERNAL_PROBES))
       for probe in runner.probes:
         self.assertIn(probe, run.results)
 
@@ -165,22 +181,145 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     runner.run()
     self.assertTrue(runner.is_success)
+    self.assertEqual(len(runner.runs), 4)
     for run in runner.runs:
-      results = run.results[probe]
-      with results.json.open() as f:
-        probe_data = json.load(f)
-        self.assertEqual(probe_data, "custom_probe_data")
-      browser_dir = runner.out_dir / run.browser.unique_name
-      # Pyfakefs is having some issues with relative symlinks, thus we're
-      # manually combining the paths.
-      runs_dir = browser_dir / "runs"
-      run_symlink = runs_dir / compat.readlink(runs_dir / str(run.index))
-      self.assertEqual(run_symlink.resolve(), run.out_dir)
+      self._validate_successful_run(run, runner, probe, "custom_probe_data")
     for browser in runner.browsers:
       runs_symlinks = list(
           (runner.out_dir / browser.unique_name / "runs").iterdir())
       self.assertEqual(len(runs_symlinks), 2)
 
+  def test_run_remote_web_driver(self):
+    driver = mock.Mock()
+    driver.capabilities = {
+        "browserVersion": "123.0.4567.89",
+        "setWindowRect": False,
+    }
+    browser = RemoteWebDriver("test-driver", driver)
+    runner = self.default_runner(browsers=[browser])
+    runner.run()
+
+  def _validate_successful_run(self, run, runner, probe, probe_data):
+    results = run.results[probe]
+    with results.json.open() as f:
+      probe_data = json.load(f)
+      self.assertEqual(probe_data, probe_data)
+    browser_dir = runner.out_dir / run.browser.unique_name
+    # Pyfakefs is having some issues with relative symlinks, thus we're
+    # manually combining the paths.
+    runs_dir = browser_dir / "runs"
+    run_symlink = runs_dir / (runs_dir / str(run.index)).readlink()
+    self.assertEqual(run_symlink.resolve(), run.out_dir)
+    self._validate_internal_probes(run, runner)
+
+  def _validate_internal_probes(self, run, runner):
+    for probe in runner.probes:
+      if not probe.is_internal:
+        continue
+      result = run.results[probe]
+      self.assertTrue(result)
+
+  def test_single_story_run_mock_probe_partial_setup_fail(self):
+    runner = self.single_story_runner(throw=False)
+
+    probe = MockProbe("custom_probe_data", FailingMockProbeContext)
+    runner.attach_probe(probe)
+    self.assertIn(probe, runner.probes)
+    for browser in runner.browsers:
+      self.assertIn(probe, browser.probes)
+
+    with self.assertRaises(MultiException) as cm:
+      runner.run()
+    self.assertEqual(len(cm.exception), 1)
+    exception = cm.exception.exceptions[0].exception
+    self.assertIsInstance(exception, CustomException)
+
+    self.assertFalse(runner.is_success)
+    self.assertEqual(len(runner.runs), 1)
+    failed_run = list(runner.runs)[0]
+    self.assertFalse(failed_run.is_success)
+    self.assertTrue(failed_run.results[probe].is_empty)
+    self._validate_internal_probes(failed_run, runner)
+
+  def test_single_story_run_mock_probe_calls(self):
+    # Make sure start / stop are called.
+    runner = self.single_story_runner(throw=True)
+    with mock.patch.object(FailingMockProbeContext,
+                           "setup") as setup_mock, mock.patch.object(
+                               FailingMockProbeContext,
+                               "start") as start_mock, mock.patch.object(
+                                   FailingMockProbeContext,
+                                   "stop") as stop_mock:
+      probe = MockProbe("custom_probe_data", FailingMockProbeContext)
+      runner.attach_probe(probe)
+      runner.run()
+    self.assertTrue(runner.is_success)
+    setup_mock.assert_called_once()
+    start_mock.assert_called_once()
+    stop_mock.assert_called_once()
+
+  def test_single_story_run_mock_probe_partial_setup_fail_mock(self):
+    # Make sure start / stop / teardown are not called after a setup failure
+    runner = self.single_story_runner(throw=False)
+    with mock.patch.object(FailingMockProbeContext,
+                           "start") as start_mock, mock.patch.object(
+                               FailingMockProbeContext,
+                               "stop") as stop_mock, mock.patch.object(
+                                   FailingMockProbeContext,
+                                   "teardown") as teardown_mock:
+      probe = MockProbe("custom_probe_data", FailingMockProbeContext)
+      runner.attach_probe(probe)
+      with self.assertRaises(MultiException) as cm:
+        runner.run()
+      exception = cm.exception.exceptions[0].exception
+      self.assertIsInstance(exception, CustomException)
+    self.assertFalse(runner.is_success)
+    start_mock.assert_not_called()
+    stop_mock.assert_not_called()
+    teardown_mock.assert_not_called()
+
+  def test_run_mock_probe_partial_setup_fail(self):
+    runner = self.default_runner(throw=False)
+    setup_count = 0
+
+    class PartialFailingMockProbeContext(MockProbeContext):
+
+      @override
+      def setup(self):
+        nonlocal setup_count
+        setup_count += 1
+        if setup_count == 3:
+          raise CustomException(f"failing setup number {setup_count}")
+
+    probe = MockProbe("custom_probe_data", PartialFailingMockProbeContext)
+    runner.attach_probe(probe)
+    self.assertIn(probe, runner.probes)
+    for browser in runner.browsers:
+      self.assertIn(probe, browser.probes)
+
+    with self.assertRaises(MultiException) as cm:
+      runner.run()
+    self.assertEqual(len(cm.exception), 1)
+    exception = cm.exception.exceptions[0].exception
+    self.assertIsInstance(exception, CustomException)
+
+    self.assertFalse(runner.is_success)
+    self.assertEqual(setup_count, 4)
+    self.assertEqual(len(runner.runs), 4)
+    failed_runs = list(run for run in runner.runs if not run.is_success)
+    self.assertEqual(len(failed_runs), 1)
+    failed_run = failed_runs[0]
+
+    for run in runner.runs:
+      if run is failed_run:
+        continue
+      self.assertTrue(run.is_success)
+      self._validate_successful_run(run, runner, probe, "custom_probe_data")
+
+    self.assertEqual(failed_run.index, 2)
+    self.assertFalse(failed_run.is_success)
+    self.assertTrue(failed_run.results[probe].is_empty)
+    self._validate_internal_probes(failed_run, runner)
 
   def test_attach_probe_twice(self):
     runner = self.default_runner()
@@ -246,12 +385,9 @@ class CustomException(Exception):
   pass
 
 
-def run_setup_fail(is_dry_run):
-  raise CustomException()
-
-
 class RunThreadGroupTestCase(BaseRunnerTestCase):
 
+  @override
   def tearDown(self) -> None:
     for browser in self.browsers:
       self.assertFalse(browser.is_running)
@@ -268,7 +404,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         self.out_dir, [MockChromeDev("chrome-dev-2")],
         self.benchmark,
         platform=self.platform,
-        throw=True)
+        throw=True,
+        in_memory_result_db=True)
     runs_b = list(runner_b.get_runs())
     self.assertNotEqual(runs_a[0].runner, runs_b[0].runner)
     with self.assertRaises(AssertionError) as cm:
@@ -384,7 +521,11 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     # 2 runs, same story, different browsers
     benchmark = MockBenchmark(stories=[self.stories[0]])
     runner = Runner(
-        self.out_dir, self.browsers, benchmark, platform=self.platform)
+        self.out_dir,
+        self.browsers,
+        benchmark,
+        platform=self.platform,
+        in_memory_result_db=True)
     runs = tuple(runner.get_runs())
     thread = RunThreadGroup(runs)
     failing_session, successful_session = thread.browser_sessions
@@ -452,6 +593,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         self.assertIsInstance(exception_entry.exception, CustomException)
 
 # pytype: enable=wrong-arg-types
+
+del BaseRunnerTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

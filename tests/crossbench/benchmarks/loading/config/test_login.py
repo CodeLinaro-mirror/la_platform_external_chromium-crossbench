@@ -5,16 +5,17 @@
 import pathlib
 from unittest import mock
 
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.secrets import Secret
-from crossbench.cli.config.secret_type import SecretType
+from crossbench.cli.config.secrets import (GoogleUsernamePassword,
+                                           UsernamePassword)
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
+from tests.crossbench.action_runner.action_runner_test_case import \
+    ActionRunnerTestCase
 from tests.crossbench.mock_browser import MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
                                           LinuxMockPlatform)
@@ -62,7 +63,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
                                           Flags(), 1, self.root_dir, True, True)
     self.run = MockRun(self.runner, self.session, "run 1")
 
-    self.action_runner = BasicActionRunner()
+    self.action_runner = DefaultActionRunner()
     self.mock_args = mock.Mock()
 
   def expect_google_login(self):
@@ -80,25 +81,27 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     self.expect_google_login()
 
+    self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])
 
   def test_logged_in_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
     page = LoadingPageFilter.stories_from_config(self.mock_args, config)
 
-    self.browser.expect_is_logged_in(
-        Secret(SecretType.GOOGLE, "test", "s3cr3t"))
+    self.browser.expect_is_logged_in(GoogleUsernamePassword("test", "s3cr3t"))
 
+    self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])
 
   def test_logged_in_non_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
     page = LoadingPageFilter.stories_from_config(self.mock_args, config)
 
-    self.browser.expect_is_logged_in(Secret(None, "test", "s3cr3t"))
+    self.browser.expect_is_logged_in(UsernamePassword("test", "s3cr3t"))
 
     self.expect_google_login()
 
+    self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])
 
 

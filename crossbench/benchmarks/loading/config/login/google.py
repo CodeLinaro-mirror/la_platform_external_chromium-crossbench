@@ -6,13 +6,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from typing_extensions import override
+
 from crossbench.benchmarks.loading.config.login.base import PresetLoginBlock
-from crossbench.cli.config.secret_type import SecretType
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.page.interactive import InteractivePage
-  from crossbench.cli.config.secrets import Secret
+  from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -39,9 +40,12 @@ class GoogleLogin(PresetLoginBlock):
               f"inputField.value = {repr(input_val)};"
               f"document.getElementById({repr(button_name)}).click();")
 
+  @override
   def run_with(self, runner: ActionRunner, run: Run,
                page: InteractivePage) -> None:
-    secret: Secret = self.get_secret(run, page, SecretType.GOOGLE)
+    secret: UsernamePassword | None = run.secrets.google
+    if not secret:
+      raise RuntimeError("No google login provided")
 
     if self.is_logged_in(run, secret, strict=True):
       return
@@ -58,14 +62,14 @@ class GoogleLogin(PresetLoginBlock):
       else:
         self._standard_login(action, secret)
 
-  def _standard_login(self, action, secret):
+  def _standard_login(self, action: Actions, secret) -> None:
     self._submit_login_field(action, "Enter your password", secret.password,
                              "passwordNext")
     action.wait_js_condition(
         "return document.URL.startsWith('https://myaccount.google.com');", 0.2,
         10)
 
-  def _test_account_login(self, action, secret):
+  def _test_account_login(self, action: Actions, secret) -> None:
     self._submit_login_field(action, "Enter trusted contact\\’s email",
                              secret.password, "verifycontactNext")
     # TODO: handle account passkey setup, for now each test account needs a

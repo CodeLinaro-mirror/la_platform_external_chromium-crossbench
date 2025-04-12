@@ -7,6 +7,8 @@ from __future__ import annotations
 import abc
 import pathlib
 
+from typing_extensions import override
+
 from crossbench.browsers.chrome.downloader import (ChromeDownloader,
                                                    ChromeDownloaderLinux,
                                                    ChromeDownloaderMacOS,
@@ -112,6 +114,7 @@ class AbstractChromeDownloaderTestCase(
 class BasicChromeDownloaderTestCaseLinux(AbstractChromeDownloaderTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.platform.is_linux = True
@@ -128,6 +131,7 @@ class BasicChromeDownloaderTestCaseLinux(AbstractChromeDownloaderTestCase):
 class BasicChromeDownloaderTestCaseMacOS(AbstractChromeDownloaderTestCase):
   __test__ = True
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.platform.is_macos = True

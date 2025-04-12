@@ -4,11 +4,12 @@
 
 import pathlib
 
+from typing_extensions import override
+
 from crossbench.probes.probe import Probe
-from crossbench.probes.results import (BrowserProbeResult,
-                                       DuplicateProbeResult, EmptyProbeResult,
-                                       LocalProbeResult, ProbeResultDict)
-from crossbench.runner.run import Run
+from crossbench.probes.results import (BrowserProbeResult, DuplicateProbeResult,
+                                       EmptyProbeResult, LocalProbeResult,
+                                       ProbeResultDict)
 from tests import test_helper
 from tests.crossbench.base import (BaseCrossbenchTestCase,
                                    CrossbenchFakeFsTestCase)
@@ -279,6 +280,7 @@ class MockRun:
 
 class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.run = MockRun(self.browsers[0], self.platform)
@@ -358,12 +360,13 @@ class MockProbe(Probe):
   """
   NAME = "mock-probe"
 
-  def get_context(self, run: Run):
+  @override
+  def get_context_cls(self):
     pass
-
 
 class ProbeResultDictTestCase(CrossbenchFakeFsTestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.result_location = pathlib.Path("test/out/results")

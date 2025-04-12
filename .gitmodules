@@ -1,6 +1,0 @@
-[submodule "third_party/tsproxy"]
-	path = third_party/tsproxy
-	url = https://chromium.googlesource.com/external/github.com/catchpoint/WebPageTest.tsproxy
-[submodule "third_party/webpagereplay"]
-	path = third_party/webpagereplay
-	url = https://chromium.googlesource.com/webpagereplay

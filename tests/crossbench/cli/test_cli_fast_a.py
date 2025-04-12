@@ -6,17 +6,16 @@ import argparse
 import json
 import pathlib
 import unittest
-from unittest import mock
 
 import hjson
+
+from crossbench import __version__, plt
+from crossbench.cli.cli import CrossBenchCLI
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.env import EnvironmentConfig
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
-
-from crossbench import __version__, plt
-from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.env import HostEnvironmentConfig
 
 
 class FastCliTestCasePartA(BaseCliTestCase):
@@ -27,6 +26,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
   Keep FastCliTestCasePartA and FastCliTestCasePartB balanced for faster local
   presubmit checks.
   """
+
+  def test_benchmark_order(self):
+    sorted_benchmark_classes = sorted(
+        CrossBenchCLI.BENCHMARKS, key=lambda cls: cls.NAME)
+    self.assertSequenceEqual(sorted_benchmark_classes, CrossBenchCLI.BENCHMARKS)
 
   def test_invalid(self):
     with self.assertRaises(SysExitTestException):
@@ -168,6 +172,26 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("Disable colored output", stdout)
     self.assertIn("Available Probes for all Benchmarks:", stdout)
 
+  def test_help_subcommand_probe(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("help", "v8.log")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "help", "v8.log", raises=SysExitTestException)
+    self.assertFalse(stderr)
+    self.assertIn("v8.log", stdout)
+    self.assertIn("V8LogProbe", stdout)
+
+  def test_help_subcommand_benchmark(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("help", "sp3.0")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "help", "sp3.0", raises=SysExitTestException)
+    self.assertFalse(stderr)
+    self.assertIn("Speedometer 3.0", stdout)
+    self.assertIn("https://browserbench.org/Speedometer3.0/", stdout)
+
   def test_version(self):
     with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("--version")
@@ -187,7 +211,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn(__version__, stdout)
 
   def test_subcommand_run_subcommand(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
                    "--throw")
@@ -195,11 +219,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_invalid_probe(self):
-    with self.assertRaises(argparse.ArgumentError), self.patch_get_browser():
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli("loading", "--probe=invalid_probe_name", "--throw")
 
   def test_basic_probe_setting(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "--probe=v8.log", f"--urls={url}",
                    "--env-validation=skip", "--throw")
@@ -210,7 +234,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_invalid_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
     config_file.touch()
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentError) as cm:
         self.run_cli("loading", f"--probe-config={config_file}",
@@ -228,7 +252,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
@@ -241,7 +265,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config_data = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentTypeError):
         self.run_cli("loading", f"--probe-config={config_file}",
@@ -257,7 +281,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
@@ -272,7 +296,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
       self.run_cli("loading", f"--probe-config={config_file}",
                    "--urls=http://test.com", "--env-validation=skip", "--throw")
     self.assertIn("invalid probe name", str(cm.exception))
@@ -283,7 +307,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip", "--throw")
@@ -295,7 +319,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self.patch_get_browser():
+        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip", "--throw")
@@ -332,7 +356,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
@@ -355,16 +379,15 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")
       for browser in self.browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertFalse(browser.js_flags)
-      config = cli.runner.env.config
-      self.assertEqual(config.disk_min_free_space_gib,
-                       HostEnvironmentConfig.IGNORE)
+      config = cli.last_subcommand.runner.env.config
+      self.assertEqual(config.disk_min_free_space_gib, EnvironmentConfig.IGNORE)
       self.assertEqual(config.screen_brightness_percent, 66)
       self.assertEqual(config.cpu_max_usage_percent, 77)
 
@@ -392,14 +415,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
         return mock_browser.MockChromeDev
       return mock_browser.MockChromeStable
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        side_effect=mock_get_browser_cls):
+    with self._patch_get_browser_cls(side_effect=mock_get_browser_cls):
       url = "http://test.com"
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")
-      browsers = cli.runner.browsers
+      browsers = cli.last_subcommand.runner.browsers
       self.assertEqual(len(browsers), 2)
       self.assertEqual(browsers[0].label, "browser_1")
       self.assertEqual(browsers[1].label, "browser_2")

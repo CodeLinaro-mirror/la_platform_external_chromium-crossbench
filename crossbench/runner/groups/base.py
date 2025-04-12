@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable
 
 from crossbench import exception
 from crossbench.probes.results import ProbeResult, ProbeResultDict
@@ -15,15 +15,15 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-  from crossbench.types import JsonDict
+  from crossbench.types import JsonMapping
 
 
 class RunGroup(abc.ABC):
 
   def __init__(self, throw: bool = False) -> None:
     self._exceptions = exception.Annotator(throw)
-    self._path: Optional[LocalPath] = None
-    self._merged_probe_results: Optional[ProbeResultDict] = None
+    self._path: LocalPath | None = None
+    self._merged_probe_results: ProbeResultDict | None = None
 
   def _set_path(self, path: LocalPath) -> None:
     assert self._path is None
@@ -69,7 +69,7 @@ class RunGroup(abc.ABC):
         yield run
 
   @property
-  def info(self) -> JsonDict:
+  def info(self) -> JsonMapping:
     return {
         "runs": len(tuple(self.runs)),
         "failed runs": len(tuple(self.failed_runs))

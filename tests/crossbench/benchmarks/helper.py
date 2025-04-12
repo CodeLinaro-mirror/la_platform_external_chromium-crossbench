@@ -5,6 +5,8 @@
 import abc
 from typing import Sequence, Type
 
+from typing_extensions import override
+
 from crossbench.benchmarks import base as benchmark
 from tests.crossbench.base import BaseCrossbenchTestCase
 
@@ -13,13 +15,14 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   @property
   @abc.abstractmethod
-  def benchmark_cls(self):
+  def benchmark_cls(self) -> Type[benchmark.Benchmark]:
     pass
 
   @property
   def story_cls(self):
     return self.benchmark_cls.DEFAULT_STORY_CLS
 
+  @override
   def setUp(self):
     super().setUp()
     self.assertTrue(
@@ -28,6 +31,9 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   def test_describe(self):
     self.assertIsInstance(self.benchmark_cls.describe(), dict)
+
+  def test_aliases(self):
+    self.assertNotIn(self.benchmark_cls.NAME, self.benchmark_cls.aliases())
 
 
 class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):

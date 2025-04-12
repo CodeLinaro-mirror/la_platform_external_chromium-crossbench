@@ -8,6 +8,8 @@ from unittest import mock
 
 from crossbench.helper.path_finder import (ChromiumBuildBinaryFinder,
                                            ChromiumCheckoutFinder,
+                                           TraceboxFinder, TraceconvFinder,
+                                           TraceProcessorFinder,
                                            V8CheckoutFinder, V8ToolsFinder)
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -111,6 +113,32 @@ class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
     self.assertEqual(
         ChromiumBuildBinaryFinder(self.platform, "custom_binary").path,
         candidate)
+
+
+class PerfettoToolFinderTestCase(BaseCheckoutTestCase):
+
+  def test_find_traceconv(self):
+    self._find_tool(TraceconvFinder, "traceconv")
+
+  def test_find_tracebox(self):
+    self._find_tool(TraceboxFinder, "tracebox")
+
+  def test_find_trace_processor(self):
+    self._find_tool(TraceProcessorFinder, "trace_processor")
+
+  def _find_tool(self, finder_cls, name):
+    finder = finder_cls(self.platform)
+    self.assertIsNone(finder.path)
+    self.assertIsNone(finder.path)
+    checkout_dir = pathlib.Path.home() / "Documents/chromium/src"
+    false_candidate = checkout_dir / "third_party/perfetto/tools/another_binary"
+    self.fs.create_file(false_candidate, st_size=100)
+    self.assertIsNone(finder_cls(self.platform).path)
+    candidate = checkout_dir / "third_party/perfetto/tools" / name
+    self.fs.create_file(candidate, st_size=100)
+    self.assertIsNone(finder_cls(self.platform).path)
+    self._add_chrome_checkout_files(checkout_dir)
+    self.assertEqual(finder_cls(self.platform).path, candidate)
 
 
 class V8ToolsFinderTestCase(BaseCheckoutTestCase):

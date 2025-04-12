@@ -7,31 +7,43 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
 
-from crossbench import helper
+from crossbench.helper.durations import TimeScope
+from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from types import TracebackType
+
   from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.exception import ExceptionAnnotationScope
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-  from crossbench.runner.timing import Timing
+  from crossbench.runner.timing import AnyTimeUnit, Timing
 
 
-class Actions(helper.TimeScope):
+def _default_success_condition(js_result: Any) -> bool:
+  if js_result is True:
+    return True
+
+  ObjectParser.bool(js_result, strict=True)
+
+  return False
+
+class Actions(TimeScope):
 
   _max_end_datetime: dt.datetime
 
-  def __init__(self,
-               message: str,
-               run: Run,
-               runner: Optional[Runner] = None,
-               browser: Optional[Browser] = None,
-               verbose: bool = False,
-               measure: bool = True,
-               timeout: dt.timedelta = dt.timedelta()):
+  def __init__(
+      self,
+      message: str,
+      run: Run,
+      runner: Optional[Runner] = None,
+      browser: Optional[Browser] = None,
+      verbose: bool = False,
+      measure: bool = True,
+      timeout: dt.timedelta = dt.timedelta()) -> None:
     assert message, "Actions need a name"
     super().__init__(message)
     self._exception_annotation: ExceptionAnnotationScope = run.exceptions.info(
@@ -53,10 +65,6 @@ class Actions(helper.TimeScope):
     return self._runner.timing
 
   @property
-  def run(self) -> Run:
-    return self._run
-
-  @property
   def platform(self) -> plt.Platform:
     return self._run.browser_platform
 
@@ -72,13 +80,15 @@ class Actions(helper.TimeScope):
       sys.stdout.write(f"   {self._message.ljust(30)}\r")
     return self
 
-  def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
+  def __exit__(self, exc_type: Optional[Type[BaseException]],
+               exc_value: Optional[BaseException],
+               exc_traceback: Optional[TracebackType]) -> None:
     self._is_active = False
     self._exception_annotation.__exit__(exc_type, exc_value, exc_traceback)
     super().__exit__(exc_type, exc_value, exc_traceback)
     logging.debug("Action end: %s", self._message)
     if self._measure:
-      self.run.durations[f"actions-duration {self.message}"] = self.duration
+      self._run.durations[f"actions-duration {self.message}"] = self.duration
 
   def _assert_is_active(self) -> None:
     assert self._is_active, "Actions have to be used in a with scope"
@@ -91,35 +101,39 @@ class Actions(helper.TimeScope):
 
   def js(self,
          js_code: str,
-         timeout: Union[int, float, dt.timedelta] = 10,
+         timeout: AnyTimeUnit = 10,
+         absolute_time: bool = False,
          arguments: Sequence[object] = (),
          **kwargs) -> Any:
     self._assert_is_active()
     assert js_code, "js_code must be a valid JS script"
     if kwargs:
       js_code = js_code.format(**kwargs)
-    delta = self.timing.timeout_timedelta(timeout)
+    delta = self.timing.timeout_timedelta(timeout, absolute_time)
     return self._browser.js(js_code, delta, arguments=arguments)
 
-  def wait_js_condition(self,
-                        js_code: str,
-                        min_wait: Union[dt.timedelta, float],
-                        timeout: Union[dt.timedelta, float],
-                        delay: Union[dt.timedelta, float] = 0) -> None:
-    wait_range = helper.WaitRange(
-        min=self.timing.timedelta(min_wait),
-        timeout=self.timing.timeout_timedelta(timeout),
-        delay=delay)
+  def wait_js_condition(
+      self,
+      js_code: str,
+      min_wait: AnyTimeUnit,
+      timeout: AnyTimeUnit,
+      delay: AnyTimeUnit = 0,
+      absolute_time: bool = False,
+      arguments: Sequence[object] = (),
+      success_condition: Callable[[Any], bool] = _default_success_condition
+  ) -> None:
+    wait_range = self._run.wait_range(min_wait, timeout, delay)
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
-    for _, time_left in wait_range.wait_with_backoff():
-      time_units = self.timing.units(time_left)
-      result = self.js(js_code, timeout=time_units, absolute_time=True)
-      if result:
+    for _, _, time_left in wait_range.wait_with_backoff():
+      time_units = self.timing.units(time_left, absolute_time)
+      result = self.js(
+          js_code,
+          timeout=time_units,
+          absolute_time=absolute_time,
+          arguments=arguments)
+      if success_condition(result):
         return
-      assert result is False, (
-          f"js_code did not return a bool, but got: {result}\n"
-          f"js-code: {js_code}")
 
   def show_url(self, url: str, target: Optional[str] = None) -> None:
     self._assert_is_active()
@@ -131,8 +145,8 @@ class Actions(helper.TimeScope):
         raise ValueError(f"Invalid target: {target}")
       self._browser.show_url(url, target=target)
 
-  def wait(
-      self, seconds: Union[dt.timedelta,
-                           float] = dt.timedelta(seconds=1)) -> None:
+  def wait(self,
+           time: AnyTimeUnit = dt.timedelta(seconds=1),
+           absolute_time: bool = False) -> None:
     self._assert_is_active()
-    self.platform.sleep(seconds)
+    self._runner.wait(time, absolute_time)

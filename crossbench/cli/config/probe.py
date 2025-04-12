@@ -4,13 +4,12 @@
 
 from __future__ import annotations
 
-import argparse
 import dataclasses
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Final, Iterable, List, Optional,
-                    Sequence, Type)
+from typing import TYPE_CHECKING, Any, Dict, Final, Self, Type
 
-from crossbench import exception
+from typing_extensions import override
+
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.parse import ObjectParser
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
@@ -33,17 +32,18 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
 
 @dataclasses.dataclass(frozen=True)
 class ProbeConfig(ConfigObject):
-  cls: Type[Probe]
+  probe_cls: Type[Probe]
   config: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
   def __post_init__(self) -> None:
-    if not self.cls:
+    if not self.probe_cls:
       raise ValueError(f"{type(self).__name__}.cls cannot be None.")
     if self.config is None:
       raise ValueError(f"{type(self).__name__}.config cannot be None.")
 
   @classmethod
-  def parse_str(cls, value: str) -> ProbeConfig:
+  @override
+  def parse_str(cls, value: str) -> Self:
     # 1. variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
@@ -64,13 +64,13 @@ class ProbeConfig(ConfigObject):
     return cls.parse_dict(config)
 
   @classmethod
-  def parse_dict(cls, config: Dict[str, Any]) -> ProbeConfig:
+  @override
+  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
     probe_name = ObjectParser.non_empty_str(config.pop("name"), "name")
     return cls.parse_probe_dict(probe_name, config)
 
   @classmethod
-  def parse_probe_dict(cls, probe_name: str, config: Dict[str,
-                                                          Any]) -> ProbeConfig:
+  def parse_probe_dict(cls, probe_name: str, config: Dict[str, Any]) -> Self:
     if probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(probe_cls, config)
     raise cls._unknown_probe_error(probe_name)
@@ -85,67 +85,4 @@ class ProbeConfig(ConfigObject):
 
   @property
   def name(self) -> str:
-    return self.cls.NAME
-
-
-class ProbeListConfig(ConfigObject):
-
-  @classmethod
-  def from_cli_args(cls, args: argparse.Namespace) -> ProbeListConfig:
-    with exception.annotate_argparsing():
-      if args.probe_config:
-        return cls.parse_path(args.probe_config)
-      return cls(args.probe)
-
-  @classmethod
-  def parse_other(cls: Type[ProbeListConfig], value: Any) -> ProbeListConfig:
-    if isinstance(value, (tuple, list)):
-      return cls.parse_sequence(value)
-    return super().parse_other(value)
-
-  @classmethod
-  def parse_sequence(cls: Type[ProbeListConfig],
-                     config: Sequence[Dict[str, Any]]) -> ProbeListConfig:
-    probe_configs: List[ProbeConfig] = []
-    for index, probe_config in enumerate(config):
-      probe_config = ObjectParser.dict(probe_config, f"probes[{index}]")
-      probe_configs.append(ProbeConfig.parse_dict(probe_config))
-    return cls(probe_configs)
-
-  @classmethod
-  def parse_dict(cls: Type[ProbeListConfig],
-                 config: Dict[str, Any]) -> ProbeListConfig:
-    # Support global configs with {"probes": ...}
-    if "probes" in config:
-      config = config["probes"]
-      if isinstance(config, (tuple, list)):
-        return cls.parse_sequence(config)
-    elif "browsers" in config or "flags" in config:
-      raise ProbeConfigError("Missing 'probes' property in global config.")
-    config = ObjectParser.dict(config, "probes")
-    probe_configs: List[ProbeConfig] = []
-    for probe_name, config_data in config.items():
-      with exception.annotate(f"Parsing probe config probes['{probe_name}']"):
-        probe_configs.append(
-            ProbeConfig.parse_probe_dict(probe_name, config_data))
-    return cls(probe_configs)
-
-  @classmethod
-  def parse_str(cls, value: str) -> ProbeListConfig:
-    raise NotImplementedError()
-
-  def __init__(self, probes: Optional[Iterable[ProbeConfig]] = None):
-    self._probes: List[Probe] = []
-    if not probes:
-      return
-    for probe_config in probes:
-      with exception.annotate(f"Parsing --probe={probe_config.name}"):
-        self._add_probe(probe_config)
-
-  @property
-  def probes(self) -> List[Probe]:
-    return self._probes
-
-  def _add_probe(self, probe_config: ProbeConfig) -> None:
-    probe: Probe = probe_config.cls.from_config(probe_config.config)
-    self._probes.append(probe)
+    return self.probe_cls.NAME
