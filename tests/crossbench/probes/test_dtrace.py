@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from crossbench.cli.config.probe import ProbeListConfig
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.dtrace import DTraceProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase

@@ -5,6 +5,8 @@
 import datetime as dt
 import unittest
 
+from typing_extensions import override
+
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter
 from crossbench.runner.run import Run
 from crossbench.stories.press_benchmark import PressBenchmarkStory
@@ -22,6 +24,7 @@ class MockStory(PressBenchmarkStory):
   )
 
   @property
+  @override
   def substory_duration(self) -> dt.timedelta:
     return dt.timedelta(seconds=0.1)
 

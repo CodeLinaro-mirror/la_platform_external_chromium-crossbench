@@ -23,7 +23,7 @@ class LiveNetworkTestCase(BaseCrossbenchTestCase):
     mock_browser_session = mock.Mock()
     with network.open(mock_browser_session):
       self.assertTrue(network.is_running)
-      self.assertFalse(network.extra_flags(self.browsers[0].attributes))
+      self.assertFalse(network.extra_flags(self.browsers[0].attributes()))
       # Should not be able to double open the network.
       with self.assertRaises(AssertionError):
         with network.open(mock_browser_session):

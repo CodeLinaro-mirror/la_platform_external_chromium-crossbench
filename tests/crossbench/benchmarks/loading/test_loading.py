@@ -12,16 +12,18 @@ import json
 import pathlib
 import re
 import unittest
-from typing import List, Sequence, cast
+from typing import List, Sequence
 from unittest import mock
+
+from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.base import ActionRunner
-from crossbench.action_runner.basic_action_runner import BasicActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingPageFilter,
-                                                             PageLoadBenchmark)
+from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
+                                                             LoadingPageFilter)
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
 from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
@@ -30,28 +32,30 @@ from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.secrets import SecretsConfig
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.cli.config.secrets import Secrets
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase
-from tests.crossbench.benchmarks import helper
+from tests.crossbench.benchmarks.helper import SubStoryTestCase
 from tests.crossbench.mock_browser import JsInvocation
 
 
-class TestPageLoadBenchmark(helper.SubStoryTestCase):
+class TestPageLoadBenchmark(SubStoryTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
-    return PageLoadBenchmark
+    return LoadingBenchmark
 
+  @override
   def story_filter(  # pylint: disable=arguments-differ
       self,
       patterns: Sequence[str],
       separate: bool = True,
       playback: PlaybackController = PlaybackController.default(),
       tabs: TabController = TabController.default(),
-      action_runner: ActionRunner = BasicActionRunner(),
+      action_runner: ActionRunner = DefaultActionRunner(),
       about_blank_duration: dt.timedelta = dt.timedelta(),
       run_login: bool = True,
       run_setup: bool = True) -> LoadingPageFilter:
@@ -62,8 +66,9 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
         action_runner=action_runner,
         run_login=run_login,
         run_setup=run_setup)
-    return cast(LoadingPageFilter,
-                super().story_filter(patterns, args=args, separate=separate))
+    story_filter = super().story_filter(patterns, args=args, separate=separate)
+    assert isinstance(story_filter, LoadingPageFilter)
+    return story_filter
 
   def test_page_list(self):
     self.assertTrue(PAGE_LIST)
@@ -143,6 +148,27 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
     self._test_run(stories)
     self._assert_urls_loaded([story.url for story in PAGE_LIST])
 
+  def test_substories_single(self):
+    page = LivePage("test", "https://test.com", dt.timedelta(seconds=5))
+    self.assertSequenceEqual(page.substories, ["test"])
+
+  def test_substories_combined(self):
+    page = CombinedPage(PAGE_LIST)
+    self.assertSequenceEqual(page.substories,
+                             [story.name for story in PAGE_LIST])
+    page_0 = LivePage("test_0", "https://test.com/1", dt.timedelta(seconds=5))
+    page_1 = LivePage("test_1", "https://test.com/1", dt.timedelta(seconds=5))
+    page = CombinedPage([page_0, page_1])
+    self.assertSequenceEqual(page.substories, ["test_0", "test_1"])
+
+  def test_substories_nested(self):
+    page_0 = LivePage("test_0", "https://test.com/1", dt.timedelta(seconds=5))
+    page_1 = LivePage("test_1", "https://test.com/1", dt.timedelta(seconds=5))
+    page_2 = CombinedPage([page_0, page_1])
+    page_3 = LivePage("test_3", "https://test.com/3", dt.timedelta(seconds=5))
+    page = CombinedPage([page_2, page_3])
+    self.assertSequenceEqual(page.substories, ["test_0", "test_1", "test_3"])
+
   def test_run_default(self):
     stories = PAGE_LIST
     self._test_run(stories)
@@ -202,10 +228,11 @@ class TestPageLoadBenchmark(helper.SubStoryTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
-        throw=throw)
+        throw=throw,
+        in_memory_result_db=True)
     runner.run()
     self.assertTrue(runner.is_success)
     self.assertTrue(self.browsers[0].did_run)
@@ -222,7 +249,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def test_invalid_duplicate_urls_stories(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      with self.patch_get_browser():
+      with self._patch_get_browser():
         url = "http://test.com"
         self.run_cli("loading", "run", f"--urls={url}", f"--stories={url}",
                      "--env-validation=skip", "--throw")
@@ -231,7 +258,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def test_invalid_duplicate_urls_config(self):
     with self.assertRaises(argparse.ArgumentError) as cm:
-      with self.patch_get_browser():
+      with self._patch_get_browser():
         self.run_cli("loading", "run", "--urls=https://test.com",
                      "--page-config=config.hjson", "--env-validation=skip",
                      "--throw")
@@ -240,7 +267,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def test_invalid_duplicate_stories_config(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      with self.patch_get_browser():
+      with self._patch_get_browser():
         self.run_cli("loading", "run", "--stories=https://test.com",
                      "--page-config=config.hjson", "--env-validation=skip",
                      "--throw")
@@ -263,7 +290,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       json.dump(config_data, f)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      with self.patch_get_browser():
+      with self._patch_get_browser():
         self.run_cli("loading", "run", "--stories=https://test.com",
                      "--config=config.hjson", "--page-config=config.hjson",
                      "--env-validation=skip", "--throw")
@@ -279,7 +306,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_2 = "http://two.test.com"
     with config.open("w", encoding="utf-8") as f:
       f.write("\n".join((url_1, url_2)))
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
@@ -293,7 +320,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_2 = "http://two.test.com"
     with config.open("w", encoding="utf-8") as f:
       f.write("\n".join((url_1, url_2)))
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--separate", "--throw")
       for browser in self.browsers:
@@ -302,7 +329,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.assertEqual(url_2, browser.url_list[self.SPLASH_URLS_LEN * 2 + 1])
 
   def test_urls_single(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
                    "--throw")
@@ -310,7 +337,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_urls_multiple(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
       self.run_cli("loading", "run", f"--urls={url_1},{url_2}",
@@ -320,7 +347,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                              browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_urls_multiple_separate(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
       self.run_cli("loading", "run", f"--urls={url_1},{url_2}",
@@ -331,7 +358,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.assertEqual(url_2, browser.url_list[self.SPLASH_URLS_LEN * 2 + 1])
 
   def test_repeat_playback(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
       self.run_cli("loading", "run", f"--urls={url_1},{url_2}", "--playback=2x",
@@ -341,7 +368,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                              browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_repeat_playback_separate(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
       self.run_cli("loading", "run", f"--urls={url_1},{url_2}", "--playback=2x",
@@ -374,7 +401,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_1, url_2, config = self.simple_pages_config()
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "run", f"--page-config={config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
@@ -428,7 +455,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     self.setup_expected_google_login_js()
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "run", f"--page-config={config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
@@ -445,16 +472,17 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
             "password": "s3cr3t"
         }
     }
-    secrets_dict = SecretsConfig.parse(secrets_data).as_dict()
+    secrets = Secrets.parse(secrets_data)
     self.setup_expected_google_login_js()
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       with mock.patch.object(
           Settings, "secrets",
           new_callable=mock.PropertyMock) as mock_get_secrets:
-        mock_get_secrets.return_value = secrets_dict
+        mock_get_secrets.return_value = secrets
         self.run_cli("loading", "run", f"--page-config={config_file}",
                      "--env-validation=skip", "--throw",
                      f"--secrets={json.dumps(secrets_data)}")
+        self.assertEqual(mock_get_secrets.call_count, 2)
       for browser in self.browsers:
         self.assertListEqual([GOOGLE_LOGIN_URL, url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
@@ -464,7 +492,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     self.setup_expected_google_login_js()
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       with self.assertRaises(Exception) as cm:
         self.run_cli("loading", "run", f"--page-config={config_file}",
                      "--env-validation=skip", "--throw")
@@ -491,7 +519,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     }
     with global_config_file.open("w", encoding="utf-8") as f:
       json.dump(global_config_data, f)
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "run", f"--config={global_config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
@@ -708,6 +736,9 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       })
     self.assertIn("login", str(cm.exception))
 
+
+# Don't expose abstract base test cases.
+del SubStoryTestCase, BaseCliTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

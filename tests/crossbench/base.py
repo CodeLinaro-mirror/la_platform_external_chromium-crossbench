@@ -10,13 +10,11 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import Final, List, Optional, Sequence, Tuple
+from typing import Final, List, Optional, Sequence, Tuple, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
-from tests import test_helper
-from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import MockCLI, MockPlatform
+from typing_extensions import override
 
 import crossbench
 from crossbench import path as pth
@@ -25,10 +23,15 @@ from crossbench.benchmarks.loading.loadline_presets import \
     LoadLineTabletBenchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
-from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
-from crossbench.cli.config.secrets import SecretsConfig
+from crossbench.cli.config.secrets import Secrets
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
+from crossbench.helper.sleep_preventer import SystemSleepPreventer
+from crossbench.runner.runner import Runner
+from tests import test_helper
+from tests.crossbench import mock_browser
+from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
 
 class CrossbenchFakeFsTestCase(
@@ -36,7 +39,7 @@ class CrossbenchFakeFsTestCase(
 
   def setUp(self) -> None:
     super().setUp()
-    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser, pth])
+    self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser, pth, plt])
     # gettext is used extensively in argparse
     gettext_patcher = mock.patch(
         "gettext.dgettext", side_effect=lambda domain, message: message)
@@ -44,15 +47,22 @@ class CrossbenchFakeFsTestCase(
     self.addCleanup(gettext_patcher.stop)
 
     sleep_patcher = mock.patch("time.sleep", return_value=None)
-    sleep_patcher.start()
+    self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
+    # This is platform specific and causes issues pending sh commands
+    self.sleep_preventer_patcher = mock.patch.object(SystemSleepPreventer,
+                                                     "__enter__")
+    self.addCleanup(self.sleep_preventer_patcher.stop)
+    self.sleep_preventer_patcher.start()
 
-  def create_file(self,
-                  path_str: str,
-                  contents: Optional[str] = None) -> pathlib.Path:
+
+  def create_file(self, path_str: str, contents: str = "") -> pathlib.Path:
     path = pathlib.Path(path_str)
     self.fs.create_file(path, contents=contents)
     return path
+
+
+TEST_WARNING = "Test Warning"
 
 
 class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
@@ -60,24 +70,21 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]
 
+  @override
   def setUp(self) -> None:
     # Instantiate MockPlatform before setting up fake_filesystem so we can
     # still interact with the original, real plt.Platform object for extracting
     # basic system information.
     self.platform = MockPlatform()  # pytype: disable=not-instantiable
+    self.platform.use_fs = True
     super().setUp()
     self._default_log_level = logging.getLogger().getEffectiveLevel()
     logging.getLogger().setLevel(logging.CRITICAL)
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs)
-      self.assertTrue(mock_browser_cls.mock_app_path().exists())
+      self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    self.fs.add_real_directory(
-        LoadLineTabletBenchmark.default_network_config_path().parent,
-        lazy_read=not test_helper.is_google_env())
-    if test_helper.is_google_env():
-      self.fs.add_real_directory("/build/cas")
     self.browsers: List[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
@@ -92,14 +99,17 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.mock_args = mock.Mock(
         wraps=False,
         driver_path=None,
+        remote_driver_path=None,
         network_config=None,
         browser_config=None,
         viewport=None,
         splash_screen=None,
-        secrets=SecretsConfig(),
+        secrets=Secrets(),
         wipe_system_user_data=False,
         http_request_timeout=dt.timedelta(),
         cache_dir=pathlib.Path("test_cache_dir"),
+        browser_cache_dir=None,
+        clear_browser_cache_dir=None,
         enable_features=None,
         disable_features=None,
         js_flags=None,
@@ -108,6 +118,20 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
         probe=[],
         other_browser_args=[],
         driver_logging=False)
+
+  def setup_loadline_config(self):
+    config_dir = LoadLineTabletBenchmark.default_network_config_path().parent
+    self.fs.add_real_directory(
+        config_dir,
+        lazy_read=not test_helper.is_google_env())
+    if test_helper.is_google_env():
+      # On google3, all files have been replaced by symlinks. The link targets
+      # must be added in order for these symlinks to resolve.
+      for child in config_dir.glob("**/*"):
+        if child.is_symlink():
+          link_target = child.readlink()
+          if not link_target.exists():
+            self.fs.add_real_file(link_target)
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
@@ -126,6 +150,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   SPLASH_URLS_LEN: Final[int] = 2
 
+  @override
   def setUp(self) -> None:
     super().setUp()
 
@@ -146,6 +171,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
+    self.setup_loadline_config()
+
   def run_cli_output(self,
                      *args,
                      raises=None,
@@ -161,14 +188,53 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     mock_stderr.close()
     return cli, stdout, stderr
 
+  @contextlib.contextmanager
+  def _patch_get_runner(self):
+    with mock.patch.object(
+        BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
+      yield
+
+  def _mock_get_runner(self, args, benchmark, env_config, env_validation_mode,
+                       timing):
+    if not args.out_dir:
+      # Use stable mock out dir
+      args.out_dir = pathlib.Path("/results")
+      assert not args.out_dir.exists()
+    runner_kwargs = Runner.kwargs_from_cli(args)
+    runner = Runner(
+        benchmark=benchmark,
+        env_config=env_config,
+        env_validation_mode=env_validation_mode,
+        timing=timing,
+        **runner_kwargs,
+        # Use custom platform
+        platform=self.platform,
+        in_memory_result_db=True)
+    return runner
+
+  @contextlib.contextmanager
+  def _patch_sys_exit(self):
+    with mock.patch(
+        "sys.exit", side_effect=SysExitTestException), mock.patch.object(
+            plt, "PLATFORM", self.platform):
+      yield
+
+  @contextlib.contextmanager
+  def _patch_get_browser_cls(self,
+                             return_value: Optional[Type[Browser]] = None,
+                             **kwargs):
+    if not kwargs:
+      kwargs["return_value"] = return_value or mock_browser.MockChromeStable
+    with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
+                           **kwargs) as patcher:
+      yield patcher
+
   def run_cli(self,
               *args,
               raises=None,
               enable_logging: bool = False) -> MockCLI:
     cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
-    with mock.patch(
-        "sys.exit", side_effect=SysExitTestException), mock.patch.object(
-            plt, "PLATFORM", self.platform):
+    with self._patch_sys_exit(), self._patch_get_runner():
       if raises:
         with self.assertRaises(raises):
           cli.run(args)
@@ -176,16 +242,11 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
         cli.run(args)
     return cli
 
-  def mock_chrome_stable(self):
-    return mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
-        return_value=mock_browser.MockChromeStable)
-
   @contextlib.contextmanager
-  def patch_get_browser(self, return_value: Optional[Sequence[Browser]] = None):
+  def _patch_get_browser(self,
+                         return_value: Optional[Sequence[Browser]] = None):
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(
-        CrossBenchCLI, "_get_browsers", return_value=return_value):
+        BenchmarkSubcommand, "_get_browsers", return_value=return_value):
       yield

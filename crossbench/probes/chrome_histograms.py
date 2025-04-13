@@ -10,17 +10,20 @@ import dataclasses
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
+                    Type)
+
+from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.browser import Browser
-from crossbench.env import HostEnvironment
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
+  from crossbench.env import HostEnvironment
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
   from crossbench.types import Json
@@ -53,9 +56,10 @@ class ChromeHistogramMetric(abc.ABC):
 
 class ChromeHistogramCountMetric(ChromeHistogramMetric):
 
-  def __init__(self, histogram_name: str):
+  def __init__(self, histogram_name: str) -> None:
     super().__init__(f"{histogram_name}_count", histogram_name)
 
+  @override
   def compute(self, delta: ChromeHistogramSample,
               baseline: ChromeHistogramSample) -> float:
     return delta.diff_count(baseline)
@@ -63,9 +67,10 @@ class ChromeHistogramCountMetric(ChromeHistogramMetric):
 
 class ChromeHistogramMeanMetric(ChromeHistogramMetric):
 
-  def __init__(self, histogram_name: str):
+  def __init__(self, histogram_name: str) -> None:
     super().__init__(f"{histogram_name}_mean", histogram_name)
 
+  @override
   def compute(self, delta: ChromeHistogramSample,
               baseline: ChromeHistogramSample) -> float:
     return delta.diff_mean(baseline)
@@ -73,16 +78,17 @@ class ChromeHistogramMeanMetric(ChromeHistogramMetric):
 
 class ChromeHistogramPercentileMetric(ChromeHistogramMetric):
 
-  def __init__(self, histogram_name: str, percentile: int):
+  def __init__(self, histogram_name: str, percentile: int) -> None:
     super().__init__(f"{histogram_name}_p{percentile}", histogram_name)
     self._percentile = percentile
 
+  @override
   def compute(self, delta: ChromeHistogramSample,
               baseline: ChromeHistogramSample) -> float:
     return delta.diff_percentile(baseline, self._percentile)
 
 
-PERCENTILE_METRIC_RE = re.compile(r"^p(\d+)$")
+PERCENTILE_METRIC_RE: re.Pattern[str] = re.compile(r"^p(\d+)$")
 
 
 def parse_histogram_metrics(value: Any,
@@ -122,7 +128,8 @@ class ChromeHistogramsProbe(JsonResultProbe):
   RESULT_LOCATION = ResultLocation.LOCAL
 
   @classmethod
-  def config_parser(cls) -> ProbeConfigParser:
+  @override
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "metrics",
@@ -130,7 +137,9 @@ class ChromeHistogramsProbe(JsonResultProbe):
         type=parse_histogram_metrics,
         help=("Required dictionary of Chrome UMA histogram metric names. "
               "Histograms are recorded before and after a test and any "
-              "differences logged."))
+              "differences logged."
+              "See tools/metrics/histograms/metadata/storage/histograms.xml"
+              "or chrome://histograms for a list of available histograms."))
     return parser
 
   def __init__(self, metrics: Sequence[ChromeHistogramMetric]) -> None:
@@ -145,17 +154,14 @@ class ChromeHistogramsProbe(JsonResultProbe):
     super().validate_browser(env, browser)
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
 
-  def to_json(self, actions: Actions) -> Json:
-    raise NotImplementedError("should not be called, data comes from context")
-
-  def get_context(self, run: Run) -> ChromeHistogramsProbeContext:
-    return ChromeHistogramsProbeContext(self, run)
+  def get_context_cls(self) -> Type[ChromeHistogramsProbeContext]:
+    return ChromeHistogramsProbeContext
 
 
 @dataclasses.dataclass
 class ChromeHistogramBucket:
   min: int
-  max: int
+  max: int | None
   count: int
 
 
@@ -204,7 +210,7 @@ class ChromeHistogramSample:
 
     bucket_counts: Dict[int, int] = {}
     bucket_maxes: Dict[int, int] = {}
-    prev_min: Optional[int] = None
+    prev_min: int | None = None
     for i, line in enumerate(body.splitlines(), start=1):
       m = re.match(cls._BUCKET_RE, line)
       if not m:
@@ -231,7 +237,7 @@ class ChromeHistogramSample:
                mean: Optional[float] = 0,
                flags: int = 0,
                bucket_counts: Optional[Dict[int, int]] = None,
-               bucket_maxes: Optional[Dict[int, int]] = None):
+               bucket_maxes: Optional[Dict[int, int]] = None) -> None:
     self._name = name
     self._count = count
     self._mean = mean
@@ -262,7 +268,7 @@ class ChromeHistogramSample:
     buckets: ChromeHistogramBuckets = []
     for bucket_min, bucket_count in self._bucket_counts.items():
       bucket_count = bucket_count - baseline.bucket_count(bucket_min)
-      bucket_max: Optional[int] = self._bucket_maxes.get(bucket_min)
+      bucket_max: int | None = self._bucket_maxes.get(bucket_min)
       buckets.append(
           ChromeHistogramBucket(bucket_min, bucket_max, bucket_count))
     return buckets
@@ -329,8 +335,8 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
 
   def __init__(self, probe: ChromeHistogramsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._baseline: Optional[Dict[str, ChromeHistogramSample]] = None
-    self._delta: Optional[Dict[str, ChromeHistogramSample]] = None
+    self._baseline: Dict[str, ChromeHistogramSample] | None = None
+    self._delta: Dict[str, ChromeHistogramSample] | None = None
 
   def dump_histograms(self, name: str) -> Dict[str, ChromeHistogramSample]:
     with self.run.actions(
@@ -355,6 +361,7 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
     self._delta = self.dump_histograms("stop")
     super().stop()
 
+  @override
   def to_json(self, actions: Actions) -> Json:
     del actions
     assert self._baseline, "Did not extract start histograms"

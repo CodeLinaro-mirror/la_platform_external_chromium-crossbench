@@ -19,8 +19,7 @@ from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
 from crossbench.benchmarks.loading.config.pages import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig)
-from crossbench.cli.config.secret_type import SecretType
-from crossbench.cli.config.secrets import Secret, SecretsConfig
+from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -138,19 +137,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       PagesConfig.parse(config_data)
     self.assertIn("empty", str(cm.exception).lower())
 
-  def test_parse_empty_missing_get_action(self):
-    config_data = {
-        "pages": {
-            "Google Story": [{
-                "action": "wait",
-                "duration": 5
-            }]
-        }
-    }
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      PagesConfig.parse(config_data)
-    self.assertIn("get", str(cm.exception).lower())
-
   def test_example(self):
     config_data = {
         "pages": {
@@ -179,9 +165,13 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     assert not file.exists()
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    pages = PagesConfig.parse(str(file)).pages
+    file_config = PagesConfig.parse(str(file))
+    self.assertEqual(config, file_config)
+    pages = file_config.pages
     self.assert_single_google_story(pages)
-    self.assertIsNone(config.pages[0].login)
+    self.assertIsNone(pages[0].login)
+
+    self.assertEqual(config, PagesConfig.parse(json.dumps(config_data)))
 
   def test_example_with_login(self):
     config_data = {
@@ -232,7 +222,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                     },
                     {
                         "action": "scroll",
-                        "direction": "down",
                         "duration": 3
                     },
                 ]
@@ -268,8 +257,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
         }
     }
     pages = PagesConfig.parse(config_data)
-    secret = Secret(SecretType.GOOGLE, "test", "s3cr3t")
-    self.assertEqual(pages.secrets, SecretsConfig({secret.type: secret}))
+    secret = GoogleUsernamePassword("test", "s3cr3t")
+    self.assertEqual(pages.secrets, Secrets(google=secret))
     self.assertEqual(pages.pages[0].first_url, "http://google.com")
 
   def test_no_scenarios(self):
@@ -312,16 +301,6 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
           PagesConfig.parse_dict(config_dict)
-
-  def test_missing_get_action_scenario(self):
-    with self.assertRaises(argparse.ArgumentTypeError):
-      PagesConfig.parse_dict(
-          {"pages": {
-              "TEST": [{
-                  "action": "wait",
-                  "duration": 5.0
-              }]
-          }})
 
   def test_get_action_durations(self):
     durations = [
@@ -485,7 +464,9 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     action = actions[0]
     self.assertEqual(action.TYPE, ActionType.CLICK)
     assert isinstance(action, ClickAction)
-    self.assertEqual(action.selector, "[aria-label='Search Google']")
+    self.assertIsNotNone(action.position.selector)
+    self.assertEqual(action.position.selector.selector,
+                     "[aria-label='Search Google']")
 
     config["selectors"] = [["aria/SIMPLE"], ["#rso > div:nth-of-type(3) h3"],
                            ["xpath///*[@id=\"rso\"]"],
@@ -493,7 +474,9 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
                            ["text/SIMPLE"]]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
-    self.assertEqual(action.selector, "xpath///*[@id=\"rso\"]")
+    self.assertIsNotNone(action.position.selector)
+    self.assertEqual(action.position.selector.selector,
+                     "xpath///*[@id=\"rso\"]")
 
     config["selectors"] = [
         ["aria/SIMPLE"],
@@ -501,14 +484,18 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     ]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
-    self.assertEqual(action.selector, "#rso > div:nth-of-type(3) h3")
+    self.assertIsNotNone(action.position.selector)
+    self.assertEqual(action.position.selector.selector,
+                     "#rso > div:nth-of-type(3) h3")
 
     config["selectors"] = [
         ["#rso > div:nth-of-type(3) h3"],
     ]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
-    self.assertEqual(action.selector, "#rso > div:nth-of-type(3) h3")
+    self.assertIsNotNone(action.position.selector)
+    self.assertEqual(action.position.selector.selector,
+                     "#rso > div:nth-of-type(3) h3")
 
     config["selectors"] = [
         ["aria/SIMPLE", "area/OTHER"],
@@ -516,14 +503,18 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     ]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
-    self.assertEqual(action.selector, "#rso > div:nth-of-type(3) h3")
+    self.assertIsNotNone(action.position.selector)
+    self.assertEqual(action.position.selector.selector,
+                     "#rso > div:nth-of-type(3) h3")
 
     config["selectors"] = [
         ["text/Content"],
     ]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
-    self.assertEqual(action.selector, "xpath///*[text()='Content']")
+    self.assertIsNotNone(action.position.selector)
+    self.assertEqual(action.position.selector.selector,
+                     "xpath///*[text()='Content']")
 
 
 class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
@@ -553,6 +544,8 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
     config_dict = ListPagesConfig.parse({"pages": "http://foo.bar.com,23s"})
     config_str = PagesConfig(
         pages=(PageConfig.parse("http://foo.bar.com,23s"),))
+    self.assertIsInstance(config_dict, ListPagesConfig)
+    self.assertIsInstance(config_str, PagesConfig)
     self.assertEqual(config_dict, config_str)
 
   @unittest.skip("Combined pages per line not supported yet")

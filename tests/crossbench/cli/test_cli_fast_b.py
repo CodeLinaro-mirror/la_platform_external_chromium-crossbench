@@ -11,22 +11,23 @@ from typing import List, Optional, Type
 from unittest import mock
 
 import hjson
+
+from crossbench import __version__, plt
+from crossbench.browsers import viewport
+from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
+from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.driver import DriverConfig
+from crossbench.cli.config.driver_type import BrowserDriverType
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
+from crossbench.env import ValidationMode
+from crossbench.parse import LateArgumentError
+from crossbench.path import AnyPath
+from crossbench.probes.internal.summary import ResultsSummaryProbe
+from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
-
-from crossbench import __version__, plt
-from crossbench.browsers import splash_screen, viewport
-from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
-from crossbench.env import ValidationMode
-from crossbench.parse import LateArgumentError
-from crossbench.path import AnyPath
-from crossbench.probes import internal
-from crossbench.runner.runner import Runner
 
 
 class FastCliTestCasePartA(BaseCliTestCase):
@@ -42,15 +43,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    browser_bin = browser_cls.mock_app_path(
+        self.platform).with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
-    with mock.patch.object(
-        BrowserVariantsConfig, "get_browser_cls",
-        return_value=browser_cls) as get_browser_cls:
+    with self._patch_get_browser_cls(browser_cls) as get_browser_cls:
       self.run_cli("loading", f"--browser={browser_bin}",
                    "--urls=http://test.com", "--env-validation=skip")
     get_browser_cls.assert_called_once_with(
@@ -60,16 +57,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
     if self.platform.is_win:
       self.skipTest("No auto-download available on windows")
     browser_cls = mock_browser.MockChromeStable
-    # TODO: migrate to with_stem once python 3.9 is available everywhere
-    suffix = browser_cls.mock_app_path().suffix
-    browser_bin = browser_cls.mock_app_path().with_name(
-        f"Custom Google Chrome{suffix}")
+    browser_bin = browser_cls.mock_app_path(
+        self.platform).with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls", return_value=browser_cls), mock.patch.object(
-            CrossBenchCLI, "_run_benchmark") as run_benchmark:
+    with self._patch_get_browser_cls(browser_cls), mock.patch.object(
+        BenchmarkSubcommand, "_run_benchmark") as run_benchmark:
       self.run_cli("loading", f"--browser={browser_bin}",
                    "--urls=http://test.com", "--env-validation=skip", "--",
                    "--chrome-flag1=value1", "--chrome-flag2")
@@ -96,13 +89,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
+    with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-beta",
@@ -113,7 +104,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 3)
       versions = []
       for result_file in result_files:
@@ -141,13 +132,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
+    with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-dev", "--browser=chrome-beta",
@@ -157,7 +146,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 2)
       versions = []
       for result_file in result_files:
@@ -185,13 +174,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
+    with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-dev", "--browser=chrome-beta",
@@ -201,7 +188,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 2)
       versions = []
       for result_file in result_files:
@@ -217,23 +204,23 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
       if browser_config.driver.type == BrowserDriverType.IOS:
-        self.assertEqual(browser_config.path,
-                         mock_browser.MockChromeStable.mock_app_path())
+        self.assertEqual(
+            browser_config.path,
+            mock_browser.MockChromeStable.mock_app_path(self.platform))
         return mock_browser.MockChromeStable
       if browser_config.driver.type == BrowserDriverType.WEB_DRIVER:
-        self.assertEqual(browser_config.path,
-                         mock_browser.MockChromeBeta.mock_app_path())
+        self.assertEqual(
+            browser_config.path,
+            mock_browser.MockChromeBeta.mock_app_path(self.platform))
         return mock_browser.MockChromeBeta
       self.assertEqual(browser_config.driver.type,
                        BrowserDriverType.APPLE_SCRIPT)
       self.assertEqual(browser_config.path,
-                       mock_browser.MockChromeDev.mock_app_path())
+                       mock_browser.MockChromeDev.mock_app_path(self.platform))
       return mock_browser.MockChromeDev
 
     self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
-    with mock.patch.object(
-        BrowserVariantsConfig,
-        "get_browser_cls",
+    with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"
       self.run_cli("loading", "--browser=ios:chrome-stable",
@@ -244,7 +231,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
       result_files = list(
-          self.out_dir.glob(f"*/*/{internal.ResultsSummaryProbe.NAME}.json"))
+          self.out_dir.glob(f"*/*/{ResultsSummaryProbe.NAME}.json"))
       self.assertEqual(len(result_files), 3)
       versions = []
       for result_file in result_files:
@@ -259,7 +246,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_probe_invalid_inline_json_config(self):
     with self.assertRaises(
-        argparse.ArgumentError) as cm, self.patch_get_browser():
+        argparse.ArgumentError) as cm, self._patch_get_browser():
       self.run_cli("loading", "--probe=v8.log{invalid json: d a t a}",
                    "--urls=cnn", "--env-validation=skip", "--throw")
     message = str(cm.exception)
@@ -267,7 +254,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_probe_empty_inline_json_config(self):
     js_flags = ["--log-foo", "--log-bar"]
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", "--probe=v8.log{}", f"--urls={url}",
                    "--env-validation=skip")
@@ -279,7 +266,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_probe_inline_json_config(self):
     js_flags = ["--log-foo", "--log-bar"]
     json_config = json.dumps({"js_flags": js_flags})
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       url = "http://test.com"
       self.run_cli("loading", f"--probe=v8.log{json_config}", f"--urls={url}",
                    "--env-validation=skip")
@@ -289,12 +276,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
           self.assertIn(flag, browser.js_flags)
 
   def test_env_config_name(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "--env=strict", "--urls=http://test.com",
                    "--env-validation=skip", "--throw")
 
   def test_env_config_inline_hjson(self):
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", "--env={\"power_use_battery\":false}",
                    "--urls=http://test.com", "--env-validation=skip")
 
@@ -318,17 +305,14 @@ class FastCliTestCasePartA(BaseCliTestCase):
     def mock_get_browser_cls(browser_config: BrowserConfig):
       self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
-        if mock_browser_cls.mock_app_path() == browser_config.path:
+        if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
     driver_path = self.out_dir / "driver"
     self.fs.create_file(driver_path, st_size=1024)
     with self.assertRaises(LateArgumentError) as cm:
-      with mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+      with self._patch_get_browser_cls(side_effect=mock_get_browser_cls):
         self.run_cli("loading", "--browser=chrome", "--browser=firefox",
                      f"--driver-path={driver_path}", "--urls=http://test.com",
                      "--env-validation=skip", "--throw")
@@ -358,7 +342,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config = pathlib.Path("/test.config.hjson")
     with config.open("w", encoding="utf-8") as f:
       hjson.dump({"env": {}}, f)
-    with self.patch_get_browser():
+    with self._patch_get_browser():
       self.run_cli("loading", f"--env-config={config}",
                    "--urls=http://test.com", "--env-validation=skip")
 
@@ -380,39 +364,37 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("unknown-value", message)
 
   def test_splash_screen_none(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--splash-screen=none")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertEqual(browser.splash_screen, splash_screen.SplashScreen.NONE)
+        self.assertEqual(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual([url], browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_splash_screen_minimal(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--splash-screen=minimal")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertEqual(browser.splash_screen,
-                         splash_screen.SplashScreen.MINIMAL)
+        self.assertEqual(browser.settings.splash_screen, SplashScreen.MINIMAL)
         self.assertEqual(len(browser.url_list), 3)
         self.assertIn(url, browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_splash_screen_url(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       splash_url = "http://splash.com"
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", f"--splash-screen={splash_url}")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertIsInstance(browser.splash_screen,
-                              splash_screen.URLSplashScreen)
+        self.assertIsInstance(browser.settings.splash_screen, URLSplashScreen)
         self.assertEqual(len(browser.url_list), 3)
         self.assertEqual(splash_url, browser.url_list[0])
         self.assertEqual(len(browser.js_flags), 0)
@@ -426,11 +408,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("-123", message)
 
   def test_viewport_maximized(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--env-validation=skip",
                          "--throw", "--viewport=maximized")
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.viewport, viewport.Viewport.MAXIMIZED)
         self.assertEqual(len(browser.url_list), 3)
@@ -440,7 +422,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     powersampler_bin = self.out_dir / "powersampler"
     self.fs.create_file(powersampler_bin, st_size=1024)
     config_str = json.dumps({"bin_path": str(powersampler_bin)})
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         self.run_cli("loading", "--browser=chrome",
                      f"--probe=powersampler:{config_str}", "--repeat=10",
@@ -449,20 +431,20 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.assertIn("powersampler", str(cm.exception))
 
   def test_fast(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--throw", "--fast")
-      self.assertEqual(cli.args.splash_screen, splash_screen.SplashScreen.NONE)
+      self.assertEqual(cli.args.splash_screen, SplashScreen.NONE)
       self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
       self.assertEqual(cli.args.env_validation, ValidationMode.SKIP)
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
-        self.assertIs(browser.splash_screen, splash_screen.SplashScreen.NONE)
+        self.assertIs(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual(browser.url_list, [url])
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_create_symlinks(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       out_dir = self.out_dir / "create_symlinks"
       self.assertFalse(out_dir.exists())
       url = "http://test.com"
@@ -477,7 +459,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.assertTrue(links[0].is_symlink())
 
   def test_no_symlinks(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       out_dir = self.out_dir / "no_symlinks"
       self.assertFalse(out_dir.exists())
       url = "http://test.com"
@@ -490,12 +472,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
           self.assertFalse((dirpath / name).is_symlink())
 
   def test_debug(self):
-    with self.mock_chrome_stable():
+    with self._patch_get_browser_cls():
       url = "http://test.com"
       cli = self.run_cli("loading", f"--urls={url}", "--debug")
       self.assertTrue(cli.args.throw)
       self.assertEqual(cli.args.verbosity, 3)
-      for browser in cli.runner.browsers:
+      for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(len(browser.url_list), 3)
         self.assertEqual(len(browser.js_flags), 0)
@@ -512,7 +494,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     for debugger in ("lldb", "gdb", "lldb"):
       searched_binaries = []
-      with self.mock_chrome_stable(), mock.patch.object(
+      with self._patch_get_browser_cls(), mock.patch.object(
           plt.PLATFORM, "search_binary", side_effect=mock_search_binary):
         with self.assertRaises(ValueError) as cm:
           self.run_cli("loading", "--urls=cnn", f"--{debugger}", "--throw")

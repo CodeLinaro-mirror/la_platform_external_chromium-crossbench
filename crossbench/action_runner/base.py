@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
 
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
+from crossbench.action_runner.bond_base import BondActionRunner
+from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
@@ -18,7 +20,6 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.combined import CombinedPage
   from crossbench.benchmarks.loading.page.interactive import InteractivePage
   from crossbench.benchmarks.loading.tab_controller import TabController
-  from crossbench.path import LocalPath
   from crossbench.runner.run import Run
 
 
@@ -55,17 +56,17 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
 
     super().__init__(runner, action, input_source_message)
 
-
 class ActionRunner:
 
-  def __init__(self):
+  def __init__(self) -> None:
     self._listener = ActionRunnerListener()
+    # TODO: Don't share state across runs
+    self._info_stack: exception.TInfoStack | None = None
 
-  def set_listener(self, listener):
+    self._failure_screenshot_annotations: List[ScreenshotAnnotation] = []
+
+  def set_listener(self, listener: ActionRunnerListener) -> None:
     self._listener = listener
-
-  # TODO: Don't share state across runs
-  _info_stack: Optional[exception.TInfoStack]
 
   # info_stack is a unique identifier for the currently running or most recently
   # run action.
@@ -74,6 +75,14 @@ class ActionRunner:
     if not self._info_stack:
       raise RuntimeError("info_stack can not be called before run_blocks")
     return self._info_stack
+
+  @property
+  def bond(self) -> BondActionRunner:
+    return BondActionRunner()
+
+  def teardown(self, run: Run) -> None:
+    del run
+    pass
 
   def run_blocks(self, run: Run, page: InteractivePage,
                  blocks: Iterable[ActionBlock]) -> None:
@@ -87,6 +96,7 @@ class ActionRunner:
     with exception.annotate(f"Running block {block_index}: {block.label}"):
       for action_index, action in enumerate(block, start=1):
         self._info_stack = (f"block_{block_index}", f"action_{action_index}")
+        self._failure_screenshot_annotations = []
         action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
@@ -171,9 +181,20 @@ class ActionRunner:
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)
 
-  def screenshot_impl(self, run: Run, suffix: str) -> None:
-    del run, suffix
+  def screenshot_impl(
+      self,
+      run: Run,
+      suffix: str,
+      annotations: Optional[Sequence[ScreenshotAnnotation]] = None) -> None:
+    del run, suffix, annotations
     raise NotImplementedError("screenshot_impl not implemented")
+
+  def add_failure_screenshot_annotation(
+      self, annotation: ScreenshotAnnotation) -> None:
+    self._failure_screenshot_annotations.append(annotation)
+
+  def failure_screenshot(self, run: Run, suffix: str) -> None:
+    self.screenshot_impl(run, suffix, self._failure_screenshot_annotations)
 
   def screenshot(self, run: Run, action: i_action.ScreenshotAction) -> None:
     del action
@@ -195,7 +216,7 @@ class ActionRunner:
       run.runner.wait(duration)
 
   def run_page_multiple_tabs(self, run: Run, tabs: TabController,
-                             pages: Iterable[Page]):
+                             pages: Iterable[Page]) -> None:
     # TODO: refactor possible logics to TabController.
     browser = run.browser
     for _ in tabs:
@@ -214,14 +235,14 @@ class ActionRunner:
         raise
 
   def run_combined_page(self, run: Run, page: CombinedPage,
-                        multiple_tabs: bool):
+                        multiple_tabs: bool) -> None:
     if multiple_tabs:
       self.run_page_multiple_tabs(run, page.tabs, page.pages)
     else:
       for sub_page in page.pages:
         sub_page.run_with(run, self, False)
 
-  def run_interactive_page_once(self, run: Run, page: InteractivePage):
+  def run_interactive_page_once(self, run: Run, page: InteractivePage) -> None:
     try:
       self.run_blocks(run, page, page.blocks)
       self._maybe_navigate_to_about_blank(run, page)
@@ -230,13 +251,14 @@ class ActionRunner:
       raise
 
   def run_interactive_page(self, run: Run, page: InteractivePage,
-                           multiple_tabs: bool):
+                           multiple_tabs: bool) -> None:
     if multiple_tabs:
       self.run_page_multiple_tabs(run, page.tabs, [page])
     else:
       self.run_interactive_page_once(run, page)
 
-  def run_setup(self, run: Run, page: InteractivePage, setup: ActionBlock):
+  def run_setup(self, run: Run, page: InteractivePage,
+                setup: ActionBlock) -> None:
     try:
       with exception.annotate("setup"):
         setup.run_with(self, run, page)
@@ -244,13 +266,21 @@ class ActionRunner:
       page.create_failure_artifacts(run, "setup-failure")
       raise
 
-  def run_login(self, run: Run, page: InteractivePage, login: ActionBlock):
+  def run_login(self, run: Run, page: InteractivePage,
+                login: ActionBlock) -> None:
     try:
       with exception.annotate("login"):
-        login.run_with(self, run, page)
+        with run.browser.network.traffic_shaper.pause():
+          login.run_with(self, run, page)
     except Exception:
       page.create_failure_artifacts(run, "login-failure")
       raise
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
+    raise ActionNotImplementedError(self, action)
+
+  def close_tab(self, run: Run, action: i_action.CloseTabAction):
+    raise ActionNotImplementedError(self, action)
+
+  def wait_for_download(self, run: Run, action: i_action.WaitForDownloadAction):
     raise ActionNotImplementedError(self, action)

@@ -5,31 +5,36 @@
 from __future__ import annotations
 
 import abc
+import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Optional, cast
+from typing import TYPE_CHECKING, Iterable, Self, cast
 
-from crossbench import helper
+from typing_extensions import override
+
 from crossbench import path as pth
-from crossbench.parse import PathParser
+from crossbench.helper import fs_helper
+from crossbench.helper.wait import WaitRange
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
+from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser, ProbeKeyT)
+                                     ProbeKeyT)
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.plt.base import TupleCmdArgs
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
 _PERFETTO_CONFIG_REMOTE_DIR_ANDROID = pth.AnyPath(
     "/data/misc/perfetto-configs/")
 _PERFETTO_TRACE_REMOTE_DIR_ANDROID = pth.AnyPath("/data/misc/perfetto-traces/")
-
 _PERFETTO_REMOTE_DIR_CROS = pth.AnyPath("/usr/local/tmp")
+
 
 class PerfettoProbe(Probe):
   """
@@ -54,34 +59,53 @@ class PerfettoProbe(Probe):
   IS_GENERAL_PURPOSE = True
 
   @classmethod
-  def config_parser(cls) -> ProbeConfigParser:
+  @override
+  def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "textproto",
-        type=str,
+        type=ObjectParser.str_or_file_contents,
         help=("Serialized perfetto configuration. "
               "See probe instructions for more details"))
     parser.add_argument(
         "perfetto_bin",
         type=PathParser.any_path,
-        default="perfetto",
-        help="Perfetto binary on the browser device")
+        default=pth.AnyPath("perfetto"),
+        help="Perfetto binary on the browser device (android, chrome-os)")
+    parser.add_argument(
+        "tracebox_bin",
+        type=PathParser.any_path,
+        default=pth.AnyPath("tracebox"),
+        help="Tracebox binary on the browser device (linux, macos). "
+        "Auto downloaded on local devices.")
+    parser.add_argument(
+        "trace_browser_startup",
+        type=bool,
+        default=False,
+        help="Start perfetto tracing before launching the browser.")
     return parser
 
-  def __init__(self, textproto: str, perfetto_bin: pth.AnyPath):
+  def __init__(self,
+               textproto: str,
+               perfetto_bin: pth.AnyPath,
+               tracebox_bin: pth.AnyPath,
+               trace_browser_startup: bool = False) -> None:
     super().__init__()
     if not textproto:
       raise ValueError("Please specify a tracing config")
     self._textproto = textproto
-    if not perfetto_bin:
-      raise ValueError("Please specify a perfetto binary.")
     self._perfetto_bin = perfetto_bin
+    self._tracebox_bin = tracebox_bin
+    self._trace_browser_startup = trace_browser_startup
 
   @property
+  @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("textproto", self.textproto),
         ("perfetto_bin", str(self.perfetto_bin)),
+        ("tracebox_bin", str(self.tracebox_bin)),
+        ("trace_browser_startup", str(self.trace_browser_startup)),
     )
 
   @property
@@ -93,23 +117,29 @@ class PerfettoProbe(Probe):
     return self._perfetto_bin
 
   @property
+  def tracebox_bin(self) -> pth.AnyPath:
+    return self._tracebox_bin
+
+  @property
+  def trace_browser_startup(self) -> bool:
+    return self._trace_browser_startup
+
+  @property
+  @override
   def result_path_name(self) -> str:
     return "perfetto.trace.pb"
 
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
-    super().validate_browser(env, browser)
-    if not (browser.platform.is_android or browser.platform.is_chromeos):
-      raise ProbeIncompatibleBrowser(self, browser,
-                                     "Only supported on android or ChromeOS")
-
+  @override
   def attach(self, browser: Browser) -> None:
-    assert browser.attributes.is_chromium_based
+    assert browser.attributes().is_chromium_based
     browser.features.enable("EnablePerfettoSystemTracing")
     super().attach(browser)
 
+  @override
   def log_run_result(self, run: Run) -> None:
     self._log_results([run])
 
+  @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_results(group.runs)
 
@@ -119,13 +149,15 @@ class PerfettoProbe(Probe):
     for run in runs:
       result_file = run.results[self].file
       logging.critical("  - %s : %s", result_file,
-                       helper.get_file_size(result_file))
+                       fs_helper.get_file_size(result_file))
 
   def get_context(self, run: Run) -> PerfettoProbeContext:
     # TODO: support more platforms
     if run.browser_platform.is_chromeos:
       return ChromeOsPerfettoProbeContext(self, run)
-    return AndroidPerfettoProbeContext(self, run)
+    if run.browser_platform.is_android:
+      return AndroidPerfettoProbeContext(self, run)
+    return DesktopPerfettoProbeContext(self, run)
 
 
 class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
@@ -133,21 +165,26 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     super().__init__(probe, run)
     self._host_config_file: pth.LocalPath = (
         run.out_dir / "perfetto_config.textproto")
-    self._pid: Optional[int] = None
-
+    self._perfetto_pid: int | None = None
 
   def setup(self) -> None:
-    assert self._pid is None
+    assert self._perfetto_pid is None
     for p in self.browser_platform.processes():
       if p["name"] == "perfetto":
         logging.warning("PERFETTO: killing existing session pid: %s", p["pid"])
         self.browser_platform.terminate(p["pid"])
+    self._setup_validate_bin()
+    self._setup_push_perfetto_config()
+    if self.probe.trace_browser_startup:
+      self._start_perfetto()
 
-    if not self.browser_platform.which(self.probe.perfetto_bin):
+  def _setup_validate_bin(self) -> None:
+    binary = self.perfetto_cmd[0]
+    if not self.browser_platform.which(binary):
       raise ValueError(
-          f"perfetto bin '{self.probe.perfetto_bin}' cannot be found "
-          f"on {self.browser_platform}")
+          f"{repr(binary)} cannot be found on {self.browser_platform}")
 
+  def _setup_push_perfetto_config(self) -> None:
     self.host_platform.set_file_contents(self._host_config_file,
                                          self.probe.textproto)
     self.browser_platform.push(self._host_config_file,
@@ -161,40 +198,59 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
   def get_default_result_path(self) -> pth.AnyPath:
     pass
 
+  @property
+  def perfetto_cmd(self) -> TupleCmdArgs:
+    return (self.probe.perfetto_bin,)
+
   def start(self) -> None:
+    if self.probe.trace_browser_startup:
+      if not self._perfetto_pid:
+        raise RuntimeError("Perfetto was not started")
+      return
+    self._start_perfetto()
+    self.browser.performance_mark("crossbench-probe-perfetto-start")
+
+  def stop(self) -> None:
+    self.browser.performance_mark("crossbench-probe-perfetto-stop")
+    logging.info("PERFETTO: stopping")
+    if not self._perfetto_pid:
+      raise RuntimeError("Perfetto was not started")
+    self._stop_perfetto()
+
+  def _start_perfetto(self) -> None:
     logging.info("PERFETTO: starting")
-    proc = self.browser_platform.sh(
-        self.probe.perfetto_bin,
+    cmd: TupleCmdArgs = self.perfetto_cmd + (
         "--background",
         "--config",
         self.get_browser_config_path(),
         "--txt",
         "--out",
         self.result_path,
-        capture_output=True)
+    )
+    proc = self.browser_platform.sh(*cmd, capture_output=True)
     if proc.returncode > 0:
       logging.error("perfetto command failed with stderr: %s", proc.stderr)
       raise subprocess.CalledProcessError(proc.returncode, proc.args,
                                           proc.stdout, proc.stderr)
 
-    self._pid = int(proc.stdout.decode("utf-8").rstrip())
-    self.browser.performance_mark("crossbench-probe-perfetto-start")
+    self._perfetto_pid = NumberParser.positive_int(
+        proc.stdout.decode("utf-8").rstrip(), "perfetto pid")
+    atexit.register(self._stop_perfetto)
 
-  def stop(self) -> None:
-    self.browser.performance_mark("crossbench-probe-perfetto-stop")
-    logging.info("PERFETTO: stopping")
-    if not self._pid:
-      raise RuntimeError("Perfetto was not started")
-    # TODO(cbruni): replace with wait_and_terminate
-    self.browser_platform.terminate(self._pid)
+  def _stop_perfetto(self) -> None:
+    if not self._perfetto_pid:
+      return
+    atexit.unregister(self._stop_perfetto)
+    # TODO(cbruni): replace with terminate_gracefully
+    self.browser_platform.terminate(self._perfetto_pid)
     try:
-      for _ in helper.WaitRange(1, 30).wait_with_backoff():
-        if not self.browser_platform.process_info(self._pid):
+      for _ in WaitRange(1, 30).wait_with_backoff():
+        if not self.browser_platform.process_info(self._perfetto_pid):
           break
     except TimeoutError:
       logging.error("perfetto process did not stop after 30s. "
                     "The trace might be incomplete.")
-    self._pid = None
+    self._perfetto_pid = None
 
   def teardown(self) -> ProbeResult:
     # Copy files:
@@ -210,15 +266,69 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     return LocalProbeResult(trace=(local_result_file,))
 
 
+class DesktopPerfettoProbeContext(PerfettoProbeContext):
+
+  def __init__(self, probe: PerfettoProbe, run: Run) -> None:
+    self._tracebox_proc: subprocess.Popen | None = None
+    super().__init__(probe, run)
+    self._tracebox_bin = self.probe.tracebox_bin
+
+  @override
+  def get_browser_config_path(self) -> pth.AnyPath:
+    return self.result_path.with_name("perfetto_config.textproto")
+
+  @override
+  def get_default_result_path(self) -> pth.AnyPath:
+    return self._run.get_default_probe_result_path(
+        self._probe).with_name("perfetto.trace.pb")
+
+  @override
+  def setup(self) -> None:
+    super().setup()
+    self._tracebox_proc = self._setup_tracebox()
+
+  @override
+  def _setup_validate_bin(self) -> None:
+    if not self.browser_platform.which(self._tracebox_bin):
+      self._tracebox_bin = PerfettoToolDownloader(
+          "tracebox", platform=self.browser_platform).download()
+    super()._setup_validate_bin()
+
+  @override
+  def teardown(self) -> ProbeResult:
+    self._teardown_tracebox()
+    return super().teardown()
+
+  def _setup_tracebox(self) -> subprocess.Popen:
+    tracebox_proc = self.browser_platform.popen(self._tracebox_bin, "traced",
+                                                "traced_probes")
+    atexit.register(self._teardown_tracebox)
+    return tracebox_proc
+
+  def _teardown_tracebox(self) -> None:
+    if self._tracebox_proc:
+      atexit.unregister(self._teardown_tracebox)
+      self._tracebox_proc.terminate()
+      self._tracebox_proc = None
+
+  @property
+  @override
+  def perfetto_cmd(self) -> TupleCmdArgs:
+    return (self._tracebox_bin, "perfetto")
+
+
 class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
+  @override
   def get_browser_config_path(self) -> pth.AnyPath:
     return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / "perfetto_config.textproto"
 
+  @override
   def get_default_result_path(self) -> pth.AnyPath:
     return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / "perfetto.trace.pb"
 
   @property
+  @override
   def browser_platform(self) -> AndroidAdbPlatform:
     browser_platform = super().browser_platform
     assert isinstance(browser_platform, AndroidAdbPlatform)
@@ -228,13 +338,16 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 class ChromeOsPerfettoProbeContext(PerfettoProbeContext):
 
   @property
+  @override
   def browser_platform(self) -> ChromeOsSshPlatform:
     browser_platform = super().browser_platform
     isinstance(browser_platform, ChromeOsSshPlatform)
     return cast(ChromeOsSshPlatform, browser_platform)
 
+  @override
   def get_browser_config_path(self) -> pth.AnyPath:
     return _PERFETTO_REMOTE_DIR_CROS / "perfetto_config.textproto"
 
+  @override
   def get_default_result_path(self) -> pth.AnyPath:
     return _PERFETTO_REMOTE_DIR_CROS / "perfetto.trace.pb"

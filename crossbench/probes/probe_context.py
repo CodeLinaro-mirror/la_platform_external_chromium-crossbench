@@ -10,6 +10,8 @@ import datetime as dt
 from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
                     TypeVar)
 
+from typing_extensions import override
+
 from crossbench import plt
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        LocalProbeResult, ProbeResult)
@@ -46,8 +48,8 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     self._result_origin = result_origin
     self._is_active: bool = False
     self._is_success: bool = False
-    self._start_time: Optional[dt.datetime] = None
-    self._stop_time: Optional[dt.datetime] = None
+    self._start_time: dt.datetime | None = None
+    self._stop_time: dt.datetime | None = None
 
   def set_start_time(self, start_datetime: dt.datetime) -> None:
     assert self._start_time is None
@@ -59,14 +61,14 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     assert not self._is_active
     assert not self._is_success
 
-    with self.result_origin.exception_handler(f"Probe {self.name} start"):
+    with self.result_origin.exception_capture(f"Probe {self.name} start"):
       self._is_active = True
       self.start()
 
     try:
       yield
     finally:
-      with self.result_origin.exception_handler(f"Probe {self.name} stop"):
+      with self.result_origin.exception_capture(f"Probe {self.name} stop"):
         self.stop()
         self._is_success = True
         assert self._stop_time is None
@@ -157,10 +159,15 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     """Helper to create LocalProbeResult."""
     return LocalProbeResult(url=url, file=file, **kwargs)
 
+  def empty_result(self) -> EmptyProbeResult:
+    return EmptyProbeResult()
+
   def setup(self) -> None:
     """
     Called before starting the browser, typically used to set run-specific
     browser flags.
+    If an error is thrown here, *none* of the other hooks
+    (start, stop, teardown) will be called.
     """
 
   @abc.abstractmethod
@@ -195,26 +202,32 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self._run
 
   @property
+  @override
   def result_origin(self) -> ResultOrigin:
     return self._run
 
   @property
+  @override
   def session(self) -> BrowserSessionRunGroup:
     return self._run.session
 
   @property
+  @override
   def browser(self) -> Browser:
     return self._run.browser
 
   @property
+  @override
   def runner(self) -> Runner:
     return self._run.runner
 
   @property
+  @override
   def result_path(self) -> AnyPath:
     return self._default_result_path
 
   @property
+  @override
   def local_result_path(self) -> LocalPath:
     return self.host_platform.local_path(self.result_path)
 
@@ -226,11 +239,12 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     del options
 
   @abc.abstractmethod
+  @override
   def start(self) -> None:
     """
     Called immediately before starting the given Run, after the browser started.
     This method should have as little overhead as possible. If possible,
-    delegate heavy computation to the "SetUp" method.
+    delegate heavy computation to the "setup" method.
     """
 
   def start_story_run(self) -> None:
@@ -246,6 +260,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     """
 
   @abc.abstractmethod
+  @override
   def stop(self) -> None:
     """
     Called immediately after finishing the given Run with the browser still
@@ -256,16 +271,18 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return None
 
   @abc.abstractmethod
+  @override
   def teardown(self) -> ProbeResult:
     """
     Called after stopping all probes and shutting down the browser.
+    Not called if an error was thrown in the setup method.
     Returns
     - None if no data was collected
     - If Data was collected:
       - Either a path (or list of paths) to results file
       - Directly a primitive json-serializable object containing the data
     """
-    return EmptyProbeResult()
+    return self.empty_result()
 
 
 class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
@@ -284,17 +301,21 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self._session.get_default_probe_result_path(self._probe)
 
   @property
+  @override
   def session(self) -> BrowserSessionRunGroup:
     return self._session
 
   @property
+  @override
   def result_origin(self) -> ResultOrigin:
     return self._session
 
   @property
+  @override
   def browser(self) -> Browser:
     return self._session.browser
 
   @property
+  @override
   def result_path(self) -> AnyPath:
     return self._default_result_path

@@ -8,8 +8,10 @@ import datetime as dt
 from typing import Optional
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
-from crossbench.env import HostEnvironmentConfig, ValidationMode
+from crossbench.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
@@ -18,6 +20,7 @@ from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 class TestManualBenchmark(BaseBenchmarkTestCase):
 
   @property
+  @override
   def benchmark_cls(self):
     return ManualBenchmark
 
@@ -55,11 +58,12 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=HostEnvironmentConfig(),
+        env_config=EnvironmentConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
-        throw=True)
+        throw=True,
+        in_memory_result_db=True)
 
     with self.assertLogs(level="INFO") as cm:
       runner.run()
