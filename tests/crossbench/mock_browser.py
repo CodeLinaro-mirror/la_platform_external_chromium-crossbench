@@ -111,6 +111,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.tab_list: List[int] = [next(self.tab_handler_generator)]
     self._current_url: str = ""
     self._default_js_return = None
+    self._performance_marks: List[str] = []
 
   def expect_js(
       self,
@@ -177,6 +178,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def js(self, script, timeout: Optional[dt.timedelta] = None, arguments=()):
+
     self.invoked_js.append(
         JsInvocation(
             result=None, script=script, arguments=arguments, timeout=timeout))
@@ -218,6 +220,14 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
     # Return copies to avoid leaking data between repetitions.
     return copy.deepcopy(expectation.result)
+
+  @override
+  def performance_mark(self, name: str) -> None:
+    self.performance_marks.append(name)
+
+  @property
+  def performance_marks(self) -> List[str]:
+    return self._performance_marks
 
   @override
   def is_logged_in(self,

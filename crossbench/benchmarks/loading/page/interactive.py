@@ -102,11 +102,10 @@ class InteractivePage(Page):
     action_runner = get_action_runner(run)
     action_runner.teardown(run)
 
-  def run(self, run: Run) -> None:
+  def run_once(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     multiple_tabs = self.tabs.multiple_tabs
-    for _ in self._playback:
-      action_runner.run_interactive_page(run, self, multiple_tabs)
+    action_runner.run_interactive_page(run, self, multiple_tabs)
 
   @override
   def run_with(self, run: Run, action_runner: ActionRunner,

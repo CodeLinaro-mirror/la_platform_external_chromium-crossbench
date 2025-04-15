@@ -28,6 +28,9 @@ if TYPE_CHECKING:
 
 DEFAULT_DURATION_SECONDS = 15
 DEFAULT_DURATION = dt.timedelta(seconds=DEFAULT_DURATION_SECONDS)
+PERFORMANCE_MARK_PREFIX: str = "crossbench-"
+ITERATION_START_MARK: str = PERFORMANCE_MARK_PREFIX + "iteration-start"
+ITERATION_END_MARK: str = PERFORMANCE_MARK_PREFIX + "iteration-end"
 
 # This is initialized in interactive.py to avoid circular dependencies
 PAGE_LIST: List[Page] = []
@@ -68,6 +71,16 @@ class Page(Story, metaclass=abc.ABCMeta):
   def run_with(self, run: Run, action_runner: ActionRunner,
                multiple_tabs: bool) -> None:
     pass
+
+  @abc.abstractmethod
+  def run_once(self, run: Run) -> None:
+    pass
+
+  def run(self, run: Run) -> None:
+    for _ in self._playback:
+      run.browser.performance_mark(ITERATION_START_MARK)
+      self.run_once(run)
+      run.browser.performance_mark(ITERATION_END_MARK)
 
   @property
   @abc.abstractmethod

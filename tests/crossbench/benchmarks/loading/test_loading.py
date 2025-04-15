@@ -211,6 +211,40 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     urls = [url1, url2] * 3
     self._assert_urls_loaded(urls)
 
+  def test_iteration_performance_marks_single_run(self):
+    url1 = "https://www.example.com/test1"
+    url2 = "https://www.example.com/test2"
+    stories = self.story_filter([url1, url2],
+                                separate=False,
+                                playback=PlaybackController.repeat(1)).stories
+    self._test_run(stories)
+
+    for browser in self.browsers:
+      # one mark for iteration start, one for iteration end
+      self.assertEqual(len(browser.performance_marks), 2)
+      self.assertEqual(browser.performance_marks[0],
+                       "crossbench-iteration-start")
+      self.assertEqual(browser.performance_marks[1], "crossbench-iteration-end")
+
+  def test_iteration_performance_marks_repeat_run(self):
+    repeats: int = 3
+    url1 = "https://www.example.com/test1"
+    url2 = "https://www.example.com/test2"
+    stories = self.story_filter(
+        [url1, url2],
+        separate=False,
+        playback=PlaybackController.repeat(repeats)).stories
+    self._test_run(stories)
+
+    for browser in self.browsers:
+      # one mark for iteration start, one for iteration end
+      self.assertEqual(len(browser.performance_marks), 2 * repeats)
+      for i in range(repeats):
+        self.assertEqual(browser.performance_marks[i * 2],
+                         "crossbench-iteration-start")
+        self.assertEqual(browser.performance_marks[(i * 2) + 1],
+                         "crossbench-iteration-end")
+
   def test_run_repeat_separate(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
