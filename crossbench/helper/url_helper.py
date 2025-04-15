@@ -7,11 +7,10 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import urllib.parse as urlparse
-from typing import Any, Dict, Iterator, Mapping, Optional
+from typing import Any, Callable, Dict, Mapping, Optional
 
 import requests
 
-from crossbench.helper import wait
 from crossbench.runner.timing import AnyTime
 
 DEFAULT_REQUEST_TIMEOUT = dt.timedelta(seconds=10)
@@ -23,29 +22,39 @@ ConnectionError = requests.ConnectionError  # pylint: disable=redefined-builtin
 Response = requests.Response
 
 
+def retry_timeout_request(
+    url: str, timeout: AnyTime, retry: int, verbose: bool, method: str,
+    send_request: Callable[[float], requests.Response]) -> requests.Response:
+  deadline = dt.datetime.now() + dt.timedelta(seconds=to_seconds(timeout))
+  request_timeout_seconds = to_seconds(timeout)
+  i = 0
+  while True:
+    try:
+      if verbose:
+        logging.debug("%s: url: %s", method, url)
+      response = send_request(request_timeout_seconds)
+      response.raise_for_status()
+      return response
+    except requests.RequestException as e:
+      request_timeout_seconds = (deadline - dt.datetime.now()).total_seconds()
+      if i < retry and request_timeout_seconds > 0:
+        i += 1
+        if verbose:
+          logging.warning("%s request failed url=%s, retrying: %s", method, url,
+                          e)
+        continue
+      logging.error("%s request failed url=%s", method, url)
+      raise e
+
+
 def get(url: str,
         timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
         retry: int = 0,
         verbose: bool = True) -> requests.Response:
-  max_request_count = retry + 1
-  request_timeout_seconds = to_seconds(timeout) / max_request_count
-  for i in _retry(retry):
-    try:
-      if verbose:
-        logging.debug("GET: url: %s", url)
-      response = requests.get(url, timeout=request_timeout_seconds)
-      response.raise_for_status()
-      return response
-    except requests.RequestException as e:
-      if i < retry:
-        if verbose:
-          logging.warning("GET request failed url=%s, retrying: %s", url, e)
-        continue
-      if verbose:
-        logging.error("GET request failed url=%s", url)
-      raise e
-  raise RuntimeError("Could not complete request")
-
+  return retry_timeout_request(
+      url, timeout, retry, verbose, "GET",
+      lambda request_timeout_seconds: requests.get(
+          url, timeout=request_timeout_seconds))
 
 def post(url: str,
          body_json: Optional[Any] = None,
@@ -53,37 +62,16 @@ def post(url: str,
          timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
          retry: int = 0,
          verbose: bool = True) -> requests.Response:
-  max_request_count = retry + 1
-  request_timeout_seconds = to_seconds(timeout) / max_request_count
-  for i in _retry(retry):
-    try:
-      response = requests.post(
-          url, headers=headers, json=body_json, timeout=request_timeout_seconds)
-      response.raise_for_status()
-      return response
-    except requests.RequestException as e:
-      if i < retry:
-        if verbose:
-          logging.warning("POST request failed url=%s retrying: %s", url, e)
-        continue
-      if verbose:
-        logging.error("POST request failed url=%s", url)
-      raise e
-  raise RuntimeError("Could not complete request")
-
+  return retry_timeout_request(
+      url, timeout, retry, verbose, "POST",
+      lambda request_timeout_seconds: requests.post(
+          url, headers=headers, json=body_json, timeout=request_timeout_seconds
+      ))
 
 def to_seconds(delta: AnyTime) -> float:
   if isinstance(delta, dt.timedelta):
     return delta.total_seconds()
   return delta
-
-
-def _retry(retry: int) -> Iterator[int]:
-  max_iterations = retry + 1
-  wait_range = wait.WaitRange(min=1, max_iterations=max_iterations)
-  for i, _, _ in wait_range.wait_with_backoff():
-    yield i
-
 
 def update_url_query(url: str, query_params: Dict[str, str]) -> str:
   parsed_url = urlparse.urlparse(url)

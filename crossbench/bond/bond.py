@@ -144,8 +144,8 @@ class BondClient:
                        body_json: Any,
                        retry: int = 3) -> requests.Response:
     headers = self._get_request_headers()
-    return url_helper.post(url, body_json, headers, retry)
-
+    return url_helper.post(
+        url=url, body_json=body_json, headers=headers, retry=retry)
 
   def create_meeting(self) -> str:
     request_body_json = {
