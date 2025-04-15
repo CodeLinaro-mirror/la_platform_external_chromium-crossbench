@@ -215,6 +215,7 @@ class TraceProcessorProbe(Probe):
 
     return TraceProcessorConfig(
         bin_path=self.trace_processor_bin,
+        ingest_ftrace_in_raw=True,
         resolver_registry=ResolverRegistry(
             resolvers=[CrossbenchTraceUriResolver, PathUriResolver]),
         load_timeout=10,
