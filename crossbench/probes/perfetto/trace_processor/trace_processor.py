@@ -210,7 +210,7 @@ class TraceProcessorProbe(Probe):
     extra_flags = []
 
     for module_path in self.module_paths:
-      extra_flags.append("--add-sql-module")
+      extra_flags.append("--override-sql-module")
       extra_flags.append(str(module_path))
 
     return TraceProcessorConfig(
