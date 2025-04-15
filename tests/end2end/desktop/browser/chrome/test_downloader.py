@@ -92,7 +92,7 @@ def _delete_extracted_app(output_dir: pathlib.Path, app_version: str) -> None:
 def test_download_pre_115_canary(test_env: TestEnv) -> None:
   test_env.assert_empty_output_dir()
   _load_and_check_version(test_env.output_dir, test_env.archive_dir,
-                          "chrome-114.0.5735.2 canary", "114.0.5735.2")
+                          "chrome-114.0.5734.0 canary", "114.0.5734.0")
 
 
 def test_download_major_version_milestone(test_env: TestEnv) -> None:

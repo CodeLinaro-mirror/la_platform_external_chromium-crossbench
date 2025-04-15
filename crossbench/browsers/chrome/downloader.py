@@ -178,6 +178,11 @@ class ChromeDownloader(Downloader):
       if not self._requested_version.contains(version):
         logging.debug("Skipping download candidate: %s %s", version, url)
         continue
+      # https://crbug.com/409334109: sometimes we get non-canary builds in
+      # the archive. Canary versions always end in 0.
+      if self._requested_version.is_pre_alpha and version.parts[-1] != 0:
+        logging.debug("Skipping non-canary build: %s %s", version, url)
+        continue
       for archive_version, archive_url in self._archive_urls(url, version):
         try:
           result = self.host_platform.sh_stdout(self.gsutil, "ls", archive_url)
