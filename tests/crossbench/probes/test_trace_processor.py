@@ -4,6 +4,7 @@
 
 from argparse import ArgumentTypeError
 import json
+import pathlib
 import unittest
 
 from crossbench import path as pth
@@ -13,7 +14,8 @@ from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import TraceProcessorQueryConfig
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.base import (BaseCrossbenchTestCase,
+                                   CrossbenchFakeFsTestCase)
 
 
 def read_query_sql(name: str) -> str:
@@ -64,6 +66,23 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
               },
           ],
       })
+
+
+class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
+
+  def test_custom_trace_processor_path(self):
+    trace_processor_dir = pathlib.Path("/path/to")
+    trace_processor_path = trace_processor_dir / "trace_processor_shell"
+    trace_processor_dir.mkdir(parents=True)
+    trace_processor_path.touch()
+
+    config = TraceProcessorProbe.from_config({
+        "trace_processor_bin": str(trace_processor_path),
+        "queries": [],
+    })
+
+    self.assertEquals(
+        str(config.trace_processor_bin), str(trace_processor_path))
 
 
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):

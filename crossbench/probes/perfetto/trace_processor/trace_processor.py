@@ -151,7 +151,7 @@ class TraceProcessorProbe(Probe):
         help="Additional paths to include as trace processor modules.")
     parser.add_argument(
         "trace_processor_bin",
-        type=PathParser.local_binary_path,
+        type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the trace_processor binary")
     return parser
 
