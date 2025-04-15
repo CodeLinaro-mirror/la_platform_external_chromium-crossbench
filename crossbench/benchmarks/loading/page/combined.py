@@ -73,6 +73,11 @@ class CombinedPage(Page):
     for page in self._pages:
       page.teardown(run)
 
+  @override
+  def setup(self, run: Run) -> None:
+    for page in self.pages:
+      page.setup(run)
+
   def run(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     multiple_tabs = self.tabs.multiple_tabs

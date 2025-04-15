@@ -412,6 +412,45 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.assertListEqual([url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
 
+  def multiple_pages_with_setup_blocks_config(self):
+    config = {
+        "pages": {
+            "first_page": {
+                "setup": [{
+                    "action": "js",
+                    "script": "SETUP ONE",
+                }],
+                "actions": [{
+                    "action": "wait",
+                    "duration": "1s"
+                }]
+            },
+            "second_page": {
+                "setup": [{
+                    "action": "js",
+                    "script": "SETUP TWO",
+                }],
+                "actions": [{
+                    "action": "wait",
+                    "duration": "1s"
+                }]
+            }
+        }
+    }
+    return config
+
+  def test_pages_with_multiple_setup_blocks(self):
+    for browser in self.browsers:
+      browser.expect_js(JsInvocation(None, "SETUP ONE"))
+      browser.expect_js(JsInvocation(None, "SETUP TWO"))
+
+    config = self.multiple_pages_with_setup_blocks_config()
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    with self._patch_get_browser():
+      self.run_cli("loading", "run", f"--page-config={config_file}",
+                   "--env-validation=skip", "--throw")
+
   def setup_expected_google_login_js(self):
     expected_scripts: List[JsInvocation] = [
         JsInvocation(True, re.compile(r".*Email or phone.*")),
