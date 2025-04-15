@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import enum
 from typing import Any, Mapping, Self, Sequence, Set
 
@@ -142,12 +143,17 @@ class BondClient:
   def _post_with_retry(self,
                        url: str,
                        body_json: Any,
+                       timeout: dt.timedelta,
                        retry: int = 3) -> requests.Response:
     headers = self._get_request_headers()
     return url_helper.post(
-        url=url, body_json=body_json, headers=headers, retry=retry)
+        url=url,
+        body_json=body_json,
+        headers=headers,
+        timeout=timeout,
+        retry=retry)
 
-  def create_meeting(self) -> str:
+  def create_meeting(self, timeout: dt.timedelta) -> str:
     request_body_json = {
         "conference_type": "THOR",
         "backend_options": {
@@ -155,8 +161,10 @@ class BondClient:
             "mas_one_platform_url": MAS_ONEPLATFORM_URL
         }
     }
-    response = self._post_with_retry(f"{ENDPOINT}/v1/conferences:create",
-                                     request_body_json)
+    response = self._post_with_retry(
+        url=f"{ENDPOINT}/v1/conferences:create",
+        body_json=request_body_json,
+        timeout=timeout)
     resonse_body_dict = ObjectParser.dict(response.json())
     conference = ObjectParser.dict(resonse_body_dict["conference"],
                                    "conference")
@@ -164,12 +172,13 @@ class BondClient:
                                                  "conferenceCode")
     return conference_code
 
-  def add_bots(self, conference_code: str,
-               config: AddBotsConfig) -> Sequence[int]:
+  def add_bots(self, conference_code: str, config: AddBotsConfig,
+               timeout: dt.timedelta) -> Sequence[int]:
     request_body_json = config.to_request_body_json(conference_code)
     response = self._post_with_retry(
-        f"{ENDPOINT}/v1/conference/{conference_code}/bots:add",
-        request_body_json)
+        url=f"{ENDPOINT}/v1/conference/{conference_code}/bots:add",
+        body_json=request_body_json,
+        timeout=timeout)
     response_body_dict = ObjectParser.dict(response.json())
     num_of_failures = NumberParser.positive_zero_int(
         response_body_dict["numOfFailures"], "numOfFailures")
@@ -181,17 +190,21 @@ class BondClient:
     self._meetings_with_bots.add(conference_code)
     return bot_ids
 
-  def run_script(self, conference_code: str, script: str) -> None:
+  def run_script(self, conference_code: str, script: str,
+                 timeout: dt.timedelta) -> None:
     request_body_json = {
         "script": script,
         "conference": {
             "conference_code": conference_code,
         },
     }
-    self._post_with_retry(f"{ENDPOINT}/v1/conference/{conference_code}/script",
-                          request_body_json)
+    self._post_with_retry(
+        url=f"{ENDPOINT}/v1/conference/{conference_code}/script",
+        body_json=request_body_json,
+        timeout=timeout)
 
-  def remove_all_bots(self, conference_code: str) -> None:
+  def remove_all_bots(self, conference_code: str,
+                      timeout: dt.timedelta) -> None:
     request_body_json = {
         "conference": {
             "conference_code": conference_code,
@@ -200,10 +213,11 @@ class BondClient:
         "remove_all": True,
     }
     self._post_with_retry(
-        f"{ENDPOINT}/v1/conference/{conference_code}/bots:remove",
-        request_body_json)
+        url=f"{ENDPOINT}/v1/conference/{conference_code}/bots:remove",
+        body_json=request_body_json,
+        timeout=timeout)
 
   def teardown(self) -> None:
     for conference_code in self._meetings_with_bots:
-      self.remove_all_bots(conference_code)
+      self.remove_all_bots(conference_code, timeout=dt.timedelta(seconds=10))
     self._meetings_with_bots = set()
