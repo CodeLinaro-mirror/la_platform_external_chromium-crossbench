@@ -480,6 +480,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     cpu_str = f"{variant} {platform}"
+
+    # Some android devices do not populate props for CPU info.
+    # In that case, fallback to attempting to parse /proc/cpuinfo
+    if not variant or not platform:
+      return super().cpu
+
     if num_cores := self.cpu_cores(logical=False):
       cpu_str = f"{cpu_str} {num_cores} cores"
     return cpu_str

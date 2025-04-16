@@ -122,18 +122,6 @@ class LinuxPlatform(PosixPlatform):
     except (FileNotFoundError, SubprocessError):
       return "UNKNOWN"
 
-  @functools.cached_property
-  @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
-    cpu_str = "UNKNOWN"
-    for line in self.cat(self.path("/proc/cpuinfo")).splitlines():
-      if line.startswith("model name"):
-        _, cpu_str = line.split(":", maxsplit=2)
-        break
-    if num_cores := self.cpu_cores(logical=False):
-      cpu_str = f"{cpu_str} {num_cores} cores"
-    return cpu_str
-
   @property
   @override
   def has_display(self) -> bool:
