@@ -42,6 +42,7 @@ class JetStreamProbe(
   """
 
   TOTAL_METRIC_KEY: Final[str] = "Total/score"
+  SORT_KEYS: bool = False
 
   @property
   def jetstream(self) -> JetStreamBenchmark:
@@ -74,7 +75,7 @@ class JetStreamProbe(
     with results_json.open(encoding="utf-8") as f:
       data = json.load(f)
       if single_result:
-        logging.critical("Score %s", data["Total"]["score"])
+        logging.critical("Score %s", data[self.TOTAL_METRIC_KEY])
       else:
         self._log_result_metrics(data)
 
@@ -127,8 +128,8 @@ class JetStreamProbe(
     return parts[0] != "Total" and parts[1] == "score"
 
 
+
 class JetStreamProbeContext(JsonResultProbeContext):
-  FLATTEN: bool = False
   JS: str = """
   let results = Object.create(null);
   let benchmarks = []
