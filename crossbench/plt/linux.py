@@ -130,7 +130,7 @@ class LinuxPlatform(PosixPlatform):
       if line.startswith("model name"):
         _, cpu_str = line.split(":", maxsplit=2)
         break
-    if num_cores := self.cpu_cores:
+    if num_cores := self.cpu_cores(logical=False):
       cpu_str = f"{cpu_str} {num_cores} cores"
     return cpu_str
 
