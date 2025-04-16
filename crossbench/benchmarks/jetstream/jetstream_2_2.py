@@ -35,6 +35,7 @@ class JetStream22Story(JetStream2Story):
   NAME: str = "jetstream_2.2"
   URL: str = "https://chromium-workloads.web.app/jetstream/v2.2/"
   URL_OFFICIAL: str = "https://browserbench.org/JetStream2.2/"
+  URL_CHROME_FORK: str = "https://chromium-workloads.web.app/jetstream/v2.2-custom/"
 
 
 class JetStream22Benchmark(JetStream2Benchmark):

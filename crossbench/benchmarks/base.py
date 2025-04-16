@@ -435,9 +435,9 @@ class PressBenchmark(SubStoryBenchmark):
     parser = super().add_cli_parser(subparsers, aliases)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     benchmark_url_group = parser.add_mutually_exclusive_group()
-    live_url = cls.DEFAULT_STORY_CLS.URL
-    local_url = cls.DEFAULT_STORY_CLS.URL_LOCAL
-    official_url = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
+    live_url: str = cls.DEFAULT_STORY_CLS.URL
+    local_url: str = cls.DEFAULT_STORY_CLS.URL_LOCAL
+    official_url: str = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
     benchmark_url_group.add_argument(
         "--live",
         "--live-url",
@@ -467,6 +467,19 @@ class PressBenchmark(SubStoryBenchmark):
         const=local_url,
         help=(f"Use custom or locally (default={local_url}) "
               "hosted benchmark url."))
+
+    if custom_fork_url := getattr(cls.DEFAULT_STORY_CLS, "URL_CHROME_FORK",
+                                  None):
+      parser.add_argument(
+          "--custom",
+          "--chrome-custom-fork",
+          "--chrome-fork",
+          action="store_const",
+          dest="custom_benchmark_url",
+          const=custom_fork_url,
+          help=(f"Use custom chrome fork hosted on {custom_fork_url}. "
+                "This include additional options and performance.mark calls "
+                "for easier investigation."))
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
     return parser
 

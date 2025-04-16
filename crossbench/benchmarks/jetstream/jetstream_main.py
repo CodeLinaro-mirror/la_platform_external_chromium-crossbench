@@ -36,6 +36,7 @@ class JetStreamMainStory(JetStream3Story):
   NAME: str = "jetstream_main"
   URL: str = "https://chromium-workloads.web.app/jetstream/main/"
   URL_OFFICIAL: str = "https://chromium-workloads.web.app/jetstream/main/"
+  URL_CHROME_FORK: str = "https://chromium-workloads.web.app/jetstream/main-custom/"
   SUBSTORIES: Tuple[str, ...] = (
       "WSL",
       "UniPoker",

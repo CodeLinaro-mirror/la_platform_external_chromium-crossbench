@@ -38,6 +38,7 @@ class Speedometer30Story(Speedometer3Story):
   NAME: str = "speedometer_3.0"
   URL: str = "https://chromium-workloads.web.app/speedometer/v3.0/"
   URL_OFFICIAL: str = "https://browserbench.org/Speedometer3.0/"
+  URL_CHROME_FORK: str = "https://chromium-workloads.web.app/speedometer/v3.0-custom/"
 
 
 class Speedometer30Benchmark(Speedometer3Benchmark):
