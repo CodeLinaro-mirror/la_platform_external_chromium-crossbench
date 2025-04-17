@@ -7,6 +7,7 @@ from __future__ import annotations
 import atexit
 import dataclasses
 import datetime as dt
+from math import ceil
 import shlex
 import subprocess
 from typing import TYPE_CHECKING, Self
@@ -355,27 +356,21 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
       (scrollable_top, scrollable_bottom,
        max_swipe_distance) = scroll_area.get_scrollable_area()
 
-      remaining_distance = abs(total_scroll_distance)
+      swipe_count = ceil(abs(total_scroll_distance) / max_swipe_distance)
+      swipe_distance = abs(total_scroll_distance) / swipe_count
+      swipe_duration = action.duration / swipe_count
 
-      while remaining_distance > 0:
-
-        current_distance = min(max_swipe_distance, remaining_distance)
-
-        # The duration for this swipe should be only a fraction of the total
-        # duration since the entire distance may not be covered in one swipe.
-        current_duration = (current_distance /
-                            abs(total_scroll_distance)) * action.duration
-
+      for _ in range(swipe_count):
         if total_scroll_distance > 0:
           # If scrolling down, the swipe should start at the bottom and end
           # above.
           y_start: int = scrollable_bottom
-          y_end: int = round(scrollable_bottom - current_distance)
+          y_end: int = round(scrollable_bottom - swipe_distance)
 
         else:
           # If scrolling up, the swipe should start at the top and end below.
           y_start = scrollable_top
-          y_end = round(scrollable_top + current_distance)
+          y_end = round(scrollable_top + swipe_distance)
 
         self._execute_touch_playback(
             run,
@@ -384,9 +379,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
                 viewport_info.native_screen,
                 Point(scroll_area.middle.x, y_start),
                 end_position=Point(scroll_area.middle.x, y_end),
-                duration=current_duration))
-
-        remaining_distance -= current_distance
+                duration=swipe_duration))
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
