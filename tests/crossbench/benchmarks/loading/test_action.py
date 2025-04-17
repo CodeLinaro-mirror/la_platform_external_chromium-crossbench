@@ -258,6 +258,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertIsNone(action.position.coordinates)
     self.assertTrue(action.has_timeout)
     self.assertIsNone(action.verify)
+    self.assertEqual(action.attempts, 1)
     action.validate()
 
     action_2 = ClickAction.parse_dict(action.to_json())
@@ -283,6 +284,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.position.coordinates.y, 2)
     self.assertTrue(action.has_timeout)
     self.assertIsNone(action.verify)
+    self.assertEqual(action.attempts, 1)
     action.validate()
 
     action_2 = ClickAction.parse_dict(action.to_json())
@@ -300,6 +302,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
             "wait": True,
         },
         "verify": "#id",
+        "attempts": 7,
         "timeout": "12s"
     }
     action = ClickAction.parse_dict(config_dict)
@@ -313,6 +316,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.position.selector.wait)
     self.assertTrue(action.has_timeout)
     self.assertEqual(action.verify, "#id")
+    self.assertEqual(action.attempts, 7)
     action.validate()
 
     action_2 = ClickAction.parse_dict(action.to_json())

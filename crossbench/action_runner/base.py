@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
 
 from crossbench import exception
@@ -110,13 +111,24 @@ class ActionRunner:
   def click(self, run: Run, action: i_action.ClickAction) -> None:
     input_source = action.input_source
     if input_source is InputSource.JS:
-      self.click_js(run, action)
+      do_click = self.click_js
     elif input_source is InputSource.TOUCH:
-      self.click_touch(run, action)
+      do_click = self.click_touch
     elif input_source is InputSource.MOUSE:
-      self.click_mouse(run, action)
+      do_click = self.click_mouse
     else:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
+
+    for i in range(action.attempts):
+      try:
+        do_click(run, action)
+        return
+      except Exception as e:
+        if i + 1 < action.attempts:
+          logging.warning("Click failed with %d attempts left: %s",
+                          action.attempts - i, e)
+          continue
+        raise e
 
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
     input_source = action.input_source
