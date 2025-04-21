@@ -277,9 +277,10 @@ class ActionRunner:
                 setup: ActionBlock) -> None:
     try:
       with exception.annotate("setup"):
+        self._info_stack = ("setup",)
         setup.run_with(self, run, page)
     except Exception:
-      page.create_failure_artifacts(run, "setup-failure")
+      page.create_failure_artifacts(run, "failure")
       raise
 
   def run_login(self, run: Run, page: InteractivePage,
@@ -287,9 +288,10 @@ class ActionRunner:
     try:
       with exception.annotate("login"):
         with run.browser.network.traffic_shaper.pause():
+          self._info_stack = ("login",)
           login.run_with(self, run, page)
     except Exception:
-      page.create_failure_artifacts(run, "login-failure")
+      page.create_failure_artifacts(run, "failure")
       raise
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
