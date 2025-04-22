@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import unittest
 
 import hjson
@@ -21,6 +22,7 @@ from crossbench.cli.config.env import ENV_CONFIG_PRESETS
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
+from crossbench.helper.cwd import ChangeCWD
 from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -32,6 +34,12 @@ from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):
+
+  def test_validate(self):
+    with self.assertRaises(ValueError):
+      BrowserConfig(browser=None)
+    with self.assertRaises(ValueError):
+      BrowserConfig(browser=Chrome.stable_path(self.platform), driver=None)
 
   def test_preset_no_overlap(self):
     # make sure we have unique names between the two preset names so we
@@ -97,6 +105,52 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse("C:\\selenium\\bar")
     self.assertIn("C:\\\\selenium\\\\bar", str(cm.exception))
+
+  def test_parse_config_path(self):
+    browser_path = Chrome.stable_path(self.platform)
+    config: JsonDict = {"browser": str(browser_path)}
+    config_a = BrowserConfig.parse(config)
+    with self.platform.NamedTemporaryFile("browser_config.hjson") as path:
+      with path.open("w", encoding="utf-8") as f:
+        json.dump(config, f)
+      config_b = BrowserConfig.parse(path)
+    self.assertEqual(config_a, config_b)
+    config_c = BrowserConfig.parse(browser_path)
+    self.assertEqual(config_a, config_c)
+    config_d = BrowserConfig.parse(str(browser_path))
+    self.assertEqual(config_a, config_d)
+
+  def test_parse_relative_browser_path(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      cwd = tmp_dir / "crossbench"
+      cwd.mkdir()
+      with ChangeCWD(cwd):
+        browser_path = pth.LocalPath("../out/Release/chrome")
+        self.fs.create_file(browser_path, st_size=100)
+        self.assertTrue((tmp_dir / "out").is_dir())
+        config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+      with ChangeCWD(tmp_dir):
+        browser_path = pth.LocalPath("out/Release/chrome")
+        config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+        browser_path = pth.LocalPath("./out/Release/chrome")
+        config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+
+  def test_home_dir_expansion(self):
+    if not self.platform.is_posix:
+      return
+    home = pth.LocalPath.home()
+    browser_path = home / "chromium/src/out/Release/chrome"
+    self.fs.create_file(browser_path, st_size=100)
+    home_browser_path: str = "~/chromium/src/out/Release/chrome"
+    config_a = BrowserConfig.parse(home_browser_path)
+    self.assertEqual(config_a.browser, browser_path)
+    self.assertTrue(config_a.browser.is_absolute())
+    config_dict = {"browser": home_browser_path}
+    config_b = BrowserConfig.parse(config_dict)
+    self.assertEqual(config_a, config_b)
 
   def test_parse_simple_missing_driver(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

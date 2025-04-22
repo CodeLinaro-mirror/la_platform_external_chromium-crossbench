@@ -9,13 +9,11 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Optional, Self, TextIO, Tuple, cast
+from typing import Any, Optional, Self, Tuple, cast
 
-import hjson
 from typing_extensions import override
 
 import crossbench.browsers.all as all_browsers
-from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
@@ -76,6 +74,21 @@ class BrowserConfig(ConfigObject):
   def default(cls) -> Self:
     return cls(
         all_browsers.Chrome.stable_path(plt.PLATFORM), DriverConfig.default())
+
+  @classmethod
+  @override
+  def is_valid_path(cls, path: pth.LocalPath) -> bool:
+    if path.exists() and cls.is_supported_browser_path(path):
+      return True
+    return super().is_valid_path(path)
+
+  @classmethod
+  @override
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    has_config_extension = path.suffix in cls.VALID_CONFIG_EXTENSIONS
+    if not has_config_extension and cls.is_supported_browser_path(path):
+      return cls(path)
+    return super().parse_path(path, **kwargs)
 
   @classmethod
   @override
@@ -293,16 +306,6 @@ class BrowserConfig(ConfigObject):
     if env_identifier := match.group("env"):
       env = EnvironmentConfig.parse_str(env_identifier)
     return (driver, path, network, env)
-
-  @classmethod
-  def parse_text_io(cls, f: TextIO) -> Self:
-    with exception.annotate(f"Loading browser config file: {f.name}"):
-      config = {}
-      with exception.annotate("Parsing hjson"):
-        config = hjson.load(f)
-      with exception.annotate(f"Parsing config file: {f.name}"):
-        return cls.parse_dict(config)
-    raise argparse.ArgumentTypeError(f"Could not parse : '{f.name}'")
 
   @classmethod
   @override

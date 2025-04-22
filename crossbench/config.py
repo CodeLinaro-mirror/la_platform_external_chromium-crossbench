@@ -401,7 +401,8 @@ class ConfigObject(abc.ABC):
     objects contain other nested config-parsed objects,
   - It is then used to create a real instance of an object.
   """
-  VALID_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
+  VALID_CONFIG_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
+  VALID_EXTENSIONS: Tuple[str, ...] = VALID_CONFIG_EXTENSIONS
   VALID_SCHEME: Tuple[str, ...] = ("http", "https", "file", "gs", "ftp")
 
   @classmethod
@@ -454,7 +455,7 @@ class ConfigObject(abc.ABC):
       return cls.parse_str(value, **kwargs)
     if value:
       try:
-        maybe_path = pth.LocalPath(value).resolve()
+        maybe_path = cls._resolve_path(value)
         if cls.is_valid_path(maybe_path):
           return cls.parse_path(maybe_path, **kwargs)
         if cls.value_has_path_prefix(value):
@@ -462,6 +463,14 @@ class ConfigObject(abc.ABC):
       except OSError:
         pass
     return cls.parse_str(value, **kwargs)
+
+  @classmethod
+  def _resolve_path(cls, value: Any) -> pth.LocalPath:
+    maybe_path = pth.LocalPath(value)
+    if str(maybe_path)[0] == "~":
+      maybe_path = maybe_path.expanduser()
+    maybe_path = maybe_path.resolve()
+    return maybe_path
 
   @classmethod
   def parse_other(cls, value: Any) -> Self:
