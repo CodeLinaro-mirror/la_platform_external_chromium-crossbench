@@ -119,6 +119,7 @@ class RunThreadGroup(threading.Thread):
     runs = tuple(browser_session.runs)
     logging.info("%s: Skipping %s runs due to browser session setup errors.",
                  self, len(runs))
+    browser_session.exceptions.log("Browser session setup errors")
     for run in runs:
       run.exceptions.extend(browser_session.exceptions)
 
