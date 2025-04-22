@@ -262,7 +262,7 @@ class DefaultActionRunner(ActionRunner):
           timeout=timeout,
           arguments=(selector,),
           success_condition=success_condition)
-    except TimeoutError as e:
+    except (TimeoutError, ValueError) as e:
       if required:
         raise
       logging.debug("Element %s not found: %s", selector, e)
