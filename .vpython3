@@ -346,3 +346,29 @@ wheel: <
   name: "infra/python/wheels/greenlet/${vpython_platform}"
   version: "version:3.0.1"
 >
+
+wheel: <
+  name: "infra/python/wheels/pywin32/${vpython_platform}"
+  version: "version:308"
+  match_tag: <
+    platform: "win32"
+  >
+  match_tag: <
+    platform: "win_amd64"
+  >
+>
+
+wheel: <
+  name: "infra/python/wheels/mobly-py3"
+  version: "version:1.12.4"
+>
+
+wheel: <
+  name: "infra/python/wheels/snippet-uiautomator-py3"
+  version: "version:1.1.2"
+>
+
+wheel: <
+  name: "infra/python/wheels/portpicker-py3"
+  version: "version:1.6.0"
+>
