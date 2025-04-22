@@ -2,17 +2,18 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from argparse import ArgumentTypeError
 import json
 import pathlib
 import unittest
+from argparse import ArgumentTypeError
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
-from crossbench.probes.perfetto.trace_processor.trace_processor import TraceProcessorQueryConfig
+from crossbench.probes.perfetto.trace_processor.trace_processor import \
+    TraceProcessorQueryConfig
 from tests import test_helper
 from tests.crossbench.base import (BaseCrossbenchTestCase,
                                    CrossbenchFakeFsTestCase)
@@ -81,8 +82,7 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
         "queries": [],
     })
 
-    self.assertEquals(
-        str(config.trace_processor_bin), str(trace_processor_path))
+    self.assertEqual(str(config.trace_processor_bin), str(trace_processor_path))
 
 
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):
