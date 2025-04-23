@@ -9,8 +9,8 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Self,
-                    Sequence, Set, TextIO, Tuple, Type, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
+                    Self, Sequence, Set, TextIO, Tuple, Type, cast)
 
 import hjson
 from typing_extensions import override
@@ -39,6 +39,9 @@ if TYPE_CHECKING:
   FlagGroupItemT = Tuple[str, str | None] | None
   BrowserLookupTableT = Dict[str, Tuple[Type[Browser], "BrowserConfig"]]
 
+# Add some slack for buffer for browser + platform names. Note that ultimately
+# this is going to get cropped to MAX_PART_LEN.
+MAX_LABEL_LEN: Final[int] = pth.MAX_PART_LEN - 50
 
 @contextlib.contextmanager
 def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
@@ -132,7 +135,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
                  "please use --browser-config for more meaningful names")
     # Last resort, add index
     for index, browser in enumerate(browsers):
-      browser.unique_name += f"_{index}"
+      browser.unique_name = f"{browser.unique_name[:MAX_LABEL_LEN]}_{index}"
     assert self._has_unique_variant_names(browsers)
 
   def _has_unique_variant_names(self, browsers: List[Browser]) -> bool:
@@ -149,9 +152,9 @@ class BaseBrowserVariantsConfig(abc.ABC):
   def _flags_to_label(self, name: str, flags: Flags) -> str:
     return f"{name}_{convert_flags_to_label(*flags)}"
 
-  def _create_unique_variant_labels(self, name: str,
-                                    raw_browser_data: str | Dict[str, Any],
-                                    flag_variants: FlagsGroupConfig) -> Dict:
+  def _create_unique_variant_labels(
+      self, name: str, raw_browser_data: str | Dict[str, Any],
+      flag_variants: FlagsGroupConfig) -> Dict[FlagsVariantConfig, str]:
     labels_lookup: Dict[FlagsVariantConfig, str] = {}
     group_labels = set(variant.label for variant in flag_variants)
     use_unique_variant_label = len(group_labels) == len(flag_variants)
@@ -166,7 +169,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
         else:
           # TODO: This case might not happen anymore
           label = self._flags_to_label(name, variant.flags)
-      labels_lookup[variant] = label
+      labels_lookup[variant] = label[:MAX_LABEL_LEN]
     return labels_lookup
 
   def _check_unique_label(self, label: str) -> bool:
@@ -438,8 +441,9 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
         name, raw_browser_data)
     self._log_browser_variants(name, flag_variants)
     browser_platform = self._get_browser_platform(browser_config)
-    labels_lookup = self._create_unique_variant_labels(name, raw_browser_data,
-                                                       flag_variants)
+    labels_lookup: Dict[FlagsVariantConfig,
+                        str] = self._create_unique_variant_labels(
+                            name, raw_browser_data, flag_variants)
     for variant in flag_variants:
       label = labels_lookup[variant]
       browser_flags = browser_cls.default_flags(variant.flags)

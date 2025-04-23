@@ -80,14 +80,14 @@ class Browser(abc.ABC):
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
       self._version = self._extract_version()
-      self._unique_name = f"{self.type_name()}_{self.label}".lower()
+      self.unique_name = f"{self.type_name()}_{self.label}".lower()
       return
     self._path = self._init_resolve_binary(path)
     # TODO clean up
     if not self.platform.is_android:
       assert self.path.is_absolute()
     self._version = self._extract_version()
-    self._unique_name = f"{self.type_name()}_v{self.version.major}_{self.label}"
+    self.unique_name = f"{self.type_name()}_v{self.version.major}_{self.label}"
 
   def _init_flags(self, settings: Settings) -> Flags:
     assert not self._settings.js_flags, (

@@ -824,18 +824,30 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def verify_variant_flags(self, variants, expected_flags):
     self.assertEqual(len(variants), len(expected_flags))
-    for index, browser in enumerate(variants):
+    for index, browser_variant in enumerate(variants):
       self.assertEqual(
-          str(browser.flags), expected_flags[index],
+          str(browser_variant.flags), expected_flags[index],
           f"Unexpected flags for variant[{index}]")
+      label = browser_variant.label
+      self.assertLessEqual(len(label), 255, f"Too long label: {repr(label)}")
 
   def test_flag_combination_js_flags_with_fixed(self):
+    long_js_flags: str = ",".join(
+        ("--max_maglev_inlined_bytecode_size=363",
+         "--max_maglev_inlined_bytecode_size_small=32",
+         "--max_maglev_inlined_bytecode_size_cumulative=892",
+         "--max_inlined_bytecode_size=482",
+         "--max_inlined_bytecode_size_cumulative=905",
+         "--max_inlined_bytecode_size_small=3", "--no-opt"))
+    self.assertLess(len(long_js_flags), 255)
+    self.assertLess(240, len(long_js_flags))
     config = BrowserVariantsConfigDict(
         {
             "flags": {
                 "group1": {
                     "--js-flags": [
-                        None, "--max-opt=1,--trace-ic", "--max-opt=2 --log-all"
+                        None, "--max-opt=1,--trace-ic", "--max-opt=2 --log-all",
+                        long_js_flags
                     ],
                 },
                 "group2": {
@@ -851,13 +863,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args)
-    self.assertEqual(len(config.variants), 3)
+    self.assertEqual(len(config.variants), 4)
     for variant in config.variants:
       self.assertEqual(variant.browser_cls, mock_browser.MockChromeStable)
     expected_flags = (
         "--bar=v1 --foo=w2",
         "--bar=v1 --foo=w2 --js-flags=--max-opt=1,--trace-ic",
         "--bar=v1 --foo=w2 --js-flags=--max-opt=2,--log-all",
+        f"--bar=v1 --foo=w2 --js-flags={long_js_flags}",
     )
     self.verify_variant_flags(config.variants, expected_flags)
 
