@@ -14,6 +14,7 @@ from immutabledict import immutabledict
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import (ENV_PRESETS, NETWORK_PRESETS,
                                            BrowserConfig)
 from crossbench.cli.config.driver import DriverConfig
@@ -581,6 +582,19 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("limit", msg)
     self.assertIn("'chr'", msg)
 
+  def test_parse_safari_variants(self):
+    config = BrowserConfig.parse("safari")
+    self.assertEqual(config.path, Safari.default_path(self.platform))
+    for name in ("sf", "sf-stable", "safari-stable"):
+      config_b = BrowserConfig.parse(name)
+      self.assertEqual(config, config_b)
+
+  def test_parse_safari_tech_preview_variants(self):
+    config = BrowserConfig.parse("safari-technology-preview")
+    self.assertEqual(config.path, Safari.technology_preview_path(self.platform))
+    for name in ("safari-tp", "safari-tech-preview", "sf-tp", "stp", "tp"):
+      config_b = BrowserConfig.parse(name)
+      self.assertEqual(config, config_b)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
