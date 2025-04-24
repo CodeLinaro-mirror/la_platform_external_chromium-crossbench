@@ -95,12 +95,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                                    "root@my-chromeos-machine", cmd, **kwargs)
 
   def test_parse_browser_config_template(self):
-    if not self.EXAMPLE_CONFIG_PATH.exists():
-      raise unittest.SkipTest(
-          f"Test file {self.EXAMPLE_CONFIG_PATH} does not exist")
     self.fs.add_real_file(self.EXAMPLE_CONFIG_PATH)
     with self.EXAMPLE_CONFIG_PATH.open(encoding="utf-8") as f:
-      config = BrowserVariantsConfig(
+      config = BrowserVariantsConfigDict(
           browser_lookup_override=self.browser_lookup)
       config.parse_text_io(f, args=self.mock_args)
     self.assertIn("flag-group-1", config.flags_config)

@@ -136,8 +136,6 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
   assert not v8_log_files
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.is_macos, reason="Safari is only available on macos")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
                                        test_chrome_name) -> None:
@@ -149,6 +147,8 @@ def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
   # This fails on the CQ bot, so make sure we skip it there:
   if driver_path:
     pytest.skip("Skipping test on CQ.")
+  if not plt.PLATFORM.is_macos:
+    return
   platform = plt.PLATFORM
   if not platform.is_macos and (not platform.exists(
       all_browsers.Safari.default_path(platform))):

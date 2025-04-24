@@ -440,21 +440,23 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         config,
         BrowserConfig(pth.AnyPosixPath("com.android.chrome"), expected_driver))
 
-  @unittest.skipIf(plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_adb_phone_serial_invalid_macos(self):
+    if not plt.PLATFORM.is_macos:
+      return
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = BrowserConfig.parse("0XXXXXX:chrome")
+    self.assertIn("0XXXXXX", str(cm.exception))
+    self.assertEqual(len(self.platform.sh_cmds), 2)
+
+  def test_parse_adb_phone_serial_invalid_non_macos(self):
+    if plt.PLATFORM.is_macos:
+      return
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = BrowserConfig.parse("0XXXXXX:chrome")
     self.assertIn("0XXXXXX", str(cm.exception))
     self.assertEqual(len(self.platform.sh_cmds), 1)
-
-  @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
-  def test_parse_adb_phone_serial_invalid_non_macos(self):
-    self.platform.sh_results = [ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_OUTPUT]
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      _ = BrowserConfig.parse("0XXXXXX:chrome")
-    self.assertIn("0XXXXXX", str(cm.exception))
-    self.assertEqual(len(self.platform.sh_cmds), 2)
 
   def test_parse_invalid_driver(self):
     with self.assertRaises(argparse.ArgumentTypeError):

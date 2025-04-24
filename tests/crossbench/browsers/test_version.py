@@ -242,7 +242,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_no_equal_stable_beta(self):
     if not self.BETA_VERSION_STR:
-      self.skipTest(f"{type(self).__name__} :beta version not supported.")
+      self.skipTest(f"{type(self).__name__}: beta version not supported.")
     version_stable = self.parse(self.STABLE_VERSION_STR)
     version_beta = self.parse(self.BETA_VERSION_STR)
     self.assertNotEqual(version_stable, version_beta)

@@ -175,10 +175,10 @@ def test_download_specific_version_pre_115_stable(test_env: TestEnv) -> None:
   assert list(test_env.archive_dir.iterdir()) == [archive]
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_macos and plt.PLATFORM.is_arm64,
-    reason="Old versions only supported on intel machines.")
 def test_download_old_major_version(test_env: TestEnv) -> None:
+  if plt.PLATFORM.is_macos and plt.PLATFORM.is_arm64:
+    # Old versions only supported on intel machines.
+    return
   test_env.assert_empty_output_dir()
   _load_and_check_version(test_env.output_dir, test_env.archive_dir,
                           "chrome-M68", "68")

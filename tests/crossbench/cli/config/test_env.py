@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import unittest
 
 import hjson
 
@@ -130,8 +129,7 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
 
   def test_parse_example_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"
-    if not example_config_file.exists():
-      raise unittest.SkipTest(f"Test file {example_config_file} does not exist")
+    self.fs.add_real_file(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
       data = hjson.load(f)
     EnvironmentConfig(**data["env"])

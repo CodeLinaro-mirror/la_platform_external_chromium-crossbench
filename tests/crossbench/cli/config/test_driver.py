@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import unittest
 
 import hjson
 
@@ -218,8 +217,9 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
 
-  @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_ios_phone_serial(self):
+    if not plt.PLATFORM.is_macos:
+      return
     self.platform.sh_results = [
         ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT,
         XCTRACE_DEVICES_SINGLE_OUTPUT

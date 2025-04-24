@@ -8,7 +8,6 @@ import abc
 import argparse
 import datetime as dt
 import pathlib
-import unittest
 from unittest import mock
 
 from typing_extensions import override
@@ -124,8 +123,9 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
         self.platform.path(pathlib.PurePosixPath("foo/bar")),
         pathlib.PurePosixPath)
 
-  @unittest.skipUnless(plt.PLATFORM.is_win, "Incompatible platform")
   def test_win_absolute_path_conversion(self):
+    if not plt.PLATFORM.is_win:
+      return
     windows_path = pth.AnyWindowsPath("/foo/bar/file")
     abs_path = self.platform.absolute(windows_path)
     self.assertEqual(str(abs_path), "/foo/bar/file")
@@ -133,8 +133,9 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
     self.assertTrue(abs_path.is_absolute())
     self.assertTrue(self.platform.is_absolute(abs_path))
 
-  @unittest.skipUnless(plt.PLATFORM.is_win, "Incompatible platform")
   def test_win_absolute_path_conversion_drive(self):
+    if not plt.PLATFORM.is_win:
+      return
     windows_path = pth.AnyWindowsPath("C:/foo/bar/file")
     abs_path = self.platform.absolute(windows_path)
     self.assertEqual(str(abs_path), "/foo/bar/file")

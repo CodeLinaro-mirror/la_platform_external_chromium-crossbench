@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import pathlib
 import textwrap
-import unittest
 from typing import Final
 from unittest import mock, skipIf
 
@@ -130,8 +129,6 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   def mock_platform_setup(self):
     self.mock_platform = WinMockPlatform()
 
-  @unittest.skip(
-      "earlier pyfakefs versions don't handle posix on win properly.")
   def test_host_platform(self):
     self.assertTrue(self.platform.host_platform.is_win)
     self.assertIsInstance(
@@ -140,35 +137,28 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
         str(self.platform.host_path("foo/bar")),
         str(self.platform.path("foo/bar")))
 
-  @unittest.skip(
-      "earlier pyfakefs versions don't handle posix on win properly.")
   def test_mktemp(self):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
     self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
-    self.expect_sh("shell",
-                   "mktemp -d  /data/local/tmp/custom_prefix.XXXXXXXXXXX")
+    self.expect_sh("mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX")
     self.platform.mkdtemp("custom_prefix")
 
-  @unittest.skip(
-      "earlier pyfakefs versions don't handle posix on win properly.")
   def test_push(self):
     local_path = self.mock_platform.path("C:/foo/push.local.data")
     remote_path = self.platform.default_tmp_dir / "push.remote.data"
     self.assertIsInstance(local_path, pathlib.PureWindowsPath)
     self.fs.create_file(local_path, contents="some data")
-    self.expect_sh("push", "C:\\foo\\push.local.data",
-                   "/data/local/tmp/push.remote.data")
+    self.expect_adb("push", "C:\\foo\\push.local.data",
+                    "/data/local/tmp/push.remote.data")
     self.platform.push(local_path, remote_path)
 
-  @unittest.skip(
-      "earlier pyfakefs versions don't handle posix on win properly.")
   def test_push_remote_win_path(self):
     local_path = self.mock_platform.path("C:/foo/push.local.data")
     remote_path = self.mock_platform.path("custom/push.remote.data")
     self.assertIsInstance(local_path, pathlib.PureWindowsPath)
     self.fs.create_file(local_path, contents="some data")
-    self.expect_sh("push", "C:\\foo\\push.local.data",
-                   "custom/push.remote.data")
+    self.expect_adb("push", "C:\\foo\\push.local.data",
+                    "custom/push.remote.data")
     self.platform.push(local_path, remote_path)
 
 
