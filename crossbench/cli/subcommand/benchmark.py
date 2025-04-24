@@ -682,8 +682,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     if not args.create_symlinks:
       logging.debug("Symlink disabled by command line option")
       return
-    if not args.out_dir and runner.out_dir.exists():
-      self._update_default_results_symlinks(runner)
+    if runner.out_dir.exists():
+      if not args.out_dir:
+        self._update_default_results_symlinks(runner)
       self._create_runs_results_symlinks(runner)
 
   def _update_default_results_symlinks(self, runner: Runner) -> None:
