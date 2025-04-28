@@ -39,6 +39,7 @@ tabulate = "^0.8.10"
 websockets = "^11.0.3"
 pygments = "^2.14.0"
 sqlalchemy = "^2.0.38"
+xlsxwriter = "^3.2.2"
 
 [tool.poetry.scripts]
 crossbench = 'crossbench.scripts:crossbench'

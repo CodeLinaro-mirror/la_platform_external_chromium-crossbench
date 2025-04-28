@@ -348,6 +348,11 @@ wheel: <
 >
 
 wheel: <
+  name: "infra/python/wheels/xlsxwriter-py3"
+  version: "version:3.2.2"
+>
+
+wheel: <
   name: "infra/python/wheels/pywin32/${vpython_platform}"
   version: "version:308"
   match_tag: <

@@ -70,6 +70,7 @@ class JetStreamProbe(
     logging.critical("JetStream results:")
     if not single_result:
       logging.critical("  %s", result_dict[self].csv)
+      logging.critical("  %s", result_dict[self].get("xlsx"))
     logging.info("- " * 40)
 
     with results_json.open(encoding="utf-8") as f:

@@ -8,12 +8,15 @@ import abc
 import csv
 import json
 import logging
+import re
 from collections import defaultdict
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
                     Tuple, Type, TypeVar)
 
+import xlsxwriter
 from tabulate import tabulate
 from typing_extensions import override
+from xlsxwriter.utility import xl_rowcol_to_cell
 
 from crossbench.probes import helper
 from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
@@ -23,6 +26,7 @@ from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.base import RunGroup
@@ -30,6 +34,8 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
+
+IS_NUMERIC_RE = re.compile(r"[0-9.e+\-]+")
 
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
@@ -99,7 +105,10 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         f"Cannot override existing CSV result: {merged_csv_path}")
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       csv.writer(f, delimiter="\t").writerows(merged_table)
-    return LocalProbeResult(csv=(merged_csv_path,))
+
+    merged_xlsx_path = merged_json_path.with_suffix(".xlsx")
+    XLSXWriter.write(merged_table, merged_xlsx_path)
+    return LocalProbeResult(csv=(merged_csv_path,), xlsx=(merged_xlsx_path,))
 
   def write_group_result(
       self,
@@ -169,6 +178,89 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     benchmark item."""
     del metrics
     del table
+
+
+class XLSXWriter:
+
+  @classmethod
+  def write(cls, table: List[List[str]], path: pth.LocalPath) -> None:
+    instance = cls(table, path)
+    instance.write_xlsx()
+
+  def __init__(self, table: List[List[str]], path: pth.LocalPath):
+    self._table: List[List[str]] = table
+    self._nof_header_cols: int = self._detect_header_cols()
+    self._nof_header_rows: int = self._detect_header_rows()
+
+    self._path = path
+    self._workbook = xlsxwriter.Workbook(self._path)
+    self._worksheet = self._workbook.add_worksheet()
+    self._percent_format = self._workbook.add_format(
+        {"num_format": "+0.0%;-0.0%;0.0%"})
+    self._num_format = self._workbook.add_format({"num_format": "0.000"})
+
+  def _detect_header_cols(self) -> int:
+    nof_header_cols: int = 0
+    header_row: List[str] = self._table[0]
+    for col, header in enumerate(header_row[1:]):
+      nof_header_cols = col + 1
+      if header:
+        break
+    return nof_header_cols
+
+  def _detect_header_rows(self) -> int:
+    nof_header_rows: int = 0
+    for row, row_data in enumerate(self._table):
+      first_data: str = row_data[self._nof_header_cols]
+      if not IS_NUMERIC_RE.fullmatch(first_data):
+        nof_header_rows = row + 1
+    # Ugly hack to account for "runs" and "failed runs":
+    nof_header_rows += 2
+    return nof_header_rows
+
+  def write_xlsx(self) -> None:
+    self._write_rows()
+    self._close_xlsx()
+
+  def _write_rows(self) -> None:
+    for row_index, row_data in enumerate(self._table):
+      self._write_row(row_index, row_data)
+
+  def _write_row(self, row_index: int, row_data: List[str]) -> None:
+    is_header_row: bool = row_index < self._nof_header_rows
+    src_first_data_col_index: int = self._write_header_cols(row_index, row_data)
+    dst_col_index: int = src_first_data_col_index
+    # Percent diffs are computed against the first cell.
+    base_cell: str = xl_rowcol_to_cell(row_index, dst_col_index)
+    for src_col_index in range(src_first_data_col_index, len(row_data)):
+      value = row_data[src_col_index]
+      if is_header_row:
+        self._worksheet.write(row_index, dst_col_index, value)
+      else:
+        self._worksheet.write_number(row_index, dst_col_index, float(value),
+                                     self._num_format)
+
+      current_cell: str = xl_rowcol_to_cell(row_index, dst_col_index)
+      dst_col_index += 1
+      # Only write diff after the first data column.
+      if base_cell == current_cell:
+        continue
+      # Skip over diff formula for the header row (== keep empty cell).
+      if not is_header_row:
+        diff_formula = f"=({current_cell}/{base_cell}-1)"
+        self._worksheet.write_formula(row_index, dst_col_index, diff_formula,
+                                      self._percent_format)
+      dst_col_index += 1
+
+  def _write_header_cols(self, row_index, row_data) -> int:
+    for col in range(self._nof_header_cols):
+      self._worksheet.write(row_index, col, row_data[col])
+    return self._nof_header_cols
+
+  def _close_xlsx(self):
+    self._worksheet.freeze_panes(self._nof_header_rows, self._nof_header_cols)
+    self._worksheet.set_default_row(hide_unused_rows=True)
+    self._workbook.close()
 
 
 JsonResultProbeT = TypeVar("JsonResultProbeT", bound="JsonResultProbe")
