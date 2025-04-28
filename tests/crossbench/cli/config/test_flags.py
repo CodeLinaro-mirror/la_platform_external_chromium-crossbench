@@ -15,9 +15,10 @@ from crossbench.config import ConfigError
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.flags.base import Flags
 from tests import test_helper
+from tests.crossbench.base import CrossbenchMockArgsMixin
 
 
-class FlagsConfigTestCase(unittest.TestCase):
+class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_invalid_empty(self):
     with self.assertRaises(ArgumentTypeMultiException) as cm:
@@ -222,7 +223,7 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
     self.assertNotIn(variant_c, variants)
 
 
-class FlagsGroupConfigTestCase(unittest.TestCase):
+class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_empty(self):
     for empty in (None, [], (), {}, "", "  "):
@@ -434,18 +435,6 @@ class FlagsGroupConfigTestCase(unittest.TestCase):
     with self.assertRaises(ValueError) as cm:
       group_a.product(group_b)
     self.assertIn("different previous value", str(cm.exception))
-
-  def mock_args(self, **kwargs):
-    args = argparse.Namespace(
-        browser=kwargs.pop("browser", []),
-        browser_config=kwargs.pop("browser_config", None),
-        enable_features=kwargs.pop("enable_features", []),
-        disable_features=kwargs.pop("disable_features", []),
-        js_flags=kwargs.pop("js_flags", []),
-        enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
-        other_browser_args=kwargs.pop("other_browser_args", []))
-    assert not kwargs, f"got unused kwargss: {kwargs}"
-    return args
 
   def test_parse_args_empty(self):
     args = self.mock_args()

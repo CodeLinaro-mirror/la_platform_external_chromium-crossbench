@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import pathlib
-from unittest import mock
 
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.pages import PagesConfig
@@ -64,7 +63,6 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.run = MockRun(self.runner, self.session, "run 1")
 
     self.action_runner = DefaultActionRunner()
-    self.mock_args = mock.Mock()
 
   def expect_google_login(self):
     self.browser.expect_js(result=True)
@@ -77,7 +75,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
   def test_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
-    page = LoadingPageFilter.stories_from_config(self.mock_args, config)
+    page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
 
     self.expect_google_login()
 
@@ -86,7 +84,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
   def test_logged_in_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
-    page = LoadingPageFilter.stories_from_config(self.mock_args, config)
+    page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
 
     self.browser.expect_is_logged_in(GoogleUsernamePassword("test", "s3cr3t"))
 
@@ -95,7 +93,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
   def test_logged_in_non_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
-    page = LoadingPageFilter.stories_from_config(self.mock_args, config)
+    page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
 
     self.browser.expect_is_logged_in(UsernamePassword("test", "s3cr3t"))
 

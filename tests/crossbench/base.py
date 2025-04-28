@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import contextlib
 import datetime as dt
 import io
@@ -23,6 +24,9 @@ from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.benchmarks.loading.loadline_presets import \
     LoadLineTabletBenchmark
+from crossbench.benchmarks.loading.playback_controller import \
+    PlaybackController
+from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
@@ -67,7 +71,45 @@ class CrossbenchFakeFsTestCase(
 TEST_WARNING = "Test Warning"
 
 
-class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+class CrossbenchMockArgsMixin:
+
+  def mock_args(self, **kwargs) -> argparse.Namespace:
+    args = argparse.Namespace(
+        wraps=kwargs.pop("wraps", False),
+        throw=kwargs.pop("throw", False),
+        browser=kwargs.pop("browser", []),
+        driver_path=kwargs.pop("driver_path", None),
+        remote_driver_path=kwargs.pop("remote_driver_path", None),
+        network_config=kwargs.pop("network_config", None),
+        browser_config=kwargs.pop("browser_config", None),
+        probe_config=kwargs.pop("probe_config", None),
+        viewport=kwargs.pop("viewport", None),
+        splash_screen=kwargs.pop("splash_screen", None),
+        secrets=kwargs.pop("secrets", Secrets()),
+        driver_logging=kwargs.pop("driver_logging", False),
+        wipe_system_user_data=kwargs.pop("wipe_system_user_data", False),
+        http_request_timeout=kwargs.pop("", dt.timedelta()),
+        cache_dir=pathlib.Path("test_cache_dir"),
+        browser_cache_dir=kwargs.pop("browser_cache_dir", None),
+        clear_browser_cache_dir=kwargs.pop("clear_browser_cache_dir", None),
+        enable_features=kwargs.pop("enable_features", None),
+        disable_features=kwargs.pop("disable_features", None),
+        js_flags=kwargs.pop("js_flags", None),
+        enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
+        network=kwargs.pop("network", NetworkConfig.default()),
+        probe=kwargs.pop("probe", []),
+        other_browser_args=kwargs.pop("other_browser_args", []),
+        playback=kwargs.pop("playback", PlaybackController.default()),
+        tabs=kwargs.pop("tabs", TabController.default()),
+        about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
+        run_login=kwargs.pop("run_login", True),
+        run_setup=kwargs.pop("run_setup", True))
+    assert not kwargs, f"got unused kwargs: {kwargs}"
+    return args
+
+
+class BaseCrossbenchTestCase(
+    CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]
@@ -98,28 +140,6 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.expected_js, [])
-    self.mock_args = mock.Mock(
-        wraps=False,
-        driver_path=None,
-        remote_driver_path=None,
-        network_config=None,
-        browser_config=None,
-        viewport=None,
-        splash_screen=None,
-        secrets=Secrets(),
-        wipe_system_user_data=False,
-        http_request_timeout=dt.timedelta(),
-        cache_dir=pathlib.Path("test_cache_dir"),
-        browser_cache_dir=None,
-        clear_browser_cache_dir=None,
-        enable_features=None,
-        disable_features=None,
-        js_flags=None,
-        enable_field_trial_config=False,
-        network=NetworkConfig.default(),
-        probe=[],
-        other_browser_args=[],
-        driver_logging=False)
 
   def setup_loadline_config(self):
     config_dir = LoadLineTabletBenchmark.default_network_config_path().parent
