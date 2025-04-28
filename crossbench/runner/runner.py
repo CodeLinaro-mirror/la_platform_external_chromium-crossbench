@@ -654,18 +654,25 @@ class Runner:
       logging.debug("Skip creating result symlinks in '%s': no runs produced.",
                     results_root)
       return
+    self._create_first_last_run_symlinks(runs)
+    self._create_runs_symlinks(runs)
+    self._create_sessions_symlinks(runs)
+
+  def _create_first_last_run_symlinks(self, runs: Tuple[Run, ...]) -> None:
     out_dir = self.out_dir
     first_run_dir = out_dir / "first_run"
-    last_run_dir = out_dir / "last_run"
     if first_run_dir.exists():
       logging.error("Cannot create first_run symlink: %s", first_run_dir)
     else:
       first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
+    last_run_dir = out_dir / "last_run"
     if last_run_dir.exists():
       logging.error("Cannot create last_run symlink: %s", last_run_dir)
     else:
       last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
 
+  def _create_runs_symlinks(self, runs: Tuple[Run, ...]) -> None:
+    out_dir = self.out_dir
     runs_dir = out_dir / "runs"
     runs_dir.mkdir()
     for run in runs:
@@ -674,6 +681,8 @@ class Runner:
       relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
       (runs_dir / str(run.index)).symlink_to(relative)
 
+  def _create_sessions_symlinks(self, runs: Tuple[Run, ...]) -> None:
+    out_dir = self.out_dir
     sessions_dir = out_dir / "sessions"
     sessions_dir.mkdir()
     for session in set(run.browser_session for run in runs):
