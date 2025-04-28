@@ -366,6 +366,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     if self.browser.is_running:
       self._runs[-1]._teardown_browser(is_dry_run)  # pylint: disable=protected-access
 
+  def handle_startup_failure(self) -> None:
+    runs = tuple(self.runs)
+    self.exceptions.log(f"SESSION STARTUP ERRORS: Skipping {len(runs)} runs")
+    for run in runs:
+      run.exceptions.extend(self.exceptions)
+
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:
     return self.first_run is run

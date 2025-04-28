@@ -109,19 +109,10 @@ class RunThreadGroup(threading.Thread):
       logging.info("=" * 80)
     with browser_session.open() as is_success:
       if not is_success:
-        self._handle_session_startup_failure(browser_session)
+        browser_session.handle_startup_failure()
       else:
         for run in browser_session.runs:
           self._run_browser_session_run(browser_session, run)
-
-  def _handle_session_startup_failure(
-      self, browser_session: BrowserSessionRunGroup) -> None:
-    runs = tuple(browser_session.runs)
-    logging.info("%s: Skipping %s runs due to browser session setup errors.",
-                 self, len(runs))
-    browser_session.exceptions.log("Browser session setup errors")
-    for run in runs:
-      run.exceptions.extend(browser_session.exceptions)
 
   def _run_browser_session_run(self, browser_session: BrowserSessionRunGroup,
                                run: Run) -> None:
@@ -136,3 +127,10 @@ class RunThreadGroup(threading.Thread):
     else:
       browser_session.exceptions.extend(run.exceptions)
       run.log_failure()
+
+
+class RunMainGroup(RunThreadGroup):
+  """ Renamed subclass for single-threaded runs"""
+
+  def start(self):
+    raise RuntimeError("RunMainGroup cannot run on a background thread")

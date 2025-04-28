@@ -55,10 +55,11 @@ class ReplayNetwork(Network):
   @override
   def open(self: ReplayNetworkT,
            session: BrowserSessionRunGroup) -> Iterator[ReplayNetworkT]:
-    with super().open(session):
-      with self._open_replay_server(session):
-        with self._traffic_shaper.open(self, session):
-          yield self
+    with exception.annotate(f"Starting {type(self).__name__}"):
+      with super().open(session):
+        with self._open_replay_server(session):
+          with self._traffic_shaper.open(self, session):
+            yield self
 
   @contextlib.contextmanager
   def _open_replay_server(self, session: BrowserSessionRunGroup):

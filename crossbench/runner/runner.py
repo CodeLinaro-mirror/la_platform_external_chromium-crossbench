@@ -35,7 +35,7 @@ from crossbench.runner.groups.cache_temperatures import \
 from crossbench.runner.groups.repetitions import RepetitionsRunGroup
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.stories import StoriesRunGroup
-from crossbench.runner.groups.thread import RunThreadGroup
+from crossbench.runner.groups.thread import RunMainGroup, RunThreadGroup
 from crossbench.runner.run import Run
 from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -71,7 +71,7 @@ class ThreadMode(StrEnumWithHelp):
 
   def group(self, runs: List[Run]) -> List[RunThreadGroup]:
     if self == ThreadMode.NONE:
-      return [RunThreadGroup(runs)]
+      return [RunMainGroup(runs)]
     groups: Dict[Any, List[Run]] = {}
     if self == ThreadMode.SESSION:
       groups = collection_helper.group_by(
@@ -634,7 +634,9 @@ class Runner:
         group_exceptions.extend(group.exceptions, is_nested=True)
     finally:
       self._exceptions.extend(group_exceptions)
-      if not group_exceptions.is_success:
+      # Don't clutter the output if we have global failures.
+      any_successful_group = any(group.is_success for group in groups)
+      if any_successful_group and not group_exceptions.is_success:
         group_exceptions.log(
             f"❗ MERGED {group_name.upper()} PROBE DATA WITH ERRORS",
             separator="-")
