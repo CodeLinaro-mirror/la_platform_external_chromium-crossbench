@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -41,7 +41,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.cli.cli import CrossBenchCLI
   from crossbench.probes.probe import Probe
-  from crossbench.runner.run import Run
 
 
 class EnableFastAction(argparse.Action):
@@ -678,61 +677,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     finally:
       self._update_symlinks(args, runner)
 
-  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
-    if not args.create_symlinks:
-      logging.debug("Symlink disabled by command line option")
-      return
-    if runner.out_dir.exists():
-      if not args.out_dir:
-        self._update_default_results_symlinks(runner)
-      self._create_runs_results_symlinks(runner)
-
-  def _update_default_results_symlinks(self, runner: Runner) -> None:
-    assert runner.create_symlinks
-    results_root = runner.out_dir.parent
-    latest_link = results_root / "latest"
-    if latest_link.is_symlink():
-      latest_link.unlink()
-    if not latest_link.exists():
-      latest_link.symlink_to(
-          runner.out_dir.relative_to(results_root), target_is_directory=True)
-    else:
-      logging.error("Could not create %s", latest_link)
-
-  def _create_runs_results_symlinks(self, runner: Runner) -> None:
-    assert runner.create_symlinks
-    results_root = runner.out_dir.parent
-    runs: Tuple[Run, ...] = runner.all_runs
-    if not runs:
-      logging.debug("Skip creating result symlinks in '%s': no runs produced.",
-                    results_root)
-      return
-    out_dir = runner.out_dir
-    first_run_dir = out_dir / "first_run"
-    last_run_dir = out_dir / "last_run"
-    if first_run_dir.exists():
-      logging.error("Cannot create first_run symlink: %s", first_run_dir)
-    else:
-      first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
-    if last_run_dir.exists():
-      logging.error("Cannot create last_run symlink: %s", last_run_dir)
-    else:
-      last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
-
-    runs_dir = out_dir / "runs"
-    runs_dir.mkdir()
-    for run in runs:
-      if not run.out_dir.exists():
-        continue
-      relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
-      (runs_dir / str(run.index)).symlink_to(relative)
-
-    sessions_dir = out_dir / "sessions"
-    sessions_dir.mkdir()
-    for session in set(run.browser_session for run in runs):
-      relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
-      (sessions_dir / str(session.index)).symlink_to(relative)
-
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:
     logging.info("=" * 80)
@@ -758,6 +702,26 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     all_annotations = set(
         itertools.chain.from_iterable(run.annotations for run in runner.runs))
     RunAnnotation.log_all(all_annotations)
+
+  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
+    if not args.create_symlinks:
+      return
+    runner.update_symlinks()
+    if not args.out_dir:
+      self._update_default_results_symlinks(args, runner)
+
+  def _update_default_results_symlinks(self, args: argparse.Namespace,
+                                       runner: Runner) -> None:
+    assert args.create_symlinks
+    results_root = runner.out_dir.parent
+    latest_link = results_root / "latest"
+    if latest_link.is_symlink():
+      latest_link.unlink()
+    if not latest_link.exists():
+      latest_link.symlink_to(
+          runner.out_dir.relative_to(results_root), target_is_directory=True)
+    else:
+      logging.error("Could not create %s", latest_link)
 
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
     # TODO: move browser instance create to separate method.

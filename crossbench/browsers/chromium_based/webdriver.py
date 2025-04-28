@@ -123,8 +123,7 @@ class ChromiumBasedWebDriver(
 
     # pytype: disable=wrong-keyword-args
     assert self._stdout_log_file is None
-    self._stdout_log_file = self.log_file.with_suffix(
-        ".browser.stdout.log").open("w+")
+    self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
         service_args=service_args,

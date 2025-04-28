@@ -639,6 +639,47 @@ class Runner:
             f"❗ MERGED {group_name.upper()} PROBE DATA WITH ERRORS",
             separator="-")
 
+  def update_symlinks(self) -> None:
+    if not self.create_symlinks:
+      logging.debug("Symlink disabled by command line option")
+      return
+    if self.out_dir.exists():
+      self._create_runs_results_symlinks()
+
+  def _create_runs_results_symlinks(self) -> None:
+    assert self.create_symlinks
+    results_root = self.out_dir.parent
+    runs: Tuple[Run, ...] = self.all_runs
+    if not runs:
+      logging.debug("Skip creating result symlinks in '%s': no runs produced.",
+                    results_root)
+      return
+    out_dir = self.out_dir
+    first_run_dir = out_dir / "first_run"
+    last_run_dir = out_dir / "last_run"
+    if first_run_dir.exists():
+      logging.error("Cannot create first_run symlink: %s", first_run_dir)
+    else:
+      first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
+    if last_run_dir.exists():
+      logging.error("Cannot create last_run symlink: %s", last_run_dir)
+    else:
+      last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
+
+    runs_dir = out_dir / "runs"
+    runs_dir.mkdir()
+    for run in runs:
+      if not run.out_dir.exists():
+        continue
+      relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
+      (runs_dir / str(run.index)).symlink_to(relative)
+
+    sessions_dir = out_dir / "sessions"
+    sessions_dir.mkdir()
+    for session in set(run.browser_session for run in runs):
+      relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
+      (sessions_dir / str(session.index)).symlink_to(relative)
+
 
 TEMPERATURE_ICONS = {
     "cold": "🥶",
