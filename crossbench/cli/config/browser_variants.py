@@ -402,25 +402,21 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       if not config["browsers"]:
         raise ConfigError("Config contains empty 'browsers' dict.")
       with exception.annotate("Parsing config['browsers']"):
-        self._parse_dict_browsers(config["browsers"], args)
+        self._parse_browsers(config["browsers"], args)
 
-  def _parse_dict_browsers(self, data: Dict[str, Any],
-                           args: argparse.Namespace) -> None:
+  def _parse_browsers(self, data: Dict[str, Any],
+                      args: argparse.Namespace) -> None:
     for name, browser_config in data.items():
       with exception.annotate(f"Parsing browsers[{repr(name)}]"):
         self._parse_browser(name, browser_config, args)
 
   def _parse_browser(self, name: str, raw_browser_data: Any,
                      args: argparse.Namespace) -> None:
-    if isinstance(raw_browser_data, (dict, str)):
-      return self._parse_dict_browser_dict(name, raw_browser_data, args)
-    raise argparse.ArgumentTypeError(
-        f"Expected str or dict, got {type(raw_browser_data).__name__}: "
-        f"{repr(raw_browser_data)}")
+    if not isinstance(raw_browser_data, (dict, str)):
+      raise argparse.ArgumentTypeError(
+          f"Expected str or dict, got {type(raw_browser_data).__name__}: "
+          f"{repr(raw_browser_data)}")
 
-  def _parse_dict_browser_dict(self, name: str,
-                               raw_browser_data: str | Dict[str, Any],
-                               args: argparse.Namespace) -> None:
     path_or_identifier: str | None = None
     if isinstance(raw_browser_data, dict):
       path_or_identifier = raw_browser_data.get("path")
@@ -438,7 +434,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     assert browser_cls
 
     flag_variants: FlagsGroupConfig = self._get_browser_variants(
-        name, raw_browser_data)
+        args, name, raw_browser_data)
     self._log_browser_variants(name, flag_variants)
     browser_platform = self._get_browser_platform(browser_config)
     labels_lookup: Dict[FlagsVariantConfig,
@@ -454,7 +450,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
                            browser_flags, browser_platform, network)
 
   def _get_browser_variants(
-      self, browser_name: str,
+      self, args: argparse.Namespace, browser_name: str,
       raw_browser_data: str | Dict[str, Any]) -> FlagsGroupConfig:
     default_variant = FlagsVariantConfig(DEFAULT_LABEL)
     flag_variants = FlagsGroupConfig((default_variant,))
@@ -467,6 +463,14 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
         f"Expand browsers[{repr(browser_name)}].flags into full variants"):
       flag_variants = flag_variants.product(*flag_groups)
 
+    if args.browser:
+      # If there are additional --browser arguments, all browser flags are
+      # consumed there
+      return flag_variants
+    # Create variants for the existing browser command line flags and
+    # create the product.
+    args_flag_groups: FlagsGroupConfig = FlagsGroupConfig.parse_args(args)
+    flag_variants = flag_variants.product(args_flag_groups)
     return flag_variants
 
   def _parse_browser_flags(self, browser_name: str,

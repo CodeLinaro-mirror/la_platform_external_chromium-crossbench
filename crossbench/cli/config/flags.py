@@ -32,24 +32,25 @@ DEFAULT_LABEL: Final[str] = "default"
 
 def _parse_flags(flag_data: str | list | tuple | FlagsData | None) -> Flags:
   if not flag_data:
-    return Flags().freeze()
+    return ChromeFlags().freeze()
   if isinstance(flag_data, str):
-    return Flags.parse_str(flag_data).freeze()
+    return ChromeFlags.parse_str(flag_data).freeze()
   if isinstance(flag_data, (list, tuple)):
     return _parse_flags_sequence(flag_data)
-  return Flags.parse(flag_data).freeze()
+  return ChromeFlags.parse(flag_data).freeze()
 
 
 def _parse_flags_sequence(flag_data: Iterable) -> Flags:
-  split_flags = (Flags.split(flag) for flag in flag_data)
-  return Flags(split_flags).freeze()
+  split_flags = (ChromeFlags.split(flag) for flag in flag_data)
+  return ChromeFlags(split_flags).freeze()
 
 
 @dataclasses.dataclass(frozen=True)
 class FlagsVariantConfig:
   label: str
   index: int = 0
-  flags: Flags = dataclasses.field(default_factory=lambda: Flags().freeze())
+  flags: Flags = dataclasses.field(
+      default_factory=lambda: ChromeFlags().freeze())
 
   @classmethod
   def parse(cls, name: str, index: int, data: Any) -> FlagsVariantConfig:
@@ -94,6 +95,8 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
       return cls.parse_dict(data)
     if isinstance(data, (list, tuple)):
       return cls.parse_sequence(data)
+    if isinstance(data, argparse.Namespace):
+      return cls.parse_args(data)
     raise ConfigError(f"Invalid type {type(data)}: {repr(data)}")
 
   @classmethod
@@ -149,7 +152,7 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
 
   @classmethod
   def _validate_variants_dict(cls, data: Dict[str, Any]) -> None:
-    flags = Flags()
+    flags = ChromeFlags()
     for flag_name, flag_value in data.items():
       with exception.annotate_argparsing(
           f"Parsing flag variant ...[{flag_name}]:"):
@@ -179,10 +182,10 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
       if variant is None:
         flag = None
       elif not variant.strip():
-        flag = Flags((flag_name,))
+        flag = ChromeFlags((flag_name,))
       else:
         cls._validate_variant_flag(flag_name, variant)
-        flag = Flags({flag_name: variant})
+        flag = ChromeFlags({flag_name: variant})
       if flag in flags:
         raise ConfigError("Same flag variant was specified more than once: "
                           f"{repr(flag)} for entry {repr(flag_name)}")
@@ -235,7 +238,7 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
       initial_flags.set("--enable-field-trial-config")
     if args.enable_field_trial_config is False:
       initial_flags.set("--disable-field-trial-config")
-
+    # Convert flags back to dict-based config object:
     args_config: Dict[str, List[str] | str | None] = dict(initial_flags.items())
     base_js_flags = initial_flags.js_flags
     if args.js_flags:

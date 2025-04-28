@@ -132,8 +132,8 @@ class ChromeFlags(Flags):
       js_flags = JSFlags()
       js_flags.set(candidate, value)
       logging.error(
-          "Got potential V8 flag that should be used as "
-          "--js-flags=%s", js_flags)
+          "Got potential V8 flag %s that should be used as "
+          "--js-flags=%s", repr(name), js_flags)
     if name == "--user-data-dir":
       if not value or not value.strip():
         raise ValueError("--user-data-dir cannot be the empty string.")

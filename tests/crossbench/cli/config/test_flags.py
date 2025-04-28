@@ -550,7 +550,7 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(group_inline, group_a)
     variant_a = group_inline[0]
     variant_b = group_inline[1]
-    self.assertEqual(str(variant_a.flags), "--js-flags")
+    self.assertEqual(str(variant_a.flags), "")
     self.assertEqual(str(variant_b.flags), "--js-flags=--log-all")
 
   def test_parse_args_js_flags_2_with_empty_and_other_browser_args(self):
@@ -568,7 +568,7 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         js_flags=["", "--log-all"], other_browser_args=["--js-flags"])
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 2)
-    self.assertEqual(str(group_inline[0].flags), "--js-flags")
+    self.assertEqual(str(group_inline[0].flags), "")
     self.assertEqual(str(group_inline[1].flags), "--js-flags=--log-all")
 
   def test_parse_args_combined(self):
@@ -583,7 +583,19 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
          "--bar --enable-features=Feature1 --js-flags=--log-all"))
     self.assertEqual(group_inline, group_a)
 
-
+  def test_parse_args_product_js_flags(self):
+    args_a = self.mock_args(js_flags=["--max-opt=1", "--log-all"])
+    group_a = FlagsGroupConfig.parse_args(args_a)
+    self.assertEqual(len(group_a), 2)
+    args_b = self.mock_args(js_flags=["--no-turbofan"])
+    group_b = FlagsGroupConfig.parse_args(args_b)
+    self.assertEqual(len(group_b), 1)
+    product = group_a.product(group_b)
+    self.assertEqual(len(product), 2)
+    self.assertEqual(
+        str(product[0].flags), "--js-flags=--max-opt=1,--no-turbofan")
+    self.assertEqual(
+        str(product[1].flags), "--js-flags=--log-all,--no-turbofan")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,6 @@ import argparse
 import contextlib
 import copy
 import json
-import unittest
 from typing import Dict, Optional, Tuple, Type
 from unittest import mock
 
@@ -870,30 +869,34 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.verify_variant_flags(config.variants, expected_flags)
 
   def test_flag_combination_js_flags_combinations_invalid(self):
-    with self.assertRaises(ConfigError) as cm:
-      _ = BrowserVariantsConfigDict(
-          {
-              "flags": {
-                  "group1": {
-                      "--js-flags": [
-                          None, "--max-opt=2,--trace-ic",
-                          "--max-opt=3 --log-all"
-                      ],
-                  },
-                  "group2": {
-                      "default": "--js-flags=--no-sparkplug"
-                  }
-              },
-              "browsers": {
-                  "chrome-stable": {
-                      "path": "chrome-stable",
-                      "flags": ["group1", "group2"]
-                  }
-              }
-          },
-          browser_lookup_override=self.browser_lookup,
-          args=self.mock_args())
-    self.assertIn("--js-flags", str(cm.exception))
+    config = BrowserVariantsConfigDict(
+        {
+            "flags": {
+                "group1": {
+                    "--js-flags": [
+                        None, "--max-opt=2,--trace-ic", "--max-opt=3 --log-all"
+                    ],
+                },
+                "group2": {
+                    "default": "--js-flags=--no-sparkplug"
+                }
+            },
+            "browsers": {
+                "chrome-stable": {
+                    "path": "chrome-stable",
+                    "flags": ["group1", "group2"]
+                }
+            }
+        },
+        args=self.mock_args())
+    self.assertEqual(len(config.variants), 3)
+    self.assertEqual(str(config.variants[0].flags), "--js-flags=--no-sparkplug")
+    self.assertEqual(
+        str(config.variants[1].flags),
+        "--js-flags=--max-opt=2,--trace-ic,--no-sparkplug")
+    self.assertEqual(
+        str(config.variants[2].flags),
+        "--js-flags=--max-opt=3,--log-all,--no-sparkplug")
 
   def test_flag_group_combination(self):
     config = BrowserVariantsConfigDict(
@@ -1114,7 +1117,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertIn("--no-sandbox", browser.flags)
       self.assertEqual(browser.flags["--enable-logging"], "stderr")
 
-  @unittest.skip("Not yet supported")
   def test_from_cli_args_browser_config_js_flags(self):
     browser_config = {
         "browsers": {
@@ -1129,7 +1131,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         json.dump(browser_config, f)
 
       args = self.mock_args(
-          browser_config=config_file, js_flags=["--max-opt=1,--log-al"])
+          browser_config=config_file, js_flags=["--max-opt=1,--log-all"])
       with self._patch_get_browser_cls():
         config = BrowserVariantsConfig.parse_args(args)
 
