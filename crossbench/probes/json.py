@@ -49,6 +49,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
 
   SORT_KEYS = True
+  AUTO_MERGE_REPETITIONS = True
 
   @property
   @override
@@ -60,6 +61,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       self,
       group: RepetitionsRunGroup,
   ) -> ProbeResult:
+    if not self.AUTO_MERGE_REPETITIONS:
+      return super().merge_repetitions(group)
     merger = MetricsMerger()
     for run in group.runs:
       if self not in run.results:

@@ -5,23 +5,28 @@
 from __future__ import annotations
 
 import abc
-from typing import (TYPE_CHECKING, Dict, Hashable, Optional, Self, Set, Tuple,
-                    Type, TypeVar)
+import logging
+from typing import (TYPE_CHECKING, Dict, Hashable, List, Optional, Self, Set,
+                    Tuple, Type, TypeVar)
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigParser, UnusedPropertiesMode
 from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.probe_result_key import ProbeResultKey
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
+                                       ProbeResult)
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.probes.results import ProbeResultDict
+  from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.cache_temperatures import \
       CacheTemperaturesRunGroup
@@ -197,28 +202,45 @@ class Probe(ProbeResultKey, abc.ABC):
     same repetition, story and browser.
     """
     # Return the first result by default.
-    return tuple(group.runs)[0].results[self]
+    return group.first_run.results[self]
+
+  def symlinked_single_run_result(self, group: RunGroup) -> ProbeResult:
+    runs = tuple(group.runs)
+    if len(runs) != 1:
+      return EmptyProbeResult()
+    first_run = runs[0]
+    if not first_run.create_symlinks:
+      return EmptyProbeResult()
+
+    first_run_results: ProbeResult = first_run.results[self]
+    group_dir: pth.LocalPath = group.path
+    symlinked_files: List[pth.LocalPath] = []
+    for file in first_run_results.all_files():
+      group_result_symlink = group_dir / file.name
+      if group_result_symlink.exists():
+        logging.debug("Skipping symlinking single run results: %s", file)
+        continue
+      group_result_symlink.symlink_to(file.relative_to(group_dir))
+      symlinked_files.append(group_result_symlink)
+    return LocalProbeResult(file=symlinked_files)
 
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
     """
     For merging probe data from multiple repetitions of the same story.
     """
-    del group
-    return EmptyProbeResult()
+    return self.symlinked_single_run_result(group)
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     """
     For merging multiple stories for the same browser.
     """
-    del group
-    return EmptyProbeResult()
+    return self.symlinked_single_run_result(group)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """
     For merging all probe data (from multiple stories and browsers.)
     """
-    del group
-    return EmptyProbeResult()
+    return self.symlinked_single_run_result(group)
 
   def get_context(self: Self, run: Run) -> Optional[ProbeContext[Self]]:
     probe_cls: Type[ProbeContext[Self]] = self.get_context_cls()

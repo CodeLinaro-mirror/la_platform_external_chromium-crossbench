@@ -17,8 +17,7 @@ from crossbench.helper import collection_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
@@ -172,11 +171,9 @@ class VideoProbe(Probe):
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     """Merge story videos from multiple browser/configurations"""
-    if not self.merge_runs:
-      return LocalProbeResult()
     groups = list(group.repetitions_groups)
-    if len(groups) <= 1:
-      return EmptyProbeResult()
+    if not self.merge_runs or len(groups) <= 1:
+      return super().merge_browsers(group)
     grouped: Dict[Story,
                   List[RepetitionsRunGroup]] = collection_helper.group_by(
                       groups,
