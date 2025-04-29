@@ -12,6 +12,8 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
+from mobly.controllers import android_device
+from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -481,6 +483,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @property
   def serial_id(self):
     return self._adb.serial_id
+
+  @functools.cached_property
+  def uiautomator_device(self) -> android_device.AndroidDevice:
+    ad = android_device.AndroidDevice(self.serial_id)
+    ad.services.register(
+      uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
+    )
+    return ad
 
   @functools.cached_property
   @override

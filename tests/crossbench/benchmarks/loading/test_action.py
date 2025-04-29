@@ -890,7 +890,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action_2.validate()
 
 
-class PositionConfigTestCasse(unittest.TestCase):
+class PositionConfigTestCase(unittest.TestCase):
 
   def test_parse_position_from_coordinates(self):
     position = PositionConfig.from_coordinates(123, 456)
@@ -898,6 +898,7 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertIsNotNone(position.coordinates)
     self.assertEqual(123, position.coordinates.x)
     self.assertEqual(456, position.coordinates.y)
+    self.assertIsNone(position.ui_selector)
 
   def test_parse_position_from_selector_defaults(self):
     position = PositionConfig.from_selector("#id")
@@ -907,6 +908,7 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertTrue(position.selector.required)
     self.assertFalse(position.selector.scroll_into_view)
     self.assertFalse(position.selector.wait)
+    self.assertIsNone(position.ui_selector)
 
   def test_parse_position_from_selector_all(self):
     position = PositionConfig.from_selector(
@@ -917,6 +919,15 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertFalse(position.selector.required)
     self.assertTrue(position.selector.scroll_into_view)
     self.assertTrue(position.selector.wait)
+    self.assertIsNone(position.ui_selector)
+
+  def test_parse_position_from_ui_selector(self):
+    res = "com.google.android.apps.nexuslauncher:id/search_container_hotseat"
+    position = PositionConfig.from_ui_selector(res=res)
+    self.assertIsNone(position.selector)
+    self.assertIsNone(position.coordinates)
+    self.assertIsNotNone(position.ui_selector)
+    self.assertEqual(res, position.ui_selector.res)
 
   def test_selector_and_coordinates_raises(self):
     with self.assertRaisesRegex(ValueError, "exactly one"):

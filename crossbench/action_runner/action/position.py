@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, Dict, Self, Type
+from typing import TYPE_CHECKING, Any, Dict, Self, Type
 
 from typing_extensions import override
 
@@ -76,9 +76,37 @@ class SelectorConfig(ConfigObject):
 
 
 @dataclasses.dataclass(frozen=True)
+class UiSelectorConfig(ConfigObject):
+  res: str
+
+  @classmethod
+  @override
+  def parse_str(cls, value) -> UiSelectorConfig:
+    del value
+    raise NotImplementedError("Cannot create UiSelectorConfig from string")
+
+  @classmethod
+  @override
+  def parse_dict(cls, config: dict[str, Any],
+                 **kwargs: Any) -> UiSelectorConfig:
+    return cls.config_parser().parse(config)
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[UiSelectorConfig]:
+    parser = ConfigParser(
+        cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+    parser.add_argument(
+        "res", type=ObjectParser.non_empty_str, required=True,
+        help="Resource name of the UI element to match.")
+    return parser
+
+
+@dataclasses.dataclass(frozen=True)
 class PositionConfig(ConfigObject):
   coordinates: CoordinatesConfig | None = None
   selector: SelectorConfig | None = None
+  ui_selector: UiSelectorConfig | None = None
 
   @classmethod
   @override
@@ -95,6 +123,10 @@ class PositionConfig(ConfigObject):
     coordinates_parser = CoordinatesConfig.config_parser()
     if coordinates_parser.has_all_required_args(config):
       return cls(coordinates=coordinates_parser.parse(config))
+
+    ui_selector_parser = UiSelectorConfig.config_parser()
+    if ui_selector_parser.has_all_required_args(config):
+      return cls(ui_selector=ui_selector_parser.parse(config))
 
     raise argparse.ArgumentTypeError(
         f"{config} is not a valid coordinate or selector")
@@ -116,10 +148,15 @@ class PositionConfig(ConfigObject):
             scroll_into_view=scroll_into_view,
             wait=wait))
 
+  @classmethod
+  def from_ui_selector(cls, res: str) -> PositionConfig:
+    return cls(ui_selector=UiSelectorConfig(res=res))
+
   @override
   def validate(self) -> None:
     super().validate()
-    if bool(self.coordinates) == bool(self.selector):
+    if (bool(self.coordinates) + bool(self.selector)
+        + bool(self.ui_selector)) != 1:
       raise ValueError(
           "Position config must have exactly one coordinates or selector")
 
@@ -133,5 +170,7 @@ class PositionConfig(ConfigObject):
           "selector": selector.selector,
           "wait": selector.wait,
       }
+    if ui_selector := self.ui_selector:
+      return {"res": ui_selector.res}
     raise ValueError(
         "Position config must have exactly one coordinates or selector")
