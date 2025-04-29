@@ -23,6 +23,7 @@ from crossbench.runner.actions import Actions
 from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action.position import UiSelectorConfig
   from crossbench.plt.android_adb import AndroidAdbPlatform
 
 
@@ -178,7 +179,10 @@ return [
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
-    self._rate_limit_keystrokes(run, action, self._type_characters)
+    if action.text:
+      self._rate_limit_keystrokes(run, action, self._type_characters)
+    elif keyevent := action.keyevent:
+      self._send_keyevent(run, keyevent)
 
   def _click_impl(self, run: Run, action: i_action.ClickAction,
                   use_mouse: bool) -> None:
@@ -195,8 +199,7 @@ return [
           raise InputSourceNotImplementedError(
             self, action, action.input_source,
             "Mouse actions not implemented for UiSelectorConfig")
-        ad = cast("AndroidAdbPlatform", run.browser_platform).uiautomator_device
-        ad.ui(res=ui_selector.res).click()
+        self._click_ui_selector(run, ui_selector, action.timeout)
       elif selector_config := action.position.selector:
         if selector_config.wait:
           self.wait_for_element_impl(
@@ -332,3 +335,18 @@ return [
     # characters with the encoding '%s'.
     characters = characters.replace(" ", "%s")
     run.browser_platform.sh("input", "keyboard", "text", characters)
+
+  def _send_keyevent(self, run: Run, keyevent:str) -> None:
+    run.browser_platform.sh("input", "keyevent", keyevent)
+
+  def _click_ui_selector(self,
+                         run: Run,
+                         ui_selector: UiSelectorConfig,
+                         timeout: dt.timedelta) -> None:
+    ad = cast("AndroidAdbPlatform", run.browser_platform).uiautomator_device
+    selector_dict = ui_selector.to_json()
+    ui_object = ad.ui(**ui_selector.to_json())
+    # This verification step verifies if the element exists.
+    assert ui_object.wait.exists(timeout=timeout), (
+      f"Element with selector {selector_dict} not found")
+    ui_object.click()

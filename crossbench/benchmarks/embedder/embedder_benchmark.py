@@ -8,7 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Sequence, Tuple
+from typing import TYPE_CHECKING, cast, Sequence, Tuple
 
 from typing_extensions import override
 
@@ -25,6 +25,7 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
+  from crossbench.browsers.webview.embedder import WebviewEmbedder
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.runner.run import Run
 
@@ -39,6 +40,10 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
   def setup(self, run: Run) -> None:
     # TODO(zbikowski): Set up webview flags (including --remote-allow-origins=*)
     # TODO(zbikowski): Add a way to ensure embedder is installed and start it.
+    # Launching the Google Quick Search app
+    run_browser = cast("WebviewEmbedder", run.browser)
+    run.browser_platform.sh("am", "start", "-n",
+                            f"{run_browser.android_package}/.SearchActivity")
     logging.info("Starting Embedder Benchmark...")
 
   def run(self, run: Run) -> None:

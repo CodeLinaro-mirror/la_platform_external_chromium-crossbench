@@ -336,6 +336,14 @@ class ConfigParserTestCase(unittest.TestCase):
         config_parser.has_all_required_args({"name_alias": "a name"}))
     self.assertFalse(config_parser.has_all_required_args({"integer": 1}))
 
+  def test_has_any_args(self):
+    config_parser = CustomConfigObjectToArgumentValue.config_parser()
+    self.assertTrue(config_parser.has_any_args({"name": "a name"}))
+    self.assertTrue(
+        config_parser.has_any_args({"name_alias": "a name"}))
+    self.assertTrue(config_parser.has_any_args({"integer": 1}))
+    self.assertFalse(config_parser.has_any_args({"invalid": 1}))
+
   def test_parse_bool_false(self):
     config = CustomBoolConfigObject.parse(False)
     assert isinstance(config, CustomBoolConfigObject)

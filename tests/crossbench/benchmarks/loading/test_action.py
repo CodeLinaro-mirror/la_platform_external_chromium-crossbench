@@ -492,6 +492,39 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ClickAction.parse_dict(config_dict)
     self.assertIn("text", str(cm.exception))
 
+  def test_parse_text_input_keyevent(self):
+    config_dict = {
+        "action": "text_input",
+        "source": "keyboard",
+        "duration": "1s",
+        "keyevent": "KEYCODE_BACK"
+    }
+    action = TextInputAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.TEXT_INPUT)
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.input_source, InputSource.KEYBOARD)
+    self.assertIsNone(action.text)
+    self.assertEqual(action.keyevent, "KEYCODE_BACK")
+    self.assertEqual(action.duration, dt.timedelta(seconds=1))
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = TextInputAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_text_input_both(self):
+    config_dict = {
+        "action": "text_input",
+        "source": "keyboard",
+        "duration": "1s",
+        "text": "some text",
+        "keyevent": "KEYCODE_BACK"
+    }
+    with self.assertRaisesRegex(ValueError, "Exactly one"):
+      TextInputAction.parse_dict(config_dict)
+
   def test_parse_wait_for_condition(self):
     config_dict = {
         "action": "wait_for_condition",

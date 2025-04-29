@@ -937,6 +937,10 @@ class ConfigParser(Generic[ConfigResultObjectT]):
           return False
     return True
 
+  def has_any_args(self, config_data: Dict[str, Any]) -> bool:
+    config_keys: Set[str] = set(config_data.keys())
+    return bool(config_keys.intersection(self._arg_names))
+
   def kwargs_from_config(self, config_data: Dict[str, Any],
                          **extra_kwargs) -> Dict[str, Any]:
     with exception.annotate_argparsing(

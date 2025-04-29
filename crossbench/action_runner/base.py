@@ -146,10 +146,10 @@ class ActionRunner:
 
   def text_input(self, run: Run, action: i_action.TextInputAction) -> None:
     input_source = action.input_source
-    if input_source is InputSource.JS:
-      self.text_input_js(run, action)
-    elif input_source is InputSource.KEYBOARD:
+    if input_source is InputSource.KEYBOARD:
       self.text_input_keyboard(run, action)
+    elif input_source is InputSource.JS and not action.keyevent:
+      self.text_input_js(run, action)
     else:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 

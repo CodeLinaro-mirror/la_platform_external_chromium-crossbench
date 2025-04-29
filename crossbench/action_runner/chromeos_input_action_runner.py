@@ -383,6 +383,9 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
+    if action.keyevent:
+      raise ValueError("Keyevents are currently not supported on ChromeOS")
+
     browser_platform = run.browser_platform
 
     script = (SCRIPTS_DIR / "text_input.py").read_text()

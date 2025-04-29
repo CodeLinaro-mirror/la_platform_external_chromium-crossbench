@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, cast, Any, Callable, Optional, Sequence, Tuple
 
 from typing_extensions import override
 
@@ -317,7 +317,8 @@ class DefaultActionRunner(ActionRunner):
   def _rate_limit_keystrokes(
       self, run: Run, action: i_action.TextInputAction,
       do_type_function: Callable[[Run, Actions, str], Any]) -> None:
-    character_delay_s = (action.duration / len(action.text)).total_seconds()
+    action_text = cast(str, action.text)
+    character_delay_s = (action.duration / len(action_text)).total_seconds()
     start_time = time.time()
     action_expected_end_time = start_time + action.duration.total_seconds()
 
@@ -325,12 +326,12 @@ class DefaultActionRunner(ActionRunner):
 
       # When no duration is specified, input the entire text at once.
       if action.duration == dt.timedelta():
-        do_type_function(run, actions, action.text)
+        do_type_function(run, actions, action_text)
         return
 
       character_expected_end_time = start_time
 
-      for character in action.text:
+      for character in action_text:
         character_expected_end_time += character_delay_s
 
         do_type_function(run, actions, character)

@@ -77,7 +77,14 @@ class SelectorConfig(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class UiSelectorConfig(ConfigObject):
-  res: str
+  """Represents a BySelector.
+
+  https://developer.android.com/reference/androidx/test/uiautomator/BySelector
+  """
+
+  res: str | None = None
+  clazz: str | None = None
+  text: str | None = None
 
   @classmethod
   @override
@@ -97,9 +104,25 @@ class UiSelectorConfig(ConfigObject):
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument(
-        "res", type=ObjectParser.non_empty_str, required=True,
+        "res", type=ObjectParser.non_empty_str, required=False,
         help="Resource name of the UI element to match.")
+    parser.add_argument(
+        "clazz", type=ObjectParser.non_empty_str, required=False,
+        help="Class name of the UI element to match.")
+    parser.add_argument(
+        "text", type=ObjectParser.non_empty_str, required=False,
+        help="Text of the UI element to match.")
     return parser
+
+  def to_json(self) -> JsonDict:
+    result: JsonDict = {}
+    if self.res is not None:
+      result["res"] = self.res
+    if self.clazz is not None:
+      result["clazz"] = self.clazz
+    if self.text is not None:
+      result["text"] = self.text
+    return result
 
 
 @dataclasses.dataclass(frozen=True)
@@ -125,7 +148,8 @@ class PositionConfig(ConfigObject):
       return cls(coordinates=coordinates_parser.parse(config))
 
     ui_selector_parser = UiSelectorConfig.config_parser()
-    if ui_selector_parser.has_all_required_args(config):
+    if (ui_selector_parser.has_all_required_args(config)
+        and ui_selector_parser.has_any_args(config)):
       return cls(ui_selector=ui_selector_parser.parse(config))
 
     raise argparse.ArgumentTypeError(
@@ -149,8 +173,15 @@ class PositionConfig(ConfigObject):
             wait=wait))
 
   @classmethod
-  def from_ui_selector(cls, res: str) -> PositionConfig:
-    return cls(ui_selector=UiSelectorConfig(res=res))
+  def from_ui_selector(cls,
+                       res: str | None = None,
+                       clazz: str | None = None,
+                       text: str | None = None) -> PositionConfig:
+    return cls(
+        ui_selector=UiSelectorConfig(
+            res=res,
+            clazz=clazz,
+            text=text))
 
   @override
   def validate(self) -> None:
@@ -171,6 +202,6 @@ class PositionConfig(ConfigObject):
           "wait": selector.wait,
       }
     if ui_selector := self.ui_selector:
-      return {"res": ui_selector.res}
+      return ui_selector.to_json()
     raise ValueError(
         "Position config must have exactly one coordinates or selector")
