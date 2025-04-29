@@ -14,7 +14,7 @@ from typing_extensions import override
 from crossbench.benchmarks.base import Benchmark
 from crossbench.cli.ui import timer
 from crossbench.helper import input_helper
-from crossbench.parse import DurationParser
+from crossbench.parse import DurationParser, ObjectParser
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -28,10 +28,13 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
 
   STORY_NAME = "manual"
 
-  def __init__(self, start_after: Optional[dt.timedelta],
-               run_for: Optional[dt.timedelta]) -> None:
+  def __init__(self,
+               start_after: Optional[dt.timedelta] = dt.timedelta(),
+               run_for: Optional[dt.timedelta] = dt.timedelta(),
+               url: Optional[str] = None) -> None:
     self._start_after = start_after
     self._run_for = run_for
+    self._url = url
     duration = ((start_after or dt.timedelta()) +
                 (run_for or dt.timedelta(seconds=30)))
     super().__init__(self.STORY_NAME, duration)
@@ -53,10 +56,13 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
   def run(self, run: Run) -> None:
     with timer():
       logging.info("-" * 80)
+      if url := self._url:
+        with run.actions("Show URL") as actions:
+          actions.show_url(url)
       self._wait_for_input()
-      # Empty line to preserve timer output.
-      print()
-      logging.info("Stopping Manual Benchmark...")
+    # Empty line to preserve timer output.
+    print()
+    logging.info("Stopping Manual Benchmark...")
 
   def _wait_for_input(self) -> None:
     if self._run_for is None:
@@ -89,9 +95,13 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   NAME = "manual"
   DEFAULT_STORY_CLS = ManualStory
 
-  def __init__(self, start_after: Optional[dt.timedelta],
-               run_for: Optional[dt.timedelta]) -> None:
-    super().__init__([ManualStory(start_after=start_after, run_for=run_for)])
+  def __init__(self,
+               start_after: Optional[dt.timedelta] = None,
+               run_for: Optional[dt.timedelta] = None,
+               url: Optional[str] = None) -> None:
+    manual_story = ManualStory(
+        start_after=start_after, run_for=run_for, url=url)
+    super().__init__([manual_story])
 
   @classmethod
   @override
@@ -101,14 +111,19 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
     parser = super().add_cli_parser(subparsers, aliases)
     parser.add_argument(
         "--start-after",
-        help="How long to wait until measurement starts",
-        type=DurationParser.positive_or_zero_duration)
+        type=DurationParser.positive_or_zero_duration,
+        help="How long to wait until measurement starts")
     parser.add_argument(
         "--run-for",
         "--stop-after",
         "--duration",
-        help="How long to run measurement for",
-        type=DurationParser.positive_duration)
+        type=DurationParser.positive_duration,
+        help="How long to run measurement for")
+    parser.add_argument(
+        "--url",
+        "--test-url",
+        type=ObjectParser.url_str,
+        help="Navigate to URL right after the start-after timeout.")
     return parser
 
   @classmethod
@@ -117,4 +132,5 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
     kwargs = super().kwargs_from_cli(args)
     kwargs["start_after"] = args.start_after
     kwargs["run_for"] = args.run_for
+    kwargs["url"] = args.url
     return kwargs

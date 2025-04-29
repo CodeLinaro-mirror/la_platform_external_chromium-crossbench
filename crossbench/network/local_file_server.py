@@ -212,5 +212,5 @@ class LocalFileNetwork(Network):
     if self._extra_headers:
       formatted_headers = json.dumps(dict(self._extra_headers))
       extra_headers_str = f" extra_headers={formatted_headers}"
-    return ("LOCAL(path={self._path}, "
+    return (f"LOCAL(path={self._path}, "
             f"speed={self.traffic_shaper}{extra_headers_str})")
