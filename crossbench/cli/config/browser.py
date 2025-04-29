@@ -26,7 +26,10 @@ from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 
-SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
+SUPPORTED_EMBEDDER = ("googlequicksearchbox",)
+SUPPORTED_BROWSER = (
+  "chromium", "chrome", "safari", "edge", "firefox"
+  ) + SUPPORTED_EMBEDDER
 
 # Split inputs like:
 # - "/out/x64.release/chrome"

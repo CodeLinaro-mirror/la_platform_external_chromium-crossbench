@@ -23,7 +23,7 @@ from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser import BrowserConfig, SUPPORTED_EMBEDDER
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
                                          FlagsGroupConfig, FlagsVariantConfig)
@@ -215,6 +215,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
         return all_browsers.FirefoxWebDriver
     if "edge" in path_str:
       return all_browsers.EdgeWebDriver
+    if any(embedder in path_str for embedder in SUPPORTED_EMBEDDER):
+      return all_browsers.WebviewEmbedder
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
   @classmethod

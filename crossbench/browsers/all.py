@@ -28,3 +28,4 @@ from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.safari.webdriver import (SafariWebDriver,
                                                   SafariWebdriverIOS)
 from crossbench.browsers.webview.browser import WebviewBrowser
+from crossbench.browsers.webview.embedder import WebviewEmbedder
