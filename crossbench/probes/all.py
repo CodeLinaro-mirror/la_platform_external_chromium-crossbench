@@ -12,6 +12,7 @@ from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
+from crossbench.probes.embedder import WebviewEmbedderProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
 from crossbench.probes.internal.browser.driver_log import BrowserDriverLogProbe
@@ -91,6 +92,7 @@ GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     DownloadsProbe,
     DTraceProbe,
     DumpHtmlProbe,
+    WebviewEmbedderProbe,
     FrequencyProbe,
     JSProbe,
     LogcatAndroidProbe,

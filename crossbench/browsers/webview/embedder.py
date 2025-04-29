@@ -21,7 +21,8 @@ if TYPE_CHECKING:
 
 class WebviewEmbedder(Webview):
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
+  def start(self,  # pytype: disable=override-error
+            session: BrowserSessionRunGroup) -> None:
     # Start is a no-op. Embedder activity will be started by the Benchmark.
     # Webview will be started by the Embedder. Driver will be started
     # by the ProbeContext
@@ -29,13 +30,14 @@ class WebviewEmbedder(Webview):
     self._is_running = True
 
   @override
-  def quit(self) -> None:
+  def quit(self) -> None:  # pytype: disable=override-error
     # External code that started the driver is responsible for shutting it down.
     self._is_running = False
     self._teardown_cache_dir()
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
+  def _start_driver(self,  # pytype: disable=override-error
+                    session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> ChromiumDriver:
     options = self._create_options(session, [])
     service = webdriver.ChromeService(executable_path=driver_path)
@@ -48,7 +50,8 @@ class WebviewEmbedder(Webview):
     return self._private_driver
 
   @override
-  def _create_options(self, session: BrowserSessionRunGroup,
+  def _create_options(self,  # pytype: disable=override-error
+                      session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromeOptions:
     options = ChromeOptions()
     # TODO(zbikowski): process name should come from config
