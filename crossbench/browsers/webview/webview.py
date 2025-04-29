@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.browsers.version import BrowserVersion
 
-WEBVIEW_PROVIDER : Final[str] = "com.google.android.webview"
+WEBVIEW_PROVIDER : Final[str] = "com.google.android.webview.debug"
 
 
 # TODO: crbug.com/393058910 - Replace this Webview class stub placeholder
