@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from crossbench.benchmarks.embedder import EmbedderBenchmark
 from crossbench.benchmarks.jetstream import (JetStream20Benchmark,
                                              JetStream21Benchmark,
                                              JetStream22Benchmark,

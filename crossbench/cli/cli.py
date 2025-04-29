@@ -120,6 +120,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
 class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
+      benchmarks.EmbedderBenchmark,
       # JetStream:
       benchmarks.JetStream20Benchmark,
       benchmarks.JetStream21Benchmark,

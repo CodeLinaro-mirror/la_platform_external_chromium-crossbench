@@ -1,0 +1,12 @@
+{
+  cujs: {
+    agsa-simple: [
+      {action: "click", source: "touch", position: {
+        res: "com.google.android.apps.nexuslauncher:id/search_container_hotseat"
+      }},
+      {action: "wait", duration: "3s"},
+      {action: "text_input", duration: "1s", text: "Hello World\n", source: "keyboard"},
+      {action: "wait", duration: "3s"},
+    ],
+  },
+}

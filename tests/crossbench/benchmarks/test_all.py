@@ -8,6 +8,7 @@ import unittest
 
 from ordered_set import OrderedSet
 
+from crossbench.benchmarks.embedder.embedder_benchmark import EmbedderBenchmark
 from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
@@ -72,6 +73,7 @@ ALL = (
     Speedometer31Benchmark,
     SpeedometerMainBenchmark,
     MemoryBenchmark,
+    EmbedderBenchmark,
 )
 
 
