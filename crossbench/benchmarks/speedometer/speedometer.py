@@ -73,6 +73,14 @@ class SpeedometerProbe(
       total_score.append(iteration_score)
     return total_score
 
+  def _is_valid_metric_key(self, metric_key: str) -> bool:
+    parts = metric_key.split("/")
+    if len(parts) == 2:
+      return True
+    if len(parts) == 1:
+      return parts[0] in ("Geomean", "Score")
+    return parts[-1] == "total"
+
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
@@ -114,10 +122,6 @@ class SpeedometerProbe(
         continue
       table[metric_key].append(
           Metric.format(metric["average"], metric["stddev"]))
-
-  @abc.abstractmethod
-  def _is_valid_metric_key(self, metric_key: str) -> bool:
-    pass
 
 
 class SpeedometerProbeContext(JsonResultProbeContext):

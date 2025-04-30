@@ -57,4 +57,4 @@ class Speedometer31Benchmark(Speedometer3Benchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("sp3", "speedometer_3") + super().aliases()
+    return ("sp", "speedometer", "sp3", "speedometer_3") + super().aliases()
