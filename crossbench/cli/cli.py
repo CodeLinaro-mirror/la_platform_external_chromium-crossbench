@@ -122,6 +122,7 @@ class CrossBenchCLI:
   BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
       benchmarks.EmbedderBenchmark,
       # JetStream:
+      benchmarks.JetStream11Benchmark,
       benchmarks.JetStream20Benchmark,
       benchmarks.JetStream21Benchmark,
       benchmarks.JetStream22Benchmark,

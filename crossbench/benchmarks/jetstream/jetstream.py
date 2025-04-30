@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import datetime as dt
 import json
 import logging
 import statistics
@@ -20,6 +21,7 @@ from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import CSVFormatter, Metric, MetricsMerger
 from crossbench.probes.results import ProbeResult, ProbeResultDict
+from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
   import argparse
@@ -198,6 +200,32 @@ class JetStreamCSVFormatter(CSVFormatter):
         score_items.append((key, value))
     total_item = [(self.TOTAL_METRIC_KEY, data[self.TOTAL_METRIC_KEY])]
     return total_item + score_items + items
+
+
+class JetStreamStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
+  URL_LOCAL: str = "http://localhost:8000/"
+
+  @property
+  @override
+  def substory_duration(self) -> dt.timedelta:
+    return dt.timedelta(seconds=2)
+
+  def run(self, run: Run) -> None:
+    with run.actions("Running") as actions:
+      actions.js("JetStream.start()")
+      actions.wait(self.fast_duration)
+    self.run_wait_until_done(run)
+
+  def run_wait_until_done(self, run: Run) -> None:
+    with run.actions("Waiting for completion") as actions:
+      actions.wait_js_condition(
+          """
+        let summaryElement = document.getElementById("result-summary");
+        return (summaryElement.classList.contains("done"));
+        """,
+          0.5,
+          self.slow_duration,
+          delay=self.substory_duration)
 
 
 class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
