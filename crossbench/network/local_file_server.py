@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import email.parser
 import http.server
@@ -187,9 +188,15 @@ class LocalFileNetwork(Network):
       # TODO: create port-forwarder service that is shut down properly.
       # TODO: make ports configurable
       browser_platform.reverse_port_forward(self._port, self._port)
+
+      def cleanup():
+        browser_platform.stop_reverse_port_forward(self._port)
+
+      atexit.register(cleanup)
     yield
     if browser_platform.is_remote:
-      browser_platform.stop_reverse_port_forward(self._port)
+      atexit.unregister(cleanup)
+      cleanup()
 
   @property
   @override
