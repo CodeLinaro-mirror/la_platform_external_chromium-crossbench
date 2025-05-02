@@ -119,10 +119,12 @@ class ChromeDownloader(Downloader):
     # Version ordering is: stable < beta < dev < canary < canary_asan
     # See https://developer.chrome.com/docs/web-platform/versionhistory/reference#filter
     channel_filter = "channel<=canary"
+    channel = "all"
     requested_channel = BrowserVersionChannel.ANY
     if self._requested_version.has_channel:
       requested_channel = self._requested_version.channel
       channel_filter = f"channel={self._requested_version.channel_name}"
+      channel = self._requested_version.channel_name
 
     milestone_filter: str = ""
     label: str = str(requested_channel)
@@ -133,12 +135,12 @@ class ChromeDownloader(Downloader):
 
     url = self.VERSION_URL.format(
         platform=platform,
-        channel="all",
+        channel=channel,
         filter=f"{milestone_filter},{channel_filter}&")
     logging.debug("LIST ALL VERSIONS for %s: %s", label, url)
     version_urls: List[Tuple[BrowserVersion, str]] = []
     try:
-      response = url_helper.get(url, retry=3)
+      response = url_helper.get(url, retry=3, timeout=100)
       raw_infos = response.json()["versions"]
       version_urls = [
           self._create_version_url(

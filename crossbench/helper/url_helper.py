@@ -44,6 +44,7 @@ def retry_timeout_request(
                           e)
         continue
       logging.error("%s request failed url=%s", method, url)
+      logging.debug("RequestException: %s", e)
       raise e
 
 
