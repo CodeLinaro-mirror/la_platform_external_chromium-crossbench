@@ -96,6 +96,7 @@ class JetStream11Story(JetStreamStory):
           url=self.get_run_url(run),
           ready_state=ReadyState.COMPLETE,
           timeout=dt.timedelta(seconds=10))
+      actions.wait_js_condition("return !!JetStream;", min_wait=0.01, timeout=2)
       actions.js("JetStream.initialize();")
       # Intercept console.log to capture the raw results.
       actions.js("""
