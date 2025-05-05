@@ -190,12 +190,14 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--network",
         type=NetworkConfig.parse,
         help=("Either an inline network config or an file path to full "
-              "network config hjson file (see --network-config)."))
+              "network config hjson file (see --network-config or "
+              "'help network')."))
     network_settings_group.add_argument(
         "--network-config",
         metavar="DIR",
         type=NetworkConfig.parse_config_path,
-        help=NetworkConfig.help())
+        help=("Path to a full network config file. See `help network` "
+              "for all options."))
     network_settings_group.add_argument(
         "--local-file-server",
         "--local-fileserver",
@@ -204,7 +206,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         type=NetworkConfig.parse_local,
         metavar="DIR",
         dest="network",
-        help="Start a local http file server at the given directory.")
+        help=("Start a local http file server at the given directory. "
+              "See `help network` for more options."))
     network_settings_group.add_argument(
         "--wpr",
         "--web-page-replay",
@@ -214,7 +217,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=("Use wpr.archive to replay network requests "
               "via a local proxy server. "
               "Archives can be recorded with --probe=wpr. "
-              "WPR_ARCHIVE can be a local file or a gs:// google storage url."))
+              "WPR_ARCHIVE can be a local file or a gs:// google storage url. "
+              "See `help network` for more options."))
 
     env_group = subparser.add_argument_group("Environment Options", "")
     env_settings_group = env_group.add_mutually_exclusive_group()

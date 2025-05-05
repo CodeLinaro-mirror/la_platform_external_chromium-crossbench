@@ -27,7 +27,7 @@ class HelpSubcommand(CrossbenchSubcommand):
     help_parser.add_argument(
         "probe_or_benchmark",
         nargs="?",
-        help="Use a benchmark or probe name to display more details.")
+        help="Use a benchmark, probe or network name to display more details.")
     return help_parser
 
   @override

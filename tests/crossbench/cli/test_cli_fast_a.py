@@ -67,6 +67,14 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("describe", "benchmark", "unknown benchmark", "--json")
     self.assertEqual(cm.exception.exit_code, 0)
 
+  def test_describe_invalid_network(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("describe", "network", "unknown benchmark")
+    self.assertEqual(cm.exception.exit_code, 0)
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("describe", "network", "unknown benchmark", "--json")
+    self.assertEqual(cm.exception.exit_code, 0)
+
   def test_describe_invalid_all(self):
     with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "all", "unknown probe or benchmark")
@@ -76,7 +84,6 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe(self):
-    # Non-json output shouldn't fail
     self.run_cli("describe")
     self.run_cli("describe", "all")
     _, stdout, stderr = self.run_cli_output("describe", "--json")
@@ -84,41 +91,58 @@ class FastCliTestCasePartA(BaseCliTestCase):
     data = json.loads(stdout)
     self.assertIn("benchmarks", data)
     self.assertIn("probes", data)
+    self.assertIn("networks", data)
     self.assertIsInstance(data["benchmarks"], dict)
     self.assertIsInstance(data["probes"], dict)
+    self.assertIsInstance(data["networks"], dict)
 
   def test_describe_benchmarks(self):
-    # Non-json output shouldn't fail
     self.run_cli("describe", "benchmarks")
     _, stdout, stderr = self.run_cli_output("describe", "--json", "benchmarks")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
+    self.assertNotIn("networks", data)
     self.assertIsInstance(data, dict)
     self.assertIn("loading", data)
 
   def test_describe_probes(self):
-    # Non-json output shouldn't fail
     self.run_cli("describe", "probes")
     _, stdout, stderr = self.run_cli_output("describe", "--json", "probes")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
+    self.assertNotIn("networks", data)
     self.assertIsInstance(data, dict)
     self.assertIn("v8.log", data)
 
+  def test_describe_networks(self):
+    self.run_cli("describe", "networks")
+    _, stdout, stderr = self.run_cli_output("describe", "--json", "networks")
+    self.assertFalse(stderr)
+    data = json.loads(stdout)
+    self.assertNotIn("benchmarks", data)
+    self.assertNotIn("probes", data)
+    self.assertNotIn("networks", data)
+    self.assertIsInstance(data, dict)
+    self.assertIn("LIVE", data)
+
   def test_describe_all(self):
-    self.run_cli("describe", "probes")
+    self.run_cli("describe", "all")
     _, stdout, stderr = self.run_cli_output("describe", "all")
     self.assertFalse(stderr)
-    self.assertIn("benchmarks", stdout)
+    self.assertIn("Benchmark", stdout)
+    self.assertIn("Probe", stdout)
+    self.assertIn("Network", stdout)
+
     self.assertIn("v8.log", stdout)
     self.assertIn("speedometer", stdout)
+    self.assertIn("LIVE", stdout)
 
   def test_describe_all_filtered(self):
-    self.run_cli("describe", "probes")
+    self.run_cli("describe", "all")
     _, stdout, stderr = self.run_cli_output("describe", "all", "v8.log")
     self.assertFalse(stderr)
     self.assertNotIn("benchmarks", stdout)
@@ -126,13 +150,14 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("speedometer", stdout)
 
   def test_describe_all_json(self):
-    self.run_cli("describe", "probes")
+    self.run_cli("describe", "all")
     _, stdout, stderr = self.run_cli_output("describe", "--json", "all")
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertIsInstance(data, dict)
-    self.assertIn("benchmarks", data)
     self.assertIn("v8.log", data["probes"])
+    self.assertIn("speedometer_2.1", data["benchmarks"])
+    self.assertIn("LIVE", data["networks"])
 
   def test_describe_all_json_filtered(self):
     self.run_cli("describe", "probes")
@@ -144,6 +169,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertEqual(data["benchmarks"], {})
     self.assertEqual(len(data["probes"]), 1)
     self.assertIn("v8.log", data["probes"])
+    self.assertEqual(data["networks"], {})
 
   def test_help(self):
     with self.assertRaises(SysExitTestException) as cm:
