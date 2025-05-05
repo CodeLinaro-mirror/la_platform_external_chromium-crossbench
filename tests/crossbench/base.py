@@ -95,6 +95,7 @@ class CrossbenchMockArgsMixin:
         enable_features=kwargs.pop("enable_features", None),
         disable_features=kwargs.pop("disable_features", None),
         js_flags=kwargs.pop("js_flags", None),
+        sandbox=kwargs.pop("sandbox", None),
         enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
         network=kwargs.pop("network", NetworkConfig.default()),
         probe=kwargs.pop("probe", []),

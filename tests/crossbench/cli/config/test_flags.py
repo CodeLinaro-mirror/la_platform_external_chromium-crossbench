@@ -193,6 +193,7 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
     self.assertEqual(empty.label, "default")
     self.assertFalse(empty.flags)
     self.assertEqual(empty.index, 0)
+    self.assertEqual(empty, empty)
 
   def test_merge_copy(self):
     flags_a = Flags.parse("--foo-a")
@@ -221,6 +222,7 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
     self.assertIn(variant_a, variants)
     self.assertIn(variant_b, variants)
     self.assertNotIn(variant_c, variants)
+    self.assertNotEqual(variant_a, {})
 
 
 class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
@@ -596,6 +598,37 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         str(product[0].flags), "--js-flags=--max-opt=1,--no-turbofan")
     self.assertEqual(
         str(product[1].flags), "--js-flags=--log-all,--no-turbofan")
+
+  def test_parse_chrome_flags(self):
+    args = self.mock_args(js_flags=["--no-opt"])
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(str(group[0].flags), "--js-flags=--no-opt")
+
+    args = self.mock_args(sandbox=False)
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(str(group[0].flags), "--no-sandbox")
+
+    args = self.mock_args(enable_features="Custom")
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(str(group[0].flags), "--enable-features=Custom")
+
+    args = self.mock_args(disable_features="Custom")
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(str(group[0].flags), "--disable-features=Custom")
+
+    args = self.mock_args(enable_field_trial_config=True)
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(str(group[0].flags), "--enable-field-trial-config")
+
+    args = self.mock_args(enable_field_trial_config=False)
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(str(group[0].flags), "--disable-field-trial-config")
 
 
 if __name__ == "__main__":

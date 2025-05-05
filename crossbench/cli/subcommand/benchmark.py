@@ -397,6 +397,15 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     chrome_args.add_argument(
         "--js-flags", dest="js_flags", action="append", default=[])
 
+    chrome_args.add_argument(
+        "--no-sandbox",
+        "--nosandbox",
+        dest="sandbox",
+        action="store_false",
+        default=None,
+        help=("Disables the sandbox for all process types that are "
+              "normally sandboxed. Use for testing purposes only."))
+
     doc_str = "See chrome's base/feature_list.h source file for more details"
     chrome_args.add_argument(
         "--enable-features",

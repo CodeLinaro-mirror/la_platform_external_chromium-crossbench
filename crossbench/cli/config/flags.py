@@ -234,10 +234,24 @@ class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
       initial_flags["--enable-features"] = args.enable_features
     if args.disable_features:
       initial_flags["--disable-features"] = args.disable_features
-    if args.enable_field_trial_config is True:
-      initial_flags.set("--enable-field-trial-config")
-    if args.enable_field_trial_config is False:
-      initial_flags.set("--disable-field-trial-config")
+    match args.enable_field_trial_config:
+      case True:
+        initial_flags.set("--enable-field-trial-config")
+      case False:
+        initial_flags.set("--disable-field-trial-config")
+      case None:
+        pass
+      case _:
+        raise ValueError(
+            "Invalid field-trial-config value: {args.enable_field_trial_config}"
+        )
+    match args.sandbox:
+      case False:
+        initial_flags.set("--no-sandbox")
+      case None:
+        pass
+      case _:
+        raise ValueError(f"Unknown sandbox value: {args.sandbox}")
     # Convert flags back to dict-based config object:
     args_config: Dict[str, List[str] | str | None] = dict(initial_flags.items())
     base_js_flags = initial_flags.js_flags
