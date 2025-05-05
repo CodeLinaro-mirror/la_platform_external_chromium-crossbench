@@ -33,7 +33,7 @@ from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
-from crossbench.helper.sleep_preventer import SystemSleepPreventer
+from crossbench.helper.wake_lock import WakeLock
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -56,8 +56,7 @@ class CrossbenchFakeFsTestCase(
     self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
     # This is platform specific and causes issues pending sh commands
-    self.sleep_preventer_patcher = mock.patch.object(SystemSleepPreventer,
-                                                     "__enter__")
+    self.sleep_preventer_patcher = mock.patch.object(WakeLock, "__enter__")
     self.addCleanup(self.sleep_preventer_patcher.stop)
     self.sleep_preventer_patcher.start()
 

@@ -18,9 +18,9 @@ from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
 from crossbench.helper import collection_helper
-from crossbench.helper.sleep_preventer import SystemSleepPreventer
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.helper.wait import WaitRange
+from crossbench.helper.wake_lock import WakeLock
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
@@ -441,7 +441,7 @@ class Runner:
 
   def run(self, is_dry_run: bool = False) -> None:
     self._state.expect(RunnerState.INITIAL)
-    with SystemSleepPreventer(self._platform):
+    with WakeLock(self._platform):
       with self._exceptions.annotate("Preparing"):
         self._setup()
       with self._exceptions.capture("Running"):

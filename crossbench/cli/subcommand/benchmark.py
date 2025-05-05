@@ -28,6 +28,7 @@ from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.helper.wake_lock import WakeLock
 from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
                               PathParser)
 from crossbench.probes.debugger import DebuggerProbe
@@ -492,36 +493,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     try:
       self._process_args(args)
       benchmark = self._get_benchmark(args)
-      with plt.PLATFORM.TemporaryDirectory(prefix="crossbench") as tmp_dirname:
-        if args.dry_run:
-          args.out_dir = pth.LocalPath(tmp_dirname) / "results"
-        args.browser = self._get_browsers(args)
-        probes: Sequence[Probe] = self._get_probes(args)
-        env_config: EnvironmentConfig = self._get_env_config(args)
-        env_validation_mode: ValidationMode = self._get_env_validation_mode(
-            args)
-        timing: Timing = self._get_timing(args)
-        self._runner = self._get_runner(args, benchmark, env_config,
-                                        env_validation_mode, timing)
-
-        # We prevent running multiple stories in repetition OR if multiple
-        # browsers are open when 'power' probes are used since it might distort
-        # the data.
-        if len(args.browser) > 1 or args.repetitions > 1:
-          probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
-          if probe_names:
-            names_str = ",".join(probe_names)
-            raise argparse.ArgumentTypeError(
-                f"Cannot use [{names_str}] probe(s) "
-                "with repeat > 1 and/or with multiple browsers. We need to "
-                "always start at the same battery level, and by running "
-                "stories on multiple browsers or multiples time will create "
-                "erroneous data.")
-
-        for probe in probes:
-          self.runner.attach_probe(probe, matching_browser_only=True)
-
-        self._run_benchmark(args, self.runner)
+      with plt.PLATFORM.TemporaryDirectory(
+          prefix="crossbench") as tmp_dirname, WakeLock(plt.PLATFORM):
+        self._run(args, benchmark, tmp_dirname)
     except KeyboardInterrupt:
       sys.exit(2)
     except LateArgumentError as e:
@@ -533,6 +507,37 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         raise
       self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
       sys.exit(3)
+
+  def _run(self, args: argparse.Namespace, benchmark: Benchmark,
+           tmp_dirname: pth.AnyPath) -> None:
+    if args.dry_run:
+      args.out_dir = pth.LocalPath(tmp_dirname) / "results"
+    args.browser = self._get_browsers(args)
+    probes: Sequence[Probe] = self._get_probes(args)
+    env_config: EnvironmentConfig = self._get_env_config(args)
+    env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
+    timing: Timing = self._get_timing(args)
+    self._runner = self._get_runner(args, benchmark, env_config,
+                                    env_validation_mode, timing)
+
+    # We prevent running multiple stories in repetition OR if multiple
+    # browsers are open when 'power' probes are used since it might distort
+    # the data.
+    if len(args.browser) > 1 or args.repetitions > 1:
+      probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
+      if probe_names:
+        names_str = ",".join(probe_names)
+        raise argparse.ArgumentTypeError(
+            f"Cannot use [{names_str}] probe(s) "
+            "with repeat > 1 and/or with multiple browsers. We need to "
+            "always start at the same battery level, and by running "
+            "stories on multiple browsers or multiples time will create "
+            "erroneous data.")
+
+    for probe in probes:
+      self.runner.attach_probe(probe, matching_browser_only=True)
+
+    self._run_benchmark(args, self.runner)
 
   def _helper(self, args: argparse.Namespace) -> None:
     """Handle common subcommand mistakes that are not easily implementable
