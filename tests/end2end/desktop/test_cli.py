@@ -281,7 +281,7 @@ def test_loading(test_env: TestEnv, test_chrome_name) -> None:
       f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--viewport=headless",
-      "--stories=cnn",
+      "--stories=wikipedia",
       "--cool-down-time=2.5",
       "--probe=performance.entries",
       test_env=test_env,
