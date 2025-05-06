@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Optional, TextIO, Tuple, Type, cast
+from typing import TYPE_CHECKING, Final, Optional, TextIO, Tuple, Type, cast
 
 from typing_extensions import override
 
@@ -45,6 +45,10 @@ class ChromiumBased(Browser):
       "--disable-background-timer-throttling",
       "--disable-renderer-backgrounding",
   )
+  # Versions [M98, M100] don't respect the --no-first-run flag and always
+  # display a "What's New" tab on startup.
+  WHATS_NEW_UI_VERSION_RANGE: Final[range] = range(98, 100 + 1)
+
 
   @classmethod
   @abc.abstractmethod
@@ -91,6 +95,15 @@ class ChromiumBased(Browser):
           "behavior may not work as expected. Add "
           "--allow-background-interventions to bypass this.")
       self._flags.update(self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS)
+
+    if self.version.major in self.WHATS_NEW_UI_VERSION_RANGE:
+      whatsnew_ui_feature = "ChromeWhatsNewUI"
+      if not self._flags.features:
+        logging.warning("Disabling %s", whatsnew_ui_feature)
+        self._flags.features.disable(whatsnew_ui_feature)
+      elif whatsnew_ui_feature not in self._flags.features:
+        logging.warning("Browser might show %s, hiding the main tab",
+                        whatsnew_ui_feature)
 
     # Explicitly disable field-trials by default on all chrome flavours:
     # By default field-trials are disabled on non-Chrome branded builds, but

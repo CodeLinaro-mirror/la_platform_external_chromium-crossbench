@@ -340,6 +340,9 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
   def __str__(self) -> str:
     return " ".join(self)
 
+  def __contains__(self, feature: str) -> bool:
+    return feature in self._disabled or feature in self._enabled
+
 
 class ChromeFeatures(ChromeBaseFeatures):
   """

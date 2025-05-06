@@ -1028,6 +1028,19 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     features_str = str(features)
     self.assertEqual(features_str, "--disable-features=feature1")
 
+  def test_contains(self):
+    features = self.instance()
+    self.assertFalse("feature1" in features)
+    self.assertFalse("feature2" in features)
+
+    features.enable("feature1")
+    self.assertTrue("feature1" in features)
+    self.assertFalse("feature2" in features)
+
+    features.disable("feature2")
+    self.assertTrue("feature1" in features)
+    self.assertTrue("feature2" in features)
+
 
 class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
 
