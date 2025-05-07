@@ -97,7 +97,6 @@ class WebviewEmbedderProbeContext(JsonResultProbeContext[WebviewEmbedderProbe]):
   def to_json(self, actions: Actions) -> Json:
     driver = self.browser.start_driver(self.session)
     try:
-      driver.switch_to.window(driver.window_handles[0])
       data = actions.js(self.probe.metric_js)
     finally:
       driver.quit()

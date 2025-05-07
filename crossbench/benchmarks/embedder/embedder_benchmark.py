@@ -42,7 +42,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
     # TODO(zbikowski): Add a way to ensure embedder is installed and start it.
     # Launching the Google Quick Search app
     run_browser = cast("WebviewEmbedder", run.browser)
-    run.browser_platform.sh("am", "start", "-n",
+    run.browser_platform.sh("am", "start", "-S", "-W", "-n",
                             f"{run_browser.android_package}/.SearchActivity")
     logging.info("Starting Embedder Benchmark...")
 
