@@ -198,6 +198,17 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("Disable colored output", stdout)
     self.assertIn("Available Probes for all Benchmarks:", stdout)
 
+  def test_help_subcommand_all_probes(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("help", "probes")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "help", "probes", raises=SysExitTestException)
+    self.assertFalse(stderr)
+    self.assertIn("v8.log", stdout)
+    self.assertIn("V8LogProbe", stdout)
+    self.assertIn("v8.rcs", stdout)
+
   def test_help_subcommand_probe(self):
     with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("help", "v8.log")
@@ -207,6 +218,18 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertFalse(stderr)
     self.assertIn("v8.log", stdout)
     self.assertIn("V8LogProbe", stdout)
+    self.assertNotIn("v8.rcs", stdout)
+
+  def test_help_subcommand_probe_with_category(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("help", "probe", "v8.log")
+    self.assertEqual(cm.exception.exit_code, 0)
+    _, stdout, stderr = self.run_cli_output(
+        "help", "probe", "v8.log", raises=SysExitTestException)
+    self.assertFalse(stderr)
+    self.assertIn("v8.log", stdout)
+    self.assertIn("V8LogProbe", stdout)
+    self.assertNotIn("v8.rcs", stdout)
 
   def test_help_subcommand_benchmark(self):
     with self.assertRaises(SysExitTestException) as cm:

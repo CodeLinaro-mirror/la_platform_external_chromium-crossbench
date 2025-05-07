@@ -23,6 +23,12 @@ if TYPE_CHECKING:
 
 class DescribeSubcommand(CrossbenchSubcommand):
 
+  PROBE_ALIAS = ("probe", "probes")
+  BENCHMARK_ALIAS = ("benchmark", "benchmarks")
+  NETWORK_ALIAS = ("network", "networks")
+  CATEGORIES = ("all",) + PROBE_ALIAS + BENCHMARK_ALIAS + NETWORK_ALIAS
+
+
   def add_cli_parser(self) -> argparse.ArgumentParser:
     describe_parser = self.cli.subparsers.add_parser(
         "describe", aliases=["desc"], help="Print all benchmarks and stories")
@@ -30,8 +36,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
     describe_parser.add_argument(
         "category",
         nargs="?",
-        choices=("all", "benchmark", "benchmarks", "probe", "probes", "network",
-                 "networks"),
+        choices=self.CATEGORIES,
         default="all",
         help="Limit output to the given category, defaults to 'all'")
     describe_parser.add_argument(
@@ -50,44 +55,75 @@ class DescribeSubcommand(CrossbenchSubcommand):
 
   @override
   def run(self, args: argparse.Namespace) -> None:
-    self.describe(args.filter, args.category, args.json)
+    self.describe(args.category, args.filter, args.json)
+
+  def run_from_help(self, args: argparse.Namespace) -> None:
+    search_terms = args.search_terms
+    category = "all"
+    search_str = ""
+    if len(search_terms) == 1:
+      search_str = search_terms[0]
+    elif len(search_terms) == 2:
+      category, search_str = search_terms
+    else:
+      self.error(f"Invalid help args: {search_terms}")
+    if category not in self.CATEGORIES:
+      self.error(
+          f"Invalid category {repr(category)}, choices are {self.CATEGORIES}")
+    self.describe(category, search_str)
 
   def describe(self,
-               search_str: Optional[str] = None,
-               category: Optional[str] = "all",
+               category: str,
+               search_str: str | None,
                print_json: bool = False) -> None:
-    if search_str:
-      search_str = search_str.lower()
+    category, search_str = self._process_search_str(category, search_str)
+
     data: HelpData = {
         "benchmarks": self._benchmark_help(search_str),
         "probes": self._probe_help(search_str),
         "networks": self._network_help(search_str)
     }
     if print_json:
-      self.print_json(search_str, category, data)
+      self.print_json(category, search_str, data)
       return
     # Create tabular format
     printed_any = False
     if category in ("all", "benchmark", "benchmarks"):
-      printed_any |= self.print_benchmarks(search_str, category, data)
+      printed_any |= self.print_benchmarks(category, search_str, data)
     if category in ("all", "probe", "probes"):
-      printed_any |= self.print_probes(search_str, category, data)
+      printed_any |= self.print_probes(category, search_str, data)
     if category in ("all", "network", "networks"):
-      printed_any |= self.print_networks(search_str, category, data)
+      printed_any |= self.print_networks(category, search_str, data)
     if not printed_any:
       self.no_match_error(search_str)
 
-  def print_json(self, search_str: str | None, category: str | None,
+  def _process_search_str(self, category: str,
+                          search_str: str | None) -> Tuple[str, str | None]:
+    if not search_str:
+      return category, search_str
+    search_str = search_str.lower()
+    if search_str in self.PROBE_ALIAS:
+      category = "probe"
+      search_str = None
+    elif search_str in self.BENCHMARK_ALIAS:
+      category = "benchmark"
+      search_str = None
+    elif search_str in self.NETWORK_ALIAS:
+      category = "network"
+      search_str = None
+    return category, search_str
+
+  def print_json(self, category: str, search_str: str | None,
                  data: HelpData) -> None:
-    if category in ("probe", "probes"):
+    if category in self.PROBE_ALIAS:
       data = data["probes"]
       if not data:
         self.error(f"No matching probe found: '{search_str}'")
-    elif category in ("benchmark", "benchmarks"):
+    elif category in self.BENCHMARK_ALIAS:
       data = data["benchmarks"]
       if not data:
         self.error(f"No matching benchmark found: '{search_str}'")
-    elif category in ("network", "networks"):
+    elif category in self.NETWORK_ALIAS:
       data = data["networks"]
       if not data:
         self.error(f"No matching network found: '{search_str}'")
@@ -101,8 +137,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
     self.error(
         f"No matching benchmarks, probes or networks found: '{search_str}'")
 
-  def print_probes(self, search_str: str | None, category: str | None,
-                   data: HelpData):
+  def print_probes(self, category: str, search_str: str | None, data: HelpData):
     printed_any: bool = False
     table = [["Probe", "Help"]]
     for probe_name, probe_desc in data["probes"].items():
@@ -115,7 +150,8 @@ class DescribeSubcommand(CrossbenchSubcommand):
       print(tbl.tabulate(table, tablefmt="grid"))
     return printed_any
 
-  def print_benchmarks(self, search_str: str | None, category, data: HelpData):
+  def print_benchmarks(self, category: str, search_str: str | None,
+                       data: HelpData):
     printed_any = False
     table: List[List[Optional[str]]] = [["Benchmark", "Property", "Value"]]
     for benchmark_name, values in data["benchmarks"].items():
@@ -140,7 +176,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
       print(tbl.tabulate(table, tablefmt="grid"))
     return printed_any
 
-  def print_networks(self, search_str: str | None, category: str | None,
+  def print_networks(self, category: str, search_str: str | None,
                      data: HelpData):
     printed_any: bool = False
     table = [["Network", "Help"]]

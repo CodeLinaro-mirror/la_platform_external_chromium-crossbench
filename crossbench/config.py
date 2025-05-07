@@ -16,8 +16,8 @@ import json
 import logging
 import re
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
-                    Iterable, List, Optional, Self, Set, Tuple, Type,
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final,
+                    Generic, Iterable, List, Optional, Self, Set, Tuple, Type,
                     TypeAlias, TypeVar, cast)
 from urllib.parse import urlparse
 
@@ -401,10 +401,10 @@ class ConfigObject(abc.ABC):
     objects contain other nested config-parsed objects,
   - It is then used to create a real instance of an object.
   """
-  VALID_CONFIG_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
-  VALID_EXTENSIONS: Tuple[str, ...] = VALID_CONFIG_EXTENSIONS
-  VALID_SCHEME: Tuple[str, ...] = ("http", "https", "file", "gs", "ftp")
-
+  VALID_CONFIG_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".hjson", ".json")
+  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
+  VALID_SCHEME: ClassVar[Tuple[str,
+                               ...]] = ("http", "https", "file", "gs", "ftp")
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
     return PathParser.value_has_path_prefix(value)

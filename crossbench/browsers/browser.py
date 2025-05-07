@@ -345,7 +345,7 @@ class Browser(abc.ABC):
     logging.info("🏷️  STARTING BROWSER Version: %s", self.version)
     if driver_path:
       logging.info("🐎 STARTING BROWSER Driver:  %s", driver_path)
-    logging.info("🕸  STARTING BROWSER Network: %s", self.network)
+    logging.info("🛜  STARTING BROWSER Network: %s", self.network)
     logging.info("🩺 STARTING BROWSER Probes:  %s",
                  ", ".join(p.NAME for p in self.probes))
     logging.info("🚩 STARTING BROWSER Flags:   %s", shlex.join(args))

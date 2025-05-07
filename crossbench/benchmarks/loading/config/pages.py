@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
-                    Tuple)
+from typing import (TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Self,
+                    Sequence, Tuple)
 
 from typing_extensions import override
 
@@ -243,7 +243,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
 class ListPagesConfig(PagesConfig):
 
-  VALID_EXTENSIONS: Tuple[str, ...] = (".txt", ".list")
+  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".txt", ".list")
 
   @classmethod
   @override

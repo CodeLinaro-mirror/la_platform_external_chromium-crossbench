@@ -60,7 +60,7 @@ android devices using the device ID or unique device names
 
 ## Main Components
 
-### Browsers
+### 🌐 Browsers
 Crossbench supports running benchmarks on one or multiple browser configurations.
 The main implementation uses selenium for maximum system independence.
 
@@ -82,7 +82,7 @@ Multi-browser example:
 ```
 
 #### `--browser` flag on desktop:
-| Flag | Description |
+| Example | Description |
 |------|-------------|
 |`--browser=chrome-stable`| Use the installed Chrome stable on the host. Also works with `beta`, `dev` and `canary` versions. |
 |`--browser=edge-stable`| Use the installed Edge stable on the host. Also works with `beta`, `dev` and `canary` versions. |
@@ -102,7 +102,7 @@ Multi-browser example:
 You can directly run on attached android devices using the device ID or unique device names.
 They need to have [developer mode and usb-debugging enabled](https://developer.android.com/studio/debug/dev-options#Enable-debugging).
 
-| Flag | Description |
+| Example | Description |
 |------|-------------|
 | `--browser=adb:chrome-stable` | Use Chrome stable on a single attached adb device. Note this will fail if there is more than one attached device. |
 |  `--browser=Pixel_7_pro:chrome-canary` | Use Chrome canary on an attached Pixel 7 Pro device. Note this will fail if there is more than one Pixel 7 pro attached.|
@@ -150,7 +150,7 @@ Safari needs some extra steps to work:
   - "Developer" tab: Optional, if you plan to use the apple-script browser, also check "Allow JavaScript from Apple Events"
 
 
-### Probes
+### 🩺 Probes
 Probes define a way to extract arbitrary (performance) numbers from a
 host or running browser. This can reach from running simple JS-snippets to
 extract page-specific numbers to system-wide profiling.
@@ -186,7 +186,7 @@ The [example file](config/doc/probe.config.hjson) lists and explains all
 configuration details. For the specific probe configuration properties consult
 the `describe` command.
 
-### Benchmarks
+### 📏 Benchmarks
 Use the `describe` command to list all benchmark details:
 
 ```bash
@@ -200,7 +200,7 @@ Use the `describe` command to list all benchmark details:
 ./cb.py speedometer_3.0 --help
 ```
 
-### Stories
+### 📚 Stories
 Stories define sequences of browser interactions. This can be simply
 loading a URL and waiting for a given period of time, or in more complex
 scenarios, actively interact with a page and navigate multiple times.
@@ -218,8 +218,23 @@ as filter.
 ./cb.py speedometer --browser=$BROWSER --stories='.*Angular.*'
 ```
 
+### 🛜 Network
 
-## Development
+Crossbench supports various network settings directly, see `./cb.py help network` for more detail.
+| Type | Description |
+| ------- | -- |
+| LIVE    | Live network.  |
+| WPR     | Replayed network from a [wpr.go](https://chromium.googlesource.com/webpagereplay/) archive. Note you can use the `--probe=wpr` probe to record fresh network archives |
+| LOCAL   | Serve content from a local http file server. This is useful for local debugging or running press benchmarks. |
+
+| Example | Description |
+| -- | -- |
+| `--network=/path/to/speedometer` | Use a local fileserver. |
+| `--network=3G-slow` | Use live network with slow 3G traffic shaping. |
+| `--network=path/to/archive.wprgo` | Use 'wpr' replay network with the given request archive. |
+| `--network='{type:"wpr", path:"./archive.wprgo", speed:"3G-regular"}'`| Use 'wpr' network with 3G traffic shaping. |
+
+## 🛠️ Development
 
 ### Checking Out Code
 Don't just `git clone` the crossbench repo! Use depot_tools to set everything
