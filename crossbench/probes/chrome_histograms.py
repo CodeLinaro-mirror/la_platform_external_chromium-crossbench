@@ -192,7 +192,7 @@ class ChromeHistogramSample:
   # "Histogram: WebUI.CreatedForUrl recorded 30 samples (flags = 0x41)"
   _HEADER_RE = re.compile(r"^Histogram: +.* recorded (\d+) samples"
                           r"(?:, mean = (-?\d+\.\d+))?"
-                          r" \(flags = (0x[0-9A-Fa-f]+)\)$")
+                          r"(?: \(flags = (0x[0-9A-Fa-f]+)\))?$")
 
   @classmethod
   def from_json(cls, histogram_dict: Dict) -> ChromeHistogramSample:
@@ -206,7 +206,7 @@ class ChromeHistogramSample:
           f"{name} histogram header has invalid data: {header}")
     count = int(m.group(1))
     mean = float(m.group(2)) if m.group(2) is not None else None
-    flags = int(m.group(3), 16)
+    flags = int(m.group(3), 16) if m.group(3) is not None else 0
 
     bucket_counts: Dict[int, int] = {}
     bucket_maxes: Dict[int, int] = {}
@@ -256,6 +256,10 @@ class ChromeHistogramSample:
   @property
   def count(self) -> int:
     return self._count
+
+  @property
+  def flags(self) -> int:
+    return self._flags
 
   def bucket_max(self, bucket_min: int) -> Optional[int]:
     return self._bucket_maxes.get(bucket_min)

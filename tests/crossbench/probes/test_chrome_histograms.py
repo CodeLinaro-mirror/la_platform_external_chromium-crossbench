@@ -121,6 +121,13 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
           self._sample_json("test", self.BASELINE_HEADER,
                             self.BASELINE_BODY + "bar\n"))
 
+  def test_sample_no_flags_in_header(self):
+    no_flags_sample = ChromeHistogramSample.from_json(
+        self._sample_json("test",
+                          "Histogram: test recorded 50 samples, mean = 57.4",
+                          self.BASELINE_BODY))
+    self.assertEqual(0, no_flags_sample.flags)
+
   def test_sample_count_header_body_mismatch(self):
     with pytest.raises(
         Exception,
