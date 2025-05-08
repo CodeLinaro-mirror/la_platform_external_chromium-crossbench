@@ -257,7 +257,7 @@ to setup the correct environment for testing and debugging.
 
 ```bash
 # a) On debian:
-sudo apt-get install python3.10 python3-poetry
+sudo apt-get install python3.11 python3.11-dev python3-poetry
 # b) With python 3.11 installed already:
 pip3 install poetry
 ```
