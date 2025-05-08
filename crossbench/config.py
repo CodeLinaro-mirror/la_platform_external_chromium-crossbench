@@ -612,8 +612,7 @@ def template_args(value: Any) -> Dict[str, TemplateArg]:
       if not re.match(ARG_NAME_PATTERN, arg_key):
         raise argparse.ArgumentTypeError(
             "Template args must only contain uppercase letters, "
-            f"numbers, and '_': {arg_key}"
-        )
+            f"numbers, and '_': {arg_key}")
 
       dict_value[arg_key] = TemplateArg(name=arg_key, value=arg_value)
 
@@ -630,6 +629,9 @@ class _TemplatedConfigParser(ConfigObject):
 
   # Matches args of the format: $[ARG]
   ARG_PATTERN: re.Pattern = re.compile(r"\$\[([A-Z\d_]+)\]")
+
+  # Matches the special list spread format $[..ARG]
+  LIST_SPREAD_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\.\.\.([A-Z\d_]+)\]$")
 
   # Matches escape sequences of the above: $[[ARG]
   ESCAPED_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\[([A-Z\d_]+)\]")
@@ -756,11 +758,37 @@ class _TemplatedConfigParser(ConfigObject):
             child_value)
     return result
 
+  def _is_list_spread_reference(self, value: Any) -> Optional[str]:
+    if not isinstance(value, str):
+      return None
+
+    match = re.match(self.LIST_SPREAD_ARG_PATTERN, value)
+
+    if match:
+      return match.group(1)
+
+    return None
+
   def _substitute_list(self, value: List[Any]) -> List[Any]:
     result: List[Any] = []
     for index, child_value in enumerate(value):
       with exception.annotate(f"Parsing List index: {index}:"):
-        result.append(self._substitute_args(child_value))
+
+        arg_name = self._is_list_spread_reference(child_value)
+
+        if arg_name and arg_name not in self._unbound_args:
+
+          arg_expansion = self._substitute_str(f"$[{arg_name}]")
+
+          if not isinstance(arg_expansion, list):
+            raise ValueError(
+                f"Argument value for the spread operator {child_value}"
+                f" is not a list: {arg_expansion}")
+
+          for list_item in arg_expansion:
+            result.append(list_item)
+        else:
+          result.append(self._substitute_args(child_value))
     return result
 
   def _substitute_str(self, value: str) -> Any:

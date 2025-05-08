@@ -82,6 +82,7 @@ class CustomBoolConfigObject(ConfigObject):
 class CustomNestedConfigObject(ConfigObject):
   name: str
   option: str | None = None
+  array: List[str] | None = None
 
   @classmethod
   @override
@@ -98,6 +99,7 @@ class CustomNestedConfigObject(ConfigObject):
     parser = ConfigParser(cls)
     parser.add_argument("name", type=str, required=True)
     parser.add_argument("option", type=str, required=False)
+    parser.add_argument("array", type=list)
     return parser
 
 
@@ -1177,6 +1179,153 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     self.assertEqual(config.name, "name")
     self.assertEqual(config.array[0], "/templates/test_file")
+
+  def test_template_list_spread_in_non_list_does_nothing(self):
+    config = {
+        "template": {
+            "name": "$[...NAME]"
+        },
+        "args": {
+            "NAME": ["my name",]
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertEqual(config.name, "$[...NAME]")
+
+  def test_template_list_spread_non_list_value_throws(self):
+    config = {
+        "template": {
+            "array": ["some", "string", "values", "$[...ARG]"]
+        },
+        "args": {
+            "ARG": "arg_value"
+        }
+    }
+
+    with self.assertRaisesRegex(MultiException, "is not a list"):
+      config = CustomConfigObject.parse(config)
+
+  def test_template_list_spread_end(self):
+    config = {
+        "template": {
+            "name": "name",
+            "array": ["some", "string", "values", "$[...ARG]"]
+        },
+        "args": {
+            "ARG": ["arg_value"]
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertEqual(len(config.array), 4)
+    self.assertEqual(config.array[3], "arg_value")
+
+  def test_template_list_spread_beginning(self):
+    config = {
+        "template": {
+            "name": "name",
+            "array": [
+                "$[...ARG]",
+                "some",
+                "string",
+                "values",
+            ]
+        },
+        "args": {
+            "ARG": ["arg_value"]
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertEqual(len(config.array), 4)
+    self.assertEqual(config.array[0], "arg_value")
+
+  def test_template_list_spread_middle(self):
+    config = {
+        "template": {
+            "name": "name",
+            "array": [
+                "some",
+                "string",
+                "$[...ARG]",
+                "values",
+            ]
+        },
+        "args": {
+            "ARG": ["arg_value"]
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertEqual(len(config.array), 4)
+    self.assertEqual(config.array[2], "arg_value")
+
+  def test_template_list_spread_multiple_middle(self):
+    config = {
+        "template": {
+            "name": "name",
+            "array": [
+                "some",
+                "string",
+                "$[...ARG]",
+                "values",
+            ]
+        },
+        "args": {
+            "ARG": ["arg_value", "another arg value"]
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertEqual(len(config.array), 5)
+    self.assertEqual(config.array[2], "arg_value")
+    self.assertEqual(config.array[3], "another arg value")
+
+  def test_template_list_spread_empty_substitution(self):
+    config = {
+        "template": {
+            "name": "name",
+            "array": [
+                "some",
+                "string",
+                "$[...ARG]",
+                "values",
+            ]
+        },
+        "args": {
+            "ARG": []
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertListEqual(config.array, ["some", "string", "values"])
+
+  def test_parse_template_unbound_list_spread_arg(self):
+    config = {
+        "template": {
+            "name": "name",
+            "nested": {
+                "template": {
+                    "name": "name",
+                    "array": [
+                        "first",
+                        "$[...ARG]",
+                        "third",
+                    ]
+                },
+                "unbound_args": ["ARG"]
+            }
+        },
+        "args": {
+            "ARG": ["second"]
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertListEqual(config.nested.array, ["first", "second", "third"])
 
 
 class ConfigEnumTestCase(unittest.TestCase):
