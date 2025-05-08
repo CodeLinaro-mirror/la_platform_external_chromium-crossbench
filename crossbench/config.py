@@ -600,6 +600,8 @@ class TemplateArg:
     self.used = True
 
 
+ARG_NAME_PATTERN: re.Pattern = re.compile(r"^[A-Z\d_]+$")
+
 def template_args(value: Any) -> Dict[str, TemplateArg]:
   dict_value = ObjectParser.dict(value)
 
@@ -607,8 +609,11 @@ def template_args(value: Any) -> Dict[str, TemplateArg]:
     with exception.annotate_argparsing(
         f"Parsing ...[{repr(arg_key)}] = {repr(arg_value)}"):
 
-      if not arg_key.isupper():
-        logging.warning("Arg names should be uppercase: %s", arg_key)
+      if not re.match(ARG_NAME_PATTERN, arg_key):
+        raise argparse.ArgumentTypeError(
+            "Template args must only contain uppercase letters, "
+            f"numbers, and '_': {arg_key}"
+        )
 
       dict_value[arg_key] = TemplateArg(name=arg_key, value=arg_value)
 
@@ -623,11 +628,11 @@ class ConfigTemplateError(argparse.ArgumentTypeError):
 
 class _TemplatedConfigParser(ConfigObject):
 
-  # Matches args of the format: $[.. arg name ..]
-  ARG_RE = re.compile(r"\$\[([^\][[^\]]*)\]")
+  # Matches args of the format: $[ARG]
+  ARG_PATTERN: re.Pattern = re.compile(r"\$\[([A-Z\d_]+)\]")
 
-  # Matches escape sequences of the above: $[[ should not be replaced ]
-  ESCAPED_ARG_RE = re.compile(r"\$\[\[([^\]].*)\]")
+  # Matches escape sequences of the above: $[[ARG]
+  ESCAPED_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\[([A-Z\d_]+)\]")
 
   VALID_KEYS_FOR_TEMPLATE_OBJECT: Final[frozenset] = frozenset([
       frozenset(["template", "args"]),
@@ -760,7 +765,7 @@ class _TemplatedConfigParser(ConfigObject):
 
   def _substitute_str(self, value: str) -> Any:
 
-    while matches := list(re.finditer(self.ARG_RE, value)):
+    while matches := list(re.finditer(self.ARG_PATTERN, value)):
 
       made_a_substitution: bool = False
 
@@ -802,7 +807,7 @@ class _TemplatedConfigParser(ConfigObject):
     return value
 
   def _fix_escape_sequence(self, value: str) -> str:
-    matches = list(re.finditer(self.ESCAPED_ARG_RE, value))
+    matches = list(re.finditer(self.ESCAPED_ARG_PATTERN, value))
     # Reverse matches so that string indices don't get messed up while we
     # substitute.
     matches.reverse()

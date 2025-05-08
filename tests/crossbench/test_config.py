@@ -710,41 +710,69 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("choices are", error_message)
     self.assertIn("config_enum", error_message)
 
+  def test_parse_templated_config_missing_arg_name_throws(self):
+    config = {"template": {"name": "$[ARG]"}, "args": {"": ""}}
+
+    with self.assertRaisesRegex(MultiException,
+                                "Template args must only contain"):
+      config = CustomConfigObject.parse(config)
+
+  def test_parse_templated_config_lowercase_arg_name_throws(self):
+    config = {"template": {"name": "$[arg]"}, "args": {"arg": "my name"}}
+
+    with self.assertRaisesRegex(MultiException,
+                                "Template args must only contain"):
+      config = CustomConfigObject.parse(config)
+
+  def test_parse_templated_config_space_beginning_arg_name_throws(self):
+    config = {"template": {"name": "$[ ARG]"}, "args": {" ARG": "my name"}}
+
+    with self.assertRaisesRegex(MultiException,
+                                "Template args must only contain"):
+      config = CustomConfigObject.parse(config)
+
+  def test_parse_templated_config_space_end_arg_name_throws(self):
+    config = {"template": {"name": "$[ARG ]"}, "args": {"ARG ": "my name"}}
+
+    with self.assertRaisesRegex(MultiException,
+                                "Template args must only contain"):
+      config = CustomConfigObject.parse(config)
+
   def test_parse_templated_config_missing_arg_throws(self):
     config = {
         "template": {
-            "name": "$[missing_arg]"
+            "name": "$[MISSING_ARG]"
         },
         "args": {
-            "arg": "arg_value"
+            "ARG": "arg_value"
         }
     }
 
-    with self.assertRaisesRegex(MultiException, "missing_arg"):
+    with self.assertRaisesRegex(MultiException, "MISSING_ARG"):
       config = CustomConfigObject.parse(config)
 
   def test_parse_templated_config_multiple_missing_args_throws(self):
     config = {
         "template": {
-            "name": "$[missing_arg] $[missing_arg2]"
+            "name": "$[MISSING_ARG] $[MISSING_ARG2]"
         },
         "args": {
-            "arg": "arg_value"
+            "ARG": "arg_value"
         }
     }
 
     with self.assertRaises(MultiException) as cm:
       config = CustomConfigObject.parse(config)
-    self.assertIn("'missing_arg'", str(cm.exception))
-    self.assertIn("'missing_arg2'", str(cm.exception))
+    self.assertIn("'MISSING_ARG'", str(cm.exception))
+    self.assertIn("'MISSING_ARG2'", str(cm.exception))
 
   def test_parse_templated_config_unsupported_arg_throws(self):
     config = {
         "template": {
-            "name": "text and $[dict-arg]"
+            "name": "text and $[DICT_ARG]"
         },
         "args": {
-            "dict-arg": {
+            "DICT_ARG": {
                 "key": "value"
             }
         }
@@ -758,10 +786,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "top level",
-            "nested": "$[arg]"
+            "nested": "$[ARG]"
         },
         "args": {
-            "arg": {
+            "ARG": {
                 "name": "nested"
             }
         }
@@ -773,7 +801,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.nested.name, "nested")
 
   def test_parse_templated_config_empty_arg(self):
-    config = {"template": {"name": "$[arg]"}, "args": {"arg": ""}}
+    config = {"template": {"name": "$[ARG]"}, "args": {"ARG": ""}}
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
@@ -781,7 +809,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.name, "")
 
   def test_parse_templated_config_string_only(self):
-    config = {"template": {"name": "$[arg]"}, "args": {"arg": "arg_value"}}
+    config = {"template": {"name": "$[ARG]"}, "args": {"ARG": "arg_value"}}
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
@@ -791,11 +819,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_unused_arg(self):
     config = {
         "template": {
-            "name": "$[arg]"
+            "name": "$[ARG]"
         },
         "args": {
-            "arg": "arg_value",
-            "unused_arg": "unused"
+            "ARG": "arg_value",
+            "UNUSED_ARG": "unused"
         }
     }
 
@@ -807,13 +835,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_string_multiple(self):
     config = {
         "template": {
-            "name": "$[one]$[two]$[three]$[four]",
+            "name": "$[ONE]$[TWO]$[THREE]$[FOUR]",
         },
         "args": {
-            "one": "1",
-            "two": "2",
-            "three": "3",
-            "four": "4"
+            "ONE": "1",
+            "TWO": "2",
+            "THREE": "3",
+            "FOUR": "4"
         }
     }
 
@@ -825,13 +853,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_string_multiple_mixed(self):
     config = {
         "template": {
-            "name": "[$[one]_$[two]_$[three]_$[four]]",
+            "name": "[$[ONE]_$[TWO]_$[THREE]_$[FOUR]]",
         },
         "args": {
-            "one": "1",
-            "two": 2,
-            "three": 3.0,
-            "four": 4.56
+            "ONE": "1",
+            "TWO": 2,
+            "THREE": 3.0,
+            "FOUR": 4.56
         }
     }
 
@@ -843,12 +871,12 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_string_nested_matches(self):
     config = {
         "template": {
-            "name": "$[$[$[arg]]]",
+            "name": "$[$[$[ARG]]]",
         },
         "args": {
-            "arg": "arg2",
-            "arg2": "arg3",
-            "arg3": "the true arg"
+            "ARG": "ARG2",
+            "ARG2": "ARG3",
+            "ARG3": "the true arg"
         }
     }
 
@@ -861,10 +889,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "name",
-            "integer": "$[arg]"
+            "integer": "$[ARG]"
         },
         "args": {
-            "arg": 4
+            "ARG": 4
         }
     }
 
@@ -877,10 +905,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "name",
-            "float_field": "$[arg]"
+            "float_field": "$[ARG]"
         },
         "args": {
-            "arg": 1.3
+            "ARG": 1.3
         }
     }
 
@@ -892,14 +920,14 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_filepath(self):
     template_path_str = "template_file.hjson"
     template = {
-        "name": "$[arg]",
+        "name": "$[ARG]",
     }
 
     path = pathlib.Path(template_path_str)
     with path.open("w", encoding="utf-8") as f:
       json.dump(template, f)
 
-    args = {"template": template_path_str, "args": {"arg": "arg_value"}}
+    args = {"template": template_path_str, "args": {"ARG": "arg_value"}}
 
     config = CustomConfigObject.parse(args)
     self.assertIsInstance(config, CustomConfigObject)
@@ -908,7 +936,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_templated_config_two_layer_filepath(self):
     nested_path_str = "nested.hjson"
-    nested = {"name": "$[arg]"}
+    nested = {"name": "$[ARG]"}
 
     path = pathlib.Path(nested_path_str)
     with path.open("w", encoding="utf-8") as f:
@@ -924,7 +952,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     with path.open("w", encoding="utf-8") as f:
       json.dump(template, f)
 
-    args = {"template": template_path_str, "args": {"arg": "arg_value"}}
+    args = {"template": template_path_str, "args": {"ARG": "arg_value"}}
 
     config = CustomConfigObject.parse(args)
     self.assertIsInstance(config, CustomConfigObject)
@@ -934,18 +962,18 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_two_level_template(self):
     config = {
         "template": {
-            "name": "$[top-level-arg]",
+            "name": "$[TOP_LEVEL_ARG]",
             "nested": {
                 "template": {
-                    "name": "$[second-level-arg]"
+                    "name": "$[SECOND_LEVEL_ARG]"
                 },
                 "args": {
-                    "second-level-arg": "second-level-name"
+                    "SECOND_LEVEL_ARG": "second-level-name"
                 }
             }
         },
         "args": {
-            "top-level-arg": "top-level-name"
+            "TOP_LEVEL_ARG": "top-level-name"
         }
     }
 
@@ -959,10 +987,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     nested_path_str = "nested.hjson"
     nested = {
         "template": {
-            "name": "$[nested-name]"
+            "name": "$[NESTED_NAME]"
         },
         "args": {
-            "nested-name": "nested"
+            "NESTED_NAME": "nested"
         }
     }
 
@@ -972,11 +1000,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = {
         "template": {
-            "name": "$[top-level-arg]",
+            "name": "$[TOP_LEVEL_ARG]",
             "nested": nested_path_str
         },
         "args": {
-            "top-level-arg": "top-level-name"
+            "TOP_LEVEL_ARG": "top-level-name"
         }
     }
 
@@ -989,61 +1017,61 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_single_escaped_value(self):
     config = {
         "template": {
-            "name": "some text $[[arg] on either side",
+            "name": "some text $[[ARG] on either side",
         },
         "args": {
-            "placeholder": "nothing"
+            "PLACEHOLDER": "nothing"
         }
     }
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
 
-    self.assertEqual(config.name, "some text $[arg] on either side")
+    self.assertEqual(config.name, "some text $[ARG] on either side")
 
   def test_parse_templated_config_nested_escaped_value(self):
     config = {
         "template": {
-            "name": "$[[ $[[arg] ]",
+            "name": "$[[$[[ARG]]",
         },
         "args": {
-            "placeholder": "nothing"
+            "PLACEHOLDER": "nothing"
         }
     }
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
 
-    self.assertEqual(config.name, "$[ $[[arg] ]")
+    self.assertEqual(config.name, "$[[$[ARG]]")
 
   def test_parse_templated_config_escaped_value_and_non_escaped(self):
     config = {
         "template": {
-            "name": "$[[arg] $[arg]",
+            "name": "$[[ARG] $[ARG]",
         },
         "args": {
-            "arg": "arg_value"
+            "ARG": "arg_value"
         }
     }
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
 
-    self.assertEqual(config.name, "$[arg] arg_value")
+    self.assertEqual(config.name, "$[ARG] arg_value")
 
   def test_parse_template_single_unbound_arg(self):
     config = {
         "template": {
-            "name": "$[arg]",
+            "name": "$[ARG]",
             "nested": {
                 "template": {
-                    "name": "$[arg]"
+                    "name": "$[ARG]"
                 },
-                "unbound_args": ["arg"]
+                "unbound_args": ["ARG"]
             }
         },
         "args": {
-            "arg": "from-top-level"
+            "ARG": "from-top-level"
         }
     }
 
@@ -1056,17 +1084,17 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_template_multiple_unbound_arg(self):
     config = {
         "template": {
-            "name": "$[arg]",
+            "name": "$[ARG]",
             "nested": {
                 "template": {
-                    "name": "$[arg] $[arg2]"
+                    "name": "$[ARG] $[ARG2]"
                 },
-                "unbound_args": ["arg", "arg2"]
+                "unbound_args": ["ARG", "ARG2"]
             }
         },
         "args": {
-            "arg": "hello",
-            "arg2": "world"
+            "ARG": "hello",
+            "ARG2": "world"
         }
     }
 
@@ -1079,29 +1107,29 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_template_unbound_arg_undefined(self):
     config = {
         "template": {
-            "name": "$[arg]",
+            "name": "$[ARG]",
             "nested": {
                 "template": {
-                    "name": "$[not-an-arg]"
+                    "name": "$[NOT_AN_ARG]"
                 },
-                "unbound_args": ["not-an-arg"]
+                "unbound_args": ["NOT_AN_ARG"]
             }
         },
         "args": {
-            "arg": "hello",
+            "ARG": "hello",
         }
     }
 
-    with self.assertRaisesRegex(MultiException, "'not-an-arg'"):
+    with self.assertRaisesRegex(MultiException, "'NOT_AN_ARG'"):
       config = CustomConfigObject.parse(config)
 
   def test_self_referencing_arg_throws(self):
     config = {
         "template": {
-            "name": "$[arg]",
+            "name": "$[ARG]",
         },
         "args": {
-            "arg": "some other $[arg] text"
+            "ARG": "some other $[ARG] text"
         }
     }
 
@@ -1111,10 +1139,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_self_referencing_detection_escaped_arg(self):
     config = {
         "template": {
-            "name": "$[arg]",
+            "name": "$[ARG]",
         },
         "args": {
-            "arg": "some other $[[arg] text"
+            "ARG": "some other $[[ARG] text"
         }
     }
 
@@ -1123,10 +1151,10 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_self_referencing_detection_arg_name_no_arg_sequence(self):
     config = {
         "template": {
-            "name": "$[arg]",
+            "name": "$[ARG]",
         },
         "args": {
-            "arg": "some other arg text"
+            "ARG": "some other arg text"
         }
     }
 
