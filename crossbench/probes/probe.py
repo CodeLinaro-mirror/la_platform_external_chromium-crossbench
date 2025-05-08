@@ -195,6 +195,10 @@ class Probe(ProbeResultKey, abc.ABC):
     if not browser.platform.is_macos:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on macOS")
 
+  def setup(self, runner) -> None:
+    """Called before any runs or browsers have been started."""
+    pass
+
   def merge_cache_temperatures(self,
                                group: CacheTemperaturesRunGroup) -> ProbeResult:
     """

@@ -425,10 +425,16 @@ class Run(ResultOrigin):
 
   def teardown(self, is_dry_run: bool) -> None:
     self._state.transition(State.RUN, to=State.DONE)
-    self._teardown_browser(is_dry_run)
-    self._probe_context_manager.teardown(is_dry_run)
-    if not is_dry_run:
-      self._rm_browser_tmp_dir()
+    try:
+      self._teardown_browser(is_dry_run)
+      self._probe_context_manager.teardown(is_dry_run)
+      if not is_dry_run:
+        self._rm_browser_tmp_dir()
+    finally:
+      self.teardown_write_results_db()
+
+  def teardown_write_results_db(self) -> None:
+    self.results_db.teardown_run(self)
 
   def _teardown_browser(self, is_dry_run: bool) -> None:
     if is_dry_run:

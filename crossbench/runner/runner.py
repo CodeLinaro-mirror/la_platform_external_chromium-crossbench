@@ -467,6 +467,8 @@ class Runner:
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
     self._setup_validate_browsers()
+    with self._exceptions.annotate("Preparing Probes"):
+      self._setup_probes()
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
       assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
@@ -494,6 +496,11 @@ class Runner:
       assert probe in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
+
+  def _setup_probes(self) -> None:
+    for probe in self.probes:
+      with self._exceptions.annotate(f"Preparing Probe: {probe.name}"):
+        probe.setup(self)
 
   def has_any_live_network(self) -> bool:
     return any(browser.network.is_live for browser in self.browsers)

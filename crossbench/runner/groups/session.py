@@ -370,7 +370,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     runs = tuple(self.runs)
     self.exceptions.log(f"SESSION STARTUP ERRORS: Skipping {len(runs)} runs")
     for run in runs:
-      run.exceptions.extend(self.exceptions)
+      with self.exception_capture(f"Processing startup failures for {run}"):
+        run.exceptions.extend(self.exceptions)
+        run.teardown_write_results_db()
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:
