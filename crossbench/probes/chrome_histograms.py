@@ -18,13 +18,17 @@ from typing_extensions import override
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
+from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
@@ -156,6 +160,16 @@ class ChromeHistogramsProbe(JsonResultProbe):
 
   def get_context_cls(self) -> Type[ChromeHistogramsProbeContext]:
     return ChromeHistogramsProbeContext
+
+  def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
+    merged = MetricsMerger.merge_json_list(
+        story_group.results[self].json
+        for story_group in group.repetitions_groups)
+    return self.write_group_result(group, merged)
+
+  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    return self.merge_browsers_json_list(group).merge(
+        self.merge_browsers_csv_list(group))
 
 
 @dataclasses.dataclass
