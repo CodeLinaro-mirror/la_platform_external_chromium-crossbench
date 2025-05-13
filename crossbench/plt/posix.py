@@ -18,6 +18,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, List,
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.helper.wait import WaitRange
 from crossbench.plt import proc_helper
 from crossbench.plt.base import Environ, Platform, SubprocessError
 from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
@@ -536,6 +537,8 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
     with self.NamedTemporaryFile("popen_pid_") as temp_pid_file:
       shell_cmd = shlex.join(map(str, args))
       # Capture the PID and wait on the process to finish.
+      # Ideally this would use mkfifo but that's not readily available on
+      # Android.
       shell_cmd += f" & PID=$! && echo $PID >{temp_pid_file} && wait $PID"
       if not quiet:
         logging.debug("REMOTE SHELL: %s", shell_cmd)
@@ -545,7 +548,10 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
       remote_popen = RemotePopen(
           self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
           stderr=stderr, stdin=stdin)
-      remote_pid = int(self.cat(temp_pid_file))
-      remote_popen.set_remote_pid(remote_pid)
-
-    return remote_popen
+      # tmp_pid_file might not have been immediately flushed:
+      for _ in WaitRange(0.01, 2).wait_with_backoff():
+        if pid_str := self.cat(temp_pid_file):
+          remote_pid = int(pid_str)
+          remote_popen.set_remote_pid(remote_pid)
+          return remote_popen
+      raise RuntimeError("Could not read remote PID")

@@ -136,9 +136,16 @@ def _verify_experimental_metrics(out_dir):
   assert has_metric_values
 
 
-@pytest.mark.parametrize("benchmark_type", BenchmarkType)
-def test_loadline_default(device_id, adb_path, benchmark_type,
-                          test_env: TestEnv) -> None:
+def test_loadline_phone(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline_default(device_id, adb_path, BenchmarkType.PHONE, test_env)
+
+
+def test_loadline_tablet(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline_default(device_id, adb_path, BenchmarkType.TABLET, test_env)
+
+
+def _test_loadline_default(device_id, adb_path, benchmark_type: BenchmarkType,
+                           test_env: TestEnv) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
