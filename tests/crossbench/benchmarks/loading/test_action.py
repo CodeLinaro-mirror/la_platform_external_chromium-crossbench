@@ -858,6 +858,34 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaisesRegex(ValueError, "tab_index, title, or url"):
       SwitchTabAction.parse_dict(config_dict)
 
+  def test_parse_switch_tab_relative_tab_index(self):
+    config_dict = {
+        "action": "switch_tab",
+        "relative_tab_index": 17,
+        "title": "^Example.*",
+        "url": "http(s)?://example.com"
+    }
+    action = SwitchTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.SWITCH_TAB)
+    self.assertEqual(action.relative_tab_index, 17)
+    self.assertEqual(action.title.pattern, "^Example.*")
+    self.assertEqual(action.url.pattern, "http(s)?://example.com")
+    action.validate()
+
+    action_2 = SwitchTabAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_switch_tab_both_tab_index_raises(self):
+    config_dict = {
+        "action": "switch_tab",
+        "relative_tab_index": 17,
+        "tab_index": 17,
+    }
+    with self.assertRaises(ValueError):
+      SwitchTabAction.parse_dict(config_dict)
+
   def test_parse_close_tab_all_args(self):
     config_dict = {
         "action": "close_tab",

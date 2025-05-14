@@ -409,11 +409,13 @@ class Browser(abc.ABC):
       title: Optional[re.Pattern] = None,
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
+      relative_tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> str:
     del title
     del url
     del tab_index
+    del relative_tab_index
     del timeout
     raise NotImplementedError(f"Switching tabs is not supported by {self}")
 
@@ -422,11 +424,13 @@ class Browser(abc.ABC):
       title: Optional[re.Pattern] = None,
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
+      relative_tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> None:
     del title
     del url
     del tab_index
+    del relative_tab_index
     del timeout
     raise NotImplementedError(f"Closing tabs is not supported by {self}")
 

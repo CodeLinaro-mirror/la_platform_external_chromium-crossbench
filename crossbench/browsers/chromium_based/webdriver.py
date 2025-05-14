@@ -215,8 +215,10 @@ class ChromiumBasedWebDriver(
       title: Optional[re.Pattern] = None,
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
+      relative_tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> str:
+    assert not (tab_index is not None and relative_tab_index is not None)
     driver = self._private_driver
     original_handle = driver.current_window_handle
     for _ in wait.wait_with_backoff(timeout):
@@ -226,6 +228,8 @@ class ChromiumBasedWebDriver(
       except ValueError as e:
         raise RuntimeError("Original starting tab no longer exists") from e
 
+      if relative_tab_index is not None:
+        tab_index = (i + relative_tab_index) % len(driver.window_handles)
       if tab_index is not None:
         handles = [driver.window_handles[tab_index]]
       else:
@@ -247,6 +251,8 @@ class ChromiumBasedWebDriver(
       error += f" with url matching {repr(url.pattern)}"
     if tab_index is not None:
       error += f" with tab_index matching {tab_index}"
+    if relative_tab_index is not None:
+      error += f" with relative_tab_index matching {tab_index}"
     raise RuntimeError(error)
 
   @override
@@ -255,6 +261,7 @@ class ChromiumBasedWebDriver(
       title: Optional[re.Pattern] = None,
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
+      relative_tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> None:
     driver = self._private_driver
@@ -262,7 +269,8 @@ class ChromiumBasedWebDriver(
     tab_to_close = original_handle
 
     if title or url or (tab_index is not None):
-      tab_to_close = self.switch_tab(title, url, tab_index, timeout)
+      tab_to_close = self.switch_tab(title, url, tab_index, relative_tab_index,
+                                     timeout)
 
     driver.close()
 

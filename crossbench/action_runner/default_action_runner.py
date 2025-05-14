@@ -301,13 +301,13 @@ class DefaultActionRunner(ActionRunner):
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction) -> None:
     with run.actions("SwitchTabAction", measure=False):
       run.browser.switch_tab(action.title, action.url, action.tab_index,
-                             action.timeout)
+                             action.relative_tab_index, action.timeout)
 
   @override
   def close_tab(self, run: Run, action: i_action.CloseTabAction) -> None:
     with run.actions("CloseTabAction", measure=False):
       run.browser.close_tab(action.title, action.url, action.tab_index,
-                            action.timeout)
+                            action.relative_tab_index, action.timeout)
 
   def _get_scroll_field(self, has_selector: bool) -> str:
     if has_selector:
