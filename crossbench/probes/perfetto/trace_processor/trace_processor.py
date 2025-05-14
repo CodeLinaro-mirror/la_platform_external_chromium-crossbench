@@ -362,9 +362,14 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
   def _merge_trace_files(self) -> LocalProbeResult:
     with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
-      with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
-        for f in self.run.results.all_traces():
-          zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
+      traces = list(self.run.results.all_traces())
+      if len(traces) == 1:
+        # Symlink the existing trace to save time and space
+        self.host_platform.symlink_or_copy(traces[0], self.merged_trace_path)
+      else:
+        with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
+          for f in traces:
+            zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
     return LocalProbeResult(trace=(self.merged_trace_path,))
 
   def _maybe_run_tp(self) -> ProbeResult:
