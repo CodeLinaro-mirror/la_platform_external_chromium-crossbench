@@ -645,6 +645,7 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
         ("data:text/html,this is some data",
          "data:text/html,this is some data"),
+        ("chrome://extensions", "chrome://extensions"),
     )
     for url, result in expected:
       with self.subTest(url=url):

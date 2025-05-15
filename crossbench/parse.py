@@ -352,7 +352,7 @@ class ObjectParser:
                     value: str,
                     name: str = "url",
                     schemes: Sequence[str] = ("http", "https", "about", "file",
-                                              "data"),
+                                              "data", "chrome"),
                     default_scheme: str = "https") -> str:
     parsed = cls.fuzzy_url(value, name, schemes, default_scheme)
     return urlparse.urlunparse(parsed)
@@ -362,7 +362,7 @@ class ObjectParser:
                 value: str,
                 name: str = "url",
                 schemes: Sequence[str] = ("http", "https", "about", "file",
-                                          "data"),
+                                          "data", "chrome"),
                 default_scheme: str = "https") -> urlparse.ParseResult:
     assert default_scheme, "missing default scheme value"
     value = cls.non_empty_str(value, name)
