@@ -215,7 +215,11 @@ Use `--stories` to list individual story names, or use regular expression
 as filter.
 
 ```bash
+# Only run Angular workloads:
 ./cb.py speedometer --browser=$BROWSER --stories='.*Angular.*'
+
+# Exclude bomb-workers and segmentation:
+./cb.py js --browser=chrome-m120-canary --stories='^(?!(segmentation|bomb-workers)).*'
 ```
 
 ### 🛜 Network

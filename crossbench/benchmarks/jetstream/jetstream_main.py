@@ -8,11 +8,9 @@ from typing import TYPE_CHECKING, Tuple, Type
 
 from typing_extensions import override
 
-from crossbench.benchmarks.jetstream.jetstream_3 import (JetStream3Benchmark,
-                                                         JetStream3Probe,
-                                                         JetStream3ProbeContext,
-                                                         JetStream3Story,
-                                                         ProbeClsTupleT)
+from crossbench.benchmarks.jetstream.jetstream_3 import (
+    JetStream3Benchmark, JetStream3Probe, JetStream3ProbeContext,
+    JetStream3Story, ProbeClsTupleT)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -37,7 +35,10 @@ class JetStreamMainStory(JetStream3Story):
   URL: str = "https://chromium-workloads.web.app/jetstream/main/"
   URL_OFFICIAL: str = "https://chromium-workloads.web.app/jetstream/main/"
   URL_CHROME_FORK: str = "https://chromium-workloads.web.app/jetstream/main-custom/"
+  # Contents of running:
+  # JSON.stringify(JetStream.benchmarks.map(e => e.name), undefined, " ")
   SUBSTORIES: Tuple[str, ...] = (
+      "zlib-wasm",
       "WSL",
       "UniPoker",
       "uglify-js-wtb",
@@ -51,6 +52,7 @@ class JetStreamMainStory(JetStream3Story):
       "stanford-crypto-sha256",
       "stanford-crypto-pbkdf2",
       "stanford-crypto-aes",
+      "sqlite3-wasm",
       "splay",
       "segmentation",
       "richards-wasm",
@@ -66,7 +68,6 @@ class JetStreamMainStory(JetStream3Story):
       "prepack-wtb",
       "pdfjs",
       "OfflineAssembler",
-      "octane-zlib",
       "octane-code-load",
       "navier-stokes",
       "n-body-SP",
@@ -84,7 +85,6 @@ class JetStreamMainStory(JetStream3Story):
       "gcc-loops-wasm",
       "gbemu",
       "gaussian-blur",
-      "float-mm.c",
       "FlightPlanner",
       "first-inspector-code-load",
       "espree-wtb",
@@ -94,6 +94,7 @@ class JetStreamMainStory(JetStream3Story):
       "delta-blue",
       "date-format-xparb-SP",
       "date-format-tofte-SP",
+      "Dart-flute-wasm",
       "crypto-sha1-SP",
       "crypto-md5-SP",
       "crypto-aes-SP",
@@ -103,17 +104,12 @@ class JetStreamMainStory(JetStream3Story):
       "cdjs",
       "Box2D",
       "bomb-workers",
-      "bigint-paillier",
-      "bigint-noble-secp256k1",
       "bigint-noble-ed25519",
-      "bigint-noble-bls12-381",
-      "bigint-bigdenary",
       "Basic",
       "base64-SP",
       "babylon-wtb",
       "Babylon",
       "async-fs",
-      "argon2-wasm-simd",
       "argon2-wasm",
       "Air",
       "ai-astar",
