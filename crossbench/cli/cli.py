@@ -159,7 +159,7 @@ class CrossBenchCLI:
   RUNNER_CLS: Type[Runner] = Runner
 
   def __init__(self, enable_logging: bool = True) -> None:
-    self._enable_logging = enable_logging
+    self._enable_logging: bool = enable_logging
     self._console_handler: logging.StreamHandler | None = None
     self._benchmark_subcommands: Dict[BenchmarkClsT, BenchmarkSubcommand] = {}
     self.parser = MainCrossBenchArgumentParser(
@@ -322,13 +322,17 @@ class CrossBenchCLI:
     logging.getLogger().addHandler(self._console_handler)
 
     # Manually extract values to allow logging for failing arguments.
-    if "-v" in argv or "-vv" in argv or "-vvv" in argv:
+    if self._has_debug_logging_argv(argv):
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
     # TODO: move to ui helpers
     ui.COLOR_LOGGING = self._detect_terminal_color(argv)
     if ui.COLOR_LOGGING:
       self._console_handler.setFormatter(ui.ColoredLogFormatter())
+    logging.debug(" ".join(sys.argv))
+
+  def _has_debug_logging_argv(self, argv: Sequence[str]) -> bool:
+    return any(value in ("-v", "-vv", "-vvv", "--debug") for value in argv)
 
   def _detect_terminal_color(self, argv: Sequence[str]) -> bool:
     if "--no-color" in argv:
