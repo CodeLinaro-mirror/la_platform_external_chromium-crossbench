@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
-                    Tuple, Type, TypeAlias, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional,
+                    Sequence, Tuple, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override

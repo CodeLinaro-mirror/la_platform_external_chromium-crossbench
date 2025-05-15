@@ -182,4 +182,6 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
 
   def log_run_test_url(self, run: Run) -> None:
     del run
+    if self.url != self.test_url:
+      logging.info("🔗 STORY URL:                %s", self.url)
     logging.info("🔗 STORY PUBLIC TEST URL:    %s", self.test_url)
