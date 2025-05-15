@@ -437,7 +437,8 @@ class ConfigObject(abc.ABC):
     if isinstance(value, dict):
       if (cls is not _TemplatedConfigParser and
           _TemplatedConfigParser.is_template_invocation(value)):
-        result = cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
+        result = cls.parse(
+            _TemplatedConfigParser.parse_and_substitute(value), **kwargs)
         return result
       return cls.parse_dict(value, **kwargs)
     if value is None:
