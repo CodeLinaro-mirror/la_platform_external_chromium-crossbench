@@ -18,6 +18,7 @@ from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
 from immutabledict import immutabledict
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.network.base import Network
 from crossbench.parse import ObjectParser
 
@@ -159,8 +160,10 @@ class LocalFileNetwork(Network):
     # TODO: support  https server using SSLContext.wrap_socket(httpd.socket)
     request_handler_cls = CustomHeadersRequestHandler.bind(
         self._path, self._extra_headers)
-    server = http.server.ThreadingHTTPServer((self._host, self._port),
-                                             request_handler_cls)
+    with exception.annotate(
+        f"Starting fileserver on {self.host}:{self.http_port}"):
+      server = http.server.ThreadingHTTPServer((self._host, self._port),
+                                               request_handler_cls)
     with self._server_thread(server):
       logging.info("%s custom host=%s, port=%s",
                    type(self).__name__, self.host, self.http_port)
