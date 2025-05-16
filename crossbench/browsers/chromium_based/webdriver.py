@@ -45,6 +45,10 @@ class ChromiumBasedWebDriver(
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
   UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
 
+  def __init__(self, *args, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
+    self._script_identifier_kwargs: dict[Any, Any] | None = None
+
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
@@ -197,9 +201,18 @@ class ChromiumBasedWebDriver(
 
   @override
   def run_script_on_new_document(self, script: str) -> None:
-    self._execute_cdp_cmd(self._private_driver,
-                          "Page.addScriptToEvaluateOnNewDocument",
-                          {"source": script})
+    if self._script_identifier_kwargs is not None:
+      self._execute_cdp_cmd(self._private_driver,
+                            "Page.removeScriptToEvaluateOnNewDocument",
+                            self._script_identifier_kwargs)
+    self._script_identifier_kwargs = self._execute_cdp_cmd(
+        self._private_driver, "Page.addScriptToEvaluateOnNewDocument",
+        {"source": script})
+
+  @override
+  def quit(self) -> None:
+    self._script_identifier_kwargs = None
+    super().quit()
 
   @override
   def current_window_id(self) -> str:
