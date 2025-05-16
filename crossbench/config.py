@@ -779,7 +779,8 @@ class _TemplatedConfigParser(ConfigObject):
 
         if arg_name and arg_name not in self._unbound_args:
 
-          arg_expansion = self._substitute_str(f"$[{arg_name}]")
+          arg_expansion = _PrimitiveConfigObject.parse(
+              self._substitute_str(f"$[{arg_name}]")).value
 
           if not isinstance(arg_expansion, list):
             raise ValueError(

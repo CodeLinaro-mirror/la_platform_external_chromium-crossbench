@@ -1297,6 +1297,31 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.array[2], "arg_value")
     self.assertEqual(config.array[3], "another arg value")
 
+  def test_template_list_spread_multi_level_substitution(self):
+    config = {
+        "template": {
+            "name": "name",
+            "array": [
+                "some",
+                "string",
+                "$[...ARG]",
+                "values",
+            ]
+        },
+        "args": {
+            "ARG": {
+                "template": ["$[ARG2]"],
+                "args": {
+                    "ARG2": "list entry"
+                }
+            },
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertEqual(len(config.array), 4)
+    self.assertEqual(config.array[2], "list entry")
+
   def test_template_list_spread_empty_substitution(self):
     config = {
         "template": {
