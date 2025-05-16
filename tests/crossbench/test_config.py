@@ -887,6 +887,21 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     self.assertEqual(config.name, "the true arg")
 
+  def test_parse_template_full_string_substitute_finishes_substitution(self):
+    config = {
+      "template": {
+        "name": "$[ARG]"
+      },
+      "args": {
+        "ARG": "prefix$[ARG2]",
+        "ARG2": "name"
+      }
+    }
+
+    config = CustomConfigObject.parse(config)
+
+    self.assertEqual(config.name, "prefixname")
+
   def test_parse_templated_config_int(self):
     config = {
         "template": {

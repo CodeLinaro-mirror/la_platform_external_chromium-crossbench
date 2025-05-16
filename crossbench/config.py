@@ -817,7 +817,7 @@ class _TemplatedConfigParser(ConfigObject):
         arg_value = template_arg.value
         template_arg.set_used()
 
-        if m.group(0) == value:
+        if m.group(0) == value and not isinstance(arg_value, str):
           # Arg pattern is the whole string, replace the whole value to allow
           # non-string values to be substituted.
           return arg_value
