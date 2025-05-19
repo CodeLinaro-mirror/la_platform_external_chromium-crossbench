@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import argparse
+import difflib
 import logging
 import re
 from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional,
@@ -366,7 +367,14 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
           if iregexp.fullmatch(substory)
       ]
     if not substories:
-      raise ValueError(f"'{original_pattern}' didn't match any stories.")
+      error_message = f"'{original_pattern}' didn't match any stories."
+      similar_stories = difflib.get_close_matches(original_pattern,
+                                                  self._known_names)
+      if len(similar_stories) > 1:
+        error_message += f" Did you mean one of {', '.join(similar_stories)}?"
+      elif len(similar_stories) == 1:
+        error_message += f" Did you mean {similar_stories[0]}?"
+      raise ValueError(error_message)
     if len(substories) == len(self._known_names) and self._selected_names:
       raise ValueError(f"'{original_pattern}' matched all and overrode all"
                        "previously filtered story names.")
