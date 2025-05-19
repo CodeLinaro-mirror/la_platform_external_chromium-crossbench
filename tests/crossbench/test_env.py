@@ -216,19 +216,17 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     with self.patch_property(self.platform, "has_display") as has_display:
       has_display.return_value = True
       mock_browser.viewport.is_headless = False
-      with self.assertRaises(ValidationError) as cm:
+      with self.assertRaisesRegex(ValidationError, "is_headless"):
         env.validate()
-      self.assertIn("is_headless", str(cm.exception))
-
-      has_display.return_value = False
-      with self.assertRaises(ValidationError) as cm:
-        env.validate()
-
-      has_display.return_value = True
       mock_browser.viewport.is_headless = True
-      env.validate()
+      with self.assertRaisesRegex(ValidationError, "is_headless"):
+        env.validate()
 
       has_display.return_value = False
+      mock_browser.viewport.is_headless = False
+      with self.assertRaisesRegex(ValidationError, "is_headless"):
+        env.validate()
+      mock_browser.viewport.is_headless = True
       env.validate()
 
   def test_request_is_headless_false(self):
@@ -242,19 +240,21 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         validation_mode=ValidationMode.THROW)
     with self.patch_property(self.platform, "has_display") as has_display:
       has_display.return_value = True
+      self.assertTrue(self.platform.has_display)
+      mock_browser.viewport.is_headless = True
+      with self.assertRaisesRegex(ValidationError, " browser "):
+        env.validate()
       mock_browser.viewport.is_headless = False
       env.validate()
 
       has_display.return_value = False
       self.assertFalse(self.platform.has_display)
-      with self.assertRaises(ValidationError) as cm:
-        env.validate()
-
-      has_display.return_value = True
       mock_browser.viewport.is_headless = True
-      with self.assertRaises(ValidationError) as cm:
+      with self.assertRaisesRegex(ValidationError, "browser_is_headless"):
         env.validate()
-      self.assertIn("is_headless", str(cm.exception))
+      mock_browser.viewport.is_headless = False
+      with self.assertRaisesRegex(ValidationError, "browser_is_headless"):
+        env.validate()
 
   def test_results_dir_single(self):
     env = self.create_env()

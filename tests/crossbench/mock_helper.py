@@ -89,6 +89,10 @@ class MockPlatformMixin:
     self.mkdir_calls: int = 0
     super().__init__(*args, **kwargs)
 
+  @property
+  def has_display(self) -> bool:
+    return True
+
   def os_details(self):
     return {
         "system": "mock os system",

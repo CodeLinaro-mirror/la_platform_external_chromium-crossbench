@@ -340,23 +340,35 @@ class HostEnvironment:
           "but got {brightness}%")
 
   def _check_headless(self) -> None:
-    # TODO: migrate to full viewport support
+    self._check_config_headless()
+    self._check_browser_headless()
+
+  def _check_config_headless(self) -> None:
     requested_headless = self._config.browser_is_headless
     if requested_headless is EnvironmentConfig.IGNORE:
       return
-    if self._platform.is_linux and not requested_headless:
-      # Check that the system can run browsers with a UI.
-      if not self._platform.has_display:
-        self.handle_validation_warning(
-            "Requested browser_is_headless=False, "
-            "but no DISPLAY is available to run with a UI.")
-    # Check that browsers are running in the requested display mode:
+    # Check that browsers are running in the requested headless mode:
     for browser in self.browsers:
       if browser.viewport.is_headless != requested_headless:
         self.handle_validation_warning(
             f"Requested browser_is_headless={requested_headless},"
             f"but browser {browser.unique_name} has conflicting "
             f"headless={browser.viewport.is_headless}.")
+      if browser.platform.is_headless != requested_headless:
+        self.handle_validation_warning(
+            "Requested browser_is_headless=False, "
+            f"but no display is available to run with a UI for {browser}.")
+
+  def _check_browser_headless(self) -> None:
+    for browser in self.browsers:
+      if browser.viewport.is_headless:
+        continue
+      if browser.platform.has_display:
+        continue
+      self.handle_validation_warning(
+          f"{browser} requires a {browser.viewport} "
+          f"but no display is available on {browser.platform}. "
+          "Use --headless to run chrome without a display.")
 
   def _check_probes(self) -> None:
     for probe in self._probes:

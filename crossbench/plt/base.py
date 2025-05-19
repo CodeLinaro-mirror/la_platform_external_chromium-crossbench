@@ -393,6 +393,10 @@ class Platform(abc.ABC):
     pass
 
   @property
+  def is_headless(self) -> bool:
+    return not self.has_display
+
+  @property
   def has_display(self) -> bool:
     """Return a bool whether the platform has an active display.
     This can be false on linux without $DISPLAY, true an all other platforms."""
