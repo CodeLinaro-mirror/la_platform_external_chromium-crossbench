@@ -339,6 +339,16 @@ class HostEnvironment:
           f"Requested main display brightness={brightness}%, "
           "but got {brightness}%")
 
+  def _check_screen_refresh_rate(self) -> None:
+    refresh_rate = self._config.screen_refresh_rate
+    if not self._platform.is_macos or refresh_rate is EnvironmentConfig.IGNORE:
+      return
+    success, log_msg = self._platform.set_display_refresh_rate(refresh_rate)
+    if success:
+      logging.debug(log_msg)
+    else:
+      self.handle_validation_warning(log_msg)
+
   def _check_headless(self) -> None:
     self._check_config_headless()
     self._check_browser_headless()
@@ -496,6 +506,7 @@ class HostEnvironment:
     self._check_system_min_uptime()
     self._check_running_binaries()
     self._check_screen_brightness()
+    self._check_screen_refresh_rate()
     self._check_headless()
     self._check_results_dir()
     self._check_probes()

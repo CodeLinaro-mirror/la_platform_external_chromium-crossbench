@@ -99,6 +99,7 @@ class EnvironmentConfig(ConfigObject):
   require_probes: bool | None = IGNORE
   screen_allow_autobrightness: bool | None = IGNORE
   screen_brightness_percent: int | None = IGNORE
+  screen_refresh_rate: int | None = IGNORE
   system_allow_monitoring: bool | None = IGNORE
   system_forbidden_process_names: List[str] | None = IGNORE
   system_min_uptime: dt.timedelta | None = IGNORE
@@ -155,6 +156,10 @@ class EnvironmentConfig(ConfigObject):
         type=ObjectParser.bool,
         default=cls.IGNORE)
     parser.add_argument("screen_brightness_percent", type=int)
+    parser.add_argument(
+        "screen_refresh_rate",
+        type=NumberParser.int_range(30, 240),
+        default=cls.IGNORE)
     parser.add_argument("system_allow_monitoring", type=ObjectParser.bool)
     parser.add_argument(
         "system_forbidden_process_names", type=str, is_list=True)
@@ -174,6 +179,7 @@ class EnvironmentConfig(ConfigObject):
         "require_probes": merge_bool,
         "screen_allow_autobrightness": merge_bool,
         "screen_brightness_percent": merge_number_max,
+        "screen_refresh_rate": merge_number_max,
         "system_allow_monitoring": merge_bool,
         "system_forbidden_process_names": merge_str_list,
         "system_min_uptime": merge_duration_max
