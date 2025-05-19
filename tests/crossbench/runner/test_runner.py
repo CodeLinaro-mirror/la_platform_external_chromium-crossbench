@@ -167,10 +167,12 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertTrue(runner.is_success)
     for run in runner.runs:
       self.assertTrue(run.is_success)
-      self.assertEqual(
-          len(run.results), len(all_probes.DEFAULT_INTERNAL_PROBES))
-      for probe in runner.probes:
-        self.assertIn(probe, run.results)
+
+      if not is_dry_run:
+        self.assertEqual(
+            len(run.results), len(all_probes.DEFAULT_INTERNAL_PROBES))
+        for probe in runner.probes:
+          self.assertIn(probe, run.results)
 
   def test_run_mock_probe(self):
     runner = self.default_runner()

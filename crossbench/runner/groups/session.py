@@ -264,7 +264,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
     try:
-      with self._start_network(), self._start_probes(is_dry_run):
+      with self._start_network(is_dry_run), self._start_probes(is_dry_run):
         self._start(is_dry_run)
         try:
           self._state.expect(State.RUNNING)
@@ -306,8 +306,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         self.raw_session_dir.symlink_to(self.path)
 
   @contextlib.contextmanager
-  def _start_network(self):
+  def _start_network(self, is_dry_run: bool = False):
     logging.debug("Starting network: %s", self.network)
+    if is_dry_run:
+      yield
+      return
     with self._exceptions.annotate(f"Starting Network: {self.network}"):
       with self.network.open(self):
         yield
@@ -327,10 +330,10 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _start_browser(self, is_dry_run: bool) -> None:
     self._state.expect(State.STARTING)
-    assert self.network.is_running, "Network isn't running yet"
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
+    assert self.network.is_running, "Network isn't running yet"
     assert self._probe_context_manager.is_running
     browser_log_file = self.path / "browser.log"
     assert not browser_log_file.exists(), (

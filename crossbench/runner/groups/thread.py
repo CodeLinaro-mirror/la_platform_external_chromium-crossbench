@@ -107,7 +107,7 @@ class RunThreadGroup(threading.Thread):
       self._log_run(browser_session.first_run)
     else:
       logging.info("=" * 80)
-    with browser_session.open() as is_success:
+    with browser_session.open(self.is_dry_run) as is_success:
       if not is_success:
         browser_session.handle_startup_failure()
       else:
@@ -122,8 +122,10 @@ class RunThreadGroup(threading.Thread):
       logging.warning("%s: Got setup errors.", run)
     run.run(self.is_dry_run)
     run.log_annotations()
+
     if run.is_success:
-      run.log_results()
+      if not self.is_dry_run:
+        run.log_results()
     else:
       browser_session.exceptions.extend(run.exceptions)
       run.log_failure()

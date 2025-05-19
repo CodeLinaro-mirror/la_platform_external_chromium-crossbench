@@ -583,6 +583,8 @@ class Runner:
     thread_groups: List[RunThreadGroup] = []
     with self._exceptions.info("Creating thread groups for all Runs"):
       thread_groups = self._get_thread_groups()
+      for thread_group in thread_groups:
+        thread_group.is_dry_run = is_dry_run
 
     group_count = len(thread_groups)
     if group_count == 1:
@@ -591,7 +593,6 @@ class Runner:
 
     with self._exceptions.annotate(f"Starting {group_count} thread groups."):
       for thread_group in thread_groups:
-        thread_group.is_dry_run = is_dry_run
         thread_group.start()
     with self._exceptions.annotate(
         "Waiting for all thread groups to complete."):
