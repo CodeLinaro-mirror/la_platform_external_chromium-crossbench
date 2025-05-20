@@ -886,6 +886,15 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError):
       SwitchTabAction.parse_dict(config_dict)
 
+  def test_parse_switch_tab_only_relative_tab_index(self):
+    config_dict = {
+        "action": "switch_tab",
+        "relative_tab_index": 17,
+    }
+    action = SwitchTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.relative_tab_index, 17)
+
   def test_parse_close_tab_all_args(self):
     config_dict = {
         "action": "close_tab",

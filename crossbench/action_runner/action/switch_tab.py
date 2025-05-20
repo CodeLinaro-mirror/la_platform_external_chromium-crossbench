@@ -37,7 +37,8 @@ class SwitchTabAction(BaseTabAction):
   def validate(self) -> None:
     super().validate()
 
-    if not self.title and not self.url and self.tab_index is None:
+    if (not self.title and not self.url and self.tab_index is None and
+        self.relative_tab_index is None):
       raise ValueError("One of tab_index, title, or url is required.")
 
     if self.relative_tab_index is not None and self.tab_index is not None:
