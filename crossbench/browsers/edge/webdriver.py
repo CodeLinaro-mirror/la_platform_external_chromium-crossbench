@@ -109,4 +109,6 @@ class EdgeWebDriverDownloader:
         return "win64"
       if self.platform.is_ia32:
         return "win32"
+      if self.platform.is_arm64:
+        return "arm64"
     raise ValueError(f"Unsupported edgedriver platform {self.platform}")

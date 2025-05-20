@@ -36,6 +36,7 @@ class ChromeDownloader(Downloader):
       "https://versionhistory.googleapis.com/v1/"
       "chrome/platforms/{platform}/channels/{channel}/versions?filter={filter}")
   VERSION_URL_PLATFORM_LOOKUP: Dict[Tuple[str, str], str] = {
+      ("win", "arm64"): "win_arm64",
       ("win", "ia32"): "win",
       ("win", "x64"): "win64",
       ("linux", "x64"): "linux",
@@ -529,8 +530,10 @@ class ChromeDownloaderAndroid(ChromeDownloader):
 
 class ChromeDownloaderWin(ChromeDownloader):
   ARCHIVE_SUFFIX: str = ".zip"
-  ARCHIVE_STEM: str = "chrome-win64-clang"
+  ARCHIVE_STEM_X64: str = "chrome-win64-clang"
+  ARCHIVE_STEM_ARM: str = "chrome-win-arm64-clang"
   STORAGE_URL: str = "gs://chrome-unsigned/desktop-5c0tCh/"
+  MIN_WIN_ARM64_MILESTONE: Final[int] = 118
 
   @classmethod
   @override
@@ -542,9 +545,32 @@ class ChromeDownloaderWin(ChromeDownloader):
                platform_name: str, browser_platform: Platform) -> None:
     assert not browser_type
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
-    platform_name = "win64-clang"
+    self._archive_stem: str
+    if browser_platform.is_arm64:
+      platform_name = "win-arm64-clang"
+      self._archive_stem = self.ARCHIVE_STEM_ARM
+    else:
+      platform_name = "win64-clang"
+      self._archive_stem = self.ARCHIVE_STEM_X64
     super().__init__(version_identifier, "chrome", platform_name,
                      browser_platform)
+
+  @override
+  def _requested_version_validation(self) -> None:
+    assert self._browser_platform.is_win
+    if self._requested_version.is_channel_version:
+      return
+    major_version: int = self._requested_version.major
+    if (self._browser_platform.is_arm64 and
+        (major_version < self.MIN_WIN_ARM64_MILESTONE)):
+      raise ValueError(
+          "Chrome Arm64 for Windows is only available starting with M118, "
+          f"but requested {self._requested_version} is too old.")
+
+  @override
+  def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
+    self._requested_version_validation()
+    super()._download_archive(archive_url, tmp_dir)
 
   @override
   def _archive_urls(
@@ -552,7 +578,7 @@ class ChromeDownloaderWin(ChromeDownloader):
       version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
     parts = version.parts
     stable = (ChromeVersion.stable(parts),
-              f"{folder_url}{self.ARCHIVE_STEM}.zip")
+              f"{folder_url}{self._archive_stem}.zip")
     return (stable,)
 
   @override
@@ -570,5 +596,5 @@ class ChromeDownloaderWin(ChromeDownloader):
     tmp_path = self.host_platform.mkdtemp()
     with zipfile.ZipFile(archive_path, "r") as zip_file:
       zip_file.extractall(tmp_path)
-    self.host_platform.rename(tmp_path / self.ARCHIVE_STEM, extracted_path)
+    self.host_platform.rename(tmp_path / self._archive_stem, extracted_path)
     assert self.host_platform.is_dir(extracted_path), "Could not extract"

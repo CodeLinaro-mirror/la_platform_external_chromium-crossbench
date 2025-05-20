@@ -69,6 +69,20 @@ class WinPlatform(Platform):
         "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
     ).strip().splitlines()[2].strip()
 
+  @functools.lru_cache(maxsize=1)
+  @override
+  def _raw_machine_arch(self) -> str:
+    self.assert_is_local()
+    # The method in base class doesn't always give the correct answer,
+    # because it uses py_platform.machine, which give the architecture of
+    # the Python binary. It is possible to run x64 Python on ARM Windows.
+    cpu_caption = self.powershell_stdout(
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption"
+    ).strip().splitlines()[2].strip().lower()
+    if cpu_caption.startswith("arm"):
+      return "arm64" if "64-bit" in cpu_caption else "arm"
+    return super()._raw_machine_arch()
+
   @override
   def uptime(self) -> dt.timedelta:
     """Parse powershell last boot time time-span into a timedelta object.

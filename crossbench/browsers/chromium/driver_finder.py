@@ -154,7 +154,10 @@ class ChromeDriverFinder:
       ("macos", "x64"): "mac-x64",
       ("macos", "arm64"): "mac-arm64",
       ("win", "ia32"): "win32",
-      ("win", "x64"): "win64"
+      ("win", "x64"): "win64",
+      # TODO(crbug/418674629): There is currently no Windows ARM64 version of
+      # Chrome for Testing, so we get ChromeDriver for win64 instead.
+      ("win", "arm64"): "win64",
   }
 
   def _get_cft_url(self, milestone: int) -> Tuple[str, Optional[str]]:
