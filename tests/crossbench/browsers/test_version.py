@@ -13,6 +13,7 @@ from typing_extensions import override
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
+from crossbench.browsers.d8.version import D8Version
 from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.safari.version import SafariVersion
 from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
@@ -1127,6 +1128,17 @@ class UnknownBrowserVersionTestCase(unittest.TestCase):
       _ = version <= chr_version
     with self.assertRaises(TypeError):
       _ = chr_version <= version
+
+
+class D8VersionTestCase(unittest.TestCase):
+
+  def test_init(self):
+    with self.assertRaises(BrowserVersionParseError):
+      D8Version.parse("")
+
+  def test_parse_basic(self):
+    version = D8Version.parse("V8 version 13.5.0 (candidate)")
+    self.assertEqual(version.parts, (13, 5, 0))
 
 
 # Hide the abstract base test class from all test runner

@@ -606,5 +606,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       config_b = BrowserConfig.parse(name)
       self.assertEqual(config, config_b)
 
+  def test_parse_local_d8(self):
+    v8_path = "/Documents/v8/v8/out/release/d8"
+    self.fs.create_file(v8_path, st_size=100)
+    self.assertEqual(
+        BrowserConfig.parse(v8_path),
+        BrowserConfig(pth.LocalPosixPath(v8_path)))
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

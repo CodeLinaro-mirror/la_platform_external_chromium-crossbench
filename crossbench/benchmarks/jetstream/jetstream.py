@@ -212,8 +212,9 @@ class JetStreamStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   def run(self, run: Run) -> None:
     with run.actions("Running") as actions:
-      actions.js("JetStream.start()")
-      actions.wait(self.fast_duration)
+      # This might be run in d8, where JetStream.start() is blocking
+      with actions.wait_until(self.fast_duration):
+        actions.js("JetStream.start()", timeout=self.slow_duration)
     self.run_wait_until_done(run)
 
   def run_wait_until_done(self, run: Run) -> None:

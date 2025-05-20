@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import logging
 import sys
+import time as py_time
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
 
 from crossbench.action_runner.action.enums import ReadyState
@@ -166,5 +168,30 @@ class Actions(TimeScope):
   def wait(self,
            time: AnyTimeUnit = dt.timedelta(seconds=1),
            absolute_time: bool = False) -> None:
+    """"Wait for a fixed timeout. If you need to wait until a certain
+    timeout passed independent of a previous action, use wait_until(...).
+
+    | action 2s | wait 2s | => total time is 4s
+    | action 4s | wait 2s | => total time is 6s
+    """
     self._assert_is_active()
     self._runner.wait(time, absolute_time)
+
+  @contextlib.contextmanager
+  def wait_until(self,
+                 timeout: AnyTimeUnit = dt.timedelta(seconds=1),
+                 absolute_time: bool = False):
+    """Wait until the given timeout elapsed.
+    Unlike wait(...), this takes into account the time spent in the the
+    wrapped block.
+
+    | wait_until 6s | action 2s | => total time is 6s
+    | wait_until 6s | action 4s | => total time is 6s
+    """
+    self._assert_is_active()
+    delta: dt.timedelta = self.timing.timeout_timedelta(timeout, absolute_time)
+    end_time: float = py_time.time() + delta.total_seconds()
+    yield
+    time_left = end_time - py_time.time()
+    if time_left > 0:
+      self._runner.wait(time_left, absolute_time=True)
