@@ -127,6 +127,17 @@ class LoadingPageFilter(StoryFilter[Page]):
     return parser
 
   @classmethod
+  def add_page_config_arg(cls, group: argparse._ArgumentGroup) -> None:
+    group.add_argument(
+        "--page-config",
+        "--pages-config",
+        dest="pages_config",
+        type=PagesConfig.parse,
+        help="Stories we want to perform in the benchmark run following a "
+        "specified scenario. For a reference on how to build scenarios and "
+        "possible actions check config/doc/pages.config.hjson")
+
+  @classmethod
   def add_page_config_parser(cls, parser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
     # TODO: move --stories into mutually exclusive group as well
@@ -135,14 +146,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "--url",
         dest="urls",
         help="List of urls and durations to load: url,seconds,...")
-    page_config_group.add_argument(
-        "--page-config",
-        "--pages-config",
-        dest="pages_config",
-        type=PagesConfig.parse,
-        help="Stories we want to perform in the benchmark run following a"
-        "specified scenario. For a reference on how to build scenarios and"
-        "possible actions check config/doc/pages.config.hjson")
+    cls.add_page_config_arg(page_config_group)
     page_config_group.add_argument(
         "--url-file",
         "--urls-file",

@@ -46,7 +46,8 @@ class LoadLinePageFilter(LoadingPageFilter):
 
   @classmethod
   def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
-    pass
+    page_config_group = parser.add_mutually_exclusive_group()
+    cls.add_page_config_arg(page_config_group)
 
   @classmethod
   @override
@@ -163,9 +164,14 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   def get_pages_config(
       cls, args: Optional[argparse.Namespace] = None) -> PagesConfig:
     # Use manual caching, since args is not hashable.
-    if cls._page_config is None:
-      cls._page_config = PagesConfig.parse(cls.default_pages_config_path())
-    return cls._page_config
+    if not args or not args.pages_config:
+      if cls._page_config is None:
+        cls._page_config = PagesConfig.parse(cls.default_pages_config_path())
+      return cls._page_config
+    if args.config:
+      raise argparse.ArgumentTypeError(
+          "--config is not supported with loadline.")
+    return args.pages_config
 
   @classmethod
   @override
