@@ -531,7 +531,7 @@ class ConfigObject(abc.ABC):
   def parse_config_path(cls, path: pth.LocalPathLike, **kwargs) -> Self:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       file_path = PathParser.existing_file_path(path)
-      data = ObjectParser.dict_hjson_file(file_path)
+      data = ObjectParser.non_empty_hjson_file(file_path)
       with ChangeCWD(file_path.parent):
         return cls.parse(data, **kwargs)
     raise exception.UnreachableError()
