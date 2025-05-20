@@ -223,8 +223,11 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return copy.deepcopy(expectation.result)
 
   @override
-  def performance_mark(self, name: str, detail: Any = None) -> None:
-    self.performance_marks.append(name)
+  def performance_mark(self,
+                       name: str,
+                       detail: Any = None,
+                       prefix: str = "crossbench-") -> None:
+    self.performance_marks.append(prefix + name)
     self.performance_marks_details.append(detail)
 
   @property

@@ -471,10 +471,14 @@ class Browser(abc.ABC):
     # Poor-man's hash, browsers should be unique.
     return hash(id(self))
 
-  def performance_mark(self, name: str, detail: Any = None) -> None:
+  def performance_mark(self,
+                       name: str,
+                       detail: Any = None,
+                       prefix: str = "crossbench-") -> None:
+    full_name = prefix + name
     if detail is None:
-      self.js("performance.mark(arguments[0]);", arguments=[name])
+      self.js("performance.mark(arguments[0]);", arguments=[full_name])
     else:
       self.js(
           "performance.mark(arguments[0],{detail: arguments[1]});",
-          arguments=[name, detail])
+          arguments=[full_name, detail])

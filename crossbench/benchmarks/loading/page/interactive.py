@@ -95,9 +95,9 @@ class InteractivePage(Page):
     if self._run_login and (login_block := self.login_block):
       action_runner.run_login(run, self, login_block)
     if self._run_setup and (setup_block := self.setup_block):
-      run.browser.performance_mark("crossbench-setup-start", self._name)
+      run.browser.performance_mark("setup-start", self._name)
       action_runner.run_setup(run, self, setup_block)
-      run.browser.performance_mark("crossbench-setup-end", self._name)
+      run.browser.performance_mark("setup-end", self._name)
 
   @override
   def teardown(self, run: Run) -> None:

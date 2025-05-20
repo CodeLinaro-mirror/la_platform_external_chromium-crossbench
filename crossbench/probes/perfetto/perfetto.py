@@ -208,10 +208,10 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
         raise RuntimeError("Perfetto was not started")
       return
     self._start_perfetto()
-    self.browser.performance_mark("crossbench-probe-perfetto-start")
+    self.browser.performance_mark("probe-perfetto-start")
 
   def stop(self) -> None:
-    self.browser.performance_mark("crossbench-probe-perfetto-stop")
+    self.browser.performance_mark("probe-perfetto-stop")
     logging.info("PERFETTO: stopping")
     if not self._perfetto_pid:
       raise RuntimeError("Perfetto was not started")

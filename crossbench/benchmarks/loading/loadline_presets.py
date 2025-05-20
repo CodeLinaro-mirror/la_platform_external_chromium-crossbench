@@ -120,7 +120,7 @@ class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
     benchmark_type = ("loadline-phone" if "phone" in self.probe.benchmark.NAME
                       else "loadline-tablet")
     self.browser.performance_mark(
-        f"LoadLine/{benchmark_type}/{self.run.story.name}")
+        f"LoadLine/{benchmark_type}/{self.run.story.name}", prefix="")
 
   def stop(self) -> None:
     pass

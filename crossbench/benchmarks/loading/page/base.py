@@ -75,9 +75,9 @@ class Page(Story, metaclass=abc.ABCMeta):
 
   def run(self, run: Run) -> None:
     for _ in self._playback:
-      run.browser.performance_mark("crossbench-iteration-start")
+      run.browser.performance_mark("iteration-start")
       self.run_once(run)
-      run.browser.performance_mark("crossbench-iteration-end")
+      run.browser.performance_mark("iteration-end")
 
   @property
   @abc.abstractmethod
