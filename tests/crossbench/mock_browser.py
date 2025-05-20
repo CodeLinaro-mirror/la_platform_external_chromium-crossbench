@@ -112,6 +112,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self._current_url: str = ""
     self._default_js_return = None
     self._performance_marks: List[str] = []
+    self._performance_marks_details: List[Any] = []
 
   def expect_js(
       self,
@@ -222,12 +223,17 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return copy.deepcopy(expectation.result)
 
   @override
-  def performance_mark(self, name: str) -> None:
+  def performance_mark(self, name: str, detail: Any = None) -> None:
     self.performance_marks.append(name)
+    self.performance_marks_details.append(detail)
 
   @property
   def performance_marks(self) -> List[str]:
     return self._performance_marks
+
+  @property
+  def performance_marks_details(self) -> List[Any]:
+    return self._performance_marks_details
 
   @override
   def is_logged_in(self,

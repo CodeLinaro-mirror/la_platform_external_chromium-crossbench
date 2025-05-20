@@ -485,6 +485,14 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--page-config={config_file}",
                    "--env-validation=skip", "--throw")
 
+    for browser in self.browsers:
+      self.assertEqual(
+          browser.performance_marks,
+          ["crossbench-setup-start", "crossbench-setup-end"] * 2 +  # 2 pages
+          ["crossbench-iteration-start", "crossbench-iteration-end"])
+      self.assertEqual(browser.performance_marks_details,
+                       ["first_page"] * 2 + ["second_page"] * 2 + [None, None])
+
   def setup_expected_google_login_js(self):
     expected_scripts: List[JsInvocation] = [
         JsInvocation(True, re.compile(r".*Email or phone.*")),
