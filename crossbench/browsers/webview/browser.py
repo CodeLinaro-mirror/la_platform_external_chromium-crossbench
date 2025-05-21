@@ -9,18 +9,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Sequence
 
-from selenium.webdriver.chrome.options import Options as ChromeOptions
 from typing_extensions import override
 
 from crossbench.browsers.webview.webview import Webview
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.options import ChromiumOptions
-  from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
   from crossbench import path as pth
   from crossbench.browsers.settings import Settings
-  from crossbench.browsers.version import BrowserVersion
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -51,8 +48,7 @@ class WebviewBrowser(Webview):
   @override
   def _create_options(self, session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromiumOptions:
-    options: ChromiumOptions = ChromeOptions()
-    options.add_experimental_option("androidPackage", self._android_package)
+    options = super()._create_options(session, args)
     # Needed because WebView/WebLayer apps require activity name.
     options.add_experimental_option("androidActivity", self._android_activity)
     return options
