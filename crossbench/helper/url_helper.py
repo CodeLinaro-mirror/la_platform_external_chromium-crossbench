@@ -17,7 +17,6 @@ DEFAULT_REQUEST_TIMEOUT = dt.timedelta(seconds=10)
 
 RequestException = requests.RequestException
 HTTPError = requests.HTTPError
-ConnectionError = requests.ConnectionError  # pylint: disable=redefined-builtin
 
 Response = requests.Response
 

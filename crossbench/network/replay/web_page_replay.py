@@ -311,7 +311,7 @@ class WprBase(abc.ABC):
     logging.info("WPR: shutting down recorder.")
     try:
       self._open_wpr_cmd_url("command-exit", verbose=False)
-    except url_helper.ConnectionError:
+    except url_helper.RequestException:
       # The above request always fails because WPR closes the connection
       # without response.
       pass
