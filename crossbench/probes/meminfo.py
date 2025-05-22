@@ -72,6 +72,15 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     else:
       raise ValueError("Cannot dump meminfo without package name.")
 
+    meminfo_json = []
+    for proc_name, proc_meminfo in meminfo.items():
+      proc_data = dataclasses.asdict(proc_meminfo)
+      proc_data["timestamp"] = timestamp
+      proc_data["name"] = proc_name
+      meminfo_json.append(proc_data)
+
+    self.browser.performance_mark("meminfo", detail=meminfo_json)
+
     csv_path = self.result_path / package_path / "meminfo.csv"
 
     self.host_platform.mkdir(csv_path.parent, parents=True, exist_ok=True)
@@ -96,11 +105,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       )
       if write_header:
         writer.writeheader()
-      for proc_name, proc_meminfo in meminfo.items():
-        row_data = dataclasses.asdict(proc_meminfo)
-        row_data["timestamp"] = timestamp
-        row_data["name"] = proc_name
-        writer.writerow(row_data)
+      writer.writerows(meminfo_json)
 
   @override
   def teardown(self) -> ProbeResult:

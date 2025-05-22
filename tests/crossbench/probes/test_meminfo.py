@@ -58,6 +58,54 @@ class TestMeminfoProbe(GenericProbeTestCase):
         "2025-05-20 12:45:59,1,process_1,2,3,4\n"
         "2025-05-20 12:45:59,2,process_2,3,4,5\n")
 
+    self.assertTrue("crossbench-meminfo" in self.browsers[0].performance_marks)
+
+    meminfo_detail = self.browsers[0].performance_marks_details[
+        self.browsers[0].performance_marks.index("crossbench-meminfo")]
+
+    self.assertEqual(meminfo_detail, [
+        {
+            "timestamp": "2025-05-20 12:45:59",
+            "pid": 1,
+            "name": "process_1",
+            "pss_total": 2,
+            "rss_total": 3,
+            "swap_total": 4
+        },
+        {
+            "timestamp": "2025-05-20 12:45:59",
+            "pid": 2,
+            "name": "process_2",
+            "pss_total": 3,
+            "rss_total": 4,
+            "swap_total": 5
+        },
+    ])
+
+    self.assertTrue("crossbench-meminfo" in self.browsers[1].performance_marks)
+
+    meminfo_detail = self.browsers[1].performance_marks_details[
+        self.browsers[1].performance_marks.index("crossbench-meminfo")]
+
+    self.assertEqual(meminfo_detail, [
+        {
+            "timestamp": "2025-05-20 12:45:59",
+            "pid": 1,
+            "name": "process_1",
+            "pss_total": 2,
+            "rss_total": 3,
+            "swap_total": 4
+        },
+        {
+            "timestamp": "2025-05-20 12:45:59",
+            "pid": 2,
+            "name": "process_2",
+            "pss_total": 3,
+            "rss_total": 4,
+            "swap_total": 5
+        },
+    ])
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
