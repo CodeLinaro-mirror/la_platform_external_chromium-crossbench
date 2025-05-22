@@ -88,6 +88,41 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
       self.assertEqual(self.platform.search_app(bin_path), bin_path)
     cm.assert_called_once_with(os.fspath(bin_path))
 
+  def test_machine_arch_amd64(self):
+    cpu_caption = textwrap.dedent("""
+        Caption
+        -------
+        Intel64 Family 6 Model 154 Stepping 3
+
+
+    """)
+    self.expect_sh(
+        "powershell",
+        "-c",
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
+        result=cpu_caption)
+    self.platform.use_mock_machine = False
+    with mock.patch("platform.machine", return_value="AMD64"):
+      self.assertTrue(self.platform.is_x64)
+      self.assertFalse(self.platform.is_arm64)
+
+  def test_machine_arch_arm64(self):
+    cpu_caption = textwrap.dedent("""
+        Caption
+        -------
+        ARMv8 (64-bit) Family 8 Model 1 Revision 201
+
+
+    """)
+    self.expect_sh(
+        "powershell",
+        "-c",
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
+        result=cpu_caption)
+    self.platform.use_mock_machine = False
+    self.assertTrue(self.platform.is_arm64)
+    self.assertFalse(self.platform.is_x64)
+
   def test_uptime(self):
     time_span = textwrap.dedent("""
         Days              : 14

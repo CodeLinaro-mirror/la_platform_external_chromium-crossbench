@@ -82,6 +82,7 @@ class MockPlatformMixin:
     self.file_contents: Dict[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
+    self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
     self._machine_arch: [MachineArch] = None  # type: ignore
@@ -170,6 +171,8 @@ class MockPlatformMixin:
 
   @property
   def machine(self) -> MachineArch:
+    if not self.use_mock_machine:
+      return super().machine
     if self._machine_arch:
       return self._machine_arch
     return MachineArch.ARM_64
