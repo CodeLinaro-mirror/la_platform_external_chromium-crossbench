@@ -250,7 +250,7 @@ class XLSXWriter:
         continue
       # Skip over diff formula for the header row (== keep empty cell).
       if not is_header_row:
-        diff_formula = f"=({current_cell}/{base_cell}-1)"
+        diff_formula = f"=(({current_cell}/{base_cell})-1)"
         self._worksheet.write_formula(row_index, dst_col_index, diff_formula,
                                       self._percent_format)
       dst_col_index += 1
