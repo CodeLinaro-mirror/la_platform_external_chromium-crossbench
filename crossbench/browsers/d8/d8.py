@@ -12,10 +12,11 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
 
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.d8.shell import D8Shell
-from crossbench.browsers.d8.url_mapper import D8URLMapper
+from crossbench.browsers.d8.url_mapper import D8URLMapper, DummyURLMapper
 from crossbench.browsers.d8.version import D8Version
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags.chrome import ChromeFlags
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
   from crossbench.flags.base import FlagsData
   from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
 
 class D8(Browser):
 
@@ -51,7 +51,7 @@ class D8(Browser):
       raise RuntimeError("D8 wrapper only works with --local-file-server"
                          f"but got {self.network} network.")
     self._d8_shell: D8Shell | None = None
-    self._url_mapper: D8URLMapper = D8URLMapper(self)
+    self._url_mapper: D8URLMapper = DummyURLMapper(self)
 
   @property
   def network(self) -> LocalFileNetwork:
@@ -98,36 +98,24 @@ class D8(Browser):
     super().start(session)
     js_flags_copy = self.js_flags.copy()
     js_flags_copy.update(session.extra_js_flags)
+    self._log_browser_start(tuple(js_flags_copy))
 
+    self._url_mapper = D8URLMapper.create(self, session)
     self._d8_shell = D8Shell(
         self.platform,
         self.d8_path,
         flags=list(js_flags_copy),
         cwd=self.network.path)
+
     self._pid = self._d8_shell.pid
     self._is_running = True
     self._install_d8_mocks()
 
   def _install_d8_mocks(self) -> None:
-    # Mock some DOM apis so we can get jetstream working.
-    self.js("""globalThis.document ??= {
-            readyState: 'complete',
-            querySelectorAll() {
-              return [,];
-            },
-            getElementById(name) {
-              return {
-                classList: {
-                  contains(name) {
-                    return true;
-                  }
-                }
-              }
-            },
-        };""")
-    self.js("globalThis.isInBrowser = false;")
-    self.js("globalThis.readFile = read;")
-    self.js("globalThis.isD8 = true;")
+    with exception.annotate("D8 setup"):
+      if shell := self._d8_shell:
+        if setup_file := self._url_mapper.setup_file:
+          shell.load(setup_file)
 
   def force_quit(self) -> None:
     if not self._is_running:

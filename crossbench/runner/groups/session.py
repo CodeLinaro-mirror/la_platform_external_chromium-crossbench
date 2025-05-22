@@ -26,6 +26,7 @@ from crossbench.runner.result_origin import ResultOrigin
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.network.base import Network
@@ -166,6 +167,10 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   @override
   def browser(self) -> Browser:
     return self._browser
+
+  @property
+  def benchmark(self) -> Benchmark:
+    return self.first_run.benchmark
 
   @property
   def index(self) -> int:
