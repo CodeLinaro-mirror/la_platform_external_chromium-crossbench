@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from typing_extensions import override
 
@@ -106,9 +106,8 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   @classmethod
   @override
   def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
+      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--start-after",
         type=DurationParser.positive_or_zero_duration,

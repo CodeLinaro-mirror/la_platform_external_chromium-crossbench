@@ -8,13 +8,12 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, cast, Sequence, Tuple
+from typing import TYPE_CHECKING, Sequence, Tuple, cast
 
 from typing_extensions import override
 
-from crossbench.action_runner.android_input_action_runner import (
+from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-)
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
@@ -93,9 +92,8 @@ class EmbedderBenchmark(SubStoryBenchmark):
   @classmethod
   @override
   def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
+      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--cujs-config",
         "--cuj-config",

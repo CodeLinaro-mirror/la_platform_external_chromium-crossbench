@@ -27,6 +27,7 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
     DevtoolsRecorderProxySubcommand
 from crossbench.cli.subcommand.help import HelpSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import LateArgumentError
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.runner.runner import Runner
@@ -263,6 +264,7 @@ class CrossBenchCLI:
     self._init_logging(argv)
     unprocessed_argv: List[str] = []
     try:
+      argv = self._rename_subcommand(argv)
       # Manually check for unprocessed_argv to print nicer error messages.
       self.args, unprocessed_argv = self.parser.parse_known_args(argv)
     except argparse.ArgumentError as e:
@@ -282,6 +284,32 @@ class CrossBenchCLI:
       self.args.crossbench_subcommand.run(self.args)
     finally:
       self._teardown_logging()
+
+  def _rename_subcommand(self, argv: Sequence[str]) -> Sequence[str]:
+    if not argv:
+      return argv
+    subcommand = argv[0]
+    if subcommand.startswith("-"):
+      return argv
+
+    choices = set(self._subparsers.choices.keys())
+    if subcommand in choices:
+      return argv
+
+    alternative: str | None = None
+    for benchmark_cls in self._benchmark_subcommands:
+      aliases = benchmark_cls.aliases()
+      if subcommand in aliases:
+        alternative = benchmark_cls.NAME
+        break
+      choices.update(benchmark_cls.aliases())
+
+    if not alternative:
+      message, alternative = close_matches_message(subcommand, set(choices))
+      message = f"Unknown subcommand {repr(subcommand)}: {message}"
+    if not alternative:
+      raise argparse.ArgumentError(None, message)
+    return [alternative, *argv[1:]]
 
   def handle_late_argument_error(self, e: LateArgumentError) -> None:
     self.error(f"error argument {e.flag}: {e.message}")

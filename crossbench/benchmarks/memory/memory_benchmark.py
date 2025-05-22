@@ -347,9 +347,8 @@ class MemoryBenchmark(SubStoryBenchmark):
   @classmethod
   @override
   def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
+      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
     parser.add_argument(
         "--skippable-tab-count",

@@ -110,7 +110,23 @@ class TestProbeListConfig(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}{trailing_brace}")
     with self.assertRaises(argparse.ArgumentTypeError):
-      ProbeConfig.parse("v8.log::")
+      ProbeConfig.parse("other.log")
+
+  def test_parse_with_typo(self):
+    v8_probe = ProbeConfig.parse("v8.log")
+    with self.assertLogs(level="ERROR") as cm:
+      v8_close_probe = ProbeConfig.parse("v8_log")
+    self.assertEqual(v8_probe, v8_close_probe)
+    output = "\n".join(cm.output)
+    self.assertIn("v8.log", output)
+    self.assertIn("v8_log", output)
+
+    with self.assertLogs(level="ERROR") as cm:
+      v8_close_probe = ProbeConfig.parse("v8_log:{}")
+    self.assertEqual(v8_probe, v8_close_probe)
+    output = "\n".join(cm.output)
+    self.assertIn("v8.log", output)
+    self.assertIn("v8_log", output)
 
   def test_inline_config_dir_instead_of_file(self):
     mock_dir = pth.LocalPath("some/dir")

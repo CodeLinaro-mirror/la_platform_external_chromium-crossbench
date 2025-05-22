@@ -96,8 +96,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    subparser = self._benchmark_cls.add_cli_parser(
-        self.cli.subparsers, self._benchmark_cls.aliases())
+    subparser = self._benchmark_cls.add_cli_parser(self.cli.subparsers)
     assert isinstance(subparser, argparse.ArgumentParser), (
         f"Benchmark class {self._benchmark_cls}.add_cli_parser did not return "
         f"an ArgumentParser: {subparser}")

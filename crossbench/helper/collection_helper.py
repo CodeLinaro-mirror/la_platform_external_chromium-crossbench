@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import difflib
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional,
                     Tuple, TypeVar)
 
@@ -50,3 +51,16 @@ def group_by(
     # sort keys as well for more predictable behavior
     return dict(sorted(groups.items(), key=sort_key))
   return dict(groups.items())
+
+
+def close_matches_message(choice: str,
+                          choices: Iterable[str]) -> Tuple[str, str | None]:
+  error_message: str = ""
+  similar_choices = difflib.get_close_matches(choice, choices)
+  alternative: str | None = None
+  if len(similar_choices) > 1:
+    error_message += f" Did you mean one of {', '.join(similar_choices)}?"
+  elif len(similar_choices) == 1:
+    alternative = similar_choices[0]
+    error_message += f" Did you mean {repr(alternative)}?"
+  return error_message, alternative
