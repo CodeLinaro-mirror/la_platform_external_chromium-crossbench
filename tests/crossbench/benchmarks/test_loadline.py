@@ -14,8 +14,9 @@ from typing import Sequence
 from typing_extensions import override
 
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
-from crossbench.benchmarks.loading.loadline_presets import (
-    LoadLinePageFilter, LoadLinePhoneBenchmark, LoadLineTabletBenchmark)
+from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
+                                            LoadLine1TabletBenchmark)
+from crossbench.benchmarks.loadline.loadline_1 import LoadLinePageFilter
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -66,29 +67,29 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
 
   def test_get_pages_config_variants(self):
     configs = [
-        LoadLineTabletBenchmark.get_pages_config(),
-        LoadLinePhoneBenchmark.get_pages_config()
+        LoadLine1TabletBenchmark.get_pages_config(),
+        LoadLine1PhoneBenchmark.get_pages_config()
     ]
     self.assertNotEqual(configs[0], configs[1])
 
 
-class TestLoadLineTabletBenchmark(BaseLoadLineBenchmarkTestCase):
+class TestLoadLine1TabletBenchmark(BaseLoadLineBenchmarkTestCase):
 
   @property
   @override
   def benchmark_cls(self):
-    return LoadLineTabletBenchmark
+    return LoadLine1TabletBenchmark
 
 
-class TestLoadLinePhoneBenchmark(BaseLoadLineBenchmarkTestCase):
+class TestLoadLine1PhoneBenchmark(BaseLoadLineBenchmarkTestCase):
 
   @property
   @override
   def benchmark_cls(self):
-    return LoadLinePhoneBenchmark
+    return LoadLine1PhoneBenchmark
 
 
-class LoadLineBenchmarkCliTestCase(BaseCliTestCase):
+class LoadLine1BenchmarkCliTestCase(BaseCliTestCase):
 
   def test_run_default_phone(self):
     # TODO(378584786): implement

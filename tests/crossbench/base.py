@@ -22,8 +22,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
-from crossbench.benchmarks.loading.loadline_presets import \
-    LoadLineTabletBenchmark
+from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -142,7 +141,10 @@ class BaseCrossbenchTestCase(
       self.assertListEqual(browser.expected_js, [])
 
   def setup_loadline_config(self):
-    config_dir = LoadLineTabletBenchmark.default_network_config_path().parent
+    self.setup_config_dir(
+        LoadLine1TabletBenchmark.default_network_config_path().parent)
+
+  def setup_config_dir(self, config_dir):
     self.fs.add_real_directory(
         config_dir,
         lazy_read=not test_helper.is_google_env())

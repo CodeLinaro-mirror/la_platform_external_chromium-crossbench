@@ -60,13 +60,13 @@ class LoadLinePageFilter(LoadingPageFilter):
     return ()
 
 
-class LoadLineProbe(BenchmarkProbeMixin, Probe):
+class LoadLine1Probe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE = False
   NAME = "loadline_probe"
 
   @override
-  def get_context_cls(self,) -> Type[LoadLineProbeContext]:
-    return LoadLineProbeContext
+  def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
+    return LoadLine1ProbeContext
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
@@ -111,7 +111,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
                  sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
 
 
-class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
+class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
 
   def start(self) -> None:
     pass
@@ -130,9 +130,9 @@ class LoadLineProbeContext(ProbeContext[LoadLineProbe]):
     return self.empty_result()
 
 
-class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
+class LoadLine1Benchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS = LoadLinePageFilter
-  PROBES = (LoadLineProbe,)
+  PROBES = (LoadLine1Probe,)
   DEFAULT_REPETITIONS = 100
 
   _page_config: PagesConfig | None = None
@@ -179,7 +179,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
     return tuple(page.any_label for page in cls.get_pages_config().pages)
 
 
-class LoadLinePhoneBenchmark(LoadLineBenchmark):
+class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
   """LoadLine benchmark for phones.
   """
   NAME = "loadline-phone"
@@ -197,10 +197,10 @@ class LoadLinePhoneBenchmark(LoadLineBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-phone", "load-phone", "ld-phone")
+    return ("loadline1-phone", "ld-phone", "ld1-phone")
 
 
-class LoadLineTabletBenchmark(LoadLineBenchmark):
+class LoadLine1TabletBenchmark(LoadLine1Benchmark):
   """LoadLine benchmark for tablets.
   """
   NAME = "loadline-tablet"
@@ -218,7 +218,7 @@ class LoadLineTabletBenchmark(LoadLineBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-tablet", "load-tablet", "ld-tablet")
+    return ("loadline1-tablet", "ld-tablet", "ld1-tablet")
 
   @classmethod
   @override
@@ -227,7 +227,7 @@ class LoadLineTabletBenchmark(LoadLineBenchmark):
     return Flags(["--request-desktop-sites"])
 
 
-class LoadLinePhoneDebugBenchmark(LoadLinePhoneBenchmark):
+class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
   """LoadLine benchmark for phones, with more tracing categories, for easier
   performance analysis.
   """
@@ -243,10 +243,10 @@ class LoadLinePhoneDebugBenchmark(LoadLinePhoneBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-phone-debug", "load-phone-debug", "ld-phone-debug")
+    return ("loadline1-phone-debug", "ld-phone-debug", "ld1-phone-debug")
 
 
-class LoadLineTabletDebugBenchmark(LoadLineTabletBenchmark):
+class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
   """LoadLine benchmark for tablets, with more tracing categories, for easier
   performance analysis.
   """
@@ -262,10 +262,10 @@ class LoadLineTabletDebugBenchmark(LoadLineTabletBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-tablet-debug", "load-tablet-debug", "ld-tablet-debug")
+    return ("loadline1-tablet-debug", "ld-tablet-debug", "ld1-tablet-debug")
 
 
-class LoadLinePhoneFastBenchmark(LoadLinePhoneBenchmark):
+class LoadLine1PhoneFastBenchmark(LoadLine1PhoneBenchmark):
   """LoadLine benchmark for phones, with less repetitions, for faster local
   experiments.
   """
@@ -275,10 +275,10 @@ class LoadLinePhoneFastBenchmark(LoadLinePhoneBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-phone-fast", "load-phone-fast", "ld-phone-fast")
+    return ("loadline1-phone-fast", "ld-phone-fast", "ld1-phone-fast")
 
 
-class LoadLineTabletFastBenchmark(LoadLineTabletBenchmark):
+class LoadLine1TabletFastBenchmark(LoadLine1TabletBenchmark):
   """LoadLine benchmark for tablets, with less repetitions, for faster local
   experiments.
   """
@@ -288,4 +288,4 @@ class LoadLineTabletFastBenchmark(LoadLineTabletBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("loading-tablet-fast", "load-tablet-fast", "ld-tablet-fast")
+    return ("loadline1-tablet-fast", "ld-tablet-fast", "ld1-tablet-fast")

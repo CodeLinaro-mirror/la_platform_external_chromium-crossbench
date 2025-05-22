@@ -130,12 +130,12 @@ class CrossBenchCLI:
       # Loading:
       benchmarks.LoadingBenchmark,
       # LoadLine:
-      benchmarks.LoadLinePhoneBenchmark,
-      benchmarks.LoadLinePhoneDebugBenchmark,
-      benchmarks.LoadLinePhoneFastBenchmark,
-      benchmarks.LoadLineTabletBenchmark,
-      benchmarks.LoadLineTabletDebugBenchmark,
-      benchmarks.LoadLineTabletFastBenchmark,
+      benchmarks.LoadLine1PhoneBenchmark,
+      benchmarks.LoadLine1PhoneDebugBenchmark,
+      benchmarks.LoadLine1PhoneFastBenchmark,
+      benchmarks.LoadLine1TabletBenchmark,
+      benchmarks.LoadLine1TabletDebugBenchmark,
+      benchmarks.LoadLine1TabletFastBenchmark,
       # Manual:
       benchmarks.ManualBenchmark,
       # Memory:
