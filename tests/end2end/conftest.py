@@ -36,6 +36,7 @@ WIN_APP_SUFFIX = [".exe", ".bat"]
 # pylint: disable=redefined-outer-name
 ADB_DEVICE_ID_FLAG = "--adb-device-id"
 ADB_PATH_FLAG = "--adb-path"
+BUNDLETOOL_FLAG = "--bundletool"
 CAS_ARCHIVE_FLAG = "--cas-archive"
 TEST_BROWSER_FLAG = "--test-browser-path"
 TEST_DRIVER_FLAG = "--test-driver-path"
@@ -49,7 +50,8 @@ def pytest_addoption(parser):
   parser.addoption(
       TEST_GSUTIL_FLAG, "--gsutilpath", default=None, type=PathParser.path)
   parser.addoption(ADB_DEVICE_ID_FLAG, default=None, type=str)
-  parser.addoption("--adb-path", default=None, type=str)
+  parser.addoption(ADB_PATH_FLAG, default=None, type=str)
+  parser.addoption(BUNDLETOOL_FLAG, default=None, type=str)
   parser.addoption("--ignore-tests", default=None, type=str)
   parser.addoption(CAS_ARCHIVE_FLAG, default=None, type=str)
 
@@ -237,3 +239,10 @@ def adb_path(request) -> Optional[str]:
   except BinaryNotFoundError:
     logging.info("No custom adb path.")
     return None
+
+
+@pytest.fixture(scope="session")
+def bundletool(request) -> Optional[str]:
+  maybe_bundletool: str | None = request.config.getoption(BUNDLETOOL_FLAG)
+  logging.info("bundletool: %s", maybe_bundletool)
+  return maybe_bundletool

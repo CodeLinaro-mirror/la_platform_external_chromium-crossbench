@@ -77,16 +77,22 @@ class Adb:
   _serial_id: str
   _device_info: Dict[str, str]
   _adb_bin: pth.AnyPath
+  _bundletool: Optional[pth.AnyPath]
 
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
-               adb_bin: Optional[pth.AnyPath] = None) -> None:
+               adb_bin: Optional[pth.AnyPath] = None,
+               bundletool: Optional[pth.AnyPath] = None) -> None:
     self._host_platform = host_platform
     if adb_bin:
       self._adb_bin = host_platform.parse_binary_path(adb_bin)
     else:
       self._adb_bin = _find_adb_bin(host_platform)
+    if bundletool:
+      self._bundletool = host_platform.parse_binary_path(bundletool)
+    else:
+      self._bundletool = pth.LocalPath("bundletool")
     self.start_server()
     self._serial_id, self._device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", self._serial_id,
@@ -411,10 +417,14 @@ class Adb:
                    modules: Optional[str] = None) -> None:
     if not apks.exists():
       raise ValueError(f"APK {apks} does not exist.")
-    cmd = [
-        "bundletool",
+    if self._bundletool and self._bundletool.suffix == ".jar":
+      binary = ["java", "-jar", str(self._bundletool)]
+    else:
+      binary = [str(self._bundletool)]
+    cmd = binary + [
         "install-apks",
         f"--apks={apks}",
+        f"--adb={self._adb_bin}",
         f"--device-id={self._serial_id}",
     ]
     if allow_downgrade:

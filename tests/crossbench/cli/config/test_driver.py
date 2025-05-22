@@ -232,6 +232,25 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, BrowserDriverType.IOS)
     self.assertEqual(config.device_id, "00001111-11AA22BB33DD")
 
+  def test_parse_custom_bundletool(self):
+    adb_bin = self.out_dir / "adb"
+    bundletool = self.out_dir / "bundletool"
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
+    config_dict = {
+        "type": "adb",
+        "device_id": "0a388e93",
+        "adb_bin": str(adb_bin),
+        "bundletool": str(bundletool)
+    }
+    self.fs.create_file(adb_bin, st_size=100)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = DriverConfig.parse(hjson.dumps(config_dict))
+    self.assertIn(str(bundletool), str(cm.exception))
+    self.fs.create_file(bundletool, st_size=100)
+    config = DriverConfig.parse(hjson.dumps(config_dict))
+    assert isinstance(config, DriverConfig)
+    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.bundletool, bundletool)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
