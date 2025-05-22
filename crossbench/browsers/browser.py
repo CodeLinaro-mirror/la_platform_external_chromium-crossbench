@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
 
@@ -18,6 +18,7 @@ from crossbench import plt
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.flags.base import Flags, FlagsData, FlagsT
+from crossbench.plt.process_meminfo import ProcessMeminfo
 
 if TYPE_CHECKING:
   import re
@@ -200,6 +201,9 @@ class Browser(abc.ABC):
     # TODO(cbruni): fix posix process_info for remote platforms where
     # we don't get the status back.
     return False
+
+  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+    raise NotImplementedError(f"meminfo not implemented for {self}.")
 
   @property
   def is_running(self) -> bool:

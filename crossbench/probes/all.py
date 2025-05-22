@@ -23,6 +23,7 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.internal.system_details import SystemDetailsProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
@@ -96,6 +97,7 @@ GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
     FrequencyProbe,
     JSProbe,
     LogcatAndroidProbe,
+    MeminfoProbe,
     PerfettoProbe,
     PerformanceEntriesProbe,
     PollingShellProbe,

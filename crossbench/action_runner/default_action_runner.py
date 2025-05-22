@@ -22,6 +22,7 @@ from crossbench.action_runner.element_not_found_error import \
 from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.probes.downloads import DownloadsProbe, DownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
+from crossbench.probes.meminfo import MeminfoProbe, MeminfoProbeContext
 from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
 
@@ -374,6 +375,15 @@ class DefaultActionRunner(ActionRunner):
       return
     assert isinstance(ctx, DumpHtmlProbeContext)
     ctx.dump_html("_".join(self.info_stack) + f"_{suffix}")
+
+  @override
+  def dump_meminfo_impl(self, run: Run, action: i_action.MeminfoAction) -> None:
+    ctx = run.find_probe_context(MeminfoProbe)
+    if not ctx:
+      logging.warning("No meminfo probe for dump on %s", repr(self.info_stack))
+      return
+    assert isinstance(ctx, MeminfoProbeContext)
+    ctx.dump_meminfo(action.target, action.package)
 
   def wait_for_download(self, run: Run,
                         action: i_action.WaitForDownloadAction) -> None:

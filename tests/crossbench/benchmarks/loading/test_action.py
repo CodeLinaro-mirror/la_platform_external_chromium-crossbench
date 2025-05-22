@@ -17,6 +17,7 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
+from crossbench.action_runner.action.meminfo import MeminfoAction, MeminfoTarget
 from crossbench.action_runner.action.position import (CoordinatesConfig,
                                                       PositionConfig,
                                                       SelectorConfig)
@@ -956,6 +957,57 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action.validate()
 
     action_2 = WaitForReadyStateAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_default(self):
+    config_dict = {"action": "meminfo"}
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.target, MeminfoTarget.BROWSER)
+    self.assertIsNone(action.package)
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_browser(self):
+    config_dict = {"action": "meminfo", "target": "browser"}
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.target, MeminfoTarget.BROWSER)
+    self.assertIsNone(action.package)
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_invalid_target(self):
+    config_dict = {"action": "meminfo", "target": "notatarget"}
+
+    with self.assertRaisesRegex(ValueError, "target"):
+      MeminfoAction.parse_dict(config_dict)
+
+  def test_parse_meminfo_package_missing_name(self):
+    config_dict = {"action": "meminfo", "target": "package"}
+    with self.assertRaisesRegex(ValueError, "package"):
+      MeminfoAction.parse_dict(config_dict)
+
+  def test_parse_meminfo_package(self):
+    config_dict = {
+        "action": "meminfo",
+        "target": "package",
+        "package": "netflix"
+    }
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.target, MeminfoTarget.PACKAGE)
+    self.assertEqual(action.package, "netflix")
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 

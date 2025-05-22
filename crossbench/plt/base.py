@@ -43,6 +43,7 @@ if TYPE_CHECKING:
   from subprocess import Popen
 
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.types import JsonDict
   ProcessLike: TypeAlias = Popen | Process | int
@@ -556,6 +557,9 @@ class Platform(abc.ABC):
       return psutil.Process(pid).as_dict()
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
+
+  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+    raise NotImplementedError(f"meminfo not implemented for {self}.")
 
   def foreground_process(self) -> Optional[Dict[str, Any]]:
     return None

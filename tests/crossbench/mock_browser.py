@@ -9,8 +9,8 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
-from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
-                    cast)
+from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
+                    Type, cast)
 
 from typing_extensions import override
 
@@ -24,6 +24,7 @@ from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
 from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.process_meminfo import ProcessMeminfo
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -259,6 +260,13 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   @property
   def current_url(self) -> str:
     return self._current_url
+
+  @override
+  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+    return {
+        "process_1": ProcessMeminfo(1, 2, 3, 4),
+        "process_2": ProcessMeminfo(2, 3, 4, 5)
+    }
 
 
 def app_root(platform: plt.Platform) -> pathlib.Path:

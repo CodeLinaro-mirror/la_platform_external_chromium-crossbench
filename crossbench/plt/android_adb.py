@@ -21,6 +21,7 @@ from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.posix import RemotePosixPlatform
+from crossbench.plt.process_meminfo import ProcessMeminfo
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
@@ -704,6 +705,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       res.append({"pid": int(tokens[0]), "name": tokens[1]})
     return res
 
+  @override
+  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+    dumpsys_output = self.sh_stdout("dumpsys", "meminfo", "--package",
+                                    process_name)
+    return self._parse_dumpsys_meminfo(dumpsys_output)
+
   @functools.lru_cache(maxsize=1)
   @override
   def cpu_details(self) -> Dict[str, Any]:
@@ -780,3 +787,30 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
+
+  def _parse_dumpsys_meminfo(self,
+                             meminfo_output: str) -> Dict[str, ProcessMeminfo]:
+    pid_sections = re.split(r"\*\* MEMINFO in pid (\d+) \[(.*?)] \*\*",
+                            meminfo_output)[1:]
+
+    meminfos = {}
+
+    for i in range(0, len(pid_sections), 3):
+      pid = pid_sections[i]
+      process_name = pid_sections[i + 1].strip()
+      raw_process_info = pid_sections[i + 2]
+
+      pss_rss_total = re.search(
+          r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
+          r"\s+TOTAL SWAP \(KB\):\s+(?P<swap_total>\d+)", raw_process_info)
+
+      if not pss_rss_total:
+        raise ValueError("Failed to parse meminfo.")
+
+      meminfos[process_name] = ProcessMeminfo(
+          pid=int(pid),
+          pss_total=int(pss_rss_total["pss_total"]),
+          rss_total=int(pss_rss_total["rss_total"]),
+          swap_total=int(pss_rss_total["swap_total"]))
+
+    return meminfos

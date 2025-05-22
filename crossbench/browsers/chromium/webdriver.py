@@ -8,7 +8,7 @@ import atexit
 import logging
 import re
 import subprocess
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, cast
 
 import hjson
 from immutabledict import immutabledict
@@ -36,8 +36,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.browsers.version import BrowserVersion
   from crossbench.cli.config.secrets import UsernamePassword
-  from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
+  from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -137,6 +137,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
         self.adb_force_stop()
     finally:
       self._restore_chrome_flags()
+
+  @override
+  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+    return self.platform.meminfo(self.android_package)
 
   def _restore_chrome_flags(self) -> None:
     atexit.unregister(self._restore_chrome_flags)
