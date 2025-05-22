@@ -203,7 +203,7 @@ class Browser(abc.ABC):
     return False
 
   def meminfo(self) -> Dict[str, ProcessMeminfo]:
-    raise NotImplementedError(f"meminfo not implemented for {self}.")
+    return self.platform.meminfo(str(self.path))
 
   @property
   def is_running(self) -> bool:
