@@ -58,6 +58,8 @@ class JetStreamURLMapper(D8URLMapper):
     super().__init__(d8)
     self._driver_js: pth.LocalPath = self.path / "JetStreamDriver.js"
     if not self._driver_js.is_file():
+      self._driver_js  = self.path / "driver.js"
+    if not self._driver_js.is_file():
       raise ValueError(f"{self._driver_js} does not exist.")
 
   @property

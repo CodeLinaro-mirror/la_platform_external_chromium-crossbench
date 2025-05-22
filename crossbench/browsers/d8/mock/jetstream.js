@@ -17,6 +17,7 @@ globalThis.document ??= {
       }
     },
 };
-globalThis.isInBrowser = false;
-globalThis.readFile = read;
-globalThis.isD8 = true;
+globalThis.isInBrowser ??= false;
+globalThis.readFile ??= read;
+globalThis.isD8 ??= true;
+globalThis.testList ??= [];
