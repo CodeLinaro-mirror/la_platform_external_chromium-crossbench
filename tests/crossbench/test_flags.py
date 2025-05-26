@@ -355,6 +355,16 @@ class TestChromeFlags(TestFlags):
     self.assertTrue(flags)
     self.assertTrue(flags.features)
 
+  def test_features_rename(self):
+    flags = self.CLASS()
+    flags["--enable-feature"] = "F1"
+    self.assertEqual(str(flags), "--enable-features=F1")
+    self.assertEqual(flags.features.enabled_str(), "F1")
+    flags = self.CLASS()
+    flags["--disable-feature"] = "F1"
+    self.assertEqual(str(flags), "--disable-features=F1")
+    self.assertEqual(flags.features.disabled_str(), "F1")
+
   def test_blink_features(self):
     flags = self.CLASS()
     features = flags.blink_features
@@ -410,6 +420,16 @@ class TestChromeFlags(TestFlags):
     flags["--enable-blink-features"] = None
     self.assertNotIn("--enable-blink-features", flags)
     self.assertTrue(features.is_empty)
+
+  def test_blink_features_rename(self):
+    flags = self.CLASS()
+    flags["--enable-blink-feature"] = "F1"
+    self.assertEqual(str(flags), "--enable-blink-features=F1")
+    self.assertEqual(flags.blink_features.enabled_str(), "F1")
+    flags = self.CLASS()
+    flags["--disable-blink-feature"] = "F1"
+    self.assertEqual(str(flags), "--disable-blink-features=F1")
+    self.assertEqual(flags.blink_features.disabled_str(), "F1")
 
   def test_user_data_dir(self):
     flags = self.CLASS()
@@ -655,7 +675,6 @@ class TestChromeFlags(TestFlags):
       self.assertIn(invalid_flag, output)
       self.assertIn("--enable-field-trial-config", output)
 
-
   def test_flag_typos_enable_blink_features(self):
     for invalid_flag in ("--enable-blink-feature", "--enabled-blink-feature",
                          "--enabled-blink-features"):
@@ -680,6 +699,7 @@ class TestChromeFlags(TestFlags):
         flags.set(invalid_flag)
       self.assertIn(invalid_flag, str(cm.output))
       self.assertIn(invalid_flag, flags)
+      self.assertNotIn(invalid_flag, flags.js_flags)
 
   def test_known_flags(self):
     for chrome_flag in KNOWN_CHROME_FLAGS:

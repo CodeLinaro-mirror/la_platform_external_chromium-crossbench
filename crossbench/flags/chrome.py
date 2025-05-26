@@ -49,6 +49,8 @@ class ChromeFlags(Flags):
       "--disable-field-trial-config",
   )
 
+  USER_DATA_DIR_FLAG: Final[str] = "--user-data-dir"
+
   def __init__(self, initial_data: FlagsData = None) -> None:
     self._features = ChromeFeatures()
     self._blink_features = ChromeBlinkFeatures()
@@ -83,38 +85,66 @@ class ChromeFlags(Flags):
            should_override: bool = False) -> None:
     self.assert_not_frozen()
     # pylint: disable=signature-differs
+    if self._set_special_flags(flag_name, flag_value, should_override):
+      return
+    if candidate := self._find_misspelled_flag(flag_name):
+      logging.error(
+          "Potentially misspelled flag: '%s'. "
+          "Did you mean to use %s ?", flag_name, candidate)
+      # Retry setting special flags.
+      if self._set_special_flags(candidate, flag_value, should_override):
+        return
+    super()._set(flag_name, flag_value, should_override)
+
+  def _set_special_flags(self,
+                         flag_name: str,
+                         flag_value: Optional[str] = None,
+                         should_override: bool = False) -> bool:
     if flag_name == ChromeFeatures.ENABLE_FLAG:
       if flag_value is None:
         self._features.clear_enabled()
       else:
         for feature in flag_value.split(","):
           self._features.enable(feature)
-    elif flag_name == ChromeFeatures.DISABLE_FLAG:
+      return True
+    if flag_name == ChromeFeatures.DISABLE_FLAG:
       if flag_value is None:
         self._features.clear_disabled()
       else:
         for feature in flag_value.split(","):
           self._features.disable(feature)
-    elif flag_name == ChromeBlinkFeatures.ENABLE_FLAG:
+      return True
+    if flag_name == ChromeBlinkFeatures.ENABLE_FLAG:
       if flag_value is None:
         self.blink_features.clear_enabled()
       else:
         for feature in flag_value.split(","):
           self._blink_features.enable(feature)
-    elif flag_name == ChromeBlinkFeatures.DISABLE_FLAG:
+      return True
+    if flag_name == ChromeBlinkFeatures.DISABLE_FLAG:
       if flag_value is None:
         self.blink_features.clear_disabled()
       else:
         for feature in flag_value.split(","):
           self._blink_features.disable(feature)
-    elif flag_name == self._JS_FLAG:
+      return True
+    if flag_name == self._JS_FLAG:
       if flag_value is None:
         self._js_flags.clear()
       else:
         self._set_js_flag(flag_value, should_override)
-    else:
-      flag_value = self._verify_flag(flag_name, flag_value)
-      super()._set(flag_name, flag_value, should_override)
+      return True
+    if flag_name == self.USER_DATA_DIR_FLAG:
+      self._set_user_data_dir(flag_value)
+      return True
+    if candidate := self._find_js_flag(flag_name):
+      js_flags = JSFlags()
+      js_flags.set(candidate, flag_value)
+      logging.error(
+          "Got potential V8 flag %s that should be used as "
+          "--js-flags=%s", repr(flag_name), js_flags)
+      return False
+    return False
 
   def _set_js_flag(self, raw_js_flags: str, should_override: bool) -> None:
     new_js_flags = JSFlags(self._js_flags)
@@ -122,29 +152,6 @@ class ChromeFlags(Flags):
       new_js_flags.set(
           js_flag_name, js_flag_value, should_override=should_override)
     self._js_flags.update(new_js_flags)
-
-  def _verify_flag(self, name: str, value: Optional[str]) -> Optional[str]:
-    if candidate := self._find_misspelled_flag(name):
-      logging.error(
-          "Potentially misspelled flag: '%s'. "
-          "Did you mean to use %s ?", name, candidate)
-    if candidate := self._find_js_flag(name):
-      js_flags = JSFlags()
-      js_flags.set(candidate, value)
-      logging.error(
-          "Got potential V8 flag %s that should be used as "
-          "--js-flags=%s", repr(name), js_flags)
-    if name == "--user-data-dir":
-      if not value or not value.strip():
-        raise ValueError("--user-data-dir cannot be the empty string.")
-      # TODO: support remote platforms
-      expanded_dir = str(pth.LocalPath(value).expanduser())
-      if expanded_dir != value:
-        logging.warning(
-            "Chrome Flags: auto-expanding --user-data-dir from '%s' to '%s'",
-            value, expanded_dir)
-      return expanded_dir
-    return value
 
   def _find_misspelled_flag(self, name: str) -> Optional[str]:
     if name in ("--enable-feature", "--enabled-feature", "--enabled-features"):
@@ -160,6 +167,8 @@ class ChromeFlags(Flags):
       return "--disable-blink-features"
     if name in ("--enable-field-trials", "--enable-field-trials-config"):
       return "--enable-field-trial-config"
+    if name in ("--enable-extensions", "--load-extensions"):
+      return "--load-extension"
     return None
 
   def _find_js_flag(self, name: str) -> Optional[str]:
@@ -171,6 +180,17 @@ class ChromeFlags(Flags):
     if normalized_name in KNOWN_JS_FLAGS:
       return name
     return None
+
+  def _set_user_data_dir(self, value: Optional[str]):
+    if not value or not value.strip():
+      raise ValueError("--user-data-dir cannot be the empty string.")
+    # TODO: support remote platforms
+    expanded_dir = str(pth.LocalPath(value).expanduser())
+    if expanded_dir != value:
+      logging.warning(
+          "Chrome Flags: auto-expanding --user-data-dir from '%s' to '%s'",
+          value, expanded_dir)
+    self.data[self.USER_DATA_DIR_FLAG] = expanded_dir
 
   @property
   def features(self) -> ChromeFeatures:
