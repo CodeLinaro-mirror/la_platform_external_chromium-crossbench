@@ -78,6 +78,8 @@ LIVE_PAGES = (
     LivePage("expedia", "https://www.expedia.com/", dt.timedelta(seconds=7)),
     LivePage("facebook", "https://facebook.com/shakira",
              dt.timedelta(seconds=8)),
+    LivePage("google", "https://google.com/search?q=newyork",
+             dt.timedelta(seconds=7)),
     LivePage("maps", "https://goo.gl/maps/TEZde4y4Hc6r2oNN8",
              dt.timedelta(seconds=10)),
     LivePage("microsoft", "https://microsoft.com/", dt.timedelta(seconds=6)),
