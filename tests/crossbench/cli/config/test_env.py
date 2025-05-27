@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-import hjson
-
+from crossbench import hjson as cb_hjson
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvironmentConfig
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
@@ -131,7 +130,7 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"
     self.fs.add_real_file(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
+      data = cb_hjson.load_unique_keys(f)
     EnvironmentConfig(**data["env"])
 
 

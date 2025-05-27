@@ -12,11 +12,11 @@ import logging
 from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
                     Self, Sequence, Set, TextIO, Tuple, Type, cast)
 
-import hjson
 from typing_extensions import override
 
 import crossbench.browsers.all as all_browsers
 from crossbench import exception
+from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.browser_helper import convert_flags_to_label
@@ -390,7 +390,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     with exception.annotate(f"Loading browser config file: {f.name}"):
       config = {}
       with exception.annotate("Parsing hjson"):
-        config = hjson.load(f)
+        config = cb_hjson.load_unique_keys(f)
       with exception.annotate(f"Parsing config file: {f.name}"):
         self.parse_dict(config, args)
 

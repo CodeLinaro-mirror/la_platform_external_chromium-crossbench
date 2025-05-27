@@ -19,6 +19,7 @@ from urllib import parse as urlparse
 import hjson
 
 from crossbench import path as pth
+from crossbench import hjson as cb_hjson
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -175,7 +176,7 @@ class PathParser:
     path = cls.file_path(value)
     with path.open(encoding="utf-8") as f:
       try:
-        hjson.load(f)
+        cb_hjson.load_unique_keys(f)
       except ValueError as e:
         message = _extract_decoding_error("Invalid hjson file '{path}':", path,
                                           e)
@@ -217,7 +218,7 @@ class ObjectParser:
       raise argparse.ArgumentTypeError(
           "Invalid inline hjson, missing braces: '{value_str}'")
     try:
-      return hjson.loads(value_str)
+      return cb_hjson.loads_unique_keys(value_str)
     except ValueError as e:
       message = _extract_decoding_error("Could not decode inline hjson",
                                         value_str, e)
@@ -241,7 +242,7 @@ class ObjectParser:
     path = PathParser.file_path(value)
     with path.open(encoding="utf-8") as f:
       try:
-        return hjson.load(f)
+        return cb_hjson.load_unique_keys(f)
       except ValueError as e:
         message = _extract_decoding_error("Invalid hjson file '{path}':", path,
                                           e)

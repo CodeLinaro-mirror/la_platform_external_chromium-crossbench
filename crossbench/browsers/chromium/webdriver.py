@@ -10,13 +10,13 @@ import re
 import subprocess
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, cast
 
-import hjson
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 from typing_extensions import override
 
 from crossbench import exception
+from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
@@ -227,7 +227,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     package_info = {}
     for line in output:
       key, value = line.split(": ")
-      package_info[key] = hjson.loads(value)
+      package_info[key] = cb_hjson.loads_unique_keys(value)
     return immutabledict(package_info)
 
   @override
