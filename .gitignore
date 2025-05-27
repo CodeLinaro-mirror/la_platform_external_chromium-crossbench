@@ -6,6 +6,5 @@ dist
 results
 binary_cache
 .DS_Store
-buildtools
 third_party
 cache
