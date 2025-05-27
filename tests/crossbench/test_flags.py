@@ -7,7 +7,8 @@ import unittest
 
 from crossbench.flags.base import Flags, FrozenFlagsError
 from crossbench.flags.chrome import (ChromeBaseFeatures, ChromeBlinkFeatures,
-                                     ChromeFeatures, ChromeFlags)
+                                     ChromeExtensions, ChromeFeatures,
+                                     ChromeFlags)
 from crossbench.flags.js_flags import JSFlags
 from crossbench.flags.known_chrome_flags import KNOWN_CHROME_FLAGS
 from crossbench.flags.known_js_flags import KNOWN_JS_FLAGS
@@ -777,6 +778,81 @@ class TestChromeFlags(TestFlags):
         str(flags), "--foo --enable-field-trial-config --bar "
         "--enable-benchmarking=enable-field-trial-config")
 
+  def test_load_extensions(self):
+    flags = self.CLASS()
+    flags["--load-extensions"] = "a,b"
+    self.assertEqual(flags.extensions.extensions, ("a", "b"))
+    self.assertEqual(str(flags), "--load-extension=a,b")
+
+    flags = self.CLASS()
+    flags["--load-extension"] = "a,b"
+    self.assertEqual(flags.extensions.extensions, ("a", "b"))
+    self.assertEqual(str(flags), "--load-extension=a,b")
+
+  def test_extensions_disabled(self):
+    flags = self.CLASS()
+    self.assertFalse(flags.extensions.enabled)
+    self.assertFalse(flags.extensions.disabled)
+    flags.set("--disable-extensions")
+    self.assertFalse(flags.extensions.enabled)
+    self.assertTrue(flags.extensions.disabled)
+    self.assertEqual(str(flags), "--disable-extensions")
+
+    flags = self.CLASS()
+    flags["--disable-extensions-except"] = "foo"
+    self.assertTrue(flags.extensions.enabled)
+    self.assertFalse(flags.extensions.disabled)
+    self.assertEqual(str(flags), "--disable-extensions-except=foo")
+
+  def test_extensions_conflicts_enable(self):
+    flags = self.CLASS()
+    flags.set("--disable-extensions")
+    for enable_flag in ChromeExtensions.ENABLE_FLAGS:
+      with self.assertRaisesRegex(ValueError, enable_flag):
+        flags[enable_flag] = "foo"
+
+  def test_extensions_conflicts_disable(self):
+    for enable_flag in ChromeExtensions.ENABLE_FLAGS:
+      flags = self.CLASS()
+      flags[enable_flag] = "foo"
+      with self.assertRaisesRegex(ValueError, "--disable-extensions"):
+        flags.set("--disable-extensions")
+
+  def test_extensions_conflict_enable(self):
+    flags = self.CLASS()
+    flags["--load-extension"] = "extension_a,extension_b"
+    self.assertEqual(str(flags), "--load-extension=extension_a,extension_b")
+    self.assertEqual(
+        str(flags.extensions), "--load-extension=extension_a,extension_b")
+    # setting the same twice is allowed
+    flags["--load-extension"] = "extension_a,extension_b"
+    # Switching modes is not allowed.
+    with self.assertRaisesRegex(ValueError, "extension_a"):
+      flags["--disable-extensions-except"] = "extension_a,extension_b"
+    # Overriding is not allowed.
+    with self.assertRaisesRegex(ValueError, "extension_c"):
+      flags["--load-extension"] = "extension_c"
+    with self.assertRaisesRegex(ValueError, "extension_c"):
+      flags["--disable-extensions-except"] = "extension_c"
+
+  def test_merge_extensions(self):
+    flags_a = self.CLASS()
+    flags_a["--load-extension"] = "extension_a"
+    flags_b = self.CLASS()
+    flags_b["--load-extension"] = "extension_b,extension_c"
+    flags_a.merge(flags_b)
+    self.assertEqual(
+        str(flags_a), "--load-extension=extension_a,extension_b,extension_c")
+
+  def test_extensions_invalid_empty(self):
+    flags = self.CLASS()
+    with self.assertRaisesRegex(ValueError, "load-extension"):
+      flags["--load-extension"] = ""
+    with self.assertRaisesRegex(ValueError, "disable-extensions-except"):
+      flags["--disable-extensions-except"] = ""
+    with self.assertRaisesRegex(ValueError, "disable-extensions"):
+      flags["--disable-extensions"] = "asdfasdfasd"
+
 
 class TestJSFlags(TestFlags):
   CLASS = JSFlags
@@ -1108,6 +1184,119 @@ class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     self.assertEqual(
         str(features),
         "--enable-blink-features=feature1 --disable-blink-features=feature2")
+
+
+class ChromeExtensionsTestCase(unittest.TestCase):
+
+  def test_empty(self):
+    extensions = ChromeExtensions()
+    self.assertEqual(str(extensions), "")
+    self.assertFalse(extensions)
+    self.assertFalse(extensions.disabled)
+    self.assertFalse(extensions.enabled)
+
+  def test_disable_flag(self):
+    extensions = ChromeExtensions()
+    extensions.disable()
+    self.assertEqual(str(extensions), "--disable-extensions")
+    self.assertTrue(extensions)
+    self.assertTrue(extensions.disabled)
+    self.assertFalse(extensions.enabled)
+
+  def test_enable_flag(self):
+    extensions = ChromeExtensions()
+    extensions.enable("foo")
+    self.assertEqual(str(extensions), "--load-extension=foo")
+    self.assertTrue(extensions)
+    self.assertFalse(extensions.disabled)
+    self.assertTrue(extensions.enabled)
+
+  def test_enable_selective(self):
+    extensions = ChromeExtensions()
+    extensions.enable("foo", selective=True)
+    self.assertEqual(str(extensions), "--disable-extensions-except=foo")
+    self.assertTrue(extensions)
+    self.assertFalse(extensions.disabled)
+    self.assertTrue(extensions.enabled)
+    with self.assertRaisesRegex(ValueError, "ext_b"):
+      extensions.add("ext_b")
+    with self.assertRaisesRegex(ValueError, "ext_b"):
+      extensions.enable("ext_b")
+    with self.assertRaisesRegex(ValueError, "enabled"):
+      extensions.disable()
+
+  def test_enable_multiple(self):
+    extensions = ChromeExtensions()
+    extensions.enable("foo,bar")
+    self.assertEqual(str(extensions), "--load-extension=foo,bar")
+
+  def test_enable_selective_multiple(self):
+    extensions = ChromeExtensions()
+    extensions.enable("foo,bar", selective=True)
+    self.assertEqual(str(extensions), "--disable-extensions-except=foo,bar")
+
+  def test_merge_empty(self):
+    extensions_a = ChromeExtensions()
+    extensions_a.merge(ChromeExtensions())
+    self.assertFalse(extensions_a)
+    extensions_a.merge(ChromeExtensions(["foo", "bar"]))
+    self.assertTrue(extensions_a)
+    self.assertEqual(extensions_a.extensions, ("foo", "bar"))
+
+  def test_merge(self):
+    extensions_a = ChromeExtensions(["ext_a"])
+    extensions_a.merge(ChromeExtensions())
+    self.assertTrue(extensions_a)
+    self.assertEqual(extensions_a.extensions, ("ext_a",))
+
+    extensions_a.merge(ChromeExtensions(["foo", "bar"]))
+    self.assertTrue(extensions_a)
+    self.assertEqual(extensions_a.extensions, ("ext_a", "foo", "bar"))
+
+    extensions_b = ChromeExtensions()
+    extensions_b.disable()
+    with self.assertRaisesRegex(ValueError, "modes"):
+      extensions_a.merge(extensions_b)
+    with self.assertRaisesRegex(ValueError, "modes"):
+      extensions_b.merge(extensions_a)
+
+  def test_add(self):
+    extensions = ChromeExtensions(["ext_a"])
+    with self.assertRaisesRegex(ValueError, "empty"):
+      extensions.add("")
+    extensions.add("ext_b")
+    self.assertEqual(extensions.extensions, ("ext_a", "ext_b"))
+    extensions.add("ext_c")
+    self.assertEqual(extensions.extensions, ("ext_a", "ext_b", "ext_c"))
+
+  def test_enable(self):
+    extensions = ChromeExtensions(["ext_a"])
+    with self.assertRaisesRegex(ValueError, "empty"):
+      extensions.enable("")
+    extensions.enable("ext_b")
+    self.assertEqual(extensions.extensions, ("ext_a", "ext_b"))
+    extensions.enable("ext_c,ext_d")
+    self.assertEqual(extensions.extensions,
+                     ("ext_a", "ext_b", "ext_c", "ext_d"))
+
+  def test_disable(self):
+    extensions = ChromeExtensions(["ext_a"])
+    with self.assertRaisesRegex(ValueError, "ext_a"):
+      extensions.disable()
+    extensions = ChromeExtensions()
+    extensions.disable()
+    with self.assertRaisesRegex(ValueError, "ext_b"):
+      extensions.add("ext_b")
+    with self.assertRaisesRegex(ValueError, "ext_b"):
+      extensions.enable("ext_b")
+
+  def test_set(self):
+    extensions = ChromeExtensions()
+    extensions.set("--load-extension", "foo,bar")
+    self.assertEqual(extensions.extensions, ("foo", "bar"))
+    with self.assertRaisesRegex(ValueError, "--foo-bar"):
+      extensions.set("--foo-bar")
+
 
 
 del _ChromeBaseFeaturesTestCase

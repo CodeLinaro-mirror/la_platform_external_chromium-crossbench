@@ -13,6 +13,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData, Freezable
+from crossbench.flags.chrome_extensions import ChromeExtensions
 from crossbench.flags.js_flags import JSFlags
 from crossbench.flags.known_js_flags import KNOWN_JS_FLAGS
 
@@ -52,9 +53,10 @@ class ChromeFlags(Flags):
   USER_DATA_DIR_FLAG: Final[str] = "--user-data-dir"
 
   def __init__(self, initial_data: FlagsData = None) -> None:
-    self._features = ChromeFeatures()
-    self._blink_features = ChromeBlinkFeatures()
-    self._js_flags = JSFlags()
+    self._features: ChromeFeatures = ChromeFeatures()
+    self._blink_features: ChromeBlinkFeatures = ChromeBlinkFeatures()
+    self._js_flags: JSFlags = JSFlags()
+    self._extensions: ChromeExtensions = ChromeExtensions()
     super().__init__(initial_data)
 
   def freeze(self) -> ChromeFlags:
@@ -62,6 +64,7 @@ class ChromeFlags(Flags):
     self._js_flags.freeze()
     self._features.freeze()
     self._blink_features.freeze()
+    self._extensions.freeze()
     return self
 
   def __getitem__(self, key):
@@ -76,6 +79,8 @@ class ChromeFlags(Flags):
     if (key == ChromeBlinkFeatures.DISABLE_FLAG and
         self._blink_features.disabled):
       return self._blink_features.disabled_str()
+    if key in ChromeExtensions.FLAGS:
+      return self._extensions[key]
     return super().__getitem__(key)
 
   @override
@@ -136,6 +141,9 @@ class ChromeFlags(Flags):
       return True
     if flag_name == self.USER_DATA_DIR_FLAG:
       self._set_user_data_dir(flag_value)
+      return True
+    if flag_name in ChromeExtensions.FLAGS:
+      self._extensions.set(flag_name, flag_value, should_override)
       return True
     if candidate := self._find_js_flag(flag_name):
       js_flags = JSFlags()
@@ -204,6 +212,10 @@ class ChromeFlags(Flags):
   def js_flags(self) -> JSFlags:
     return self._js_flags
 
+  @property
+  def extensions(self) -> ChromeExtensions:
+    return self._extensions
+
   def has_enable_benchmarking_field_trials(self):
     # Enable the benchmarking extension with field trial configs which
     # requires a special value. See `ShouldUseFieldTrialTestingConfig()`.
@@ -240,23 +252,25 @@ class ChromeFlags(Flags):
     self.features.merge(other.features)
     self.blink_features.merge(other.blink_features)
     self.js_flags.merge(other.js_flags)
+    self.extensions.merge(other.extensions)
     for name, value in other.base_items():
       self.set(name, value)
 
-  def base_items(self) -> Iterable[Tuple[str, Optional[str]]]:
+  def base_items(self) -> Iterable[Tuple[str, str | None]]:
     yield from super().items()
 
   @override
-  def items(self) -> Iterable[Tuple[str, Optional[str]]]:  # type: ignore
+  def items(self) -> Iterable[Tuple[str, str | None]]:  # type: ignore
     yield from self.base_items()
     if self._js_flags:
       yield (self._JS_FLAG, str(self.js_flags))
     yield from self.features.items()
     yield from self.blink_features.items()
+    yield from self.extensions.items()
 
   def __bool__(self) -> bool:
     return bool(self.data) or bool(self._js_flags) or bool(
-        self._features) or bool(self._blink_features)
+        self._features) or bool(self._blink_features) or bool(self._extensions)
 
 
 class ChromeBaseFeatures(Freezable, abc.ABC):
