@@ -302,7 +302,7 @@ class WprBase(abc.ABC):
     if self._log_file:
       self._log_file.close()
       self._log_file = None
-    if self._process:
+    if self._process and force_shutdown:
       self._platform.terminate_gracefully(self._process, timeout=1)
     self._process = None
     self._stop_forward_ports()
