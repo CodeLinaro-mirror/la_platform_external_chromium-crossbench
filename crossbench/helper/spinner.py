@@ -7,15 +7,21 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from typing import Iterable
+from typing import Final, Iterable
 
+CLEAR_END: Final[str] = "\x1b[J"
+STORE_CURSOR_POS: Final[str] = "\x1b[s"
+RESTORE_CURSOR_POS: Final[str] = "\x1b[u"
 
 class Spinner:
   CURSORS = "◐◓◑◒"
 
-  def __init__(self, sleep: float = 0.5) -> None:
-    self._is_running = False
-    self._sleep_time = sleep
+  def __init__(self, sleep: float = 0.5, title: str = "") -> None:
+    self._is_running: bool = False
+    self._sleep_time_seconds: float = sleep
+    self._title: str = title
+    self._message: str = ""
+    self._cursor: str = " "
 
   def __enter__(self) -> None:
     # Only enable the spinner if the output is an interactive terminal.
@@ -34,15 +40,31 @@ class Spinner:
       yield from Spinner.CURSORS
 
   def _spin(self) -> None:
-    stdout = sys.stdout
     for cursor in self._cursors():
+      self._cursor = cursor
       if not self._is_running:
         return
-      # Print the current wait-cursor and send a carriage return to move to the
-      # start of the line.
-      stdout.write(f" {cursor}\r")
-      stdout.flush()
+      self._write_message()
       self._sleep()
 
   def _sleep(self) -> None:
-    time.sleep(self._sleep_time)
+    time.sleep(self._sleep_time_seconds)
+
+  def write(self, message: str) -> None:
+    self._message = message
+    self._write_message()
+
+  @property
+  def title(self) -> str:
+    return self._title
+
+  @title.setter
+  def title(self, title: str) -> None:
+    self._title = title
+    self._write_message()
+
+  def _write_message(self) -> None:
+    stdout = sys.stdout
+    stdout.write(f"{STORE_CURSOR_POS} {self._cursor} "
+                 f"{self._title}{self._message}{CLEAR_END}{RESTORE_CURSOR_POS}")
+    stdout.flush()

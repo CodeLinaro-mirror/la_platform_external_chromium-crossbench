@@ -130,17 +130,15 @@ class ChromeDownloader(Downloader):
       channel = version.channel_name
 
     milestone_filter: str = ""
-    label: str = str(requested_channel)
     if not version.is_channel_version:
       milestone: int = version.major
-      label = f"M{milestone}"
       milestone_filter = f"version>={milestone},version<{milestone+1}"
 
     url = self.VERSION_URL.format(
         platform=platform,
         channel=channel,
         filter=f"{milestone_filter},{channel_filter}&")
-    logging.debug("LIST ALL VERSIONS for %s: %s", label, url)
+    self.info(f"Listing all versions at {url}")
     version_urls: List[Tuple[BrowserVersion, str]] = []
     try:
       response = url_helper.get(url, retry=3, timeout=100)
@@ -156,7 +154,7 @@ class ChromeDownloader(Downloader):
           f"Could not find version {version} "
           f"for {self._browser_platform.name} {self._browser_platform.machine} "
       ) from e
-    logging.debug("FILTERING %d CANDIDATES", len(version_urls))
+    self.info(f"Filtering {len(version_urls)} candidates")
     return self._filter_candidate_urls(version_urls)
 
   def _create_version_url(
@@ -169,7 +167,7 @@ class ChromeDownloader(Downloader):
   def _find_exact_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
     # TODO: respect channel
     version, test_url = self._create_version_url(self.requested_version)
-    logging.debug("LIST VERSIONS for M%s: %s", self.requested_version, test_url)
+    self.info(f"LIST VERSIONS at {test_url}")
     return self._filter_candidate_urls([(version, test_url)])
 
   def _filter_candidate_urls(
@@ -178,6 +176,7 @@ class ChromeDownloader(Downloader):
     versions_urls.sort(key=lambda version_url: version_url[0], reverse=True)
     # Iterate from new to old version and and the first one that is older or
     # equal than the requested version.
+    access_error: str = ""
     for version, url in versions_urls:
       if not self.requested_version.contains(version):
         logging.debug("Skipping download candidate: %s %s", version, url)
@@ -192,9 +191,15 @@ class ChromeDownloader(Downloader):
           result = self.host_platform.sh_stdout(self.gsutil, "ls", archive_url)
         except SubprocessError as e:
           logging.debug("gsutil failed: %s", e)
+          if stderr := e.stderr:
+            stderr_str = stderr.decode("utf-8")
+            if "AccessDeniedException" in stderr_str:
+              access_error = stderr_str
           continue
         if result:
           return archive_version, archive_url
+    if access_error:
+      raise ValueError(f"Could not load version: {access_error}")
     return self.requested_version, None
 
   @override
