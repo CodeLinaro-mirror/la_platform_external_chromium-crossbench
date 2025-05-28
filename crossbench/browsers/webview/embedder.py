@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+import logging
+from typing import TYPE_CHECKING, Sequence, Tuple
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -27,6 +28,7 @@ class WebviewEmbedder(Webview):
     # Webview will be started by the Embedder. Driver will be started
     # by the ProbeContext
     # TODO(zbikowski): set up WV flags and restart embedder process
+    self._log_browser_start(())
     self._is_running = True
 
   @override
@@ -60,3 +62,11 @@ class WebviewEmbedder(Webview):
       "androidProcess", f"{self.android_package}:search")
     options.add_experimental_option("androidUseRunningApp", True)
     return options
+
+  @override
+  def _log_browser_start(self,
+                         args: Tuple[str, ...],
+                         driver_path: pth.AnyPath | None = None) -> None:
+    super()._log_browser_start(args, driver_path)
+    logging.info("📱 STARTING BROWSER Embedder: %s",
+                 self.platform.app_version(self.android_package))
