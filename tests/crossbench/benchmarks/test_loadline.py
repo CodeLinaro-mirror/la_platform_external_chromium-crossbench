@@ -16,7 +16,7 @@ from typing_extensions import override
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
                                             LoadLine1TabletBenchmark)
-from crossbench.benchmarks.loadline.loadline_1 import LoadLinePageFilter
+from crossbench.benchmarks.loadline.loadline import LoadLinePageFilter
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -31,7 +31,7 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
   @override
   def setUp(self):
     super().setUp()
-    self.setup_loadline_config()
+    self.setup_loadline_configs()
 
   @override
   def story_filter(  # pylint: disable=arguments-differ

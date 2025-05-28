@@ -4,98 +4,50 @@
 
 from __future__ import annotations
 
-import abc
-import argparse
-import logging
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Tuple, Type
 
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
 from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
-from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
-from crossbench.benchmarks.loading.config.pages import PagesConfig
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
-                                                             LoadingPageFilter)
 from crossbench.flags.base import Flags
+from crossbench.benchmarks.loadline.loadline import (
+    LoadLineProbe, LoadLineBenchmark)
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
-from crossbench.probes.probe import Probe, ProbeContext
-from crossbench.probes.results import LocalProbeResult
+from crossbench.probes.probe import ProbeContext
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-
-CONFIG_DIR: pth.LocalPath = config.config_dir()
-LOADLINE_DIR: pth.LocalPath = CONFIG_DIR / "benchmark" / "loadline"
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
 VERSION_STRING = "1.1.0"
 
 
-class LoadLinePageFilter(LoadingPageFilter):
-  """LoadLine benchmark for phone/tablet."""
-  CAN_COMBINE_STORIES: bool = False
-
-  @classmethod
-  def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
-    page_config_group = parser.add_mutually_exclusive_group()
-    cls.add_page_config_arg(page_config_group)
-
-  @classmethod
-  @override
-  def default_stories(cls) -> Tuple[Page, ...]:
-    return cls.all_stories()
-
-  @classmethod
-  @override
-  def all_stories(cls) -> Tuple[Page, ...]:
-    return ()
-
-
-class LoadLine1Probe(BenchmarkProbeMixin, Probe):
-  IS_GENERAL_PURPOSE = False
+class LoadLine1Probe(LoadLineProbe):
   NAME = "loadline_probe"
+  BENCHMARK_NAME = "LoadLine"
+  BENCHMARK_VERSION = VERSION_STRING
 
   @override
   def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
     return LoadLine1ProbeContext
 
   @override
-  def log_browsers_result(self, group: BrowsersRunGroup) -> None:
-    logging.info("-" * 80)
-    logging.critical("LoadLine Benchmark (%s)", VERSION_STRING)
-    logging.critical("LoadLine results:")
-    logging.info("- " * 40)
-    logging.critical(
-        tabulate(
-            pd.read_csv(
-                group.get_local_probe_result_path(self).with_suffix(".csv")),
-            headers="keys",
-            tablefmt="plain"))
-
-  @override
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_file = group.get_local_probe_result_path(self).with_suffix(".csv")
-    self._compute_score(group).to_csv(csv_file)
-    return LocalProbeResult(csv=(csv_file,))
-
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
     loadline_result: pth.LocalPath | None = None
     for result in all_results:
-      # Look for the "loadline/benchmark_score" trace processor query result.
+      # Look for the trace processor query result.
       if result.name == "loadline_benchmark_score.csv":
         loadline_result = result
         break
-    assert loadline_result is not None, "LoadLine: query result not found"
+    assert loadline_result is not None, f"{self.NAME}: query result not found"
 
     df = pd.read_csv(loadline_result)
     df = df.groupby(["cb_browser",
@@ -130,53 +82,18 @@ class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
     return self.empty_result()
 
 
-class LoadLine1Benchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS = LoadLinePageFilter
+class LoadLine1Benchmark(LoadLineBenchmark):
   PROBES = (LoadLine1Probe,)
   DEFAULT_REPETITIONS = 100
 
-  _page_config: PagesConfig | None = None
+  @classmethod
+  def _base_dir(cls) -> pth.LocalPath:
+    return config.config_dir() / "benchmark" / "loadline"
 
   @classmethod
   @override
-  def requires_separate(cls, args: argparse.Namespace) -> bool:
-    # Perfetto metrics used in the benchmark require a separate Perfetto
-    # session for each run.
-    return True
-
-  @classmethod
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "probe_config.hjson"
-
-  @classmethod
-  @abc.abstractmethod
-  @override
-  def default_network_config_path(cls) -> pth.LocalPath:
-    pass
-
-  @classmethod
-  @abc.abstractmethod
-  def default_pages_config_path(cls) -> pth.LocalPath:
-    pass
-
-  @classmethod
-  @override
-  def get_pages_config(
-      cls, args: Optional[argparse.Namespace] = None) -> PagesConfig:
-    # Use manual caching, since args is not hashable.
-    if not args or not args.pages_config:
-      if cls._page_config is None:
-        cls._page_config = PagesConfig.parse(cls.default_pages_config_path())
-      return cls._page_config
-    if args.config:
-      raise argparse.ArgumentTypeError(
-          "--config is not supported with loadline.")
-    return args.pages_config
-
-  @classmethod
-  @override
-  def all_story_names(cls) -> Sequence[str]:
-    return tuple(page.any_label for page in cls.get_pages_config().pages)
+    return cls._base_dir() / "probe_config.hjson"
 
 
 class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
@@ -187,12 +104,12 @@ class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
   @classmethod
   @override
   def default_pages_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "page_config_phone.hjson"
+    return cls._base_dir() / "page_config_phone.hjson"
 
   @classmethod
   @override
   def default_network_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "network_config_phone.hjson"
+    return cls._base_dir() / "network_config_phone.hjson"
 
   @classmethod
   @override
@@ -208,12 +125,12 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
   @classmethod
   @override
   def default_pages_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "page_config_tablet.hjson"
+    return cls._base_dir() / "page_config_tablet.hjson"
 
   @classmethod
   @override
   def default_network_config_path(cls) -> pth.LocalPath:
-    return pth.LocalPath(LOADLINE_DIR) / "network_config_tablet.hjson"
+    return cls._base_dir() / "network_config_tablet.hjson"
 
   @classmethod
   @override
@@ -237,8 +154,7 @@ class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return (pth.LocalPath(LOADLINE_DIR) /
-                "probe_config_experimental_lightweight.hjson")
+    return cls._base_dir() / "probe_config_experimental_lightweight.hjson"
 
   @classmethod
   @override
@@ -256,8 +172,7 @@ class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return (pth.LocalPath(LOADLINE_DIR) /
-                "probe_config_experimental_lightweight.hjson")
+    return cls._base_dir() / "probe_config_experimental_lightweight.hjson"
 
   @classmethod
   @override

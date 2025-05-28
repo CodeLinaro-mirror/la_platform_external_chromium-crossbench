@@ -10,7 +10,8 @@ from pyfakefs import fake_filesystem_unittest
 import crossbench.path
 from crossbench import plt
 from crossbench.benchmarks.loadline import (
-    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark)
+    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
+    LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark)
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
@@ -103,7 +104,8 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.assertTrue(probes)
 
   def test_parse_loadline_configs(self):
-    for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark):
+    for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
+                LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
       probe_config = cls.default_probe_config_path()
       self._add_real_file(probe_config)
       probes = ProbeListConfig.parse_path(probe_config).probes
