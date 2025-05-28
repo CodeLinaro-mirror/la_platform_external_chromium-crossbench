@@ -120,7 +120,7 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
   # TODO: speed up --browser=chrome-M111 and add it.
   _run_cli(
       "sp2.1",
-      "--browser=chrome-M113",
+      "--browser=chrome-M113-any",
       "--browser=chrome-111.0.5563.110",
       "--browser=chrome-latest-dev",
       "--headless",
