@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
+import atexit
 import logging
+import shlex
 from typing import TYPE_CHECKING, Sequence, Tuple
 
 from selenium import webdriver
@@ -26,15 +28,26 @@ class WebviewEmbedder(Webview):
             session: BrowserSessionRunGroup) -> None:
     # Start is a no-op. Embedder activity will be started by the Benchmark.
     # Webview will be started by the Embedder. Driver will be started
-    # by the ProbeContext
-    # TODO(zbikowski): set up WV flags and restart embedder process
-    self._log_browser_start(())
+    # by the ProbeContext. We do, however, need to set up browser flags
+    # and kill any currently running Embedder app instances to make sure
+    # it picks up the new flags when started by the Benchmark.
+    self._backup_chrome_flags()
+    atexit.register(self._restore_chrome_flags)
+    args = self._get_browser_flags_for_session(session)
+    logging.debug("%s: setting flags file contents in %s", self,
+                  self._chrome_command_line_path)
+    self.platform.set_file_contents(
+        self._chrome_command_line_path,
+        shlex.join(("webview", *args)))
+    self.platform.sh("pkill", "-f", self.android_package)
+    self._log_browser_start(args)
     self._is_running = True
 
   @override
   def quit(self) -> None:  # pytype: disable=override-error
     # External code that started the driver is responsible for shutting it down.
     self._is_running = False
+    self._restore_chrome_flags()
     self._teardown_cache_dir()
 
   @override
