@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import dataclasses
+import datetime as dt
 import functools
 import logging
 import re
@@ -15,6 +16,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
 
 from typing_extensions import override
 
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
@@ -372,7 +374,10 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
   def dump_histograms(self, name: str) -> Dict[str, ChromeHistogramSample]:
     with self.run.actions(
         f"Probe({self.probe.name}) dump histograms {name}") as actions:
-      actions.show_url("chrome://histograms")
+      actions.show_url(
+          "chrome://histograms",
+          ready_state=ReadyState.COMPLETE,
+          timeout=dt.timedelta(seconds=10))
       actions.js(self.HISTOGRAM_SEND)
       actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, 10.0)
       data = actions.js(self.HISTOGRAM_DATA)
