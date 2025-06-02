@@ -13,10 +13,15 @@ Supported OS: MacOS, Android, Linux and Windows.
 
 ## Basic usage:
 ### Chromium Devs (with a full chromium checkout)
-Use the `./cb.py` script directly to run benchmarks (requires chrome's
-[vpython3](https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython.md))
+
+- Use the [`tools/perf/cb`](https://source.chromium.org/chromium/chromium/src/+/main:tools/perf/cb) helper script.
+
+Alternative:
+- Make sure to run `gclient sync` to get the latest crossbench roll.
+- Use a standalone [crossbench checkout](#checking-out-code) and run `./cb.py`.
 
 ### Standalone installation
+Note: The pip package is only irregularly updated and thus likely out of date.
 - Use `pip install crossbench`,
 - or use the "poetry" package manager, see the [development section](#development).
 
