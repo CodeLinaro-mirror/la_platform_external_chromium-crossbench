@@ -144,15 +144,28 @@ class ChromeHistogramsProbe(JsonResultProbe):
               "differences logged."
               "See tools/metrics/histograms/metadata/storage/histograms.xml"
               "or chrome://histograms for a list of available histograms."))
+    parser.add_argument(
+        "use_baseline",
+        aliases=("baseline",),
+        type=bool,
+        default=True,
+        help="Dump histograms at start to use as baseline")
     return parser
 
-  def __init__(self, metrics: Sequence[ChromeHistogramMetric]) -> None:
+  def __init__(self,
+               metrics: Sequence[ChromeHistogramMetric],
+               use_baseline: bool = True) -> None:
     super().__init__()
     self._metrics = metrics
+    self._use_baseline = use_baseline
 
   @property
   def metrics(self) -> Sequence[ChromeHistogramMetric]:
     return self._metrics
+
+  @property
+  def use_baseline(self) -> bool:
+    return self._use_baseline
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
@@ -372,7 +385,10 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
       return histograms
 
   def start(self) -> None:
-    self._baseline = self.dump_histograms("start")
+    if self.probe.use_baseline:
+      self._baseline = self.dump_histograms("start")
+    else:
+      self._baseline = {}
     super().start()
 
   def stop(self) -> None:
@@ -382,7 +398,9 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
   @override
   def to_json(self, actions: Actions) -> Json:
     del actions
-    assert self._baseline, "Did not extract start histograms"
+    assert self._baseline is not None, "Probe was not started"
+    if self.probe.use_baseline:
+      assert self._baseline, "Did not extract start histograms"
     assert self._delta, "Did not extract end histograms"
     json = {}
     for metric in self.probe.metrics:

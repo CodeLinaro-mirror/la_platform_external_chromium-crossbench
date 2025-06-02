@@ -186,6 +186,19 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         "Startup.FirstWebContents.NonEmptyPaint3_p50",
         "Startup.FirstWebContents.NonEmptyPaint3_p90",
     ])
+    self.assertEqual(probe.use_baseline, True)
+
+  def test_parse_config(self):
+    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.from_config({
+        "metrics": {
+            "PageLoad.PaintTiming.NavigationToFirstContentfulPaint": ["mean"]
+        },
+        "baseline": False,
+    })
+    self.assertListEqual([metric.name for metric in probe.metrics], [
+        "PageLoad.PaintTiming.NavigationToFirstContentfulPaint_mean",
+    ])
+    self.assertEqual(probe.use_baseline, False)
 
 
 if __name__ == "__main__":
