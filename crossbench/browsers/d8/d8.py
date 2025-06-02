@@ -86,7 +86,10 @@ class D8(Browser):
 
   @classmethod
   @override
-  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
+  def default_flags(cls,
+                    initial_data: FlagsData = None,
+                    milestone: int = 0) -> ChromeFlags:
+    del milestone
     return ChromeFlags(initial_data)
 
   @property

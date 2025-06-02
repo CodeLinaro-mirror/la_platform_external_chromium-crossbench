@@ -9,7 +9,8 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence, Tuple
+from typing import (TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence,
+                    Tuple)
 
 from ordered_set import OrderedSet
 
@@ -38,7 +39,10 @@ if TYPE_CHECKING:
 class Browser(abc.ABC):
 
   @classmethod
-  def default_flags(cls, initial_data: FlagsData = None) -> Flags:
+  def default_flags(cls,
+                    initial_data: FlagsData = None,
+                    milestone: int = 0) -> Flags:
+    del milestone
     return Flags(initial_data)
 
   @classmethod
@@ -93,7 +97,7 @@ class Browser(abc.ABC):
   def _init_flags(self, settings: Settings) -> Flags:
     assert not self._settings.js_flags, (
         f"{self} doesn't support custom js_flags")
-    return self.default_flags(settings.flags)
+    return self.default_flags(settings.flags, self.version.major)
 
   @property
   def platform(self) -> plt.Platform:

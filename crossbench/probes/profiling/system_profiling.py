@@ -438,7 +438,7 @@ class ProfilingProbe(Probe):
     if not self._spare_renderer_process:
       browser.features.disable("SpareRendererForSitePerProcess")
     if self._start_profiling_after_setup:
-      browser.flags.enable_benchmarking_extension()
+      browser.flags.enable_benchmarking_api()
     if self._sample_js:
       if browser.platform.is_linux:
         browser.js_flags.set("--perf-prof")

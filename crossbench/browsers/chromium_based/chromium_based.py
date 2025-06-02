@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 class ChromiumBased(Browser):
   MIN_HEADLESS_NEW_VERSION: int = 112
+  MIN_BENCHMARKING_EXTENSION_FLAG_MILESTONE: Final[int] = 139
   DEFAULT_FLAGS: Tuple[str, ...] = (
       "--no-default-browser-check",
       "--disable-component-update",
@@ -57,8 +58,10 @@ class ChromiumBased(Browser):
 
   @classmethod
   @override
-  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
-    return ChromeFlags(initial_data)
+  def default_flags(cls,
+                    initial_data: FlagsData = None,
+                    milestone: int = 0) -> ChromeFlags:
+    return ChromeFlags.for_milestone(initial_data, milestone)
 
   def __init__(self,
                label: str,
@@ -82,7 +85,7 @@ class ChromiumBased(Browser):
   def _init_flags(self, settings: Settings) -> ChromeFlags:
     flags: Flags = settings.flags
     js_flags: Flags = settings.js_flags
-    self._flags = self.default_flags(self.DEFAULT_FLAGS)
+    self._flags = self.default_flags(self.DEFAULT_FLAGS, self.version.major)
     self._flags.update(flags)
 
     if "--allow-background-interventions" in self._flags.data:

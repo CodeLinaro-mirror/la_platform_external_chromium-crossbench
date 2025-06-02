@@ -99,9 +99,9 @@ class AndroidProfilingContext(PosixProfilingContext):
     if (self.browser.platform.is_android and
         self.browser.attributes().is_chromium_based):
       chromium = cast(ChromiumBased, self.browser)
-      # Set `--enable-benchmarking` explicitly for
+      # Set `--enable-benchmarking-extension` explicitly for
       # retrieving Renderer PID, if needed.
-      chromium.flags.set("--enable-benchmarking")
+      chromium.flags.enable_benchmarking_api()
     self._stop_existing_simpleperf()
 
   def start(self) -> None:

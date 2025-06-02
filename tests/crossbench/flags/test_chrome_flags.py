@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from crossbench.flags.chrome import ChromeFlags
+from typing_extensions import override
+
+from crossbench.flags.chrome import ChromeFlags, ChromePreM139Flags
 from crossbench.flags.chrome_extensions import ChromeExtensions
 from crossbench.flags.known_chrome_flags import KNOWN_CHROME_FLAGS
 from crossbench.flags.known_js_flags import KNOWN_JS_FLAGS
@@ -12,6 +14,26 @@ from tests.crossbench.flags.test_flags import TestFlags
 
 class TestChromeFlags(TestFlags):
   CLASS = ChromeFlags
+
+  def test_for_milestone(self):
+    flags = self.CLASS.for_milestone()
+    self.assertEqual(type(flags), ChromeFlags)
+
+    flags = self.CLASS.for_milestone(milestone=0)
+    self.assertEqual(type(flags), ChromeFlags)
+
+    for milestone in range(80, 139):
+      flags = self.CLASS.for_milestone({}, milestone)
+      self.assertEqual(type(flags), ChromePreM139Flags)
+
+    flags = self.CLASS.for_milestone({}, 138)
+    self.assertEqual(type(flags), ChromePreM139Flags)
+    flags = self.CLASS.for_milestone({}, 139)
+    self.assertEqual(type(flags), ChromeFlags)
+
+    for milestone in range(140, 150):
+      flags = ChromeFlags.for_milestone({}, milestone)
+      self.assertEqual(type(flags), ChromeFlags)
 
   def test_js_flags(self):
     flags = self.CLASS({
@@ -467,16 +489,15 @@ class TestChromeFlags(TestFlags):
     field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
     self.assertEqual(
         str(field_trials.field_trial_flags), "--enable-field-trial-config")
+    # Post M139 --enable-benchmarking does not affect field trials.
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
         str(field_trials.field_trial_flags), "--enable-field-trial-config")
     field_trials.set(
         "--enable-benchmarking",
-        "enable-field-trial-config",
         should_override=True)
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config "
-        "--enable-benchmarking=enable-field-trial-config")
+        str(field_trials.field_trial_flags), "--enable-field-trial-config")
 
   def test_no_experiments_flags(self):
     empty = self.CLASS()
@@ -490,42 +511,41 @@ class TestChromeFlags(TestFlags):
     self.assertEqual(
         str(field_trials.no_experiments_flags),
         "--disable-field-trial-config --enable-benchmarking")
-    field_trials.set(
-        "--enable-benchmarking",
-        "enable-field-trial-config",
-        should_override=True)
+    field_trials.set("--enable-benchmarking", should_override=True)
     self.assertEqual(
-        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+        str(field_trials.no_experiments_flags),
+        "--disable-field-trial-config --enable-benchmarking")
 
   def test_set_enable_benchmarking_extension(self):
     flags = self.CLASS()
-    flags.enable_benchmarking_extension()
-    self.assertEqual(str(flags), "--enable-benchmarking")
+    flags.enable_benchmarking_api()
+    self.assertEqual(str(flags), "--enable-benchmarking-api")
 
     flags = self.CLASS.parse("--foo")
-    flags.enable_benchmarking_extension()
-    self.assertEqual(str(flags), "--foo --enable-benchmarking")
+    flags.enable_benchmarking_api()
+    self.assertEqual(str(flags), "--foo --enable-benchmarking-api")
 
-    flags = self.CLASS.parse("--enable-benchmarking")
-    flags.enable_benchmarking_extension()
-    self.assertEqual(str(flags), "--enable-benchmarking")
+    flags = self.CLASS.parse("--enable-benchmarking-api")
+    flags.enable_benchmarking_api()
+    self.assertEqual(str(flags), "--enable-benchmarking-api")
 
     flags = self.CLASS.parse("--enable-benchmarking=enable-field-trial-config")
-    flags.enable_benchmarking_extension()
+    flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), "--enable-benchmarking=enable-field-trial-config")
+        str(flags), ("--enable-benchmarking=enable-field-trial-config "
+                     "--enable-benchmarking-api"))
 
     flags = self.CLASS.parse("--enable-field-trial-config")
-    flags.enable_benchmarking_extension()
+    flags.enable_benchmarking_api()
     self.assertEqual(
         str(flags), "--enable-field-trial-config "
-        "--enable-benchmarking=enable-field-trial-config")
+        "--enable-benchmarking-api")
 
     flags = self.CLASS.parse("--foo --enable-field-trial-config --bar")
-    flags.enable_benchmarking_extension()
+    flags.enable_benchmarking_api()
     self.assertEqual(
         str(flags), "--foo --enable-field-trial-config --bar "
-        "--enable-benchmarking=enable-field-trial-config")
+        "--enable-benchmarking-api")
 
   def test_load_extensions(self):
     flags = self.CLASS()
@@ -602,6 +622,80 @@ class TestChromeFlags(TestFlags):
     with self.assertRaisesRegex(ValueError, "disable-extensions"):
       flags["--disable-extensions"] = "asdfasdfasd"
 
+
+class TestChromePreM139Flags(TestChromeFlags):
+  CLASS = ChromePreM139Flags
+
+  @override
+  def test_no_experiments_flags(self):
+    empty = self.CLASS()
+    self.assertFalse(empty.no_experiments_flags)
+    some_flags = self.CLASS(("--foo", "--bar"))
+    self.assertFalse(some_flags.no_experiments_flags)
+    field_trials = self.CLASS(("--disable-field-trial-config", "--foo"))
+    self.assertEqual(
+        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+    field_trials.set("--enable-benchmarking")
+    self.assertEqual(
+        str(field_trials.no_experiments_flags),
+        "--disable-field-trial-config --enable-benchmarking")
+    field_trials.set(
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
+    self.assertEqual(
+        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+
+  @override
+  def test_set_enable_benchmarking_extension(self):
+    flags = self.CLASS()
+    flags.enable_benchmarking_api()
+    self.assertEqual(str(flags), "--enable-benchmarking")
+
+    flags = self.CLASS.parse("--foo")
+    flags.enable_benchmarking_api()
+    self.assertEqual(str(flags), "--foo --enable-benchmarking")
+
+    flags = self.CLASS.parse("--enable-benchmarking")
+    flags.enable_benchmarking_api()
+    self.assertEqual(str(flags), "--enable-benchmarking")
+
+    flags = self.CLASS.parse("--enable-benchmarking=enable-field-trial-config")
+    flags.enable_benchmarking_api()
+    self.assertEqual(
+        str(flags), "--enable-benchmarking=enable-field-trial-config")
+
+    flags = self.CLASS.parse("--enable-field-trial-config")
+    flags.enable_benchmarking_api()
+    self.assertEqual(
+        str(flags), "--enable-field-trial-config "
+        "--enable-benchmarking=enable-field-trial-config")
+
+    flags = self.CLASS.parse("--foo --enable-field-trial-config --bar")
+    flags.enable_benchmarking_api()
+    self.assertEqual(
+        str(flags), "--foo --enable-field-trial-config --bar "
+        "--enable-benchmarking=enable-field-trial-config")
+
+  @override
+  def test_field_trial_flags(self):
+    empty = self.CLASS()
+    self.assertFalse(empty.field_trial_flags)
+    some_flags = self.CLASS(("--foo", "--bar"))
+    self.assertFalse(some_flags.field_trial_flags)
+    field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
+    self.assertEqual(
+        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+    field_trials.set("--enable-benchmarking")
+    self.assertEqual(
+        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+    field_trials.set(
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
+    self.assertEqual(
+        str(field_trials.field_trial_flags), "--enable-field-trial-config "
+        "--enable-benchmarking=enable-field-trial-config")
 
 del TestFlags
 

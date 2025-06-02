@@ -446,6 +446,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
                             name, raw_browser_data, flag_variants)
     for variant in flag_variants:
       label = labels_lookup[variant]
+      # This will take the newest flag implementation by default.
       browser_flags = browser_cls.default_flags(variant.flags)
       with exception.annotate_argparsing("Creating network config"):
         network_config = browser_config.network or args.network

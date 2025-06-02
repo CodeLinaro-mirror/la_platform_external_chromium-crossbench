@@ -89,8 +89,10 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
-    return ChromeFlags(initial_data)
+  def default_flags(cls,
+                    initial_data: FlagsData = None,
+                    milestone: int = 0) -> ChromeFlags:
+    return ChromeFlags.for_milestone(initial_data, milestone)
 
   def __init__(self,
                label: str,
