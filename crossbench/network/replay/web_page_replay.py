@@ -308,7 +308,7 @@ class WprBase(abc.ABC):
     self._stop_forward_ports()
 
   def _shut_down(self) -> None:
-    logging.info("WPR: shutting down recorder.")
+    logging.info("WPR: shutting down %s.", self.NAME)
     try:
       self._open_wpr_cmd_url("command-exit", verbose=False)
     except url_helper.RequestException:
