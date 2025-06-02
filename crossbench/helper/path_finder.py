@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Iterator, Optional, Tuple
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence, Tuple
 
 from typing_extensions import override
 
@@ -107,6 +107,9 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
   """Finds a custom-built binary in either a given out/BUILD dir or
   tries to find it in build dirs in common known chromium checkout locations."""
 
+  BUILD_DIR_NAMES: Final[Sequence[str]] = ("Release", "release", "rel",
+                                           "Optdebug", "optdebug", "opt")
+
   def __init__(
       self,
       platform: Platform,
@@ -122,13 +125,15 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
   def _iterate_candidate_bin_paths(self) -> Iterator[pth.AnyPath]:
     for candidate_dir in self._candidates:
       yield candidate_dir / self._binary_name
+      for build in self.BUILD_DIR_NAMES:
+        yield candidate_dir / build / self._binary_name
 
     for candidate in default_chromium_candidates(self.platform):
       candidate_out = candidate / "out"
       if not self.platform.is_dir(candidate_out):
         continue
       # TODO: support remote glob
-      for build in ("Release", "release", "rel", "Optdebug", "optdebug", "opt"):
+      for build in self.BUILD_DIR_NAMES:
         yield candidate_out / build / self._binary_name
 
   @override

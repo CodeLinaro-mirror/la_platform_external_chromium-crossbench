@@ -8,6 +8,7 @@ import atexit
 import logging
 import re
 import subprocess
+import sys
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, cast
 
 from immutabledict import immutabledict
@@ -22,6 +23,8 @@ from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.helper import wait
+from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
+from crossbench.helper.spinner import Spinner
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.bin import Binaries
@@ -202,9 +205,9 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
                label: str,
                path: Optional[pth.AnyPath] = None,
                settings: Optional[Settings] = None) -> None:
-    if self.is_apk_helper(path):
+    if not self.is_apk_helper(path):
       raise ValueError(
-          "Locally built chrome version needs package, got empty path")
+          "Locally built chrome version does not work with packaged apks.")
     assert settings, "Android browser needs custom settings and platform"
     assert path, "Got invalid path"
     self._package_info: immutabledict[str, Any] = self._parse_package_info(
@@ -233,8 +236,24 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   @override
   def _setup_binary(self) -> None:
     super()._setup_binary()
-    self.host_platform.sh_stdout(self.path, "install",
-                                 f"--device={self.platform.serial_id}")
+    with Spinner():
+      sys.stdout.write(f"   Installing {self.path.name} on {self.platform}\r")
+      self.host_platform.sh_stdout(self.path, "install",
+                                   f"--device={self.platform.serial_id}")
+
+  @override
+  def _find_driver(self) -> pth.AnyPath:
+    if self._driver_path:
+      return self._driver_path
+    assert self.app_path
+    if build_dir := self.local_build_dir():
+      logging.info("Looking for local chromedriver in %s", build_dir.parent)
+      finder = ChromiumBuildBinaryFinder(self.host_platform, "chromedriver",
+                                         (build_dir.parent,))
+      if driver_path := finder.path:
+        return driver_path
+    raise ValueError("Chrome APK helper needs an explicit chrome driver. "
+                     "Use --driver-path or a custom browser config.")
 
 
 class AutoForwardingRemoteWebDriver(RemoteWebDriver):

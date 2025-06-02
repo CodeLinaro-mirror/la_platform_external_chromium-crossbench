@@ -59,7 +59,12 @@ class ChromiumBasedWebDriver(
     return self.version.major == 0 or self.is_locally_compiled()
 
   def is_locally_compiled(self) -> bool:
-    return pth.LocalPath(self.app_path.parent / "args.gn").exists()
+    return bool(self.local_build_dir())
+
+  def local_build_dir(self) -> pth.LocalPath | None:
+    if path := helper.find_build_dir(self.path, self.host_platform):
+      return self.host_platform.local_path(path)
+    return None
 
   def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
                        cmd_args: dict):

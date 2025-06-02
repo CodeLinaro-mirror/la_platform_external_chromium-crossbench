@@ -107,6 +107,7 @@ They need to have [developer mode and usb-debugging enabled](https://developer.a
 | `--browser=adb:chrome-stable` | Use Chrome stable on a single attached adb device. Note this will fail if there is more than one attached device. |
 |  `--browser=Pixel_7_pro:chrome-canary` | Use Chrome canary on an attached Pixel 7 Pro device. Note this will fail if there is more than one Pixel 7 pro attached.|
 | `--browser=2900FF00BB:chrome-dev` | Use Chrome dev on an attached adb device with the serial id `2900FF00BB`. Use `adb devices -l` to find the serial id.|
+| `--browser=adb:out/arm64.apk/bin/chrome_public_apk` | Use a locally built [chrome_public_apk helper](https://chromium.googlesource.com/chromium/src/+/main/docs/android_build_instructions.md#build-the-full-browser) with an automatically chosen locally build chromedriver from an adjacent build folder. This will also auto-install chrome on your device. |
 
 #### Browser Config File
 For more complex scenarios you can use a

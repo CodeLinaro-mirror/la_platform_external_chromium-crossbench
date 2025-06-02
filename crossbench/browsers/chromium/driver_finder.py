@@ -27,7 +27,29 @@ if TYPE_CHECKING:
 
 
 class ChromeDriverFinder:
-  driver_path: pth.LocalPath
+
+  # Using CFT as abbreviation for Chrome For Testing here.
+  CFT_MIN_MILESTONE = 115
+  CFT_BASE_URL: str = "https://googlechromelabs.github.io/chrome-for-testing"
+  CFT_VERSION_URL: str = f"{CFT_BASE_URL}/{{version}}.json"
+  CFT_LATEST_URL: str = f"{CFT_BASE_URL}/LATEST_RELEASE_{{major}}"
+
+  CFT_PLATFORM: Final[Dict[Tuple[str, str], str]] = {
+      ("linux", "x64"):
+          "linux64",
+      ("macos", "x64"):
+          "mac-x64",
+      ("macos", "arm64"):
+          "mac-arm64",
+      ("win", "ia32"):
+          "win32",
+      ("win", "x64"):
+          "win64",
+      # TODO(crbug/418674629): There is currently no Windows ARM64 version of
+      # Chrome for Testing, so we get ChromeDriver for win64 instead.
+      ("win", "arm64"):
+          "win64",
+  }
 
   def __init__(self, browser: ChromiumBasedWebDriver) -> None:
     self.browser = browser
@@ -53,14 +75,15 @@ class ChromeDriverFinder:
   def find_local_build(self) -> pth.LocalPath:
     assert self.browser.app_path
     # assume it's a local build
-    lookup_dir = pth.LocalPath(self.browser.app_path.parent)
+    lookup_dir: pth.LocalPath = self.host_platform.local_path(
+        self.browser.app_path.parent)
     driver_path = lookup_dir / "chromedriver"
-    if self.platform.is_win:
+    if self.host_platform.is_win:
       driver_path = driver_path.with_suffix(".exe")
-    if self.platform.is_file(driver_path):
+    if self.host_platform.is_file(driver_path):
       return driver_path
     error_message: List[str] = [f"Driver '{driver_path}' does not exist."]
-    if helper.is_build_dir(lookup_dir, self.platform):
+    if helper.is_build_dir(lookup_dir, self.host_platform):
       error_message += [helper.build_chromedriver_instructions(lookup_dir)]
     else:
       error_message += ["Please manually provide a chromedriver binary."]
@@ -143,23 +166,6 @@ class ChromeDriverFinder:
       return None
     return maybe_drivers[0]
 
-  # Using CFT as abbreviation for Chrome For Testing here.
-  CFT_MIN_MILESTONE = 115
-  CFT_BASE_URL: str = "https://googlechromelabs.github.io/chrome-for-testing"
-  CFT_VERSION_URL: str = f"{CFT_BASE_URL}/{{version}}.json"
-  CFT_LATEST_URL: str = f"{CFT_BASE_URL}/LATEST_RELEASE_{{major}}"
-
-  CFT_PLATFORM: Final[Dict[Tuple[str, str], str]] = {
-      ("linux", "x64"): "linux64",
-      ("macos", "x64"): "mac-x64",
-      ("macos", "arm64"): "mac-arm64",
-      ("win", "ia32"): "win32",
-      ("win", "x64"): "win64",
-      # TODO(crbug/418674629): There is currently no Windows ARM64 version of
-      # Chrome for Testing, so we get ChromeDriver for win64 instead.
-      ("win", "arm64"): "win64",
-  }
-
   def _get_cft_url(self, milestone: int) -> Tuple[str, Optional[str]]:
     logging.debug("ChromeDriverFinder: Looking up chrome-for-testing version.")
     platform_name: str | None = self.CFT_PLATFORM.get(self.host_platform.key)
@@ -224,7 +230,8 @@ class ChromeDriverFinder:
     logging.debug(
         "ChromeDriverFinder: "
         "Looking upe old-style stable version M%s", milestone)
-    assert milestone < self.CFT_MIN_MILESTONE
+    assert milestone < self.CFT_MIN_MILESTONE, (
+        f"Expected requested M{milestone} < M{self.CFT_MIN_MILESTONE}")
     listing_url = f"{self.PRE_115_STABLE_URL}/index.html"
     driver_version: str | None = self._get_pre_115_driver_version(milestone)
     if not driver_version:
