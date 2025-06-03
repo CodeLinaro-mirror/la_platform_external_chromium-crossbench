@@ -13,13 +13,13 @@ import math
 import re
 import shlex
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable, List,
-                    Optional, Sequence, Type, TypeVar, cast)
+                    Optional, Sequence, Tuple, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
 
-from crossbench import path as pth
 from crossbench import hjson as cb_hjson
+from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench import plt
@@ -347,13 +347,15 @@ class ObjectParser:
           f"Invalid {name}: {repr(value)}, {e}") from e
 
   PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
+  INVALID_FUZZY_URL_RE = re.compile(r"[^./]+(?:/.+)?")
+  COMMON_URL_SCHEMES: Final[Tuple[str, ...]] = ("http", "https", "about",
+                                                "file", "data", "chrome")
 
   @classmethod
   def fuzzy_url_str(cls,
                     value: str,
                     name: str = "url",
-                    schemes: Sequence[str] = ("http", "https", "about", "file",
-                                              "data", "chrome"),
+                    schemes: Sequence[str] = COMMON_URL_SCHEMES,
                     default_scheme: str = "https") -> str:
     parsed = cls.fuzzy_url(value, name, schemes, default_scheme)
     return urlparse.urlunparse(parsed)
@@ -362,26 +364,30 @@ class ObjectParser:
   def fuzzy_url(cls,
                 value: str,
                 name: str = "url",
-                schemes: Sequence[str] = ("http", "https", "about", "file",
-                                          "data", "chrome"),
+                schemes: Sequence[str] = COMMON_URL_SCHEMES,
                 default_scheme: str = "https") -> urlparse.ParseResult:
     assert default_scheme, "missing default scheme value"
     value = cls.non_empty_str(value, name)
+    url = value
     if PathParser.value_has_path_prefix(value):
-      value = f"file://{value}"
+      url = f"file://{value}"
     else:
       parsed = cls.base_url(value)
       if not parsed.scheme:
-        value = f"{default_scheme}://{value}"
+        url = f"{default_scheme}://{value}"
       # Check if this was a url without a scheme but with ports, which gets
       # "wrongly" parsed and the host ends up in result.scheme and port and path
       # are merged into result.path.
       if parsed.scheme not in schemes and not parsed.netloc:
         if cls.PORT_URL_PATH_RE.match(parsed.path):
           # foo.com:8080/test => https://foo.com:8080/test
-          value = f"{default_scheme}://{value}"
+          url = f"{default_scheme}://{value}"
+        elif parsed.path == "localhost":
+          pass
+        elif cls.INVALID_FUZZY_URL_RE.fullmatch(parsed.path):
+          raise argparse.ArgumentTypeError(f"Invalid {name}: {repr(value)}")
       schemes = tuple(schemes) + (default_scheme,)
-    return cls.url(value, name, schemes)
+    return cls.url(url, name, schemes)
 
   @classmethod
   def url(cls,

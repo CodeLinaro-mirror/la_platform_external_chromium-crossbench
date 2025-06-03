@@ -12,6 +12,7 @@ import time as py_time
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
 
 from crossbench.action_runner.action.enums import ReadyState
+from crossbench.cli import ui
 from crossbench.helper.durations import TimeScope
 from crossbench.parse import ObjectParser
 
@@ -174,8 +175,10 @@ class Actions(TimeScope):
     | action 2s | wait 2s | => total time is 4s
     | action 4s | wait 2s | => total time is 6s
     """
-    self._assert_is_active()
-    self._runner.wait(time, absolute_time)
+    delta: dt.timedelta = self.timing.timeout_timedelta(time, absolute_time)
+    with ui.countdown(delta):
+      self._assert_is_active()
+      self._runner.wait(time, absolute_time=True)
 
   @contextlib.contextmanager
   def wait_until(self,
@@ -190,8 +193,15 @@ class Actions(TimeScope):
     """
     self._assert_is_active()
     delta: dt.timedelta = self.timing.timeout_timedelta(timeout, absolute_time)
-    end_time: float = py_time.time() + delta.total_seconds()
-    yield
-    time_left = end_time - py_time.time()
-    if time_left > 0:
-      self._runner.wait(time_left, absolute_time=True)
+    start_time: float = py_time.time()
+    end_time: float = start_time + delta.total_seconds()
+    with ui.countdown(delta):
+      yield
+      time_left = end_time - py_time.time()
+      if time_left > 0:
+        self._runner.wait(time_left, absolute_time=True)
+      else:
+        run_duration = dt.timedelta(seconds=py_time.time() - start_time)
+        logging.info(
+            "Action took longer (%s) than expected action duration (%s).",
+            run_duration, delta)

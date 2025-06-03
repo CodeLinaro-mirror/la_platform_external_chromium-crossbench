@@ -7,12 +7,12 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, cast, Any, Callable, Optional, Sequence, Tuple
+from typing import (TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple,
+                    cast)
 
 from typing_extensions import override
 
 from crossbench.action_runner.action import all as i_action
-from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
 from crossbench.action_runner.default_bond_action_runner import \
@@ -136,24 +136,10 @@ class DefaultActionRunner(ActionRunner):
 
   @override
   def get(self, run: Run, action: i_action.GetAction) -> None:
-    # TODO: potentially refactor the timing and logging out to the base class.
-    start_time = time.time()
-    expected_end_time = start_time + action.duration.total_seconds()
-
     with run.actions(f"Get {action.url}", measure=False) as actions:
-      actions.show_url(action.url, str(action.target), action.ready_state,
-                       action.timeout)
-
-      if action.ready_state != ReadyState.ANY:
-        return
-      # Wait for the given duration from the start of the action.
-      wait_time_seconds = expected_end_time - time.time()
-      if wait_time_seconds > 0:
-        actions.wait(wait_time_seconds)
-      elif action.duration:
-        run_duration = dt.timedelta(seconds=time.time() - start_time)
-        logging.info("%s took longer (%s) than expected action duration (%s).",
-                     action, run_duration, action.duration)
+      with actions.wait_until(action.duration):
+        actions.show_url(action.url, str(action.target), action.ready_state,
+                         action.timeout)
 
   @override
   def click_js(self, run: Run, action: i_action.ClickAction) -> None:

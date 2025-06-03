@@ -7,11 +7,10 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from typing import Final, Iterable
+from typing import Iterable
 
-CLEAR_END: Final[str] = "\x1b[J"
-STORE_CURSOR_POS: Final[str] = "\x1b[s"
-RESTORE_CURSOR_POS: Final[str] = "\x1b[u"
+from crossbench.helper import terminal
+
 
 class Spinner:
   CURSORS = "◐◓◑◒"
@@ -65,6 +64,7 @@ class Spinner:
 
   def _write_message(self) -> None:
     stdout = sys.stdout
-    stdout.write(f"{STORE_CURSOR_POS} {self._cursor} "
-                 f"{self._title}{self._message}{CLEAR_END}{RESTORE_CURSOR_POS}")
+    stdout.write(f"{terminal.STORE_CURSOR_POS} {self._cursor} "
+                 f"{self._title}{self._message}{terminal.CLEAR_END}"
+                 f"{terminal.RESTORE_CURSOR_POS}")
     stdout.flush()

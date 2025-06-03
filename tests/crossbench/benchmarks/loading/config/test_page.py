@@ -134,13 +134,8 @@ class PageConfigTestsCase(unittest.TestCase):
     config_urls = [
         "cnn",
     ]
-    config = PageConfig.parse(config_urls)
-    self.assertIsNone(config.login)
-    self.assertIsNone(config.setup)
-    self.assertIsNone(config.label)
-    self.assertEqual(config.any_label, "cnn")
-    self.assertEqual(config.first_url, "https://cnn")
-    self.assertEqual(len(config.blocks), 1)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "cnn"):
+      PageConfig.parse(config_urls)
 
   def test_parse_action_sequence(self):
     config = PageConfig.parse([{

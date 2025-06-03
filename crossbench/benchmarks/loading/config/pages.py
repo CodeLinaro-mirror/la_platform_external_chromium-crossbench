@@ -69,6 +69,7 @@ class PagesConfig(ConfigObject):
         values[-1] = f"{previous_part},{part}"
         previous_part = None
       except DurationParseError:
+        # part is likely a URL
         previous_part = part
         values.append(part)
     return cls.parse_sequence(values)

@@ -59,6 +59,18 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(actions), 2)
     self.assertEqual(actions[0].TYPE, ActionType.GET)
     self.assertEqual(actions[1].TYPE, ActionType.WAIT_FOR_READY_STATE)
+    self.assertEqual(page_config.duration, dt.timedelta())
+
+  def test_parse_single_no_scheme(self):
+    config = PagesConfig.parse("www.google.com")
+    self.assertEqual(len(config.pages), 1)
+    page_config = config.pages[0]
+    self.assertEqual(page_config.first_url, "https://www.google.com")
+    config = PagesConfig.parse("www.google.com,123s")
+    self.assertEqual(len(config.pages), 1)
+    page_config = config.pages[0]
+    self.assertEqual(page_config.first_url, "https://www.google.com")
+    self.assertEqual(page_config.duration, dt.timedelta(seconds=123))
 
   def test_parse_single_with_duration(self):
     config = PagesConfig.parse("http://a.com,123s")
@@ -67,12 +79,24 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(page_config.first_url, "http://a.com")
     self.assertEqual(page_config.duration.total_seconds(), 123)
 
+  def test_parse_single_url_with_comma_and_duration(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid"):
+      PagesConfig.parse(
+          "https://www.google.com/maps/place/Japan/@33.33,44.4,55m/data=!3m2,123s"
+      )
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid"):
+      PagesConfig.parse(
+          "https://www.google.com/maps/place/Japan/@33.33,44.4,55m/data=!3m2,123s/http.google.com"
+      )
+
   def test_parse_multiple(self):
     config = PagesConfig.parse("http://a.com,http://b.com")
     self.assertEqual(len(config.pages), 2)
     page_config_0, page_config_1 = config.pages
     self.assertEqual(page_config_0.first_url, "http://a.com")
     self.assertEqual(page_config_1.first_url, "http://b.com")
+    self.assertEqual(page_config_0.duration, dt.timedelta())
+    self.assertEqual(page_config_1.duration, dt.timedelta())
 
   def test_parse_multiple_short_domain(self):
     config = PagesConfig.parse("a.com,b.com")

@@ -9,9 +9,6 @@ from typing import TYPE_CHECKING, Dict, Tuple
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.get import GetAction
-from crossbench.action_runner.action.wait_for_ready_state import \
-    WaitForReadyStateAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.base import DEFAULT_DURATION, PAGE_LIST
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
@@ -39,10 +36,8 @@ class LivePage(InteractivePage):
       tabs: TabController = TabController.default(),
       about_blank_duration: dt.timedelta = dt.timedelta()
   ) -> None:
-    assert url, "Invalid page url"
     self.url: str = url
-    blocks = (ActionBlock(
-        actions=(GetAction(self.url, duration), WaitForReadyStateAction())),)
+    blocks = (ActionBlock.from_url(url, duration),)
     super().__init__(
         name,
         blocks=blocks,

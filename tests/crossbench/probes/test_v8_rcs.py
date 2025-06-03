@@ -29,9 +29,10 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
         LivePage("amazon", "https://amazon.com")
     ]
     repetitions = 2
+
     runner = self.create_runner(
         stories,
-        js_side_effects=[True, EXAMPLE_RCS_DATA],
+        js_side_effects=[EXAMPLE_RCS_DATA],
         repetitions=repetitions,
         separate=True,
         throw=True)
@@ -86,7 +87,7 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     cache_temperatures = ("cold", "warm")
     runner = self.create_runner(
         stories,
-        js_side_effects=[True, EXAMPLE_RCS_DATA, True, EXAMPLE_RCS_DATA],
+        js_side_effects=[EXAMPLE_RCS_DATA, EXAMPLE_RCS_DATA],
         repetitions=repetitions,
         cache_temperatures=cache_temperatures,
         separate=True,

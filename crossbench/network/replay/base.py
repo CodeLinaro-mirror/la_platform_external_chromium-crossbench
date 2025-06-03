@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.helper.spinner import Spinner
+from crossbench.cli import ui
 from crossbench.network.base import Network
 from crossbench.parse import PathParser
 
@@ -76,7 +76,8 @@ class ReplayNetwork(Network):
     raise RuntimeError(f"Could not find md5 hash in gsutil output: {metadata}")
 
   def _download_gcloud_archive(self, url: str) -> LocalPath:
-    with exception.annotate(f"Downloading {url}"), Spinner():
+    title: str = f"Downloading {url}"
+    with exception.annotate(title), ui.spinner(title):
       local_path = (
           self.host_platform.local_cache_dir("wpr") /
           self._generate_filename(url))

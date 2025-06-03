@@ -17,7 +17,7 @@ from typing_extensions import override
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
-from crossbench.helper.spinner import Spinner
+from crossbench.cli import ui
 from crossbench.helper.wait import WaitRange
 
 if TYPE_CHECKING:
@@ -70,7 +70,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     service = SafariService(executable_path=os.fspath(driver_path))
     driver_kwargs = {"service": service, "options": options}
 
-    with Spinner():
+    with ui.spinner():
       driver = self._start_driver_with_retries(driver_kwargs)
       self.platform.sleep(0.5)
 

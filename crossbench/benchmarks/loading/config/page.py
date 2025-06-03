@@ -14,8 +14,6 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
-from crossbench.action_runner.action.wait_for_ready_state import \
-    WaitForReadyStateAction
 from crossbench.benchmarks.loading.config.blocks import (ActionBlock,
                                                          ActionBlockListConfig)
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
@@ -112,8 +110,7 @@ class PageConfig(ConfigObject):
                label: Optional[str],
                url: str,
                duration: dt.timedelta = dt.timedelta()) -> Self:
-    actions = (GetAction(url, duration=duration), WaitForReadyStateAction())
-    blocks = (ActionBlock(actions=actions),)
+    blocks = (ActionBlock.from_url(url, duration),)
     return cls(label=label, blocks=blocks)
 
   def actions(self) -> Iterator[Action]:

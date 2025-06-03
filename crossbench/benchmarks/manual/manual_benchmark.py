@@ -77,7 +77,6 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
           " (or press enter to close immediately)", self._run_for)
       input_helper.input_with_timeout(timeout=self._run_for)
 
-
   @classmethod
   @override
   def all_story_names(cls) -> Tuple[str, ...]:

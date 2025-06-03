@@ -17,7 +17,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
-from crossbench.helper.spinner import Spinner
+from crossbench.cli import ui
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -75,7 +75,7 @@ class Downloader(abc.ABC):
     self._archive_dir.mkdir(parents=True, exist_ok=True)
     self._app_path: pth.LocalPath = pth.LocalPath()
     self._requested_version: BrowserVersion = UnknownBrowserVersion()
-    self._spinner = Spinner(title="BROWSER: ")
+    self._spinner = ui.spinner(title="BROWSER: ")
     with self._spinner:
       self._app_path = self.find(archive_path_or_version_identifier)
     self._validate()

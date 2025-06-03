@@ -69,10 +69,12 @@ def post(url: str,
           url, headers=headers, json=body_json, timeout=request_timeout_seconds
       ))
 
+
 def to_seconds(delta: AnyTime) -> float:
   if isinstance(delta, dt.timedelta):
     return delta.total_seconds()
   return delta
+
 
 def update_url_query(url: str, query_params: Dict[str, str]) -> str:
   parsed_url = urlparse.urlparse(url)

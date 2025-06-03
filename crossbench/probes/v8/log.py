@@ -14,10 +14,10 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type, cast
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.cli import ui
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import V8ToolsFinder
-from crossbench.helper.spinner import Spinner
 from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
@@ -254,7 +254,7 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     json_list: List[AnyPath] = []
     maybe_js_flags = getattr(self.browser, "js_flags", {})
     if _PROF_FLAG in maybe_js_flags or _LOG_ALL_FLAG in maybe_js_flags:
-      with Spinner():
+      with ui.spinner():
         json_list = self.probe.process_log_files(log_files)
     return self.browser_result(file=tuple(log_files), json=json_list)
 

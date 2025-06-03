@@ -13,12 +13,12 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
+from crossbench.cli import ui
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
-from crossbench.helper.spinner import Spinner
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import ProbeResultDict
@@ -375,7 +375,7 @@ class Run(ResultOrigin):
       logging.info("RUNNING STORY")
       self._state.expect(State.RUN)
       try:
-        with self.measure("run"), Spinner(), self.exceptions.capture():
+        with self.measure("run"), ui.spinner(), self.exceptions.capture():
           if not is_dry_run:
             self._run_story()
       except TimeoutError as e:

@@ -21,10 +21,10 @@ from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
+from crossbench.cli import ui
 from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.helper import wait
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
-from crossbench.helper.spinner import Spinner
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.bin import Binaries
@@ -236,7 +236,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   @override
   def _setup_binary(self) -> None:
     super()._setup_binary()
-    with Spinner():
+    with ui.spinner():
       sys.stdout.write(f"   Installing {self.path.name} on {self.platform}\r")
       self.host_platform.sh_stdout(self.path, "install",
                                    f"--device={self.platform.serial_id}")
