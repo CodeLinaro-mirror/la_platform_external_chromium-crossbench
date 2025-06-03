@@ -11,8 +11,9 @@ import subprocess
 import tempfile
 from typing import TYPE_CHECKING, Dict, List, Self, TextIO, Tuple, Type
 
-from typing_extensions import override
+from typing_extensions import Final, override
 
+from crossbench.config import ConfigEnum
 from crossbench.helper import collection_helper
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -28,6 +29,16 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
 
+
+class Orientation(ConfigEnum):
+  HORIZONTAL = ("horizontal", "Align horizontally.")
+  VERTICAL = ("vertical", "Align vertically.")
+
+
+FFMPEG_STACK_DIRECTION: Final[Dict[Orientation, str]] = {
+    Orientation.HORIZONTAL: "hstack",
+    Orientation.VERTICAL: "vstack",
+}
 
 class VideoProbe(Probe):
   """
@@ -58,15 +69,28 @@ class VideoProbe(Probe):
         type=bool,
         default=True,
         help="Merge videos from multiple runs")
+    parser.add_argument(
+        "orientation",
+        aliases=(
+            "dir",
+            "direction",
+        ),
+        type=Orientation,
+        default=Orientation.HORIZONTAL,
+        help=("Primary merge orientation for repetitions. "
+              "Each further merge level will happen in the opposite direction "
+              "of the previous one."))
     return parser
 
   def __init__(self,
                generate_timestrip: bool = True,
-               merge_runs: bool = True) -> None:
+               merge_runs: bool = True,
+               orientation: Orientation = Orientation.HORIZONTAL) -> None:
     super().__init__()
     self._duration = None
     self._generate_timestrip = generate_timestrip
     self._merge_runs = merge_runs
+    self._orientation = orientation
 
   @property
   @override
@@ -76,6 +100,16 @@ class VideoProbe(Probe):
   @property
   def generate_timestrip(self) -> bool:
     return self._generate_timestrip
+
+  @property
+  def primary_orientation(self):
+    return self._orientation
+
+  @property
+  def secondary_orientation(self):
+    if self._orientation == Orientation.VERTICAL:
+      return Orientation.HORIZONTAL
+    return Orientation.VERTICAL
 
   @property
   def merge_runs(self) -> bool:
@@ -149,11 +183,12 @@ class VideoProbe(Probe):
                  "fontsize=h/15:"
                  "y=h-line_h-10:x=10:"
                  "box=1:boxborderw=20:boxcolor=white")
+    stack_direction: str = FFMPEG_STACK_DIRECTION[self.primary_orientation]
     self.host_platform.sh(
         "ffmpeg", "-hide_banner", \
         *video_file_inputs, \
         "-filter_complex",
-        f"hstack=inputs={len(runs)},"
+        f"{stack_direction}=inputs={len(runs)},"
         f"drawtext={draw_text},"
         "scale=3000:-2", *self.VIDEO_QUALITY, video_file)
 
@@ -203,11 +238,12 @@ class VideoProbe(Probe):
     for repetitions_group in repetitions_groups:
       result_files = repetitions_group.results[self].file_list
       input_files += ["-i", os.fspath(result_files[0])]
+    stack_direction: str = FFMPEG_STACK_DIRECTION[self.secondary_orientation]
     try:
-      self.host_platform.sh("ffmpeg", "-hide_banner", *input_files,
-                            "-filter_complex",
-                            f"vstack=inputs={len(repetitions_groups)}",
-                            *self.VIDEO_QUALITY, result_path)
+      self.host_platform.sh(
+          "ffmpeg", "-hide_banner", *input_files, "-filter_complex",
+          f"{stack_direction}=inputs={len(repetitions_groups)}",
+          *self.VIDEO_QUALITY, result_path)
     except Exception as e:
       logging.error("Merging multiple browser video failed. "
                     "Different screen orientations are not supported yet.")
