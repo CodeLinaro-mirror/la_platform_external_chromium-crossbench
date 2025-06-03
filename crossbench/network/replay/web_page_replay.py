@@ -170,8 +170,8 @@ class WprBase(abc.ABC):
 
   def start(self) -> None:
     try:
-      self._start_wpr()
       atexit.register(self.stop)
+      self._start_wpr()
       logging.info("WPR: waiting for startup...")
       self._wait_for_startup()
       logging.info(("WPR: Started wpr.go %s: "
@@ -215,6 +215,7 @@ class WprBase(abc.ABC):
       logging.debug("Got exception while reading wpr log file: %s", e)
 
   def _forward_ports(self) -> None:
+    assert self._process, "Should not forward ports if WPR is not running"
     if self._platform.is_remote:
       self._host_http_port = self._platform.port_forward(
           0, self._device_http_port)
@@ -297,15 +298,19 @@ class WprBase(abc.ABC):
 
   def stop(self, force_shutdown: bool = False) -> None:
     atexit.unregister(self.stop)
-    if self._process and not force_shutdown:
-      self._shut_down()
-    if self._log_file:
-      self._log_file.close()
-      self._log_file = None
-    if self._process and force_shutdown:
-      self._platform.terminate_gracefully(self._process, timeout=1)
-    self._process = None
-    self._stop_forward_ports()
+    if not self._process:
+      return
+    try:
+      if not force_shutdown:
+        self._shut_down()
+      if self._log_file:
+        self._log_file.close()
+        self._log_file = None
+      if force_shutdown:
+        self._platform.terminate_gracefully(self._process, timeout=1)
+    finally:
+      self._process = None
+      self._stop_forward_ports()
 
   def _shut_down(self) -> None:
     logging.info("WPR: shutting down %s.", self.NAME)
