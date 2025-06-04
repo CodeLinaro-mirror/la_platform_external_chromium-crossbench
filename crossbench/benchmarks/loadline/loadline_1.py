@@ -12,9 +12,9 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
+from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
+                                                     LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.benchmarks.loadline.loadline import (
-    LoadLineProbe, LoadLineBenchmark)
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import ProbeContext
@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
 VERSION_STRING = "1.1.0"
+
 
 
 class LoadLine1Probe(LoadLineProbe):

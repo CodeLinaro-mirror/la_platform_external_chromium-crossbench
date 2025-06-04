@@ -291,12 +291,13 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
   def __init__(self,
                story_cls: Type[SpeedometerStory],
                patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
                separate: bool = False,
                url: Optional[str] = None,
                iterations: Optional[int] = None) -> None:
     self.iterations = iterations
     assert issubclass(story_cls, SpeedometerStory)
-    super().__init__(story_cls, patterns, separate, url)
+    super().__init__(story_cls, patterns, args, separate, url)
 
   @override
   def create_stories_from_names(self, names: List[str],

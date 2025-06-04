@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
 
 import pandas as pd
 from tabulate import tabulate
@@ -60,36 +60,35 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
 
 class LoadLinePageFilter(LoadingPageFilter):
   """LoadLine benchmark for phone/tablet."""
-  CAN_COMBINE_STORIES: bool = False
-
   @classmethod
   def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
     cls.add_page_config_arg(page_config_group)
 
   @classmethod
+  def add_story_grouping_parser(cls, parser: argparse.ArgumentParser) -> None:
+    # Loadline always needs separate substories for metrics calculation.
+    parser.add_argument(
+        "--separate",
+        action="store_true",
+        default=True,
+        help="Run each story in a fresh browser (enabled by default).")
+
+  @classmethod
   @override
   def default_stories(cls) -> Tuple[Page, ...]:
     return cls.all_stories()
 
-  # TODO(crbug.com/395420667): Support story selection via --stories.
   @classmethod
   @override
   def all_stories(cls) -> Tuple[Page, ...]:
-    return ()
+    return tuple()
 
 
 class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS = LoadLinePageFilter
 
   _page_config: PagesConfig | None = None
-
-  @classmethod
-  @override
-  def requires_separate(cls, args: argparse.Namespace) -> bool:
-    # Perfetto metrics used in the benchmark require a separate Perfetto
-    # session for each run.
-    return True
 
   @classmethod
   @abc.abstractmethod
@@ -121,6 +120,15 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
       raise argparse.ArgumentTypeError(
           "--config is not supported with loadline.")
     return args.pages_config
+
+  @classmethod
+  @override
+  def describe_stories(cls) -> Mapping[str, str]:
+    # TODO: Use full story objects
+    result: Dict[str, str] = {}
+    for page_config in cls.get_pages_config().pages:
+      result[page_config.any_label] = page_config.first_url
+    return result
 
   @classmethod
   @override

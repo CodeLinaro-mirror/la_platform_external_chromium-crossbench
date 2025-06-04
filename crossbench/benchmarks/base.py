@@ -8,7 +8,7 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional,
+from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional,
                     Sequence, Tuple, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
@@ -117,6 +117,7 @@ class Benchmark(abc.ABC):
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
     self.stories: List[Story] = self._validate_stories(stories)
+    self.log_stories(self.stories)
 
   def _validate_stories(self, stories: Sequence[Story]) -> List[Story]:
     assert stories, "No stories provided"
@@ -130,11 +131,18 @@ class Benchmark(abc.ABC):
     del runner
 
 
+  def log_stories(self, stories: Sequence[StoryT]) -> None:
+    substory_names = [name for story in stories for name in story.substories]
+    stories_str = ", ".join(substory_names)
+    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s", len(stories),
+                 len(substory_names), stories_str)
+
+
 StoryT = TypeVar("StoryT", bound=Story)
 
 
 class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
-  CAN_COMBINE_STORIES: bool = True
+  DEFAULT_STORY_NAME: str = "default"
 
   @classmethod
   def add_cli_parser(
@@ -143,28 +151,30 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         "--stories",
         "--story",
         dest="stories",
-        default="default",
+        default=cls.DEFAULT_STORY_NAME,
         help="Comma-separated list of story names. "
         "Use 'all' for selecting all available stories. "
         "Use 'default' for the standard selection of stories.")
-    if cls.CAN_COMBINE_STORIES:
-      is_combined_group = parser.add_mutually_exclusive_group()
-      is_combined_group.add_argument(
-          "--combined",
-          dest="separate",
-          default=False,
-          action="store_false",
-          help="Run each story in the same session. (default)")
-      is_combined_group.add_argument(
-          "--separate",
-          action="store_true",
-          help="Run each story in a fresh browser.")
-
+    cls.add_story_grouping_parser(parser)
     return parser
 
   @classmethod
+  def add_story_grouping_parser(cls, parser: argparse.ArgumentParser) -> None:
+    is_combined_group = parser.add_mutually_exclusive_group()
+    is_combined_group.add_argument(
+        "--combined",
+        dest="separate",
+        default=False,
+        action="store_false",
+        help="Run each story in the same session. (default)")
+    is_combined_group.add_argument(
+        "--separate",
+        action="store_true",
+        help="Run each story in a fresh browser.")
+
+  @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
-    return {"patterns": args.stories.split(",")}
+    return {"patterns": args.stories.split(","), "args": args}
 
   @classmethod
   def from_cli_args(cls, story_cls: Type[StoryT],
@@ -175,7 +185,9 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def __init__(self,
                story_cls: Type[StoryT],
                patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
                separate: bool = False) -> None:
+    self._args = args
     self.story_cls: Type[StoryT] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
@@ -187,6 +199,12 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     self.process_all(patterns)
     self.stories = self.create_stories(separate)
 
+  @property
+  def args(self) -> argparse.Namespace:
+    if args := self._args:
+      return args
+    raise RuntimeError("Missing args for additional filtering")
+
   @abc.abstractmethod
   def process_all(self, patterns: Sequence[str]) -> None:
     pass
@@ -194,12 +212,6 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def create_stories(self, separate: bool) -> Sequence[StoryT]:
     pass
-
-  def log_stories(self, stories: Sequence[StoryT]) -> None:
-    substory_names = [name for story in stories for name in story.substories]
-    stories_str = ", ".join(substory_names)
-    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s", len(stories),
-                 len(substory_names), stories_str)
 
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
@@ -237,8 +249,21 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   @override
   def describe(cls) -> Dict[str, Any]:
     data = super().describe()
-    data["stories"] = cls.all_story_names()
+    data["stories"] = cls.describe_stories()
     return data
+
+  @classmethod
+  def describe_stories(cls) -> Mapping[str, str]:
+    # TODO: use story objects instead
+    return {name: "" for name in cls.all_story_names()}
+
+  @classmethod
+  def all_stories(cls) -> Sequence[Story]:
+    all_args = argparse.Namespace()
+    return cls.STORY_FILTER_CLS(  # pylint: disable=abstract-class-instantiated
+        cls.DEFAULT_STORY_CLS, ["all"],
+        args=all_args,
+        separate=True).stories
 
   @classmethod
   def all_story_names(cls) -> Sequence[str]:
@@ -276,11 +301,12 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   def __init__(self,
                story_cls: Type[PressBenchmarkStoryT],
                patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
                separate: bool = False,
                url: Optional[str] = None) -> None:
     self.url: str | None = url
     self._selected_names: OrderedSet[str] = OrderedSet()
-    super().__init__(story_cls, patterns, separate)
+    super().__init__(story_cls, patterns, args, separate)
     assert issubclass(self.story_cls, PressBenchmarkStory)
     for name in self._known_names:
       assert name, "Invalid empty story name"
@@ -385,7 +411,6 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
     names = list(self._selected_names)
     stories = self.create_stories_from_names(names, separate)
-    self.log_stories(stories)
     return stories
 
   def create_stories_from_names(

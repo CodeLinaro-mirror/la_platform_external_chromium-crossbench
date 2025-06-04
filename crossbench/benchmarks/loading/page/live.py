@@ -59,6 +59,9 @@ class LivePage(InteractivePage):
   def __str__(self) -> str:
     return f"Page(name={self.name}, url={self.url})"
 
+  def help(self) -> str:
+    return f"{self.url},{self.duration.total_seconds()}s"
+
 
 LIVE_PAGES = (
     LivePage("blank", "about:blank", dt.timedelta(seconds=1)),

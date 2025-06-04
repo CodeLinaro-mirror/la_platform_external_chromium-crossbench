@@ -381,6 +381,7 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
   def __init__(self,
                story_cls: Type[SpeedometerStory],
                patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
                separate: bool = False,
                url: Optional[str] = None,
                iterations: Optional[int] = None,
@@ -395,7 +396,8 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
     self.viewport = viewport
     self.shuffle_seed: ShuffleSeedT = shuffle_seed
     assert issubclass(story_cls, Speedometer3Story)
-    super().__init__(story_cls, patterns, separate, url, iterations=iterations)
+    super().__init__(
+        story_cls, patterns, args, separate, url, iterations=iterations)
 
   @override
   def create_stories_from_names(self, names: List[str],

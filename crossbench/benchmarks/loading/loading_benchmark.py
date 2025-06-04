@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
+                    Tuple, Type)
 
 from typing_extensions import override
 
@@ -167,16 +167,7 @@ class LoadingPageFilter(StoryFilter[Page]):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
-    kwargs["args"] = args
     return kwargs
-
-  def __init__(self,
-               story_cls: Type[Page],
-               patterns: Sequence[str],
-               args: argparse.Namespace,
-               separate: bool = True) -> None:
-    self._args: argparse.Namespace = args
-    super().__init__(story_cls, patterns, separate)
 
   @override
   def process_all(self, patterns: Sequence[str]) -> None:
@@ -190,7 +181,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         return
     # Let the PageConfig handle the arg splitting again:
     config = PagesConfig.parse(",".join(patterns))
-    self.stories = self.stories_from_config(self._args, config)
+    self.stories = self.stories_from_config(self.args, config)
 
   @classmethod
   def all_stories(cls) -> Tuple[Page, ...]:
@@ -249,9 +240,9 @@ class LoadingPageFilter(StoryFilter[Page]):
   def create_stories(self, separate: bool) -> Sequence[Page]:
     if not separate and len(self.stories) > 1:
       combined_name = "_".join(page.name for page in self.stories)
-      self.stories = (CombinedPage(self.stories, combined_name,
-                                   self._args.playback, self._args.tabs),)
-    self.log_stories(self.stories)
+      args = self.args
+      self.stories = (CombinedPage(self.stories, combined_name, args.playback,
+                                   args.tabs),)
     return self.stories
 
 
@@ -272,7 +263,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   """
   NAME = "loading"
   DEFAULT_STORY_CLS = Page
-  STORY_FILTER_CLS = LoadingPageFilter
+  STORY_FILTER_CLS: Type[LoadingPageFilter] = LoadingPageFilter
 
   @classmethod
   @override
@@ -288,21 +279,18 @@ class LoadingBenchmark(SubStoryBenchmark):
     return parser
 
   @classmethod
-  def requires_separate(cls, args: argparse.Namespace) -> bool:
-    return args.separate
-
-  @classmethod
   @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
-    has_default_stories: bool = args.stories and args.stories == "default"
+    has_default_stories: bool = (
+        args.stories and args.stories == LoadingPageFilter.DEFAULT_STORY_NAME)
     if config := cls.get_pages_config(args):
       # TODO: make stories and page_config mutually exclusive.
       if not has_default_stories:
         raise argparse.ArgumentTypeError(
             f"Cannot specify --stories={repr(args.stories)} "
             "with any other page config option.")
-      pages = LoadingPageFilter.stories_from_config(args, config)
-      if cls.requires_separate(args):
+      pages = cls.STORY_FILTER_CLS.stories_from_config(args, config)
+      if args.separate:
         return pages
       if len(pages) == 1:
         return pages
@@ -353,8 +341,20 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
+  def describe_stories(cls) -> Mapping[str, str]:
+    result: Dict[str, str] = {}
+    for story in cls.all_stories():
+      story_help = story.help()
+      if story_help == story.name:
+        story_help = ""
+      result[story.name] = story_help
+    return result
+
+  @classmethod
+  @override
   def all_story_names(cls) -> Sequence[str]:
-    return sorted(LivePage.all_story_names())
+    # TODO: Use StoryFilter for listing stories everywhere.
+    return sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories())
 
   def __init__(self,
                stories: Sequence[Page],
