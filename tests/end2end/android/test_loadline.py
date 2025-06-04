@@ -176,9 +176,11 @@ def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   out_dir = test_env.results_dir
+  # We run the benchmark with increased time units to account for
+  # the slowness of emulators on test bots.
   cli.run([
       BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=2",
-      "--throw", f"--out-dir={out_dir}",
+      "--throw", f"--out-dir={out_dir}", "--time-unit=2s",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ] + list(test_env.cq_flags))
   _verify_default_metrics(out_dir)
