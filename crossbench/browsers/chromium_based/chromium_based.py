@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import abc
-import argparse
 import logging
 from typing import TYPE_CHECKING, Final, Optional, TextIO, Tuple, Type, cast
 
@@ -112,10 +111,10 @@ class ChromiumBased(Browser):
     # By default field-trials are disabled on non-Chrome branded builds, but
     # are auto-enabled on everything else. This gives very confusing results
     # when comparing local builds to official binaries.
-    field_trial_flags: ChromeFlags = self._flags.field_trial_flags
+    field_trial_flags: ChromeFlags = self._flags.field_trial_enable_flags
     if not field_trial_flags:
       logging.info("Disabling experiments/finch/field-trials for %s", self)
-      for flag in ChromeFlags.NO_EXPERIMENTS_FLAGS:
+      for flag in ChromeFlags.FIELD_TRIAL_DISABLE_FLAGS:
         self._flags.set(flag)
     else:
       logging.warning("Running with field-trials or finch experiments.")
@@ -138,13 +137,7 @@ class ChromiumBased(Browser):
   @override
   def validate_flags(self) -> None:
     super().validate_flags()
-    field_trial_flags: ChromeFlags = self.flags.field_trial_flags
-    no_finch_flags = self.flags.no_experiments_flags
-    if field_trial_flags and no_finch_flags:
-      raise argparse.ArgumentTypeError(
-          f"Conflicting {self.type_name()} flags detected: "
-          f"{field_trial_flags} vs {no_finch_flags}.\n"
-          "Cannot enable and disable finch / field-trials at the same time.")
+    self.flags.validate()
 
   @override
   def _setup_cache_dir(self) -> Optional[pth.AnyPath]:

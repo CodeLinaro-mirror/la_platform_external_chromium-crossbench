@@ -246,6 +246,14 @@ class BasicFlags(Freezable, collections.UserDict):
   def __str__(self) -> str:
     return " ".join(self)
 
+  def freeze(self: Self) -> Self:
+    self.validate()
+    super().freeze()
+    return self
+
+  def validate(self) -> None:
+    pass
+
 
 class Flags(BasicFlags):
   """

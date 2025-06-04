@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
+
 from typing_extensions import override
 
 from crossbench.flags.chrome import ChromeFlags, ChromePreM139Flags
@@ -483,38 +485,42 @@ class TestChromeFlags(TestFlags):
 
   def test_field_trial_flags(self):
     empty = self.CLASS()
-    self.assertFalse(empty.field_trial_flags)
+    self.assertFalse(empty.field_trial_enable_flags)
     some_flags = self.CLASS(("--foo", "--bar"))
-    self.assertFalse(some_flags.field_trial_flags)
+    self.assertFalse(some_flags.field_trial_enable_flags)
     field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+        str(field_trials.field_trial_enable_flags),
+        "--enable-field-trial-config")
     # Post M139 --enable-benchmarking does not affect field trials.
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+        str(field_trials.field_trial_enable_flags),
+        "--enable-field-trial-config")
     field_trials.set(
         "--enable-benchmarking",
         should_override=True)
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+        str(field_trials.field_trial_enable_flags),
+        "--enable-field-trial-config")
 
-  def test_no_experiments_flags(self):
+  def test_disable_field_trials_flags(self):
     empty = self.CLASS()
-    self.assertFalse(empty.no_experiments_flags)
+    self.assertFalse(empty.field_trial_disable_flags)
     some_flags = self.CLASS(("--foo", "--bar"))
-    self.assertFalse(some_flags.no_experiments_flags)
+    self.assertFalse(some_flags.field_trial_disable_flags)
     field_trials = self.CLASS(("--disable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+        str(field_trials.field_trial_disable_flags),
+        "--disable-field-trial-config")
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.no_experiments_flags),
-        "--disable-field-trial-config --enable-benchmarking")
+        str(field_trials.field_trial_disable_flags),
+        "--disable-field-trial-config")
     field_trials.set("--enable-benchmarking", should_override=True)
     self.assertEqual(
-        str(field_trials.no_experiments_flags),
-        "--disable-field-trial-config --enable-benchmarking")
+        str(field_trials.field_trial_disable_flags),
+        "--disable-field-trial-config")
 
   def test_set_enable_benchmarking_extension(self):
     flags = self.CLASS()
@@ -622,29 +628,48 @@ class TestChromeFlags(TestFlags):
     with self.assertRaisesRegex(ValueError, "disable-extensions"):
       flags["--disable-extensions"] = "asdfasdfasd"
 
+  def test_conflict_field_trials(self):
+    flags = self.CLASS()
+    flags.set("--enable-field-trial-config")
+    flags.set("--disable-field-trial-config")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "field-trial"):
+      flags.validate()
+
+  def test_conflict_field_trials_enable_benchmarking(self):
+    flags = self.CLASS()
+    flags.set("--enable-field-trial-config")
+    flags.set("--enable-benchmarking")
+    flags.validate()
+    flags.set(
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
+    flags.validate()
 
 class TestChromePreM139Flags(TestChromeFlags):
   CLASS = ChromePreM139Flags
 
   @override
-  def test_no_experiments_flags(self):
+  def test_disable_field_trials_flags(self):
     empty = self.CLASS()
-    self.assertFalse(empty.no_experiments_flags)
+    self.assertFalse(empty.field_trial_disable_flags)
     some_flags = self.CLASS(("--foo", "--bar"))
-    self.assertFalse(some_flags.no_experiments_flags)
+    self.assertFalse(some_flags.field_trial_disable_flags)
     field_trials = self.CLASS(("--disable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+        str(field_trials.field_trial_disable_flags),
+        "--disable-field-trial-config")
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.no_experiments_flags),
+        str(field_trials.field_trial_disable_flags),
         "--disable-field-trial-config --enable-benchmarking")
     field_trials.set(
         "--enable-benchmarking",
         "enable-field-trial-config",
         should_override=True)
     self.assertEqual(
-        str(field_trials.no_experiments_flags), "--disable-field-trial-config")
+        str(field_trials.field_trial_disable_flags),
+        "--disable-field-trial-config")
 
   @override
   def test_set_enable_benchmarking_extension(self):
@@ -680,22 +705,38 @@ class TestChromePreM139Flags(TestChromeFlags):
   @override
   def test_field_trial_flags(self):
     empty = self.CLASS()
-    self.assertFalse(empty.field_trial_flags)
+    self.assertFalse(empty.field_trial_enable_flags)
     some_flags = self.CLASS(("--foo", "--bar"))
-    self.assertFalse(some_flags.field_trial_flags)
+    self.assertFalse(some_flags.field_trial_enable_flags)
     field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+        str(field_trials.field_trial_enable_flags),
+        "--enable-field-trial-config")
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config")
+        str(field_trials.field_trial_enable_flags),
+        "--enable-field-trial-config")
     field_trials.set(
         "--enable-benchmarking",
         "enable-field-trial-config",
         should_override=True)
     self.assertEqual(
-        str(field_trials.field_trial_flags), "--enable-field-trial-config "
+        str(field_trials.field_trial_enable_flags),
+        "--enable-field-trial-config "
         "--enable-benchmarking=enable-field-trial-config")
+
+  @override
+  def test_conflict_field_trials_enable_benchmarking(self):
+    flags = self.CLASS()
+    flags.set("--enable-field-trial-config")
+    flags.set("--enable-benchmarking")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "field-trial"):
+      flags.validate()
+    flags.set(
+        "--enable-benchmarking",
+        "enable-field-trial-config",
+        should_override=True)
+    flags.validate()
 
 del TestFlags
 

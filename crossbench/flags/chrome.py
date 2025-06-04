@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
 from typing import Final, Iterable, Optional, Tuple
 
@@ -28,7 +29,7 @@ class ChromeFlags(Flags):
   JS_FLAG: Final[str] = "--js-flags"
 
   # All flags that might affect how finch / field-trials are loaded.
-  FIELD_TRIAL_FLAGS: Tuple[str, ...] = (
+  FIELD_TRIAL_ENABLE_FLAGS: Tuple[str, ...] = (
       "--force-fieldtrials",
       "--variations-server-url",
       "--variations-insecure-server-url",
@@ -37,14 +38,7 @@ class ChromeFlags(Flags):
       "--disable-variations-safe-mode",
   )
 
-  NO_EXPERIMENTS_FLAGS: Final[Tuple[str, ...]] = (
-      "--no-experiments",
-      # The benchmarking flag without value is a no-experiment flag. However,
-      # when used as '--enable-benchmarking=enable-field-trial-config' it
-      # works with experiments.
-      "--enable-benchmarking",
-      "--disable-field-trial-config",
-  )
+  FIELD_TRIAL_DISABLE_FLAGS: Tuple[str, ...] = ("--disable-field-trial-config",)
 
   USER_DATA_DIR_FLAG: Final[str] = "--user-data-dir"
 
@@ -219,12 +213,12 @@ class ChromeFlags(Flags):
     return self._js_flags
 
   @property
-  def field_trial_flags(self) -> ChromeFlags:
-    return self.filtered(self.FIELD_TRIAL_FLAGS)
+  def field_trial_enable_flags(self) -> ChromeFlags:
+    return self.filtered(self.FIELD_TRIAL_ENABLE_FLAGS)
 
   @property
-  def no_experiments_flags(self) -> ChromeFlags:
-    return self.filtered(self.NO_EXPERIMENTS_FLAGS)
+  def field_trial_disable_flags(self) -> ChromeFlags:
+    return self.filtered(self.FIELD_TRIAL_DISABLE_FLAGS)
 
   def enable_benchmarking_api(self) -> None:
     self.set("--enable-benchmarking-api")
@@ -256,14 +250,34 @@ class ChromeFlags(Flags):
     return bool(self.data) or bool(self._js_flags) or bool(
         self._features) or bool(self._blink_features)
 
+  @override
+  def validate(self) -> None:
+    field_trial_enable_flags = self.field_trial_enable_flags
+    field_trial_disable_flags = self.field_trial_disable_flags
+    if field_trial_enable_flags and field_trial_disable_flags:
+      raise argparse.ArgumentTypeError(
+          f"Conflicting {type(self).__name__} detected: "
+          f"{field_trial_enable_flags} vs {field_trial_disable_flags}.\n"
+          "Cannot enable and disable finch / field-trials at the same time.")
+
 
 class ChromePreM139Flags(ChromeFlags):
   VERSION_RANGE: Final[range] = range(1, 139)
-  FIELD_TRIAL_FLAGS: Tuple[str, ...] = ChromeFlags.FIELD_TRIAL_FLAGS + (
-      # The benchmarking flag without value is a no-experiment flag. However,
-      # when used as '--enable-benchmarking=enable-field-trial-config' it
-      # works with experiments.
-      "--enable-benchmarking",)
+  FIELD_TRIAL_ENABLE_FLAGS: Tuple[
+      str, ...] = ChromeFlags.FIELD_TRIAL_ENABLE_FLAGS + (
+          # The benchmarking flag without value is a no-field-trial flag.
+          # However, when used as
+          # '--enable-benchmarking=enable-field-trial-config' it works
+          # with field trials.
+          "--enable-benchmarking",)
+
+  FIELD_TRIAL_DISABLE_FLAGS: Tuple[
+      str, ...] = ChromeFlags.FIELD_TRIAL_DISABLE_FLAGS + (
+          # The benchmarking flag without value is a no-field-trial flag.
+          # However, when used as
+          # '--enable-benchmarking=enable-field-trial-config' it works
+          # with field trials.
+          "--enable-benchmarking",)
 
   def has_enable_benchmarking_field_trials(self):
     # Enable the benchmarking extension with field trial configs which
@@ -273,8 +287,8 @@ class ChromePreM139Flags(ChromeFlags):
 
   @property
   @override
-  def field_trial_flags(self) -> ChromeFlags:
-    filtered = self.filtered(self.FIELD_TRIAL_FLAGS)
+  def field_trial_enable_flags(self) -> ChromeFlags:
+    filtered = self.filtered(self.FIELD_TRIAL_ENABLE_FLAGS)
     if "--enable-benchmarking" in self and (
         not self.has_enable_benchmarking_field_trials()):
       del filtered["--enable-benchmarking"]
@@ -282,8 +296,8 @@ class ChromePreM139Flags(ChromeFlags):
 
   @property
   @override
-  def no_experiments_flags(self) -> ChromeFlags:
-    filtered_copy = self.filtered(self.NO_EXPERIMENTS_FLAGS)
+  def field_trial_disable_flags(self) -> ChromeFlags:
+    filtered_copy = self.filtered(self.FIELD_TRIAL_DISABLE_FLAGS)
     # Special case for --enable-benchmarking which disables field trials
     # by default, unless it has a "enable-field-trial-config" value.
     if self.has_enable_benchmarking_field_trials():
@@ -292,7 +306,7 @@ class ChromePreM139Flags(ChromeFlags):
 
   @override
   def enable_benchmarking_api(self) -> None:
-    if self.field_trial_flags:
+    if self.field_trial_enable_flags:
       self.set("--enable-benchmarking", "enable-field-trial-config")
     else:
       self.set("--enable-benchmarking")
