@@ -77,7 +77,7 @@ class ReplayNetwork(Network):
 
   def _download_gcloud_archive(self, url: str) -> LocalPath:
     title: str = f"Downloading {url}"
-    with exception.annotate(title), ui.spinner(title):
+    with exception.annotate(title), ui.spinner(title=title):
       local_path = (
           self.host_platform.local_cache_dir("wpr") /
           self._generate_filename(url))
