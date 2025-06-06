@@ -155,16 +155,20 @@ class ChromiumBased(Browser):
     if user_data_dir:
       return user_data_dir
 
-    temp_dir = None
     if self.platform.is_android:
-      # On Android, not all apps have permission to write to /data/local/tmp.
-      # We use a folder on external storage instead.
-      # This does not affect the user-cache-dir which needs to be cleared
-      # separately.
-      temp_dir = "/storage/emulated/0/Documents"
+      # On Android, not all apps have permission to write to /data/local/tmp,
+      # so we can't just use a temp dir for user data as on other platforms.
+      # We can create a subdir in Chromium's default data dir, but that will
+      # be erased by chromedriver on session start.
+      # Another option is a folder on external storage, but access to external
+      # storage can be slow and this affects Chromium performance.
+      # So the only reliable thing for now is to keep Chromium using default
+      # user data dir. Note that unless --keep-browser-cache is specified,
+      # all user data is cleared by chromedriver before each browser session.
+      return None
+
     # Using a temp-dir on macos also forces the user-cache-dir to be there.
-    user_data_dir = self.platform.mkdtemp(
-        prefix=f"{self.type_name()}_", dir=temp_dir)
+    user_data_dir = self.platform.mkdtemp(prefix=f"{self.type_name()}_")
     return user_data_dir
 
   @property
