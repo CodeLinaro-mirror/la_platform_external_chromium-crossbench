@@ -39,6 +39,9 @@ class WebviewBrowser(Webview):
     # shutting it down.
     self._is_running = False
     self._teardown_cache_dir()
+    if self._stdout_log_file:
+      self._stdout_log_file.close()
+      self._stdout_log_file = None
 
   @override
   def _setup_binary_permissions(self) -> None:
