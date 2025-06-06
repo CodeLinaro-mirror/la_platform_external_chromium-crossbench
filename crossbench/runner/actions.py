@@ -178,7 +178,7 @@ class Actions(TimeScope):
     delta: dt.timedelta = self.timing.timeout_timedelta(time, absolute_time)
     with ui.countdown(delta):
       self._assert_is_active()
-      self._runner.wait(time, absolute_time=True)
+      self._runner.wait(time, absolute_time=absolute_time)
 
   @contextlib.contextmanager
   def wait_until(self,
