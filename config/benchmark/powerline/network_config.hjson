@@ -1,0 +1,5 @@
+{
+  type: "local",
+  path: "${crossbench_root}/config/benchmark/powerline",
+  run_on_device: false,
+}
