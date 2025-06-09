@@ -684,11 +684,9 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
     self.assert_coordinates_touched(
-        Point(960, 972), Point(960, 108),
-        scroll_duration * ((972 - 108) / 1600))
+        Point(960, 972), Point(960, 172), scroll_duration * 0.5)
     self.assert_coordinates_touched(
-        Point(960, 972), Point(960, 236),
-        scroll_duration * ((972 - 236) / 1600))
+        Point(960, 972), Point(960, 172), scroll_duration * 0.5)
 
   def test_scroll_touch_selector_required_not_found_raises(self):
     scroll_action = ScrollAction(

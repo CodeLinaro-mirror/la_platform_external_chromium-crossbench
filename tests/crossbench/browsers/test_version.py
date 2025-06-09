@@ -13,6 +13,7 @@ from typing_extensions import override
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
+from crossbench.browsers.d8.version import D8Version
 from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.safari.version import SafariVersion
 from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
@@ -242,7 +243,7 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
   def test_no_equal_stable_beta(self):
     if not self.BETA_VERSION_STR:
-      self.skipTest(f"{type(self).__name__} :beta version not supported.")
+      self.skipTest(f"{type(self).__name__}: beta version not supported.")
     version_stable = self.parse(self.STABLE_VERSION_STR)
     version_beta = self.parse(self.BETA_VERSION_STR)
     self.assertNotEqual(version_stable, version_beta)
@@ -292,6 +293,18 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     self.assertFalse(any_copy.has_channel)
     self.assertEqual(any_copy.parts, version.parts)
     self.assertEqual(any_copy.version_str, version.version_str)
+
+
+  def test_sorting(self):
+    version_a = self.VERSION_CLS.any((90, 0, 4947, 3))
+    version_b = self.VERSION_CLS.any((100, 0, 4947, 3))
+    version_c = self.VERSION_CLS.any((120, 0, 4947, 2))
+    sorted_list = [version_a, version_b, version_c]
+    self.assertListEqual(sorted([version_a, version_c, version_b]), sorted_list)
+    self.assertListEqual(sorted([version_c, version_a, version_b]), sorted_list)
+    self.assertListEqual(sorted([version_c, version_b, version_a]), sorted_list)
+    self.assertListEqual(sorted([version_b, version_c, version_a]), sorted_list)
+
 
 
 class ChromiumVersionTestCase(_BrowserVersionTestCase):
@@ -371,6 +384,7 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(self.parse("Chromium 125"), self.parse("125"))
     self.assertEqual(self.parse("Chromium 125"), self.parse("125 Stable"))
     self.assertEqual(self.parse("Chromium 125"), self.parse("125 stable"))
+
 
   def test_parse_partial_milestone(self):
     version = self.parse("Chromium 125")
@@ -807,6 +821,21 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
     self.assertFalse(milestone_125_stable.contains(channel_beta))
     self.assertFalse(milestone_125_beta.contains(channel_beta))
 
+  def test_parse_milestone_variants_channel(self):
+    for channel in ("canary", "dev", "beta", "stable", "extended"):
+      version = self.parse(f"Chrome M125 {channel}")
+      self.assertEqual(version, self.parse(f"Chrome M125 {channel}"))
+      self.assertEqual(version, self.parse(f"M125 {channel}"))
+      self.assertEqual(version, self.parse(f"m125 {channel}"))
+      self.assertEqual(version, self.parse(f"125 {channel}"))
+
+  def test_parse_latest_milestone(self):
+    for channel in ("canary", "dev", "beta", "stable", "extended"):
+      version = self.parse(f"Chrome {channel}")
+      self.assertEqual(self.parse(f"Chrome latest {channel}"), version)
+      self.assertEqual(self.parse(f"Chrome-latest-{channel}"), version)
+      self.assertEqual(self.parse(f"chr-latest-{channel}"), version)
+
 
 class ChromeForTestingBrowserVersionTestCase(ChromeBrowserVersionTestCase):
   ANY_VERSION_STR = "Google Chrome for Testing 115.0.5790.114 Any"
@@ -1099,6 +1128,17 @@ class UnknownBrowserVersionTestCase(unittest.TestCase):
       _ = version <= chr_version
     with self.assertRaises(TypeError):
       _ = chr_version <= version
+
+
+class D8VersionTestCase(unittest.TestCase):
+
+  def test_init(self):
+    with self.assertRaises(BrowserVersionParseError):
+      D8Version.parse("")
+
+  def test_parse_basic(self):
+    version = D8Version.parse("V8 version 13.5.0 (candidate)")
+    self.assertEqual(version.parts, (13, 5, 0))
 
 
 # Hide the abstract base test class from all test runner

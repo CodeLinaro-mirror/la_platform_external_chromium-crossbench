@@ -23,7 +23,6 @@ import subprocess
 import sys
 import tempfile
 import urllib.error
-import urllib.parse
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
@@ -43,6 +42,8 @@ if TYPE_CHECKING:
   from asyncio.subprocess import Process
   from subprocess import Popen
 
+  from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.types import JsonDict
   ProcessLike: TypeAlias = Popen | Process | int
@@ -290,6 +291,7 @@ class Platform(abc.ABC):
         "os": self.os_details(),
         "python": self.python_details(),
         "CPU": self.cpu_details(),
+        "display": self.display_details()
     }
 
   @functools.lru_cache(maxsize=1)
@@ -310,11 +312,20 @@ class Platform(abc.ABC):
         "bits": 64 if sys.maxsize > 2**32 else 32,
     }
 
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    # TODO: implement on more platforms
+    return tuple()
+
+
   def get_relative_cpu_speed(self) -> float:
     return 1
 
   def is_thermal_throttled(self) -> bool:
     return self.get_relative_cpu_speed() < 1
+
+  @abc.abstractmethod
+  def uptime(self) -> dt.timedelta:
+    pass
 
   def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     return psutil.disk_usage(str(self.local_path(path)))
@@ -381,6 +392,10 @@ class Platform(abc.ABC):
   @abc.abstractmethod
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     pass
+
+  @property
+  def is_headless(self) -> bool:
+    return not self.has_display
 
   @property
   def has_display(self) -> bool:
@@ -542,6 +557,9 @@ class Platform(abc.ABC):
       return psutil.Process(pid).as_dict()
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
+
+  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+    raise NotImplementedError(f"meminfo not implemented for {self}.")
 
   def foreground_process(self) -> Optional[Dict[str, Any]]:
     return None
@@ -948,6 +966,12 @@ class Platform(abc.ABC):
   def get_main_display_brightness(self) -> int:
     raise NotImplementedError(
         "'get_main_display_brightness' is only available on MacOS for now")
+
+  def set_display_refresh_rate(self,
+                               refresh_rate: int,
+                               retry: int = 3) -> Tuple[bool, str]:
+    raise NotImplementedError(
+        "'set_display_refresh_rate' is only available on MacOS for now")
 
   def check_autobrightness(self) -> bool:
     raise NotImplementedError(

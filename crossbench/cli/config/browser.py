@@ -9,13 +9,11 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Optional, Self, TextIO, Tuple, cast
+from typing import Any, Optional, Self, Tuple, cast
 
-import hjson
 from typing_extensions import override
 
 import crossbench.browsers.all as all_browsers
-from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
@@ -28,7 +26,9 @@ from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 
-SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox")
+SUPPORTED_EMBEDDER = ("googlequicksearchbox",)
+SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox",
+                     "d8") + SUPPORTED_EMBEDDER
 
 # Split inputs like:
 # - "/out/x64.release/chrome"
@@ -76,6 +76,21 @@ class BrowserConfig(ConfigObject):
   def default(cls) -> Self:
     return cls(
         all_browsers.Chrome.stable_path(plt.PLATFORM), DriverConfig.default())
+
+  @classmethod
+  @override
+  def is_valid_path(cls, path: pth.LocalPath) -> bool:
+    if path.exists() and cls.is_supported_browser_path(path):
+      return True
+    return super().is_valid_path(path)
+
+  @classmethod
+  @override
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    has_config_extension = path.suffix in cls.VALID_CONFIG_EXTENSIONS
+    if not has_config_extension and cls.is_supported_browser_path(path):
+      return cls(path)
+    return super().parse_path(path, **kwargs)
 
   @classmethod
   @override
@@ -248,7 +263,8 @@ class BrowserConfig(ConfigObject):
       return all_browsers.Edge.canary_path(platform)
     if identifier in ("safari", "sf", "safari-stable", "sf-stable"):
       return all_browsers.Safari.default_path(platform)
-    if identifier in ("safari-technology-preview", "safari-tp", "sf-tp", "tp"):
+    if identifier in ("safari-technology-preview", "safari-tech-preview",
+                      "safari-tp", "sf-tp", "stp", "tp"):
       return all_browsers.Safari.technology_preview_path(platform)
     if identifier in ("firefox", "firefox-stable", "ff", "ff-stable"):
       return all_browsers.Firefox.default_path(platform)
@@ -256,6 +272,8 @@ class BrowserConfig(ConfigObject):
       return all_browsers.Firefox.developer_edition_path(platform)
     if identifier in ("firefox-nightly", "ff-nightly", "ff-trunk"):
       return all_browsers.Firefox.nightly_path(platform)
+    if identifier in ("webview", "org.chromium.webview_shell"):
+      return pth.AnyPosixPath("org.chromium.webview_shell")
     return None
 
   @classmethod
@@ -291,16 +309,6 @@ class BrowserConfig(ConfigObject):
     if env_identifier := match.group("env"):
       env = EnvironmentConfig.parse_str(env_identifier)
     return (driver, path, network, env)
-
-  @classmethod
-  def parse_text_io(cls, f: TextIO) -> Self:
-    with exception.annotate(f"Loading browser config file: {f.name}"):
-      config = {}
-      with exception.annotate("Parsing hjson"):
-        config = hjson.load(f)
-      with exception.annotate(f"Parsing config file: {f.name}"):
-        return cls.parse_dict(config)
-    raise argparse.ArgumentTypeError(f"Could not parse : '{f.name}'")
 
   @classmethod
   @override

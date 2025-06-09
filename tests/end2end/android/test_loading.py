@@ -159,6 +159,12 @@ def test_scroll(browser_config, test_env) -> None:
                       "selector": "div[id='yes-scroll']",
                       "timeout": "1s"
                   },
+                  {
+                      "action": "wait_for_condition",
+                      "condition":
+                          "return !!document.getElementById('yes-scroll')",
+                      "timeout": "1s"
+                  },
               ]
           }
       }

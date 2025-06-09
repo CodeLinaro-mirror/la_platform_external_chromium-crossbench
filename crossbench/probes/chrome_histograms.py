@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import dataclasses
+import datetime as dt
 import functools
 import logging
 import re
@@ -15,16 +16,21 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
 
 from typing_extensions import override
 
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
+from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
@@ -140,15 +146,28 @@ class ChromeHistogramsProbe(JsonResultProbe):
               "differences logged."
               "See tools/metrics/histograms/metadata/storage/histograms.xml"
               "or chrome://histograms for a list of available histograms."))
+    parser.add_argument(
+        "use_baseline",
+        aliases=("baseline",),
+        type=bool,
+        default=True,
+        help="Dump histograms at start to use as baseline")
     return parser
 
-  def __init__(self, metrics: Sequence[ChromeHistogramMetric]) -> None:
+  def __init__(self,
+               metrics: Sequence[ChromeHistogramMetric],
+               use_baseline: bool = True) -> None:
     super().__init__()
     self._metrics = metrics
+    self._use_baseline = use_baseline
 
   @property
   def metrics(self) -> Sequence[ChromeHistogramMetric]:
     return self._metrics
+
+  @property
+  def use_baseline(self) -> bool:
+    return self._use_baseline
 
   def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
@@ -156,6 +175,16 @@ class ChromeHistogramsProbe(JsonResultProbe):
 
   def get_context_cls(self) -> Type[ChromeHistogramsProbeContext]:
     return ChromeHistogramsProbeContext
+
+  def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
+    merged = MetricsMerger.merge_json_list(
+        story_group.results[self].json
+        for story_group in group.repetitions_groups)
+    return self.write_group_result(group, merged)
+
+  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    return self.merge_browsers_json_list(group).merge(
+        self.merge_browsers_csv_list(group))
 
 
 @dataclasses.dataclass
@@ -192,7 +221,7 @@ class ChromeHistogramSample:
   # "Histogram: WebUI.CreatedForUrl recorded 30 samples (flags = 0x41)"
   _HEADER_RE = re.compile(r"^Histogram: +.* recorded (\d+) samples"
                           r"(?:, mean = (-?\d+\.\d+))?"
-                          r" \(flags = (0x[0-9A-Fa-f]+)\)$")
+                          r"(?: \(flags = (0x[0-9A-Fa-f]+)\))?$")
 
   @classmethod
   def from_json(cls, histogram_dict: Dict) -> ChromeHistogramSample:
@@ -206,7 +235,7 @@ class ChromeHistogramSample:
           f"{name} histogram header has invalid data: {header}")
     count = int(m.group(1))
     mean = float(m.group(2)) if m.group(2) is not None else None
-    flags = int(m.group(3), 16)
+    flags = int(m.group(3), 16) if m.group(3) is not None else 0
 
     bucket_counts: Dict[int, int] = {}
     bucket_maxes: Dict[int, int] = {}
@@ -256,6 +285,10 @@ class ChromeHistogramSample:
   @property
   def count(self) -> int:
     return self._count
+
+  @property
+  def flags(self) -> int:
+    return self._flags
 
   def bucket_max(self, bucket_min: int) -> Optional[int]:
     return self._bucket_maxes.get(bucket_min)
@@ -341,7 +374,10 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
   def dump_histograms(self, name: str) -> Dict[str, ChromeHistogramSample]:
     with self.run.actions(
         f"Probe({self.probe.name}) dump histograms {name}") as actions:
-      actions.show_url("chrome://histograms")
+      actions.show_url(
+          "chrome://histograms",
+          ready_state=ReadyState.COMPLETE,
+          timeout=dt.timedelta(seconds=10))
       actions.js(self.HISTOGRAM_SEND)
       actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, 10.0)
       data = actions.js(self.HISTOGRAM_DATA)
@@ -354,7 +390,10 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
       return histograms
 
   def start(self) -> None:
-    self._baseline = self.dump_histograms("start")
+    if self.probe.use_baseline:
+      self._baseline = self.dump_histograms("start")
+    else:
+      self._baseline = {}
     super().start()
 
   def stop(self) -> None:
@@ -364,7 +403,9 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
   @override
   def to_json(self, actions: Actions) -> Json:
     del actions
-    assert self._baseline, "Did not extract start histograms"
+    assert self._baseline is not None, "Probe was not started"
+    if self.probe.use_baseline:
+      assert self._baseline, "Did not extract start histograms"
     assert self._delta, "Did not extract end histograms"
     json = {}
     for metric in self.probe.metrics:

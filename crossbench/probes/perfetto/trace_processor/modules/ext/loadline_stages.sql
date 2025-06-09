@@ -37,7 +37,13 @@ FROM slice, loadline_presentation
 WHERE
   name = 'PipelineReporter'
   AND ts + dur BETWEEN presentation - 1e6 AND presentation + 1e6
-  AND extract_arg(arg_set_id, 'chrome_frame_reporter.state') = 'STATE_PRESENTED_ALL'
+  AND COALESCE(
+    extract_arg(arg_set_id, 'frame_reporter.state'),
+    -- TODO(crbug.com/409484302): Remove once Chrome migrates from
+    -- ChromeTrackEvent.chrome_frame_reporter to
+    -- ChromeTrackEvent.frame_reporter.
+    extract_arg(arg_set_id, 'chrome_frame_reporter.state')
+  ) = 'STATE_PRESENTED_ALL'
 ORDER BY ts
 LIMIT 1;
 

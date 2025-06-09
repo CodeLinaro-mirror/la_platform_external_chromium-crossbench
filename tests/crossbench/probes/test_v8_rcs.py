@@ -29,6 +29,7 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
         LivePage("amazon", "https://amazon.com")
     ]
     repetitions = 2
+
     runner = self.create_runner(
         stories,
         js_side_effects=[EXAMPLE_RCS_DATA],

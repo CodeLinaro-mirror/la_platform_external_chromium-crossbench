@@ -45,6 +45,7 @@ press_benchmarks: List[Type[PressBenchmark]] = [
     benchmarks.MotionMark131Benchmark,
     benchmarks.MotionMarkMainBenchmark,
     # JetStream:
+    benchmarks.JetStream11Benchmark,
     benchmarks.JetStream20Benchmark,
     benchmarks.JetStream21Benchmark,
     benchmarks.JetStream22Benchmark,

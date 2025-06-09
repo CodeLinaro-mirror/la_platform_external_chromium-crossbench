@@ -59,26 +59,38 @@ class AbstractChromeDownloaderTestCase(
     self.assertFalse(ChromeDownloader.is_valid("chr-i45", self.platform))
 
     self.assertTrue(ChromeDownloader.is_valid("M45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M45 stable", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M45-canary", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("m45", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chrome-m45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chrome-m45-dev", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chrome-45", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-m45", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-45", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chr-45-stable", self.platform))
 
     self.assertTrue(ChromeDownloader.is_valid("M100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M100 stable", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("M100-stable", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("m100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chrome-m100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chrome-m100-dev", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chrome-100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-m100", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("chr-100", self.platform))
+    self.assertTrue(ChromeDownloader.is_valid("chr-100-stable", self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome m100", self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome 100", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("Google Chrome extended", self.platform))
 
     self.assertFalse(
         ChromeDownloader.is_valid("M100.1.2.123.9999", self.platform))
     self.assertTrue(ChromeDownloader.is_valid("M111.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("M111.0.5563.110 stable", self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome M111.0.5563.110",
                                   self.platform))
@@ -88,6 +100,9 @@ class AbstractChromeDownloaderTestCase(
     self.assertFalse(ChromeDownloader.is_valid("111.0.5563.110", self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome 111.0.5563.110",
+                                  self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("Google Chrome 111.0.5563.110 canary",
                                   self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("Google Chrome Canary111.0.5563.110",
@@ -102,6 +117,18 @@ class AbstractChromeDownloaderTestCase(
         ChromeDownloader.is_valid("chrome-111.0.5563.110", self.platform))
     self.assertTrue(
         ChromeDownloader.is_valid("chr-111.0.5563.110", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chr-111.0.5563.110-canary", self.platform))
+
+  def test_is_valid_strings_latest(self):
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome latest stable", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome latest canary", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome-latest-stable", self.platform))
+    self.assertTrue(
+        ChromeDownloader.is_valid("chrome-latest-dev", self.platform))
 
   def test_is_valid_path(self) -> None:
     self.assertFalse(

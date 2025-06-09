@@ -7,12 +7,13 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, Optional, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Tuple
 
 from typing_extensions import override
 
 from crossbench import exception
-from crossbench.cli.config.network_speed import NetworkSpeedConfig
+from crossbench.cli.config.network_speed import (NetworkSpeedConfig,
+                                                 NetworkSpeedPreset)
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_file_server import LocalFileNetwork
@@ -40,6 +41,10 @@ class NetworkType(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class NetworkConfig(ConfigObject):
+  ARCHIVE_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".archive", ".wprgo")
+  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = (
+      ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS)
+
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
   path: pth.LocalPath | None = None
@@ -48,9 +53,6 @@ class NetworkConfig(ConfigObject):
   persist_server: bool = False
   run_on_device: bool = False
   skip_injection: bool = False
-
-  ARCHIVE_EXTENSIONS = (".archive", ".wprgo")
-  VALID_EXTENSIONS = ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS
 
   @classmethod
   def default(cls, type: Optional[NetworkType] = None) -> Self:
@@ -61,9 +63,18 @@ class NetworkConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls, default=cls.default())
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
+    preset_choices = tuple(str(preset) for preset in NetworkSpeedPreset) # pytype: disable=missing-parameter
     parser.add_argument(
-        "speed", type=NetworkSpeedConfig, default=NetworkSpeedConfig.default())
-    parser.add_argument("path", type=PathParser.existing_path)
+        "speed",
+        type=NetworkSpeedConfig,
+        default=NetworkSpeedConfig.default(),
+        help=("Enable traffic shaping using ts_proxy, disabled by default. "
+              f"Either full NetworkSpeedConfig or one of {preset_choices}."))
+    parser.add_argument(
+        "path",
+        type=PathParser.existing_path,
+        help=("Path to a local directory for 'local' file server network, "
+              "or path to a archive.wprgo for a 'wpr' replay network"))
     parser.add_argument("url", type=str)
     parser.add_argument(
         "wpr_go_bin",
@@ -72,7 +83,12 @@ class NetworkConfig(ConfigObject):
               "used for WPR replay network. "
               "If not specified, a default lookup in known locations is used."))
     parser.add_argument("persist_server", type=bool, default=False)
-    parser.add_argument("run_on_device", type=bool, default=False)
+    parser.add_argument(
+        "run_on_device",
+        type=bool,
+        default=False,
+        help=("For 'wpr' network only: switch to enable running on-device "
+              "to reduce delays caused by traffic forwarding over adb."))
     parser.add_argument(
         "skip_injection",
         type=bool,

@@ -8,19 +8,20 @@ import unittest
 
 from ordered_set import OrderedSet
 
+from crossbench.benchmarks.embedder.embedder_benchmark import EmbedderBenchmark
+from crossbench.benchmarks.jetstream.jetstream_1_1 import JetStream11Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_0 import JetStream20Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_1 import JetStream21Benchmark
 from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
 from crossbench.benchmarks.jetstream.jetstream_main import \
     JetStreamMainBenchmark
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
-from crossbench.benchmarks.loading.loadline_presets import (
-    LoadLinePhoneBenchmark,
-    LoadLinePhoneDebugBenchmark,
-    LoadLinePhoneFastBenchmark,
-    LoadLineTabletBenchmark,
-    LoadLineTabletDebugBenchmark,
-    LoadLineTabletFastBenchmark)
+from crossbench.benchmarks.loadline import (
+    LoadLine1PhoneBenchmark, LoadLine1PhoneDebugBenchmark,
+    LoadLine1PhoneFastBenchmark, LoadLine1TabletBenchmark,
+    LoadLine1TabletDebugBenchmark, LoadLine1TabletFastBenchmark,
+    LoadLine2PhoneBenchmark, LoadLine2PhoneDebugBenchmark,
+    LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
@@ -35,6 +36,8 @@ from crossbench.benchmarks.motionmark.motionmark_1_3_1 import \
     MotionMark131Benchmark
 from crossbench.benchmarks.motionmark.motionmark_main import \
     MotionMarkMainBenchmark
+from crossbench.benchmarks.speedometer.speedometer_1_0 import \
+    Speedometer10Benchmark
 from crossbench.benchmarks.speedometer.speedometer_2_0 import \
     Speedometer20Benchmark
 from crossbench.benchmarks.speedometer.speedometer_2_1 import \
@@ -48,16 +51,21 @@ from crossbench.benchmarks.speedometer.speedometer_main import \
 from tests import test_helper
 
 ALL = (
+    JetStream11Benchmark,
     JetStream20Benchmark,
     JetStream21Benchmark,
     JetStream22Benchmark,
     JetStreamMainBenchmark,
-    LoadLinePhoneBenchmark,
-    LoadLinePhoneDebugBenchmark,
-    LoadLinePhoneFastBenchmark,
-    LoadLineTabletBenchmark,
-    LoadLineTabletDebugBenchmark,
-    LoadLineTabletFastBenchmark,
+    LoadLine1PhoneBenchmark,
+    LoadLine1PhoneDebugBenchmark,
+    LoadLine1PhoneFastBenchmark,
+    LoadLine1TabletBenchmark,
+    LoadLine1TabletDebugBenchmark,
+    LoadLine1TabletFastBenchmark,
+    LoadLine2PhoneBenchmark,
+    LoadLine2PhoneDebugBenchmark,
+    LoadLine2TabletBenchmark,
+    LoadLine2TabletDebugBenchmark,
     ManualBenchmark,
     MotionMark10Benchmark,
     MotionMark11Benchmark,
@@ -66,12 +74,14 @@ ALL = (
     MotionMark131Benchmark,
     MotionMarkMainBenchmark,
     LoadingBenchmark,
+    Speedometer10Benchmark,
     Speedometer20Benchmark,
     Speedometer21Benchmark,
     Speedometer30Benchmark,
     Speedometer31Benchmark,
     SpeedometerMainBenchmark,
     MemoryBenchmark,
+    EmbedderBenchmark,
 )
 
 

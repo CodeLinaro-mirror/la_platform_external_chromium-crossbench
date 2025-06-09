@@ -2,18 +2,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from argparse import ArgumentTypeError
 import json
+import pathlib
 import unittest
+from argparse import ArgumentTypeError
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
-from crossbench.probes.perfetto.trace_processor.trace_processor import TraceProcessorQueryConfig
+from crossbench.probes.perfetto.trace_processor.trace_processor import \
+    TraceProcessorQueryConfig
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.base import (BaseCrossbenchTestCase,
+                                   CrossbenchFakeFsTestCase)
 
 
 def read_query_sql(name: str) -> str:
@@ -46,6 +49,12 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertEqual(queries[1].name, inline_name)
     self.assertEqual(queries[1].sql, inline_sql)
 
+    self.assertEqual(len(probe.module_paths), 2)
+    self.assertRegex(
+        str(probe.module_paths[0]),
+        r".*\/crossbench\/probes\/perfetto\/trace_processor\/modules\/ext")
+    self.assertEqual(str(probe.module_paths[1]), "/my_project/modules/ext")
+
   def test_query_config_duplicate_name_raises(self):
     with self.assertRaisesRegex(ArgumentTypeError,
                                 "Unexpected duplicates in query names"):
@@ -58,6 +67,22 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
               },
           ],
       })
+
+
+class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
+
+  def test_custom_trace_processor_path(self):
+    trace_processor_dir = pathlib.Path("/path/to")
+    trace_processor_path = trace_processor_dir / "trace_processor_shell"
+    trace_processor_dir.mkdir(parents=True)
+    trace_processor_path.touch()
+
+    config = TraceProcessorProbe.from_config({
+        "trace_processor_bin": str(trace_processor_path),
+        "queries": [],
+    })
+
+    self.assertEqual(str(config.trace_processor_bin), str(trace_processor_path))
 
 
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):
@@ -94,6 +119,17 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.name, "__comment__")
     self.assertEqual(query.sql,
                      "select * from slice where slice.name = 'comment'")
+
+  def test_query_with_replacements(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "comment",
+        "sql": "'replace me'",
+        "replacements": {
+            "replace me": "new value"
+        }
+    })
+    self.assertEqual(query.name, "comment")
+    self.assertEqual(query.sql, "'new value'")
 
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 

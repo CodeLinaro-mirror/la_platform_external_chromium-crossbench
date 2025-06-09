@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
 
 from crossbench import exception
@@ -110,13 +111,24 @@ class ActionRunner:
   def click(self, run: Run, action: i_action.ClickAction) -> None:
     input_source = action.input_source
     if input_source is InputSource.JS:
-      self.click_js(run, action)
+      do_click = self.click_js
     elif input_source is InputSource.TOUCH:
-      self.click_touch(run, action)
+      do_click = self.click_touch
     elif input_source is InputSource.MOUSE:
-      self.click_mouse(run, action)
+      do_click = self.click_mouse
     else:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
+
+    for i in range(action.attempts):
+      try:
+        do_click(run, action)
+        return
+      except Exception as e:
+        if i + 1 < action.attempts:
+          logging.warning("Click failed with %d attempts left: %s",
+                          action.attempts - i, e)
+          continue
+        raise e
 
   def scroll(self, run: Run, action: i_action.ScrollAction) -> None:
     input_source = action.input_source
@@ -134,10 +146,10 @@ class ActionRunner:
 
   def text_input(self, run: Run, action: i_action.TextInputAction) -> None:
     input_source = action.input_source
-    if input_source is InputSource.JS:
-      self.text_input_js(run, action)
-    elif input_source is InputSource.KEYBOARD:
+    if input_source is InputSource.KEYBOARD:
       self.text_input_keyboard(run, action)
+    elif input_source is InputSource.JS and not action.keyevent:
+      self.text_input_js(run, action)
     else:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
@@ -167,6 +179,10 @@ class ActionRunner:
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
+    raise ActionNotImplementedError(self, action)
+
+  def wait_for_condition(self, run: Run,
+                         action: i_action.WaitForConditionAction) -> None:
     raise ActionNotImplementedError(self, action)
 
   def wait_for_element(self, run: Run,
@@ -209,6 +225,14 @@ class ActionRunner:
     del action
     with run.actions("Dump HTML", measure=False):
       self.dump_html_impl(run, "dump")
+
+  def dump_meminfo_impl(self, run: Run, action: i_action.MeminfoAction) -> None:
+    del run, action
+    raise NotImplementedError("dump_meminfo_impl not implemented")
+
+  def dump_meminfo(self, run: Run, action: i_action.MeminfoAction) -> None:
+    with run.actions("Meminfo", measure=False):
+      self.dump_meminfo_impl(run, action)
 
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
@@ -261,9 +285,10 @@ class ActionRunner:
                 setup: ActionBlock) -> None:
     try:
       with exception.annotate("setup"):
+        self._info_stack = ("setup",)
         setup.run_with(self, run, page)
     except Exception:
-      page.create_failure_artifacts(run, "setup-failure")
+      page.create_failure_artifacts(run, "failure")
       raise
 
   def run_login(self, run: Run, page: InteractivePage,
@@ -271,9 +296,10 @@ class ActionRunner:
     try:
       with exception.annotate("login"):
         with run.browser.network.traffic_shaper.pause():
+          self._info_stack = ("login",)
           login.run_with(self, run, page)
     except Exception:
-      page.create_failure_artifacts(run, "login-failure")
+      page.create_failure_artifacts(run, "failure")
       raise
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):

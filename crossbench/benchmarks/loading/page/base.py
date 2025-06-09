@@ -69,6 +69,16 @@ class Page(Story, metaclass=abc.ABCMeta):
                multiple_tabs: bool) -> None:
     pass
 
+  @abc.abstractmethod
+  def run_once(self, run: Run) -> None:
+    pass
+
+  def run(self, run: Run) -> None:
+    for _ in self._playback:
+      run.browser.performance_mark("iteration-start")
+      self.run_once(run)
+      run.browser.performance_mark("iteration-end")
+
   @property
   @abc.abstractmethod
   def first_url(self) -> str:

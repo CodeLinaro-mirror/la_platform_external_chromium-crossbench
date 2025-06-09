@@ -121,6 +121,13 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
           self._sample_json("test", self.BASELINE_HEADER,
                             self.BASELINE_BODY + "bar\n"))
 
+  def test_sample_no_flags_in_header(self):
+    no_flags_sample = ChromeHistogramSample.from_json(
+        self._sample_json("test",
+                          "Histogram: test recorded 50 samples, mean = 57.4",
+                          self.BASELINE_BODY))
+    self.assertEqual(0, no_flags_sample.flags)
+
   def test_sample_count_header_body_mismatch(self):
     with pytest.raises(
         Exception,
@@ -179,6 +186,19 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         "Startup.FirstWebContents.NonEmptyPaint3_p50",
         "Startup.FirstWebContents.NonEmptyPaint3_p90",
     ])
+    self.assertEqual(probe.use_baseline, True)
+
+  def test_parse_config(self):
+    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.from_config({
+        "metrics": {
+            "PageLoad.PaintTiming.NavigationToFirstContentfulPaint": ["mean"]
+        },
+        "baseline": False,
+    })
+    self.assertListEqual([metric.name for metric in probe.metrics], [
+        "PageLoad.PaintTiming.NavigationToFirstContentfulPaint_mean",
+    ])
+    self.assertEqual(probe.use_baseline, False)
 
 
 if __name__ == "__main__":

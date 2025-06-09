@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.helper.spinner import Spinner
+from crossbench.cli import ui
 from crossbench.network.base import Network
 from crossbench.parse import PathParser
 
@@ -55,10 +55,11 @@ class ReplayNetwork(Network):
   @override
   def open(self: ReplayNetworkT,
            session: BrowserSessionRunGroup) -> Iterator[ReplayNetworkT]:
-    with super().open(session):
-      with self._open_replay_server(session):
-        with self._traffic_shaper.open(self, session):
-          yield self
+    with exception.annotate(f"Starting {type(self).__name__}"):
+      with super().open(session):
+        with self._open_replay_server(session):
+          with self._traffic_shaper.open(self, session):
+            yield self
 
   @contextlib.contextmanager
   def _open_replay_server(self, session: BrowserSessionRunGroup):
@@ -75,7 +76,8 @@ class ReplayNetwork(Network):
     raise RuntimeError(f"Could not find md5 hash in gsutil output: {metadata}")
 
   def _download_gcloud_archive(self, url: str) -> LocalPath:
-    with exception.annotate(f"Downloading {url}"), Spinner():
+    title: str = f"Downloading {url}"
+    with exception.annotate(title), ui.spinner(title=title):
       local_path = (
           self.host_platform.local_cache_dir("wpr") /
           self._generate_filename(url))

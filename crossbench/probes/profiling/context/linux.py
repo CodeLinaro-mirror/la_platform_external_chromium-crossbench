@@ -15,8 +15,8 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.chromium.version import ChromiumVersion
+from crossbench.cli import ui
 from crossbench.helper import fs_helper
-from crossbench.helper.spinner import Spinner
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import CleanupMode
 
@@ -115,7 +115,7 @@ class LinuxProfilingContext(PosixProfilingContext):
     with run.actions(
         f"Probe {self.probe.name}: "
         f"Injecting V8 symbols into {len(perf_files)} profiles",
-        verbose=True), Spinner():
+        verbose=True), ui.spinner():
       # Filter out empty files
       perf_files = [
           file for file in perf_files
@@ -141,7 +141,7 @@ class LinuxProfilingContext(PosixProfilingContext):
     with run.actions(
         f"Probe {self.probe.name}: "
         f"exporting {len(perf_files)} profiles to pprof (slow)",
-        verbose=True), Spinner():
+        verbose=True), ui.spinner():
       self.browser_platform.sh(
           "gcertstatus >&/dev/null || "
           "(echo 'Authenticating with gcert:'; gcert)",
@@ -266,6 +266,6 @@ def linux_perf_probe_pprof(
     logging.info("PPROF (with js-symbols):")
   else:
     logging.info("PPROF (no js-symbols):")
-  logging.info("  linux-perf:   %s %s", perf_data_file.name, size)
+  logging.info("  linux-perf:   %s [%s]", perf_data_file.name, size)
   logging.info("  pprof result: %s", url)
   return url

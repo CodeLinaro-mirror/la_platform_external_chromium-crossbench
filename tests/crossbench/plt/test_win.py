@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import os
 import pathlib
+import textwrap
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
@@ -85,6 +87,66 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     with mock.patch("shutil.which", return_value=bin_path) as cm:
       self.assertEqual(self.platform.search_app(bin_path), bin_path)
     cm.assert_called_once_with(os.fspath(bin_path))
+
+  def test_machine_arch_amd64(self):
+    cpu_caption = textwrap.dedent("""
+        Caption
+        -------
+        Intel64 Family 6 Model 154 Stepping 3
+
+
+    """)
+    self.expect_sh(
+        "powershell",
+        "-c",
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
+        result=cpu_caption)
+    self.platform.use_mock_machine = False
+    with mock.patch("platform.machine", return_value="AMD64"):
+      self.assertTrue(self.platform.is_x64)
+      self.assertFalse(self.platform.is_arm64)
+
+  def test_machine_arch_arm64(self):
+    cpu_caption = textwrap.dedent("""
+        Caption
+        -------
+        ARMv8 (64-bit) Family 8 Model 1 Revision 201
+
+
+    """)
+    self.expect_sh(
+        "powershell",
+        "-c",
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
+        result=cpu_caption)
+    self.platform.use_mock_machine = False
+    self.assertTrue(self.platform.is_arm64)
+    self.assertFalse(self.platform.is_x64)
+
+  def test_uptime(self):
+    time_span = textwrap.dedent("""
+        Days              : 14
+        Hours             : 2
+        Minutes           : 19
+        Seconds           : 54
+        Milliseconds      : 978
+        Ticks             : 12179949789862
+        TotalDays         : 14.0971641086366
+        TotalHours        : 338.331938607278
+        TotalMinutes      : 20299.9163164367
+        TotalSeconds      : 1217994.9789862
+        TotalMilliseconds : 1217994978.9862
+    """)
+    self.expect_sh(
+        "powershell",
+        "-c", ("(New-TimeSpan -Start "
+               "(Get-CimInstance Win32_OperatingSystem).LastBootUpTime)"),
+        result=time_span)
+    uptime = self.platform.uptime()
+    self.assertEqual(
+        uptime,
+        dt.timedelta(
+            days=14, hours=2, minutes=19, seconds=54, milliseconds=978))
 
 
 if __name__ == "__main__":

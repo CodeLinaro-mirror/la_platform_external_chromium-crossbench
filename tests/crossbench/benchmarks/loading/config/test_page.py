@@ -8,9 +8,10 @@ import argparse
 import datetime as dt
 import unittest
 
+from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.get import GetAction
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
-from crossbench.action_runner.action.get import GetAction
 from tests import test_helper
 
 
@@ -44,6 +45,12 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.duration, dt.timedelta())
     self.assertIsNone(config.label)
     self.assertEqual(config.any_label, "a.com")
+    blocks = config.blocks
+    self.assertEqual(len(blocks), 1)
+    actions = blocks[0].actions
+    self.assertEqual(len(actions), 2)
+    self.assertEqual(actions[0].TYPE, ActionType.GET)
+    self.assertEqual(actions[1].TYPE, ActionType.WAIT_FOR_READY_STATE)
 
   def test_parse_url_ftp_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -127,13 +134,8 @@ class PageConfigTestsCase(unittest.TestCase):
     config_urls = [
         "cnn",
     ]
-    config = PageConfig.parse(config_urls)
-    self.assertIsNone(config.login)
-    self.assertIsNone(config.setup)
-    self.assertIsNone(config.label)
-    self.assertEqual(config.any_label, "cnn")
-    self.assertEqual(config.first_url, "https://cnn")
-    self.assertEqual(len(config.blocks), 1)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "cnn"):
+      PageConfig.parse(config_urls)
 
   def test_parse_action_sequence(self):
     config = PageConfig.parse([{
