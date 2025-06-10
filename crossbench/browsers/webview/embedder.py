@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import atexit
 import logging
 import shlex
 from typing import TYPE_CHECKING, Sequence, Tuple
@@ -32,7 +31,6 @@ class WebviewEmbedder(Webview):
     # and kill any currently running Embedder app instances to make sure
     # it picks up the new flags when started by the Benchmark.
     self._backup_chrome_flags()
-    atexit.register(self._restore_chrome_flags)
     args = self._get_browser_flags_for_session(session)
     logging.debug("%s: setting flags file contents in %s", self,
                   self._chrome_command_line_path)

@@ -76,6 +76,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     assert settings, "Android browser needs custom settings and platform"
     self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
     self._previous_command_line_contents: str | None = None
+    self._needs_restore_chrome_flags: bool = False
     super().__init__(label, path, settings)
     self._android_package: str = self._lookup_android_package(self.path)
     if not self._android_package:
@@ -114,12 +115,14 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self.adb_force_clear()
       self.platform.adb.grant_permissions(self.android_package)
     self._backup_chrome_flags()
-    atexit.register(self._restore_chrome_flags)
     return self._start_chromedriver(session, driver_path)
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None
     self._previous_command_line_contents = self._read_device_flags()
+    assert not self._needs_restore_chrome_flags, "Invalid flag restore state."
+    self._needs_restore_chrome_flags = True
+    atexit.register(self._restore_chrome_flags)
 
   def _read_device_flags(self) -> Optional[str]:
     if not self.platform.exists(self._chrome_command_line_path):
@@ -147,6 +150,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   def _restore_chrome_flags(self) -> None:
     atexit.unregister(self._restore_chrome_flags)
+    if not self._needs_restore_chrome_flags:
+      return
     current_flags = self._read_device_flags()
     if current_flags != self._previous_command_line_contents:
       logging.warning("%s: flags file changed during run", self)
@@ -161,6 +166,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
                     self._chrome_command_line_path)
       self.platform.set_file_contents(self._chrome_command_line_path,
                                       self._previous_command_line_contents)
+    self._needs_restore_chrome_flags = False
     self._previous_command_line_contents = None
 
   @override
