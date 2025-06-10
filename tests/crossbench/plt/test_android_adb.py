@@ -17,6 +17,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.arch import MachineArch
+from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
@@ -454,29 +455,82 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
         "FILE1\nFILE2\n")
 
+  def test_port_forward_default(self):
+    # Closing the default port-manager happens in the atexit handler.
+    self.expect_adb("forward", "tcp:0", "tcp:33221", result="666")
+    self.platform.ports.forward(0, 33221)
+    self.expect_adb("forward", "--remove", "tcp:666")
+    self.platform.ports.stop_forward(666)
+
   def test_port_forward(self):
     self.expect_adb("forward", "tcp:0", "tcp:33221", result="666")
     self.expect_adb("forward", "--remove", "tcp:666")
-    port = self.platform.port_forward(0, 33221)
-    self.assertEqual(port, 666)
-    self.platform.stop_port_forward(port)
+    with self.platform.ports.nested() as ports:
+      port = ports.forward(0, 33221)
+      self.assertEqual(port, 666)
+      # Cannot forward the same ports in a nested scope.
+      with self.platform.ports.nested() as ports_2:
+        with self.assertRaises(PortForwardException):
+          ports_2.forward(666, 33221)
+      ports.stop_forward(port)
+      with self.assertRaises(PortForwardException):
+        ports.stop_forward(port)
+
+  def test_port_forward_auto_close(self):
+    self.expect_adb("forward", "tcp:0", "tcp:33221", result="666")
+    self.expect_adb("forward", "--remove", "tcp:666")
+    with self.platform.ports.nested() as ports:
+      port = ports.forward(0, 33221)
+      self.assertEqual(port, 666)
+
+  def test_reverse_port_forward_default(self):
+    self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
+    self.platform.ports.reverse_forward(0, 33221)
+    self.expect_adb("reverse", "--remove", "tcp:666")
+    self.platform.ports.stop_reverse_forward(666)
 
   def test_reverse_port_forward(self):
+    with self.platform.ports.nested() as ports:
+      self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
+      self.expect_adb("reverse", "--remove", "tcp:666")
+      port = ports.reverse_forward(0, 33221)
+      self.assertEqual(port, 666)
+      # Cannot forward the same ports in a nested scope.
+      with self.platform.ports.nested() as ports_2:
+        with self.assertRaises(PortForwardException):
+          ports_2.reverse_forward(666, 33221)
+      ports.stop_reverse_forward(port)
+      with self.assertRaises(PortForwardException):
+        ports.stop_reverse_forward(port)
+
+  def test_reverse_port_forward_nested_auto_close(self):
+    self.expect_adb("reverse", "tcp:0", "tcp:33300", result="333")
     self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
     self.expect_adb("reverse", "--remove", "tcp:666")
-    port = self.platform.reverse_port_forward(0, 33221)
-    self.assertEqual(port, 666)
-    self.platform.stop_reverse_port_forward(port)
+    self.expect_adb("reverse", "--remove", "tcp:333")
+    with self.platform.ports.nested() as ports:
+      port = ports.reverse_forward(0, 33300)
+      self.assertEqual(port, 333)
+      with self.platform.ports.nested() as ports:
+        port = ports.reverse_forward(0, 33221)
+        self.assertEqual(port, 666)
 
-  def test_port_forward_invalid(self):
-    super().test_port_forward_invalid()
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
-      self.platform.port_forward(1111, 0)
+  def test_reverse_port_forward_auto_close(self):
+    self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
+    self.expect_adb("reverse", "--remove", "tcp:666")
+    with self.platform.ports.nested() as ports:
+      port = ports.reverse_forward(0, 33221)
+      self.assertEqual(port, 666)
 
-  def test_reverse_port_forward_invalid(self):
-    super().test_reverse_port_forward_invalid()
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):
-      self.platform.reverse_port_forward(1111, 0)
+  def test_port_forward_invalid_adb(self):
+    with self.platform.ports.nested() as ports:
+      with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
+        ports.forward(1111, 0)
+
+  def test_reverse_port_forward_invalid_adb(self):
+    with self.platform.ports.nested() as ports:
+      with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):
+        ports.reverse_forward(1111, 0)
 
   def test_display_resolution(self):
     self.expect_sh(

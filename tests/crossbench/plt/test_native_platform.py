@@ -503,7 +503,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertLess(0, uptime.total_seconds())
 
 
-
 class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   platform: PosixPlatform
   # MacOs has custom subclass

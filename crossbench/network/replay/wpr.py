@@ -203,13 +203,13 @@ class LocalWprReplayNetwork(WprReplayNetwork):
     https_port = self.https_port
     logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                  browser_platform)
-    # TODO: create port-forwarder service that is shut down properly.
     # TODO: make ports configurable
-    browser_platform.reverse_port_forward(http_port, http_port)
-    browser_platform.reverse_port_forward(https_port, https_port)
-    yield
-    browser_platform.stop_reverse_port_forward(http_port)
-    browser_platform.stop_reverse_port_forward(https_port)
+    ports = browser_platform.ports
+    with browser_platform.ports.nested() as ports:
+      ports.reverse_forward(http_port, http_port)
+      ports.reverse_forward(https_port, https_port)
+      yield
+      # port cleanup happens automatically
 
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
@@ -293,8 +293,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
-    wpr_go_bin, archive, key_file, cert_file, inject_script =\
-        self._push_required_files()
+    wpr_go_bin, archive, key_file, cert_file, inject_script = (
+        self._push_required_files())
     inject_scripts: List[AnyPath] = ([inject_script] if
                                      self.inject_deterministic_script else [])
     return WprReplayServer(

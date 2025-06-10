@@ -297,7 +297,7 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
           stdin=subprocess.PIPE)
       atexit.register(self._stop_remote_driver)
       driver_port = self._wait_for_driver_port()
-      self._forward_port = platform.port_forward(0, driver_port)
+      self._forward_port = platform.ports.forward(0, driver_port)
       logging.info(
           "Chromedriver listening on %d forwarded through local port %d",
           driver_port, self._forward_port)
@@ -316,11 +316,13 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
       self._chromedriver.terminate()
       self._chromedriver = None
     finally:
-      # Closing the ssh connection doesn't terminate chromedriver, so kill it.
-      self._killall_chromedriver()
-      if self._forward_port:
-        self._platform.stop_port_forward(self._forward_port)
-        self._forward_port = 0
+      try:
+        # Closing the ssh connection doesn't terminate chromedriver, so kill it.
+        self._killall_chromedriver()
+      finally:
+        if forward_port := self._forward_port:
+          self._platform.ports.stop_forward(forward_port)
+          self._forward_port = 0
 
   def _killall_chromedriver(self) -> None:
     self._platform.sh("killall", "chromedriver", check=False)

@@ -75,7 +75,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._extra_flags = extra_flags
     # Temporary objects, reset after all runs are ready (see set_ready).
     self._probe_results = ProbeResultDict(root_dir)
-    self._probe_context_manager = ProbeSessionContextManager(
+    self._probe_session_context_manager = ProbeSessionContextManager(
         self, self._probe_results)
 
   def append(self, run: Run) -> None:
@@ -92,7 +92,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._validate()
     self._set_path(self._get_session_dir())
     self._probe_results = ProbeResultDict(self.path)
-    self._probe_context_manager = ProbeSessionContextManager(
+    self._probe_session_context_manager = ProbeSessionContextManager(
         self, self._probe_results)
 
   def _validate(self) -> None:
@@ -283,7 +283,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _setup(self, is_dry_run: bool) -> None:
     self._state.expect(State.SETUP)
-    self._probe_context_manager.setup(self.probes, is_dry_run)
+    self._probe_session_context_manager.setup(self.probes, is_dry_run)
     # TODO: handle session vs run probe.
     for run in self.runs:
       with self._exceptions.annotate(f"Setting up {run}"):
@@ -323,7 +323,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   @contextlib.contextmanager
   def _start_probes(self, is_dry_run: bool):
     with self._exceptions.annotate("Starting Session Probes"):
-      with self._probe_context_manager.open(is_dry_run):
+      with self._probe_session_context_manager.open(is_dry_run):
         yield
 
   def _start(self, is_dry_run: bool) -> None:
@@ -339,7 +339,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       logging.info("BROWSER: %s", self.browser.path)
       return
     assert self.network.is_running, "Network isn't running yet"
-    assert self._probe_context_manager.is_running
+    assert self._probe_session_context_manager.is_running
     browser_log_file = self.path / "browser.log"
     assert not browser_log_file.exists(), (
         f"Default browser log file {browser_log_file} already exists.")
@@ -364,7 +364,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         self._stop_browser(is_dry_run)
       finally:
         self._state.transition(State.STOPPING, to=State.DONE)
-    self._probe_context_manager.teardown(is_dry_run)
+    self._probe_session_context_manager.teardown(is_dry_run)
 
   def _stop_browser(self, is_dry_run: bool) -> None:
     self._state.expect(State.STOPPING)

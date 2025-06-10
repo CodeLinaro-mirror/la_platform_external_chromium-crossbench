@@ -36,6 +36,7 @@ from crossbench.helper import wait
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
@@ -109,6 +110,7 @@ class Platform(abc.ABC):
   def __init__(self) -> None:
     self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
+    self._default_port_manager: PortManager = PortManager(self)
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -569,8 +571,13 @@ class Platform(abc.ABC):
     self.assert_is_local()
     return self.path(tempfile.gettempdir())
 
+  @property
+  def ports(self) -> PortManager:
+    return self._default_port_manager
+
   def port_forward(self, local_port: int, remote_port: int) -> int:
     """ Forwards a device remote_port to a local port."""
+    # TODO: Migrate forwarding methods to custom PortManager
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
     parse.NumberParser.port_number(local_port, "local_port")
@@ -578,11 +585,13 @@ class Platform(abc.ABC):
     return local_port
 
   def stop_port_forward(self, local_port: int) -> None:
+    # TODO: Migrate forwarding methods to custom PortManager
     del local_port
     self.assert_is_local()
 
   def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
     """ Forwards a local port to a device port."""
+    # TODO: Migrate forwarding methods to custom PortManager
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
     parse.NumberParser.port_number(remote_port, "remote_port")
@@ -590,6 +599,7 @@ class Platform(abc.ABC):
     return remote_port
 
   def stop_reverse_port_forward(self, remote_port: int) -> None:
+    # TODO: Migrate forwarding methods to custom PortManager
     del remote_port
     self.assert_is_local()
 

@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import atexit
 import contextlib
 import email.parser
 import http.server
@@ -185,21 +184,17 @@ class LocalFileNetwork(Network):
   @contextlib.contextmanager
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
     browser_platform = session.browser_platform
+    ports = browser_platform.ports
     if browser_platform.is_remote:
       logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                    browser_platform)
-      # TODO: create port-forwarder service that is shut down properly.
       # TODO: make ports configurable
-      browser_platform.reverse_port_forward(self._port, self._port)
-
-      def cleanup():
-        browser_platform.stop_reverse_port_forward(self._port)
-
-      atexit.register(cleanup)
-    yield
-    if browser_platform.is_remote:
-      atexit.unregister(cleanup)
-      cleanup()
+      ports.reverse_forward(self._port, self._port)
+    try:
+      yield
+    finally:
+      if browser_platform.is_remote:
+        ports.stop_reverse_forward(self._port)
 
   @property
   @override
