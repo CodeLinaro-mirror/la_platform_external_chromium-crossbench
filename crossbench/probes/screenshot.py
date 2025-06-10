@@ -18,7 +18,7 @@ from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.path import AnyPath
   from crossbench.runner.run import Run
 

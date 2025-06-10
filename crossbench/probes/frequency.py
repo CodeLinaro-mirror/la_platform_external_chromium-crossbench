@@ -17,7 +17,7 @@ from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 

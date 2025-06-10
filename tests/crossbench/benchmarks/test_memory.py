@@ -12,7 +12,7 @@ from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.memory.memory_benchmark import (
     MemoryBenchmark, MemoryBenchmarkStoryFilter, MemoryProbe)
-from crossbench.env import EnvironmentConfig, ValidationMode
+from crossbench.env.env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper

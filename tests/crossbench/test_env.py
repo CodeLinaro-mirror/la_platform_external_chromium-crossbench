@@ -12,8 +12,8 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.settings import Settings
-from crossbench.env import (EnvironmentConfig, HostEnvironment, ValidationError,
-                            ValidationMode)
+from crossbench.env.env import (EnvironmentConfig, HostEnvironment,
+                                ValidationError, ValidationMode)
 from crossbench.helper import url_helper
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase

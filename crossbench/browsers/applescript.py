@@ -16,12 +16,12 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser
-from crossbench.env import ValidationError
+from crossbench.env.env import ValidationError
 
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 

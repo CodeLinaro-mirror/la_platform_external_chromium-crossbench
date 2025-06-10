@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.webdriver import RemoteWebDriver
-from crossbench.env import HostEnvironment
+from crossbench.env.env import HostEnvironment
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError

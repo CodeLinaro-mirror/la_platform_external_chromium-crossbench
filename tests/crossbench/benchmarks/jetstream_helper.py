@@ -17,7 +17,8 @@ from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Probe,
                                                          JetStream2ProbeContext,
                                                          JetStream2Story)
-from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
+from crossbench.env.env import (EnvironmentConfig, HostEnvironment,
+                                ValidationMode)
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 

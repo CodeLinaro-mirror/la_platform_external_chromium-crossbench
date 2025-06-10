@@ -16,7 +16,8 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
-from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
+from crossbench.env.env import (EnvironmentConfig, HostEnvironment,
+                                ValidationMode)
 from crossbench.helper import collection_helper
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.helper.wait import WaitRange

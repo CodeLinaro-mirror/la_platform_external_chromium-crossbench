@@ -21,9 +21,9 @@ from typing_extensions import override
 import crossbench.benchmarks.all as benchmarks
 import crossbench.browsers.browser
 import crossbench.browsers.webdriver as cb_webdriver
-import crossbench.env
 import crossbench.runner.runner
 from crossbench import path as pth
+from crossbench.cli.config.env import ValidationMode
 from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
@@ -160,6 +160,6 @@ def run_benchmark(output_folder: pth.LocalPathLike,
       out_dir=pth.LocalPath(output_folder),
       browsers=browser_list,
       benchmark=benchmark,
-      env_validation_mode=crossbench.env.ValidationMode.SKIP)
+      env_validation_mode=ValidationMode.SKIP)
 
   runner.run()

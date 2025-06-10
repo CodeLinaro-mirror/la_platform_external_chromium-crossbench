@@ -10,7 +10,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
-from crossbench.env import HostEnvironment
+from crossbench.env.env import HostEnvironment
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
 from crossbench.probes.frequency import FrequencyProbe, FrequencyProbeContext

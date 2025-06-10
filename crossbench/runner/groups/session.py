@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.network.base import Network
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe

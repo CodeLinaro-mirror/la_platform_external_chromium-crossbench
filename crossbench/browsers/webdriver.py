@@ -30,7 +30,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.timeouts import Timeouts
 
   from crossbench.browsers.settings import Settings
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 

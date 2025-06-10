@@ -17,7 +17,7 @@ from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env import HostEnvironment
+from crossbench.env.env import HostEnvironment
 from crossbench.exception import Annotator
 from crossbench.helper.wait import WaitRange
 from crossbench.path import safe_filename

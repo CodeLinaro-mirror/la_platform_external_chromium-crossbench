@@ -20,7 +20,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.path import LocalPath
   from crossbench.plt.base import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run

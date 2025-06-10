@@ -24,14 +24,14 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.replacements import Replacements
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
+from crossbench.replacements import Replacements
 
 if TYPE_CHECKING:
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict

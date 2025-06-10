@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Self,
-                    TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, List,
+                    Optional, Self, TypeAlias)
 
 from typing_extensions import override
 
@@ -38,8 +38,6 @@ def merge_bool(name: str, left: Optional[bool],
     raise ValueError(f"Conflicting merge values for {name}: "
                      f"{left} vs. {right}")
   return left
-
-
 
 
 def merge_number_max(name: str, left: Optional[Number],
@@ -87,7 +85,7 @@ ENV_CONFIG_PRESETS: Dict[str, "EnvironmentConfig"] = {}
 
 @dataclasses.dataclass(frozen=True)
 class EnvironmentConfig(ConfigObject):
-  IGNORE = None
+  IGNORE: ClassVar[None] = None
 
   browser_allow_background: bool | None = IGNORE
   browser_allow_existing_process: bool | None = IGNORE

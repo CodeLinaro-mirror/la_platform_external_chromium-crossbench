@@ -12,7 +12,7 @@ import hjson
 from crossbench import __version__, plt
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.env import EnvironmentConfig
+from crossbench.env.env import EnvironmentConfig
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException

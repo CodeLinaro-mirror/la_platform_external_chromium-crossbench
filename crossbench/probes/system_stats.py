@@ -14,7 +14,7 @@ from crossbench.probes.probe_error import ProbeValidationError
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
 
 
 class SystemStatsProbe(PollingProbe):

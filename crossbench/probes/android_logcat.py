@@ -15,7 +15,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.runner.run import Run
 

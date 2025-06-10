@@ -13,7 +13,7 @@ from crossbench.probes.probe import Probe
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
 
 
 class ChromiumProbe(Probe):

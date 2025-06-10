@@ -25,7 +25,8 @@ from crossbench.benchmarks.motionmark.motionmark_1_3_1 import (
 from crossbench.benchmarks.motionmark.motionmark_main import (
     MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
     MotionMarkMainStory)
-from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
+from crossbench.env.env import (EnvironmentConfig, HostEnvironment,
+                                ValidationMode)
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper

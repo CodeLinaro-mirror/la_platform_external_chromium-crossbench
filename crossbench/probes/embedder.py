@@ -13,13 +13,12 @@ from crossbench.parse import ObjectParser
 from crossbench.probes.js import parse_javascript
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import (ProbeConfigParser,
-                                     ProbeIncompatibleBrowser)
+from crossbench.probes.probe import ProbeConfigParser, ProbeIncompatibleBrowser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.env import HostEnvironment
   from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions

@@ -17,13 +17,15 @@ from crossbench.helper import collection_helper, url_helper
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import CmdArg, Platform
   from crossbench.probes.probe import Probe
 
+
 class ValidationError(Exception):
   pass
+
 
 STALE_RESULT_ICONS = {
     75: "👻",
@@ -50,23 +52,22 @@ class HostEnvironment:
     fail:     Fast-fail on mismatch
   """
 
-
   def __init__(self,
                platform: Platform,
-               out_dir: LocalPath,
+               out_dir: pth.LocalPath,
                browsers: Iterable[Browser],
                probes: Iterable[Probe],
                repetitions: int,
                config: Optional[EnvironmentConfig] = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
-    self._wait_until = dt.datetime.now()
-    self._config = config or EnvironmentConfig()
-    self._out_dir = out_dir
-    self._browsers = tuple(browsers)
+    self._wait_until: dt.datetime = dt.datetime.now()
+    self._config: EnvironmentConfig = config or EnvironmentConfig()
+    self._out_dir: pth.LocalPath = out_dir
+    self._browsers: Tuple[Browser, ...] = tuple(browsers)
     self._probes = tuple(probes)
-    self._repetitions = repetitions
-    self._platform = platform
-    self._validation_mode = validation_mode
+    self._repetitions: int = repetitions
+    self._platform: Platform = platform
+    self._validation_mode: ValidationMode = validation_mode
 
   @property
   def platform(self) -> Platform:
@@ -246,7 +247,6 @@ class HostEnvironment:
         self.handle_validation_warning(
             f"Expected min system uptime {min_uptime} but got {uptime}. "
             "The OS might not be ready for a clean measurement.")
-
 
   def _check_forbidden_system_process(self) -> None:
     # Verify that no terminals are running.
@@ -444,7 +444,7 @@ class HostEnvironment:
       return
     self._file_access_access_warning(f"the parent result dir: {out_dir})")
 
-  def _has_read_write_access(self, test_dir: AnyPathLike) -> bool:
+  def _has_read_write_access(self, test_dir: pth.AnyPathLike) -> bool:
     try:
       self.platform.mkdir(test_dir, exist_ok=True, parents=True)
       with self.platform.NamedTemporaryFile(
@@ -468,7 +468,6 @@ class HostEnvironment:
         f"Could not modify {dir_name}.\n"
         "Likely missing 'Full Disk Access' macOS Privacy & Security "
         f"permission for {term_program}.")
-
 
   def check_browser_focused(self, browser: Browser) -> None:
     if (self._config.browser_allow_background or not browser.pid or
