@@ -114,6 +114,22 @@ class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
         ChromiumBuildBinaryFinder(self.platform, "custom_binary").path,
         candidate)
 
+  def test_find_build_dir_from_candite(self):
+    checkout_dir = pathlib.Path.home() / "Documents/some_chr/src"
+    candidate = checkout_dir / "out/Release/custom_binary"
+    self.fs.create_file(candidate, st_size=100)
+    assert checkout_dir.is_dir()
+    self._add_chrome_checkout_files(checkout_dir)
+    self.assertIsNone(
+        ChromiumBuildBinaryFinder(self.platform, "custom_binary").path,)
+    self.assertEqual(
+        ChromiumBuildBinaryFinder(self.platform, "custom_binary",
+                                  (checkout_dir / "out",)).path, candidate)
+    self.assertEqual(
+        ChromiumBuildBinaryFinder(self.platform, "custom_binary",
+                                  (candidate.parent,)).path, candidate)
+
+
 
 class PerfettoToolFinderTestCase(BaseCheckoutTestCase):
 

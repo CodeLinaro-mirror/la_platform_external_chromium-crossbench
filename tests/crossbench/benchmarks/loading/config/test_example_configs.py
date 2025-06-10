@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import datetime as dt
-import hjson
 
+from crossbench import hjson as cb_hjson
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.helper.cwd import ChangeCWD
 from tests import test_helper
@@ -30,7 +30,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
+      data = cb_hjson.load_unique_keys(f)
     dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
@@ -70,7 +70,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
+      data = cb_hjson.load_unique_keys(f)
     dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
@@ -87,7 +87,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
+      data = cb_hjson.load_unique_keys(f)
     with ChangeCWD(test_helper.config_dir() / "benchmark/loadline"):
       dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
@@ -106,7 +106,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
+      data = cb_hjson.load_unique_keys(f)
     with ChangeCWD(test_helper.config_dir() / "benchmark/loadline"):
       dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)

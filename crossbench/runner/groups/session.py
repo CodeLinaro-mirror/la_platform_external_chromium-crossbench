@@ -26,6 +26,7 @@ from crossbench.runner.result_origin import ResultOrigin
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.env import HostEnvironment
   from crossbench.network.base import Network
@@ -168,6 +169,10 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._browser
 
   @property
+  def benchmark(self) -> Benchmark:
+    return self.first_run.benchmark
+
+  @property
   def index(self) -> int:
     return self._index
 
@@ -264,7 +269,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     with self.measure("browser-session-setup"):
       self._setup(is_dry_run)
     try:
-      with self._start_network(), self._start_probes(is_dry_run):
+      with self._start_network(is_dry_run), self._start_probes(is_dry_run):
         self._start(is_dry_run)
         try:
           self._state.expect(State.RUNNING)
@@ -306,8 +311,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         self.raw_session_dir.symlink_to(self.path)
 
   @contextlib.contextmanager
-  def _start_network(self):
+  def _start_network(self, is_dry_run: bool = False):
     logging.debug("Starting network: %s", self.network)
+    if is_dry_run:
+      yield
+      return
     with self._exceptions.annotate(f"Starting Network: {self.network}"):
       with self.network.open(self):
         yield
@@ -327,10 +335,10 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _start_browser(self, is_dry_run: bool) -> None:
     self._state.expect(State.STARTING)
-    assert self.network.is_running, "Network isn't running yet"
     if is_dry_run:
       logging.info("BROWSER: %s", self.browser.path)
       return
+    assert self.network.is_running, "Network isn't running yet"
     assert self._probe_context_manager.is_running
     browser_log_file = self.path / "browser.log"
     assert not browser_log_file.exists(), (
@@ -365,6 +373,14 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # in a unclean state.
     if self.browser.is_running:
       self._runs[-1]._teardown_browser(is_dry_run)  # pylint: disable=protected-access
+
+  def handle_startup_failure(self) -> None:
+    runs = tuple(self.runs)
+    self.exceptions.log(f"SESSION STARTUP ERRORS: Skipping {len(runs)} runs")
+    for run in runs:
+      with self.exception_capture(f"Processing startup failures for {run}"):
+        run.exceptions.extend(self.exceptions)
+        run.teardown_write_results_db()
 
   # TODO: remove once cleanly implemented
   def is_first_run(self, run: Run) -> bool:

@@ -51,6 +51,7 @@ class DriverConfig(ConfigObject):
   path: AnyPath | None = None
   device_id: str | None = None
   adb_bin: AnyPath | None = None
+  bundletool: AnyPath | None = None
   settings: immutabledict | None = None
 
   @classmethod
@@ -185,6 +186,10 @@ class DriverConfig(ConfigObject):
         "adb_bin",
         type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the adb binary, only valid for Android.")
+    parser.add_argument(
+        "bundletool",
+        type=plt.PLATFORM.parse_local_binary_path,
+        help="Path to the bundletool jar file, only valid for Android.")
     return parser
 
   def __post_init__(self) -> None:
@@ -210,7 +215,9 @@ class DriverConfig(ConfigObject):
     if self.type == BrowserDriverType.ANDROID:
       self.validate_android()
     elif self.adb_bin:
-      raise argparse.ArgumentTypeError("adb_path is only valid for Android.")
+      raise argparse.ArgumentTypeError("adb_bin is only valid for Android.")
+    elif self.bundletool:
+      raise argparse.ArgumentTypeError("bundletool is only valid for Android.")
     if self.type == BrowserDriverType.IOS:
       self.validate_ios()
     if self.type == BrowserDriverType.CHROMEOS_SSH:
@@ -245,6 +252,8 @@ class DriverConfig(ConfigObject):
           f"Choices are {names}.")
     if self.adb_bin:
       platform.parse_binary_path(self.adb_bin)
+    if self.bundletool:
+      platform.parse_binary_path(self.bundletool)
 
   def validate_chromeos(self) -> None:
     platform = self.get_platform()
@@ -327,7 +336,7 @@ class DriverConfig(ConfigObject):
         ssh_user=ssh_user)
 
   def get_adb_platform(self) -> plt.Platform:
-    adb = Adb(plt.PLATFORM, self.device_id, self.adb_bin)
+    adb = Adb(plt.PLATFORM, self.device_id, self.adb_bin, self.bundletool)
     return AndroidAdbPlatform(plt.PLATFORM, self.device_id, adb)
 
 def driver_device_id(device_id: Optional[str],

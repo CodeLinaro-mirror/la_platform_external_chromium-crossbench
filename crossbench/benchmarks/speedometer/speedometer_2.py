@@ -15,15 +15,7 @@ from crossbench.parse import ObjectParser
 
 
 class Speedometer2Probe(SpeedometerProbe):
-
-  @override
-  def _is_valid_metric_key(self, metric_key: str) -> bool:
-    parts = metric_key.split("/")
-    if len(parts) == 2:
-      return True
-    if len(parts) == 1:
-      return parts[0] in ("Geomean", "Score")
-    return parts[-1] == "total"
+  pass
 
 
 class Speedometer2ProbeContext(SpeedometerProbeContext):

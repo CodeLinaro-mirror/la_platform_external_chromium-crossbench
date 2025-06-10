@@ -16,8 +16,8 @@ import json
 import logging
 import re
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Generic,
-                    Iterable, List, Optional, Self, Set, Tuple, Type,
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final,
+                    Generic, Iterable, List, Optional, Self, Set, Tuple, Type,
                     TypeAlias, TypeVar, cast)
 from urllib.parse import urlparse
 
@@ -401,9 +401,10 @@ class ConfigObject(abc.ABC):
     objects contain other nested config-parsed objects,
   - It is then used to create a real instance of an object.
   """
-  VALID_EXTENSIONS: Tuple[str, ...] = (".hjson", ".json")
-  VALID_SCHEME: Tuple[str, ...] = ("http", "https", "file", "gs", "ftp")
-
+  VALID_CONFIG_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".hjson", ".json")
+  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
+  VALID_SCHEME: ClassVar[Tuple[str,
+                               ...]] = ("http", "https", "file", "gs", "ftp")
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
     return PathParser.value_has_path_prefix(value)
@@ -436,10 +437,11 @@ class ConfigObject(abc.ABC):
     if isinstance(value, dict):
       if (cls is not _TemplatedConfigParser and
           _TemplatedConfigParser.is_template_invocation(value)):
-        result = cls.parse(_TemplatedConfigParser.parse_and_substitute(value))
+        result = cls.parse(
+            _TemplatedConfigParser.parse_and_substitute(value), **kwargs)
         return result
       return cls.parse_dict(value, **kwargs)
-    if not value:
+    if value is None:
       raise ConfigError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pth.LocalPath):
       return cls.parse_path(value, **kwargs)
@@ -452,15 +454,24 @@ class ConfigObject(abc.ABC):
     if cls.is_valid_url(value):
       # TODO(346197734): use parse_url here
       return cls.parse_str(value, **kwargs)
-    try:
-      maybe_path = pth.LocalPath(value).expanduser()
-      if cls.is_valid_path(maybe_path):
-        return cls.parse_path(maybe_path, **kwargs)
-      if cls.value_has_path_prefix(value):
-        return cls.parse_unknown_path(maybe_path, **kwargs)
-    except OSError:
-      pass
+    if value:
+      try:
+        maybe_path = cls._resolve_path(value)
+        if cls.is_valid_path(maybe_path):
+          return cls.parse_path(maybe_path, **kwargs)
+        if cls.value_has_path_prefix(value):
+          return cls.parse_unknown_path(maybe_path, **kwargs)
+      except OSError:
+        pass
     return cls.parse_str(value, **kwargs)
+
+  @classmethod
+  def _resolve_path(cls, value: Any) -> pth.LocalPath:
+    maybe_path = pth.LocalPath(value)
+    if str(maybe_path)[0] == "~":
+      maybe_path = maybe_path.expanduser()
+    maybe_path = maybe_path.resolve()
+    return maybe_path
 
   @classmethod
   def parse_other(cls, value: Any) -> Self:
@@ -491,6 +502,18 @@ class ConfigObject(abc.ABC):
   @classmethod
   def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     # TODO: this should be redirected to parse_config_path
+
+    # _PrimitiveConfigObject will always parse paths as strings
+    # directly and end up calling parse_unknown_path unless they
+    # point to a .hjson config file. In these cases the paths
+    # will be correctly parsed in their final class later so
+    # calling parse_unknown_path is not necessarily an
+    # indication of a bad path.
+    if cls is not _PrimitiveConfigObject:
+      logging.warning(
+          "Parsing value as unknown path. "
+          "This probably means the supplied path is incorrect: %s",
+          str(path))
     return cls.parse_str(str(path), **kwargs)
 
   @classmethod
@@ -508,7 +531,7 @@ class ConfigObject(abc.ABC):
   def parse_config_path(cls, path: pth.LocalPathLike, **kwargs) -> Self:
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       file_path = PathParser.existing_file_path(path)
-      data = ObjectParser.dict_hjson_file(file_path)
+      data = ObjectParser.non_empty_hjson_file(file_path)
       with ChangeCWD(file_path.parent):
         return cls.parse(data, **kwargs)
     raise exception.UnreachableError()
@@ -555,6 +578,12 @@ class _PrimitiveConfigObject(ConfigObject):
 
   @classmethod
   def parse_other(cls, value: Any) -> Self:
+    if isinstance(value, Iterable):
+      result = []
+      for value_entry in value:
+        result.append(_PrimitiveConfigObject.parse(value_entry).value)
+      return cls(result)
+
     return cls(value)
 
 
@@ -572,6 +601,8 @@ class TemplateArg:
     self.used = True
 
 
+ARG_NAME_PATTERN: re.Pattern = re.compile(r"^[A-Z\d_]+$")
+
 def template_args(value: Any) -> Dict[str, TemplateArg]:
   dict_value = ObjectParser.dict(value)
 
@@ -579,8 +610,10 @@ def template_args(value: Any) -> Dict[str, TemplateArg]:
     with exception.annotate_argparsing(
         f"Parsing ...[{repr(arg_key)}] = {repr(arg_value)}"):
 
-      if not arg_key.isupper():
-        logging.warning("Arg names should be uppercase: %s", arg_key)
+      if not re.match(ARG_NAME_PATTERN, arg_key):
+        raise argparse.ArgumentTypeError(
+            "Template args must only contain uppercase letters, "
+            f"numbers, and '_': {arg_key}")
 
       dict_value[arg_key] = TemplateArg(name=arg_key, value=arg_value)
 
@@ -595,11 +628,14 @@ class ConfigTemplateError(argparse.ArgumentTypeError):
 
 class _TemplatedConfigParser(ConfigObject):
 
-  # Matches args of the format: $[.. arg name ..]
-  ARG_RE = re.compile(r"\$\[([^\][[^\]]*)\]")
+  # Matches args of the format: $[ARG]
+  ARG_PATTERN: re.Pattern = re.compile(r"\$\[([A-Z\d_]+)\]")
 
-  # Matches escape sequences of the above: $[[ should not be replaced ]
-  ESCAPED_ARG_RE = re.compile(r"\$\[\[([^\]].*)\]")
+  # Matches the special list spread format $[..ARG]
+  LIST_SPREAD_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\.\.\.([A-Z\d_]+)\]$")
+
+  # Matches escape sequences of the above: $[[ARG]
+  ESCAPED_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\[([A-Z\d_]+)\]")
 
   VALID_KEYS_FOR_TEMPLATE_OBJECT: Final[frozenset] = frozenset([
       frozenset(["template", "args"]),
@@ -723,16 +759,43 @@ class _TemplatedConfigParser(ConfigObject):
             child_value)
     return result
 
+  def _is_list_spread_reference(self, value: Any) -> Optional[str]:
+    if not isinstance(value, str):
+      return None
+
+    match = re.match(self.LIST_SPREAD_ARG_PATTERN, value)
+
+    if match:
+      return match.group(1)
+
+    return None
+
   def _substitute_list(self, value: List[Any]) -> List[Any]:
     result: List[Any] = []
     for index, child_value in enumerate(value):
       with exception.annotate(f"Parsing List index: {index}:"):
-        result.append(self._substitute_args(child_value))
+
+        arg_name = self._is_list_spread_reference(child_value)
+
+        if arg_name and arg_name not in self._unbound_args:
+
+          arg_expansion = _PrimitiveConfigObject.parse(
+              self._substitute_str(f"$[{arg_name}]")).value
+
+          if not isinstance(arg_expansion, list):
+            raise ValueError(
+                f"Argument value for the spread operator {child_value}"
+                f" is not a list: {arg_expansion}")
+
+          for list_item in arg_expansion:
+            result.append(list_item)
+        else:
+          result.append(self._substitute_args(child_value))
     return result
 
   def _substitute_str(self, value: str) -> Any:
 
-    while matches := list(re.finditer(self.ARG_RE, value)):
+    while matches := list(re.finditer(self.ARG_PATTERN, value)):
 
       made_a_substitution: bool = False
 
@@ -755,7 +818,7 @@ class _TemplatedConfigParser(ConfigObject):
         arg_value = template_arg.value
         template_arg.set_used()
 
-        if m.group(0) == value:
+        if m.group(0) == value and not isinstance(arg_value, str):
           # Arg pattern is the whole string, replace the whole value to allow
           # non-string values to be substituted.
           return arg_value
@@ -774,7 +837,7 @@ class _TemplatedConfigParser(ConfigObject):
     return value
 
   def _fix_escape_sequence(self, value: str) -> str:
-    matches = list(re.finditer(self.ESCAPED_ARG_RE, value))
+    matches = list(re.finditer(self.ESCAPED_ARG_PATTERN, value))
     # Reverse matches so that string indices don't get messed up while we
     # substitute.
     matches.reverse()
@@ -908,6 +971,10 @@ class ConfigParser(Generic[ConfigResultObjectT]):
         if not config_keys.intersection(names):
           return False
     return True
+
+  def has_any_args(self, config_data: Dict[str, Any]) -> bool:
+    config_keys: Set[str] = set(config_data.keys())
+    return bool(config_keys.intersection(self._arg_names))
 
   def kwargs_from_config(self, config_data: Dict[str, Any],
                          **extra_kwargs) -> Dict[str, Any]:

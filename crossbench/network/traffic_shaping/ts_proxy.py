@@ -19,6 +19,7 @@ from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Self, TypeVar
 
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.flags.base import Flags
 from crossbench.helper import wait
 from crossbench.helper.path_finder import TsProxyFinder
@@ -402,14 +403,15 @@ class TsProxyTrafficShaper(TrafficShaper):
   @override
   def open(self: TsProxyTrafficShaperT, network: Network,
            session: BrowserSessionRunGroup) -> Iterator[TsProxyTrafficShaperT]:
-    if not network.is_live:
-      self._ts_proxy = self._create_remapping_ts_proxy(network)
+    with exception.annotate("Starting tsproxy traffic shaping"):
+      if not network.is_live:
+        self._ts_proxy = self._create_remapping_ts_proxy(network)
 
-    with super().open(network, session):
-      logging.debug("Starting TS Proxy")
-      with self._ts_proxy:
-        with self._forward_ports(network, session):
-          yield self
+      with super().open(network, session):
+        logging.debug("Starting TS Proxy")
+        with self._ts_proxy:
+          with self._forward_ports(network, session):
+            yield self
 
   @contextlib.contextmanager
   @override

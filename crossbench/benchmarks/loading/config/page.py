@@ -110,8 +110,7 @@ class PageConfig(ConfigObject):
                label: Optional[str],
                url: str,
                duration: dt.timedelta = dt.timedelta()) -> Self:
-    actions = (GetAction(url, duration=duration),)
-    blocks = (ActionBlock(actions=actions),)
+    blocks = (ActionBlock.from_url(url, duration),)
     return cls(label=label, blocks=blocks)
 
   def actions(self) -> Iterator[Action]:

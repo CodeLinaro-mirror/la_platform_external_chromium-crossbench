@@ -211,6 +211,40 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     urls = [url1, url2] * 3
     self._assert_urls_loaded(urls)
 
+  def test_iteration_performance_marks_single_run(self):
+    url1 = "https://www.example.com/test1"
+    url2 = "https://www.example.com/test2"
+    stories = self.story_filter([url1, url2],
+                                separate=False,
+                                playback=PlaybackController.repeat(1)).stories
+    self._test_run(stories)
+
+    for browser in self.browsers:
+      # one mark for iteration start, one for iteration end
+      self.assertEqual(len(browser.performance_marks), 2)
+      self.assertEqual(browser.performance_marks[0],
+                       "crossbench-iteration-start")
+      self.assertEqual(browser.performance_marks[1], "crossbench-iteration-end")
+
+  def test_iteration_performance_marks_repeat_run(self):
+    repeats: int = 3
+    url1 = "https://www.example.com/test1"
+    url2 = "https://www.example.com/test2"
+    stories = self.story_filter(
+        [url1, url2],
+        separate=False,
+        playback=PlaybackController.repeat(repeats)).stories
+    self._test_run(stories)
+
+    for browser in self.browsers:
+      # one mark for iteration start, one for iteration end
+      self.assertEqual(len(browser.performance_marks), 2 * repeats)
+      for i in range(repeats):
+        self.assertEqual(browser.performance_marks[i * 2],
+                         "crossbench-iteration-start")
+        self.assertEqual(browser.performance_marks[(i * 2) + 1],
+                         "crossbench-iteration-end")
+
   def test_run_repeat_separate(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
@@ -223,6 +257,10 @@ class TestPageLoadBenchmark(SubStoryTestCase):
 
   def _test_run(self, stories, throw: bool = False):
     benchmark = self.benchmark_cls(stories)
+
+    for browser in self.browsers:
+      browser.set_default_js_return(True)
+
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,
@@ -407,6 +445,53 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       for browser in self.browsers:
         self.assertListEqual([url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
+
+  def multiple_pages_with_setup_blocks_config(self):
+    config = {
+        "pages": {
+            "first_page": {
+                "setup": [{
+                    "action": "js",
+                    "script": "SETUP ONE",
+                }],
+                "actions": [{
+                    "action": "wait",
+                    "duration": "1s"
+                }]
+            },
+            "second_page": {
+                "setup": [{
+                    "action": "js",
+                    "script": "SETUP TWO",
+                }],
+                "actions": [{
+                    "action": "wait",
+                    "duration": "1s"
+                }]
+            }
+        }
+    }
+    return config
+
+  def test_pages_with_multiple_setup_blocks(self):
+    for browser in self.browsers:
+      browser.expect_js(JsInvocation(None, "SETUP ONE"))
+      browser.expect_js(JsInvocation(None, "SETUP TWO"))
+
+    config = self.multiple_pages_with_setup_blocks_config()
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    with self._patch_get_browser():
+      self.run_cli("loading", "run", f"--page-config={config_file}",
+                   "--env-validation=skip", "--throw")
+
+    for browser in self.browsers:
+      self.assertEqual(
+          browser.performance_marks,
+          ["crossbench-setup-start", "crossbench-setup-end"] * 2 +  # 2 pages
+          ["crossbench-iteration-start", "crossbench-iteration-end"])
+      self.assertEqual(browser.performance_marks_details,
+                       ["first_page"] * 2 + ["second_page"] * 2 + [None, None])
 
   def setup_expected_google_login_js(self):
     expected_scripts: List[JsInvocation] = [

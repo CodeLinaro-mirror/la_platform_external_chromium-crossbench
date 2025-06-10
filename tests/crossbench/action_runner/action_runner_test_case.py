@@ -6,10 +6,11 @@ import datetime as dt
 import logging
 from unittest import mock
 
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.base import (CrossbenchFakeFsTestCase,
+                                   CrossbenchMockArgsMixin)
 
 
-class ActionRunnerTestCase(CrossbenchFakeFsTestCase):
+class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()

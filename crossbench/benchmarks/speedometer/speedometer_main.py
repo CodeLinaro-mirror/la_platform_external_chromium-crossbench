@@ -38,6 +38,7 @@ class SpeedometerMainStory(Speedometer3Story):
   NAME: str = "speedometer_main"
   URL: str = "https://chromium-workloads.web.app/speedometer/main/"
   URL_OFFICIAL: str = "https://chromium-workloads.web.app/speedometer/main/"
+  URL_CHROME_FORK: str = "https://chromium-workloads.web.app/speedometer/main-custom/"
 
 
 class SpeedometerMainBenchmark(Speedometer3Benchmark):

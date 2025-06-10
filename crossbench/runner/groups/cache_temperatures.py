@@ -64,6 +64,10 @@ class CacheTemperaturesRunGroup(RunGroup):
     return iter(self._runs)
 
   @property
+  def first_run(self) -> Run:
+    return self._runs[0]
+
+  @property
   def repetition(self) -> int:
     return self._repetition
 

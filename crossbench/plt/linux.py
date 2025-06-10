@@ -4,17 +4,84 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import os
-from typing import Any, Dict, Optional, Tuple, Type
+import logging
+import re
+from typing import (TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List,
+                    Optional, Tuple, Type)
 
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.parse import NumberParser
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.posix import PosixPlatform
+from crossbench.plt.process_meminfo import ProcessMeminfo
 from crossbench.plt.remote import RemotePlatformMixin
 from crossbench.plt.signals import LinuxSignals
+
+if TYPE_CHECKING:
+  from crossbench.plt.display_info import DisplayInfo
+
+
+@dataclasses.dataclass
+class XrandrDisplayInfo:
+  RESOLUTION_RE: ClassVar[re.Pattern] = re.compile(
+      r"(?P<resX>[0-9]+)x(?P<resY>[0-9]+)")
+  REFRESH_RATE_RE: ClassVar[re.Pattern] = re.compile(r"(?P<freq>[0-9.]+)\*")
+
+  header: str
+  resolutions: List[str] = dataclasses.field(default_factory=list)
+
+  def is_connected(self) -> bool:
+    return "disconnected" not in self.header
+
+  def resolution(self) -> Tuple[int, int] | None:
+    if match := self.RESOLUTION_RE.search(self.header):
+      return (NumberParser.positive_int(match.group("resX")),
+              NumberParser.positive_int(match.group("resY")))
+    return None
+
+  def refresh_rate(self) -> float:
+    for resolution in self.resolutions:
+      # The current refresh ret is marked with a `*`:
+      if match := self.REFRESH_RATE_RE.search(resolution):
+        return NumberParser.positive_float(match.group("freq"))
+    return -1
+
+
+def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
+  """ Parse xrandr output:
+  Screen 0: minimum 64 x 64, current 1728 x 946, maximum 32767 x 32767
+  DUMMY0 connected primary 1728x946+0+0 456mm x 249mm
+    1024x768      60.00  
+    1024x576      59.90
+    CRD_78       120.00* 
+    ...
+  DUMMY1 disconnected
+    1600x1200_60  60.00
+    ...
+  """
+  display_infos: List[XrandrDisplayInfo] = []
+  current_info: XrandrDisplayInfo | None = None
+  # Group display info and resolution entries:
+  for line in xrandr_str.splitlines():
+    if "connected" in line:
+      current_info = XrandrDisplayInfo(line)
+      display_infos.append(current_info)
+    if current_info and line.startswith(" "):
+      current_info.resolutions.append(line.strip())
+  # Filter by connected displays and extract the resolution.
+  for display_info in display_infos:
+    if not display_info.is_connected():
+      continue
+    if resolution := display_info.resolution():
+      yield {
+          "resolution": resolution,
+          "refresh_rate": display_info.refresh_rate(),
+      }
 
 
 class LinuxPlatform(PosixPlatform):
@@ -57,18 +124,6 @@ class LinuxPlatform(PosixPlatform):
     except (FileNotFoundError, SubprocessError):
       return "UNKNOWN"
 
-  @functools.cached_property
-  @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
-    cpu_str = "UNKNOWN"
-    for line in self.cat(self.path("/proc/cpuinfo")).splitlines():
-      if line.startswith("model name"):
-        _, cpu_str = line.split(":", maxsplit=2)
-        break
-    if num_cores := self.cpu_cores:
-      cpu_str = f"{cpu_str} {num_cores} cores"
-    return cpu_str
-
   @property
   @override
   def has_display(self) -> bool:
@@ -110,6 +165,58 @@ class LinuxPlatform(PosixPlatform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     # TODO: maybe use imagemagick's 'import' as more portable alternative
     self.sh("gnome-screenshot", "--file", result_path)
+
+  @functools.lru_cache(maxsize=1)
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    if not self.has_display:
+      return tuple()
+    if xrandr_str := self.sh_stdout("xrandr"):
+      return tuple(parse_display_xrandr(xrandr_str))
+    return tuple()
+
+  @override
+  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+    matching_pids = self.sh_stdout("pgrep", "-f", process_name).splitlines()
+
+    meminfos: Dict[str, ProcessMeminfo] = {}
+
+    for pid in matching_pids:
+      try:
+        proc_name = self.cat(f"/proc/{pid}/cmdline")
+      except (SubprocessError, OSError):
+        logging.warning("Failed to get cmdline for process: %s", pid)
+        continue
+
+      meminfo = self._get_proc_meminfo(pid)
+
+      if not meminfo:
+        logging.warning("Failed to get meminfo for process: %s", pid)
+        continue
+
+      meminfos[proc_name] = meminfo
+
+    return meminfos
+
+  _SMAPS_ROLLUP_PATTERN = re.compile(
+      r".*Rss:\s+(?P<rss_total>\d+) kB.*"
+      r"Pss:\s+(?P<pss_total>\d+) kB.*"
+      r"Swap:\s+(?P<swap_total>\d+)",
+      flags=re.DOTALL)
+
+  def _get_proc_meminfo(self, pid_str: str) -> Optional[ProcessMeminfo]:
+    try:
+      smaps_rollup = self.cat(f"/proc/{pid_str}/smaps_rollup")
+    except (SubprocessError, OSError):
+      return None
+
+    match = self._SMAPS_ROLLUP_PATTERN.search(smaps_rollup)
+
+    if not match:
+      return None
+
+    return ProcessMeminfo(
+        int(pid_str), int(match["pss_total"]), int(match["rss_total"]),
+        int(match["swap_total"]))
 
 
 class RemoteLinuxPlatform(RemotePlatformMixin, LinuxPlatform):

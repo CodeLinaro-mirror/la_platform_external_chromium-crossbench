@@ -16,7 +16,6 @@ from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
-  from crossbench.browsers.settings import Settings
   from crossbench.flags.base import Flags
   from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup

@@ -52,7 +52,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     options = FirefoxOptions()
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
-    options.set_capability("pageLoadStrategy", "eager")
+    options.set_capability("pageLoadStrategy", "none")
     args = self._get_browser_flags_for_session(session)
     for arg in args:
       options.add_argument(arg)

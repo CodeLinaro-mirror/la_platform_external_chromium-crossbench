@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -28,6 +28,7 @@ from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.helper.wake_lock import WakeLock
 from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
                               PathParser)
 from crossbench.probes.debugger import DebuggerProbe
@@ -41,7 +42,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.cli.cli import CrossBenchCLI
   from crossbench.probes.probe import Probe
-  from crossbench.runner.run import Run
 
 
 class EnableFastAction(argparse.Action):
@@ -96,8 +96,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    subparser = self._benchmark_cls.add_cli_parser(
-        self.cli.subparsers, self._benchmark_cls.aliases())
+    subparser = self._benchmark_cls.add_cli_parser(self.cli.subparsers)
     assert isinstance(subparser, argparse.ArgumentParser), (
         f"Benchmark class {self._benchmark_cls}.add_cli_parser did not return "
         f"an ArgumentParser: {subparser}")
@@ -190,12 +189,14 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--network",
         type=NetworkConfig.parse,
         help=("Either an inline network config or an file path to full "
-              "network config hjson file (see --network-config)."))
+              "network config hjson file (see --network-config or "
+              "'help network')."))
     network_settings_group.add_argument(
         "--network-config",
         metavar="DIR",
         type=NetworkConfig.parse_config_path,
-        help=NetworkConfig.help())
+        help=("Path to a full network config file. See `help network` "
+              "for all options."))
     network_settings_group.add_argument(
         "--local-file-server",
         "--local-fileserver",
@@ -204,7 +205,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         type=NetworkConfig.parse_local,
         metavar="DIR",
         dest="network",
-        help="Start a local http file server at the given directory.")
+        help=("Start a local http file server at the given directory. "
+              "See `help network` for more options."))
     network_settings_group.add_argument(
         "--wpr",
         "--web-page-replay",
@@ -214,7 +216,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=("Use wpr.archive to replay network requests "
               "via a local proxy server. "
               "Archives can be recorded with --probe=wpr. "
-              "WPR_ARCHIVE can be a local file or a gs:// google storage url."))
+              "WPR_ARCHIVE can be a local file or a gs:// google storage url. "
+              "See `help network` for more options."))
 
     env_group = subparser.add_argument_group("Environment Options", "")
     env_settings_group = env_group.add_mutually_exclusive_group()
@@ -398,6 +401,15 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     chrome_args.add_argument(
         "--js-flags", dest="js_flags", action="append", default=[])
 
+    chrome_args.add_argument(
+        "--no-sandbox",
+        "--nosandbox",
+        dest="sandbox",
+        action="store_false",
+        default=None,
+        help=("Disables the sandbox for all process types that are "
+              "normally sandboxed. Use for testing purposes only."))
+
     doc_str = "See chrome's base/feature_list.h source file for more details"
     chrome_args.add_argument(
         "--enable-features",
@@ -484,36 +496,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     try:
       self._process_args(args)
       benchmark = self._get_benchmark(args)
-      with plt.PLATFORM.TemporaryDirectory(prefix="crossbench") as tmp_dirname:
-        if args.dry_run:
-          args.out_dir = pth.LocalPath(tmp_dirname) / "results"
-        args.browser = self._get_browsers(args)
-        probes: Sequence[Probe] = self._get_probes(args)
-        env_config: EnvironmentConfig = self._get_env_config(args)
-        env_validation_mode: ValidationMode = self._get_env_validation_mode(
-            args)
-        timing: Timing = self._get_timing(args)
-        self._runner = self._get_runner(args, benchmark, env_config,
-                                        env_validation_mode, timing)
-
-        # We prevent running multiple stories in repetition OR if multiple
-        # browsers are open when 'power' probes are used since it might distort
-        # the data.
-        if len(args.browser) > 1 or args.repetitions > 1:
-          probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
-          if probe_names:
-            names_str = ",".join(probe_names)
-            raise argparse.ArgumentTypeError(
-                f"Cannot use [{names_str}] probe(s) "
-                "with repeat > 1 and/or with multiple browsers. We need to "
-                "always start at the same battery level, and by running "
-                "stories on multiple browsers or multiples time will create "
-                "erroneous data.")
-
-        for probe in probes:
-          self.runner.attach_probe(probe, matching_browser_only=True)
-
-        self._run_benchmark(args, self.runner)
+      with plt.PLATFORM.TemporaryDirectory(
+          prefix="crossbench") as tmp_dirname, WakeLock(plt.PLATFORM):
+        self._run(args, benchmark, tmp_dirname)
     except KeyboardInterrupt:
       sys.exit(2)
     except LateArgumentError as e:
@@ -525,6 +510,37 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         raise
       self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
       sys.exit(3)
+
+  def _run(self, args: argparse.Namespace, benchmark: Benchmark,
+           tmp_dirname: pth.AnyPath) -> None:
+    if args.dry_run:
+      args.out_dir = pth.LocalPath(tmp_dirname) / "results"
+    args.browser = self._get_browsers(args)
+    probes: Sequence[Probe] = self._get_probes(args)
+    env_config: EnvironmentConfig = self._get_env_config(args)
+    env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
+    timing: Timing = self._get_timing(args)
+    self._runner = self._get_runner(args, benchmark, env_config,
+                                    env_validation_mode, timing)
+
+    # We prevent running multiple stories in repetition OR if multiple
+    # browsers are open when 'power' probes are used since it might distort
+    # the data.
+    if len(args.browser) > 1 or args.repetitions > 1:
+      probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
+      if probe_names:
+        names_str = ",".join(probe_names)
+        raise argparse.ArgumentTypeError(
+            f"Cannot use [{names_str}] probe(s) "
+            "with repeat > 1 and/or with multiple browsers. We need to "
+            "always start at the same battery level, and by running "
+            "stories on multiple browsers or multiples time will create "
+            "erroneous data.")
+
+    for probe in probes:
+      self.runner.attach_probe(probe, matching_browser_only=True)
+
+    self._run_benchmark(args, self.runner)
 
   def _helper(self, args: argparse.Namespace) -> None:
     """Handle common subcommand mistakes that are not easily implementable
@@ -575,8 +591,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       args.network = NetworkConfig.default()
 
   def _process_env_args(self, args) -> None:
-    if network_config := args.env_config:
-      args.env = network_config
+    if env_config := args.env_config:
+      args.env = env_config
     elif args.env:
       pass
     else:
@@ -678,60 +694,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     finally:
       self._update_symlinks(args, runner)
 
-  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
-    if not args.create_symlinks:
-      logging.debug("Symlink disabled by command line option")
-      return
-    if not args.out_dir and runner.out_dir.exists():
-      self._update_default_results_symlinks(runner)
-      self._create_runs_results_symlinks(runner)
-
-  def _update_default_results_symlinks(self, runner: Runner) -> None:
-    assert runner.create_symlinks
-    results_root = runner.out_dir.parent
-    latest_link = results_root / "latest"
-    if latest_link.is_symlink():
-      latest_link.unlink()
-    if not latest_link.exists():
-      latest_link.symlink_to(
-          runner.out_dir.relative_to(results_root), target_is_directory=True)
-    else:
-      logging.error("Could not create %s", latest_link)
-
-  def _create_runs_results_symlinks(self, runner: Runner) -> None:
-    assert runner.create_symlinks
-    results_root = runner.out_dir.parent
-    runs: Tuple[Run, ...] = runner.all_runs
-    if not runs:
-      logging.debug("Skip creating result symlinks in '%s': no runs produced.",
-                    results_root)
-      return
-    out_dir = runner.out_dir
-    first_run_dir = out_dir / "first_run"
-    last_run_dir = out_dir / "last_run"
-    if first_run_dir.exists():
-      logging.error("Cannot create first_run symlink: %s", first_run_dir)
-    else:
-      first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
-    if last_run_dir.exists():
-      logging.error("Cannot create last_run symlink: %s", last_run_dir)
-    else:
-      last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
-
-    runs_dir = out_dir / "runs"
-    runs_dir.mkdir()
-    for run in runs:
-      if not run.out_dir.exists():
-        continue
-      relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
-      (runs_dir / str(run.index)).symlink_to(relative)
-
-    sessions_dir = out_dir / "sessions"
-    sessions_dir.mkdir()
-    for session in set(run.browser_session for run in runs):
-      relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
-      (sessions_dir / str(session.index)).symlink_to(relative)
-
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:
     logging.info("=" * 80)
@@ -758,10 +720,30 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         itertools.chain.from_iterable(run.annotations for run in runner.runs))
     RunAnnotation.log_all(all_annotations)
 
+  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
+    if not args.create_symlinks:
+      return
+    runner.update_symlinks()
+    if not args.out_dir:
+      self._update_default_results_symlinks(args, runner)
+
+  def _update_default_results_symlinks(self, args: argparse.Namespace,
+                                       runner: Runner) -> None:
+    assert args.create_symlinks
+    results_root = runner.out_dir.parent
+    latest_link = results_root / "latest"
+    if latest_link.is_symlink():
+      latest_link.unlink()
+    if not latest_link.exists():
+      latest_link.symlink_to(
+          runner.out_dir.relative_to(results_root), target_is_directory=True)
+    else:
+      logging.error("Could not create %s", latest_link)
+
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
     # TODO: move browser instance create to separate method.
     # TODO: move --browser-config parsing to BrowserVariantsConfig
-    args.browser_config = BrowserVariantsConfig.from_cli_args(args)
+    args.browser_config = BrowserVariantsConfig.parse_args(args)
     browsers = args.browser_config.browsers
     return browsers
 

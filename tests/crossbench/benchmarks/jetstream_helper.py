@@ -82,6 +82,8 @@ class JetStream2BaseTestCase(
             story.name: example_story_data for story in stories
         }
         for browser in self.browsers:
+          # Ready state complete
+          browser.expect_js(result=True)
           # Page is ready
           browser.expect_js(result=True)
           # filter benchmarks

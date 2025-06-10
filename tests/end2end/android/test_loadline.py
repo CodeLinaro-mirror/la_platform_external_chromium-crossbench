@@ -136,9 +136,16 @@ def _verify_experimental_metrics(out_dir):
   assert has_metric_values
 
 
-@pytest.mark.parametrize("benchmark_type", BenchmarkType)
-def test_loadline_default(device_id, adb_path, benchmark_type,
-                          test_env: TestEnv) -> None:
+def test_loadline_phone(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline_default(device_id, adb_path, BenchmarkType.PHONE, test_env)
+
+
+def test_loadline_tablet(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline_default(device_id, adb_path, BenchmarkType.TABLET, test_env)
+
+
+def _test_loadline_default(device_id, adb_path, benchmark_type: BenchmarkType,
+                           test_env: TestEnv) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
@@ -169,9 +176,11 @@ def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   out_dir = test_env.results_dir
+  # We run the benchmark with increased time units to account for
+  # the slowness of emulators on test bots.
   cli.run([
       BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=2",
-      "--throw", f"--out-dir={out_dir}",
+      "--throw", f"--out-dir={out_dir}", "--time-unit=2s",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ] + list(test_env.cq_flags))
   _verify_default_metrics(out_dir)

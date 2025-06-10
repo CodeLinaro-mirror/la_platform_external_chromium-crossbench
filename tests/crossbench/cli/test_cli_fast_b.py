@@ -30,7 +30,7 @@ from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
 
 
-class FastCliTestCasePartA(BaseCliTestCase):
+class FastCliTestCasePartB(BaseCliTestCase):
   """These tests are run as part of the presubmit and should be
   reasonably fast.
   Slow tests run on the CQ are in CliSlowTestCase.
@@ -99,7 +99,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", "--browser=chrome-beta",
                    "--browser=chrome-stable", "--browser=chrome-dev",
                    f"--urls={url}", "--env-validation=skip",
-                   f"--out-dir={self.out_dir}")
+                   f"--out-dir={self.out_dir}", "--no-symlinks")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
@@ -141,7 +141,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-dev", "--browser=chrome-beta",
                    f"--urls={url}", "--env-validation=skip",
-                   f"--out-dir={self.out_dir}")
+                   f"--out-dir={self.out_dir}", "--no-symlinks")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
@@ -183,7 +183,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       url = "http://test.com"
       self.run_cli("loading", "--browser=chrome-dev", "--browser=chrome-beta",
                    f"--urls={url}", "--env-validation=skip",
-                   f"--out-dir={self.out_dir}")
+                   f"--out-dir={self.out_dir}", "--no-symlinks")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"
@@ -226,7 +226,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", "--browser=ios:chrome-stable",
                    "--browser=selenium:chrome-beta",
                    "--browser=applescript:chrome-dev", f"--urls={url}",
-                   "--env-validation=skip", f"--out-dir={self.out_dir}")
+                   "--env-validation=skip", f"--out-dir={self.out_dir}",
+                   "--no-symlinks")
       self.assertTrue(self.out_dir.exists())
       get_browser_cls.assert_called()
       # Example:  BROWSER / "cb.results.json"

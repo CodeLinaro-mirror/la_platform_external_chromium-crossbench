@@ -12,7 +12,8 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 pattern: re.Pattern[str] = re.compile(
-    r"(?P<name>[^\(\)]) \((?P<version>[0-9\.]+)\) \((?P<uuid>[0-9A-Z-]+)\)")
+    r"(?P<name>[^\(\)]) \((?P<version>[0-9\.]+)\) (- Connecting )?"
+    r"\((?P<uuid>[0-9A-Z-]+)\)")
 
 
 @dataclass(frozen=True)

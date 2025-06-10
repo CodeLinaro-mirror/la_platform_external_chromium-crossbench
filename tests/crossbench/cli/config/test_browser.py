@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import unittest
 
 import hjson
@@ -13,6 +14,7 @@ from immutabledict import immutabledict
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
+from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import (ENV_PRESETS, NETWORK_PRESETS,
                                            BrowserConfig)
 from crossbench.cli.config.driver import DriverConfig
@@ -21,6 +23,7 @@ from crossbench.cli.config.env import ENV_CONFIG_PRESETS
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
+from crossbench.helper.cwd import ChangeCWD
 from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -32,6 +35,12 @@ from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):
+
+  def test_validate(self):
+    with self.assertRaises(ValueError):
+      BrowserConfig(browser=None)
+    with self.assertRaises(ValueError):
+      BrowserConfig(browser=Chrome.stable_path(self.platform), driver=None)
 
   def test_preset_no_overlap(self):
     # make sure we have unique names between the two preset names so we
@@ -97,6 +106,52 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse("C:\\selenium\\bar")
     self.assertIn("C:\\\\selenium\\\\bar", str(cm.exception))
+
+  def test_parse_config_path(self):
+    browser_path = Chrome.stable_path(self.platform)
+    config: JsonDict = {"browser": str(browser_path)}
+    config_a = BrowserConfig.parse(config)
+    with self.platform.NamedTemporaryFile("browser_config.hjson") as path:
+      with path.open("w", encoding="utf-8") as f:
+        json.dump(config, f)
+      config_b = BrowserConfig.parse(path)
+    self.assertEqual(config_a, config_b)
+    config_c = BrowserConfig.parse(browser_path)
+    self.assertEqual(config_a, config_c)
+    config_d = BrowserConfig.parse(str(browser_path))
+    self.assertEqual(config_a, config_d)
+
+  def test_parse_relative_browser_path(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      cwd = tmp_dir / "crossbench"
+      cwd.mkdir()
+      with ChangeCWD(cwd):
+        browser_path = pth.LocalPath("../out/Release/chrome")
+        self.fs.create_file(browser_path, st_size=100)
+        self.assertTrue((tmp_dir / "out").is_dir())
+        config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+      with ChangeCWD(tmp_dir):
+        browser_path = pth.LocalPath("out/Release/chrome")
+        config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+        browser_path = pth.LocalPath("./out/Release/chrome")
+        config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+
+  def test_home_dir_expansion(self):
+    if not self.platform.is_posix:
+      return
+    home = pth.LocalPath.home()
+    browser_path = home / "chromium/src/out/Release/chrome"
+    self.fs.create_file(browser_path, st_size=100)
+    home_browser_path: str = "~/chromium/src/out/Release/chrome"
+    config_a = BrowserConfig.parse(home_browser_path)
+    self.assertEqual(config_a.browser, browser_path)
+    self.assertTrue(config_a.browser.is_absolute())
+    config_dict = {"browser": home_browser_path}
+    config_b = BrowserConfig.parse(config_dict)
+    self.assertEqual(config_a, config_b)
 
   def test_parse_simple_missing_driver(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -279,6 +334,36 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("adb:webview"),
+        BrowserConfig(
+            pth.AnyPosixPath("org.chromium.webview_shell"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("adb:org.chromium.webview_shell"),
+        BrowserConfig(
+            pth.AnyPosixPath("org.chromium.webview_shell"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("adb:com.google.android.googlequicksearchbox"),
+        BrowserConfig(
+            pth.AnyPosixPath("com.google.android.googlequicksearchbox"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
   def test_parse_simple_with_local_apk(self):
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -366,21 +451,23 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         config,
         BrowserConfig(pth.AnyPosixPath("com.android.chrome"), expected_driver))
 
-  @unittest.skipIf(plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_adb_phone_serial_invalid_macos(self):
+    if not plt.PLATFORM.is_macos:
+      return
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = BrowserConfig.parse("0XXXXXX:chrome")
+    self.assertIn("0XXXXXX", str(cm.exception))
+    self.assertEqual(len(self.platform.sh_cmds), 2)
+
+  def test_parse_adb_phone_serial_invalid_non_macos(self):
+    if plt.PLATFORM.is_macos:
+      return
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = BrowserConfig.parse("0XXXXXX:chrome")
     self.assertIn("0XXXXXX", str(cm.exception))
     self.assertEqual(len(self.platform.sh_cmds), 1)
-
-  @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
-  def test_parse_adb_phone_serial_invalid_non_macos(self):
-    self.platform.sh_results = [ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_OUTPUT]
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      _ = BrowserConfig.parse("0XXXXXX:chrome")
-    self.assertIn("0XXXXXX", str(cm.exception))
-    self.assertEqual(len(self.platform.sh_cmds), 2)
 
   def test_parse_invalid_driver(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -505,6 +592,26 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("limit", msg)
     self.assertIn("'chr'", msg)
 
+  def test_parse_safari_variants(self):
+    config = BrowserConfig.parse("safari")
+    self.assertEqual(config.path, Safari.default_path(self.platform))
+    for name in ("sf", "sf-stable", "safari-stable"):
+      config_b = BrowserConfig.parse(name)
+      self.assertEqual(config, config_b)
+
+  def test_parse_safari_tech_preview_variants(self):
+    config = BrowserConfig.parse("safari-technology-preview")
+    self.assertEqual(config.path, Safari.technology_preview_path(self.platform))
+    for name in ("safari-tp", "safari-tech-preview", "sf-tp", "stp", "tp"):
+      config_b = BrowserConfig.parse(name)
+      self.assertEqual(config, config_b)
+
+  def test_parse_local_d8(self):
+    v8_path = "/Documents/v8/v8/out/release/d8"
+    self.fs.create_file(v8_path, st_size=100)
+    self.assertEqual(
+        BrowserConfig.parse(v8_path),
+        BrowserConfig(pth.LocalPosixPath(v8_path)))
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -620,12 +620,23 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.non_empty_sequence(invalid)
 
+  def test_parse_fuzzy_url_invalid(self):
+    invalid = ("foo", "x64/123", "x64/www.google.com")
+    for url in invalid:
+      with self.subTest(url=url):
+        with self.assertRaisesRegex(argparse.ArgumentTypeError, url):
+          ObjectParser.fuzzy_url(url)
+
   def test_parse_fuzzy_url(self):
     expected = (
         ("/foo/bar", "file:///foo/bar"),
         ("C:/foo/bar", "file://C:/foo/bar"),
         ("1234.com", "https://1234.com"),
         ("http://1234.com", "http://1234.com"),
+        ("http://127.0.0.1", "http://127.0.0.1"),
+        ("http://localhost", "http://localhost"),
+        ("127.0.0.1", "https://127.0.0.1"),
+        ("localhost", "https://localhost"),
         ("test.com", "https://test.com"),
         ("test.com/", "https://test.com/"),
         ("test.com/1234", "https://test.com/1234"),
@@ -638,6 +649,7 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("test.com:1234/bar", "https://test.com:1234/bar"),
         ("test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
         ("localhost:8123", "https://localhost:8123"),
+        ("localhost:8123", "https://localhost:8123"),
         ("localhost:8123/", "https://localhost:8123/"),
         ("localhost:8123/77", "https://localhost:8123/77"),
         ("localhost:8123/77/", "https://localhost:8123/77/"),
@@ -645,6 +657,7 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
         ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
         ("data:text/html,this is some data",
          "data:text/html,this is some data"),
+        ("chrome://extensions", "chrome://extensions"),
     )
     for url, result in expected:
       with self.subTest(url=url):

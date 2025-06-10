@@ -101,7 +101,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 
   @property
   def duration(self) -> dt.timedelta:
-    return dt.timedelta(milliseconds=10)
+    return dt.timedelta()
 
   @property
   def timeout(self) -> dt.timedelta:

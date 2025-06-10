@@ -54,6 +54,9 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
     self.mock_platform.expect_sh(cmd_string, result=result)
 
+  def expect_sh(self, *args, result="") -> None:
+    self._expect_sh_ssh(*args, result=result)
+
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
 

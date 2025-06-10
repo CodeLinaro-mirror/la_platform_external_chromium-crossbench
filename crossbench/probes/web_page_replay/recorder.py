@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 import shutil
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Self, Type
 
@@ -11,13 +12,14 @@ from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.helper import fs_helper
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+                                       ProbeResult, ProbeResultDict)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -176,6 +178,23 @@ class WebPageReplayProbe(Probe):
     ]
     with ChangeCWD(self._wpr_go_bin.parent):
       self.host_platform.sh(*cmd)
+
+  @override
+  def log_run_result(self, run: Run) -> None:
+    self._log_results(run.results)
+
+  @override
+  def log_browsers_result(self, group: BrowsersRunGroup) -> None:
+    self._log_results(group.results)
+
+  def _log_results(self, result_dict: ProbeResultDict) -> None:
+    if self not in result_dict:
+      return
+    wpr_archive: LocalPath = result_dict[self].file
+    logging.info("-" * 80)
+    logging.critical("WPR archive:")
+    logging.critical("  %s [%s]", wpr_archive,
+                     fs_helper.get_file_size(wpr_archive))
 
 
 class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):

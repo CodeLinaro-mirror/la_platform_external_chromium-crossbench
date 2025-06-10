@@ -8,20 +8,23 @@ import atexit
 import logging
 import re
 import subprocess
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, cast
+import sys
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, cast
 
-import hjson
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 from typing_extensions import override
 
 from crossbench import exception
+from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
+from crossbench.cli import ui
 from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.helper import wait
+from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.bin import Binaries
@@ -36,8 +39,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.browsers.version import BrowserVersion
   from crossbench.cli.config.secrets import UsernamePassword
-  from crossbench.flags.base import FlagsT
   from crossbench.plt.base import Platform
+  from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -138,6 +141,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     finally:
       self._restore_chrome_flags()
 
+  @override
+  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+    return self.platform.meminfo(self.android_package)
+
   def _restore_chrome_flags(self) -> None:
     atexit.unregister(self._restore_chrome_flags)
     current_flags = self._read_device_flags()
@@ -171,6 +178,9 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   @override
   def _setup_binary(self) -> None:  # pytype: disable=override-error
     super()._setup_binary()
+    self._setup_binary_permissions()
+
+  def _setup_binary_permissions(self) -> None:
     self.platform.adb.grant_permissions(self.android_package)
 
   @override
@@ -195,9 +205,9 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
                label: str,
                path: Optional[pth.AnyPath] = None,
                settings: Optional[Settings] = None) -> None:
-    if self.is_apk_helper(path):
+    if not self.is_apk_helper(path):
       raise ValueError(
-          "Locally built chrome version needs package, got empty path")
+          "Locally built chrome version does not work with packaged apks.")
     assert settings, "Android browser needs custom settings and platform"
     assert path, "Got invalid path"
     self._package_info: immutabledict[str, Any] = self._parse_package_info(
@@ -220,14 +230,30 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     package_info = {}
     for line in output:
       key, value = line.split(": ")
-      package_info[key] = hjson.loads(value)
+      package_info[key] = cb_hjson.loads_unique_keys(value)
     return immutabledict(package_info)
 
   @override
   def _setup_binary(self) -> None:
     super()._setup_binary()
-    self.host_platform.sh_stdout(self.path, "install",
-                                 f"--device={self.platform.serial_id}")
+    with ui.spinner():
+      sys.stdout.write(f"   Installing {self.path.name} on {self.platform}\r")
+      self.host_platform.sh_stdout(self.path, "install",
+                                   f"--device={self.platform.serial_id}")
+
+  @override
+  def _find_driver(self) -> pth.AnyPath:
+    if self._driver_path:
+      return self._driver_path
+    assert self.app_path
+    if build_dir := self.local_build_dir():
+      logging.info("Looking for local chromedriver in %s", build_dir.parent)
+      finder = ChromiumBuildBinaryFinder(self.host_platform, "chromedriver",
+                                         (build_dir.parent,))
+      if driver_path := finder.path:
+        return driver_path
+    raise ValueError("Chrome APK helper needs an explicit chrome driver. "
+                     "Use --driver-path or a custom browser config.")
 
 
 class AutoForwardingRemoteWebDriver(RemoteWebDriver):

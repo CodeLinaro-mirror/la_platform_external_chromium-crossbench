@@ -56,7 +56,11 @@ class BrowserVersionParseError(ValueError):
 
 
 class PartialBrowserVersionError(ValueError):
-  pass
+
+  def __init__(self, version: BrowserVersion):
+    self.version = version
+    msg = f"Got partial browser version: {repr(version)}"
+    super().__init__(msg)
 
 
 class BrowserVersionNoChannelError(ValueError):
@@ -193,13 +197,13 @@ class BrowserVersion(abc.ABC):
   @property
   def major(self) -> int:
     if not self._parts:
-      raise PartialBrowserVersionError()
+      raise PartialBrowserVersionError(self)
     return self._parts[0]
 
   @property
   def minor(self) -> int:
     if len(self._parts) <= 1:
-      raise PartialBrowserVersionError()
+      raise PartialBrowserVersionError(self)
     return self._parts[1]
 
   @property

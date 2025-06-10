@@ -4,11 +4,15 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import logging
 import sys
+import time as py_time
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
 
+from crossbench.action_runner.action.enums import ReadyState
+from crossbench.cli import ui
 from crossbench.helper.durations import TimeScope
 from crossbench.parse import ObjectParser
 
@@ -26,9 +30,7 @@ if TYPE_CHECKING:
 def _default_success_condition(js_result: Any) -> bool:
   if js_result is True:
     return True
-
   ObjectParser.bool(js_result, strict=True)
-
   return False
 
 class Actions(TimeScope):
@@ -135,7 +137,23 @@ class Actions(TimeScope):
       if success_condition(result):
         return
 
-  def show_url(self, url: str, target: Optional[str] = None) -> None:
+  def wait_for_ready_state(self, ready_state: ReadyState,
+                           timeout: dt.timedelta) -> None:
+    # Make sure we also finish if readyState jumps directly
+    # from "loading" to "complete"
+    self.wait_js_condition(
+        f"""
+          let state = document.readyState;
+          return state === '{ready_state}' || state === "complete";
+        """, 0.2, timeout.total_seconds())
+
+  def show_url(
+      self,
+      url: str,
+      target: Optional[str] = None,
+      ready_state: ReadyState = ReadyState.ANY,
+      timeout: dt.timedelta = dt.timedelta()
+  ) -> None:
     self._assert_is_active()
     if target and target in ("_blank", "_parent", "_top"):
       # TODO: use target in the driver instead.
@@ -145,8 +163,45 @@ class Actions(TimeScope):
         raise ValueError(f"Invalid target: {target}")
       self._browser.show_url(url, target=target)
 
+    if ready_state != ReadyState.ANY:
+      self.wait_for_ready_state(ready_state, timeout)
+
   def wait(self,
            time: AnyTimeUnit = dt.timedelta(seconds=1),
            absolute_time: bool = False) -> None:
+    """"Wait for a fixed timeout. If you need to wait until a certain
+    timeout passed independent of a previous action, use wait_until(...).
+
+    | action 2s | wait 2s | => total time is 4s
+    | action 4s | wait 2s | => total time is 6s
+    """
+    delta: dt.timedelta = self.timing.timeout_timedelta(time, absolute_time)
+    with ui.countdown(delta):
+      self._assert_is_active()
+      self._runner.wait(time, absolute_time=absolute_time)
+
+  @contextlib.contextmanager
+  def wait_until(self,
+                 timeout: AnyTimeUnit = dt.timedelta(seconds=1),
+                 absolute_time: bool = False):
+    """Wait until the given timeout elapsed.
+    Unlike wait(...), this takes into account the time spent in the the
+    wrapped block.
+
+    | wait_until 6s | action 2s | => total time is 6s
+    | wait_until 6s | action 4s | => total time is 6s
+    """
     self._assert_is_active()
-    self._runner.wait(time, absolute_time)
+    delta: dt.timedelta = self.timing.timeout_timedelta(timeout, absolute_time)
+    start_time: float = py_time.time()
+    end_time: float = start_time + delta.total_seconds()
+    with ui.countdown(delta):
+      yield
+      time_left = end_time - py_time.time()
+      if time_left > 0:
+        self._runner.wait(time_left, absolute_time=True)
+      else:
+        run_duration = dt.timedelta(seconds=py_time.time() - start_time)
+        logging.info(
+            "Action took longer (%s) than expected action duration (%s).",
+            run_duration, delta)
