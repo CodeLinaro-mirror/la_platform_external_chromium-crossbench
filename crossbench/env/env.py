@@ -9,10 +9,9 @@ import logging
 import os
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
-import colorama
-
 from crossbench import plt
 from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
+from crossbench.env.base import BaseEnvironment, ValidationError
 from crossbench.helper import collection_helper, url_helper
 from crossbench.parse import ObjectParser
 
@@ -21,10 +20,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.plt.base import CmdArg, Platform
   from crossbench.probes.probe import Probe
-
-
-class ValidationError(Exception):
-  pass
 
 
 STALE_RESULT_ICONS = {
@@ -39,7 +34,7 @@ STALE_RESULT_ICONS = {
 }
 
 
-class HostEnvironment:
+class HostEnvironment(BaseEnvironment):
   """
   HostEnvironment can check and enforce certain settings on a host
   where we run benchmarks.
@@ -60,18 +55,12 @@ class HostEnvironment:
                repetitions: int,
                config: Optional[EnvironmentConfig] = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
+    super().__init__(platform, config, validation_mode)
     self._wait_until: dt.datetime = dt.datetime.now()
-    self._config: EnvironmentConfig = config or EnvironmentConfig()
     self._out_dir: pth.LocalPath = out_dir
     self._browsers: Tuple[Browser, ...] = tuple(browsers)
     self._probes = tuple(probes)
     self._repetitions: int = repetitions
-    self._platform: Platform = platform
-    self._validation_mode: ValidationMode = validation_mode
-
-  @property
-  def platform(self) -> Platform:
-    return self._platform
 
   @property
   def repetitions(self) -> int:
@@ -81,14 +70,6 @@ class HostEnvironment:
   def browsers(self) -> Tuple[Browser, ...]:
     return self._browsers
 
-  @property
-  def config(self) -> EnvironmentConfig:
-    return self._config
-
-  @property
-  def validation_mode(self) -> ValidationMode:
-    return self._validation_mode
-
   def _add_min_delay(self, seconds: float) -> None:
     end_time = dt.datetime.now() + dt.timedelta(seconds=seconds)
     self._wait_until = max(self._wait_until, end_time)
@@ -97,38 +78,6 @@ class HostEnvironment:
     delta = self._wait_until - dt.datetime.now()
     if delta > dt.timedelta(0):
       self._platform.sleep(delta)
-
-  def handle_validation_warning(self, message: str) -> None:
-    message = f"Runner/Host environment requests cannot be fulfilled: {message}"
-    self.handle_warning(message)
-
-  def handle_warning(self,
-                     message: str,
-                     allow_interactive: bool = True) -> None:
-    """Process a warning, depending on the requested mode, this will
-    - throw an error,
-    - log a warning,
-    - prompts for continue [Yn], or
-    - skips (and just debug logs) a warning.
-    If returned True (in the prompt mode) the env validation may continue.
-    """
-    if self._validation_mode == ValidationMode.SKIP:
-      logging.debug("Ignoring %s", message)
-      return
-    if self._validation_mode == ValidationMode.WARN:
-      logging.warning(message)
-      return
-    if self._validation_mode == ValidationMode.PROMPT:
-      if allow_interactive:
-        result = input(f"{colorama.Fore.RED}{message} Continue?"
-                       f"{colorama.Fore.RESET} [Yn]")
-        # Accept <enter> as default input to continue.
-        if result.lower() != "n":
-          return
-    elif self._validation_mode != ValidationMode.THROW:
-      raise ValueError(
-          f"Unknown environment validation mode={self._validation_mode}")
-    raise ValidationError(message)
 
   def validate_url(self,
                    url: str,
@@ -514,21 +463,3 @@ class HostEnvironment:
     self._check_screen_autobrightness()
     self._check_macos_terminal()
     self._check_file_access()
-
-  def check_installed(self,
-                      binaries: Iterable[str],
-                      message: str = "Missing binaries: {}") -> None:
-    assert not isinstance(binaries, str), "Expected iterable of strings."
-    missing_binaries = list(
-        binary for binary in binaries if not self._platform.which(binary))
-    if missing_binaries:
-      self.handle_validation_warning(message.format(missing_binaries))
-
-  def check_sh_success(self,
-                       *args: CmdArg,
-                       message: str = "Could not execute: {}") -> None:
-    assert args, "Missing sh arguments"
-    try:
-      assert self._platform.sh_stdout(*args, quiet=True)
-    except plt.SubprocessError as e:
-      self.handle_validation_warning(message.format(e))
