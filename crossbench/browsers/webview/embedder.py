@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shlex
 from typing import TYPE_CHECKING, Sequence, Tuple
 
@@ -53,7 +54,7 @@ class WebviewEmbedder(Webview):
                     session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> ChromiumDriver:
     options = self._create_options(session, [])
-    service = webdriver.ChromeService(executable_path=driver_path)
+    service = webdriver.ChromeService(executable_path=os.fspath(driver_path))
     driver = webdriver.Chrome(options=options, service=service)
     return driver
 
