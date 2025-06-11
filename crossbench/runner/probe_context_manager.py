@@ -149,9 +149,16 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
         probe_results: ProbeResult = probe_context.teardown()
         probe = probe_context.probe
         if probe_results.is_empty:
-          logging.warning("Probe did not extract any data. probe=%s in %s",
-                          probe, self._origin)
+          self._warn_empty_probe_result(probe)
         self._probe_results[probe] = probe_results
+
+  def _warn_empty_probe_result(self, probe: Probe) -> None:
+    if not probe.PRODUCES_DATA:
+      return
+    if probe.is_internal:
+      return
+    logging.warning("Probe did not extract any data. probe=%s in %s", probe,
+                    self._origin)
 
   @abc.abstractmethod
   def get_probe_context(self, probe: Probe) -> Optional[ProbeContextT]:
