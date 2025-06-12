@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING = "1.2.0"
+VERSION_STRING = "1.3.0"
 
 
 class LoadLine1Probe(LoadLineProbe):
