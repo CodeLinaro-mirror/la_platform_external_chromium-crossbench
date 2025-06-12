@@ -5,12 +5,13 @@
 from __future__ import annotations
 
 import dataclasses
+import random
 from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.parse import ObjectParser
+from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -58,12 +59,12 @@ class UsernamePassword(Secret):
     parser = ConfigParser(cls)
     parser.add_argument(
         "username",
-        aliases=("user", "usr", "account"),
+        aliases=("user", "usr", "account", "account-name"),
         type=ObjectParser.non_empty_str,
         required=True)
     parser.add_argument(
         "password",
-        aliases=("pass", "pw"),
+        aliases=("pass", "pw", "account-password"),
         type=ObjectParser.any_str,
         required=True)
     return parser
@@ -89,7 +90,40 @@ class InteractiveUsernamePassword(UsernamePassword):
     return True
 
 
-class GoogleUsernamePassword(UsernamePassword):
+class CycledUsernamePassword(UsernamePassword):
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = super().config_parser()
+    parser.add_argument(
+        "use_range",
+        aliases=("use-account-range", "enable-range"),
+        type=ObjectParser.bool)
+    parser.add_argument(
+        "start",
+        aliases=("account-range-start", "range-start"),
+        type=NumberParser.positive_zero_int)
+    parser.add_argument(
+        "end",
+        aliases=("account-range-end", "range-end"),
+        type=NumberParser.positive_zero_int)
+    return parser
+
+  def __init__(self,
+               username: str,
+               password: str,
+               use_range: bool = False,
+               start: int = 0,
+               end: int = 0) -> None:
+    if use_range:
+      account_selection = random.randint(start, end)
+      username = username % account_selection
+
+    super().__init__(username, password)
+
+
+class GoogleUsernamePassword(CycledUsernamePassword):
   pass
 
 
