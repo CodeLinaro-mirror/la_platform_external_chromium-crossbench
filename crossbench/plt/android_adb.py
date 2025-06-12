@@ -810,11 +810,20 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       process_name = pid_sections[i + 1].strip()
       raw_process_info = pid_sections[i + 2]
 
-      pss_rss_total = re.search(
+      pss_rss_total_v1 = re.search(
           r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
           r"\s+TOTAL SWAP \(KB\):\s+(?P<swap_total>\d+)", raw_process_info)
 
-      if not pss_rss_total:
+      # TOTAL PSS: 91273  TOTAL RSS: 259028  TOTAL SWAP PSS: 209
+      pss_rss_total_v2 = re.search(
+          r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
+          r"\s+TOTAL SWAP PSS:\s+(?P<swap_total>\d+)", raw_process_info)
+
+      if pss_rss_total_v1:
+        pss_rss_total = pss_rss_total_v1
+      elif pss_rss_total_v2:
+        pss_rss_total = pss_rss_total_v2
+      else:
         raise ValueError("Failed to parse meminfo.")
 
       meminfos[process_name] = ProcessMeminfo(
@@ -822,5 +831,4 @@ class AndroidAdbPlatform(RemotePosixPlatform):
           pss_total=int(pss_rss_total["pss_total"]),
           rss_total=int(pss_rss_total["rss_total"]),
           swap_total=int(pss_rss_total["swap_total"]))
-
     return meminfos
