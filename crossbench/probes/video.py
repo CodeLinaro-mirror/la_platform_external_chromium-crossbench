@@ -22,7 +22,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.path import LocalPath
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
@@ -116,7 +116,7 @@ class VideoProbe(Probe):
     return self._merge_runs
 
   @override
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnvironment) -> None:
     super().validate_env(env)
     if env.repetitions > 10:
       env.handle_warning(
@@ -133,7 +133,7 @@ class VideoProbe(Probe):
     env.check_sh_success("montage", "--version")
     self._pre_check_viewport_size(env)
 
-  def _pre_check_viewport_size(self, env: HostEnvironment) -> None:
+  def _pre_check_viewport_size(self, env: RunnerEnvironment) -> None:
     first_viewport: Viewport = env.browsers[0].viewport
     for browser in env.browsers:
       viewport: Viewport = browser.viewport

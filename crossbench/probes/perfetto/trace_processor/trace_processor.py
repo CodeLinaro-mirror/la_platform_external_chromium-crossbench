@@ -31,7 +31,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 from crossbench.replacements import Replacements
 
 if TYPE_CHECKING:
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
@@ -226,7 +226,7 @@ class TraceProcessorProbe(Probe):
     return TraceProcessorProbeContext
 
   @override
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnvironment) -> None:
     super().validate_env(env)
     self._check_sql()
 

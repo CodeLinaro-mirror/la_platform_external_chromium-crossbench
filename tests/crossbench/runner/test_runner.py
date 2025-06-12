@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.webdriver import RemoteWebDriver
-from crossbench.env.env import HostEnvironment
+from crossbench.env.runner_env import RunnerEnvironment
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
@@ -339,7 +339,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     runner = self.default_runner()
     probe = MockProbe("custom_probe_data")
 
-    def mock_validate_browser(env: HostEnvironment, browser: Browser):
+    def mock_validate_browser(env: RunnerEnvironment, browser: Browser):
       del env
       nonlocal probe
       raise ProbeIncompatibleBrowser(probe, browser, "mock invalid")
@@ -361,7 +361,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     probe = MockProbe("custom_probe_data")
     compatible_browser = self.browsers[1]
 
-    def mock_validate_browser(env: HostEnvironment, browser: Browser):
+    def mock_validate_browser(env: RunnerEnvironment, browser: Browser):
       del env
       nonlocal probe
       nonlocal compatible_browser

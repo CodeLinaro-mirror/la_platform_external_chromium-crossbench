@@ -18,7 +18,7 @@ from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.path import AnyPath
   from crossbench.runner.run import Run
 
@@ -38,7 +38,7 @@ class ScreenshotProbe(Probe):
     # TODO: support interval-based screenshots
     return parser
 
-  def _pre_check_viewport_size(self, env: HostEnvironment) -> None:
+  def _pre_check_viewport_size(self, env: RunnerEnvironment) -> None:
     for browser in env.browsers:
       viewport: Viewport = browser.viewport
       if viewport.is_headless:

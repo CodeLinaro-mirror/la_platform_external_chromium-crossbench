@@ -19,7 +19,7 @@ from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
-from crossbench.env.env import ValidationMode
+from crossbench.env.runner_env import ValidationMode
 from crossbench.parse import LateArgumentError
 from crossbench.path import AnyPath
 from crossbench.probes.internal.summary import ResultsSummaryProbe

@@ -18,7 +18,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -54,7 +54,7 @@ class DTraceProbe(Probe):
     return self._script_path
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_macos(browser)
 

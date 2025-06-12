@@ -15,7 +15,7 @@ from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli import ui
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env.env import ValidationError
+from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.results_db.db import ResultsDB
@@ -222,7 +222,7 @@ class Run(ResultOrigin):
     return self._browser
 
   @property
-  def environment(self) -> HostEnvironment:
+  def environment(self) -> RunnerEnvironment:
     # TODO: replace with custom BrowserEnvironment
     return self.runner.env
 
@@ -293,7 +293,7 @@ class Run(ResultOrigin):
     assert not file.exists(), f"Probe results file exists already. file={file}"
     return file
 
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnvironment) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
 

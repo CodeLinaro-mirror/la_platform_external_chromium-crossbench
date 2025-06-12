@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import abc
 import logging
 from typing import TYPE_CHECKING, Iterable, Optional
 
@@ -20,7 +21,7 @@ class ValidationError(Exception):
   pass
 
 
-class BaseEnvironment:
+class BaseEnvironment(abc.ABC):
 
   def __init__(self,
                platform: Platform,
@@ -91,3 +92,10 @@ class BaseEnvironment:
       assert self._platform.sh_stdout(*args, quiet=True)
     except plt.SubprocessError as e:
       self.handle_validation_warning(message.format(e))
+
+  def setup(self) -> None:
+    self.validate()
+
+  @abc.abstractmethod
+  def validate(self) -> None:
+    pass

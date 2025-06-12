@@ -24,7 +24,7 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.probes.results import ProbeResultDict
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -159,7 +159,7 @@ class Probe(ProbeResultKey, abc.ABC):
         f"Probe={self.name} is attached multiple times to the same browser")
     self._browsers.add(browser)
 
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnvironment) -> None:
     """
     Part of the Checklist, make sure everything is set up correctly for a probe
     to run.
@@ -172,7 +172,7 @@ class Probe(ProbeResultKey, abc.ABC):
     for browser in self._browsers:
       self.validate_browser(env, browser)
 
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
     """
     Validate that browser is compatible with this Probe.
     - Raise ProbeValidationError for hard-errors,

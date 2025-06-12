@@ -10,7 +10,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
-from crossbench.env.env import HostEnvironment
+from crossbench.env.runner_env import RunnerEnvironment
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
 from crossbench.probes.frequency import FrequencyProbe, FrequencyProbeContext
@@ -43,7 +43,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
     browser = self._create_mock_browser()
 
     # Implicitly asserts no exception occurs.
-    probe.validate_browser(mock.Mock(spec=HostEnvironment), browser)
+    probe.validate_browser(mock.Mock(spec=RunnerEnvironment), browser)
     target_frequencies = probe.cpu_frequency_map.get_target_frequencies(
         browser.platform)
 

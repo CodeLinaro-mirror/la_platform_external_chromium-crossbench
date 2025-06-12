@@ -15,7 +15,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.runner.run import Run
 
@@ -49,7 +49,7 @@ class LogcatAndroidProbe(Probe):
     return self._filterspec
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")

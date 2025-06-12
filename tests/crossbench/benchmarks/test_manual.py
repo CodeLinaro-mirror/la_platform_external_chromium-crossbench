@@ -11,7 +11,7 @@ from unittest import mock
 from typing_extensions import override
 
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
-from crossbench.env.env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvironmentConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase

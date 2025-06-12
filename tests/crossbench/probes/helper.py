@@ -11,7 +11,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Sequence,
 
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.env.env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvironmentConfig, ValidationMode
 from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
 from tests.crossbench.base import BaseCrossbenchTestCase

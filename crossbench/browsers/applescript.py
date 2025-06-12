@@ -16,12 +16,12 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser
-from crossbench.env.env import ValidationError
+from crossbench.env.runner_env import ValidationError
 
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -118,7 +118,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     return self.platform.exec_apple_script(wrapper_script, *args)
 
   @override
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnvironment) -> None:
     super().validate_env(env)
     self._check_system_events_allowed(env)
 
@@ -138,7 +138,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     self._setup_window()
     self._check_js_from_apple_script_allowed(session.env)
 
-  def _check_system_events_allowed(self, env: HostEnvironment) -> None:
+  def _check_system_events_allowed(self, env: RunnerEnvironment) -> None:
     try:
       self._exec_apple_script(SYSTEM_EVENTS_CHECK)
     except plt.SubprocessError as e:
@@ -154,7 +154,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
       raise ValidationError(
           " Not allowed to run AppleScript and send System Events!") from e
 
-  def _check_js_from_apple_script_allowed(self, env: HostEnvironment) -> None:
+  def _check_js_from_apple_script_allowed(self, env: RunnerEnvironment) -> None:
     try:
       self.js("return 1")
     except plt.SubprocessError as e:

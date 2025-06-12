@@ -30,7 +30,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.timeouts import Timeouts
 
   from crossbench.browsers.settings import Settings
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -92,7 +92,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     pass
 
   @override
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnvironment) -> None:
     super().validate_env(env)
     self._validate_driver_version()
 

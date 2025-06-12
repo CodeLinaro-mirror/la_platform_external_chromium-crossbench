@@ -25,8 +25,8 @@ from crossbench.benchmarks.motionmark.motionmark_1_3_1 import (
 from crossbench.benchmarks.motionmark.motionmark_main import (
     MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
     MotionMarkMainStory)
-from crossbench.env.env import (EnvironmentConfig, HostEnvironment,
-                                ValidationMode)
+from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnvironment,
+                                       ValidationMode)
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -167,7 +167,7 @@ class MotionMark1BaseTestCase(
         throw=throw,
         in_memory_result_db=True)
     with mock.patch.object(
-        HostEnvironment, "validate_url", return_value=True) as cm:
+        RunnerEnvironment, "validate_url", return_value=True) as cm:
       runner.run()
     cm.assert_called_once()
     assert runner.is_success

@@ -21,7 +21,6 @@ if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, Platform
   from crossbench.probes.probe import Probe
 
-
 STALE_RESULT_ICONS = {
     75: "👻",
     100: "👾",
@@ -34,17 +33,12 @@ STALE_RESULT_ICONS = {
 }
 
 
-class HostEnvironment(BaseEnvironment):
+class RunnerEnvironment(BaseEnvironment):
   """
-  HostEnvironment can check and enforce certain settings on a host
-  where we run benchmarks.
+  RunnerEnvironment can check and enforce certain settings on the host where
+  the benchmarks runner is.
 
-  Modes:
-    skip:     Do not perform any checks
-    warn:     Only warn about mismatching host conditions
-    enforce:  Tries to auto-enforce conditions and warns about others.
-    prompt:   Interactive mode to skip over certain conditions
-    fail:     Fast-fail on mismatch
+  Use ValidationMode to change how warnings/errors are handled.
   """
 
   def __init__(self,
@@ -431,9 +425,6 @@ class HostEnvironment(BaseEnvironment):
           "was not in the foreground at the end of the benchmark. "
           "Background apps and tabs can be heavily throttled.",
           allow_interactive=False)
-
-  def setup(self) -> None:
-    self.validate()
 
   def validate(self) -> None:
     logging.info("-" * 80)

@@ -17,8 +17,8 @@ from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
                                                          JetStream2Probe,
                                                          JetStream2ProbeContext,
                                                          JetStream2Story)
-from crossbench.env.env import (EnvironmentConfig, HostEnvironment,
-                                ValidationMode)
+from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnvironment,
+                                       ValidationMode)
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -112,7 +112,7 @@ class JetStream2BaseTestCase(
         throw=throw,
         in_memory_result_db=True)
     with mock.patch.object(
-        HostEnvironment, "validate_url", return_value=True) as cm:
+        RunnerEnvironment, "validate_url", return_value=True) as cm:
       runner.run()
     cm.assert_called_once()
     for browser in self.browsers:

@@ -27,7 +27,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnvironment
   from crossbench.probes.profiling.context.base import ProfilingContext
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
@@ -321,7 +321,7 @@ class ProfilingProbe(Probe):
     return self._add_counters
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
     browser_platform = browser.platform
     if browser_platform.is_linux:
       self._validate_linux(env, browser)
@@ -375,11 +375,11 @@ class ProfilingProbe(Probe):
             self, browser,
             f"{repr(name)} is currently only supported on {platforms}")
 
-  def _validate_linux(self, env: HostEnvironment, browser: Browser) -> None:
+  def _validate_linux(self, env: RunnerEnvironment, browser: Browser) -> None:
     env.check_installed(binaries=["pprof"])
     assert browser.platform.which("perf"), "Please install linux-perf"
 
-  def _validate_macos(self, env: HostEnvironment, browser: Browser) -> None:
+  def _validate_macos(self, env: RunnerEnvironment, browser: Browser) -> None:
     assert browser.platform.which(
         "xctrace"), "Please install Xcode to use xctrace"
     # Only Linux-perf and Android-simpleperf results can be merged
@@ -393,7 +393,7 @@ class ProfilingProbe(Probe):
         f"Unsupported profile target for Mac: {self._target}. "
         f"Should be one of {str(supported_mac_targets)}.")
 
-  def _validate_android(self, env: HostEnvironment, browser: Browser) -> None:
+  def _validate_android(self, env: RunnerEnvironment, browser: Browser) -> None:
     del env
     assert browser.platform.which("simpleperf"), "simpleperf is not available"
 
@@ -405,7 +405,7 @@ class ProfilingProbe(Probe):
             "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, "
             "browser version >= M124 https://crrev.com/c/5374765 is required.")
 
-  def _validate_pprof(self, env: HostEnvironment, browser: Browser) -> None:
+  def _validate_pprof(self, env: RunnerEnvironment, browser: Browser) -> None:
     assert self._run_pprof
     host_platform = browser.host_platform
     self._run_pprof = host_platform.which("gcert") is not None
