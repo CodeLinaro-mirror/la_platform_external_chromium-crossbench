@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
@@ -397,7 +398,15 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
     super().start()
 
   def stop(self) -> None:
-    self._delta = self.dump_histograms("stop")
+    if isinstance(self.browser, WebviewEmbedder):
+      embedder_driver = self.browser.start_driver(self.session)
+    else:
+      embedder_driver = None
+    try:
+      self._delta = self.dump_histograms("stop")
+    finally:
+      if embedder_driver:
+        embedder_driver.quit()
     super().stop()
 
   @override
