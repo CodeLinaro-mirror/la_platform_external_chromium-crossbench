@@ -16,7 +16,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
-from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnvironment,
+from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnv,
                                        ValidationMode)
 from crossbench.helper import collection_helper
 from crossbench.helper.state import BaseState, StateMachine
@@ -243,9 +243,9 @@ class Runner:
     self._thread_mode = thread_mode
     self._exceptions = exception.Annotator(throw)
     self._platform = platform or plt.PLATFORM
-    self._env = RunnerEnvironment(self.platform, self.out_dir, self.browsers,
-                                  self.probes, self.repetitions, env_config,
-                                  env_validation_mode)
+    self._env = RunnerEnv(self.platform, self.out_dir, self.browsers,
+                          self.probes, self.repetitions, env_config,
+                          env_validation_mode)
     self._attach_default_probes(additional_probes)
     self._prepare_benchmark()
     if in_memory_result_db:
@@ -382,7 +382,7 @@ class Runner:
     return self._platform
 
   @property
-  def env(self) -> RunnerEnvironment:
+  def env(self) -> RunnerEnv:
     return self._env
 
   @property

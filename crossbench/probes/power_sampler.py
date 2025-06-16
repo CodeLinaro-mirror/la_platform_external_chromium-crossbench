@@ -25,7 +25,7 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -124,7 +124,7 @@ class PowerSamplerProbe(Probe):
     return self._wait_for_battery
 
   @override
-  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     self.expect_macos(browser)
     if not browser.platform.is_battery_powered:
       env.handle_warning("Power Sampler only works on battery power, "

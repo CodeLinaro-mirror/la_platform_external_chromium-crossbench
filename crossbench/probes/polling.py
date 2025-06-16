@@ -20,7 +20,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import LocalPath
   from crossbench.plt.base import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
@@ -70,7 +70,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
     return self._cmd
 
   @override
-  def validate_env(self, env: RunnerEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
     if env.repetitions != 1:
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "

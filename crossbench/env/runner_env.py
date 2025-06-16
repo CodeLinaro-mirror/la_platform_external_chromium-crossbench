@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
-from crossbench.env.base import BaseEnvironment, ValidationError
+from crossbench.env.base import BaseEnv, ValidationError
 from crossbench.helper import collection_helper, url_helper
 from crossbench.parse import ObjectParser
 
@@ -33,7 +33,7 @@ STALE_RESULT_ICONS = {
 }
 
 
-class RunnerEnvironment(BaseEnvironment):
+class RunnerEnv(BaseEnv):
   """
   RunnerEnvironment can check and enforce certain settings on the host where
   the benchmarks runner is.

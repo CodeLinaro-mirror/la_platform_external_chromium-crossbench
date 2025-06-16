@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.viewport import Viewport
   from crossbench.cli.config.secrets import Secrets, UsernamePassword
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
@@ -213,7 +213,7 @@ class Browser(abc.ABC):
   def is_running(self) -> bool:
     return self._is_running
 
-  def validate_env(self, env: RunnerEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
 

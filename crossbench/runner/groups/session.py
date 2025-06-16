@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.network.base import Network
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
@@ -56,9 +56,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   browser is (re-)started.
   """
 
-  def __init__(self, env: RunnerEnvironment, probes: Iterable[Probe],
-               browser: Browser, extra_flags: Flags, index: int,
-               root_dir: LocalPath, create_symlinks: bool, throw: bool) -> None:
+  def __init__(self, env: RunnerEnv, probes: Iterable[Probe], browser: Browser,
+               extra_flags: Flags, index: int, root_dir: LocalPath,
+               create_symlinks: bool, throw: bool) -> None:
     super().__init__(throw)
     self._state: StateMachine[State] = StateMachine(State.BUILDING)
     self._env = env
@@ -151,7 +151,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._durations
 
   @property
-  def env(self) -> RunnerEnvironment:
+  def env(self) -> RunnerEnv:
     return self._env
 
   @property

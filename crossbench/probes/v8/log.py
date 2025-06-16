@@ -25,7 +25,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -136,14 +136,14 @@ class V8LogProbe(ChromiumProbe):
     return self._js_flags.copy()
 
   @override
-  def validate_env(self, env: RunnerEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
     if env.repetitions != 1:
       env.handle_warning(f"Probe({self.NAME}) cannot merge data over multiple "
                          f"repetitions={env.repetitions}.")
 
   @override
-  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     # --prof sometimes causes issues on enterprise chrome on linux.
     if _PROF_FLAG not in self._js_flags:

@@ -7,14 +7,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
-from crossbench.env.base import BaseEnvironment
+from crossbench.env.base import BaseEnv
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
 
 
-class RunEnvironment(BaseEnvironment):
+class RunEnv(BaseEnv):
 
   def __init__(self,
                run: Run,

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
   from crossbench.browsers.browser import Browser
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -123,7 +123,7 @@ class BrowserProfilingProbe(Probe):
     return self._moz_profiler_startup_features
 
   @override
-  def validate_browser(self, env: RunnerEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if browser.platform.is_remote:
       raise ProbeValidationError(
@@ -135,7 +135,7 @@ class BrowserProfilingProbe(Probe):
       self._validate_firefox(env, browser)
     raise ProbeIncompatibleBrowser(self, browser)
 
-  def _validate_firefox(self, env: RunnerEnvironment, browser: Browser) -> None:
+  def _validate_firefox(self, env: RunnerEnv, browser: Browser) -> None:
     browser_env = browser.platform.environ
     for env_var in list(FirefoxProfilerEnvVars):
       env_var_str = str(env_var)

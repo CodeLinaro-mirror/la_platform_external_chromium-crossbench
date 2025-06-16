@@ -17,7 +17,7 @@ from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env.runner_env import RunnerEnvironment
+from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import Annotator
 from crossbench.helper.wait import WaitRange
 from crossbench.path import safe_filename
@@ -84,7 +84,7 @@ class MockRun:
     self.did_teardown_browser = False
     self.is_dry_run: bool | None = None
 
-  def validate_env(self, env: RunnerEnvironment):
+  def validate_env(self, env: RunnerEnv):
     pass
 
   def setup(self, is_dry_run: bool) -> None:
@@ -165,8 +165,8 @@ class MockRunner:
     self.browsers: list[Browser] = []
     self.out_dir = pathlib.Path("results/out")
     self.timing = Timing()
-    self.env = RunnerEnvironment(self.platform, self.out_dir, self.browsers,
-                                 self.probes, self.repetitions)
+    self.env = RunnerEnv(self.platform, self.out_dir, self.browsers,
+                         self.probes, self.repetitions)
     self.mock_waits: list[MockWait] = []
 
   def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:

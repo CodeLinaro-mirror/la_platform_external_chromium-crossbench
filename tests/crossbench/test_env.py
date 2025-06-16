@@ -12,7 +12,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.settings import Settings
-from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnvironment,
+from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnv,
                                        ValidationError, ValidationMode)
 from crossbench.helper import url_helper
 from tests import test_helper
@@ -47,10 +47,10 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     return mock.patch.object(
         type(target), name, new_callable=new_callable, **kwargs)
 
-  def create_env(self, *args, **kwargs) -> RunnerEnvironment:
-    return RunnerEnvironment(self.platform, self.mock_runner.out_dir,
-                             self.mock_runner.browsers, self.mock_runner.probes,
-                             self.mock_runner.repetitions, *args, **kwargs)
+  def create_env(self, *args, **kwargs) -> RunnerEnv:
+    return RunnerEnv(self.platform, self.mock_runner.out_dir,
+                     self.mock_runner.browsers, self.mock_runner.probes,
+                     self.mock_runner.repetitions, *args, **kwargs)
 
   def test_instantiate(self):
     env = self.create_env()

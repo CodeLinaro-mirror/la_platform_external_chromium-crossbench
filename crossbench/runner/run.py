@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.env.runner_env import RunnerEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.results_db.db import ResultsDB
@@ -222,7 +222,7 @@ class Run(ResultOrigin):
     return self._browser
 
   @property
-  def environment(self) -> RunnerEnvironment:
+  def environment(self) -> RunnerEnv:
     # TODO: replace with custom BrowserEnvironment
     return self.runner.env
 
@@ -293,7 +293,7 @@ class Run(ResultOrigin):
     assert not file.exists(), f"Probe results file exists already. file={file}"
     return file
 
-  def validate_env(self, env: RunnerEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
 

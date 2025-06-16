@@ -21,7 +21,7 @@ class ValidationError(Exception):
   pass
 
 
-class BaseEnvironment(abc.ABC):
+class BaseEnv(abc.ABC):
 
   def __init__(self,
                platform: Platform,
