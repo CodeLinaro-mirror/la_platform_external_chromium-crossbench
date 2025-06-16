@@ -224,15 +224,6 @@ class WprBase(abc.ABC):
       self._host_http_port = self._device_http_port
       self._host_https_port = self._device_https_port
 
-  def _stop_forward_ports(self) -> None:
-    if not self._platform.is_remote:
-      return
-    ports = self._platform.ports
-    if http_port := self._host_http_port:
-      ports.stop_forward(http_port)
-    if https_port := self._host_https_port:
-      ports.stop_forward(https_port)
-
   def _wait_for_startup(self) -> None:
     assert self._process, "process not started"
     assert self._log_path, "missing log_path"
@@ -311,7 +302,6 @@ class WprBase(abc.ABC):
         self._platform.terminate_gracefully(self._process, timeout=1)
     finally:
       self._process = None
-      self._stop_forward_ports()
 
   def _shut_down(self) -> None:
     logging.info("WPR: shutting down %s.", self.NAME)
