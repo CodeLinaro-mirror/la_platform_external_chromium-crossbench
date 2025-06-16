@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-if (window.location == 'https://en.m.wikipedia.org/wiki/Taylor_Swift') {
+if (window.location.href === 'https://en.m.wikipedia.org/wiki/Taylor_Swift') {
   const language_button_selector = '.language-selector';
   const language_xpath = '//span[text()=\'Afrikaans\']';
 

@@ -4,32 +4,42 @@
       {action: "get", url: "about:blank"},
 
       {action: "inject_new_document_script", script_path: "amazon_instrumentation.js", timeout: "5s"},
-      {action: "js", script: "performance.mark('LoadLine2/tablet/amazon_product_start')"},
-      {action: "get", url: "https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM"},
+      {action: "js", script: '''
+        performance.mark('LoadLine2/tablet/amazon_product_start');
+        window.location.href = "https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM";
+      '''},
       {action: "wait_for_ready_state", ready_state: "complete", timeout: "20s"},
       {action: "js", script: "performance.mark('LoadLine2/tablet/amazon_product_finish')"},
 
-      {action: "js", script: "performance.mark('LoadLine2/tablet/google_doc_start')"},
-      {action: "get", url: "https://docs.google.com/document/d/13AWeOGqtSkfpPK7meqE_X-GQQggwx4JJ1vc0YGvKg34/edit#heading=h.gjdgxs"},
+      {action: "js", script: '''
+        performance.mark('LoadLine2/tablet/google_doc_start');
+        window.location.href = "https://docs.google.com/document/d/13AWeOGqtSkfpPK7meqE_X-GQQggwx4JJ1vc0YGvKg34/edit#heading=h.gjdgxs";
+      '''},
       {action: "wait_for_ready_state", ready_state: "complete", timeout: "20s"},
       {action: "js", script: "performance.mark('LoadLine2/tablet/google_doc_finish')"},
 
       {action: "inject_new_document_script", script_path: "cnn_instrumentation.js", timeout: "5s"},
-      {action: "js", script: "performance.mark('LoadLine2/tablet/cnn_article_start')"},
-      {action: "get", url: "https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html"},
+      {action: "js", script: '''
+        performance.mark('LoadLine2/tablet/cnn_article_start');
+        window.location.href = "https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html";
+      '''},
       {action: "wait_for_ready_state", ready_state: "complete", timeout: "20s"},
       {action: "js", script: "performance.mark('LoadLine2/tablet/cnn_article_finish')"},
 
-      {action: "js", script: "performance.mark('LoadLine2/tablet/google_search_result_start')"},
-      {action: "get", url: "https://www.google.com/search?q=cats"},
+      {action: "js", script: '''
+        performance.mark('LoadLine2/tablet/google_search_result_start');
+        window.location.href = "https://www.google.com/search?q=cats";
+      '''},
       {action: "wait_for_ready_state", ready_state: "complete", timeout: "20s"},
       {action: "js", script: "performance.mark('LoadLine2/tablet/google_search_result_finish')"},
 
       {action: "inject_new_document_script", script_path: "youtube_instrumentation.js", timeout: "5s"},
-      {action: "js", script: "performance.mark('LoadLine2/tablet/youtube_video_start')"},
-      {action: "get", url: "https://www.youtube.com/watch?v=WuS9kPNAXHw&themeRefresh=1"},
+      {action: "js", script: '''
+        performance.mark('LoadLine2/tablet/youtube_video_start');
+        window.location.href = "https://www.youtube.com/watch?v=WuS9kPNAXHw&themeRefresh=1";
+      '''},
       {action: "wait_for_condition", condition: "return !!localStorage.getItem('youtube_complete')", timeout: "20s"},
-      {action: "js", script: "performance.mark('LoadLine2/tablet/youtube_video_finish')"},
+      {action: "js", script: "performance.mark('LoadLine2/tablet/youtube_video_finish');"},
 
       {action: "get", url: "about:blank"},
     ],
