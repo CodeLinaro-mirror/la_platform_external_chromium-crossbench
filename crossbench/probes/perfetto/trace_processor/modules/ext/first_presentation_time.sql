@@ -86,18 +86,3 @@ WITH
   )
 SELECT get_next_presentation_time_by_pid(ts, pid)
 FROM event;
-
-CREATE OR REPLACE PERFETTO FUNCTION get_lcp_presentation_time(url STRING)
-RETURNS INT
-AS
-WITH
-  navigation AS (
-    SELECT ts
-    FROM slice
-    WHERE name = 'Navigation StartToCommit'
-    AND EXTRACT_ARG(arg_set_id, 'debug.URL') = $url
-  )
-SELECT slice.ts + slice.dur AS ts
-FROM slice, navigation
-WHERE name = 'PageLoadMetrics.NavigationToLargestContentfulPaint'
-AND slice.ts BETWEEN navigation.ts - 1e6 AND navigation.ts + 1e6;

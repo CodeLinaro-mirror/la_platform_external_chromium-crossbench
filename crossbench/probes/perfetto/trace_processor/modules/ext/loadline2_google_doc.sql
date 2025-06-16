@@ -6,6 +6,6 @@ AS
 SELECT
   -- Multiply by 60 to make the score per minutes rather than per second.
   60e9 / (
-    get_lcp_presentation_time('https://docs.google.com/document/d/13AWeOGqtSkfpPK7meqE_X-GQQggwx4JJ1vc0YGvKg34/edit#heading=h.gjdgxs')
+    get_presentation_time('LoadLine2/google_docs/navigation_widget_added_to_dom')
     - get_event_time('LoadLine2/tablet/google_doc_start'));
 

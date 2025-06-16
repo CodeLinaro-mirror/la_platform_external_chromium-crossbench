@@ -11,6 +11,7 @@
       {action: "wait_for_ready_state", ready_state: "complete", timeout: "20s"},
       {action: "js", script: "performance.mark('LoadLine2/tablet/amazon_product_finish')"},
 
+      {action: "inject_new_document_script", script_path: "google_docs_instrumentation.js", timeout: "5s"},
       {action: "js", script: '''
         performance.mark('LoadLine2/tablet/google_doc_start');
         window.location.href = "https://docs.google.com/document/d/13AWeOGqtSkfpPK7meqE_X-GQQggwx4JJ1vc0YGvKg34/edit#heading=h.gjdgxs";
@@ -26,6 +27,9 @@
       {action: "wait_for_ready_state", ready_state: "complete", timeout: "20s"},
       {action: "js", script: "performance.mark('LoadLine2/tablet/cnn_article_finish')"},
 
+      // TODO(crbug.com/372457479): Consider using existing markers emitted by page such as trigger:SearchAFTEnd
+      // instead of custom ones.
+      {action: "inject_new_document_script", script_path: "google_search_tablet_instrumentation.js", timeout: "5s"},
       {action: "js", script: '''
         performance.mark('LoadLine2/tablet/google_search_result_start');
         window.location.href = "https://www.google.com/search?q=cats";
