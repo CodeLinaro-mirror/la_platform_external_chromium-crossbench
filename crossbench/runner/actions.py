@@ -166,6 +166,9 @@ class Actions(TimeScope):
     if ready_state != ReadyState.ANY:
       self.wait_for_ready_state(ready_state, timeout)
 
+  def current_url(self) -> str:
+    return self.js("return document.URL;")
+
   def wait(self,
            time: AnyTimeUnit = dt.timedelta(seconds=1),
            absolute_time: bool = False) -> None:

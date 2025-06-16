@@ -495,13 +495,22 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def setup_expected_google_login_js(self):
     expected_scripts: List[JsInvocation] = [
+        # Wait for email field
         JsInvocation(True, re.compile(r".*Email or phone.*")),
+        # Click submit email
         JsInvocation(None, re.compile(r".*user@test.com.*")),
+
+        # Wait for password field
         JsInvocation(True, re.compile(r".*passwordNext.*")),
-        JsInvocation(False, re.compile(r".*verifycontactNext.*")),
-        JsInvocation(True, re.compile(r".*Enter your password.*")),
-        JsInvocation(True, re.compile(r".*s3cr3t.*")),
-        JsInvocation(True, re.compile(r".*https://myaccount.google.com.*")),
+        # Click submit password
+        JsInvocation(None, re.compile(r".*s3cr3t.*")),
+
+        # Wait for redirect after password
+        JsInvocation(True, re.compile(r".*signin/challenge/pwd.*")),
+        # Wait for readystate complete
+        JsInvocation(True),
+        # Return successful login URL
+        JsInvocation("https://myaccount.google.com", re.compile(r".*URL.*")),
     ]
     for browser in self.browsers:
       for script in expected_scripts:
