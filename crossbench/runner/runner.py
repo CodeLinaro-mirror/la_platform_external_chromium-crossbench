@@ -16,8 +16,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
-from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnv,
-                                       ValidationMode)
+from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.helper.wait import WaitRange
@@ -210,7 +209,7 @@ class Runner:
                benchmark: Benchmark,
                additional_probes: Iterable[Probe] = (),
                platform: Optional[plt.Platform] = None,
-               env_config: Optional[EnvironmentConfig] = None,
+               env_config: Optional[EnvConfig] = None,
                env_validation_mode: ValidationMode = ValidationMode.THROW,
                repetitions: int = 1,
                warmup_repetitions: int = 0,
@@ -543,15 +542,17 @@ class Runner:
                 index,
                 name=", ".join(name_parts),
                 timeout=self.timing.run_timeout,
-                throw=throw)
+                throw=throw,
+                env_validation_mode=self.env.validation_mode)
             index += 1
           browser_session.set_ready()
 
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
                  repetition: int, is_warmup: bool, temperature: str, index: int,
-                 name: str, timeout: dt.timedelta, throw: bool) -> Run:
+                 name: str, timeout: dt.timedelta, throw: bool,
+                 env_validation_mode: ValidationMode) -> Run:
     return Run(self, browser_session, story, repetition, is_warmup, temperature,
-               index, name, timeout, throw)
+               index, name, timeout, throw, env_validation_mode)
 
   def assert_successful_sessions_and_runs(self) -> None:
     if self._exceptions.is_success:

@@ -30,6 +30,7 @@ from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
+from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
@@ -103,7 +104,8 @@ class CrossbenchMockArgsMixin:
         tabs=kwargs.pop("tabs", TabController.default()),
         about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
         run_login=kwargs.pop("run_login", True),
-        run_setup=kwargs.pop("run_setup", True))
+        run_setup=kwargs.pop("run_setup", True),
+        env=EnvConfig.default())
     assert not kwargs, f"got unused kwargs: {kwargs}"
     return args
 

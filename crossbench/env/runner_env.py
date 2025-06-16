@@ -10,7 +10,7 @@ import os
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 from crossbench import plt
-from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
+from crossbench.cli.config.env import EnvConfig, ValidationMode
 from crossbench.env.base import BaseEnv, ValidationError
 from crossbench.helper import collection_helper, url_helper
 from crossbench.parse import ObjectParser
@@ -47,7 +47,7 @@ class RunnerEnv(BaseEnv):
                browsers: Iterable[Browser],
                probes: Iterable[Probe],
                repetitions: int,
-               config: Optional[EnvironmentConfig] = None,
+               config: Optional[EnvConfig] = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     super().__init__(platform, config, validation_mode)
     self._wait_until: dt.datetime = dt.datetime.now()
@@ -131,7 +131,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_disk_space(self) -> None:
     limit = self._config.disk_min_free_space_gib
-    if limit is EnvironmentConfig.IGNORE:
+    if limit is EnvConfig.IGNORE:
       return
     # Check the remaining disk space on the FS where we write the results.
     usage = self._platform.disk_usage(self._out_dir)
@@ -142,7 +142,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_power(self) -> None:
     use_battery = self._config.power_use_battery
-    if use_battery is EnvironmentConfig.IGNORE:
+    if use_battery is EnvConfig.IGNORE:
       return
     battery_probes = []
     # Certain probes may require battery power:
@@ -162,7 +162,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_cpu_usage(self) -> None:
     max_cpu_usage = self._config.cpu_max_usage_percent
-    if max_cpu_usage is EnvironmentConfig.IGNORE:
+    if max_cpu_usage is EnvConfig.IGNORE:
       return
     cpu_usage_percent = round(100 * self._platform.cpu_usage(), 1)
     if cpu_usage_percent > max_cpu_usage:
@@ -172,7 +172,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_cpu_temperature(self) -> None:
     min_relative_speed = self._config.cpu_min_relative_speed
-    if min_relative_speed is EnvironmentConfig.IGNORE:
+    if min_relative_speed is EnvConfig.IGNORE:
       return
     cpu_speed = self._platform.get_relative_cpu_speed()
     if cpu_speed < min_relative_speed:
@@ -183,7 +183,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_system_min_uptime(self) -> None:
     min_uptime = self._config.system_min_uptime
-    if min_uptime is EnvironmentConfig.IGNORE:
+    if min_uptime is EnvConfig.IGNORE:
       return
     if uptime := self._platform.uptime():
       if uptime < min_uptime:
@@ -195,7 +195,7 @@ class RunnerEnv(BaseEnv):
     # Verify that no terminals are running.
     # They introduce too much overhead. (As measured with powermetrics)
     system_forbidden_process_names = self._config.system_forbidden_process_names
-    if system_forbidden_process_names is EnvironmentConfig.IGNORE:
+    if system_forbidden_process_names is EnvConfig.IGNORE:
       return
     process_found = self._platform.process_running(
         system_forbidden_process_names)
@@ -272,7 +272,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_screen_brightness(self) -> None:
     brightness = self._config.screen_brightness_percent
-    if brightness is EnvironmentConfig.IGNORE:
+    if brightness is EnvConfig.IGNORE:
       return
     assert 0 <= brightness <= 100, f"Invalid brightness={brightness}"
     self._platform.set_main_display_brightness(brightness)
@@ -284,7 +284,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_screen_refresh_rate(self) -> None:
     refresh_rate = self._config.screen_refresh_rate
-    if not self._platform.is_macos or refresh_rate is EnvironmentConfig.IGNORE:
+    if not self._platform.is_macos or refresh_rate is EnvConfig.IGNORE:
       return
     success, log_msg = self._platform.set_display_refresh_rate(refresh_rate)
     if success:
@@ -298,7 +298,7 @@ class RunnerEnv(BaseEnv):
 
   def _check_config_headless(self) -> None:
     requested_headless = self._config.browser_is_headless
-    if requested_headless is EnvironmentConfig.IGNORE:
+    if requested_headless is EnvConfig.IGNORE:
       return
     # Check that browsers are running in the requested headless mode:
     for browser in self.browsers:
@@ -331,7 +331,7 @@ class RunnerEnv(BaseEnv):
         raise ValidationError(
             f"Probe='{probe.NAME}' validation failed: {e}") from e
     require_probes = self._config.require_probes
-    if require_probes is EnvironmentConfig.IGNORE:
+    if require_probes is EnvConfig.IGNORE:
       return
     if self._config.require_probes and not self._probes:
       self.handle_validation_warning("No probes specified.")

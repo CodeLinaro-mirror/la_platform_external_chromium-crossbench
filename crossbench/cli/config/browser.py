@@ -20,7 +20,7 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
-from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvironmentConfig
+from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
@@ -61,7 +61,7 @@ class BrowserConfig(ConfigObject):
   # want to have the option to explicitly specify the default network in a
   # browser config.
   network: NetworkConfig | None = None
-  env: EnvironmentConfig | None = None
+  env: EnvConfig | None = None
 
   cache_dir: pth.AnyPath | None = None
   clear_cache: bool | None = None
@@ -100,7 +100,7 @@ class BrowserConfig(ConfigObject):
     path: pth.AnyPathLike | None = None
     driver = DriverConfig.default()
     network: NetworkConfig | None = None
-    env: EnvironmentConfig | None = None
+    env: EnvConfig | None = None
     if ":" not in value or cls.value_has_path_prefix(value):
       # Variant 1: $PATH_OR_IDENTIFIER
       path = cls._parse_path_or_identifier(value)
@@ -285,7 +285,7 @@ class BrowserConfig(ConfigObject):
   def _parse_inline_short_form(
       cls, value: str
   ) -> Tuple[DriverConfig, pth.AnyPathLike, Optional[NetworkConfig],
-             Optional[EnvironmentConfig]]:
+             Optional[EnvConfig]]:
     assert ":" in value, f"Invalid short config {repr(value)} for {cls}"
     match = SHORT_FORM_RE.fullmatch(value)
     if not match:
@@ -307,7 +307,7 @@ class BrowserConfig(ConfigObject):
       network = NetworkConfig.parse_str(network_identifier)
     env = None
     if env_identifier := match.group("env"):
-      env = EnvironmentConfig.parse_str(env_identifier)
+      env = EnvConfig.parse_str(env_identifier)
     return (driver, path, network, env)
 
   @classmethod

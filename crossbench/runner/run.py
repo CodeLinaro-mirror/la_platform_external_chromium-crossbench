@@ -14,7 +14,9 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli import ui
+from crossbench.cli.config.env import ValidationMode
 from crossbench.cli.config.secrets import Secrets
+from crossbench.env.run_env import RunEnv
 from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
@@ -55,23 +57,27 @@ class Temperature(StrEnumWithHelp):
 
 class Run(ResultOrigin):
 
-  def __init__(self,
-               runner: Runner,
-               browser_session: BrowserSessionRunGroup,
-               story: Story,
-               repetition: int,
-               is_warmup: bool,
-               temperature: str,
-               index: int,
-               name: Optional[str] = None,
-               timeout: dt.timedelta = dt.timedelta(),
-               throw: bool = False) -> None:
+  def __init__(
+      self,
+      runner: Runner,
+      browser_session: BrowserSessionRunGroup,
+      story: Story,
+      repetition: int,
+      is_warmup: bool,
+      temperature: str,
+      index: int,
+      name: Optional[str] = None,
+      timeout: dt.timedelta = dt.timedelta(),
+      throw: bool = False,
+      env_validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     super().__init__()
     self._state = StateMachine(State.INITIAL)
     self._runner = runner
     self._browser_session = browser_session
     self._browser: Browser = browser_session.browser
     browser_session.append(self)
+    self._env = RunEnv(self, self._browser.settings.env_config,
+                       env_validation_mode)
     self._story = story
     assert repetition >= 0
     self._repetition = repetition

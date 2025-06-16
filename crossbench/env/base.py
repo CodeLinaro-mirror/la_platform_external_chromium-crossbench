@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Iterable, Optional
 import colorama
 
 from crossbench import plt
-from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
+from crossbench.cli.config.env import EnvConfig, ValidationMode
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, Platform
@@ -25,10 +25,10 @@ class BaseEnv(abc.ABC):
 
   def __init__(self,
                platform: Platform,
-               config: Optional[EnvironmentConfig] = None,
+               config: Optional[EnvConfig] = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     self._platform = platform
-    self._config: EnvironmentConfig = config or EnvironmentConfig()
+    self._config: EnvConfig = config or EnvConfig()
     self._validation_mode: ValidationMode = validation_mode
 
   @property
@@ -36,7 +36,7 @@ class BaseEnv(abc.ABC):
     return self._platform
 
   @property
-  def config(self) -> EnvironmentConfig:
+  def config(self) -> EnvConfig:
     return self._config
 
   @property

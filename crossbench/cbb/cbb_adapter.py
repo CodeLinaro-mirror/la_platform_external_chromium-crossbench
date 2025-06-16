@@ -132,9 +132,10 @@ class CbbRunner(crossbench.runner.runner.Runner):
   @override
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
                  repetition: int, is_warmup: bool, temperature: str, index: int,
-                 name: str, timeout: dt.timedelta, throw: bool) -> Run:
+                 name: str, timeout: dt.timedelta, throw: bool,
+                 env_validation_mode: ValidationMode) -> Run:
     return CbbRun(self, browser_session, story, repetition, is_warmup,
-                  temperature, index, name, timeout, throw)
+                  temperature, index, name, timeout, throw, env_validation_mode)
 
 
 class CbbRun(Run):

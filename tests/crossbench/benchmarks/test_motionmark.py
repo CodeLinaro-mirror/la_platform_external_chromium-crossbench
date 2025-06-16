@@ -25,8 +25,7 @@ from crossbench.benchmarks.motionmark.motionmark_1_3_1 import (
 from crossbench.benchmarks.motionmark.motionmark_main import (
     MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
     MotionMarkMainStory)
-from crossbench.env.runner_env import (EnvironmentConfig, RunnerEnv,
-                                       ValidationMode)
+from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -160,7 +159,7 @@ class MotionMark1BaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,

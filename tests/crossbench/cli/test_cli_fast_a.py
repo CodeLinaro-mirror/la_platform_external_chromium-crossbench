@@ -12,7 +12,7 @@ import hjson
 from crossbench import __version__, plt
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.env.runner_env import EnvironmentConfig
+from crossbench.env.runner_env import EnvConfig
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
@@ -436,7 +436,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertFalse(browser.js_flags)
       config = cli.last_subcommand.runner.env.config
-      self.assertEqual(config.disk_min_free_space_gib, EnvironmentConfig.IGNORE)
+      self.assertEqual(config.disk_min_free_space_gib, EnvConfig.IGNORE)
       self.assertEqual(config.screen_brightness_percent, 66)
       self.assertEqual(config.cpu_max_usage_percent, 77)
 

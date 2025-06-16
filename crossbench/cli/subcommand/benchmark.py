@@ -21,7 +21,7 @@ from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.env import (ENV_CONFIG_PRESETS, EnvironmentConfig,
+from crossbench.cli.config.env import (ENV_CONFIG_PRESETS, EnvConfig,
                                        ValidationMode)
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
@@ -223,14 +223,14 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     env_settings_group = env_group.add_mutually_exclusive_group()
     env_settings_group.add_argument(
         "--env",
-        type=EnvironmentConfig.parse,
+        type=EnvConfig.parse,
         help=("Set default runner environment settings. {}"
               f"Possible values: {', '.join(ENV_CONFIG_PRESETS.keys())}"
               "or an inline hjson configuration (see --env-config). "
               "Mutually exclusive with --env-config"))
     env_settings_group.add_argument(
         "--env-config",
-        type=EnvironmentConfig.parse_config_path,
+        type=EnvConfig.parse_config_path,
         help=("Path to an env.config.hjson file that specifies detailed "
               "runner environment settings and requirements. "
               "See config/env.config.hjson for more details."
@@ -517,7 +517,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       args.out_dir = pth.LocalPath(tmp_dirname) / "results"
     args.browser = self._get_browsers(args)
     probes: Sequence[Probe] = self._get_probes(args)
-    env_config: EnvironmentConfig = self._get_env_config(args)
+    env_config: EnvConfig = self._get_env_config(args)
     env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
     timing: Timing = self._get_timing(args)
     self._runner = self._get_runner(args, benchmark, env_config,
@@ -596,7 +596,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     elif args.env:
       pass
     else:
-      args.env = EnvironmentConfig.default()
+      args.env = EnvConfig.default()
 
   def _process_config_args(self, args) -> None:
     if args.env_config:
@@ -617,13 +617,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     found_any_config = False
 
     if env_config_data := config_data.get("env"):
-      args.env = EnvironmentConfig.parse(env_config_data)
+      args.env = EnvConfig.parse(env_config_data)
       found_any_config = True
     else:
       logging.warning("Skipping env config: no 'env' property in %s",
                       config_file)
     if not args.env:
-      args.env = EnvironmentConfig.default()
+      args.env = EnvConfig.default()
 
     if network_config_data := config_data.get("network"):
       # TODO: migrate all --config helper to this format
@@ -770,7 +770,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                                args: argparse.Namespace) -> ValidationMode:
     return args.env_validation
 
-  def _get_env_config(self, args: argparse.Namespace) -> EnvironmentConfig:
+  def _get_env_config(self, args: argparse.Namespace) -> EnvConfig:
     return args.env
 
   def _get_timing(self, args: argparse.Namespace) -> Timing:
@@ -779,8 +779,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                   args.run_timeout, args.start_delay, args.stop_delay)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
-                  env_config: EnvironmentConfig,
-                  env_validation_mode: ValidationMode,
+                  env_config: EnvConfig, env_validation_mode: ValidationMode,
                   timing: Timing) -> Runner:
     runner_kwargs = self._runner_cls.kwargs_from_cli(args)
     return self._runner_cls(

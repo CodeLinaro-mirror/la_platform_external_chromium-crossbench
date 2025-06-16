@@ -33,7 +33,7 @@ from crossbench.benchmarks.loading.playback_controller import \
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env.runner_env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase
@@ -266,7 +266,7 @@ class TestPageLoadBenchmark(SubStoryTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         throw=throw,

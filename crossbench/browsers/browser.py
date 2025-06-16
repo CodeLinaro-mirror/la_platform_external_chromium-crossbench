@@ -138,7 +138,7 @@ class Browser(abc.ABC):
     return self._settings.secrets
 
   @property
-  def settings(self):
+  def settings(self) -> Settings:
     return self._settings
 
   @property

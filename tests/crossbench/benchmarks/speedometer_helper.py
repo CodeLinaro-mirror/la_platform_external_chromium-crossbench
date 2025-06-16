@@ -16,7 +16,7 @@ from typing_extensions import override
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
     SpeedometerStory)
-from crossbench.env.runner_env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -185,7 +185,7 @@ class SpeedometerBaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,

@@ -80,11 +80,11 @@ def merge_duration_max(name: str, left: Optional[dt.timedelta],
   return max(left, right)
 
 
-ENV_CONFIG_PRESETS: Dict[str, "EnvironmentConfig"] = {}
+ENV_CONFIG_PRESETS: Dict[str, "EnvConfig"] = {}
 
 
 @dataclasses.dataclass(frozen=True)
-class EnvironmentConfig(ConfigObject):
+class EnvConfig(ConfigObject):
   IGNORE: ClassVar[None] = None
 
   browser_allow_background: bool | None = IGNORE
@@ -103,12 +103,12 @@ class EnvironmentConfig(ConfigObject):
   system_min_uptime: dt.timedelta | None = IGNORE
 
   @classmethod
-  def default(cls) -> EnvironmentConfig:
+  def default(cls) -> EnvConfig:
     return ENV_CONFIG_PRESETS["default"]
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> EnvironmentConfig:
+  def parse_str(cls, value: str) -> EnvConfig:
     value = ObjectParser.non_empty_str(value)
     if preset := ENV_CONFIG_PRESETS.get(value):
       return preset
@@ -165,7 +165,7 @@ class EnvironmentConfig(ConfigObject):
         "system_min_uptime", type=DurationParser.positive_or_zero_duration)
     return parser
 
-  def merge(self, other: EnvironmentConfig) -> EnvironmentConfig:
+  def merge(self, other: EnvConfig) -> EnvConfig:
     mergers: Dict[str, Callable[[str, Any, Any], Any]] = {
         "browser_allow_background": merge_bool,
         "browser_allow_existing_process": merge_bool,
@@ -187,23 +187,23 @@ class EnvironmentConfig(ConfigObject):
       self_value = getattr(self, name)
       other_value = getattr(other, name)
       kwargs[name] = merger(name, self_value, other_value)
-    return EnvironmentConfig(**kwargs)
+    return EnvConfig(**kwargs)
 
 
-_config_default = EnvironmentConfig()
-_config_strict = EnvironmentConfig(
+_config_default = EnvConfig()
+_config_strict = EnvConfig(
     cpu_max_usage_percent=98,
     cpu_min_relative_speed=1,
     system_allow_monitoring=False,
     browser_allow_existing_process=False,
     require_probes=True,
     system_min_uptime=dt.timedelta(minutes=5))
-_config_battery: EnvironmentConfig = _config_strict.merge(
-    EnvironmentConfig(power_use_battery=True))
-_config_power: EnvironmentConfig = _config_strict.merge(
-    EnvironmentConfig(power_use_battery=False))
-_config_catan: EnvironmentConfig = _config_strict.merge(
-    EnvironmentConfig(
+_config_battery: EnvConfig = _config_strict.merge(
+    EnvConfig(power_use_battery=True))
+_config_power: EnvConfig = _config_strict.merge(
+    EnvConfig(power_use_battery=False))
+_config_catan: EnvConfig = _config_strict.merge(
+    EnvConfig(
         screen_brightness_percent=65,
         system_forbidden_process_names=["terminal", "iterm2"],
         screen_allow_autobrightness=False))
