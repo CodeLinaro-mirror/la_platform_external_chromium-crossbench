@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, cast
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -40,11 +40,11 @@ class ProbeResult(abc.ABC):
                file: Optional[Iterable[pth.LocalPath]] = None,
                trace: Optional[Iterable[pth.LocalPath]] = None,
                **kwargs: Iterable[pth.LocalPath]) -> None:
-    self._url_list: Tuple[str, ...] = ()
+    self._url_list: tuple[str, ...] = ()
     if url:
       self._url_list = ObjectParser.unique_sequence(
           tuple(url), "urls", DuplicateProbeResult)
-    self._trace_list: Tuple[pth.LocalPath, ...] = ()
+    self._trace_list: tuple[pth.LocalPath, ...] = ()
     if trace:
       self._trace_list = ObjectParser.unique_sequence(
           tuple(trace), "traces", DuplicateProbeResult)
@@ -57,7 +57,7 @@ class ProbeResult(abc.ABC):
     # Do last and allow duplicated
     self._extend(
         tmp_files, self._trace_list, suffix=None, allow_duplicates=True)
-    self._files: immutabledict[str, Tuple[pth.LocalPath, ...]] = immutabledict({
+    self._files: immutabledict[str, tuple[pth.LocalPath, ...]] = immutabledict({
         suffix: tuple(files) for suffix, files in tmp_files.items()
     })
     # TODO: Add Metric object for keeping metrics in-memory instead of reloading

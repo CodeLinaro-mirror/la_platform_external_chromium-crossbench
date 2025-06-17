@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import sys
 import threading
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Type
 
 import colorama
 
@@ -49,8 +49,8 @@ class ColoredLogFormatter(logging.Formatter):
 
   def formatException(
       self,
-      ei: Tuple[Type[BaseException], BaseException, Optional[TracebackType]]
-      | Tuple[None, ...]
+      ei: tuple[Type[BaseException], BaseException, Optional[TracebackType]]
+      | tuple[None, ...]
   ) -> str:
     return ""
 

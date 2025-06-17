@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, List, Mapping, Optional, Sequence,
-                    Tuple, Type)
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -184,11 +183,11 @@ class LoadingPageFilter(StoryFilter[Page]):
     self.stories = self.stories_from_config(self.args, config)
 
   @classmethod
-  def all_stories(cls) -> Tuple[Page, ...]:
+  def all_stories(cls) -> tuple[Page, ...]:
     return tuple(PAGE_LIST)
 
   @classmethod
-  def default_stories(cls) -> Tuple[Page, ...]:
+  def default_stories(cls) -> tuple[Page, ...]:
     return PAGE_LIST_SMALL
 
   @classmethod
@@ -329,7 +328,7 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("load", "ld")
 
   @classmethod

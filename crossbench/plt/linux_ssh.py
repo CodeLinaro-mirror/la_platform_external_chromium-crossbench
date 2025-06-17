@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from typing_extensions import override
 
@@ -107,7 +107,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return local_port
 
   def _validate_forwarding_ports(self, local_port: int,
-                                 remote_port: int) -> Tuple[int, int]:
+                                 remote_port: int) -> tuple[int, int]:
     local_port = parse.NumberParser.positive_zero_int(local_port, "local_port")
     remote_port = parse.NumberParser.port_number(remote_port, "remote_port")
     if not local_port:
@@ -132,7 +132,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return remote_port
 
   def _validate_reverse_forwarding_ports(self, remote_port: int,
-                                         local_port: int) -> Tuple[int, int]:
+                                         local_port: int) -> tuple[int, int]:
     remote_port = parse.NumberParser.port_number(remote_port, "remote_port")
     local_port = parse.NumberParser.positive_zero_int(local_port, "local_port")
     if not local_port:

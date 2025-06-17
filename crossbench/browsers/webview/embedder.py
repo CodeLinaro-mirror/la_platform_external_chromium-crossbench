@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Sequence, Tuple
+from typing import TYPE_CHECKING, Sequence
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -77,7 +77,7 @@ class WebviewEmbedder(Webview):
 
   @override
   def _log_browser_start(self,
-                         args: Tuple[str, ...],
+                         args: tuple[str, ...],
                          driver_path: pth.AnyPath | None = None) -> None:
     super()._log_browser_start(args, driver_path)
     logging.info("📱 STARTING BROWSER Embedder: %s",

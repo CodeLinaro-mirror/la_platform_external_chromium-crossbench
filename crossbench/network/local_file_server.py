@@ -11,8 +11,8 @@ import json
 import logging
 import os
 import threading
-from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
-                    Type, TypeVar)
+from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Type,
+                    TypeVar)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -110,7 +110,7 @@ class LocalFileNetwork(Network):
   def path(self) -> LocalPath:
     return self._path
 
-  def _parse_url(self, url: Optional[str]) -> Tuple[str, int]:
+  def _parse_url(self, url: Optional[str]) -> tuple[str, int]:
     host: str = _DEFAULT_HOST
     port: int = _DEFAULT_PORT
     if not url:

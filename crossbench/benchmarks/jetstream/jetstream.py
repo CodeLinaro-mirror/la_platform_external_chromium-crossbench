@@ -10,8 +10,8 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Final, List, Optional, Sequence, Tuple,
-                    Type, cast)
+from typing import (TYPE_CHECKING, Any, Final, List, Optional, Sequence, Type,
+                    cast)
 
 from typing_extensions import override
 
@@ -189,7 +189,7 @@ class JetStreamCSVFormatter(CSVFormatter):
 
   @override
   def format_items(self, data: dict[str, Json],
-                   sort: bool) -> Sequence[Tuple[str, Json]]:
+                   sort: bool) -> Sequence[tuple[str, Json]]:
     items = list(data.items())
     if sort:
       items.sort()

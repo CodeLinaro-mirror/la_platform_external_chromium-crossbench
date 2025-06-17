@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 import difflib
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Tuple,
-                    TypeVar)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypeVar
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath
@@ -22,7 +21,7 @@ def group_by(
     key: Callable[[InputT], KeyT],
     value: Optional[Callable[[InputT], Any]] = None,
     group: Optional[Callable[[KeyT], GroupT]] = None,
-    sort_key: Optional[Callable[[Tuple[KeyT, GroupT]], Any]] = str
+    sort_key: Optional[Callable[[tuple[KeyT, GroupT]], Any]] = str
 ) -> dict[KeyT, GroupT]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -54,7 +53,7 @@ def group_by(
 
 
 def close_matches_message(choice: str,
-                          choices: Iterable[str]) -> Tuple[str, str | None]:
+                          choices: Iterable[str]) -> tuple[str, str | None]:
   error_message: str = ""
   similar_choices = difflib.get_close_matches(choice, choices)
   alternative: str | None = None

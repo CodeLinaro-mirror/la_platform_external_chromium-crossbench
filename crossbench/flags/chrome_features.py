@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Iterable, Iterator, Optional, Tuple
+from typing import Iterable, Iterator, Optional
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -34,7 +34,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
   def disabled(self) -> OrderedSet[str]:
     return OrderedSet(self._disabled)
 
-  def _parse_feature(self, feature: str) -> Tuple[str, Optional[str]]:
+  def _parse_feature(self, feature: str) -> tuple[str, Optional[str]]:
     if not feature:
       raise ValueError("Cannot parse empty feature")
     if "," in feature:
@@ -43,7 +43,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     return self._parse_feature_parts(feature)
 
   @abc.abstractmethod
-  def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
+  def _parse_feature_parts(self, feature: str) -> tuple[str, Optional[str]]:
     pass
 
   def enable(self, feature: str) -> None:
@@ -91,7 +91,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
   def merge(self, other: ChromeBaseFeatures) -> None:
     self.update(other)
 
-  def items(self) -> Iterable[Tuple[str, str]]:
+  def items(self) -> Iterable[tuple[str, str]]:
     if self._enabled:
       yield (self.ENABLE_FLAG, self.enabled_str())
     if self._disabled:
@@ -133,7 +133,7 @@ class ChromeFeatures(ChromeBaseFeatures):
   DISABLE_FLAG: str = "--disable-features"
 
   @override
-  def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
+  def _parse_feature_parts(self, feature: str) -> tuple[str, Optional[str]]:
     parts = feature.split("<")
     if len(parts) == 2:
       return (parts[0], "<" + parts[1])
@@ -160,7 +160,7 @@ class ChromeBlinkFeatures(ChromeBaseFeatures):
   DISABLE_FLAG: str = "--disable-blink-features"
 
   @override
-  def _parse_feature_parts(self, feature: str) -> Tuple[str, Optional[str]]:
+  def _parse_feature_parts(self, feature: str) -> tuple[str, Optional[str]]:
     if "<" in feature or ":" in feature:
       raise ValueError("blink features do not have params, "
                        f"but found param separator in {repr(feature)}")

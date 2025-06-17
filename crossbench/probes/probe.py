@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Hashable, List, Optional, Self, Set, Tuple,
-                    Type, TypeVar)
+from typing import (TYPE_CHECKING, Hashable, List, Optional, Self, Set, Type,
+                    TypeVar)
 
 from typing_extensions import override
 
@@ -53,7 +53,7 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
 
 
 
-ProbeKeyT = Tuple[Tuple[str, Hashable], ...]
+ProbeKeyT = tuple[tuple[str, Hashable], ...]
 
 
 class Probe(ProbeResultKey, abc.ABC):

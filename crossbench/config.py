@@ -17,7 +17,7 @@ import logging
 import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, List, Optional, Self, Set, Tuple, Type, TypeAlias,
+                    Iterable, List, Optional, Self, Set, Type, TypeAlias,
                     TypeVar, cast)
 from urllib.parse import urlparse
 
@@ -230,7 +230,7 @@ class _ConfigArgParser:
 
   @property
   def help_text(self) -> str:
-    items: List[Tuple[str, str]] = []
+    items: List[tuple[str, str]] = []
     if self.type is None:
       if self.is_list:
         items.append(("type", "list"))
@@ -261,10 +261,10 @@ class _ConfigArgParser:
       return f"{self.help}\n{text}"
     return text
 
-  def _choices_help_text(self, choices: Iterable) -> Tuple[str, str]:
+  def _choices_help_text(self, choices: Iterable) -> tuple[str, str]:
     return ("choices", ", ".join(map(str, choices)))
 
-  def _enum_help_text(self) -> List[Tuple[str, str]]:
+  def _enum_help_text(self) -> List[tuple[str, str]]:
     if self.type and hasattr(self.type, "help_text_items"):
       # See str_enum_with_help.StrEnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
@@ -335,7 +335,7 @@ class _ConfigArgParser:
           f"additional depending arguments, but got: {depending_kwargs}")
 
   def parse_list_data(self, data: Any,
-                      depending_kwargs: dict[str, Any]) -> Tuple[Any]:
+                      depending_kwargs: dict[str, Any]) -> tuple[Any]:
     if isinstance(data, str):
       data = data.split(",")
     if not isinstance(data, (list, tuple)):
@@ -401,9 +401,9 @@ class ConfigObject(abc.ABC):
     objects contain other nested config-parsed objects,
   - It is then used to create a real instance of an object.
   """
-  VALID_CONFIG_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".hjson", ".json")
-  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
-  VALID_SCHEME: ClassVar[Tuple[str,
+  VALID_CONFIG_EXTENSIONS: ClassVar[tuple[str, ...]] = (".hjson", ".json")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
+  VALID_SCHEME: ClassVar[tuple[str,
                                ...]] = ("http", "https", "file", "gs", "ftp")
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
@@ -943,7 +943,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       type: Optional[ArgParserType],
       default: Optional[Any] = NOT_SET,
       choices: Optional[Iterable[Any]] = None,
-      aliases: Tuple[str, ...] = tuple(),
+      aliases: tuple[str, ...] = tuple(),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False,
@@ -1026,7 +1026,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
           f"{unused_keys}")
 
   @property
-  def arg_parsers(self) -> Tuple[_ConfigArgParser, ...]:
+  def arg_parsers(self) -> tuple[_ConfigArgParser, ...]:
     return tuple(self._args.values())
 
   @property

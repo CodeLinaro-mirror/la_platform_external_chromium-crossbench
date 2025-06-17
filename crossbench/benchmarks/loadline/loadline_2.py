@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 import numpy as np
 import pandas as pd
@@ -12,9 +12,9 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
+from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
+                                                     LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.benchmarks.loadline.loadline import (
-    LoadLineProbe, LoadLineBenchmark)
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import ProbeContext
@@ -101,7 +101,7 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-phone",)
 
 
@@ -127,7 +127,7 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-tablet",)
 
   @classmethod
@@ -151,7 +151,7 @@ class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-phone-debug",)
 
 
@@ -169,5 +169,5 @@ class LoadLine2TabletDebugBenchmark(LoadLine2TabletBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-tablet-debug",)

@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Iterator, Optional, Self, Sequence,
-                    Tuple, cast)
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Sequence, cast
 
 from typing_extensions import override
 
@@ -35,7 +34,7 @@ class PageConfig(ConfigObject):
   secrets: Secrets = Secrets()
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
-  blocks: Tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = tuple()
 
   @classmethod
   def parse_other(cls, value: Any, **kwargs) -> Self:

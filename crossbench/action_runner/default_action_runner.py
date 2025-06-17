@@ -7,8 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import (TYPE_CHECKING, Any, Callable, Optional, Sequence, Tuple,
-                    cast)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 from typing_extensions import override
 
@@ -92,7 +91,7 @@ class DefaultActionRunner(ActionRunner):
                           scroll_into_view: bool = False,
                           check_element_rect: bool = False,
                           click: bool = False,
-                          return_on_success: bool = False) -> Tuple[str, str]:
+                          return_on_success: bool = False) -> tuple[str, str]:
     # TODO: support more selector types
 
     script: str = ""

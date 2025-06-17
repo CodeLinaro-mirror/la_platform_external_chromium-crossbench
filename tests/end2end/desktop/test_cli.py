@@ -8,7 +8,7 @@ import contextlib
 import io
 import json
 import pathlib
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from unittest import mock
 
 import pytest
@@ -30,7 +30,7 @@ class SysExitException(Exception):
 def _run_cli(*args: str,
              extra_flags: tuple[str, ...] = (),
              test_env: Optional[TestEnv] = None,
-             auto_headless: bool = False) -> Tuple[CrossBenchCLI, io.StringIO]:
+             auto_headless: bool = False) -> tuple[CrossBenchCLI, io.StringIO]:
   if test_env is not None:
     args += (f"--out-dir={test_env.results_dir}",) + test_env.cq_flags
   if auto_headless and not plt.PLATFORM.has_display:

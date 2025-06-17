@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 from crossbench.probes.android_logcat import LogcatAndroidProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
@@ -48,9 +48,9 @@ from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 
 if TYPE_CHECKING:
   from crossbench.probes.internal.base import InternalProbe
-  InternalProbeTuple = Tuple[Type[InternalProbe], ...]
+  InternalProbeTuple = tuple[Type[InternalProbe], ...]
 
-ABSTRACT_PROBES: Tuple[Type[Probe], ...] = (Probe, JsonResultProbe)
+ABSTRACT_PROBES: tuple[Type[Probe], ...] = (Probe, JsonResultProbe)
 
 # Probes that are not user-configurable
 # Order matters, not alpha-sorted:
@@ -86,7 +86,7 @@ assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
 
 
 # Probes that can be used on arbitrary stories and may be user configurable.
-GENERAL_PURPOSE_PROBES: Tuple[Type[Probe], ...] = (
+GENERAL_PURPOSE_PROBES: tuple[Type[Probe], ...] = (
     BrowserProfilingProbe,
     ChromeHistogramsProbe,
     DebuggerProbe,

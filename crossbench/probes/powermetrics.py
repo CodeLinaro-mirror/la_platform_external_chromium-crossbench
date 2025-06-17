@@ -8,7 +8,7 @@ import atexit
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, Self, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Self, Sequence, Type
 
 from typing_extensions import override
 
@@ -47,7 +47,7 @@ class PowerMetricsProbe(Probe):
 
   NAME = "powermetrics"
   RESULT_LOCATION = ResultLocation.BROWSER
-  SAMPLERS: Tuple[SamplerType,
+  SAMPLERS: tuple[SamplerType,
                   ...] = (SamplerType.BATTERY, SamplerType.CPU_POWER,
                           SamplerType.DISK, SamplerType.GPU_POWER,
                           SamplerType.INTERRUPTS, SamplerType.NETWORK,
@@ -87,7 +87,7 @@ class PowerMetricsProbe(Probe):
     return self._sampling_interval
 
   @property
-  def samplers(self) -> Tuple[SamplerType, ...]:
+  def samplers(self) -> tuple[SamplerType, ...]:
     return self._samplers
 
   @override

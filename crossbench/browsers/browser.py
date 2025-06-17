@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence
 
 from ordered_set import OrderedSet
 
@@ -346,7 +346,7 @@ class Browser(abc.ABC):
         "Previously used browser was not correctly stopped.")
 
   def _log_browser_start(self,
-                         args: Tuple[str, ...],
+                         args: tuple[str, ...],
                          driver_path: Optional[pth.AnyPath] = None) -> None:
     logging.info("🌐 STARTING BROWSER Binary:  %s", self.path)
     logging.info("🏷️  STARTING BROWSER Version: %s", self.version)
@@ -358,7 +358,7 @@ class Browser(abc.ABC):
     logging.info("🚩 STARTING BROWSER Flags:   %s", shlex.join(args))
 
   def _get_browser_flags_for_session(
-      self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
+      self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self.attributes()))

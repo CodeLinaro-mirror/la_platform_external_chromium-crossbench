@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Final, Optional, Tuple
+from typing import Final, Optional
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ class ChromiumVersion(BrowserVersion):
   @override
   def _parse(
       cls,
-      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+      full_version: str) -> tuple[tuple[int, ...], BrowserVersionChannel, str]:
     matches = cls._VERSION_RE.fullmatch(full_version.strip(),)
     if not matches:
       raise cls.parse_error("Could not extract version number.", full_version)
@@ -65,7 +65,7 @@ class ChromiumVersion(BrowserVersion):
   @classmethod
   def _channel_version(
       cls, channel_str: str,
-      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+      full_version: str) -> tuple[tuple[int, ...], BrowserVersionChannel, str]:
     channel = cls._parse_exact_channel(channel_str, full_version)
     version_str = ""
     return tuple(), channel, version_str
@@ -73,7 +73,7 @@ class ChromiumVersion(BrowserVersion):
   @classmethod
   def _numbered_version(
       cls, version_str: str,
-      full_version: str) -> Tuple[Tuple[int, ...], BrowserVersionChannel, str]:
+      full_version: str) -> tuple[tuple[int, ...], BrowserVersionChannel, str]:
     channel: BrowserVersionChannel = cls._parse_default_channel(full_version)
 
     parts_str = version_str.split(".")
@@ -134,7 +134,7 @@ class ChromiumVersion(BrowserVersion):
 
   @property
   @override
-  def key(self) -> Tuple[Tuple[int, ...], BrowserVersionChannel]:
+  def key(self) -> tuple[tuple[int, ...], BrowserVersionChannel]:
     return (self.comparable_parts(self._PARTS_LEN), self._channel)
 
   @property

@@ -12,7 +12,7 @@ import re
 import shlex
 import subprocess
 import time
-from typing import Iterable, Optional, TextIO, Tuple
+from typing import Iterable, Optional, TextIO
 
 from typing_extensions import override
 
@@ -113,9 +113,9 @@ class WprBase(abc.ABC):
         raise ValueError(f"Injected script path cannot contain ',': {script}")
       if not self._platform.is_file(script):
         raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts: Tuple[AnyPath, ...] = tuple(inject_scripts)
+    self._inject_scripts: tuple[AnyPath, ...] = tuple(inject_scripts)
 
-  def _validate_ports(self, http_port: int, https_port: int) -> Tuple[int, int]:
+  def _validate_ports(self, http_port: int, https_port: int) -> tuple[int, int]:
     if http_port == 0:
       logging.debug("WPR: using auto-port for http")
     else:

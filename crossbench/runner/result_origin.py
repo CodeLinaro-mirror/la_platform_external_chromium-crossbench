@@ -8,7 +8,7 @@ import abc
 import contextlib
 import logging
 from collections.abc import Generator
-from typing import TYPE_CHECKING, Iterable, Tuple
+from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import override
 
@@ -88,7 +88,7 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
   @contextlib.contextmanager
   def measure(
       self, label: str
-  ) -> Generator[Tuple[ExceptionAnnotationScope, DurationMeasureContext], None,
+  ) -> Generator[tuple[ExceptionAnnotationScope, DurationMeasureContext], None,
                  None]:
     # Return a combined context manager that adds an named exception info
     # and measures the time during the with-scope.

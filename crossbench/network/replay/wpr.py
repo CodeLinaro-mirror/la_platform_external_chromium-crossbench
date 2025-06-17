@@ -9,7 +9,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import (TYPE_CHECKING, Final, Iterator, List, Mapping, Optional,
-                    Tuple, TypeVar)
+                    TypeVar)
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class WPRCloudBinary:
 
 
 # See third_party/catapult/telemetry/telemetry/binary_dependencies.json
-WPR_PREBUILT_LOOKUP: Final[Mapping[Tuple[str, str], WPRCloudBinary]] = {
+WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], WPRCloudBinary]] = {
     ("android", "arm64"):
         WPRCloudBinary("7b880f9bc61e62686657e20567b1b51d03ab96ac"),
     ("android", "arm32"):

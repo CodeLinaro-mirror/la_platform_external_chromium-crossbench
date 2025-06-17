@@ -10,7 +10,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import (TYPE_CHECKING, Any, Final, Iterator, List, Optional, Self,
-                    Sequence, Set, TextIO, Tuple, Type, cast)
+                    Sequence, Set, TextIO, Type, cast)
 
 from typing_extensions import override
 
@@ -37,8 +37,8 @@ from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  FlagGroupItemT = Tuple[str, str | None] | None
-  BrowserLookupTableT = dict[str, Tuple[Type[Browser], "BrowserConfig"]]
+  FlagGroupItemT = tuple[str, str | None] | None
+  BrowserLookupTableT = dict[str, tuple[Type[Browser], "BrowserConfig"]]
 
 # Add some slack for buffer for browser + platform names. Note that ultimately
 # this is going to get cropped to MAX_PART_LEN.

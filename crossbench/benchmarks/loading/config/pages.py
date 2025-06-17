@@ -8,8 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, List, Optional, Self,
-                    Sequence, Tuple)
+from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Self, Sequence
 
 from typing_extensions import override
 
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class PagesConfig(ConfigObject):
-  pages: Tuple[PageConfig, ...] = ()
+  pages: tuple[PageConfig, ...] = ()
   secrets: Secrets | None = None
 
   @override
@@ -125,7 +124,7 @@ class PagesConfig(ConfigObject):
   @classmethod
   def _parse_pages(cls,
                    data: dict[str, Any],
-                   secrets: Optional[Secrets] = None) -> Tuple[PageConfig, ...]:
+                   secrets: Optional[Secrets] = None) -> tuple[PageConfig, ...]:
     pages = []
     for name, page_config in data.items():
       with exception.annotate_argparsing(f"Parsing story ...['{name}']"):
@@ -161,7 +160,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_steps(cls, steps: List[dict[str, Any]]) -> Tuple[Action, ...]:
+  def _parse_steps(cls, steps: List[dict[str, Any]]) -> tuple[Action, ...]:
     actions: List[Action] = []
     for step in steps:
       if maybe_actions := cls.parse_step(step):
@@ -244,7 +243,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
 class ListPagesConfig(PagesConfig):
 
-  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".txt", ".list")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (".txt", ".list")
 
   @classmethod
   @override

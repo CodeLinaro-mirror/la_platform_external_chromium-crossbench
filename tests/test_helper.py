@@ -9,7 +9,7 @@ import pathlib
 import shutil
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Tuple
+from typing import Any
 
 import pytest
 
@@ -38,7 +38,7 @@ class TestEnv():
   output_dir: pathlib.Path
   test_name: str
   is_cq: bool = field(init=False)
-  cq_flags: Tuple[str, ...] = field(init=False)
+  cq_flags: tuple[str, ...] = field(init=False)
   archive_dir: pathlib.Path = field(init=False)
   results_dir: pathlib.Path = field(init=False)
   root_dir: pathlib.Path = field(init=False)

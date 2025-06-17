@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, List, Self, TextIO, Tuple, Type
+from typing import TYPE_CHECKING, List, Self, TextIO, Type
 
 from typing_extensions import Final, override
 
@@ -288,7 +288,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     # TODO: Add common start-story-delay on runner for these cases.
     self.host_platform.sleep(1)
 
-  def _record_cmd(self, viewport: Viewport) -> Tuple[str, ...]:
+  def _record_cmd(self, viewport: Viewport) -> tuple[str, ...]:
     if self.browser_platform.is_linux:
       env_display = os.environ.get("DISPLAY", ":0.0")
       return ("ffmpeg", "-hide_banner", "-video_size",

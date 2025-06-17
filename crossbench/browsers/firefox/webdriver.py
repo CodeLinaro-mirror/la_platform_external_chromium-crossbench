@@ -9,7 +9,7 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -120,7 +120,7 @@ class FirefoxDriverFinder:
       shutil.move(os.fspath(driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 
-  def _find_driver_download_url(self) -> Tuple[str, str]:
+  def _find_driver_download_url(self) -> tuple[str, str]:
     driver_version = self._get_driver_version()
     all_releases = self._load_releases()
     matching_release = {}
@@ -147,7 +147,7 @@ class FirefoxDriverFinder:
     logging.info("GECKODRIVER downloading %s: %s", version, url)
     return url, archive_type
 
-  def _get_driver_version(self) -> Tuple[int, int, int]:
+  def _get_driver_version(self) -> tuple[int, int, int]:
     version = self.browser.version.major
     # See https://firefox-source-docs.mozilla.org/testing/geckodriver/Support.html
     if version < 52:
@@ -164,7 +164,7 @@ class FirefoxDriverFinder:
       return (0, 31, 0)
     return (9999, 9999, 9999)
 
-  def _load_releases(self) -> dict[Tuple[int, ...], dict]:
+  def _load_releases(self) -> dict[tuple[int, ...], dict]:
     response = url_helper.get(self.RELEASES_URL)
     releases = response.json()
     assert isinstance(releases, list)

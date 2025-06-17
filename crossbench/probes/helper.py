@@ -6,17 +6,17 @@ from __future__ import annotations
 
 import csv
 from typing import (TYPE_CHECKING, Any, Callable, Final, List, Mapping,
-                    Optional, Sequence, Set, Tuple)
+                    Optional, Sequence, Set)
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
 
 INTERNAL_NAME_PREFIX: Final[str] = "cb."
 
-KeyFnType = Callable[[Tuple[str, ...]], Optional[str]]
+KeyFnType = Callable[[tuple[str, ...]], Optional[str]]
 
 
-def _default_flatten_key_fn(path: Tuple[str, ...]) -> str:
+def _default_flatten_key_fn(path: tuple[str, ...]) -> str:
   return "/".join(path)
 
 
@@ -39,7 +39,7 @@ class Flatten:
 
     Args:
         *args (optional): Optional hierarchical data to be flattened
-        key_fn (optional): Maps property paths (Tuple[str,...]) to strings used
+        key_fn (optional): Maps property paths (tuple[str,...]) to strings used
           as final result keys, or None to skip property paths.
     """
     self._accumulator: dict[str, Any] = {}
@@ -55,7 +55,7 @@ class Flatten:
     return dict(items)
 
   def append(self, *args: Mapping, ignore_toplevel: bool = False) -> None:
-    toplevel_path: Tuple[str, ...] = tuple()
+    toplevel_path: tuple[str, ...] = tuple()
     for merged_data in args:
       self._flatten(toplevel_path, merged_data, ignore_toplevel)
 
@@ -67,7 +67,7 @@ class Flatten:
     return False
 
   def _flatten(self,
-               parent_path: Tuple[str, ...],
+               parent_path: tuple[str, ...],
                data: Mapping,
                ignore_toplevel: bool = False) -> None:
     for name, item in data.items():
@@ -124,7 +124,7 @@ def merge_csv(csv_list: Sequence[LocalPath],
   """
   table: List[List[Any]] = []
   # Initial row-headers from the first csv file.
-  known_row_headers: Set[Tuple[str, ...]] = set()
+  known_row_headers: Set[tuple[str, ...]] = set()
   row_header_len = _merge_csv_prepare_row_headers(table, known_row_headers,
                                                   csv_list[0], row_header_len,
                                                   delimiter)
@@ -149,7 +149,7 @@ def merge_csv(csv_list: Sequence[LocalPath],
 
 
 def _merge_csv_prepare_row_headers(table: List[List[Any]],
-                                   known_row_headers: Set[Tuple[str, ...]],
+                                   known_row_headers: Set[tuple[str, ...]],
                                    csv_file: LocalPath, row_header_len: int,
                                    delimiter: str) -> int:
   with csv_file.open(encoding="utf-8") as first_file:

@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, MutableMapping, Optional, Sequence,
-                    Tuple, cast)
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Sequence, cast
 
 from typing_extensions import override
 
@@ -235,11 +234,11 @@ SPEEDOMETER_3_STORY_DATA = {
 class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   __doc__ = SpeedometerStory.__doc__
   URL_LOCAL: str = "http://127.0.0.1:8080"
-  SUBSTORIES: Tuple[str, ...] = tuple(SPEEDOMETER_3_STORY_DATA.keys())
+  SUBSTORIES: tuple[str, ...] = tuple(SPEEDOMETER_3_STORY_DATA.keys())
 
   @classmethod
   @override
-  def default_story_names(cls) -> Tuple[str, ...]:
+  def default_story_names(cls) -> tuple[str, ...]:
     return tuple(
         tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
               if data["enabled"]))

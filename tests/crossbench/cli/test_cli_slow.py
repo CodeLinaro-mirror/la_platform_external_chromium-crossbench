@@ -5,7 +5,7 @@
 import argparse
 import json
 import pathlib
-from typing import List, Tuple, Type
+from typing import List, Type
 from unittest import mock
 
 import hjson
@@ -27,7 +27,7 @@ class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running
   as part of the presubmit"""
 
-  def get_test_subcommands(self, benchmark_cls) -> Tuple[str, ...]:
+  def get_test_subcommands(self, benchmark_cls) -> tuple[str, ...]:
     subcommands = (benchmark_cls.NAME,)
     # Only test one alias for speeding up testing:
     if aliases := benchmark_cls.aliases():
@@ -206,7 +206,7 @@ class CliSlowTestCase(BaseCliTestCase):
           "tp": mock_browser.MockSafariTechnologyPreview,
       })
 
-    items_chunk: List[Tuple[str, Type[mock_browser.MockBrowser]]] = list(
+    items_chunk: List[tuple[str, Type[mock_browser.MockBrowser]]] = list(
         browsers.items())[chunk::4]
     for identifier, browser_cls in items_chunk:
       out_dir = self.out_dir / identifier

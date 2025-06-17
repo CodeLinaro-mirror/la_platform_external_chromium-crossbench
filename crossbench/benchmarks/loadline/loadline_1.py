@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 import numpy as np
 import pandas as pd
@@ -113,7 +113,7 @@ class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-phone", "ld-phone", "ld1-phone")
 
 
@@ -134,7 +134,7 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-tablet", "ld-tablet", "ld1-tablet")
 
   @classmethod
@@ -158,7 +158,7 @@ class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-phone-debug", "ld-phone-debug", "ld1-phone-debug")
 
 
@@ -176,7 +176,7 @@ class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-tablet-debug", "ld-tablet-debug", "ld1-tablet-debug")
 
 
@@ -189,7 +189,7 @@ class LoadLine1PhoneFastBenchmark(LoadLine1PhoneBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-phone-fast", "ld-phone-fast", "ld1-phone-fast")
 
 
@@ -202,5 +202,5 @@ class LoadLine1TabletFastBenchmark(LoadLine1TabletBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-tablet-fast", "ld-tablet-fast", "ld1-tablet-fast")

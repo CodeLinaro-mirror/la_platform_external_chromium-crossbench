@@ -10,7 +10,7 @@ import datetime as dt
 import enum
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Optional, Self, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Self, Sequence, Type
 
 from typing_extensions import override
 
@@ -58,7 +58,7 @@ class PowerSamplerProbe(Probe):
   NAME = "powersampler"
   RESULT_LOCATION = ResultLocation.BROWSER
   BATTERY_ONLY: bool = True
-  SAMPLERS: Tuple[SamplerType,
+  SAMPLERS: tuple[SamplerType,
                   ...] = (SamplerType.SMC, SamplerType.USER_IDLE_LEVEL,
                           SamplerType.MAIN_DISPLAY)
 
@@ -116,7 +116,7 @@ class PowerSamplerProbe(Probe):
     return self._sampling_interval
 
   @property
-  def samplers(self) -> Tuple[SamplerType, ...]:
+  def samplers(self) -> tuple[SamplerType, ...]:
     return self._samplers
 
   @property

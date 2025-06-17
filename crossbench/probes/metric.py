@@ -9,7 +9,7 @@ import logging
 import statistics
 from math import floor, log10
 from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Optional,
-                    Sequence, Set, Tuple)
+                    Sequence, Set)
 
 from crossbench.probes import helper
 
@@ -189,7 +189,7 @@ class MetricsMerger:
 
     Args:
         *args (optional): Optional hierarchical data to be merged.
-        key_fn (optional): Maps property paths (Tuple[str,...]) to strings used
+        key_fn (optional): Maps property paths (tuple[str,...]) to strings used
           as keys to group/merge values, or None to skip property paths.
     """
     self._data: dict[str, Metric] = {}
@@ -204,7 +204,7 @@ class MetricsMerger:
 
   def merge_values(self,
                    data: dict[str, dict],
-                   prefix_path: Tuple[str, ...] = (),
+                   prefix_path: tuple[str, ...] = (),
                    merge_duplicate_paths: bool = False) -> None:
     """Merge a previously json-serialized MetricsMerger object"""
     for property_name, item in data.items():
@@ -238,7 +238,7 @@ class MetricsMerger:
       self._merge(data)
 
   def _merge(
-      self, data: dict | List[dict], parent_path: Tuple[str, ...] = ()) -> None:
+      self, data: dict | List[dict], parent_path: tuple[str, ...] = ()) -> None:
     assert isinstance(data, dict)
     for property_name, value in data.items():
       path = parent_path + (property_name,)
@@ -301,7 +301,7 @@ class CSVFormatter:
   def __init__(self,
                metrics: MetricsMerger,
                value_fn: Optional[Callable[[Any], Any]] = None,
-               headers: Sequence[Tuple[Any, ...]] = (),
+               headers: Sequence[tuple[Any, ...]] = (),
                include_parts: bool = True,
                sort: bool = True):
     self._table: List[Sequence[Any]] = []
@@ -311,7 +311,7 @@ class CSVFormatter:
     self.append_headers(headers, max_path_depth)
     self.append_body(items, include_parts, max_path_depth)
 
-  def extract_max_depth(self, items: Sequence[Tuple[str, Json]],
+  def extract_max_depth(self, items: Sequence[tuple[str, Json]],
                         include_parts: bool) -> int:
     max_path_depth = 0
     if include_parts:
@@ -329,7 +329,7 @@ class CSVFormatter:
       row = header[:1] + header_padding + header[1:]
       self._table.append(row)
 
-  def append_body(self, items: Sequence[Tuple[str, Json]], include_parts: bool,
+  def append_body(self, items: Sequence[tuple[str, Json]], include_parts: bool,
                   max_path_depth: int) -> None:
     for path, value in items:
       if include_parts:
@@ -341,7 +341,7 @@ class CSVFormatter:
       self._table.append(row)
 
   def format_items(self, data: dict[str, Json],
-                   sort: bool) -> Sequence[Tuple[str, Json]]:
+                   sort: bool) -> Sequence[tuple[str, Json]]:
     items = tuple(data.items())
     if not sort:
       return items

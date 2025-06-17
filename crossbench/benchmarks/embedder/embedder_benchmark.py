@@ -8,7 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Sequence, cast
 
 from typing_extensions import override
 
@@ -61,7 +61,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
                             "-c", "android.intent.category.HOME")
 
   @classmethod
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ()
 
 

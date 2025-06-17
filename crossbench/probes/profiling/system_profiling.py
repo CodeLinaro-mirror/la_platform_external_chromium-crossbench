@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import shlex
 from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Self,
-                    Sequence, Tuple, cast)
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -233,10 +233,10 @@ class ProfilingProbe(Probe):
     self._frequency: int | str | None = frequency
     self._clockid: str | None = clockid
     self._count: int | None = count
-    self._cpu: Tuple[int, ...] = tuple(cpu)
-    self._events: Tuple[str, ...] = tuple(events)
-    self._grouped_events: Tuple[str, ...] = tuple(grouped_events)
-    self._add_counters: Tuple[str, ...] = tuple(add_counters)
+    self._cpu: tuple[int, ...] = tuple(cpu)
+    self._events: tuple[str, ...] = tuple(events)
+    self._grouped_events: tuple[str, ...] = tuple(grouped_events)
+    self._add_counters: tuple[str, ...] = tuple(add_counters)
 
   @property
   @override
@@ -305,19 +305,19 @@ class ProfilingProbe(Probe):
     return self._count
 
   @property
-  def cpu(self) -> Tuple[int, ...]:
+  def cpu(self) -> tuple[int, ...]:
     return self._cpu
 
   @property
-  def events(self) -> Tuple[str, ...]:
+  def events(self) -> tuple[str, ...]:
     return self._events
 
   @property
-  def grouped_events(self) -> Tuple[str, ...]:
+  def grouped_events(self) -> tuple[str, ...]:
     return self._grouped_events
 
   @property
-  def add_counters(self) -> Tuple[str, ...]:
+  def add_counters(self) -> tuple[str, ...]:
     return self._add_counters
 
   @override
@@ -366,7 +366,7 @@ class ProfilingProbe(Probe):
                                         "Android")
 
   def _validate_unsupported_settings(self, browser,
-                                     unsupported_settings: Iterable[Tuple[str,
+                                     unsupported_settings: Iterable[tuple[str,
                                                                           Any]],
                                      platforms) -> None:
     for name, value in unsupported_settings:

@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
@@ -52,7 +52,7 @@ class RunnerEnv(BaseEnv):
     super().__init__(platform, config, validation_mode)
     self._wait_until: dt.datetime = dt.datetime.now()
     self._out_dir: pth.LocalPath = out_dir
-    self._browsers: Tuple[Browser, ...] = tuple(browsers)
+    self._browsers: tuple[Browser, ...] = tuple(browsers)
     self._probes = tuple(probes)
     self._repetitions: int = repetitions
 
@@ -61,7 +61,7 @@ class RunnerEnv(BaseEnv):
     return self._repetitions
 
   @property
-  def browsers(self) -> Tuple[Browser, ...]:
+  def browsers(self) -> tuple[Browser, ...]:
     return self._browsers
 
   def _add_min_delay(self, seconds: float) -> None:

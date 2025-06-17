@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Final, Iterable, List, Optional, Type
 
 import sqlalchemy
 import sqlalchemy.engine as orm_engine
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-DEFAULT_CLASSES: Final[Tuple[Type[BaseRecord],
+DEFAULT_CLASSES: Final[tuple[Type[BaseRecord],
                              ...]] = (PlatformRecord, BrowserRecord, RunRecord,
                                       UnitRecord)
 

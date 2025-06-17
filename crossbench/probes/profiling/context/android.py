@@ -9,7 +9,7 @@ import io
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Iterable, List, Optional, cast
 
 from typing_extensions import override
 
@@ -141,10 +141,10 @@ def generate_simpleperf_command_line(
     call_graph_mode: CallGraphMode,
     frequency: Optional[int | str],
     count: Optional[int],
-    cpus: Tuple[int, ...],
-    events: Tuple[str, ...],
-    grouped_events: Tuple[str, ...],
-    add_counters: Tuple[str, ...],
+    cpus: tuple[int, ...],
+    events: tuple[str, ...],
+    grouped_events: tuple[str, ...],
+    add_counters: tuple[str, ...],
     output_path: pth.AnyPath,
 ) -> ListCmdArgs:
   command_line: ListCmdArgs = ["simpleperf", "record"]

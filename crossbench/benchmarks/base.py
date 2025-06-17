@@ -9,7 +9,7 @@ import argparse
 import logging
 import re
 from typing import (TYPE_CHECKING, Any, Generic, List, Mapping, Optional,
-                    Sequence, Tuple, Type, TypeAlias, TypeVar, cast)
+                    Sequence, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 class Benchmark(abc.ABC):
   NAME: str = ""
   DEFAULT_STORY_CLS: Type[Story] = Story  # type: ignore
-  PROBES: Tuple[Type[BenchmarkProbeMixin], ...] = ()
+  PROBES: tuple[Type[BenchmarkProbeMixin], ...] = ()
   DEFAULT_REPETITIONS: int = 1
 
   @classmethod
@@ -55,7 +55,7 @@ class Benchmark(abc.ABC):
     return ""
 
   @classmethod
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return tuple()
 
   @classmethod
@@ -419,7 +419,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     return self.story_cls.from_names(names, separate=separate, url=self.url)
 
 
-VersionParts: TypeAlias = Tuple[str] | Tuple[int, ...]
+VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS = PressBenchmarkStoryFilter
@@ -443,7 +443,7 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     raw_version: VersionParts = cls.version()
     is_branch_version = (
         len(raw_version) == 1 and isinstance(raw_version[0], str))

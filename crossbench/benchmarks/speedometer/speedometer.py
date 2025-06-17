@@ -9,7 +9,7 @@ import datetime as dt
 import json
 import logging
 from typing import (TYPE_CHECKING, Any, Final, List, Mapping, MutableMapping,
-                    Optional, Sequence, Tuple, Type)
+                    Optional, Sequence, Type)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
   from crossbench.types import Json
 
 
-def _probe_remove_tests_segments(path: Tuple[str, ...]) -> str:
+def _probe_remove_tests_segments(path: tuple[str, ...]) -> str:
   return "/".join(segment for segment in path if segment != "tests")
 
 
@@ -261,7 +261,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
           delay=self.substory_duration)
 
 
-ProbeClsTupleT = Tuple[Type[SpeedometerProbe], ...]
+ProbeClsTupleT = tuple[Type[SpeedometerProbe], ...]
 
 
 class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List, Tuple
+from typing import TYPE_CHECKING, Iterable, List
 
 from typing_extensions import override
 
@@ -33,7 +33,7 @@ class RepetitionsRunGroup(RunGroup):
   @classmethod
   def groups(cls,
              run_groups: Iterable[CacheTemperaturesRunGroup],
-             throw: bool = False) -> Tuple[RepetitionsRunGroup, ...]:
+             throw: bool = False) -> tuple[RepetitionsRunGroup, ...]:
     return tuple(
         collection_helper.group_by(
             run_groups,

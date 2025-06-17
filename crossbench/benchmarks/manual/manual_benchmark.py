@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
@@ -79,7 +79,7 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return (ManualStory.STORY_NAME,)
 
 

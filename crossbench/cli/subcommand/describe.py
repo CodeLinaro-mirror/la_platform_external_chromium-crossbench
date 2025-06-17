@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeAlias
+from typing import TYPE_CHECKING, Any, List, Optional, TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -98,7 +98,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
       self.no_match_error(search_str)
 
   def _process_search_str(self, category: str,
-                          search_str: str | None) -> Tuple[str, str | None]:
+                          search_str: str | None) -> tuple[str, str | None]:
     if not search_str:
       return category, search_str
     search_str = search_str.lower()
@@ -196,7 +196,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
   ) -> dict[str, Any]:
     benchmarks_data: dict[str, Any] = {}
     for benchmark_cls in self.cli.BENCHMARKS:
-      aliases: Tuple[str, ...] = benchmark_cls.aliases()
+      aliases: tuple[str, ...] = benchmark_cls.aliases()
       if search_str:
         if benchmark_cls.NAME != search_str and search_str not in aliases:
           continue

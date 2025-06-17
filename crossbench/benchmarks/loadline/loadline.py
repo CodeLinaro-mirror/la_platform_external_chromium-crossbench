@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence
 
 import pandas as pd
 from tabulate import tabulate
@@ -77,12 +77,12 @@ class LoadLinePageFilter(LoadingPageFilter):
 
   @classmethod
   @override
-  def default_stories(cls) -> Tuple[Page, ...]:
+  def default_stories(cls) -> tuple[Page, ...]:
     return cls.all_stories()
 
   @classmethod
   @override
-  def all_stories(cls) -> Tuple[Page, ...]:
+  def all_stories(cls) -> tuple[Page, ...]:
     return tuple()
 
 

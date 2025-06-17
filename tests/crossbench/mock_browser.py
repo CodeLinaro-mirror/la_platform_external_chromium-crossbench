@@ -9,8 +9,7 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
-from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
-                    cast)
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Type, cast
 
 from typing_extensions import override
 
@@ -572,7 +571,7 @@ class MockFirefoxNightly(MockFirefoxBrowser):
     return app_root(platform) / "firefox-trunk"
 
 
-ALL: Tuple[Type[MockBrowser], ...] = (
+ALL: tuple[Type[MockBrowser], ...] = (
     MockChromeCanary,
     MockChromeDev,
     MockChromeBeta,

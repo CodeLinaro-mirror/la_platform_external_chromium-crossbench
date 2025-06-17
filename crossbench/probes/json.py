@@ -10,8 +10,8 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, Generic, List, Optional,
-                    Tuple, Type, TypeVar)
+from typing import (TYPE_CHECKING, Any, Callable, Generic, List, Optional, Type,
+                    TypeVar)
 
 import xlsxwriter
 from tabulate import tabulate
@@ -150,7 +150,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     # 0 | metric 0 full path, metric path[0] ... metric path[N], metric 0 value
     #     ...                                                    ...
     # M | metric M full path, ...                                metric M value
-    headers: List[Tuple[str, Any]] = []
+    headers: List[tuple[str, Any]] = []
     for label, info_value in group.info.items():
       headers.append((label, info_value))
     csv_data = csv_formatter(

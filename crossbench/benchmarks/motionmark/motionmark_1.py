@@ -9,8 +9,7 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, List, MutableMapping, Optional, Tuple,
-                    Type)
+from typing import TYPE_CHECKING, Any, List, MutableMapping, Optional, Type
 
 from typing_extensions import override
 
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
   from crossbench.types import Json
 
 
-def _clean_up_path_segments(path: Tuple[str, ...]) -> Optional[str]:
+def _clean_up_path_segments(path: tuple[str, ...]) -> Optional[str]:
   name = path[-1]
   if name.startswith("segment") or name == "data":
     return None
@@ -230,7 +229,7 @@ class MotionMark1Story(PressBenchmarkStory):
 
   @classmethod
   @override
-  def default_story_names(cls) -> Tuple[str, ...]:
+  def default_story_names(cls) -> tuple[str, ...]:
     return cls.ALL_STORIES["MotionMark"]
 
   @property

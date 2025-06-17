@@ -10,7 +10,7 @@ import logging
 import os
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -324,7 +324,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
   @override
   def _extract_version(self) -> BrowserVersion:
     raw_version: str = self._private_driver.capabilities["browserVersion"]
-    parts: Tuple[int, ...] = tuple(map(int, raw_version.split(".")))
+    parts: tuple[int, ...] = tuple(map(int, raw_version.split(".")))
     return UnknownBrowserVersion(parts, version_str=raw_version)
 
   @override

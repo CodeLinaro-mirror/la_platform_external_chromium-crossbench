@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence
 
 from typing_extensions import override
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class BaseToolFinder(abc.ABC):
 
   def __init__(
-      self, platform: Platform, candidates: Tuple[pth.AnyPath,
+      self, platform: Platform, candidates: tuple[pth.AnyPath,
                                                   ...] = tuple()) -> None:
     self._platform = platform
     self._candidates = candidates + self.default_candidates()
@@ -36,10 +36,10 @@ class BaseToolFinder(abc.ABC):
     return self._path
 
   @property
-  def candidates(self) -> Tuple[pth.AnyPath, ...]:
+  def candidates(self) -> tuple[pth.AnyPath, ...]:
     return self._candidates
 
-  def default_candidates(self) -> Tuple[pth.AnyPath, ...]:
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
     return tuple()
 
   def _find_path(self) -> Optional[pth.AnyPath]:
@@ -54,7 +54,7 @@ class BaseToolFinder(abc.ABC):
     pass
 
 
-def default_chromium_candidates(platform: Platform) -> Tuple[pth.AnyPath, ...]:
+def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   """Returns a generous list of potential locations of a chromium checkout."""
   candidates = []
   if chromium_src := platform.environ.get("CHROMIUM_SRC"):
@@ -95,7 +95,7 @@ class ChromiumCheckoutFinder(BaseToolFinder):
   some preset known checkout locations."""
 
   @override
-  def default_candidates(self) -> Tuple[pth.AnyPath, ...]:
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
     return default_chromium_candidates(self.platform)
 
   @override
@@ -114,7 +114,7 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
       self,
       platform: Platform,
       binary_name: str,
-      candidates: Tuple[pth.AnyPath, ...] = tuple()) -> None:
+      candidates: tuple[pth.AnyPath, ...] = tuple()) -> None:
     self._binary_name = binary_name
     super().__init__(platform, candidates)
 
@@ -157,7 +157,7 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
 class V8CheckoutFinder(BaseToolFinder):
 
   @override
-  def default_candidates(self) -> Tuple[pth.AnyPath, ...]:
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
     if self.platform.is_android:
       return ()
     home_dir = self._platform.home()
@@ -279,7 +279,7 @@ class BaseChromiumBinaryToolFinder(BaseToolFinder):
     raise NotImplementedError()
 
   @override
-  def default_candidates(self) -> Tuple[pth.AnyPath, ...]:
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
     relative_path = chromium_src_relative_local_path() / self.chrome_path()
     if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
       return (relative_path, maybe_chrome / self.chrome_path(),)
@@ -333,7 +333,7 @@ CROSSBENCH_DIR = pth.LocalPath(__file__).parents[2]
 class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):
 
   @override
-  def default_candidates(self) -> Tuple[pth.AnyPath, ...]:
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
     candidates = super().default_candidates()
     return (CROSSBENCH_DIR / self.crossbench_path(),) + candidates
 

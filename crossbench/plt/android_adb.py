@@ -10,7 +10,7 @@ import math
 import re
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -101,7 +101,7 @@ class Adb:
 
   def _find_serial_id(
       self,
-      device_identifier: Optional[str] = None) -> Tuple[str, dict[str, str]]:
+      device_identifier: Optional[str] = None) -> tuple[str, dict[str, str]]:
     devices = self.devices()
     if not devices:
       raise ValueError("adb could not find any attached devices."
@@ -780,11 +780,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   _DUMPSYS_WINDOW_DISPLAYS_RE = re.compile(r" cur=(?P<x>\d+)x(?P<y>\d+) ")
 
   @functools.lru_cache(maxsize=1)
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     return ({"resolution": self.display_resolution(), "refresh_rate": -1},)
 
   @override
-  def display_resolution(self) -> Tuple[int, int]:
+  def display_resolution(self) -> tuple[int, int]:
     displays_out = self.sh_stdout("dumpsys", "window", "displays")
     match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
     if match_result is None:

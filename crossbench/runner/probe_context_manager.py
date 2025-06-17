@@ -8,8 +8,8 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Generic, Iterable, List, Optional, Tuple,
-                    Type, TypeVar)
+from typing import (TYPE_CHECKING, Generic, Iterable, List, Optional, Type,
+                    TypeVar)
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
@@ -69,7 +69,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
       self._setup_probes(tuple(probes))
     self._state.transition(State.SETUP, to=State.READY)
 
-  def _setup_probes(self, probes: Tuple[Probe, ...]) -> bool:
+  def _setup_probes(self, probes: tuple[Probe, ...]) -> bool:
     # We always have internal probes
     assert probes, "No probes provided"
     with self._capture("probes-setup", measure=True):
@@ -78,7 +78,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
       self._setup_contexts()
     return self.is_success
 
-  def _validate_probes(self, probes: Tuple[Probe, ...]) -> None:
+  def _validate_probes(self, probes: tuple[Probe, ...]) -> None:
     assert not self._probe_contexts, "Wrong probe context initialization order"
     probe_set = set()
     for probe in probes:
@@ -87,7 +87,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
       assert probe.is_attached, (
           f"Probe {probe.name} is not properly attached to a browser")
 
-  def _create_contexts(self, probes: Tuple[Probe, ...]) -> None:
+  def _create_contexts(self, probes: tuple[Probe, ...]) -> None:
     unique_contexts = set()
     for probe in probes:
       if probe.PRODUCES_DATA:

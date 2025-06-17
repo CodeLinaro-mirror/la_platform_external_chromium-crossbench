@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence
 
 import psutil
 from typing_extensions import override
@@ -30,7 +30,7 @@ class AppleScript:
 
   @classmethod
   def with_args(cls, app_path: AnyPath, apple_script: str,
-                **kwargs) -> Tuple[str, List[str]]:
+                **kwargs) -> tuple[str, List[str]]:
     variables = []
     replacements = {}
     args: List[str] = []

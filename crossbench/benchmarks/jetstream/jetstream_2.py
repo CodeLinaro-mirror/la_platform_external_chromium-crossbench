@@ -9,7 +9,7 @@ import argparse
 import datetime as dt
 import logging
 from typing import (TYPE_CHECKING, Any, List, MutableMapping, Optional,
-                    Sequence, Tuple, Type)
+                    Sequence, Type)
 
 from typing_extensions import override
 
@@ -38,7 +38,7 @@ class JetStream2ProbeContext(JetStreamProbeContext):
 
 
 class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
-  SUBSTORIES: Tuple[str, ...] = (
+  SUBSTORIES: tuple[str, ...] = (
       "WSL",
       "UniPoker",
       "uglify-js-wtb",
@@ -157,7 +157,7 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
       """, 1, self.duration + dt.timedelta(seconds=30))
 
 
-ProbeClsTupleT = Tuple[Type[JetStream2Probe], ...]
+ProbeClsTupleT = tuple[Type[JetStream2Probe], ...]
 
 
 class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):

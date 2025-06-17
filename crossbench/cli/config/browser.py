@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Optional, Self, Tuple, cast
+from typing import Any, Optional, Self, cast
 
 from typing_extensions import override
 
@@ -114,13 +114,13 @@ class BrowserConfig(ConfigObject):
     return cls(path, driver, network, env)
 
   @classmethod
-  def parse_with_range(cls, value: Any) -> Tuple[Self, ...]:
+  def parse_with_range(cls, value: Any) -> tuple[Self, ...]:
     if isinstance(value, str):
       return cls._parse_with_range(value)
     return (cls.parse(value),)
 
   @classmethod
-  def _parse_with_range(cls, value: str) -> Tuple[Self, ...]:
+  def _parse_with_range(cls, value: str) -> tuple[Self, ...]:
     if not value:
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     parts = value.split("...", maxsplit=1)
@@ -284,7 +284,7 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def _parse_inline_short_form(
       cls, value: str
-  ) -> Tuple[DriverConfig, pth.AnyPathLike, Optional[NetworkConfig],
+  ) -> tuple[DriverConfig, pth.AnyPathLike, Optional[NetworkConfig],
              Optional[EnvConfig]]:
     assert ":" in value, f"Invalid short config {repr(value)} for {cls}"
     match = SHORT_FORM_RE.fullmatch(value)

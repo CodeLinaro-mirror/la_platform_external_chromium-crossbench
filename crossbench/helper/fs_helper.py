@@ -4,8 +4,7 @@
 
 from __future__ import annotations
 
-from typing import (TYPE_CHECKING, Final, Iterable, List, Optional, Tuple,
-                    TypeVar)
+from typing import TYPE_CHECKING, Final, Iterable, List, Optional, TypeVar
 
 from crossbench import plt
 
@@ -20,7 +19,7 @@ def sort_by_file_size(files: Iterable[PathT],
   return sorted(files, key=lambda f: (real_platform.file_size(f), f.name))
 
 
-SIZE_UNITS: Final[Tuple[str, ...]] = ("B", "KiB", "MiB", "GiB", "TiB")
+SIZE_UNITS: Final[tuple[str, ...]] = ("B", "KiB", "MiB", "GiB", "TiB")
 
 
 def get_file_size(file: AnyPath,

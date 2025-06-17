@@ -11,7 +11,7 @@ import shutil
 import stat
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, Final, List, Optional, Tuple
+from typing import TYPE_CHECKING, Final, List, Optional
 
 from crossbench import exception
 from crossbench import path as pth
@@ -34,7 +34,7 @@ class ChromeDriverFinder:
   CFT_VERSION_URL: str = f"{CFT_BASE_URL}/{{version}}.json"
   CFT_LATEST_URL: str = f"{CFT_BASE_URL}/LATEST_RELEASE_{{major}}"
 
-  CFT_PLATFORM: Final[dict[Tuple[str, str], str]] = {
+  CFT_PLATFORM: Final[dict[tuple[str, str], str]] = {
       ("linux", "x64"):
           "linux64",
       ("macos", "x64"):
@@ -166,7 +166,7 @@ class ChromeDriverFinder:
       return None
     return maybe_drivers[0]
 
-  def _get_cft_url(self, milestone: int) -> Tuple[str, Optional[str]]:
+  def _get_cft_url(self, milestone: int) -> tuple[str, Optional[str]]:
     logging.debug("ChromeDriverFinder: Looking up chrome-for-testing version.")
     platform_name: str | None = self.CFT_PLATFORM.get(self.host_platform.key)
     if not platform_name:
@@ -179,7 +179,7 @@ class ChromeDriverFinder:
                                                        platform_name)
     return (listing_url, download_url)
 
-  def _get_cft_version_data(self, milestone: int) -> Tuple[str, Optional[dict]]:
+  def _get_cft_version_data(self, milestone: int) -> tuple[str, Optional[dict]]:
     logging.debug("ChromeDriverFinder: Trying direct download url")
     listing_url, data = self._get_cft_precise_version_data(self.browser.version)
     if data:
@@ -190,7 +190,7 @@ class ChromeDriverFinder:
     return self._get_ctf_milestone_data(milestone)
 
   def _get_cft_precise_version_data(
-      self, version: BrowserVersion) -> Tuple[str, Optional[dict]]:
+      self, version: BrowserVersion) -> tuple[str, Optional[dict]]:
     version_url: str = self.CFT_VERSION_URL.format(version=version.parts_str)
     try:
       response = url_helper.get(version_url)
@@ -202,7 +202,7 @@ class ChromeDriverFinder:
       return (version_url, None)
 
   def _get_ctf_milestone_data(self,
-                              milestone: int) -> Tuple[str, Optional[dict]]:
+                              milestone: int) -> tuple[str, Optional[dict]]:
     latest_version_url: str = self.CFT_LATEST_URL.format(major=milestone)
     try:
       response = url_helper.get(latest_version_url)
@@ -226,7 +226,7 @@ class ChromeDriverFinder:
   PRE_115_STABLE_URL: str = "http://chromedriver.storage.googleapis.com"
 
   def _get_pre_115_stable_url(self,
-                              milestone: int) -> Tuple[str, Optional[str]]:
+                              milestone: int) -> tuple[str, Optional[str]]:
     logging.debug(
         "ChromeDriverFinder: "
         "Looking upe old-style stable version M%s", milestone)
@@ -290,7 +290,7 @@ class ChromeDriverFinder:
   CHROMIUM_DASH_URL: str = "https://chromiumdash.appspot.com/fetch_releases"
   CHROMIUM_LISTING_URL: str = (
       "https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/")
-  CHROMIUM_DASH_PARAMS: dict[Tuple[str, str], dict] = {
+  CHROMIUM_DASH_PARAMS: dict[tuple[str, str], dict] = {
       ("linux", "x64"): {
           "dash_platform": "linux",
           "dash_channel": "dev",
@@ -309,7 +309,7 @@ class ChromeDriverFinder:
           "dash_platform": "win64",
       },
   }
-  CHROMIUM_LISTING_PREFIX: dict[Tuple[str, str], str] = {
+  CHROMIUM_LISTING_PREFIX: dict[tuple[str, str], str] = {
       ("linux", "x64"): "Linux_x64",
       ("macos", "x64"): "Mac",
       ("macos", "arm64"): "Mac_Arm",
@@ -317,7 +317,7 @@ class ChromeDriverFinder:
       ("win", "x64"): "Win_x64",
   }
 
-  def _get_canary_url(self) -> Tuple[str, Optional[str]]:
+  def _get_canary_url(self) -> tuple[str, Optional[str]]:
     logging.debug(
         "ChromeDriverFinder: Try downloading the chromedriver canary version")
     properties = self.CHROMIUM_DASH_PARAMS.get(self.host_platform.key)
@@ -383,7 +383,7 @@ class ChromeDriverFinder:
     })
     listing = url_helper.get(listing_url).json()
 
-    versions: List[Tuple[int, str]] = []
+    versions: List[tuple[int, str]] = []
     logging.debug("Filtering %s candidate URLs.", len(listing["items"]))
     for version in listing["items"]:
       if "name" not in version:

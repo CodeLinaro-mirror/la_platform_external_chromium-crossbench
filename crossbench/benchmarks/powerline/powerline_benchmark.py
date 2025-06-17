@@ -6,7 +6,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 from typing_extensions import override
 
@@ -64,7 +64,7 @@ class PowerlineStory(Story, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return (PowerlineStory.STORY_NAME,)
 
 

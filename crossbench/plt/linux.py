@@ -9,8 +9,7 @@ import functools
 import logging
 import os
 import re
-from typing import (TYPE_CHECKING, Any, ClassVar, Iterator, List, Optional,
-                    Tuple, Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Optional, Type
 
 from typing_extensions import override
 
@@ -38,7 +37,7 @@ class XrandrDisplayInfo:
   def is_connected(self) -> bool:
     return "disconnected" not in self.header
 
-  def resolution(self) -> Tuple[int, int] | None:
+  def resolution(self) -> tuple[int, int] | None:
     if match := self.RESOLUTION_RE.search(self.header):
       return (NumberParser.positive_int(match.group("resX")),
               NumberParser.positive_int(match.group("resY")))
@@ -85,7 +84,7 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
 
 
 class LinuxPlatform(PosixPlatform):
-  SEARCH_PATHS: Tuple[pth.AnyPath, ...] = (
+  SEARCH_PATHS: tuple[pth.AnyPath, ...] = (
       pth.AnyPosixPath("."),
       pth.AnyPosixPath("/usr/local/sbin"),
       pth.AnyPosixPath("/usr/local/bin"),
@@ -167,7 +166,7 @@ class LinuxPlatform(PosixPlatform):
     self.sh("gnome-screenshot", "--file", result_path)
 
   @functools.lru_cache(maxsize=1)
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     if not self.has_display:
       return tuple()
     if xrandr_str := self.sh_stdout("xrandr"):

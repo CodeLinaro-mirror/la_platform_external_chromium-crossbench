@@ -25,7 +25,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
-                    List, Mapping, Optional, Sequence, Tuple, Type, TypeAlias)
+                    List, Mapping, Optional, Sequence, Type, TypeAlias)
 
 import psutil
 
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 CmdArg: TypeAlias = pth.AnyPathLike
 SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
 ListCmdArgs: TypeAlias = List[CmdArg]
-TupleCmdArgs: TypeAlias = Tuple[CmdArg, ...]
+TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
 CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
@@ -201,7 +201,7 @@ class Platform(abc.ABC):
     return self.machine == MachineArch.ARM_64
 
   @property
-  def key(self) -> Tuple[str, str]:
+  def key(self) -> tuple[str, str]:
     return (self.name, str(self.machine))
 
   @property
@@ -313,7 +313,7 @@ class Platform(abc.ABC):
         "bits": 64 if sys.maxsize > 2**32 else 32,
     }
 
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     # TODO: implement on more platforms
     return tuple()
 
@@ -978,7 +978,7 @@ class Platform(abc.ABC):
 
   def set_display_refresh_rate(self,
                                refresh_rate: int,
-                               retry: int = 3) -> Tuple[bool, str]:
+                               retry: int = 3) -> tuple[bool, str]:
     raise NotImplementedError(
         "'set_display_refresh_rate' is only available on MacOS for now")
 
@@ -991,7 +991,7 @@ class Platform(abc.ABC):
     raise NotImplementedError(
         "'screenshot' is only available on MacOS for now")
 
-  def display_resolution(self) -> Tuple[int, int]:
+  def display_resolution(self) -> tuple[int, int]:
     raise NotImplementedError(
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")

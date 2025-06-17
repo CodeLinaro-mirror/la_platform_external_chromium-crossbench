@@ -7,8 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, MutableMapping, Optional, Sequence,
-                    Tuple, Type)
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Sequence, Type
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -326,7 +325,7 @@ class MemoryBenchmark(SubStoryBenchmark):
   NAME = "memory"
   DEFAULT_STORY_CLS = Page
   STORY_FILTER_CLS = MemoryBenchmarkStoryFilter
-  PROBES: Tuple[Type[MemoryProbe], ...] = (MemoryProbe,)
+  PROBES: tuple[Type[MemoryProbe], ...] = (MemoryProbe,)
 
   @classmethod
   @override
@@ -364,7 +363,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ()
 
   def __init__(self,

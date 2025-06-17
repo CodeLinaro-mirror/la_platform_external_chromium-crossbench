@@ -10,7 +10,7 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type
 
 import tabulate as tbl
 
@@ -34,7 +34,7 @@ from crossbench.runner.runner import Runner
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   BenchmarkClsT = Type[Benchmark]
-  BrowserLookupTableT = dict[str, Tuple[Type[Browser], pth.LocalPath]]
+  BrowserLookupTableT = dict[str, tuple[Type[Browser], pth.LocalPath]]
   from crossbench.cli.subcommand.base import CrossbenchSubcommand
 
 
@@ -119,7 +119,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
     file.write(f"  See {readme_file} for more details.\n")
 
 class CrossBenchCLI:
-  BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
+  BENCHMARKS: tuple[BenchmarkClsT, ...] = (
       benchmarks.EmbedderBenchmark,
       # JetStream:
       benchmarks.JetStream11Benchmark,

@@ -9,7 +9,7 @@ import dataclasses
 import functools
 import logging
 from typing import (TYPE_CHECKING, Any, Final, Iterable, List, Optional, Self,
-                    Sequence, Set, Tuple, Type)
+                    Sequence, Set, Type)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -74,7 +74,7 @@ class FlagsVariantConfig:
     return self.flags == other.flags
 
 
-class FlagsGroupConfig(Tuple[FlagsVariantConfig, ...]):
+class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
   """
   Config container for a list of FlagsVariantConfig:
   FlagsGroupConfig(

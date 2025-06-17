@@ -9,7 +9,7 @@ import logging
 import re
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
 
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
@@ -101,7 +101,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
     return path
 
-  UNSUPPORTED_FLAGS: Tuple[str, ...] = (
+  UNSUPPORTED_FLAGS: tuple[str, ...] = (
       "--disable-sync",
       "--window-size",
       "--window-position",
@@ -376,7 +376,7 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
         ChromeOsSshPlatform), (f"Invalid platform: {self._platform}")
     return cast(ChromeOsSshPlatform, self._platform)
 
-  UNSUPPORTED_FLAGS: Tuple[str, ...] = (
+  UNSUPPORTED_FLAGS: tuple[str, ...] = (
       "--user-data-dir",
       "--window-size",
       "--window-position",
@@ -389,7 +389,7 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
     platform = self.platform
     host = platform.host
     port = platform.port
-    args: Tuple[str, ...] = self._get_browser_flags_for_session(session)
+    args: tuple[str, ...] = self._get_browser_flags_for_session(session)
     # TODO(spadhi): correctly handle flags:
     #   1. decide which flags to pass to chrome vs chromedriver
     #   2. investigate irrelevant / unsupported flags on ChromeOS

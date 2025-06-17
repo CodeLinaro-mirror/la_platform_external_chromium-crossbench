@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -24,7 +24,7 @@ class LivePage(InteractivePage):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return tuple(page.name for page in PAGE_LIST)
 
   def __init__(
@@ -100,5 +100,5 @@ assert not PAGE_LIST, "PAGE_LIST was already initialized."
 PAGE_LIST.extend(LIVE_PAGES)
 
 PAGES: dict[str, LivePage] = {page.name: page for page in LIVE_PAGES}
-PAGE_LIST_SMALL: Tuple[LivePage, ...] = (PAGES["facebook"], PAGES["maps"],
+PAGE_LIST_SMALL: tuple[LivePage, ...] = (PAGES["facebook"], PAGES["maps"],
                                          PAGES["timesofindia"], PAGES["cnn"])

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import Any, Self, Tuple
+from typing import Any, Self
 
 from typing_extensions import override
 
@@ -20,12 +20,12 @@ from crossbench.parse import ObjectParser
 @dataclasses.dataclass(frozen=True)
 class CUJConfig:
   label: str
-  blocks: Tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = tuple()
 
 
 @dataclasses.dataclass(frozen=True)
 class CUJsConfig(ConfigObject):
-  cujs: Tuple[CUJConfig, ...] = ()
+  cujs: tuple[CUJConfig, ...] = ()
 
   @override
   def validate(self) -> None:
@@ -59,7 +59,7 @@ class CUJsConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_cujs(cls, data: dict[str, Any]) -> Tuple[CUJConfig, ...]:
+  def _parse_cujs(cls, data: dict[str, Any]) -> tuple[CUJConfig, ...]:
     cujs = []
     for name, cuj_config in data.items():
       with exception.annotate_argparsing(f"Parsing story ...['{name}']"):

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import enum
 import textwrap
-from typing import Any, List, NamedTuple, Optional, Self, Tuple, Type, cast
+from typing import Any, List, NamedTuple, Optional, Self, Type, cast
 
 import tabulate
 
@@ -28,7 +28,7 @@ class StrEnumWithHelp(StrHelpDataMixin, enum.Enum):
     return None
 
   @classmethod
-  def help_text_items(cls) -> List[Tuple[str, str]]:
+  def help_text_items(cls) -> List[tuple[str, str]]:
     return [
         (repr(instance.value), instance.help) for instance in cls  # pytype: disable=missing-parameter
     ]

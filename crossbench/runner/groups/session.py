@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
 
 from typing_extensions import override
 
@@ -63,7 +63,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._state: StateMachine[State] = StateMachine(State.BUILDING)
     self._env = env
     self._create_symlinks = create_symlinks
-    self._probes: Tuple[Probe, ...] = tuple(probes)
+    self._probes: tuple[Probe, ...] = tuple(probes)
     self._durations = Durations()
     self._browser = browser
     self._network: Network = browser.network

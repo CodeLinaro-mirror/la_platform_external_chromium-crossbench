@@ -14,7 +14,7 @@ import os
 import re
 import shlex
 from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, List,
-                    Optional, Sequence, Tuple, Type, TypeVar, cast)
+                    Optional, Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
@@ -359,7 +359,7 @@ class ObjectParser:
 
   PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
   INVALID_FUZZY_URL_RE = re.compile(r"[^./]+(?:/.+)?")
-  COMMON_URL_SCHEMES: Final[Tuple[str, ...]] = ("http", "https", "about",
+  COMMON_URL_SCHEMES: Final[tuple[str, ...]] = ("http", "https", "about",
                                                 "file", "data", "chrome")
 
   @classmethod

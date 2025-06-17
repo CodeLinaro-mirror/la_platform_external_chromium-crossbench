@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 from typing import (TYPE_CHECKING, Any, Iterable, List, Optional, Sequence,
-                    Tuple, Type, cast)
+                    Type, cast)
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -43,7 +43,7 @@ class ChromiumBasedWebDriver(
 
   WEB_DRIVER_OPTIONS: Type[ChromiumOptions] = ChromiumOptions
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
-  UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
+  UNSUPPORTED_FLAGS: tuple[str, ...] = ()
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)

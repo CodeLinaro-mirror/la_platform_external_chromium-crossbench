@@ -9,7 +9,7 @@ import dataclasses
 import datetime as dt
 import functools
 from typing import (TYPE_CHECKING, Any, Final, Iterator, List, Optional, Self,
-                    Sequence, Tuple, cast)
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ LOGIN_LABEL: Final[str] = "login"
 class ActionBlock(ConfigObject):
   label: str = "default"
   index: int = 0
-  actions: Tuple[Action, ...] = tuple()
+  actions: tuple[Action, ...] = tuple()
 
   @classmethod
   @override
@@ -94,7 +94,7 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   def from_url(cls, url: str, duration: dt.timedelta) -> ActionBlock:
-    actions: Tuple[Action, ...] = (GetAction(url, duration),)
+    actions: tuple[Action, ...] = (GetAction(url, duration),)
     if not duration:
       actions += (WaitForReadyStateAction(),)
     return ActionBlock(actions=actions)
@@ -154,9 +154,9 @@ class ActionBlock(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class ActionBlockListConfig(ConfigObject):
-  blocks: Tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = tuple()
 
-  def to_argument_value(self) -> Tuple[ActionBlock, ...]:
+  def to_argument_value(self) -> tuple[ActionBlock, ...]:
     return self.blocks
 
   @classmethod

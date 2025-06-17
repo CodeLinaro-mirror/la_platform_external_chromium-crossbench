@@ -8,7 +8,7 @@ import collections
 import json
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Tuple, Type
+from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -177,15 +177,15 @@ class TraceProcessorProbe(Probe):
     return self._batch
 
   @property
-  def metrics(self) -> Tuple[str, ...]:
+  def metrics(self) -> tuple[str, ...]:
     return self._metrics
 
   @property
-  def queries(self) -> Tuple[TraceProcessorQueryConfig, ...]:
+  def queries(self) -> tuple[TraceProcessorQueryConfig, ...]:
     return self._queries
 
   @property
-  def module_paths(self) -> Tuple[pth.LocalPath, ...]:
+  def module_paths(self) -> tuple[pth.LocalPath, ...]:
     return self._module_paths
 
   @property

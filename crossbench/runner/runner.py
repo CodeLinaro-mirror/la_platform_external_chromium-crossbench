@@ -9,7 +9,7 @@ import datetime as dt
 import enum
 import logging
 from typing import (TYPE_CHECKING, Any, Iterable, List, Optional, Sequence, Set,
-                    Tuple, Type)
+                    Type)
 
 from crossbench import exception
 from crossbench import path as pth
@@ -242,14 +242,14 @@ class Runner:
     self.out_dir.mkdir(parents=True)
     self._timing = timing
     self._cool_down_threshold: ThermalStatus | None = cool_down_threshold
-    self._browsers: Tuple[Browser, ...] = tuple(browsers)
+    self._browsers: tuple[Browser, ...] = tuple(browsers)
     self._validate_browser_labels()
     self._benchmark = benchmark
     self._stories = tuple(benchmark.stories)
     self._repetitions = NumberParser.positive_int(repetitions, "repetitions")
     self._warmup_repetitions = NumberParser.positive_zero_int(
         warmup_repetitions, "warmup repetitions")
-    self._cache_temperatures: Tuple[str, ...] = tuple(cache_temperatures)
+    self._cache_temperatures: tuple[str, ...] = tuple(cache_temperatures)
     self._probes: List[Probe] = []
     self._default_probes: List[Probe] = []
     # Contains both measure and warmup runs:
@@ -267,9 +267,9 @@ class Runner:
       self._results_db = ResultsDB()
     else:
       self._results_db = ResultsDB(self.out_dir / "results.db")
-    self._cache_temperatures_groups: Tuple[CacheTemperaturesRunGroup, ...] = ()
-    self._repetitions_groups: Tuple[RepetitionsRunGroup, ...] = ()
-    self._story_groups: Tuple[StoriesRunGroup, ...] = ()
+    self._cache_temperatures_groups: tuple[CacheTemperaturesRunGroup, ...] = ()
+    self._repetitions_groups: tuple[RepetitionsRunGroup, ...] = ()
+    self._story_groups: tuple[StoriesRunGroup, ...] = ()
     self._browser_group: BrowsersRunGroup | None = None
     self._create_symlinks: bool = create_symlinks
 
@@ -349,15 +349,15 @@ class Runner:
     return self._timing
 
   @property
-  def cache_temperatures(self) -> Tuple[str, ...]:
+  def cache_temperatures(self) -> tuple[str, ...]:
     return self._cache_temperatures
 
   @property
-  def browsers(self) -> Tuple[Browser, ...]:
+  def browsers(self) -> tuple[Browser, ...]:
     return self._browsers
 
   @property
-  def stories(self) -> Tuple[Story, ...]:
+  def stories(self) -> tuple[Story, ...]:
     return self._stories
 
   @property
@@ -409,26 +409,26 @@ class Runner:
     return self._results_db
 
   @property
-  def all_runs(self) -> Tuple[Run, ...]:
+  def all_runs(self) -> tuple[Run, ...]:
     return tuple(self._all_runs)
 
   @property
-  def runs(self) -> Tuple[Run, ...]:
+  def runs(self) -> tuple[Run, ...]:
     return tuple(self._measured_runs)
 
   @property
-  def cache_temperatures_groups(self) -> Tuple[CacheTemperaturesRunGroup, ...]:
+  def cache_temperatures_groups(self) -> tuple[CacheTemperaturesRunGroup, ...]:
     assert self._cache_temperatures_groups, (
         f"No CacheTemperatureRunGroup in {self}")
     return self._cache_temperatures_groups
 
   @property
-  def repetitions_groups(self) -> Tuple[RepetitionsRunGroup, ...]:
+  def repetitions_groups(self) -> tuple[RepetitionsRunGroup, ...]:
     assert self._repetitions_groups, f"No RepetitionsRunGroup in {self}"
     return self._repetitions_groups
 
   @property
-  def story_groups(self) -> Tuple[StoriesRunGroup, ...]:
+  def story_groups(self) -> tuple[StoriesRunGroup, ...]:
     assert self._story_groups, f"No StoriesRunGroup in {self}"
     return self._story_groups
 
@@ -677,7 +677,7 @@ class Runner:
   def _create_runs_results_symlinks(self) -> None:
     assert self.create_symlinks
     results_root = self.out_dir.parent
-    runs: Tuple[Run, ...] = self.all_runs
+    runs: tuple[Run, ...] = self.all_runs
     if not runs:
       logging.debug("Skip creating result symlinks in '%s': no runs produced.",
                     results_root)
@@ -686,7 +686,7 @@ class Runner:
     self._create_runs_symlinks(runs)
     self._create_sessions_symlinks(runs)
 
-  def _create_first_last_run_symlinks(self, runs: Tuple[Run, ...]) -> None:
+  def _create_first_last_run_symlinks(self, runs: tuple[Run, ...]) -> None:
     out_dir = self.out_dir
     first_run_dir = out_dir / "first_run"
     if first_run_dir.exists():
@@ -699,7 +699,7 @@ class Runner:
     else:
       last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
 
-  def _create_runs_symlinks(self, runs: Tuple[Run, ...]) -> None:
+  def _create_runs_symlinks(self, runs: tuple[Run, ...]) -> None:
     out_dir = self.out_dir
     runs_dir = out_dir / "runs"
     runs_dir.mkdir()
@@ -709,7 +709,7 @@ class Runner:
       relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
       (runs_dir / str(run.index)).symlink_to(relative)
 
-  def _create_sessions_symlinks(self, runs: Tuple[Run, ...]) -> None:
+  def _create_sessions_symlinks(self, runs: tuple[Run, ...]) -> None:
     out_dir = self.out_dir
     sessions_dir = out_dir / "sessions"
     sessions_dir.mkdir()

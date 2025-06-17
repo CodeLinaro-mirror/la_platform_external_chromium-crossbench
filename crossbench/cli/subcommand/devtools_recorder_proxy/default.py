@@ -14,7 +14,7 @@ import secrets
 import shlex
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, Coroutine, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Coroutine, Optional
 
 from websockets import server as websockets
 
@@ -119,11 +119,11 @@ class CrossbenchDevToolsRecorderProxy:
       await self._send_message(self._handle_message(message))
 
   async def _send_message(
-      self, coroutine: Coroutine[Any, Any, Optional[Tuple[Response,
+      self, coroutine: Coroutine[Any, Any, Optional[tuple[Response,
                                                           Any]]]) -> None:
     response: JsonDict = {"success": False, "payload": None, "error": None}
     try:
-      result: Optional[Tuple[Response, Any]] = await coroutine
+      result: Optional[tuple[Response, Any]] = await coroutine
       response["success"] = True
       if result:
         response_type, payload = result
@@ -144,7 +144,7 @@ class CrossbenchDevToolsRecorderProxy:
     await self._websocket.send(response_json)
 
   async def _handle_message(
-      self, message: bytearray | bytes | str) -> Optional[Tuple[Response, Any]]:
+      self, message: bytearray | bytes | str) -> Optional[tuple[Response, Any]]:
     logging.debug("RECEIVE Message: %s", message)
     try:
       payload: dict[str, Any] = json.loads(message)
@@ -167,14 +167,14 @@ class CrossbenchDevToolsRecorderProxy:
     logging.error("Unknown command: %s", command)
     return None
 
-  async def _stop_command(self) -> Tuple[Response, str]:
+  async def _stop_command(self) -> tuple[Response, str]:
     if process := self._crossbench_process:
       logging.info("# CROSSBENCH COMMAND: KILL")
       plt.PLATFORM.terminate_gracefully(process)
     self._state.transition(State.CONNECTED, State.CONNECTED, to=State.CONNECTED)
     return await self._status_command()
 
-  async def _run_command(self, args) -> Tuple[Response, str]:
+  async def _run_command(self, args) -> tuple[Response, str]:
     self._state.transition(State.CONNECTED, to=State.RUNNING)
     assert self._crossbench_process is None
     cb_path = CROSSBENCH_ROOT / "cb.py"
@@ -208,7 +208,7 @@ class CrossbenchDevToolsRecorderProxy:
 
   async def _send_output(
       self, stdout_str: Optional[str],
-      stderr_str: Optional[str]) -> Optional[Tuple[Response, dict[str, str]]]:
+      stderr_str: Optional[str]) -> Optional[tuple[Response, dict[str, str]]]:
     if self._state != State.RUNNING:
       return None
     if self._print_cmd_output:
@@ -256,5 +256,5 @@ class CrossbenchDevToolsRecorderProxy:
       stderr_str = stderr_data.decode("utf-8")
       await self._send_message(self._send_output(None, stderr_str))
 
-  async def _status_command(self) -> Tuple[Response, str]:
+  async def _status_command(self) -> tuple[Response, str]:
     return Response.STATUS, str(self._state.name)

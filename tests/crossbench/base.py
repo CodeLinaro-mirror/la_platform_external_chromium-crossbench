@@ -11,7 +11,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import Final, List, Optional, Sequence, Tuple, Type
+from typing import Final, List, Optional, Sequence, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -218,7 +218,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   def run_cli_output(self,
                      *args,
                      raises=None,
-                     enable_logging: bool = True) -> Tuple[MockCLI, str, str]:
+                     enable_logging: bool = True) -> tuple[MockCLI, str, str]:
     with mock.patch(
         "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
             "sys.stderr", new_callable=io.StringIO) as mock_stderr:

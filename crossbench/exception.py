@@ -11,7 +11,7 @@ import sys
 import traceback as tb
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Type
 
 from crossbench.helper import collection_helper, txt_helper
 from crossbench.types import JsonList
@@ -19,9 +19,9 @@ from crossbench.types import JsonList
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
-TInfoStack = Tuple[str, ...]
+TInfoStack = tuple[str, ...]
 
-TExceptionTypes = Tuple[Type[BaseException], ...]
+TExceptionTypes = tuple[Type[BaseException], ...]
 
 
 @dataclass
@@ -64,7 +64,7 @@ class ExceptionAnnotationScope:
       annotator: ExceptionAnnotator,
       exception_types: TExceptionTypes,
       ignore_exception_types: TExceptionTypes,
-      entries: Tuple[str, ...],
+      entries: tuple[str, ...],
       throw_cls: Optional[Type[BaseException]] = None,
   ) -> None:
     logging.debug("EAS: %s%s", "  " * annotator.depth, " ".join(entries))
@@ -160,14 +160,14 @@ class ExceptionAnnotator:
   def __len__(self) -> int:
     return len(self._exceptions)
 
-  def enter(self, added_info_stack_entries: Tuple[str, ...]) -> Tuple[str, ...]:
+  def enter(self, added_info_stack_entries: tuple[str, ...]) -> tuple[str, ...]:
     self._depth += 1
     self._pending_exceptions.clear()
     previous_stack = self._info_stack
     self._info_stack = previous_stack + added_info_stack_entries
     return previous_stack
 
-  def leave(self, previous_stack: Tuple[str, ...]) -> None:
+  def leave(self, previous_stack: tuple[str, ...]) -> None:
     self._depth -= 1
     self._info_stack = previous_stack
 
