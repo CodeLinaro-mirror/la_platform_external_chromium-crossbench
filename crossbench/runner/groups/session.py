@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
+from typing import TYPE_CHECKING, Iterable, Iterator, Optional
 
 from typing_extensions import override
 
@@ -68,7 +68,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._browser = browser
     self._network: Network = browser.network
     self._index: int = index
-    self._runs: List[Run] = []
+    self._runs: list[Run] = []
     self._root_dir: LocalPath = root_dir
     self._browser_tmp_dir: AnyPath | None = None
     self._extra_js_flags = JSFlags()

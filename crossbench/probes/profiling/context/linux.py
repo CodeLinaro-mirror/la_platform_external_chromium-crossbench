@@ -9,7 +9,7 @@ import json
 import logging
 import multiprocessing
 import time
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
@@ -88,11 +88,11 @@ class LinuxProfilingContext(PosixProfilingContext):
                    "You might get partial profiles")
     time.sleep(2)
 
-    perf_files: List[pth.AnyPath] = fs_helper.sort_by_file_size(
+    perf_files: list[pth.AnyPath] = fs_helper.sort_by_file_size(
         list(self.browser_platform.glob(self.result_path, PERF_DATA_PATTERN)),
         self.browser_platform)
     raw_perf_files = perf_files
-    urls: List[str] = []
+    urls: list[str] = []
     try:
       if self.probe.sample_js:
         perf_files = self._inject_v8_symbols(self.run, perf_files)
@@ -111,7 +111,7 @@ class LinuxProfilingContext(PosixProfilingContext):
     return self.browser_result(trace=perf_files)
 
   def _inject_v8_symbols(self, run: Run,
-                         perf_files: List[pth.AnyPath]) -> List[pth.AnyPath]:
+                         perf_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
     with run.actions(
         f"Probe {self.probe.name}: "
         f"Injecting V8 symbols into {len(perf_files)} profiles",
@@ -135,7 +135,7 @@ class LinuxProfilingContext(PosixProfilingContext):
       return [file for file in perf_jitted_files if file is not None]
 
   def _export_to_pprof(self, run: Run,
-                       perf_files: List[pth.AnyPath]) -> List[str]:
+                       perf_files: list[pth.AnyPath]) -> list[str]:
     assert self.probe.run_pprof
     run_details_json = json.dumps(run.get_browser_details_json())
     with run.actions(
@@ -148,7 +148,7 @@ class LinuxProfilingContext(PosixProfilingContext):
           shell=True)
       size = len(perf_files)
       items = zip(perf_files, [run_details_json] * size)
-      urls: List[str] = []
+      urls: list[str] = []
       if self.browser_platform.is_remote:
         # Use loop, as we cannot easily serialize the remote platform.
         for perf_data_file, run_details in items:

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type
+from typing import TYPE_CHECKING, Iterable, Optional, Self, Type
 
 from typing_extensions import override
 
@@ -141,7 +141,7 @@ class ShellProbeContext(ProbeContext[ShellProbe]):
 
   def __init__(self, probe: ShellProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._result_files: List[pth.LocalPath] = []
+    self._result_files: list[pth.LocalPath] = []
 
   def _maybe_run_cmd(self, name: str, cmd: TupleCmdArgs) -> None:
     if not cmd:

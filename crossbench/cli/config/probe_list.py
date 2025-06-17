@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Self, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Self, Sequence
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class ProbeListConfig(ConfigObject):
 
   @classmethod
   def parse_sequence(cls, config: Sequence[dict[str, Any]]) -> Self:
-    probe_configs: List[ProbeConfig] = []
+    probe_configs: list[ProbeConfig] = []
     for index, probe_config in enumerate(config):
       with exception.annotate(f"Parsing probes[{index}]"):
         probe_configs.append(ProbeConfig.parse(probe_config))
@@ -60,7 +60,7 @@ class ProbeListConfig(ConfigObject):
     elif "browsers" in config or "flags" in config:
       raise ProbeConfigError("Missing 'probes' property in global config.")
     config = ObjectParser.dict(config, "probes")
-    probe_configs: List[ProbeConfig] = []
+    probe_configs: list[ProbeConfig] = []
     for probe_name, config_data in config.items():
       with exception.annotate(f"Parsing probe config probes['{probe_name}']"):
         probe_configs.append(
@@ -87,7 +87,7 @@ class ProbeListConfig(ConfigObject):
       self._add_probe(probe)
 
   @property
-  def probes(self) -> List[Probe]:
+  def probes(self) -> list[Probe]:
     return list(self._probes.values())
 
   def _add_probe_config(self, probe_config: ProbeConfig) -> None:

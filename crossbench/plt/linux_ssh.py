@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
@@ -63,14 +63,14 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return self._build_ssh_cmd(*args, shell=shell)
 
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[dict[str, Any]]:
+                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
     # TODO: Define a more generic method in PosixPlatform, possibly with
     # an overridable function to generate ps command line.
     lines = self.sh_stdout("ps", "-A", "-o", "pid,cmd").splitlines()
     if len(lines) == 1:
       return []
 
-    res: List[dict[str, Any]] = []
+    res: list[dict[str, Any]] = []
     for line in lines[1:]:
       pid, name = line.split(maxsplit=1)
       res.append({"pid": int(pid), "name": name})

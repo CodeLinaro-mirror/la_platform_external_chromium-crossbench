@@ -9,7 +9,7 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type, cast
+from typing import TYPE_CHECKING, Iterable, Optional, Self, Type, cast
 
 from typing_extensions import override
 
@@ -163,7 +163,7 @@ class V8LogProbe(ChromiumProbe):
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
 
-  def process_log_files(self, log_files: List[AnyPath]) -> List[AnyPath]:
+  def process_log_files(self, log_files: list[AnyPath]) -> list[AnyPath]:
     if not self._profview:
       return []
     platform = self.host_platform
@@ -195,7 +195,7 @@ class V8LogProbe(ChromiumProbe):
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
-    runs: List[Run] = list(run for run in group.runs if self in run.results)
+    runs: list[Run] = list(run for run in group.runs if self in run.results)
     if not runs:
       return
     logging.info("-" * 80)
@@ -251,7 +251,7 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     log_files = fs_helper.sort_by_file_size(
         self.browser_platform.glob(log_dir, "*-v8.log"), self.browser_platform)
     # Only convert a v8.log file with profile ticks.
-    json_list: List[AnyPath] = []
+    json_list: list[AnyPath] = []
     maybe_js_flags = getattr(self.browser, "js_flags", {})
     if _PROF_FLAG in maybe_js_flags or _LOG_ALL_FLAG in maybe_js_flags:
       with ui.spinner():

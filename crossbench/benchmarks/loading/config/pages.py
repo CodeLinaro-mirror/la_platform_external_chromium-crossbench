@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Sequence
 
 from typing_extensions import override
 
@@ -55,7 +55,7 @@ class PagesConfig(ConfigObject):
     if value[0] == "{":
       return cls.parse_inline_hjson(value)
 
-    values: List[str] = []
+    values: list[str] = []
     previous_part: str | None = None
     for part in value.strip().split(","):
       part = ObjectParser.non_empty_str(part, "url or duration")
@@ -94,7 +94,7 @@ class PagesConfig(ConfigObject):
     if not values:
       raise argparse.ArgumentTypeError("Got empty page list.")
     ObjectParser.non_empty_sequence(values, "page list")
-    pages: List[PageConfig] = []
+    pages: list[PageConfig] = []
     for index, single_line_config in enumerate(values):
       with exception.annotate_argparsing(
           f"Parsing pages[{index}]: {repr(single_line_config)}"):
@@ -160,8 +160,8 @@ class DevToolsRecorderPagesConfig(PagesConfig):
     raise exception.UnreachableError()
 
   @classmethod
-  def _parse_steps(cls, steps: List[dict[str, Any]]) -> tuple[Action, ...]:
-    actions: List[Action] = []
+  def _parse_steps(cls, steps: list[dict[str, Any]]) -> tuple[Action, ...]:
+    actions: list[Action] = []
     for step in steps:
       if maybe_actions := cls.parse_step(step):
         actions.extend(maybe_actions)
@@ -170,7 +170,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
     return tuple(actions)
 
   @classmethod
-  def parse_step(cls, step: dict[str, Any]) -> List[Action]:
+  def parse_step(cls, step: dict[str, Any]) -> list[Action]:
     step_type: str = step["type"]
     default_timeout = dt.timedelta(seconds=10)
     if step_type == "navigate":
@@ -200,7 +200,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
         timeout=default_timeout)
 
   @classmethod
-  def _parse_selectors(cls, selectors: List[List[str]]) -> str:
+  def _parse_selectors(cls, selectors: list[list[str]]) -> str:
     xpath: str | None = None
     aria: str | None = None
     text: str | None = None
@@ -255,7 +255,7 @@ class ListPagesConfig(PagesConfig):
   @override
   def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     assert not kwargs, f"{cls.__name__} does not support extra kwargs"
-    pages: List[PageConfig] = []
+    pages: list[PageConfig] = []
     with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
       line: int = 0
       with path.open() as f:

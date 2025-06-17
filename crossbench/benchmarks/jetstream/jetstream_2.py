@@ -8,8 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, List, MutableMapping, Optional,
-                    Sequence, Type)
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -201,7 +200,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
     super().__init__(story_cls, patterns, args, separate, url)
 
   @override
-  def create_stories_from_names(self, names: List[str],
+  def create_stories_from_names(self, names: list[str],
                                 separate: bool) -> Sequence[JetStream2Story]:
     return self.story_cls.from_names(
         names, separate=separate, url=self.url, iterations=self.iterations)

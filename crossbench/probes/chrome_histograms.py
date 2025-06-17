@@ -11,8 +11,7 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, List, Mapping, Optional, Self, Sequence,
-                    Type)
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Self, Sequence, Type
 
 from typing_extensions import override
 
@@ -101,7 +100,7 @@ PERCENTILE_METRIC_RE: re.Pattern[str] = re.compile(r"^p(\d+)$")
 def parse_histogram_metrics(value: Any,
                             name: str = "value"
                            ) -> Sequence[ChromeHistogramMetric]:
-  result: List[ChromeHistogramMetric] = []
+  result: list[ChromeHistogramMetric] = []
   d = ObjectParser.dict(value, name)
   for k, v in d.items():
     histogram_name = ObjectParser.any_str(k, f"{name} name")
@@ -195,7 +194,7 @@ class ChromeHistogramBucket:
   count: int
 
 
-ChromeHistogramBuckets = List[ChromeHistogramBucket]
+ChromeHistogramBuckets = list[ChromeHistogramBucket]
 
 
 class ChromeHistogramSample:

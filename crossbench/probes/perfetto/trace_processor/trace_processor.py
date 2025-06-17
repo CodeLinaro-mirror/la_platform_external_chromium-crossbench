@@ -8,7 +8,7 @@ import collections
 import json
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type
+from typing import TYPE_CHECKING, Iterable, Optional, Self, Type
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -106,7 +106,7 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
               metadata=metadata(run)) for run in traces
       ]
 
-  def resolve(self) -> List["TraceUriResolver.Result"]:
+  def resolve(self) -> list["TraceUriResolver.Result"]:
     return self._resolved
 
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Iterable, List, Optional
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
@@ -221,21 +221,21 @@ class RunnerEnv(BaseEnv):
     if self._config.browser_allow_existing_process:
       return
     grouped_browsers: dict[plt.Platform,
-                           List[Browser]] = collection_helper.group_by(
+                           list[Browser]] = collection_helper.group_by(
                                self.browsers,
                                key=lambda browser: browser.platform)
     for platform, browsers in grouped_browsers.items():
       self._check_running_binaries_on_platform(platform, browsers)
 
   def _check_running_binaries_on_platform(
-      self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
+      self, platform: plt.Platform, platform_browsers: list[Browser]) -> None:
     # On Android, an app's process lifetime is not controlled by the user or
     # the app itself. OS can start/terminate processes in the background, so
     # we don't check for those.
     if platform.is_android:
       return
 
-    browser_binaries: dict[str, List[Browser]] = collection_helper.group_by(
+    browser_binaries: dict[str, list[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):

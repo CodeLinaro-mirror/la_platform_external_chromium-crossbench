@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from typing_extensions import override
 
@@ -30,7 +30,7 @@ DEFAULT_DURATION_SECONDS = 15
 DEFAULT_DURATION = dt.timedelta(seconds=DEFAULT_DURATION_SECONDS)
 
 # This is initialized in interactive.py to avoid circular dependencies
-PAGE_LIST: List[Page] = []
+PAGE_LIST: list[Page] = []
 
 class Page(Story, metaclass=abc.ABCMeta):
 

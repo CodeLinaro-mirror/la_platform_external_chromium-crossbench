@@ -8,8 +8,7 @@ import argparse
 import datetime as dt
 import enum
 import logging
-from typing import (TYPE_CHECKING, Any, Iterable, List, Optional, Sequence, Set,
-                    Type)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Type
 
 from crossbench import exception
 from crossbench import path as pth
@@ -69,10 +68,10 @@ class ThreadMode(StrEnumWithHelp):
       "Execute run from each browser-session in a parallel thread. "
       "High interference risk, don't use for time-critical measurements."))
 
-  def group(self, runs: List[Run]) -> List[RunThreadGroup]:
+  def group(self, runs: list[Run]) -> list[RunThreadGroup]:
     if self == ThreadMode.NONE:
       return [RunMainGroup(runs)]
-    groups: dict[Any, List[Run]] = {}
+    groups: dict[Any, list[Run]] = {}
     if self == ThreadMode.SESSION:
       groups = collection_helper.group_by(
           runs, lambda run: run.browser_session, sort_key=None)
@@ -250,11 +249,11 @@ class Runner:
     self._warmup_repetitions = NumberParser.positive_zero_int(
         warmup_repetitions, "warmup repetitions")
     self._cache_temperatures: tuple[str, ...] = tuple(cache_temperatures)
-    self._probes: List[Probe] = []
-    self._default_probes: List[Probe] = []
+    self._probes: list[Probe] = []
+    self._default_probes: list[Probe] = []
     # Contains both measure and warmup runs:
-    self._all_runs: List[Run] = []
-    self._measured_runs: List[Run] = []
+    self._all_runs: list[Run] = []
+    self._measured_runs: list[Run] = []
     self._thread_mode = thread_mode
     self._exceptions = exception.Annotator(throw)
     self._platform = platform or plt.PLATFORM
@@ -592,13 +591,13 @@ class Runner:
     # Raise a RunnerException to be handled in the CLI.
     self._exceptions.assert_success(message, RunnerException)
 
-  def _get_thread_groups(self) -> List[RunThreadGroup]:
+  def _get_thread_groups(self) -> list[RunThreadGroup]:
     # Also include warmup runs here.
     return self._thread_mode.group(self._all_runs)
 
   def _run(self, is_dry_run: bool = False) -> None:
     self._state.transition(RunnerState.SETUP, to=RunnerState.RUNNING)
-    thread_groups: List[RunThreadGroup] = []
+    thread_groups: list[RunThreadGroup] = []
     with self._exceptions.info("Creating thread groups for all Runs"):
       thread_groups = self._get_thread_groups()
       for thread_group in thread_groups:

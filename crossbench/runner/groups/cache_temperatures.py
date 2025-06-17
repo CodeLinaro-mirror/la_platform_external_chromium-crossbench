@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List
+from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import override
 
@@ -40,7 +40,7 @@ class CacheTemperaturesRunGroup(RunGroup):
 
   def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
-    self._runs: List[Run] = []
+    self._runs: list[Run] = []
     self._story: Story | None = None
     self._browser: Browser | None = None
     self._repetition = -1

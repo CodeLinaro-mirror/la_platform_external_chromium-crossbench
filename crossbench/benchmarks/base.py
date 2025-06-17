@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Generic, List, Mapping, Optional,
-                    Sequence, Type, TypeAlias, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Generic, Mapping, Optional, Sequence,
+                    Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -116,10 +116,10 @@ class Benchmark(abc.ABC):
     assert self.NAME is not None, f"{self} has no .NAME property"
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
-    self.stories: List[Story] = self._validate_stories(stories)
+    self.stories: list[Story] = self._validate_stories(stories)
     self.log_stories(self.stories)
 
-  def _validate_stories(self, stories: Sequence[Story]) -> List[Story]:
+  def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
     assert stories, "No stories provided"
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS), (
@@ -376,7 +376,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
             "is not in the filtered story list") from e
 
   def _regexp_match(self, regexp: re.Pattern,
-                    original_pattern: str) -> List[str]:
+                    original_pattern: str) -> list[str]:
     substories = [
         substory for substory in self._known_names if regexp.fullmatch(substory)
     ]
@@ -389,7 +389,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                        "previously filtered story names.")
     return substories
 
-  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> List[str]:
+  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> list[str]:
     logging.warning(
         "No matching stories, using case-insensitive fallback regexp.")
     iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
@@ -398,7 +398,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
         if iregexp.fullmatch(substory)
     ]
 
-  def _handle_no_match(self, original_pattern: str) -> List[str]:
+  def _handle_no_match(self, original_pattern: str) -> list[str]:
     choices_ms, alternative = close_matches_message(original_pattern,
                                                     self._known_names)
     error_message: str = f"'{original_pattern}' didn't match any stories."
@@ -415,7 +415,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     return stories
 
   def create_stories_from_names(
-      self, names: List[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
+      self, names: list[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
     return self.story_cls.from_names(names, separate=separate, url=self.url)
 
 

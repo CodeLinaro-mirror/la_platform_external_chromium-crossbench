@@ -11,7 +11,7 @@ import shutil
 import stat
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, Final, List, Optional
+from typing import TYPE_CHECKING, Final, Optional
 
 from crossbench import exception
 from crossbench import path as pth
@@ -82,7 +82,7 @@ class ChromeDriverFinder:
       driver_path = driver_path.with_suffix(".exe")
     if self.host_platform.is_file(driver_path):
       return driver_path
-    error_message: List[str] = [f"Driver '{driver_path}' does not exist."]
+    error_message: list[str] = [f"Driver '{driver_path}' does not exist."]
     if helper.is_build_dir(lookup_dir, self.host_platform):
       error_message += [helper.build_chromedriver_instructions(lookup_dir)]
     else:
@@ -152,12 +152,12 @@ class ChromeDriverFinder:
     with zipfile.ZipFile(zip_file, "r") as zip_ref:
       zip_ref.extractall(zip_file.parent)
     zip_file.unlink()
-    candidates: List[pth.LocalPath] = [
+    candidates: list[pth.LocalPath] = [
         path for path in zip_file.parent.glob("**/*")
         if path.is_file() and "chromedriver" in path.name
     ]
     # Find exact match first:
-    maybe_drivers: List[pth.LocalPath] = [
+    maybe_drivers: list[pth.LocalPath] = [
         path for path in candidates if path.stem == "chromedriver"
     ]
     # Backup less strict matching:
@@ -275,7 +275,7 @@ class ChromeDriverFinder:
 
   def _get_pre_70_driver_version(self, milestone) -> Optional[str]:
     response = url_helper.get(f"{self.PRE_115_STABLE_URL}/2.46/notes.txt")
-    lines: List[str] = response.text.splitlines()
+    lines: list[str] = response.text.splitlines()
     for i, line in enumerate(lines):
       if not line.startswith("---"):
         continue
@@ -383,7 +383,7 @@ class ChromeDriverFinder:
     })
     listing = url_helper.get(listing_url).json()
 
-    versions: List[tuple[int, str]] = []
+    versions: list[tuple[int, str]] = []
     logging.debug("Filtering %s candidate URLs.", len(listing["items"]))
     for version in listing["items"]:
       if "name" not in version:

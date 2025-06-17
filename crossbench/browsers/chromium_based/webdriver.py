@@ -8,8 +8,7 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Iterable, List, Optional, Sequence,
-                    Type, cast)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type, cast
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -120,7 +119,7 @@ class ChromiumBasedWebDriver(
     options = self._create_options(session, args)
 
     self._log_browser_start(args, driver_path)
-    service_args: List[str] = []
+    service_args: list[str] = []
     if self._settings.driver_logging:
       service_args += [
           "--verbose", f"--log-path={os.fspath(self._setup_driver_log_file())}"

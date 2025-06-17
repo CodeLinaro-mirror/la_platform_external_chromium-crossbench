@@ -9,7 +9,7 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Iterator, List, Optional, Self,
+from typing import (TYPE_CHECKING, Any, Final, Iterator, Optional, Self,
                     Sequence, Set, TextIO, Type, cast)
 
 from typing_extensions import override
@@ -94,17 +94,17 @@ class BaseBrowserVariantsConfig(abc.ABC):
       self,
       browser_lookup_override: Optional[BrowserLookupTableT] = None) -> None:
     self.flags_config: FlagsConfig = FlagsConfig()
-    self._variants: List[BrowserVariantConfig] = []
+    self._variants: list[BrowserVariantConfig] = []
     self._unique_labels: Set[str] = set()
     self._browser_lookup_override = browser_lookup_override or {}
 
   @property
-  def variants(self) -> List[BrowserVariantConfig]:
+  def variants(self) -> list[BrowserVariantConfig]:
     assert self._variants
     return list(self._variants)
 
   @property
-  def browsers(self) -> List[Browser]:
+  def browsers(self) -> list[Browser]:
     browsers = [
         variant.browser_cls(variant.label, variant.path, variant.settings)
         for variant in self._variants
@@ -123,7 +123,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       raise ValueError(f"Cannot extend {type(self)} with itself.")
     self._variants.extend(other.variants)
 
-  def _ensure_unique_browser_names(self, browsers: List[Browser]) -> None:
+  def _ensure_unique_browser_names(self, browsers: list[Browser]) -> None:
     if self._has_unique_variant_names(browsers):
       return
     # Expand to full version names
@@ -139,7 +139,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       browser.unique_name = f"{browser.unique_name[:MAX_LABEL_LEN]}_{index}"
     assert self._has_unique_variant_names(browsers)
 
-  def _has_unique_variant_names(self, browsers: List[Browser]) -> bool:
+  def _has_unique_variant_names(self, browsers: list[Browser]) -> bool:
     names = [browser.unique_name for browser in browsers]
     unique_names = set(names)
     return len(unique_names) == len(names)
@@ -180,7 +180,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
     return True
 
   def _validate_flags(self, browser_name: str,
-                      flag_group_names: List[str]) -> None:
+                      flag_group_names: list[str]) -> None:
     if isinstance(flag_group_names, str):
       flag_group_names = [flag_group_names]
     if not isinstance(flag_group_names, list):
@@ -474,7 +474,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     flag_variants = FlagsGroupConfig((default_variant,))
     if not isinstance(raw_browser_data, dict):
       return flag_variants
-    flag_groups: List[FlagsGroupConfig] = []
+    flag_groups: list[FlagsGroupConfig] = []
     with exception.annotate(f"Parsing browsers[{repr(browser_name)}].flags"):
       flag_groups = self._parse_browser_flags(browser_name, raw_browser_data)
     with exception.annotate(
@@ -492,13 +492,13 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     return flag_variants
 
   def _parse_browser_flags(self, browser_name: str,
-                           data: dict[str, Any]) -> List[FlagsGroupConfig]:
+                           data: dict[str, Any]) -> list[FlagsGroupConfig]:
     flag_group_names = data.get("flags", [])
     if isinstance(flag_group_names, str):
       flag_group_names = [flag_group_names]
     self._validate_flags(browser_name, flag_group_names)
     inline_flags = Flags()
-    flag_groups: List[FlagsGroupConfig] = []
+    flag_groups: list[FlagsGroupConfig] = []
     for flag_group_name in flag_group_names:
       if flag_group_name.startswith("--"):
         inline_flags.update(Flags.parse(flag_group_name))

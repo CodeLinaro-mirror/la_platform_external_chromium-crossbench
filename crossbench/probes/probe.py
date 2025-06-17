@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Hashable, List, Optional, Self, Set, Type,
-                    TypeVar)
+from typing import TYPE_CHECKING, Hashable, Optional, Self, Set, Type, TypeVar
 
 from typing_extensions import override
 
@@ -217,7 +216,7 @@ class Probe(ProbeResultKey, abc.ABC):
 
     first_run_results: ProbeResult = first_run.results[self]
     group_dir: pth.LocalPath = group.path
-    symlinked_files: List[pth.LocalPath] = []
+    symlinked_files: list[pth.LocalPath] = []
     for file in first_run_results.all_files():
       group_result_symlink = group_dir / file.name
       if group_result_symlink.exists():

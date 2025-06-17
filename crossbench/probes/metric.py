@@ -8,8 +8,8 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Optional,
-                    Sequence, Set)
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Sequence,
+                    Set)
 
 from crossbench.probes import helper
 
@@ -57,7 +57,7 @@ class Metric:
 
   def __init__(self, values: Optional[Iterable] = None) -> None:
     if not values:
-      self.values: List[float] = []
+      self.values: list[float] = []
     else:
       self.values = list(values)
     self._is_numeric: bool = all(map(is_number, self.values))
@@ -183,7 +183,7 @@ class MetricsMerger:
     return merger
 
   def __init__(self,
-               *args: dict | List[dict],
+               *args: dict | list[dict],
                key_fn: Optional[helper.KeyFnType] = None):
     """Create a new MetricsMerger
 
@@ -226,7 +226,7 @@ class MetricsMerger:
       else:
         self._data[key] = Metric.from_json(item)
 
-  def add(self, data: dict | List[dict]) -> None:
+  def add(self, data: dict | list[dict]) -> None:
     """ Merge "arbitrary" hierarchical data that ends up having primitive leafs.
     Anything that is not a dict is considered a leaf node.
     """
@@ -238,7 +238,7 @@ class MetricsMerger:
       self._merge(data)
 
   def _merge(
-      self, data: dict | List[dict], parent_path: tuple[str, ...] = ()) -> None:
+      self, data: dict | list[dict], parent_path: tuple[str, ...] = ()) -> None:
     assert isinstance(data, dict)
     for property_name, value in data.items():
       path = parent_path + (property_name,)
@@ -304,7 +304,7 @@ class CSVFormatter:
                headers: Sequence[tuple[Any, ...]] = (),
                include_parts: bool = True,
                sort: bool = True):
-    self._table: List[Sequence[Any]] = []
+    self._table: list[Sequence[Any]] = []
     converted = metrics.to_json(value_fn, sort)
     items = self.format_items(converted, sort=sort)
     max_path_depth: int = self.extract_max_depth(items, include_parts)
@@ -348,5 +348,5 @@ class CSVFormatter:
     return sorted(items)
 
   @property
-  def table(self) -> List[Sequence[Any]]:
+  def table(self) -> list[Sequence[Any]]:
     return self._table

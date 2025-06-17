@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import (Any, Iterable, Iterator, List, Optional, Self, Set,
-                    TypeAlias, TypeVar, Union)
+from typing import (Any, Iterable, Iterator, Optional, Self, Set, TypeAlias,
+                    TypeVar, Union)
 
 from typing_extensions import override
 
@@ -89,7 +89,7 @@ class BasicFlags(Freezable, collections.UserDict):
     raw_flags = raw_flags.strip()
     if not raw_flags:
       return cls()
-    flag_parts: List[tuple[str, str | None]] = []
+    flag_parts: list[tuple[str, str | None]] = []
     current_end: int | None = None
     for match in cls._PARSE_RE.finditer(raw_flags):
       if current_end is None:

@@ -8,8 +8,7 @@ import abc
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Final, Iterator, List, Mapping, Optional,
-                    TypeVar)
+from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, TypeVar
 
 from typing_extensions import override
 
@@ -213,7 +212,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
-    inject_scripts: List[AnyPath] | None = (
+    inject_scripts: list[AnyPath] | None = (
         None if self.inject_deterministic_script else [])
     return WprReplayServer(
         self.archive_path,
@@ -273,14 +272,14 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     self.browser_platform.push(path, remote_path)
     return remote_path
 
-  def _push_required_files(self) -> List[AnyPath]:
+  def _push_required_files(self) -> list[AnyPath]:
     host_platform = self.host_platform
     if local_wpr_go := WprGoToolFinder(host_platform).path:
       wpr_root = self.host_platform.local_path(local_wpr_go.parents[1])
     else:
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 
-    all_files: List[LocalPath] = [
+    all_files: list[LocalPath] = [
         self._archive_path, wpr_root / "ecdsa_key.pem",
         wpr_root / "ecdsa_cert.pem", wpr_root / "deterministic.js"
     ]
@@ -295,7 +294,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     wpr_go_bin, archive, key_file, cert_file, inject_script = (
         self._push_required_files())
-    inject_scripts: List[AnyPath] = ([inject_script] if
+    inject_scripts: list[AnyPath] = ([inject_script] if
                                      self.inject_deterministic_script else [])
     return WprReplayServer(
         archive_path=archive,

@@ -8,8 +8,7 @@ import abc
 import argparse
 import enum
 import re
-from typing import (TYPE_CHECKING, Any, Hashable, List, Mapping, Pattern,
-                    TypeAlias)
+from typing import TYPE_CHECKING, Any, Hashable, Mapping, Pattern, TypeAlias
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -94,7 +93,7 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
     if not platform.is_dir(cpu_dir):
       raise ValueError(f"Invalid CPU name: {cpu_name}.")
 
-    available_frequencies: List[int] = [
+    available_frequencies: list[int] = [
         NumberParser.positive_zero_int(f)
         for f in platform.cat(cpu_dir / "scaling_available_frequencies").rstrip(
             "\n").rstrip(" ").split(" ")

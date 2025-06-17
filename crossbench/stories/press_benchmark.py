@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import List, Optional, Self, Sequence
+from typing import Optional, Self, Sequence
 
 from typing_extensions import override
 
@@ -39,14 +39,14 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   def all(cls,
           separate: bool = False,
           url: Optional[str] = None,
-          **kwargs) -> List[Self]:
+          **kwargs) -> list[Self]:
     return cls.from_names(cls.all_story_names(), separate, url, **kwargs)
 
   @classmethod
   def default(cls,
               separate: bool = False,
               url: Optional[str] = None,
-              **kwargs) -> List[Self]:
+              **kwargs) -> list[Self]:
     return cls.from_names(cls.default_story_names(), separate, url, **kwargs)
 
   @classmethod
@@ -54,7 +54,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
                  substories: Sequence[str],
                  separate: bool = False,
                  url: Optional[str] = None,
-                 **kwargs) -> List[Self]:
+                 **kwargs) -> list[Self]:
     if not substories:
       raise ValueError("No substories provided")
     if separate:

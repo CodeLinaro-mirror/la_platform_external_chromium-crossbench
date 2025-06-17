@@ -10,8 +10,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Final, List, Optional, Sequence, Type,
-                    cast)
+from typing import TYPE_CHECKING, Any, Final, Optional, Sequence, Type, cast
 
 from typing_extensions import override
 
@@ -84,7 +83,7 @@ class JetStreamProbe(
 
   @override
   def _extract_result_metrics_table(self, metrics: dict[str, Any],
-                                    table: dict[str, List[str]]) -> None:
+                                    table: dict[str, list[str]]) -> None:
     for metric_key, metric_value in metrics.items():
       if not self._is_valid_metric_key(metric_key):
         continue
@@ -107,7 +106,7 @@ class JetStreamProbe(
     return self.write_group_result(group, merged, JetStreamCSVFormatter)
 
   def _compute_total_score(self, merged: MetricsMerger) -> Metric:
-    line_item_scores: List[List[float]] = []
+    line_item_scores: list[list[float]] = []
     for key, metric in merged.data.items():
       if self._is_valid_metric_key(key):
         line_item_scores.append(metric.values)

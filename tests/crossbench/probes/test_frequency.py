@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from typing import List
 from unittest import mock
 
 from immutabledict import immutabledict
@@ -90,7 +89,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
     mock_browser.platform = self.platform
     return mock_browser
 
-  def _create_cpu_dir(self, cpu_name: str, available_frequencies: List[int]):
+  def _create_cpu_dir(self, cpu_name: str, available_frequencies: list[int]):
     cpu_dir = pth.AnyPosixPath(f"/sys/devices/system/cpu/{cpu_name}/cpufreq")
     self.platform.mkdir(cpu_dir, parents=True, exist_ok=True)
     self.platform.set_file_contents(

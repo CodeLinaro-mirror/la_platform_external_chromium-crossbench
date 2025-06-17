@@ -9,7 +9,7 @@ import functools
 import logging
 import os
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Optional, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Type
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class XrandrDisplayInfo:
   REFRESH_RATE_RE: ClassVar[re.Pattern] = re.compile(r"(?P<freq>[0-9.]+)\*")
 
   header: str
-  resolutions: List[str] = dataclasses.field(default_factory=list)
+  resolutions: list[str] = dataclasses.field(default_factory=list)
 
   def is_connected(self) -> bool:
     return "disconnected" not in self.header
@@ -63,7 +63,7 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
     1600x1200_60  60.00
     ...
   """
-  display_infos: List[XrandrDisplayInfo] = []
+  display_infos: list[XrandrDisplayInfo] = []
   current_info: XrandrDisplayInfo | None = None
   # Group display info and resolution entries:
   for line in xrandr_str.splitlines():

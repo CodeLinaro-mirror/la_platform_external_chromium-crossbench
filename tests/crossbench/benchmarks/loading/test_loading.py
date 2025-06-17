@@ -12,7 +12,7 @@ import json
 import pathlib
 import re
 import unittest
-from typing import List, Sequence
+from typing import Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -494,7 +494,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                        ["first_page"] * 2 + ["second_page"] * 2 + [None, None])
 
   def setup_expected_google_login_js(self):
-    expected_scripts: List[JsInvocation] = [
+    expected_scripts: list[JsInvocation] = [
         # Wait for email field
         JsInvocation(True, re.compile(r".*Email or phone.*")),
         # Click submit email

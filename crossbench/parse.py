@@ -13,8 +13,8 @@ import math
 import os
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, List,
-                    Optional, Sequence, Type, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, Optional,
+                    Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
@@ -460,7 +460,7 @@ class ObjectParser:
     return value
 
   @classmethod
-  def sh_cmd(cls, value: Any) -> List[str]:
+  def sh_cmd(cls, value: Any) -> list[str]:
     value = cls.not_none(value, "shell cmd")
     if not value:
       raise argparse.ArgumentTypeError(

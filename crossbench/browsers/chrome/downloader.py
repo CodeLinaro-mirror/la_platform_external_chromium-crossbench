@@ -10,7 +10,7 @@ import os
 import shutil
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, Final, Iterable, List, Optional, Type, cast
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Type, cast
 
 from typing_extensions import override
 
@@ -138,7 +138,7 @@ class ChromeDownloader(Downloader):
         channel=channel,
         filter=f"{milestone_filter},{channel_filter}&")
     self.info(f"Listing all versions at {url}")
-    version_urls: List[tuple[BrowserVersion, str]] = []
+    version_urls: list[tuple[BrowserVersion, str]] = []
     try:
       response = url_helper.get(url, retry=3, timeout=100)
       raw_infos = response.json()["versions"]
@@ -170,7 +170,7 @@ class ChromeDownloader(Downloader):
     return self._filter_candidate_urls([(version, test_url)])
 
   def _filter_candidate_urls(
-      self, versions_urls: List[tuple[BrowserVersion, str]]
+      self, versions_urls: list[tuple[BrowserVersion, str]]
   ) -> tuple[BrowserVersion, Optional[str]]:
     versions_urls.sort(key=lambda version_url: version_url[0], reverse=True)
     # Iterate from new to old version and and the first one that is older or
@@ -445,7 +445,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
       self, folder_url: str,
       version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     prefix: str = f"{folder_url}"
-    urls: List[tuple[BrowserVersion, str]] = []
+    urls: list[tuple[BrowserVersion, str]] = []
     # TODO: pass in correct sdk_level
     package = self._get_chrome_package(100)
     # TODO: respect version channel

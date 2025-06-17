@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import psutil
 from typing_extensions import override
@@ -30,10 +30,10 @@ class AppleScript:
 
   @classmethod
   def with_args(cls, app_path: AnyPath, apple_script: str,
-                **kwargs) -> tuple[str, List[str]]:
+                **kwargs) -> tuple[str, list[str]]:
     variables = []
     replacements = {}
-    args: List[str] = []
+    args: list[str] = []
     for variable, value in kwargs.items():
       args.append(value)
       unique_variable = f"cb_input_{variable}"

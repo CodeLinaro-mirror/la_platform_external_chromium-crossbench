@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import functools
-from typing import (TYPE_CHECKING, Any, Final, Iterator, List, Optional, Self,
+from typing import (TYPE_CHECKING, Any, Final, Iterator, Optional, Self,
                     Sequence, cast)
 
 from typing_extensions import override
@@ -219,7 +219,7 @@ class ActionBlockListConfig(ConfigObject):
 
   @classmethod
   def _parse_blocks(cls, block_config_data_gen) -> Self:
-    blocks: List[ActionBlock] = []
+    blocks: list[ActionBlock] = []
     for index, label, block_data in block_config_data_gen:
       block = cls._parse_block(index, label, block_data)
       blocks.append(block)

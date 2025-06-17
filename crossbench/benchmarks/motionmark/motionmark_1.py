@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import TYPE_CHECKING, Any, List, MutableMapping, Optional, Type
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Type
 
 from typing_extensions import override
 
@@ -93,7 +93,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
 
   @override
   def _extract_result_metrics_table(self, metrics: dict[str, Any],
-                                    table: dict[str, List[str]]) -> None:
+                                    table: dict[str, list[str]]) -> None:
     for metric_key, metric in metrics.items():
       if not self._valid_metric_key(metric_key):
         continue
@@ -119,7 +119,7 @@ class MotionMark1ProbeContext(JsonResultProbeContext):
     return actions.js(self.JS)
 
   @override
-  def flatten_json_data(self, json_data: List) -> Json:
+  def flatten_json_data(self, json_data: list) -> Json:
     assert isinstance(json_data, list) and len(json_data) == 1, (
         "Motion12MarkProbe requires a results list.")
     return Flatten(json_data[0], key_fn=_clean_up_path_segments).data

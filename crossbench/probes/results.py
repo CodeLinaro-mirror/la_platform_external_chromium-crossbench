@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Iterable, Optional, cast
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -106,7 +106,7 @@ class ProbeResult(abc.ABC):
       choices = "Empty ProbeResult."
     raise ValueError(f"No files with suffix '.{suffix}'. {choices}")
 
-  def get_all(self, suffix: str) -> List[pth.LocalPath]:
+  def get_all(self, suffix: str) -> list[pth.LocalPath]:
     if files_with_suffix := self._files.get(suffix):
       return list(files_with_suffix)
     return []
@@ -169,7 +169,7 @@ class ProbeResult(abc.ABC):
     return self._url_list[0]
 
   @property
-  def url_list(self) -> List[str]:
+  def url_list(self) -> list[str]:
     return list(self._url_list)
 
   @property
@@ -181,7 +181,7 @@ class ProbeResult(abc.ABC):
     raise ValueError("ProbeResult has no files.")
 
   @property
-  def file_list(self) -> List[pth.LocalPath]:
+  def file_list(self) -> list[pth.LocalPath]:
     return list(self.all_files())
 
   @property
@@ -191,7 +191,7 @@ class ProbeResult(abc.ABC):
     return self._trace_list[0]
 
   @property
-  def trace_list(self) -> List[pth.LocalPath]:
+  def trace_list(self) -> list[pth.LocalPath]:
     return list(self._trace_list)
 
   @property
@@ -199,7 +199,7 @@ class ProbeResult(abc.ABC):
     return self.get("json")
 
   @property
-  def json_list(self) -> List[pth.LocalPath]:
+  def json_list(self) -> list[pth.LocalPath]:
     return self.get_all("json")
 
   @property
@@ -207,7 +207,7 @@ class ProbeResult(abc.ABC):
     return self.get("csv")
 
   @property
-  def csv_list(self) -> List[pth.LocalPath]:
+  def csv_list(self) -> list[pth.LocalPath]:
     return self.get_all("csv")
 
 
@@ -264,7 +264,7 @@ class BrowserProbeResult(ProbeResult):
     browser_platform = result_origin.browser_platform
     remote_tmp_dir = result_origin.browser_tmp_dir
     out_dir = result_origin.out_dir
-    local_result_paths: List[pth.LocalPath] = []
+    local_result_paths: list[pth.LocalPath] = []
     for remote_path in paths:
       try:
         relative_path = remote_path.relative_to(remote_tmp_dir)

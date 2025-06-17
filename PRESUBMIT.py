@@ -8,8 +8,8 @@ from __future__ import annotations
 import pathlib
 import platform
 import re
-from typing import Iterable, List, Optional
 import subprocess
+from typing import Iterable, Optional
 
 USE_PYTHON3 = True
 
@@ -23,8 +23,8 @@ def CheckChange(input_api, output_api, on_commit):
   testing_env["PYTHONPATH"] = input_api.os_path.pathsep.join(
       map(str, [root_path, crossbench_test_path]))
   # ---------------------------------------------------------------------------
-  modified_py_files: List[str] | None = ModifiedFiles(input_api, on_commit)
-  modified_hjson_files: List[str] | None = ModifiedFiles(
+  modified_py_files: list[str] | None = ModifiedFiles(input_api, on_commit)
+  modified_hjson_files: list[str] | None = ModifiedFiles(
       input_api, False, filename_pattern="*.hjson")
 
   # ---------------------------------------------------------------------------
@@ -41,7 +41,7 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   # Pylint:
   # ---------------------------------------------------------------------------
-  pylint_file_patterns_to_check: List[str] = PylintFilePatternsToCheck(
+  pylint_file_patterns_to_check: list[str] = PylintFilePatternsToCheck(
       on_commit, modified_py_files)
   tests += input_api.canned_checks.GetPylint(
       input_api,
@@ -53,7 +53,7 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   # MyPy:
   # ---------------------------------------------------------------------------
-  mypy_files_to_check: List[str] = MypyFilesToCheck(input_api, on_commit,
+  mypy_files_to_check: list[str] = MypyFilesToCheck(input_api, on_commit,
                                                     modified_py_files)
   tests.append(
       input_api.Command(
@@ -127,7 +127,7 @@ def CheckChange(input_api, output_api, on_commit):
 
 def ModifiedFiles(input_api,
                   on_commit: bool,
-                  filename_pattern="*.py") -> Optional[List[str]]:
+                  filename_pattern="*.py") -> Optional[list[str]]:
   if on_commit:
     return None
   files = [file.AbsoluteLocalPath() for file in input_api.AffectedFiles()]
@@ -143,7 +143,7 @@ def ModifiedFiles(input_api,
   return files_to_check
 
 
-def PylintFilePatternsToCheck(on_commit, modified_py_files) -> List[str]:
+def PylintFilePatternsToCheck(on_commit, modified_py_files) -> list[str]:
   if on_commit:
     # Test all files on commit
     return [r"^[^\.]+\.py$"]
@@ -153,7 +153,7 @@ def PylintFilePatternsToCheck(on_commit, modified_py_files) -> List[str]:
   return [re.escape(file) for file in modified_py_files]
 
 
-def MypyFilesToCheck(input_api, on_commit, modified_py_files) -> List[str]:
+def MypyFilesToCheck(input_api, on_commit, modified_py_files) -> list[str]:
   root_path = pathlib.Path(input_api.PresubmitLocalPath())
   mypy_files_to_check = {"PRESUBMIT.py"}
   crossbench_path = root_path / "crossbench"

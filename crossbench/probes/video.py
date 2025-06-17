@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, List, Self, TextIO, Type
+from typing import TYPE_CHECKING, Self, TextIO, Type
 
 from typing_extensions import Final, override
 
@@ -175,7 +175,7 @@ class VideoProbe(Probe):
     group_files = [video_file]
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
-    video_file_inputs: List[str | LocalPath] = []
+    video_file_inputs: list[str | LocalPath] = []
     for run in runs:
       video_file_inputs += ["-i", run.results[self].file_list[0]]
     draw_text = ("fontfile='/Library/Fonts/Arial.ttf':"
@@ -210,7 +210,7 @@ class VideoProbe(Probe):
     if not self.merge_runs or len(groups) <= 1:
       return super().merge_browsers(group)
     grouped: dict[Story,
-                  List[RepetitionsRunGroup]] = collection_helper.group_by(
+                  list[RepetitionsRunGroup]] = collection_helper.group_by(
                       groups,
                       key=lambda repetitions_group: repetitions_group.story)
 
@@ -224,7 +224,7 @@ class VideoProbe(Probe):
 
   def _merge_stories_for_browser(
       self, result_dir: LocalPath, story: Story,
-      repetitions_groups: List[RepetitionsRunGroup]) -> LocalPath:
+      repetitions_groups: list[RepetitionsRunGroup]) -> LocalPath:
     story = repetitions_groups[0].story
     result_path = result_dir / f"{story.name}_combined.mp4"
 
@@ -234,7 +234,7 @@ class VideoProbe(Probe):
       self.host_platform.copy(input_file, result_path)
       return result_path
 
-    input_files: List[str] = []
+    input_files: list[str] = []
     for repetitions_group in repetitions_groups:
       result_files = repetitions_group.results[self].file_list
       input_files += ["-i", os.fspath(result_files[0])]

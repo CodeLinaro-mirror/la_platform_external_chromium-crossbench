@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, List, Optional,
-                    Self, TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self,
+                    TypeAlias)
 
 from typing_extensions import override
 
@@ -60,8 +60,8 @@ def merge_number_min(name: str, left: Optional[Number],
   return min(left, right)
 
 
-def merge_str_list(name: str, left: Optional[List[str]],
-                   right: Optional[List[str]]) -> Optional[List[str]]:
+def merge_str_list(name: str, left: Optional[list[str]],
+                   right: Optional[list[str]]) -> Optional[list[str]]:
   del name
   if left is None:
     return right
@@ -99,7 +99,7 @@ class EnvConfig(ConfigObject):
   screen_brightness_percent: int | None = IGNORE
   screen_refresh_rate: int | None = IGNORE
   system_allow_monitoring: bool | None = IGNORE
-  system_forbidden_process_names: List[str] | None = IGNORE
+  system_forbidden_process_names: list[str] | None = IGNORE
   system_min_uptime: dt.timedelta | None = IGNORE
 
   @classmethod

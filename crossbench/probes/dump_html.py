@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, List, Optional, Self, Type
+from typing import TYPE_CHECKING, Optional, Self, Type
 
 from typing_extensions import override
 
@@ -45,7 +45,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
 
   def __init__(self, probe: DumpHtmlProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: List[AnyPath] = []
+    self._results: list[AnyPath] = []
 
   @override
   def get_default_result_path(self) -> AnyPath:

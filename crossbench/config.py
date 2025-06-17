@@ -17,8 +17,8 @@ import logging
 import re
 import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, List, Optional, Self, Set, Type, TypeAlias,
-                    TypeVar, cast)
+                    Iterable, Optional, Self, Set, Type, TypeAlias, TypeVar,
+                    cast)
 from urllib.parse import urlparse
 
 import tabulate
@@ -230,12 +230,12 @@ class _ConfigArgParser:
 
   @property
   def help_text(self) -> str:
-    items: List[tuple[str, str]] = []
+    items: list[tuple[str, str]] = []
     if self.type is None:
       if self.is_list:
         items.append(("type", "list"))
     elif self.is_list:
-      items.append(("type", f"List[{self.type.__qualname__}]"))
+      items.append(("type", f"list[{self.type.__qualname__}]"))
     else:
       items.append(("type", str(self.type.__qualname__)))
 
@@ -264,7 +264,7 @@ class _ConfigArgParser:
   def _choices_help_text(self, choices: Iterable) -> tuple[str, str]:
     return ("choices", ", ".join(map(str, choices)))
 
-  def _enum_help_text(self) -> List[tuple[str, str]]:
+  def _enum_help_text(self) -> list[tuple[str, str]]:
     if self.type and hasattr(self.type, "help_text_items"):
       # See str_enum_with_help.StrEnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
@@ -711,7 +711,7 @@ class _TemplatedConfigParser(ConfigObject):
       raise ConfigTemplateError(f"The following arguments were not supplied"
                                 f" but are required: {self._missing_args}")
 
-    unused_args: List[str] = []
+    unused_args: list[str] = []
 
     for (arg_name, arg_value) in self._args.items():
       if not arg_value.used:
@@ -771,8 +771,8 @@ class _TemplatedConfigParser(ConfigObject):
 
     return None
 
-  def _substitute_list(self, value: List[Any]) -> List[Any]:
-    result: List[Any] = []
+  def _substitute_list(self, value: list[Any]) -> list[Any]:
+    result: list[Any] = []
     for index, child_value in enumerate(value):
       with exception.annotate(f"Parsing List index: {index}:"):
 
@@ -1049,7 +1049,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
   @functools.lru_cache(maxsize=1)
   def __str__(self) -> str:
-    parts: List[str] = []
+    parts: list[str] = []
     doc_string = self.doc
     width = 80
     if doc_string:

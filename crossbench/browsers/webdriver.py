@@ -10,7 +10,7 @@ import logging
 import os
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -119,7 +119,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     if not service:
       return
     self._driver_pid = service.process.pid
-    candidates: List[int] = []
+    candidates: list[int] = []
     for child in self.platform.process_children(self._driver_pid):
       if str(child["exe"]) == str(self.path):
         candidates.append(child["pid"])

@@ -11,7 +11,7 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Iterable, List, Mapping, MutableMapping,
+from typing import (TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping,
                     Optional, Sequence)
 
 import psutil
@@ -75,18 +75,18 @@ class MockPlatformMixin:
   def __init__(self, *args, is_battery_powered=False, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self._sh_cmds: List[TupleCmdArgs] = []
-    self._expected_sh_cmds: List[TupleCmdArgs] | None = None
-    self._sh_results: List[ShResult] = []
-    self._download_results: List[DownloadMockData] = []
-    self.file_contents: MutableMapping[pth.AnyPath, List[str]] = (
+    self._sh_cmds: list[TupleCmdArgs] = []
+    self._expected_sh_cmds: list[TupleCmdArgs] | None = None
+    self._sh_results: list[ShResult] = []
+    self._download_results: list[DownloadMockData] = []
+    self.file_contents: MutableMapping[pth.AnyPath, list[str]] = (
         collections.defaultdict(list))
-    self.sleeps: List[dt.timedelta] = []
+    self.sleeps: list[dt.timedelta] = []
     self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
     self._machine_arch: [MachineArch] = None  # type: ignore
-    self.popens: List[MockPopen] = []
+    self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
     super().__init__(*args, **kwargs)
 
@@ -142,7 +142,7 @@ class MockPlatformMixin:
     return tuple(converted_args)
 
   @property
-  def sh_results(self) -> List[ShResult]:
+  def sh_results(self) -> list[ShResult]:
     return list(self._sh_results)
 
   @sh_results.setter
@@ -154,11 +154,11 @@ class MockPlatformMixin:
       self.expect_sh(result=result)
 
   @property
-  def sh_cmds(self) -> List[TupleCmdArgs]:
+  def sh_cmds(self) -> list[TupleCmdArgs]:
     return list(self._sh_cmds)
 
   @property
-  def expected_sh_cmds(self) -> Optional[List[TupleCmdArgs]]:
+  def expected_sh_cmds(self) -> Optional[list[TupleCmdArgs]]:
     if self._expected_sh_cmds is None:
       return None
     return list(self._expected_sh_cmds)
@@ -324,8 +324,8 @@ class MockPlatformMixin:
 class MockFd:
 
   def __init__(self):
-    self.expected_writes: List[bytes] = []
-    self.read_returns: List[bytes] = []
+    self.expected_writes: list[bytes] = []
+    self.read_returns: list[bytes] = []
 
   def __del__(self):
     assert not self.expected_writes

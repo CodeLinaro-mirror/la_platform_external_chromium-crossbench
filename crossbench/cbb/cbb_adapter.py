@@ -13,7 +13,7 @@ with corresponding changes in CBB in google3
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, List, Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from selenium import webdriver
 from typing_extensions import override
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
   from crossbench.stories.press_benchmark import PressBenchmarkStory
   from crossbench.stories.story import Story
 
-press_benchmarks: List[Type[PressBenchmark]] = [
+press_benchmarks: list[Type[PressBenchmark]] = [
     # Speedometer:
     benchmarks.Speedometer20Benchmark,
     benchmarks.Speedometer21Benchmark,
@@ -147,7 +147,7 @@ class CbbRun(Run):
 
 
 def run_benchmark(output_folder: pth.LocalPathLike,
-                  browser_list: List[crossbench.browsers.browser.Browser],
+                  browser_list: list[crossbench.browsers.browser.Browser],
                   benchmark: PressBenchmark) -> None:
   """Runs the benchmark using crossbench runner.
 

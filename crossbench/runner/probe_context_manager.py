@@ -8,8 +8,7 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Generic, Iterable, List, Optional, Type,
-                    TypeVar)
+from typing import TYPE_CHECKING, Generic, Iterable, Optional, Type, TypeVar
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
@@ -33,8 +32,8 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
     self._probe_results = probe_results
     self._probe_contexts: dict[Type[Probe], ProbeContextT] = {}
     # Contains all probe context where the setup succeeded.
-    self._setup_probe_contexts: List[ProbeContextT] = []
-    self._failed_probe_contexts: List[ProbeContextT] = []
+    self._setup_probe_contexts: list[ProbeContextT] = []
+    self._failed_probe_contexts: list[ProbeContextT] = []
     # TODO: either prefix timers or use custom duration
     self._durations = result_origin.durations
     self._exceptions = result_origin.exceptions
@@ -134,7 +133,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
       self._failed_probe_contexts = []
 
   def _teardown(self,
-                probe_contexts: List[ProbeContextT],
+                probe_contexts: list[ProbeContextT],
                 is_dry_run: bool,
                 setup_error: bool = False) -> None:
     if setup_error:

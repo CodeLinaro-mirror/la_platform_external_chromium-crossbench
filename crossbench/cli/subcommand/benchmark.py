@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -69,7 +69,7 @@ class AppendDebuggerProbeAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
-    probes: List[ProbeConfig] = getattr(namespace, self.dest, [])
+    probes: list[ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:
       probe_settings["debugger"] = "lldb"
@@ -799,7 +799,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     failed_runs = [run for run in runner.runs if not run.is_success]
     if not failed_runs:
       return
-    candidates: List[pth.LocalPath] = [
+    candidates: list[pth.LocalPath] = [
         *runner.out_dir.glob(f"{ErrorsProbe.NAME}*"),
     ]
     for failed_run in failed_runs:

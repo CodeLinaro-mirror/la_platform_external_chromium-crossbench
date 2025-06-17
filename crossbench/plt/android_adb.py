@@ -10,7 +10,7 @@ import math
 import re
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -115,7 +115,7 @@ class Adb:
       raise ValueError(f"Invalid device identifier: {repr(device_identifier)}")
     if device_identifier in devices:
       return device_identifier, devices[device_identifier]
-    matches: List[str] = []
+    matches: list[str] = []
     under_name = device_identifier.replace(" ", "_")
     for key, device_info in devices.items():
       for _, info_value in device_info.items():
@@ -361,14 +361,14 @@ class Adb:
     cmd: ListCmdArgs = ["getprop", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding).strip()
 
-  def services(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:
+  def services(self, quiet: bool = False, encoding: str = "utf-8") -> list[str]:
     lines = list(
         self.cmd("-l", quiet=quiet, encoding=encoding).strip().splitlines())
     lines = lines[1:]
     lines.sort()
     return [line.strip() for line in lines]
 
-  def packages(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:
+  def packages(self, quiet: bool = False, encoding: str = "utf-8") -> list[str]:
     # adb shell cmd package list packages
     raw_list = self.cmd(
         "package", "list", "packages", quiet=quiet,
@@ -589,7 +589,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> List[dict[str, Any]]:
+                       recursive: bool = False) -> list[dict[str, Any]]:
     # TODO: implement
     return []
 
@@ -703,12 +703,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[dict[str, Any]]:
+                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
     lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()
     if len(lines) == 1:
       return []
 
-    res: List[dict[str, Any]] = []
+    res: list[dict[str, Any]] = []
     for line in lines[1:]:
       tokens = line.strip().split(maxsplit=1)
       assert len(tokens) == 2, f"Got invalid process tokens: {tokens}"

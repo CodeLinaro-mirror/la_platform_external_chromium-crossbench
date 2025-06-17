@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -196,7 +196,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     labels = set(page_config.label for page_config in config.pages)
     use_labels = len(labels) == len(config.pages)
 
-    stories: List[Page] = []
+    stories: list[Page] = []
     for page_config in config.pages:
       stories.append(cls._story_from_config(args, page_config, use_labels))
 

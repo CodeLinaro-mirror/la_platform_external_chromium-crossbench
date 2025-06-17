@@ -7,7 +7,7 @@ import datetime as dt
 import json
 import os
 import pathlib
-from typing import List, Optional, Type
+from typing import Optional, Type
 from unittest import mock
 
 import hjson
@@ -80,7 +80,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
                    "--urls=http://test.com", "--env-validation=skip", "--throw")
 
   def test_browser_identifiers_multiple(self):
-    mock_browsers: List[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
         mock_browser.MockChromeStable,
         mock_browser.MockChromeBeta,
         mock_browser.MockChromeDev,
@@ -124,7 +124,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
     class MockChromeDev2(mock_browser.MockChromeDev):
       VERSION = "100.22.33.200"
 
-    mock_browsers: List[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
         MockChromeBeta2,
         MockChromeDev2,
     ]
@@ -166,7 +166,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
     class MockChromeDev2(mock_browser.MockChromeDev):
       VERSION = "100.22.33.999"
 
-    mock_browsers: List[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
         MockChromeBeta2,
         MockChromeDev2,
     ]
@@ -298,7 +298,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
                    "--urls=http://test.com", "--env-validation=skip")
 
   def test_conflicting_driver_path(self):
-    mock_browsers: List[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
         mock_browser.MockChromeStable,
         mock_browser.MockFirefox,
     ]

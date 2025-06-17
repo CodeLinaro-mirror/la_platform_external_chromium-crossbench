@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, Final, List, Mapping, MutableMapping,
+from typing import (TYPE_CHECKING, Any, Final, Mapping, MutableMapping,
                     Optional, Sequence, Type)
 
 from immutabledict import immutabledict
@@ -64,7 +64,7 @@ class SpeedometerProbe(
     return self.write_group_result(group, merged)
 
   def _compute_total_score(self, merged: MetricsMerger) -> Metric:
-    line_item_scores: List[List[float]] = []
+    line_item_scores: list[list[float]] = []
     for key, metric in merged.data.items():
       if self._is_valid_metric_key(key):
         line_item_scores.append(metric.values)
@@ -117,7 +117,7 @@ class SpeedometerProbe(
 
   @override
   def _extract_result_metrics_table(self, metrics: dict[str, Any],
-                                    table: dict[str, List[str]]) -> None:
+                                    table: dict[str, list[str]]) -> None:
     for metric_key, metric in metrics.items():
       if not self._is_valid_metric_key(metric_key):
         continue
@@ -312,7 +312,7 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
     super().__init__(story_cls, patterns, args, separate, url)
 
   @override
-  def create_stories_from_names(self, names: List[str],
+  def create_stories_from_names(self, names: list[str],
                                 separate: bool) -> Sequence[SpeedometerStory]:
     return self.story_cls.from_names(
         names,

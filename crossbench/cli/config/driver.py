@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Self, Type, cast
+from typing import TYPE_CHECKING, Any, Optional, Self, Type, cast
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -106,7 +106,7 @@ class DriverConfig(ConfigObject):
   @classmethod
   def try_parse_adb_settings(cls, value: str,
                              platform: plt.Platform) -> Optional[Self]:
-    candidate_serials: List[str] = []
+    candidate_serials: list[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for serial, info in adb_devices(platform).items():
       if pattern.fullmatch(serial):
@@ -131,7 +131,7 @@ class DriverConfig(ConfigObject):
   @classmethod
   def try_parse_ios_settings(cls, value: str,
                              platform: plt.Platform) -> Optional[Self]:
-    candidate_serials: List[str] = []
+    candidate_serials: list[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for uuid, device_info in ios_devices(platform).items():
       if pattern.fullmatch(uuid):

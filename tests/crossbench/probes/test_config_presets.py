@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import pathlib
-from typing import List, Type
+from typing import Type
 
 from pyfakefs import fake_filesystem_unittest
 
@@ -51,7 +51,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.fs.create_file(perfetto_tools / "trace_processor")
 
   def _test_parse_config_dir(self,
-                             real_config_dir: pathlib.Path) -> List[Probe]:
+                             real_config_dir: pathlib.Path) -> list[Probe]:
     probes = []
     self._add_real_directory(real_config_dir)
     for probe_config in real_config_dir.glob("**/*.config.hjson"):
@@ -59,7 +59,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
         probes += self._parse_config(probe_config)
     return probes
 
-  def _parse_config(self, config_file: pathlib.Path) -> List[Probe]:
+  def _parse_config(self, config_file: pathlib.Path) -> list[Probe]:
     probe_name = config_file.parent.name
     if probe_name not in PROBE_LOOKUP:
       probe_name = config_file.name.split(".")[0]

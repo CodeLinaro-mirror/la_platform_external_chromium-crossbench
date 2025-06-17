@@ -5,7 +5,7 @@
 import argparse
 import json
 import pathlib
-from typing import List, Type
+from typing import Type
 from unittest import mock
 
 import hjson
@@ -206,7 +206,7 @@ class CliSlowTestCase(BaseCliTestCase):
           "tp": mock_browser.MockSafariTechnologyPreview,
       })
 
-    items_chunk: List[tuple[str, Type[mock_browser.MockBrowser]]] = list(
+    items_chunk: list[tuple[str, Type[mock_browser.MockBrowser]]] = list(
         browsers.items())[chunk::4]
     for identifier, browser_cls in items_chunk:
       out_dir = self.out_dir / identifier
@@ -264,7 +264,7 @@ class CliSlowTestCase(BaseCliTestCase):
         self.assertEqual(network.path, local_server_path)
 
   def test_multiple_browser_compatible_flags(self):
-    mock_browsers: List[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
         mock_browser.MockChromeStable,
         mock_browser.MockFirefox,
         mock_browser.MockChromeDev,

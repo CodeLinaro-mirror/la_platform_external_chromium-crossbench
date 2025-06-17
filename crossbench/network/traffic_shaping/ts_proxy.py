@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Self, TypeVar
+from typing import IO, TYPE_CHECKING, Iterator, Optional, Self, TypeVar
 
 from typing_extensions import override
 
@@ -316,7 +316,7 @@ class TsProxyProcess:
     if not success:
       raise TsProxyServerError(f"Failed to execute command: {command}")
 
-  def _wait_for_status_response(self, timeout: int | float) -> List[str]:
+  def _wait_for_status_response(self, timeout: int | float) -> list[str]:
     logging.debug("TsProxy: waiting for status response")
     command_output = []
     for _ in wait.wait_with_backoff(timeout):

@@ -11,7 +11,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import Final, List, Optional, Sequence, Type
+from typing import Final, Optional, Sequence, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -113,7 +113,7 @@ class CrossbenchMockArgsMixin:
 class BaseCrossbenchTestCase(
     CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
-  def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
+  def filter_splashscreen_urls(self, urls: Sequence[str]) -> list[str]:
     return [url for url in urls if not url.startswith("data:")]
 
   @override
@@ -131,7 +131,7 @@ class BaseCrossbenchTestCase(
       self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    self.browsers: List[mock_browser.MockBrowser] = [
+    self.browsers: list[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
         mock_browser.MockChromeStable(

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, List, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -153,7 +153,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def print_benchmarks(self, category: str, search_str: str | None,
                        data: HelpData):
     printed_any = False
-    table: List[List[Optional[str]]] = [["Benchmark", "Property", "Value"]]
+    table: list[list[Optional[str]]] = [["Benchmark", "Property", "Value"]]
     for benchmark_name, values in data["benchmarks"].items():
       table.append([
           benchmark_name,

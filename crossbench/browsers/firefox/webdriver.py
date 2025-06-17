@@ -9,7 +9,7 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -62,7 +62,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
       # TODO: support remote platforms
       options.profile = FirefoxProfile(self.cache_dir)
     self._log_browser_start(args, driver_path)
-    service_args: List[str] = []
+    service_args: list[str] = []
     driver_log_path: str | None = None
     if self._settings.driver_logging:
       # TODO: Separate browser from driver logging

@@ -8,7 +8,7 @@ import functools
 import json
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
@@ -64,7 +64,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
                                password: Optional[str] = None) -> int:
     disable_extensions_flag: str = "--disable-extensions"
 
-    flags_for_session: List[str] = []
+    flags_for_session: list[str] = []
 
     if browser_flags:
       flags_for_session = list(browser_flags)

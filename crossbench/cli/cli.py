@@ -10,7 +10,7 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
 
 import tabulate as tbl
 
@@ -272,7 +272,7 @@ class CrossBenchCLI:
 
   def run(self, argv: Sequence[str]) -> None:
     self._init_logging(argv)
-    unprocessed_argv: List[str] = []
+    unprocessed_argv: list[str] = []
     try:
       argv = self._rename_subcommand(argv)
       # Manually check for unprocessed_argv to print nicer error messages.

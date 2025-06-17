@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -154,7 +154,7 @@ class WebPageReplayProbe(Probe):
     results = [subgroup.results[self].file for subgroup in group.story_groups]
     return self.merge_group(results, group)
 
-  def merge_group(self, results: List[LocalPath],
+  def merge_group(self, results: list[LocalPath],
                   group: RunGroup) -> ProbeResult:
     result_file = group.get_local_probe_result_path(self)
     if not results:
@@ -168,7 +168,7 @@ class WebPageReplayProbe(Probe):
 
   def httparchive_merge(self, input_archive: LocalPath,
                         output_archive: LocalPath) -> None:
-    cmd: List[str | LocalPath] = [
+    cmd: list[str | LocalPath] = [
         "go",
         "run",
         self._wpr_go_bin.parent / "httparchive.go",

@@ -9,7 +9,7 @@ import io
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, List, Optional, cast
+from typing import TYPE_CHECKING, Iterable, Optional, cast
 
 from typing_extensions import override
 
@@ -63,7 +63,7 @@ class AndroidProfilingContext(PosixProfilingContext):
     atexit.register(self.stop_process)
     self.browser.performance_mark("probe-profiling-start")
 
-  def _get_simpleperf_pids(self) -> List[int]:
+  def _get_simpleperf_pids(self) -> list[int]:
     simpleperf_pids = []
     for process in self.browser_platform.processes():
       if process["name"] == "simpleperf":

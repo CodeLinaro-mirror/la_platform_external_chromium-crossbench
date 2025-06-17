@@ -9,7 +9,7 @@ import collections
 import datetime as dt
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from typing_extensions import override
 
@@ -225,10 +225,10 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         "chrome-dev", settings=Settings(platform=self.platform))
     self.mock_firefox = MockFirefox(
         "firefox-stable", settings=Settings(platform=self.platform))
-    self.browsers: List[Browser] = [self.mock_chrome_dev, self.mock_firefox]
+    self.browsers: list[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
   def default_runner(self,
-                     browsers: Optional[List[Browser]] = None,
+                     browsers: Optional[list[Browser]] = None,
                      benchmark: Optional[Benchmark] = None,
                      throw: bool = True) -> Runner:
     return Runner(

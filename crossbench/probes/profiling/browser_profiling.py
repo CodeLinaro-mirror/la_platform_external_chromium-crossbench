@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import enum
 import json
-from typing import TYPE_CHECKING, List, Optional, Self, cast
+from typing import TYPE_CHECKING, Optional, Self, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
 from typing_extensions import override
@@ -105,10 +105,10 @@ class BrowserProfilingProbe(Probe):
   def __init__(
       self,
       moz_profiler_startup_features: Optional[
-          List[MozProfilerStartupFeatures]] = None
+          list[MozProfilerStartupFeatures]] = None
   ) -> None:
     super().__init__()
-    self._moz_profiler_startup_features: List[
+    self._moz_profiler_startup_features: list[
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []
 
   @property
@@ -119,7 +119,7 @@ class BrowserProfilingProbe(Probe):
          tuple(map(str, self.moz_profiler_startup_features))),)
 
   @property
-  def moz_profiler_startup_features(self) -> List[MozProfilerStartupFeatures]:
+  def moz_profiler_startup_features(self) -> list[MozProfilerStartupFeatures]:
     return self._moz_profiler_startup_features
 
   @override

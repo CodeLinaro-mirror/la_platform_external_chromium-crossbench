@@ -25,7 +25,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
-                    List, Mapping, Optional, Sequence, Type, TypeAlias)
+                    Mapping, Optional, Sequence, Type, TypeAlias)
 
 import psutil
 
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
 CmdArg: TypeAlias = pth.AnyPathLike
 SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
-ListCmdArgs: TypeAlias = List[CmdArg]
+ListCmdArgs: TypeAlias = list[CmdArg]
 TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
 CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
@@ -513,12 +513,12 @@ class Platform(abc.ABC):
       pass
 
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[dict[str, Any]]:
+                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
     # TODO(cbruni): support remote platforms
     assert self.is_local, "Only local platform supported"
     return self._collect_process_dict(psutil.process_iter(attrs=attrs))
 
-  def process_running(self, process_name_list: List[str]) -> Optional[str]:
+  def process_running(self, process_name_list: list[str]) -> Optional[str]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     for proc in psutil.process_iter(attrs=["name"]):
@@ -531,7 +531,7 @@ class Platform(abc.ABC):
 
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> List[dict[str, Any]]:
+                       recursive: bool = False) -> list[dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -541,8 +541,8 @@ class Platform(abc.ABC):
     return self._collect_process_dict(process.children(recursive=recursive))
 
   def _collect_process_dict(
-      self, process_iterator: Iterable[psutil.Process]) -> List[dict[str, Any]]:
-    process_info_list: List[dict[str, Any]] = []
+      self, process_iterator: Iterable[psutil.Process]) -> list[dict[str, Any]]:
+    process_info_list: list[dict[str, Any]] = []
     for process in process_iterator:
       try:
         process_info_list.append(process.as_dict())

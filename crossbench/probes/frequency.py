@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, List, Self, Type
+from typing import TYPE_CHECKING, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -118,7 +118,7 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
 
   def __init__(self, probe: FrequencyProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._previous_frequencies: List[_FrequencyState] = []
+    self._previous_frequencies: list[_FrequencyState] = []
 
   def start(self) -> None:
     target_cpu_frequencies: immutabledict[pth.AnyPosixPath, int] = (

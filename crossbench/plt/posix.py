@@ -12,8 +12,8 @@ import pathlib
 import re
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Generator, Iterator, List, Mapping,
-                    Optional, Set, Type)
+from typing import (TYPE_CHECKING, Any, Generator, Iterator, Mapping, Optional,
+                    Set, Type)
 
 from typing_extensions import override
 
@@ -83,8 +83,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     entries = self.sh_stdout("grep", "-E", "processor|core id|physical id",
                              "/proc/cpuinfo")
     logical_cores: Set[int] = set()
-    core_ids: List[int] = []
-    physical_ids: List[int] = []
+    core_ids: list[int] = []
+    physical_ids: list[int] = []
 
     for line in entries.splitlines():
       line = line.strip()
