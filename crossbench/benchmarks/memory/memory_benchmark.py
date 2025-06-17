@@ -233,9 +233,9 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(parser)
+    parser = super().add_cli_arguments(parser)
     parser.add_argument(
         "--alloc-count",
         type=NumberParser.positive_int,
@@ -332,7 +332,7 @@ class MemoryBenchmark(SubStoryBenchmark):
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
-    cls.STORY_FILTER_CLS.add_cli_parser(parser)
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     parser.add_argument(
         "--skippable-tab-count",
         type=NumberParser.positive_int,

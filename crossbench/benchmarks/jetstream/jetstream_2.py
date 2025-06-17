@@ -165,9 +165,9 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
 
   @classmethod
   @override
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(parser)
+    parser = super().add_cli_arguments(parser)
     parser.add_argument(
         "--iterations",
         "--iteration-count",

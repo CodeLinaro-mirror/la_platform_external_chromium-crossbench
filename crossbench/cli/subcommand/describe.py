@@ -50,7 +50,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
         default=False,
         action="store_true",
         help="Print the data as json data")
-    self.cli.add_verbosity_argument(describe_parser)
+    self.cli.add_debugging_arguments(describe_parser)
     return describe_parser
 
   @override

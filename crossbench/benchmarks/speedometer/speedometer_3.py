@@ -321,9 +321,9 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
 
   @classmethod
   @override
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(parser)
+    parser = super().add_cli_arguments(parser)
     parser.add_argument(
         "--sync-wait",
         default=dt.timedelta(0),

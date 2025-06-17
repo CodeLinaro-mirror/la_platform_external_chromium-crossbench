@@ -50,9 +50,9 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(parser)
+    parser = super().add_cli_arguments(parser)
     cls.add_page_config_parser(parser)
     tab_group = parser.add_mutually_exclusive_group()
     tab_group.add_argument(
@@ -127,7 +127,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     return parser
 
   @classmethod
-  def add_page_config_arg(cls, group: argparse._ArgumentGroup) -> None:
+  def add_page_config_arguments(cls, group: argparse._ArgumentGroup) -> None:
     group.add_argument(
         "--page-config",
         "--pages-config",
@@ -146,7 +146,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "--url",
         dest="urls",
         help="List of urls and durations to load: url,seconds,...")
-    cls.add_page_config_arg(page_config_group)
+    cls.add_page_config_arguments(page_config_group)
     page_config_group.add_argument(
         "--url-file",
         "--urls-file",
@@ -270,7 +270,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
-    cls.STORY_FILTER_CLS.add_cli_parser(parser)
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     parser.add_argument(
         "--action-runner",
         type=ActionRunnerConfig.parse,

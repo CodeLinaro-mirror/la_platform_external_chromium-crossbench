@@ -145,7 +145,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   DEFAULT_STORY_NAME: str = "default"
 
   @classmethod
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--stories",
@@ -155,11 +155,12 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         help="Comma-separated list of story names. "
         "Use 'all' for selecting all available stories. "
         "Use 'default' for the standard selection of stories.")
-    cls.add_story_grouping_parser(parser)
+    cls._add_story_grouping_arguments(parser)
     return parser
 
   @classmethod
-  def add_story_grouping_parser(cls, parser: argparse.ArgumentParser) -> None:
+  def _add_story_grouping_arguments(cls,
+                                    parser: argparse.ArgumentParser) -> None:
     is_combined_group = parser.add_mutually_exclusive_group()
     is_combined_group.add_argument(
         "--combined",
@@ -467,7 +468,14 @@ class PressBenchmark(SubStoryBenchmark):
   def add_cli_parser(cls, subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
-    benchmark_url_group = parser.add_mutually_exclusive_group()
+    cls._add_story_url_arguments(parser)
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
+    return parser
+
+  @classmethod
+  def _add_story_url_arguments(cls, parser) -> None:
+    benchmark_url_group = parser.add_argument_group(
+        "Story URL Options").add_mutually_exclusive_group()
     live_url: str = cls.DEFAULT_STORY_CLS.URL
     local_url: str = cls.DEFAULT_STORY_CLS.URL_LOCAL
     official_url: str = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
@@ -503,7 +511,7 @@ class PressBenchmark(SubStoryBenchmark):
 
     if custom_fork_url := getattr(cls.DEFAULT_STORY_CLS, "URL_CHROME_FORK",
                                   None):
-      parser.add_argument(
+      benchmark_url_group.add_argument(
           "--custom",
           "--chrome-custom-fork",
           "--chrome-fork",
@@ -513,8 +521,6 @@ class PressBenchmark(SubStoryBenchmark):
           help=(f"Use custom chrome fork hosted on {custom_fork_url}. "
                 "This include additional options and performance.mark calls "
                 "for easier investigation."))
-    cls.STORY_FILTER_CLS.add_cli_parser(parser)
-    return parser
 
   @classmethod
   @override

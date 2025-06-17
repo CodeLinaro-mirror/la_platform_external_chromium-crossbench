@@ -115,7 +115,15 @@ class Runner:
   def add_cli_parser(
       cls, benchmark_cls: Type[Benchmark],
       parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
+    cls._add_run_arguments(benchmark_cls, parser)
+    cls._add_output_arguments(benchmark_cls, parser)
+    return parser
+
+  @classmethod
+  def _add_run_arguments(cls, benchmark_cls: Type[Benchmark],
+                         parser: argparse.ArgumentParser) -> None:
+    run_group = parser.add_argument_group("Run & Repetition Options")
+    run_group.add_argument(
         "--repetitions",
         "--repeat",
         "--invocations",
@@ -125,7 +133,7 @@ class Runner:
         help=("Number of times each benchmark story is repeated. "
               f"Defaults to {benchmark_cls.DEFAULT_REPETITIONS}. "
               "Metrics are aggregated over multiple repetitions"))
-    parser.add_argument(
+    run_group.add_argument(
         "--warmup-repetitions",
         "--warmups",
         default=0,
@@ -133,7 +141,7 @@ class Runner:
         help=("Number of times each benchmark story is repeated for warmup. "
               "Defaults to 0. "
               "Metrics for warmup-repetitions are discarded."))
-    parser.add_argument(
+    run_group.add_argument(
         "--cache-temperatures",
         default=["default"],
         const=["cold", "warm", "hot"],
@@ -141,7 +149,7 @@ class Runner:
         help=("Repeat each run with different cache temperatures without "
               "closing the browser in between."))
 
-    parser.add_argument(
+    run_group.add_argument(
         "--thread-mode",
         "--parallel",
         default=ThreadMode.NONE,
@@ -149,6 +157,9 @@ class Runner:
         help=("Change how Runs are executed.\n" +
               ThreadMode.help_text(indent=2)))
 
+  @classmethod
+  def _add_output_arguments(cls, benchmark_cls: Type[Benchmark],
+                            parser: argparse.ArgumentParser) -> None:
     out_dir_group = parser.add_argument_group("Output Directory Options")
     symlink_group = out_dir_group.add_mutually_exclusive_group()
     symlink_group.add_argument(
@@ -180,7 +191,12 @@ class Runner:
         default=benchmark_cls.NAME,
         help=("Add a name to the default output directory. "
               "Defaults to the benchmark name"))
-    return parser
+    out_dir_group.add_argument(
+        "--cache-dir",
+        type=pth.LocalPath,
+        default=None,
+        help=("Used for caching browser binaries and archives. "
+              "Defaults to binary_cache"))
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:

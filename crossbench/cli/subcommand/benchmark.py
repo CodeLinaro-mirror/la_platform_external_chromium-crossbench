@@ -96,160 +96,117 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    subparser = self._benchmark_cls.add_cli_parser(self.cli.subparsers)
-    assert isinstance(subparser, argparse.ArgumentParser), (
+    parser = self._benchmark_cls.add_cli_parser(self.cli.subparsers)
+    assert isinstance(parser, argparse.ArgumentParser), (
         f"Benchmark class {self._benchmark_cls}.add_cli_parser did not return "
-        f"an ArgumentParser: {subparser}")
-    self._runner_cls.add_cli_parser(self._benchmark_cls, subparser)
-    self._add_arguments(subparser)
-    self.cli.add_verbosity_argument(subparser)
-    self._add_debugger_arguments(subparser)
-    subparser.add_argument("other_browser_args", nargs="*")
-    return subparser
+        f"an ArgumentParser: {parser}")
+    self._runner_cls.add_cli_parser(self._benchmark_cls, parser)
+    self._add_timing_arguments(parser)
+    self._add_network_arguments(parser)
+    self._add_env_arguments(parser)
+    self._add_browser_arguments(parser)
+    self._add_browser_cache_arguments(parser)
+    self._add_chrome_arguments(parser)
+    self._add_probe_arguments(parser)
+    self._add_debugging_arguments(parser)
+    self.cli.add_base_arguments(parser)
+    parser.add_argument("other_browser_args", nargs="*")
+    return parser
 
-  def _add_arguments(self, subparser: argparse.ArgumentParser) -> None:
-    runner_group = subparser.add_argument_group("Runner Options", "")
-    runner_group.add_argument(
-        "--cache-dir",
-        type=pth.LocalPath,
+  def _add_browser_cache_arguments(self,
+                                   parser: argparse.ArgumentParser) -> None:
+    browser_cache_group = parser.add_argument_group(
+        "Browser Options: Caches",
+        "By default tmp caches are auto-created and cleared at startup.")
+    cache_options = browser_cache_group.add_mutually_exclusive_group()
+    cache_options.add_argument(
+        "--keep-browser-cache",
+        "--no-clear-browser-cache",
+        dest="clear_browser_cache_dir",
+        action="store_false",
         default=None,
-        help=("Used for caching browser binaries and archives. "
-              "Defaults to binary_cache"))
-
-    cooldown_group = runner_group.add_mutually_exclusive_group()
-    cooldown_group.add_argument(
-        "--cool-down-threshold",
-        type=ThermalStatus.parse,
-        help=("Pause execution when the device reaches this thermal status. "
-              "Execution resumes once the status drops below the threshold. "
-              "Only available on Android."))
-    cooldown_group.add_argument(
-        "--cool-down-time",
-        "--cool-down",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta(seconds=2),
-        help=("Wait between repetitions for a fixed amount of time. "
-              f"Format: {DurationParser.help()}"))
-    cooldown_group.add_argument(
-        "--no-cool-down",
-        action="store_const",
-        dest="cool_down_time",
-        const=dt.timedelta(seconds=0),
-        help=("Disable cool-down between runs (might cause CPU throttling), "
-              "equivalent to --cool-down=0."))
-    cooldown_group.add_argument(
-        "--fast",
-        action=EnableFastAction,
-        nargs=0,
-        help=("Switch to a fast run mode "
-              "which might yield unstable performance results. "
-              "Equivalent to --cool-down=0 --no-splash --env-validation=skip."))
-
-    runner_group.add_argument(
-        "--time-unit",
-        type=DurationParser.any_duration,
-        default=dt.timedelta(seconds=1),
-        help=("Absolute duration of 1 time unit in the runner. "
-              "Increase this for slow builds or machines. "
-              f"Format: {DurationParser.help()}"))
-    runner_group.add_argument(
-        "--timeout-unit",
-        type=DurationParser.any_duration,
-        default=dt.timedelta(),
-        help=("Absolute duration of 1 time unit for timeouts in the runner. "
-              "Unlike --time-unit, this does only apply for timeouts, "
-              "as opposed to say initial wait times or sleeps."
-              f"Format: {DurationParser.help()}"))
-    runner_group.add_argument(
-        "--run-timeout",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta(),
-        help=("Sets the same timeout per run on all browsers. "
-              "Runs will be aborted after the given timeout. "
-              f"Format: {DurationParser.help()}"))
-    runner_group.add_argument(
-        "--start-delay",
-        "--startup-delay",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta(),
-        help=("Delay before running the core workload, "
-              "after a story's/workload's setup, "
-              "and after starting the browser."))
-    runner_group.add_argument(
-        "--stop-delay",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta(),
-        help=("Delay after running the core workload, "
-              "before story's/workload's teardown, "
-              "and before quitting the browser."))
-
-    network_group = subparser.add_argument_group("Network Options", "")
-    network_settings_group = network_group.add_mutually_exclusive_group()
-    network_settings_group.add_argument(
-        "--network",
-        type=NetworkConfig.parse,
-        help=("Either an inline network config or an file path to full "
-              "network config hjson file (see --network-config or "
-              "'help network')."))
-    network_settings_group.add_argument(
-        "--network-config",
-        metavar="DIR",
-        type=NetworkConfig.parse_config_path,
-        help=("Path to a full network config file. See `help network` "
-              "for all options."))
-    network_settings_group.add_argument(
-        "--local-file-server",
-        "--local-fileserver",
-        "--file-server",
-        "--fileserver",
-        type=NetworkConfig.parse_local,
-        metavar="DIR",
-        dest="network",
-        help=("Start a local http file server at the given directory. "
-              "See `help network` for more options."))
-    network_settings_group.add_argument(
-        "--wpr",
-        "--web-page-replay",
-        type=NetworkConfig.parse_wpr,
-        metavar="WPR_ARCHIVE",
-        dest="network",
-        help=("Use wpr.archive to replay network requests "
-              "via a local proxy server. "
-              "Archives can be recorded with --probe=wpr. "
-              "WPR_ARCHIVE can be a local file or a gs:// google storage url. "
-              "See `help network` for more options."))
-
-    env_group = subparser.add_argument_group("Environment Options", "")
-    env_settings_group = env_group.add_mutually_exclusive_group()
-    env_settings_group.add_argument(
-        "--env",
-        type=EnvConfig.parse,
-        help=("Set default runner environment settings. {}"
-              f"Possible values: {', '.join(ENV_CONFIG_PRESETS.keys())}"
-              "or an inline hjson configuration (see --env-config). "
-              "Mutually exclusive with --env-config"))
-    env_settings_group.add_argument(
-        "--env-config",
-        type=EnvConfig.parse_config_path,
-        help=("Path to an env.config.hjson file that specifies detailed "
-              "runner environment settings and requirements. "
-              "See config/env.config.hjson for more details."
-              "Mutually exclusive with --env"))
-
-    env_group.add_argument(
-        "--env-validation",
-        default=ValidationMode.PROMPT,
-        type=ValidationMode,  # type: ignore
-        help=(
-            "Set how runner env is validated (see als --env-config/--env):\n" +
-            ValidationMode.help_text(indent=2)))
-    env_group.add_argument(
-        "--dry-run",
+        help=("Do not clear the browser cache dir after every run. "
+              "This will affect performance and leak user data across runs."))
+    cache_options.add_argument(
+        "--clear-browser-cache",
+        "--clear-browser-cache-dir",
+        dest="clear_browser_cache_dir",
         action="store_true",
-        default=False,
-        help="Don't run any browsers or probes")
+        help=("Force clear browser cache dir (default). "
+              "Use this flag to override browser config values"))
 
-    browser_group = subparser.add_argument_group(
+  def _add_probe_arguments(self, parser: argparse.ArgumentParser) -> None:
+    probe_group = parser.add_argument_group("Probe Options")
+    probe_group.add_argument(
+        "--probe",
+        action="append",
+        type=ProbeConfig.parse,
+        default=[],
+        help=(
+            "Enable general purpose probes to measure data on all cb.stories. "
+            "This argument can be specified multiple times to add more probes. "
+            "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
+            "to configure probes. "
+            "Individual probe configs can be specified in files as well: "
+            "--probe='path/to/config.hjson'. "
+            "Use 'describe probes' or 'describe probe $NAME' for probe "
+            "configuration details."
+            f"\n\nChoices: {', '.join(PROBE_LOOKUP.keys())}"))
+    probe_group.add_argument(
+        "--probe-config",
+        type=PathParser.hjson_file_path,
+        default=self._benchmark_cls.default_probe_config_path(),
+        help=("Browser configuration.json file. "
+              "Use this config file to specify more complex Probe settings. "
+              "See config/doc/probe.config.hjson on how to set up a complex "
+              "configuration file."))
+
+  def _add_chrome_arguments(self, parser: argparse.ArgumentParser) -> None:
+    chrome_args = parser.add_argument_group(
+        "Browsers Options: Chrome/Chromium",
+        "For convenience these arguments are directly forwarded "
+        "directly to chrome. ")
+    chrome_args.add_argument(
+        "--js-flags", dest="js_flags", action="append", default=[])
+
+    chrome_args.add_argument(
+        "--no-sandbox",
+        "--nosandbox",
+        dest="sandbox",
+        action="store_false",
+        default=None,
+        help=("Disables the sandbox for all process types that are "
+              "normally sandboxed. Use for testing purposes only."))
+
+    doc_str = "See chrome's base/feature_list.h source file for more details"
+    chrome_args.add_argument(
+        "--enable-features",
+        help="Comma-separated list of enabled chrome features. " + doc_str,
+        default="")
+    chrome_args.add_argument(
+        "--disable-features",
+        help="Command-separated list of disabled chrome features. " + doc_str,
+        default="")
+
+    field_trial_group = chrome_args.add_mutually_exclusive_group()
+    field_trial_group.add_argument(
+        "--enable-field-trial-config",
+        "--enable-field-trials",
+        default=None,
+        action="store_true",
+        help=("Use chrome's field-trial configs, "
+              "disabled by default by crossbench"))
+    field_trial_group.add_argument(
+        "--disable-field-trial-config",
+        "--disable-field-trials",
+        dest="enable_field_trial_config",
+        action="store_false",
+        help=("Explicitly disable field-trial configs. "
+              "Off by default on official builds, "
+              "and disabled by default by crossbench."))
+
+  def _add_browser_arguments(self, parser: argparse.ArgumentParser) -> None:
+    browser_group = parser.add_argument_group(
         "Browser Options", "Any other browser option can be passed "
         "after the '--' arguments separator.")
     browser_config_group = browser_group.add_mutually_exclusive_group()
@@ -328,26 +285,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         type=pth.AnyPath,
         help="Set an explicit browser cache dir")
 
-    browser_cache_group = subparser.add_argument_group(
-        "Browser Options: Caches",
-        "By default tmp caches are auto-created and cleared at startup.")
-    cache_options = browser_cache_group.add_mutually_exclusive_group()
-    cache_options.add_argument(
-        "--keep-browser-cache",
-        "--no-clear-browser-cache",
-        dest="clear_browser_cache_dir",
-        action="store_false",
-        default=None,
-        help=("Do not clear the browser cache dir after every run. "
-              "This will affect performance and leak user data across runs."))
-    cache_options.add_argument(
-        "--clear-browser-cache",
-        "--clear-browser-cache-dir",
-        dest="clear_browser_cache_dir",
-        action="store_true",
-        help=("Force clear browser cache dir (default). "
-              "Use this flag to override browser config values"))
-
     browser_group.add_argument(
         "--http-request-timeout",
         type=DurationParser.positive_or_zero_duration,
@@ -394,76 +331,145 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=("Start the browser in headless if supported. "
               "Equivalent to --viewport=headless."))
 
-    chrome_args = subparser.add_argument_group(
-        "Browsers Options: Chrome/Chromium",
-        "For convenience these arguments are directly are forwarded "
-        "directly to chrome. ")
-    chrome_args.add_argument(
-        "--js-flags", dest="js_flags", action="append", default=[])
+  def _add_env_arguments(self, parser: argparse.ArgumentParser) -> None:
+    env_group = parser.add_argument_group("Environment Options")
+    env_settings_group = env_group.add_mutually_exclusive_group()
+    env_settings_group.add_argument(
+        "--env",
+        type=EnvConfig.parse,
+        help=("Set default runner environment settings. "
+              f"Possible values: {', '.join(ENV_CONFIG_PRESETS.keys())} "
+              "or an inline hjson configuration (see --env-config). "
+              "Mutually exclusive with --env-config"))
+    env_settings_group.add_argument(
+        "--env-config",
+        type=EnvConfig.parse_config_path,
+        help=("Path to an env.config.hjson file that specifies detailed "
+              "runner environment settings and requirements. "
+              "See config/env.config.hjson for more details. "
+              "Mutually exclusive with --env"))
 
-    chrome_args.add_argument(
-        "--no-sandbox",
-        "--nosandbox",
-        dest="sandbox",
-        action="store_false",
-        default=None,
-        help=("Disables the sandbox for all process types that are "
-              "normally sandboxed. Use for testing purposes only."))
-
-    doc_str = "See chrome's base/feature_list.h source file for more details"
-    chrome_args.add_argument(
-        "--enable-features",
-        help="Comma-separated list of enabled chrome features. " + doc_str,
-        default="")
-    chrome_args.add_argument(
-        "--disable-features",
-        help="Command-separated list of disabled chrome features. " + doc_str,
-        default="")
-
-    field_trial_group = chrome_args.add_mutually_exclusive_group()
-    field_trial_group.add_argument(
-        "--enable-field-trial-config",
-        "--enable-field-trials",
-        default=None,
-        action="store_true",
-        help=("Use chrome's field-trial configs, "
-              "disabled by default by crossbench"))
-    field_trial_group.add_argument(
-        "--disable-field-trial-config",
-        "--disable-field-trials",
-        dest="enable_field_trial_config",
-        action="store_false",
-        help=("Explicitly disable field-trial configs."
-              "Off by default on official builds, "
-              "and disabled by default by crossbench."))
-
-    probe_group = subparser.add_argument_group("Probe Options", "")
-    probe_group.add_argument(
-        "--probe",
-        action="append",
-        type=ProbeConfig.parse,
-        default=[],
+    env_group.add_argument(
+        "--env-validation",
+        default=ValidationMode.PROMPT,
+        type=ValidationMode,  # type: ignore
         help=(
-            "Enable general purpose probes to measure data on all cb.stories. "
-            "This argument can be specified multiple times to add more probes. "
-            "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
-            "to configure probes. "
-            "Individual probe configs can be specified in files as well: "
-            "--probe='path/to/config.hjson'."
-            "Use 'describe probes' or 'describe probe $NAME' for probe "
-            "configuration details."
-            f"\n\nChoices: {', '.join(PROBE_LOOKUP.keys())}"))
-    probe_group.add_argument(
-        "--probe-config",
-        type=PathParser.hjson_file_path,
-        default=self._benchmark_cls.default_probe_config_path(),
-        help=("Browser configuration.json file. "
-              "Use this config file to specify more complex Probe settings."
-              "See config/doc/probe.config.hjson on how to set up a complex "
-              "configuration file."))
+            "Set how runner env is validated (see also --env-config/--env):\n" +
+            ValidationMode.help_text(indent=2)))
+    env_group.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Don't run any browsers or probes")
 
-  def _add_debugger_arguments(self, subparser: argparse.ArgumentParser) -> None:
-    debug_group = subparser.add_argument_group("Verbosity / Debugging Options")
+  def _add_network_arguments(self, parser: argparse.ArgumentParser) -> None:
+    network_group = parser.add_argument_group("Network Options")
+    network_settings_group = network_group.add_mutually_exclusive_group()
+    network_settings_group.add_argument(
+        "--network",
+        type=NetworkConfig.parse,
+        help=("Either an inline network config or a file path to full "
+              "network config hjson file (see --network-config or "
+              "'help network')."))
+    network_settings_group.add_argument(
+        "--network-config",
+        metavar="DIR",
+        type=NetworkConfig.parse_config_path,
+        help=("Path to a full network config file. See `help network` "
+              "for all options."))
+    network_settings_group.add_argument(
+        "--local-file-server",
+        "--local-fileserver",
+        "--file-server",
+        "--fileserver",
+        type=NetworkConfig.parse_local,
+        metavar="DIR",
+        dest="network",
+        help=("Start a local http file server at the given directory. "
+              "See `help network` for more options."))
+    network_settings_group.add_argument(
+        "--wpr",
+        "--web-page-replay",
+        type=NetworkConfig.parse_wpr,
+        metavar="WPR_ARCHIVE",
+        dest="network",
+        help=("Use wpr.archive to replay network requests "
+              "via a local proxy server. "
+              "Archives can be recorded with --probe=wpr. "
+              "WPR_ARCHIVE can be a local file or a gs:// google storage url. "
+              "See `help network` for more options."))
+
+  def _add_timing_arguments(self, parser: argparse.ArgumentParser) -> None:
+    timing_group = parser.add_argument_group("Time & Timeout Options")
+    cooldown_group = timing_group.add_mutually_exclusive_group()
+    cooldown_group.add_argument(
+        "--cool-down-threshold",
+        type=ThermalStatus.parse,
+        help=("Pause execution when the device reaches this thermal status. "
+              "Execution resumes once the status drops below the threshold. "
+              "Only available on Android."))
+    cooldown_group.add_argument(
+        "--cool-down-time",
+        "--cool-down",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta(seconds=2),
+        help=("Wait between repetitions for a fixed amount of time. "
+              f"Format: {DurationParser.help()}"))
+    cooldown_group.add_argument(
+        "--no-cool-down",
+        action="store_const",
+        dest="cool_down_time",
+        const=dt.timedelta(seconds=0),
+        help=("Disable cool-down between runs (might cause CPU throttling), "
+              "equivalent to --cool-down=0."))
+    cooldown_group.add_argument(
+        "--fast",
+        action=EnableFastAction,
+        nargs=0,
+        help=("Switch to a fast run mode "
+              "which might yield unstable performance results. "
+              "Equivalent to --cool-down=0 --no-splash --env-validation=skip."))
+
+    timing_group.add_argument(
+        "--time-unit",
+        type=DurationParser.any_duration,
+        default=dt.timedelta(seconds=1),
+        help=("Absolute duration of 1 time unit in the runner. "
+              "Increase this for slow builds or machines. "
+              f"Format: {DurationParser.help()}"))
+    timing_group.add_argument(
+        "--timeout-unit",
+        type=DurationParser.any_duration,
+        default=dt.timedelta(),
+        help=("Absolute duration of 1 time unit for timeouts in the runner. "
+              "Unlike --time-unit, this does only apply for timeouts, "
+              "as opposed to say initial wait times or sleeps. "
+              f"Format: {DurationParser.help()}"))
+    timing_group.add_argument(
+        "--run-timeout",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta(),
+        help=("Sets the same timeout per run on all browsers. "
+              "Runs will be aborted after the given timeout. "
+              f"Format: {DurationParser.help()}"))
+    timing_group.add_argument(
+        "--start-delay",
+        "--startup-delay",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta(),
+        help=("Delay before running the core workload, "
+              "after a story's/workload's setup, "
+              "and after starting the browser."))
+    timing_group.add_argument(
+        "--stop-delay",
+        type=DurationParser.positive_or_zero_duration,
+        default=dt.timedelta(),
+        help=("Delay after running the core workload, "
+              "before story's/workload's teardown, "
+              "and before quitting the browser."))
+
+  def _add_debugging_arguments(self, parser: argparse.ArgumentParser) -> None:
+    debug_group = self.cli.add_debugging_arguments(parser)
     debug_group.add_argument(
         "--driver-logging",
         "--verbose-driver",
