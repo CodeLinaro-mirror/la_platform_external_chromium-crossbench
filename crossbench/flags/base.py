@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import (Any, Dict, Iterable, Iterator, List, Optional, Self, Set,
-                    Tuple, TypeAlias, TypeVar, Union)
+from typing import (Any, Iterable, Iterator, List, Optional, Self, Set, Tuple,
+                    TypeAlias, TypeVar, Union)
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class Freezable:
 
 
 
-FlagsData: TypeAlias = Union[None, Dict[str, str], "Flags",
+FlagsData: TypeAlias = Union[None, dict[str, str], "Flags",
                              Iterable[str | Tuple[str, str | None]]]
 
 
@@ -223,7 +223,7 @@ class BasicFlags(Freezable, collections.UserDict):
   def items(self) -> Iterable[Tuple[str, Optional[str]]]:  # type: ignore
     return self.data.items()
 
-  def to_dict(self) -> Dict[str, Optional[str]]:
+  def to_dict(self) -> dict[str, Optional[str]]:
     return dict(self.items())
 
   def clear(self):

@@ -5,7 +5,7 @@
 import argparse
 import json
 import pathlib
-from typing import Dict, List, Tuple, Type
+from typing import List, Tuple, Type
 from unittest import mock
 
 import hjson
@@ -173,7 +173,7 @@ class CliSlowTestCase(BaseCliTestCase):
     self.verify_browser_identifiers(3)
 
   def verify_browser_identifiers(self, chunk: int):
-    browsers: Dict[str, Type[mock_browser.MockBrowser]] = {
+    browsers: dict[str, Type[mock_browser.MockBrowser]] = {
         "chrome": mock_browser.MockChromeStable,
         "chrome-stable": mock_browser.MockChromeStable,
         "chr-stable": mock_browser.MockChromeStable,

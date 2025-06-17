@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Dict, Iterator, Optional, Self,
-                    Sequence, Tuple, cast)
+from typing import (TYPE_CHECKING, Any, Iterator, Optional, Self, Sequence,
+                    Tuple, cast)
 
 from typing_extensions import override
 
@@ -81,7 +81,7 @@ class PageConfig(ConfigObject):
   @override
   def parse_dict(  # pylint: disable=arguments-differ
       cls,
-      config: Dict[str, Any],
+      config: dict[str, Any],
       label: Optional[str] = None,
       secrets: Optional[Secrets] = None,
       **kwargs) -> Self:

@@ -10,8 +10,7 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Type
 
 import tabulate as tbl
 
@@ -35,7 +34,7 @@ from crossbench.runner.runner import Runner
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   BenchmarkClsT = Type[Benchmark]
-  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pth.LocalPath]]
+  BrowserLookupTableT = dict[str, Tuple[Type[Browser], pth.LocalPath]]
   from crossbench.cli.subcommand.base import CrossbenchSubcommand
 
 
@@ -169,7 +168,7 @@ class CrossBenchCLI:
   def __init__(self, enable_logging: bool = True) -> None:
     self._enable_logging: bool = enable_logging
     self._console_handler: logging.StreamHandler | None = None
-    self._benchmark_subcommands: Dict[BenchmarkClsT, BenchmarkSubcommand] = {}
+    self._benchmark_subcommands: dict[BenchmarkClsT, BenchmarkSubcommand] = {}
     self.parser = MainCrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
                      "with configurable measurement probes.\n"))

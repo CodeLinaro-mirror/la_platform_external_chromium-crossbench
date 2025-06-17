@@ -9,7 +9,7 @@ import json
 import logging
 import multiprocessing
 import time
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from typing_extensions import override
 
@@ -185,8 +185,8 @@ class LinuxProfilingContext(PosixProfilingContext):
 
 
 def prepare_linux_perf_env(platform: plt.Platform,
-                           cwd: pth.AnyPath) -> Dict[str, str]:
-  env: Dict[str, str] = dict(platform.environ)
+                           cwd: pth.AnyPath) -> dict[str, str]:
+  env: dict[str, str] = dict(platform.environ)
   env["JITDUMPDIR"] = str(platform.absolute(cwd))
   return env
 

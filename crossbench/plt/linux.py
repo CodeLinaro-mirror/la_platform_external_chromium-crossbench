@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-import os
 import logging
+import os
 import re
-from typing import (TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List,
-                    Optional, Tuple, Type)
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterator, List, Optional,
+                    Tuple, Type)
 
 from typing_extensions import override
 
@@ -140,7 +140,7 @@ class LinuxPlatform(PosixPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     details = super().system_details()
     for info_bin in ("lscpu", "inxi"):
       if info_bin_path := self.which(info_bin):
@@ -175,10 +175,10 @@ class LinuxPlatform(PosixPlatform):
     return tuple()
 
   @override
-  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
     matching_pids = self.sh_stdout("pgrep", "-f", process_name).splitlines()
 
-    meminfos: Dict[str, ProcessMeminfo] = {}
+    meminfos: dict[str, ProcessMeminfo] = {}
 
     for pid in matching_pids:
       try:

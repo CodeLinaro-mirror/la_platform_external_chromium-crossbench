@@ -7,7 +7,7 @@ from __future__ import annotations
 import atexit
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Dict, Iterator, Self
+from typing import TYPE_CHECKING, Iterator, Self
 
 from crossbench import exception
 
@@ -32,8 +32,8 @@ class PortScope:
     self._platform = platform
     self._parent_scope: Self | None = parent_scope
     assert parent_scope is not self
-    self.forwarded_ports: Dict[int, int] = {}
-    self.reverse_forwarded_ports: Dict[int, int] = {}
+    self.forwarded_ports: dict[int, int] = {}
+    self.reverse_forwarded_ports: dict[int, int] = {}
 
   @property
   def is_nested(self) -> bool:

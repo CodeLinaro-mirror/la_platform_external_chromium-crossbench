@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Iterable, List, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Tuple
 
 from typing_extensions import override
 
@@ -44,7 +44,7 @@ class RepetitionsRunGroup(RunGroup):
   def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._cache_temperatures_groups: List[CacheTemperaturesRunGroup] = []
-    self._cache_temperature_repetitions_groups: Dict[
+    self._cache_temperature_repetitions_groups: dict[
         str, CacheTemperatureRepetitionsRunGroup] = {}
     self._story: Story | None = None
     self._browser: Browser | None = None

@@ -11,7 +11,7 @@ import shutil
 import stat
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, Dict, Final, List, Optional, Tuple
+from typing import TYPE_CHECKING, Final, List, Optional, Tuple
 
 from crossbench import exception
 from crossbench import path as pth
@@ -34,7 +34,7 @@ class ChromeDriverFinder:
   CFT_VERSION_URL: str = f"{CFT_BASE_URL}/{{version}}.json"
   CFT_LATEST_URL: str = f"{CFT_BASE_URL}/LATEST_RELEASE_{{major}}"
 
-  CFT_PLATFORM: Final[Dict[Tuple[str, str], str]] = {
+  CFT_PLATFORM: Final[dict[Tuple[str, str], str]] = {
       ("linux", "x64"):
           "linux64",
       ("macos", "x64"):
@@ -179,7 +179,7 @@ class ChromeDriverFinder:
                                                        platform_name)
     return (listing_url, download_url)
 
-  def _get_cft_version_data(self, milestone: int) -> Tuple[str, Optional[Dict]]:
+  def _get_cft_version_data(self, milestone: int) -> Tuple[str, Optional[dict]]:
     logging.debug("ChromeDriverFinder: Trying direct download url")
     listing_url, data = self._get_cft_precise_version_data(self.browser.version)
     if data:
@@ -190,7 +190,7 @@ class ChromeDriverFinder:
     return self._get_ctf_milestone_data(milestone)
 
   def _get_cft_precise_version_data(
-      self, version: BrowserVersion) -> Tuple[str, Optional[Dict]]:
+      self, version: BrowserVersion) -> Tuple[str, Optional[dict]]:
     version_url: str = self.CFT_VERSION_URL.format(version=version.parts_str)
     try:
       response = url_helper.get(version_url)
@@ -202,7 +202,7 @@ class ChromeDriverFinder:
       return (version_url, None)
 
   def _get_ctf_milestone_data(self,
-                              milestone: int) -> Tuple[str, Optional[Dict]]:
+                              milestone: int) -> Tuple[str, Optional[dict]]:
     latest_version_url: str = self.CFT_LATEST_URL.format(major=milestone)
     try:
       response = url_helper.get(latest_version_url)
@@ -217,7 +217,7 @@ class ChromeDriverFinder:
   def _get_cft_driver_download_url(self, version_data,
                                    platform_name) -> Optional[str]:
     if all_downloads := version_data.get("downloads"):
-      driver_downloads: Dict = all_downloads.get("chromedriver", [])
+      driver_downloads: dict = all_downloads.get("chromedriver", [])
       for download in driver_downloads:
         if isinstance(download, dict) and download["platform"] == platform_name:
           return download["url"]
@@ -290,7 +290,7 @@ class ChromeDriverFinder:
   CHROMIUM_DASH_URL: str = "https://chromiumdash.appspot.com/fetch_releases"
   CHROMIUM_LISTING_URL: str = (
       "https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/")
-  CHROMIUM_DASH_PARAMS: Dict[Tuple[str, str], Dict] = {
+  CHROMIUM_DASH_PARAMS: dict[Tuple[str, str], dict] = {
       ("linux", "x64"): {
           "dash_platform": "linux",
           "dash_channel": "dev",
@@ -309,7 +309,7 @@ class ChromeDriverFinder:
           "dash_platform": "win64",
       },
   }
-  CHROMIUM_LISTING_PREFIX: Dict[Tuple[str, str], str] = {
+  CHROMIUM_LISTING_PREFIX: dict[Tuple[str, str], str] = {
       ("linux", "x64"): "Linux_x64",
       ("macos", "x64"): "Mac",
       ("macos", "arm64"): "Mac_Arm",

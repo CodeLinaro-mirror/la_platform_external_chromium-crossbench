@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import os
 import shutil
-from typing import TYPE_CHECKING, Dict, Final, Iterable, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type
 
 from typing_extensions import override
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
-_PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
+_PLATFORM_NAME_LOOKUP: Final[dict[Tuple[str, str], str]] = {
     ("win", "ia32"): "win32",
     ("win", "x64"): "win64",
     ("win", "arm64"): "win-aarch64",

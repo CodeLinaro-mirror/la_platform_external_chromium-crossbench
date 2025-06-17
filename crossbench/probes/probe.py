@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Dict, Hashable, List, Optional, Self, Set,
-                    Tuple, Type, TypeVar)
+from typing import (TYPE_CHECKING, Hashable, List, Optional, Self, Set, Tuple,
+                    Type, TypeVar)
 
 from typing_extensions import override
 
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.probes.results import ProbeResultDict
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.cache_temperatures import \
@@ -89,7 +88,7 @@ class Probe(ProbeResultKey, abc.ABC):
     return ProbeConfigParser(cls)
 
   @classmethod
-  def from_config(cls: Type[ProbeT], config_data: Dict) -> ProbeT:
+  def from_config(cls: Type[ProbeT], config_data: dict) -> ProbeT:
     return cls.config_parser().parse(config_data)
 
   @classmethod

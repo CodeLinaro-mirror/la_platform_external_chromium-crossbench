@@ -8,8 +8,8 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Dict, Generic, Iterable, List, Optional,
-                    Tuple, Type, TypeVar)
+from typing import (TYPE_CHECKING, Generic, Iterable, List, Optional, Tuple,
+                    Type, TypeVar)
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
@@ -31,7 +31,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
     self._state = StateMachine(State.INITIAL)
     self._origin = result_origin
     self._probe_results = probe_results
-    self._probe_contexts: Dict[Type[Probe], ProbeContextT] = {}
+    self._probe_contexts: dict[Type[Probe], ProbeContextT] = {}
     # Contains all probe context where the setup succeeded.
     self._setup_probe_contexts: List[ProbeContextT] = []
     self._failed_probe_contexts: List[ProbeContextT] = []

@@ -6,21 +6,21 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from typing_extensions import override
 
-from crossbench.benchmarks.base import Benchmark
-from crossbench.cli.ui import timer
-from crossbench.helper import input_helper
-from crossbench.parse import DurationParser
-from crossbench.stories.story import Story
 from crossbench import config
 from crossbench import path as pth
-from crossbench.cli.parser import CrossBenchArgumentParser
-from crossbench.runner.run import Run
+from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.cli.ui import timer
 from crossbench.flags.base import Flags
+from crossbench.helper import input_helper
+from crossbench.parse import DurationParser
+from crossbench.runner.run import Run
+from crossbench.stories.story import Story
 
 PLAY_AUDIO_SCRIPT = """
 
@@ -111,7 +111,7 @@ class PowerlineBenchmark(Benchmark, metaclass=abc.ABCMeta):
     #  HTML5 tag and b) it will not play from JavaScript if the user does not
     # interact with the page first. https://developer.chrome.com/blog/autoplay
     assert browser_attributes.is_chromium_based
-    return Flags({"--autoplay-policy":"no-user-gesture-required"})
+    return Flags({"--autoplay-policy": "no-user-gesture-required"})
 
   @classmethod
   @override
@@ -128,7 +128,7 @@ class PowerlineBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["run_for"] = args.run_for
     return kwargs

@@ -9,8 +9,8 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
-                    Self, Sequence, Set, TextIO, Tuple, Type, cast)
+from typing import (TYPE_CHECKING, Any, Final, Iterator, List, Optional, Self,
+                    Sequence, Set, TextIO, Tuple, Type, cast)
 
 from typing_extensions import override
 
@@ -38,7 +38,7 @@ from crossbench.parse import LateArgumentError, ObjectParser
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   FlagGroupItemT = Tuple[str, str | None] | None
-  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], "BrowserConfig"]]
+  BrowserLookupTableT = dict[str, Tuple[Type[Browser], "BrowserConfig"]]
 
 # Add some slack for buffer for browser + platform names. Note that ultimately
 # this is going to get cropped to MAX_PART_LEN.
@@ -154,9 +154,9 @@ class BaseBrowserVariantsConfig(abc.ABC):
     return f"{name}_{convert_flags_to_label(*flags)}"
 
   def _create_unique_variant_labels(
-      self, name: str, raw_browser_data: str | Dict[str, Any],
-      flag_variants: FlagsGroupConfig) -> Dict[FlagsVariantConfig, str]:
-    labels_lookup: Dict[FlagsVariantConfig, str] = {}
+      self, name: str, raw_browser_data: str | dict[str, Any],
+      flag_variants: FlagsGroupConfig) -> dict[FlagsVariantConfig, str]:
+    labels_lookup: dict[FlagsVariantConfig, str] = {}
     group_labels = set(variant.label for variant in flag_variants)
     use_unique_variant_label = len(group_labels) == len(flag_variants)
 
@@ -385,7 +385,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     return config_variants
 
   def __init__(self,
-               raw_config_data: Optional[Dict[str, Any]] = None,
+               raw_config_data: Optional[dict[str, Any]] = None,
                browser_lookup_override: Optional[BrowserLookupTableT] = None,
                args: Optional[argparse.Namespace] = None) -> None:
     super().__init__(browser_lookup_override)
@@ -407,7 +407,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       with exception.annotate(f"Parsing config file: {f.name}"):
         self.parse_dict(config, args)
 
-  def parse_dict(self, config: Dict[str, Any],
+  def parse_dict(self, config: dict[str, Any],
                  args: argparse.Namespace) -> None:
     with exception.annotate(
         f"Parsing {type(self).__name__} dict", throw_cls=ConfigError):
@@ -421,7 +421,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       with exception.annotate("Parsing config['browsers']"):
         self._parse_browsers(config["browsers"], args)
 
-  def _parse_browsers(self, data: Dict[str, Any],
+  def _parse_browsers(self, data: dict[str, Any],
                       args: argparse.Namespace) -> None:
     for name, browser_config in data.items():
       with exception.annotate(f"Parsing browsers[{repr(name)}]"):
@@ -454,7 +454,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
         args, name, raw_browser_data)
     self._log_browser_variants(name, flag_variants)
     browser_platform: plt.Platform = self._get_browser_platform(browser_config)
-    labels_lookup: Dict[FlagsVariantConfig,
+    labels_lookup: dict[FlagsVariantConfig,
                         str] = self._create_unique_variant_labels(
                             name, raw_browser_data, flag_variants)
     for variant in flag_variants:
@@ -469,7 +469,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
 
   def _get_browser_variants(
       self, args: argparse.Namespace, browser_name: str,
-      raw_browser_data: str | Dict[str, Any]) -> FlagsGroupConfig:
+      raw_browser_data: str | dict[str, Any]) -> FlagsGroupConfig:
     default_variant = FlagsVariantConfig(DEFAULT_LABEL)
     flag_variants = FlagsGroupConfig((default_variant,))
     if not isinstance(raw_browser_data, dict):
@@ -492,7 +492,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     return flag_variants
 
   def _parse_browser_flags(self, browser_name: str,
-                           data: Dict[str, Any]) -> List[FlagsGroupConfig]:
+                           data: dict[str, Any]) -> List[FlagsGroupConfig]:
     flag_group_names = data.get("flags", [])
     if isinstance(flag_group_names, str):
       flag_group_names = [flag_group_names]

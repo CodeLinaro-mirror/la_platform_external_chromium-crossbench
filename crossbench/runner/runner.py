@@ -8,8 +8,8 @@ import argparse
 import datetime as dt
 import enum
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional,
-                    Sequence, Set, Tuple, Type)
+from typing import (TYPE_CHECKING, Any, Iterable, List, Optional, Sequence, Set,
+                    Tuple, Type)
 
 from crossbench import exception
 from crossbench import path as pth
@@ -72,7 +72,7 @@ class ThreadMode(StrEnumWithHelp):
   def group(self, runs: List[Run]) -> List[RunThreadGroup]:
     if self == ThreadMode.NONE:
       return [RunMainGroup(runs)]
-    groups: Dict[Any, List[Run]] = {}
+    groups: dict[Any, List[Run]] = {}
     if self == ThreadMode.SESSION:
       groups = collection_helper.group_by(
           runs, lambda run: run.browser_session, sort_key=None)
@@ -199,7 +199,7 @@ class Runner:
               "Defaults to binary_cache"))
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     if args.out_dir:
       out_dir = args.out_dir
     else:

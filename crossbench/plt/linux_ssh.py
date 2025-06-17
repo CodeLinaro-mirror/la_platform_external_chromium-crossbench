@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -31,11 +31,11 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
                ssh_port: int, ssh_user: str) -> None:
     super().__init__(host_platform, host, port, ssh_port, ssh_user)
     self._machine: MachineArch | None = None
-    self._system_details: Dict[str, Any] | None = None
-    self._cpu_details: Dict[str, Any] | None = None
+    self._system_details: dict[str, Any] | None = None
+    self._cpu_details: dict[str, Any] | None = None
     # TOOO: create custom PortManager for linux-ssh
-    self._port_forward_popens: Dict[int, subprocess.Popen] = {}
-    self._reverse_port_forward_popens: Dict[int, subprocess.Popen] = {}
+    self._port_forward_popens: dict[int, subprocess.Popen] = {}
+    self._reverse_port_forward_popens: dict[int, subprocess.Popen] = {}
     atexit.register(self._stop_all_port_forward)
 
   @property
@@ -63,14 +63,14 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return self._build_ssh_cmd(*args, shell=shell)
 
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                attrs: Optional[List[str]] = None) -> List[dict[str, Any]]:
     # TODO: Define a more generic method in PosixPlatform, possibly with
     # an overridable function to generate ps command line.
     lines = self.sh_stdout("ps", "-A", "-o", "pid,cmd").splitlines()
     if len(lines) == 1:
       return []
 
-    res: List[Dict[str, Any]] = []
+    res: List[dict[str, Any]] = []
     for line in lines[1:]:
       pid, name = line.split(maxsplit=1)
       res.append({"pid": int(pid), "name": name})

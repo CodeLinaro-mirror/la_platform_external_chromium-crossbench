@@ -8,7 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, MutableMapping, Optional,
+from typing import (TYPE_CHECKING, Any, List, MutableMapping, Optional,
                     Sequence, Tuple, Type)
 
 from typing_extensions import override
@@ -184,7 +184,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["iterations"] = args.iterations
     return kwargs

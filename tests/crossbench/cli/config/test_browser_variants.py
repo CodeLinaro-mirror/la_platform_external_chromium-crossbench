@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import Dict, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 from unittest import mock
 
 import hjson
@@ -57,7 +57,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   @override
   def setUp(self):
     super().setUp()
-    self.browser_lookup: Dict[str, Tuple[
+    self.browser_lookup: dict[str, Tuple[
         Type[mock_browser.MockBrowser], BrowserConfig]] = {
             "chr-stable":
                 (mock_browser.MockChromeStable,

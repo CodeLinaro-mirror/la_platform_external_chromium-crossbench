@@ -8,8 +8,8 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List,
-                    Optional, Sequence, Set, Tuple)
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Optional,
+                    Sequence, Set, Tuple)
 
 from crossbench.probes import helper
 
@@ -183,7 +183,7 @@ class MetricsMerger:
     return merger
 
   def __init__(self,
-               *args: Dict | List[Dict],
+               *args: dict | List[dict],
                key_fn: Optional[helper.KeyFnType] = None):
     """Create a new MetricsMerger
 
@@ -192,18 +192,18 @@ class MetricsMerger:
         key_fn (optional): Maps property paths (Tuple[str,...]) to strings used
           as keys to group/merge values, or None to skip property paths.
     """
-    self._data: Dict[str, Metric] = {}
+    self._data: dict[str, Metric] = {}
     self._key_fn: helper.KeyFnType = key_fn or helper._default_flatten_key_fn
     self._ignored_keys: Set[str] = set()
     for data in args:
       self.add(data)
 
   @property
-  def data(self) -> Dict[str, Metric]:
+  def data(self) -> dict[str, Metric]:
     return self._data
 
   def merge_values(self,
-                   data: Dict[str, Dict],
+                   data: dict[str, dict],
                    prefix_path: Tuple[str, ...] = (),
                    merge_duplicate_paths: bool = False) -> None:
     """Merge a previously json-serialized MetricsMerger object"""
@@ -226,7 +226,7 @@ class MetricsMerger:
       else:
         self._data[key] = Metric.from_json(item)
 
-  def add(self, data: Dict | List[Dict]) -> None:
+  def add(self, data: dict | List[dict]) -> None:
     """ Merge "arbitrary" hierarchical data that ends up having primitive leafs.
     Anything that is not a dict is considered a leaf node.
     """
@@ -238,7 +238,7 @@ class MetricsMerger:
       self._merge(data)
 
   def _merge(
-      self, data: Dict | List[Dict], parent_path: Tuple[str, ...] = ()) -> None:
+      self, data: dict | List[dict], parent_path: Tuple[str, ...] = ()) -> None:
     assert isinstance(data, dict)
     for property_name, value in data.items():
       path = parent_path + (property_name,)
@@ -340,7 +340,7 @@ class CSVFormatter:
         row = (path, value)
       self._table.append(row)
 
-  def format_items(self, data: Dict[str, Json],
+  def format_items(self, data: dict[str, Json],
                    sort: bool) -> Sequence[Tuple[str, Json]]:
     items = tuple(data.items())
     if not sort:

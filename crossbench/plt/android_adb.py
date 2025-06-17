@@ -10,7 +10,7 @@ import math
 import re
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -48,18 +48,18 @@ def _find_adb_bin(platform: Platform) -> pth.AnyPath:
 
 def adb_devices(
     platform: Platform,
-    adb_bin: Optional[pth.AnyPath] = None) -> Dict[str, Dict[str, str]]:
+    adb_bin: Optional[pth.AnyPath] = None) -> dict[str, dict[str, str]]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
-  result: Dict[str, Dict[str, str]] = {}
+  result: dict[str, dict[str, str]] = {}
   for line in raw_lines:
     serial_id, details = line.split(" ", maxsplit=1)
     result[serial_id.strip()] = _parse_adb_device_info(details.strip())
   return result
 
 
-def _parse_adb_device_info(value: str) -> Dict[str, str]:
+def _parse_adb_device_info(value: str) -> dict[str, str]:
   """
   Convert a line from adb devices -l into a descriptive dictionary.
   `value` is a line of output, typically:
@@ -75,7 +75,7 @@ def _parse_adb_device_info(value: str) -> Dict[str, str]:
 class Adb:
 
   _serial_id: str
-  _device_info: Dict[str, str]
+  _device_info: dict[str, str]
   _adb_bin: pth.AnyPath
   _bundletool: Optional[pth.AnyPath]
 
@@ -101,7 +101,7 @@ class Adb:
 
   def _find_serial_id(
       self,
-      device_identifier: Optional[str] = None) -> Tuple[str, Dict[str, str]]:
+      device_identifier: Optional[str] = None) -> Tuple[str, dict[str, str]]:
     devices = self.devices()
     if not devices:
       raise ValueError("adb could not find any attached devices."
@@ -151,7 +151,7 @@ class Adb:
     return int(self.getprop("ro.build.version.release"))
 
   @property
-  def device_info(self) -> Dict[str, str]:
+  def device_info(self) -> dict[str, str]:
     return self._device_info
 
   def _build_adb_cmd(self,
@@ -303,7 +303,7 @@ class Adb:
   def unroot(self) -> None:
     self._adb("unroot", use_serial_id=False)
 
-  def devices(self) -> Dict[str, Dict[str, str]]:
+  def devices(self) -> dict[str, dict[str, str]]:
     return adb_devices(self._host_platform, self._adb_bin)
 
   def forward(self, local: int, remote: int, protocol: str = "tcp") -> int:
@@ -589,12 +589,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> List[Dict[str, Any]]:
+                       recursive: bool = False) -> List[dict[str, Any]]:
     # TODO: implement
     return []
 
   @override
-  def foreground_process(self) -> Optional[Dict[str, Any]]:
+  def foreground_process(self) -> Optional[dict[str, Any]]:
     # adb shell dumpsys activity activities
     # TODO: implement
     return None
@@ -703,12 +703,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                attrs: Optional[List[str]] = None) -> List[dict[str, Any]]:
     lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()
     if len(lines) == 1:
       return []
 
-    res: List[Dict[str, Any]] = []
+    res: List[dict[str, Any]] = []
     for line in lines[1:]:
       tokens = line.strip().split(maxsplit=1)
       assert len(tokens) == 2, f"Got invalid process tokens: {tokens}"
@@ -716,14 +716,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return res
 
   @override
-  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
     dumpsys_output = self.sh_stdout("dumpsys", "meminfo", "--package",
                                     process_name)
     return self._parse_dumpsys_meminfo(dumpsys_output)
 
   @functools.lru_cache(maxsize=1)
   @override
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
         "info": self.cpu,
@@ -741,15 +741,15 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     system_details = super().system_details()
     system_details.update({
         "Android": self._getprop_system_details(),
     })
     return system_details
 
-  def _getprop_system_details(self) -> Dict[str, Any]:
-    properties: Dict[str, str] = {}
+  def _getprop_system_details(self) -> dict[str, Any]:
+    properties: dict[str, str] = {}
     for line in self.adb.shell_stdout("getprop").strip().splitlines():
       result = self._GETPROP_RE.fullmatch(line)
       if result:
@@ -799,7 +799,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
 
   def _parse_dumpsys_meminfo(self,
-                             meminfo_output: str) -> Dict[str, ProcessMeminfo]:
+                             meminfo_output: str) -> dict[str, ProcessMeminfo]:
     pid_sections = re.split(r"\*\* MEMINFO in pid (\d+) \[(.*?)] \*\*",
                             meminfo_output)[1:]
 

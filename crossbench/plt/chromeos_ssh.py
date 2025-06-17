@@ -8,7 +8,7 @@ import functools
 import json
 import logging
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -18,8 +18,6 @@ from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
-  from typing import Any, Dict, List, Optional, Tuple
-
   from crossbench.plt.base import ListCmdArgs
   from crossbench.plt.display_info import DisplayInfo
 
@@ -105,7 +103,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     details = super().system_details()
 
     details.update({
@@ -133,7 +131,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
         embedded_display.get("resolution_vertical"), "resolution_vertical")
     return (resolution_horizontal, resolution_vertical)
 
-  def _parse_lsb_release(self) -> Dict[str, str]:
+  def _parse_lsb_release(self) -> dict[str, str]:
     # lsb-release has the format:
     # KEY=VALUE
     result = {}

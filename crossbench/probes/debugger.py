@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Dict, Iterable, Self, Type
+from typing import TYPE_CHECKING, Iterable, Self, Type
 
 from typing_extensions import override
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult
 
-_DEBUGGER_LOOKUP: Dict[str, str] = {
+_DEBUGGER_LOOKUP: dict[str, str] = {
     "macos": "lldb",
     "linux": "gdb",
 }

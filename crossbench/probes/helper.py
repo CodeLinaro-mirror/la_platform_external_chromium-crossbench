@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import csv
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, List, Optional,
-                    Sequence, Set, Tuple)
+from typing import (TYPE_CHECKING, Any, Callable, Final, List, Mapping,
+                    Optional, Sequence, Set, Tuple)
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
@@ -31,11 +31,8 @@ class Flatten:
     "b":     12,
   }
   """
-  _key_fn: KeyFnType
-  _accumulator: Dict[str, Any]
-
   def __init__(self,
-               *args: Dict,
+               *args: Mapping,
                key_fn: Optional[KeyFnType] = None,
                sort: bool = True) -> None:
     """_summary_
@@ -45,19 +42,19 @@ class Flatten:
         key_fn (optional): Maps property paths (Tuple[str,...]) to strings used
           as final result keys, or None to skip property paths.
     """
-    self._accumulator = {}
-    self._key_fn = key_fn or _default_flatten_key_fn
-    self._sort = sort
+    self._accumulator: dict[str, Any] = {}
+    self._key_fn: KeyFnType = key_fn or _default_flatten_key_fn
+    self._sort: bool = sort
     self.append(*args)
 
   @property
-  def data(self) -> Dict[str, Any]:
+  def data(self) -> dict[str, Any]:
     if not self._sort:
       return dict(self._accumulator)
     items = sorted(self._accumulator.items(), key=lambda item: item[0])
     return dict(items)
 
-  def append(self, *args: Dict, ignore_toplevel: bool = False) -> None:
+  def append(self, *args: Mapping, ignore_toplevel: bool = False) -> None:
     toplevel_path: Tuple[str, ...] = tuple()
     for merged_data in args:
       self._flatten(toplevel_path, merged_data, ignore_toplevel)
@@ -71,7 +68,7 @@ class Flatten:
 
   def _flatten(self,
                parent_path: Tuple[str, ...],
-               data,
+               data: Mapping,
                ignore_toplevel: bool = False) -> None:
     for name, item in data.items():
       if item is None:

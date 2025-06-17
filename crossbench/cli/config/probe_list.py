@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Self, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, List, Self, Sequence
 
 from typing_extensions import override
 
@@ -42,7 +42,7 @@ class ProbeListConfig(ConfigObject):
     return super().parse_other(value)
 
   @classmethod
-  def parse_sequence(cls, config: Sequence[Dict[str, Any]]) -> Self:
+  def parse_sequence(cls, config: Sequence[dict[str, Any]]) -> Self:
     probe_configs: List[ProbeConfig] = []
     for index, probe_config in enumerate(config):
       with exception.annotate(f"Parsing probes[{index}]"):
@@ -51,7 +51,7 @@ class ProbeListConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     # Support global configs with {"probes": ...}
     if "probes" in config:
       config = config["probes"]
@@ -77,7 +77,7 @@ class ProbeListConfig(ConfigObject):
       probe_configs: Iterable[ProbeConfig] = tuple(),
       probes: Iterable[Probe] = tuple()
   ) -> None:
-    self._probes: Dict[str, Probe] = {}
+    self._probes: dict[str, Probe] = {}
     if not probe_configs and not probes:
       return
     for probe_config in probe_configs:

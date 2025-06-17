@@ -8,8 +8,7 @@ import collections
 import json
 import logging
 import zipfile
-from typing import (TYPE_CHECKING, Dict, Iterable, List, Optional, Self, Tuple,
-                    Type)
+from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Tuple, Type
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -84,7 +83,7 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
   def __init__(self,
                traces: Iterable[Run] | TraceProcessorProbeContext) -> None:
 
-    def metadata(run: Run) -> Dict[str, str]:
+    def metadata(run: Run) -> dict[str, str]:
       return {
           "cb_browser": run.browser.unique_name,
           "cb_story": run.story.name,
@@ -249,8 +248,8 @@ class TraceProcessorProbe(Probe):
     return df
 
   def _aggregate_results_by_query(
-      self, runs: Iterable[Run]) -> Dict[str, pd.DataFrame]:
-    res: Dict[str, pd.DataFrame] = {}
+      self, runs: Iterable[Run]) -> dict[str, pd.DataFrame]:
+    res: dict[str, pd.DataFrame] = {}
     for run in runs:
       for file in run.results.get(self).csv_list:
         df = pd.read_csv(file)
@@ -262,8 +261,8 @@ class TraceProcessorProbe(Probe):
 
     return res
 
-  def _merge_json(self, runs: Iterable[Run]) -> Dict[str, JsonDict]:
-    merged_metrics: Dict[str,
+  def _merge_json(self, runs: Iterable[Run]) -> dict[str, JsonDict]:
+    merged_metrics: dict[str,
                          MetricsMerger] = collections.defaultdict(MetricsMerger)
     for run in runs:
       for file_path in run.results[self].json_list:

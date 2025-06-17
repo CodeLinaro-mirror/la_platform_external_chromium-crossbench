@@ -10,7 +10,7 @@ import enum
 import json
 import pathlib
 import unittest
-from typing import Any, Dict, List, Optional, Self
+from typing import Any, List, Optional, Self
 from unittest import mock
 
 from immutabledict import immutabledict
@@ -115,8 +115,8 @@ class CustomConfigObject(ConfigObject):
   generic_enum: GenericEnum = GenericEnum.A
   config_enum: CustomConfigEnum = CustomConfigEnum.A
   custom_value_enum: CustomValueEnum = CustomValueEnum.DEFAULT
-  depending_nested: Optional[Dict[str, Any]] = None
-  depending_many: Optional[Dict[str, Any]] = None
+  depending_nested: Optional[dict[str, Any]] = None
+  depending_many: Optional[dict[str, Any]] = None
 
   @classmethod
   def default(cls) -> CustomConfigObject:
@@ -134,7 +134,7 @@ class CustomConfigObject(ConfigObject):
   @classmethod
   def parse_depending_nested(
       cls, value: Optional[str],
-      nested: CustomNestedConfigObject) -> Optional[Dict]:
+      nested: CustomNestedConfigObject) -> Optional[dict]:
     if not value:
       return None
     return {
@@ -145,7 +145,7 @@ class CustomConfigObject(ConfigObject):
   @classmethod
   def parse_depending_many(cls, value: Optional[str], array: List[Any],
                            integer: int,
-                           nested: CustomNestedConfigObject) -> Optional[Dict]:
+                           nested: CustomNestedConfigObject) -> Optional[dict]:
     if not value:
       return None
     return {

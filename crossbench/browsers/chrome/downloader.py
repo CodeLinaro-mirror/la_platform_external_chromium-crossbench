@@ -10,8 +10,8 @@ import os
 import shutil
 import tempfile
 import zipfile
-from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
-                    Type, cast)
+from typing import (TYPE_CHECKING, Final, Iterable, List, Optional, Tuple, Type,
+                    cast)
 
 from typing_extensions import override
 
@@ -35,7 +35,7 @@ class ChromeDownloader(Downloader):
   VERSION_URL = (
       "https://versionhistory.googleapis.com/v1/"
       "chrome/platforms/{platform}/channels/{channel}/versions?filter={filter}")
-  VERSION_URL_PLATFORM_LOOKUP: Dict[Tuple[str, str], str] = {
+  VERSION_URL_PLATFORM_LOOKUP: dict[Tuple[str, str], str] = {
       ("win", "arm64"): "win_arm64",
       ("win", "ia32"): "win",
       ("win", "x64"): "win64",
@@ -217,7 +217,7 @@ class ChromeDownloader(Downloader):
 
 class ChromeDownloaderLinux(ChromeDownloader):
   ARCHIVE_SUFFIX: str = ".rpm"
-  CHANNEL_BINARY_LOOKUP: Dict[BrowserVersionChannel, str] = {
+  CHANNEL_BINARY_LOOKUP: dict[BrowserVersionChannel, str] = {
       BrowserVersionChannel.PRE_ALPHA: "chrome-canary",
       BrowserVersionChannel.ALPHA: "chrome-unstable",
       BrowserVersionChannel.BETA: "chrome-beta",
@@ -380,7 +380,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   ARM_64_BUILD: Final[str] = "arm_64"
   ARM_64_HIGH_BUILD: Final[str] = "high-arm_64"
 
-  CHANNEL_PACKAGE_LOOKUP: Dict[str, Tuple[str, BrowserVersionChannel]] = {
+  CHANNEL_PACKAGE_LOOKUP: dict[str, Tuple[str, BrowserVersionChannel]] = {
       "Beta": (
           "com.chrome.beta",
           BrowserVersionChannel.BETA,

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Final, Optional, Tuple
+from typing import Final, Optional, Tuple
 
 from typing_extensions import override
 
@@ -22,7 +22,7 @@ class FirefoxVersion(BrowserVersion):
                            r")"
                            r") ?(?P<channel_long>esr|any)?")
   _SPLIT_RE = re.compile(r"[ab.]")
-  _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
+  _CHANNEL_LOOKUP: dict[str, BrowserVersionChannel] = {
       "esr": BrowserVersionChannel.LTS,
       ".": BrowserVersionChannel.STABLE,
       # IRL Firefox version numbers do not distinct beta from stable, so we
@@ -31,7 +31,7 @@ class FirefoxVersion(BrowserVersion):
       "a": BrowserVersionChannel.ALPHA,
       "any": BrowserVersionChannel.ANY,
   }
-  _CHANNEL_LONG_LOOKUP: Dict[str, BrowserVersionChannel] = {
+  _CHANNEL_LONG_LOOKUP: dict[str, BrowserVersionChannel] = {
       "developer edition": BrowserVersionChannel.BETA,
       "nightly": BrowserVersionChannel.ALPHA,
   }

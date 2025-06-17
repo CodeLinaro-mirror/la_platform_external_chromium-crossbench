@@ -14,7 +14,7 @@ import secrets
 import shlex
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Coroutine, Optional, Tuple
 
 from websockets import server as websockets
 
@@ -147,7 +147,7 @@ class CrossbenchDevToolsRecorderProxy:
       self, message: bytearray | bytes | str) -> Optional[Tuple[Response, Any]]:
     logging.debug("RECEIVE Message: %s", message)
     try:
-      payload: Dict[str, Any] = json.loads(message)
+      payload: dict[str, Any] = json.loads(message)
     except json.JSONDecodeError as e:
       logging.error("Could not parse JSON response: %s", e)
       raise e
@@ -208,7 +208,7 @@ class CrossbenchDevToolsRecorderProxy:
 
   async def _send_output(
       self, stdout_str: Optional[str],
-      stderr_str: Optional[str]) -> Optional[Tuple[Response, Dict[str, str]]]:
+      stderr_str: Optional[str]) -> Optional[Tuple[Response, dict[str, str]]]:
     if self._state != State.RUNNING:
       return None
     if self._print_cmd_output:

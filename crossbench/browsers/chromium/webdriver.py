@@ -9,7 +9,7 @@ import logging
 import re
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, cast
 
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
@@ -145,7 +145,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self._restore_chrome_flags()
 
   @override
-  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self) -> dict[str, ProcessMeminfo]:
     return self.platform.meminfo(self.android_package)
 
   def _restore_chrome_flags(self) -> None:

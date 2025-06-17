@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
@@ -220,7 +220,7 @@ class RunnerEnv(BaseEnv):
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:
       return
-    grouped_browsers: Dict[plt.Platform,
+    grouped_browsers: dict[plt.Platform,
                            List[Browser]] = collection_helper.group_by(
                                self.browsers,
                                key=lambda browser: browser.platform)
@@ -235,7 +235,7 @@ class RunnerEnv(BaseEnv):
     if platform.is_android:
       return
 
-    browser_binaries: Dict[str, List[Browser]] = collection_helper.group_by(
+    browser_binaries: dict[str, List[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):

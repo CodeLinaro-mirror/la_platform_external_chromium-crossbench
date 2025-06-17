@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import unittest
-from typing import Dict
 
 from crossbench.plt.port_manager import PortForwardException
 from tests import test_helper
@@ -16,8 +15,8 @@ class FakePortLinuxMockPlatform(LinuxMockPlatform):
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.forwarded_ports: Dict[int, int] = {}
-    self.reverse_forwarded_ports: Dict[int, int] = {}
+    self.forwarded_ports: dict[int, int] = {}
+    self.reverse_forwarded_ports: dict[int, int] = {}
     self.current_port = 60000
 
   def _next_port(self) -> int:

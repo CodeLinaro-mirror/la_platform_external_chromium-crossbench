@@ -14,7 +14,7 @@ import re
 import socket
 import traceback as tb
 from subprocess import SubprocessError
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Tuple, Type
 
 import psutil
 from typing_extensions import override
@@ -32,7 +32,7 @@ DISPLAY_NDRV_RE = re.compile(
     "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")
 
 
-def parse_display_ndrvs(spdisplays_ndrvs: Dict) -> Iterator[DisplayInfo]:
+def parse_display_ndrvs(spdisplays_ndrvs: dict) -> Iterator[DisplayInfo]:
   """
   Parses `system_profiler SPDisplaysDataType` output.
   "SPDisplaysDataType" : [
@@ -144,7 +144,7 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     details = super().system_details()
     details.update({
         "system_profiler":
@@ -305,7 +305,7 @@ class MacOSPlatform(PosixPlatform):
       end run"""
     return self.sh_stdout("/usr/bin/osascript", "-e", script, *args)
 
-  def foreground_process(self) -> Optional[Dict[str, Any]]:
+  def foreground_process(self) -> Optional[dict[str, Any]]:
     foreground_process_info = self.sh_stdout("lsappinfo", "front").strip()
     if not foreground_process_info:
       return None

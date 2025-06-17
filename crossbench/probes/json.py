@@ -10,7 +10,7 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
+from typing import (TYPE_CHECKING, Any, Callable, Generic, List, Optional,
                     Tuple, Type, TypeVar)
 
 import xlsxwriter
@@ -76,9 +76,9 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return self.write_group_result(group, merger, csv_formatter=CSVFormatter)
 
   def merge_browsers_json_list(self, group: BrowsersRunGroup) -> ProbeResult:
-    merged_json: Dict[str, Dict[str, Any]] = {}
+    merged_json: dict[str, dict[str, Any]] = {}
     for story_group in group.story_groups:
-      browser_result: Dict[str, Any] = {}
+      browser_result: dict[str, Any] = {}
       merged_json[story_group.browser.unique_name] = browser_result
       browser_result["info"] = story_group.info
       browser_json_path = story_group.results[self].json
@@ -116,7 +116,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def write_group_result(
       self,
       group: RunGroup,
-      merged_data: Dict | List | MetricsMerger,
+      merged_data: dict | List | MetricsMerger,
       csv_formatter: Optional[Type[CSVFormatter]] = CSVFormatter,
       value_fn: Callable[[Any], Any] = metric_geomean) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)
@@ -163,8 +163,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   LOG_SUMMARY_KEYS = ("label", "browser", "version", "os", "device", "cpu",
                       "runs", "failed runs")
 
-  def _log_result_metrics(self, data: Dict) -> None:
-    table: Dict[str, List[str]] = defaultdict(list)
+  def _log_result_metrics(self, data: dict) -> None:
+    table: dict[str, List[str]] = defaultdict(list)
     for browser_result in data.values():
       for info_key in self.LOG_SUMMARY_KEYS:
         table[info_key].append(browser_result["info"][info_key])
@@ -174,8 +174,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         [label] + values for label, values in table.items())
     logging.critical(tabulate(flattened, tablefmt="plain"))
 
-  def _extract_result_metrics_table(self, metrics: Dict[str, Any],
-                                    table: Dict[str, List[str]]) -> None:
+  def _extract_result_metrics_table(self, metrics: dict[str, Any],
+                                    table: dict[str, List[str]]) -> None:
     """Add individual metrics to the table in here.
     Typically you only add score and total values for each benchmark or
     benchmark item."""

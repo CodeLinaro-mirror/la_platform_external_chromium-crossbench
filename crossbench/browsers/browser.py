@@ -9,8 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence,
-                    Tuple)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Tuple
 
 from ordered_set import OrderedSet
 
@@ -206,7 +205,7 @@ class Browser(abc.ABC):
     # we don't get the status back.
     return False
 
-  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self) -> dict[str, ProcessMeminfo]:
     return self.platform.meminfo(str(self.path))
 
   @property

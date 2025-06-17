@@ -24,9 +24,8 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
-                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
-                    TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
+                    List, Mapping, Optional, Sequence, Tuple, Type, TypeAlias)
 
 import psutil
 
@@ -108,7 +107,7 @@ class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
-    self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
+    self._binary_lookup_override: dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
     self._default_port_manager: PortManager = PortManager(self)
 
@@ -249,7 +248,7 @@ class Platform(abc.ABC):
     return not status.power_plugged
 
   @functools.lru_cache(maxsize=1)
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     self.assert_is_local()
     details = {
         "physical cores":
@@ -287,7 +286,7 @@ class Platform(abc.ABC):
 
 
   @functools.lru_cache(maxsize=1)
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     return {
         "machine": str(self.machine),
         "os": self.os_details(),
@@ -514,7 +513,7 @@ class Platform(abc.ABC):
       pass
 
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                attrs: Optional[List[str]] = None) -> List[dict[str, Any]]:
     # TODO(cbruni): support remote platforms
     assert self.is_local, "Only local platform supported"
     return self._collect_process_dict(psutil.process_iter(attrs=attrs))
@@ -532,7 +531,7 @@ class Platform(abc.ABC):
 
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> List[Dict[str, Any]]:
+                       recursive: bool = False) -> List[dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -542,8 +541,8 @@ class Platform(abc.ABC):
     return self._collect_process_dict(process.children(recursive=recursive))
 
   def _collect_process_dict(
-      self, process_iterator: Iterable[psutil.Process]) -> List[Dict[str, Any]]:
-    process_info_list: List[Dict[str, Any]] = []
+      self, process_iterator: Iterable[psutil.Process]) -> List[dict[str, Any]]:
+    process_info_list: List[dict[str, Any]] = []
     for process in process_iterator:
       try:
         process_info_list.append(process.as_dict())
@@ -551,7 +550,7 @@ class Platform(abc.ABC):
         pass
     return process_info_list
 
-  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -560,10 +559,10 @@ class Platform(abc.ABC):
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 
-  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
     raise NotImplementedError(f"meminfo not implemented for {self}.")
 
-  def foreground_process(self) -> Optional[Dict[str, Any]]:
+  def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
 
   @property

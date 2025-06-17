@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
-                    cast)
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, cast
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -49,7 +48,7 @@ class ProbeResult(abc.ABC):
     if trace:
       self._trace_list = ObjectParser.unique_sequence(
           tuple(trace), "traces", DuplicateProbeResult)
-    tmp_files: Dict[str, OrderedSet[pth.LocalPath]] = {}
+    tmp_files: dict[str, OrderedSet[pth.LocalPath]] = {}
     if file:
       self._extend(tmp_files, file, suffix=None, allow_duplicates=False)
     for suffix, files in kwargs.items():
@@ -67,7 +66,7 @@ class ProbeResult(abc.ABC):
     self._validate()
 
   def _append(self,
-              tmp_files: Dict[str, OrderedSet[pth.LocalPath]],
+              tmp_files: dict[str, OrderedSet[pth.LocalPath]],
               file: pth.LocalPath,
               suffix: Optional[str] = None,
               allow_duplicates: bool = False) -> None:
@@ -88,7 +87,7 @@ class ProbeResult(abc.ABC):
       tmp_files[suffix] = OrderedSet((file,))
 
   def _extend(self,
-              tmp_files: Dict[str, OrderedSet[pth.LocalPath]],
+              tmp_files: dict[str, OrderedSet[pth.LocalPath]],
               files: Iterable[pth.LocalPath],
               suffix: Optional[str] = None,
               allow_duplicates: bool = False) -> None:
@@ -239,7 +238,7 @@ class BrowserProbeResult(ProbeResult):
                **kwargs: Iterable[pth.AnyPath]) -> None:
     self._browser_file = file
     local_file: Iterable[pth.LocalPath] | None = None
-    local_kwargs: Dict[str, Iterable[pth.LocalPath]] = {}
+    local_kwargs: dict[str, Iterable[pth.LocalPath]] = {}
     self._is_remote = result_origin.is_remote
     if self._is_remote:
       if file:
@@ -249,7 +248,7 @@ class BrowserProbeResult(ProbeResult):
     else:
       # Keep local files as is.
       local_file = cast(Iterable[pth.LocalPath], file)
-      local_kwargs = cast(Dict[str, Iterable[pth.LocalPath]], kwargs)
+      local_kwargs = cast(dict[str, Iterable[pth.LocalPath]], kwargs)
 
     super().__init__(url, local_file, **local_kwargs)
 
@@ -288,7 +287,7 @@ class ProbeResultDict:
 
   def __init__(self, path: pth.AnyPath) -> None:
     self._path = path
-    self._dict: Dict[str, ProbeResult] = {}
+    self._dict: dict[str, ProbeResult] = {}
 
   def __setitem__(self, probe: ProbeResultKey, result: ProbeResult) -> None:
     assert isinstance(result, ProbeResult)

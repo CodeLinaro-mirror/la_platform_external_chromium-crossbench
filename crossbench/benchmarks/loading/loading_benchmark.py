@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
+from typing import (TYPE_CHECKING, Any, List, Mapping, Optional, Sequence,
                     Tuple, Type)
 
 from typing_extensions import override
@@ -164,7 +164,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
     return kwargs
@@ -334,7 +334,7 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["action_runner"] = args.action_runner
     return kwargs
@@ -342,7 +342,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   @classmethod
   @override
   def describe_stories(cls) -> Mapping[str, str]:
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for story in cls.all_stories():
       story_help = story.help()
       if story_help == story.name:

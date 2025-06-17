@@ -8,7 +8,7 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional,
+from typing import (TYPE_CHECKING, Any, Generic, List, Mapping, Optional,
                     Sequence, Tuple, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
@@ -71,7 +71,7 @@ class Benchmark(abc.ABC):
     return parser
 
   @classmethod
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     return {
         "name":
             cls.NAME,
@@ -103,7 +103,7 @@ class Benchmark(abc.ABC):
     return Flags()
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     del args
     return {}
 
@@ -174,7 +174,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         help="Run each story in a fresh browser.")
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     return {"patterns": args.stories.split(","), "args": args}
 
   @classmethod
@@ -193,7 +193,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
     # Using order-preserving dict instead of set
-    self._known_names: Dict[str,
+    self._known_names: dict[str,
                             None] = dict.fromkeys(story_cls.all_story_names())
     self.stories: Sequence[StoryT] = []
     # TODO: only use one method.
@@ -236,7 +236,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["stories"] = cls.stories_from_cli_args(args)
     return kwargs
@@ -248,7 +248,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     data = super().describe()
     data["stories"] = cls.describe_stories()
     return data
@@ -293,7 +293,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
     kwargs["url"] = args.custom_benchmark_url
@@ -524,14 +524,14 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["custom_url"] = args.custom_benchmark_url
     return kwargs
 
   @classmethod
   @override
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     data = super().describe()
     assert issubclass(cls.DEFAULT_STORY_CLS, PressBenchmarkStory)
     data["url"] = cls.DEFAULT_STORY_CLS.URL

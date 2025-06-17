@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Dict, Iterable, Iterator, Optional, Tuple
+from typing import Iterable, Iterator, Optional, Tuple
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -19,7 +19,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
 
   def __init__(self) -> None:
     super().__init__()
-    self._enabled: Dict[str, str | None] = {}
+    self._enabled: dict[str, str | None] = {}
     self._disabled: OrderedSet[str] = OrderedSet()
 
   @property
@@ -27,7 +27,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     return len(self._enabled) == 0 and len(self._disabled) == 0
 
   @property
-  def enabled(self) -> Dict[str, Optional[str]]:
+  def enabled(self) -> dict[str, Optional[str]]:
     return dict(self._enabled)
 
   @property

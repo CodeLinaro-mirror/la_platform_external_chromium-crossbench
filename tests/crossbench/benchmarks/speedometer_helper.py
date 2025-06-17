@@ -8,7 +8,7 @@ import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Type
+from typing import List, Optional, Sequence, Type
 from unittest import mock
 
 from typing_extensions import override
@@ -204,7 +204,7 @@ class SpeedometerBaseTestCase(
   def _verify_results(
       self,
       runner: Runner,
-      expected_num_urls: Optional[int] = None) -> List[Dict[str, str]]:
+      expected_num_urls: Optional[int] = None) -> List[dict[str, str]]:
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
@@ -230,7 +230,7 @@ class SpeedometerBaseTestCase(
     csv_files = list(runner.out_dir.glob("speedometer*.csv"))
     self.assertEqual(len(csv_files), 1)
     csv_file = self.out_dir / f"{self.probe_cls.NAME}.csv"
-    rows: List[Dict[str, str]] = [{}]
+    rows: List[dict[str, str]] = [{}]
     with csv_file.open(encoding="utf-8") as f:
       reader = csv.DictReader(f, delimiter="\t")
       rows = list(reader)

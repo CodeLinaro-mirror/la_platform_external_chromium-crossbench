@@ -9,7 +9,7 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -164,7 +164,7 @@ class FirefoxDriverFinder:
       return (0, 31, 0)
     return (9999, 9999, 9999)
 
-  def _load_releases(self) -> Dict[Tuple[int, ...], Dict]:
+  def _load_releases(self) -> dict[Tuple[int, ...], dict]:
     response = url_helper.get(self.RELEASES_URL)
     releases = response.json()
     assert isinstance(releases, list)

@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
 
 import psutil
 from typing_extensions import override
@@ -73,7 +73,7 @@ class AppleScript:
 def try_get_parent_app_name(platform: plt.Platform) -> str:
   if platform.is_remote:
     return ""
-  launched_apps: Dict[str, str] = {}
+  launched_apps: dict[str, str] = {}
   try:
     for line in platform.sh_stdout("launchctl", "list").splitlines():
       parts = line.split()

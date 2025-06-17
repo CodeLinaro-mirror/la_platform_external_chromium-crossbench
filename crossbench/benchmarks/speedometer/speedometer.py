@@ -8,8 +8,8 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Final, List, Mapping,
-                    MutableMapping, Optional, Sequence, Tuple, Type)
+from typing import (TYPE_CHECKING, Any, Final, List, Mapping, MutableMapping,
+                    Optional, Sequence, Tuple, Type)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -116,8 +116,8 @@ class SpeedometerProbe(
         self._log_result_metrics(data)
 
   @override
-  def _extract_result_metrics_table(self, metrics: Dict[str, Any],
-                                    table: Dict[str, List[str]]) -> None:
+  def _extract_result_metrics_table(self, metrics: dict[str, Any],
+                                    table: dict[str, List[str]]) -> None:
     for metric_key, metric in metrics.items():
       if not self._is_valid_metric_key(metric_key):
         continue
@@ -286,7 +286,7 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["iterations"] = args.iterations
     kwargs["url_params"] = cls.url_params_from_cli(args)

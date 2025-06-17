@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, List,
-                    Optional, Self, TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, List, Optional,
+                    Self, TypeAlias)
 
 from typing_extensions import override
 
@@ -80,7 +80,7 @@ def merge_duration_max(name: str, left: Optional[dt.timedelta],
   return max(left, right)
 
 
-ENV_CONFIG_PRESETS: Dict[str, "EnvConfig"] = {}
+ENV_CONFIG_PRESETS: dict[str, "EnvConfig"] = {}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -120,7 +120,7 @@ class EnvConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     if "env" in config:
       config = config["env"]
     return super().parse_dict(config, **kwargs)
@@ -166,7 +166,7 @@ class EnvConfig(ConfigObject):
     return parser
 
   def merge(self, other: EnvConfig) -> EnvConfig:
-    mergers: Dict[str, Callable[[str, Any, Any], Any]] = {
+    mergers: dict[str, Callable[[str, Any, Any], Any]] = {
         "browser_allow_background": merge_bool,
         "browser_allow_existing_process": merge_bool,
         "browser_is_headless": merge_bool,

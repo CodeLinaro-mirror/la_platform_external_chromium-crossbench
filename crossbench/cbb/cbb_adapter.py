@@ -13,7 +13,7 @@ with corresponding changes in CBB in google3
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, List, Optional, Type
 
 from selenium import webdriver
 from typing_extensions import override
@@ -52,7 +52,7 @@ press_benchmarks: List[Type[PressBenchmark]] = [
     benchmarks.JetStreamMainBenchmark,
 ]
 
-press_benchmarks_dict: Dict[str, Type[PressBenchmark]] = {
+press_benchmarks_dict: dict[str, Type[PressBenchmark]] = {
     cls.NAME: cls for cls in press_benchmarks
 }
 

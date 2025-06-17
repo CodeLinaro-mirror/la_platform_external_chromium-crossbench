@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, Any, Dict, Self, Type
+from typing import TYPE_CHECKING, Any, Self, Type
 
 from typing_extensions import override
 
@@ -138,7 +138,7 @@ class PositionConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict, **kwargs) -> Self:
+  def parse_dict(cls, config: dict, **kwargs) -> Self:
     selector_parser = SelectorConfig.config_parser()
     if selector_parser.has_all_required_args(config):
       return cls(selector=selector_parser.parse(config))

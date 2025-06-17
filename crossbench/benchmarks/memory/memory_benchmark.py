@@ -7,8 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, MutableMapping, Optional,
-                    Sequence, Tuple, Type)
+from typing import (TYPE_CHECKING, Any, MutableMapping, Optional, Sequence,
+                    Tuple, Type)
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -111,7 +111,7 @@ class MemoryProbeContext(ActionRunnerListener,
     self._intensive_tab_switch_count = \
       cur_benchmark.get_intensive_tab_switch_count()
     # Records the navigation_start_time time for each window handle.
-    self._navigation_time_ms: Dict[str, float] = {}
+    self._navigation_time_ms: dict[str, float] = {}
     self._tab_count: int = 1
 
   def start(self) -> None:
@@ -348,7 +348,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["skippable_tab_count"] = args.skippable_tab_count
     kwargs["target_tab_count"] = args.tabs.count
@@ -389,7 +389,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     data = super().describe()
     data["url"] = cls.STORY_FILTER_CLS.URL
     return data

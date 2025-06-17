@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Final, Optional, Tuple
+from typing import Final, Optional, Tuple
 
 from typing_extensions import override
 
@@ -20,7 +20,7 @@ class ChromiumVersion(BrowserVersion):
       r"(?P<version>(?:\d{2,3}(?:\.(?:\d{1,4}|X)){0,3})|latest)? ?"
       r"(?P<suffix>.*)", re.I)
   _VALID_SUFFIX_MATCH = re.compile(r"[^.\d]+", re.I)
-  _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
+  _CHANNEL_LOOKUP: dict[str, BrowserVersionChannel] = {
       "any": BrowserVersionChannel.ANY,
       "extended": BrowserVersionChannel.LTS,
       "stable": BrowserVersionChannel.STABLE,
@@ -28,7 +28,7 @@ class ChromiumVersion(BrowserVersion):
       "dev": BrowserVersionChannel.ALPHA,
       "canary": BrowserVersionChannel.PRE_ALPHA,
   }
-  _CHANNEL_NAME_LOOKUP: Dict[BrowserVersionChannel, str] = {
+  _CHANNEL_NAME_LOOKUP: dict[BrowserVersionChannel, str] = {
       channel: name for name, channel in _CHANNEL_LOOKUP.items()
   }
   _CHANNEL_RE = re.compile("|".join(_CHANNEL_LOOKUP.keys()), re.I)

@@ -11,7 +11,7 @@ import sys
 import traceback as tb
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from crossbench.helper import collection_helper, txt_helper
 from crossbench.types import JsonList
@@ -133,7 +133,7 @@ class ExceptionAnnotator:
     # Associates raised exception with the info_stack at that time for later
     # use in the `handle` method.
     # This is cleared whenever we enter a  new ExceptionAnnotationScope.
-    self._pending_exceptions: Dict[BaseException, TInfoStack] = {}
+    self._pending_exceptions: dict[BaseException, TInfoStack] = {}
     self._depth = 0
 
   @property
@@ -271,7 +271,7 @@ class ExceptionAnnotator:
       logging.debug("\n".join(entry.traceback))
       logging.debug("-" * 80)
     is_first_entry = True
-    grouped_entries: Dict[TInfoStack, List[Entry]] = collection_helper.group_by(
+    grouped_entries: dict[TInfoStack, List[Entry]] = collection_helper.group_by(
         self._exceptions, key=lambda entry: entry.info_stack, sort_key=None)
     for info_stack, entries in grouped_entries.items():
       logging_level = logging.ERROR if is_first_entry else logging.DEBUG

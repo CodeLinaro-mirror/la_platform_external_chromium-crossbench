@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Self, Type, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Self, Type, cast
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -266,7 +266,7 @@ class DriverConfig(ConfigObject):
                        "go/arc-setup-dev-mode-dut#usb-cros-test-image")
 
   def validate_ios(self) -> None:
-    devices: Dict[str, Any] = ios_devices(plt.PLATFORM)
+    devices: dict[str, Any] = ios_devices(plt.PLATFORM)
     if not devices:
       raise argparse.ArgumentTypeError("No iOS devices attached.")
     names = list(map(str, devices))

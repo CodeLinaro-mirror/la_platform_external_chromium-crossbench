@@ -3,15 +3,16 @@
 # found in the LICENSE file.
 
 import pathlib
-from typing import Dict, List, Type
+from typing import List, Type
 
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench.path
 from crossbench import plt
-from crossbench.benchmarks.loadline import (
-    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
-    LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark)
+from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
+                                            LoadLine1TabletDebugBenchmark,
+                                            LoadLine2TabletBenchmark,
+                                            LoadLine2TabletDebugBenchmark)
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
@@ -19,7 +20,7 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.probe import Probe
 from tests import test_helper
 
-PROBE_LOOKUP: Dict[str, Type[Probe]] = {
+PROBE_LOOKUP: dict[str, Type[Probe]] = {
     probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
 }
 

@@ -10,10 +10,10 @@ import enum
 import json
 import logging
 import math
+import os
 import re
 import shlex
-import os
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable, List,
+from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, List,
                     Optional, Sequence, Tuple, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
@@ -24,6 +24,9 @@ from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench import plt
+
+  # mypy has issues if there is a dict instance-method.
+  PyDict = dict
 
 def type_str(value: Any) -> str:
   return type(value).__name__
@@ -275,14 +278,14 @@ class ObjectParser:
     return data
 
   @classmethod
-  def dict(cls, value: Any, name: str = "value") -> Dict:
+  def dict(cls, value: Any, name: str = "value") -> PyDict:
     if isinstance(value, dict):
       return value
     raise argparse.ArgumentTypeError(
         f"Expected dict, but {name} is {type_str(value)}: {repr(value)}")
 
   @classmethod
-  def non_empty_dict(cls, value: Any, name: str = "value") -> Dict:
+  def non_empty_dict(cls, value: Any, name: str = "value") -> PyDict:
     dict_value = cls.dict(value)
     if not dict_value:
       raise argparse.ArgumentTypeError(

@@ -7,8 +7,8 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, Dict, MutableMapping, Optional,
-                    Sequence, Tuple, cast)
+from typing import (TYPE_CHECKING, Any, MutableMapping, Optional, Sequence,
+                    Tuple, cast)
 
 from typing_extensions import override
 
@@ -65,7 +65,7 @@ class Speedometer3ProbeContext(SpeedometerProbeContext, metaclass=abc.ABCMeta):
 
   @override
   def flatten_json_data(self, json_data: Any) -> Json:
-    result: Dict[str, float] = {}
+    result: dict[str, float] = {}
     assert isinstance(json_data, dict), f"Expected dict, got {type(json_data)}"
     for name, metric in json_data.items():
       result[name] = metric["mean"]
@@ -357,7 +357,7 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["detailed_metrics"] = args.detailed_metrics
     return kwargs

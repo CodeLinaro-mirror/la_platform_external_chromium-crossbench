@@ -9,8 +9,8 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
-from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
-                    Type, cast)
+from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
+                    cast)
 
 from typing_extensions import override
 
@@ -264,7 +264,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return self._current_url
 
   @override
-  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self) -> dict[str, ProcessMeminfo]:
     return {
         "process_1": ProcessMeminfo(1, 2, 3, 4),
         "process_2": ProcessMeminfo(2, 3, 4, 5)

@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
 
 import pandas as pd
 from tabulate import tabulate
@@ -126,7 +126,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   @override
   def describe_stories(cls) -> Mapping[str, str]:
     # TODO: Use full story objects
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for page_config in cls.get_pages_config().pages:
       result[page_config.any_label] = page_config.first_url
     return result

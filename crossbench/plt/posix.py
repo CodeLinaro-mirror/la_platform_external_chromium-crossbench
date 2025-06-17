@@ -12,8 +12,8 @@ import pathlib
 import re
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, List,
-                    Mapping, Optional, Set, Type)
+from typing import (TYPE_CHECKING, Any, Generator, Iterator, List, Mapping,
+                    Optional, Set, Type)
 
 from typing_extensions import override
 
@@ -116,7 +116,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     if self.is_local:
       return super().cpu_details()
     return {
@@ -456,7 +456,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         pass
 
   @override
-  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
     if self.is_local:
       return super().process_info(process)
     try:

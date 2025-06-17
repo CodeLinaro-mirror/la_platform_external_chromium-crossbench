@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Self, TextIO, Tuple, Type
+from typing import TYPE_CHECKING, List, Self, TextIO, Tuple, Type
 
 from typing_extensions import Final, override
 
@@ -35,7 +35,7 @@ class Orientation(ConfigEnum):
   VERTICAL = ("vertical", "Align vertically.")
 
 
-FFMPEG_STACK_DIRECTION: Final[Dict[Orientation, str]] = {
+FFMPEG_STACK_DIRECTION: Final[dict[Orientation, str]] = {
     Orientation.HORIZONTAL: "hstack",
     Orientation.VERTICAL: "vstack",
 }
@@ -209,7 +209,7 @@ class VideoProbe(Probe):
     groups = list(group.repetitions_groups)
     if not self.merge_runs or len(groups) <= 1:
       return super().merge_browsers(group)
-    grouped: Dict[Story,
+    grouped: dict[Story,
                   List[RepetitionsRunGroup]] = collection_helper.group_by(
                       groups,
                       key=lambda repetitions_group: repetitions_group.story)

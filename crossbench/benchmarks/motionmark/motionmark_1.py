@@ -9,8 +9,8 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, MutableMapping, Optional,
-                    Tuple, Type)
+from typing import (TYPE_CHECKING, Any, List, MutableMapping, Optional, Tuple,
+                    Type)
 
 from typing_extensions import override
 
@@ -93,8 +93,8 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
         self._log_result_metrics(data)
 
   @override
-  def _extract_result_metrics_table(self, metrics: Dict[str, Any],
-                                    table: Dict[str, List[str]]) -> None:
+  def _extract_result_metrics_table(self, metrics: dict[str, Any],
+                                    table: dict[str, List[str]]) -> None:
     for metric_key, metric in metrics.items():
       if not self._valid_metric_key(metric_key):
         continue

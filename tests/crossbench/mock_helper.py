@@ -11,8 +11,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional,
-                    Sequence)
+from typing import (TYPE_CHECKING, Any, Iterable, List, Mapping, MutableMapping,
+                    Optional, Sequence)
 
 import psutil
 from typing_extensions import override
@@ -79,7 +79,7 @@ class MockPlatformMixin:
     self._expected_sh_cmds: List[TupleCmdArgs] | None = None
     self._sh_results: List[ShResult] = []
     self._download_results: List[DownloadMockData] = []
-    self.file_contents: Dict[pth.AnyPath, List[str]] = (
+    self.file_contents: MutableMapping[pth.AnyPath, List[str]] = (
         collections.defaultdict(list))
     self.sleeps: List[dt.timedelta] = []
     self.use_mock_machine = True
@@ -210,7 +210,7 @@ class MockPlatformMixin:
     return 0.1
 
   @functools.lru_cache(maxsize=1)
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
   def set_file_contents(self,
