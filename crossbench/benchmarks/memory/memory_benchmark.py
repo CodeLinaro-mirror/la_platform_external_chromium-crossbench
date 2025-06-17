@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, MutableMapping, Optional,
+                    Sequence, Tuple, Type)
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -298,7 +299,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
-    url_params = {
+    url_params: MutableMapping[str, str] = {
         "alloc": str(args.alloc_count),
         "blocksize": str(args.block_size),
         "compress": str(args.compressibility),

@@ -8,8 +8,8 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+from typing import (TYPE_CHECKING, Any, Dict, List, MutableMapping, Optional,
+                    Sequence, Tuple, Type)
 
 from typing_extensions import override
 
@@ -120,10 +120,10 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
     return self._iterations
 
   @property
-  def url_params(self) -> Dict[str, str]:
-    params: Dict[str, str] = {}
-    if self.iterations:
-      params["iterationCount"] = str(self.iterations)
+  def url_params(self) -> MutableMapping[str, str]:
+    params: MutableMapping[str, str] = {}
+    if iterations := self.iterations:
+      params["iterationCount"] = str(iterations)
     return params
 
   @override

@@ -9,7 +9,8 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import (TYPE_CHECKING, Any, Dict, List, MutableMapping, Optional,
+                    Tuple, Type)
 
 from typing_extensions import override
 
@@ -238,7 +239,7 @@ class MotionMark1Story(PressBenchmarkStory):
     return dt.timedelta(seconds=35)
 
   @property
-  def url_params(self) -> Dict[str, str]:
+  def url_params(self) -> MutableMapping[str, str]:
     return {}
 
   @override

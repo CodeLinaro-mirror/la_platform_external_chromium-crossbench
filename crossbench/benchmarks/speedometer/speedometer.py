@@ -8,9 +8,10 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Tuple, Type)
+from typing import (TYPE_CHECKING, Any, Dict, Final, List, Mapping,
+                    MutableMapping, Optional, Sequence, Tuple, Type)
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.benchmarks.base import (PressBenchmark,
@@ -151,12 +152,14 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
   def __init__(self,
                substories: Sequence[str] = (),
                iterations: Optional[int] = None,
+               url_params: Optional[Mapping[str, str]] = None,
                url: Optional[str] = None) -> None:
     self._iterations: int = NumberParser.positive_int(
         iterations or self.DEFAULT_ITERATIONS,
         "iteration count",
         parse_str=False)
-    super().__init__(url=url, substories=substories)
+    self._url_params: Mapping[str, str] = immutabledict(url_params or {})
+    super().__init__(substories=substories, url=url)
 
   @property
   def iterations(self) -> int:
@@ -182,8 +185,8 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
     return dt.timedelta(seconds=60 * 20) + self.duration * 10
 
   @property
-  def url_params(self) -> Dict[str, str]:
-    params: Dict[str, str] = {}
+  def url_params(self) -> MutableMapping[str, str]:
+    params: MutableMapping[str, str] = dict(self._url_params)
     if self.iterations != self.DEFAULT_ITERATIONS:
       params["iterationCount"] = str(self.iterations)
     return params
@@ -286,7 +289,14 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["iterations"] = args.iterations
+    kwargs["url_params"] = cls.url_params_from_cli(args)
     return kwargs
+
+  @classmethod
+  def url_params_from_cli(cls,
+                          args: argparse.Namespace) -> MutableMapping[str, str]:
+    del args
+    return {}
 
   def __init__(self,
                story_cls: Type[SpeedometerStory],
@@ -294,8 +304,10 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
                args: Optional[argparse.Namespace] = None,
                separate: bool = False,
                url: Optional[str] = None,
-               iterations: Optional[int] = None) -> None:
-    self.iterations = iterations
+               iterations: Optional[int] = None,
+               url_params: Optional[Mapping[str, str]] = None) -> None:
+    self._iterations = iterations
+    self._url_params = url_params
     assert issubclass(story_cls, SpeedometerStory)
     super().__init__(story_cls, patterns, args, separate, url)
 
@@ -303,7 +315,11 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
   def create_stories_from_names(self, names: List[str],
                                 separate: bool) -> Sequence[SpeedometerStory]:
     return self.story_cls.from_names(
-        names, separate=separate, url=self.url, iterations=self.iterations)
+        names,
+        separate=separate,
+        url=self.url,
+        iterations=self._iterations,
+        url_params=self._url_params)
 
 
 class SpeedometerBenchmark(PressBenchmark, metaclass=abc.ABCMeta):

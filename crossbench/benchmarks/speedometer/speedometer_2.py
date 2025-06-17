@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any, MutableMapping, Tuple
 
 from typing_extensions import override
 
@@ -58,7 +58,7 @@ class Speedometer2Story(SpeedometerStory):
   @property
   def test_url(self) -> str:
     test_url = f"{self.URL}/InteractiveRunner.html"
-    params: Dict[str, str] = self.url_params
+    params: MutableMapping[str, str] = self.url_params
     if len(self.substories) == 1:
       params["suite"] = self.substories[0]
     params["startAutomatically"] = "true"
