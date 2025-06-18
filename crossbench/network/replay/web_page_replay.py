@@ -170,7 +170,7 @@ class WprBase(abc.ABC):
 
   def start(self) -> None:
     try:
-      atexit.register(self.stop)
+      atexit.register(self.stop, force_shutdown=True)
       self._start_wpr()
       logging.info("WPR: waiting for startup...")
       self._wait_for_startup()
