@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from typing_extensions import override
 
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.motionmark.base import MotionMarkBenchmark
 from crossbench.helper import url_helper
@@ -240,20 +241,25 @@ class MotionMark1Story(PressBenchmarkStory):
   def url_params(self) -> Dict[str, str]:
     return {}
 
-  def prepare_test_url(self) -> str:
+  @override
+  def get_run_url(self, run: Run) -> str:
+    url = super().get_run_url(run)
     if (url_params := self.url_params) or not self.has_default_substories:
-      updated_url = url_helper.update_url_query(f"{self.url}/developer.html",
-                                                url_params)
-      logging.info("CUSTOM URL: %s", updated_url)
-      return updated_url
-    return self.url
+      dev_url: str = f"{url}/developer.html"
+      url = url_helper.update_url_query(dev_url, url_params)
+    if url != self.url:
+      logging.info("CUSTOM URL: %s", url)
+    return url
 
   @override
   def setup(self, run: Run) -> None:
-    test_url = self.prepare_test_url()
-    use_developer_url = test_url != self.url
+    test_url = self.get_run_url(run)
+    use_developer_url = "/developer.html" in test_url
     with run.actions("Setup") as actions:
-      actions.show_url(test_url)
+      actions.show_url(
+          url=test_url,
+          ready_state=ReadyState.COMPLETE,
+          timeout=dt.timedelta(seconds=10))
       self._setup_wait_until_ready(actions, use_developer_url)
       if use_developer_url:
         self._setup_filter_stories(actions)

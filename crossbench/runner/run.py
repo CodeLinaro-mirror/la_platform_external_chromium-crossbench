@@ -13,12 +13,12 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
+from crossbench.cli import ui
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
-from crossbench.helper.spinner import Spinner
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import ProbeResultDict
@@ -369,12 +369,13 @@ class Run(ResultOrigin):
 
   def _run(self, is_dry_run: bool) -> None:
     self._state.transition(State.READY, to=State.RUN)
-    self._run_splashscreen()
+    if not is_dry_run:
+      self._run_splashscreen()
     with self._probe_context_manager.open(is_dry_run):
       logging.info("RUNNING STORY")
       self._state.expect(State.RUN)
       try:
-        with self.measure("run"), Spinner(), self.exceptions.capture():
+        with self.measure("run"), ui.spinner(), self.exceptions.capture():
           if not is_dry_run:
             self._run_story()
       except TimeoutError as e:
@@ -425,10 +426,16 @@ class Run(ResultOrigin):
 
   def teardown(self, is_dry_run: bool) -> None:
     self._state.transition(State.RUN, to=State.DONE)
-    self._teardown_browser(is_dry_run)
-    self._probe_context_manager.teardown(is_dry_run)
-    if not is_dry_run:
-      self._rm_browser_tmp_dir()
+    try:
+      self._teardown_browser(is_dry_run)
+      self._probe_context_manager.teardown(is_dry_run)
+      if not is_dry_run:
+        self._rm_browser_tmp_dir()
+    finally:
+      self.teardown_write_results_db()
+
+  def teardown_write_results_db(self) -> None:
+    self.results_db.teardown_run(self)
 
   def _teardown_browser(self, is_dry_run: bool) -> None:
     if is_dry_run:

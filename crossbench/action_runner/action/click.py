@@ -15,7 +15,7 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.benchmarks.loading.input_source import InputSource
-from crossbench.parse import DurationParser, ObjectParser
+from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
@@ -41,23 +41,31 @@ class ClickAction(InputSourceAction):
         "duration",
         type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta())
+    parser.add_argument("attempts", type=NumberParser.positive_int, default=1)
     parser.add_argument("verify", type=ObjectParser.non_empty_str)
+
     return parser
 
   def __init__(self,
                source: InputSource,
                position: PositionConfig,
+               attempts: int = 1,
                duration: dt.timedelta = dt.timedelta(),
                verify: Optional[str] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._position = position
+    self._attempts = attempts
     self._verify = verify
     super().__init__(source, duration, timeout, index)
 
   @property
   def position(self) -> PositionConfig:
     return self._position
+
+  @property
+  def attempts(self) -> int:
+    return self._attempts
 
   @property
   def verify(self) -> Optional[str]:
@@ -74,6 +82,13 @@ class ClickAction(InputSourceAction):
     if self._input_source is InputSource.JS and self.position.coordinates:
       raise ValueError("X,Y Coordinates cannot be used with JS click source.")
 
+    if self._attempts != 1:
+      if not self.position.selector:
+        raise ValueError(
+            "multiple attempts can only be used with a selector position.")
+      if not self.position.selector.required:
+        raise ValueError("non-required clicks can not have multiple attempts.")
+
   @override
   def validate_duration(self) -> None:
     # A click action is allowed to have a zero duration.
@@ -89,4 +104,5 @@ class ClickAction(InputSourceAction):
     details["position"] = self._position.to_json()
     if self._verify:
       details["verify"] = self._verify
+    details["attempts"] = self._attempts
     return details

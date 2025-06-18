@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import os
 from typing import TYPE_CHECKING, List, Optional, Self, Type
 
 from typing_extensions import override
@@ -51,7 +50,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
   @override
   def get_default_result_path(self) -> AnyPath:
     dump_dir = super().get_default_result_path()
-    os.mkdir(dump_dir)
+    self.host_platform.mkdir(dump_dir)
     return dump_dir
 
   def start(self) -> None:

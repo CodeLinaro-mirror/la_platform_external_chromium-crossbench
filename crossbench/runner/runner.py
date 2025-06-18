@@ -18,9 +18,9 @@ from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.env import EnvironmentConfig, HostEnvironment, ValidationMode
 from crossbench.helper import collection_helper
-from crossbench.helper.sleep_preventer import SystemSleepPreventer
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.helper.wait import WaitRange
+from crossbench.helper.wake_lock import WakeLock
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
@@ -35,7 +35,7 @@ from crossbench.runner.groups.cache_temperatures import \
 from crossbench.runner.groups.repetitions import RepetitionsRunGroup
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.stories import StoriesRunGroup
-from crossbench.runner.groups.thread import RunThreadGroup
+from crossbench.runner.groups.thread import RunMainGroup, RunThreadGroup
 from crossbench.runner.run import Run
 from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -71,7 +71,7 @@ class ThreadMode(StrEnumWithHelp):
 
   def group(self, runs: List[Run]) -> List[RunThreadGroup]:
     if self == ThreadMode.NONE:
-      return [RunThreadGroup(runs)]
+      return [RunMainGroup(runs)]
     groups: Dict[Any, List[Run]] = {}
     if self == ThreadMode.SESSION:
       groups = collection_helper.group_by(
@@ -441,7 +441,7 @@ class Runner:
 
   def run(self, is_dry_run: bool = False) -> None:
     self._state.expect(RunnerState.INITIAL)
-    with SystemSleepPreventer(self._platform):
+    with WakeLock(self._platform):
       with self._exceptions.annotate("Preparing"):
         self._setup()
       with self._exceptions.capture("Running"):
@@ -467,6 +467,8 @@ class Runner:
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
     self._setup_validate_browsers()
+    with self._exceptions.annotate("Preparing Probes"):
+      self._setup_probes()
     with self._exceptions.annotate("Preparing Runs"):
       self._all_runs = list(self.get_runs())
       assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
@@ -494,6 +496,11 @@ class Runner:
       assert probe in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
+
+  def _setup_probes(self) -> None:
+    for probe in self.probes:
+      with self._exceptions.annotate(f"Preparing Probe: {probe.name}"):
+        probe.setup(self)
 
   def has_any_live_network(self) -> bool:
     return any(browser.network.is_live for browser in self.browsers)
@@ -576,6 +583,8 @@ class Runner:
     thread_groups: List[RunThreadGroup] = []
     with self._exceptions.info("Creating thread groups for all Runs"):
       thread_groups = self._get_thread_groups()
+      for thread_group in thread_groups:
+        thread_group.is_dry_run = is_dry_run
 
     group_count = len(thread_groups)
     if group_count == 1:
@@ -584,7 +593,6 @@ class Runner:
 
     with self._exceptions.annotate(f"Starting {group_count} thread groups."):
       for thread_group in thread_groups:
-        thread_group.is_dry_run = is_dry_run
         thread_group.start()
     with self._exceptions.annotate(
         "Waiting for all thread groups to complete."):
@@ -634,10 +642,62 @@ class Runner:
         group_exceptions.extend(group.exceptions, is_nested=True)
     finally:
       self._exceptions.extend(group_exceptions)
-      if not group_exceptions.is_success:
+      # Don't clutter the output if we have global failures.
+      any_successful_group = any(group.is_success for group in groups)
+      if any_successful_group and not group_exceptions.is_success:
         group_exceptions.log(
             f"❗ MERGED {group_name.upper()} PROBE DATA WITH ERRORS",
             separator="-")
+
+  def update_symlinks(self) -> None:
+    if not self.create_symlinks:
+      logging.debug("Symlink disabled by command line option")
+      return
+    if self.out_dir.exists():
+      self._create_runs_results_symlinks()
+
+  def _create_runs_results_symlinks(self) -> None:
+    assert self.create_symlinks
+    results_root = self.out_dir.parent
+    runs: Tuple[Run, ...] = self.all_runs
+    if not runs:
+      logging.debug("Skip creating result symlinks in '%s': no runs produced.",
+                    results_root)
+      return
+    self._create_first_last_run_symlinks(runs)
+    self._create_runs_symlinks(runs)
+    self._create_sessions_symlinks(runs)
+
+  def _create_first_last_run_symlinks(self, runs: Tuple[Run, ...]) -> None:
+    out_dir = self.out_dir
+    first_run_dir = out_dir / "first_run"
+    if first_run_dir.exists():
+      logging.error("Cannot create first_run symlink: %s", first_run_dir)
+    else:
+      first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
+    last_run_dir = out_dir / "last_run"
+    if last_run_dir.exists():
+      logging.error("Cannot create last_run symlink: %s", last_run_dir)
+    else:
+      last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
+
+  def _create_runs_symlinks(self, runs: Tuple[Run, ...]) -> None:
+    out_dir = self.out_dir
+    runs_dir = out_dir / "runs"
+    runs_dir.mkdir()
+    for run in runs:
+      if not run.out_dir.exists():
+        continue
+      relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
+      (runs_dir / str(run.index)).symlink_to(relative)
+
+  def _create_sessions_symlinks(self, runs: Tuple[Run, ...]) -> None:
+    out_dir = self.out_dir
+    sessions_dir = out_dir / "sessions"
+    sessions_dir.mkdir()
+    for session in set(run.browser_session for run in runs):
+      relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
+      (sessions_dir / str(session.index)).symlink_to(relative)
 
 
 TEMPERATURE_ICONS = {

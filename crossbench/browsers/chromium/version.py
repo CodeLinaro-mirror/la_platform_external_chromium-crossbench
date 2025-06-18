@@ -17,7 +17,7 @@ class ChromiumVersion(BrowserVersion):
   _PARTS_LEN: Final[int] = 4
   _VERSION_RE = re.compile(
       r"(?P<prefix>[^\d]*)"
-      r"(?P<version>\d{2,3}(\.(\d{1,4}|X)){0,3})? ?"
+      r"(?P<version>(?:\d{2,3}(?:\.(?:\d{1,4}|X)){0,3})|latest)? ?"
       r"(?P<suffix>.*)", re.I)
   _VALID_SUFFIX_MATCH = re.compile(r"[^.\d]+", re.I)
   _CHANNEL_LOOKUP: Dict[str, BrowserVersionChannel] = {
@@ -145,13 +145,13 @@ class ChromiumVersion(BrowserVersion):
   @property
   def build(self) -> int:
     if len(self._parts) <= 2:
-      raise PartialBrowserVersionError()
+      raise PartialBrowserVersionError(self)
     return self._parts[2]
 
   @property
   def patch(self) -> int:
     if len(self._parts) <= 3:
-      raise PartialBrowserVersionError()
+      raise PartialBrowserVersionError(self)
     return self._parts[3]
 
   @property

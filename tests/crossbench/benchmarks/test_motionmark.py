@@ -140,6 +140,8 @@ class MotionMark1BaseTestCase(
     for _ in range(repetitions):
       for _ in stories:
         for browser in self.browsers:
+          # Ready state complete
+          browser.expect_js(result=True)
           # Page is ready
           browser.expect_js(result=True)
           # NOF enabled benchmarks

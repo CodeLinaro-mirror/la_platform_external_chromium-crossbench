@@ -18,6 +18,8 @@ from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.wait_for_ready_state import \
+    WaitForReadyStateAction
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
 
@@ -89,6 +91,13 @@ class ActionBlock(ConfigObject):
       raise ConfigError(
           f"Block label {repr(label)} is reserved for login blocks")
     return value
+
+  @classmethod
+  def from_url(cls, url: str, duration: dt.timedelta) -> ActionBlock:
+    actions: Tuple[Action, ...] = (GetAction(url, duration),)
+    if not duration:
+      actions += (WaitForReadyStateAction(),)
+    return ActionBlock(actions=actions)
 
   @override
   def validate(self) -> None:

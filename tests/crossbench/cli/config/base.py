@@ -16,7 +16,7 @@ XCTRACE_DEVICES_OUTPUT = ShResult("""
 == Devices ==
 a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
 An iPhone (17.1.2) (00001111-11AA22BB33DD)
-An iPhone Pro (17.1.1) (00002222-11AA22BB33DD)
+An iPhone Pro (17.1.1) - Connecting (00002222-11AA22BB33DD)
 
 == Devices Offline ==
 An iPhone Pro Max (17.1.0) (00003333-11AA22BB33DD)

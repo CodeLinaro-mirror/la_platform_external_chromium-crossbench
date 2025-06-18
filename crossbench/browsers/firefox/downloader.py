@@ -86,14 +86,14 @@ class FirefoxDownloader(Downloader):
   @override
   def _find_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
     # Quick probe for complete versions
-    if self._requested_version.is_complete:
+    if self.requested_version.is_complete:
       return self._find_exact_archive_url()
     raise NotImplementedError("Only full-release versions supported.")
 
   def _find_exact_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
     folder_url = (
-        f"{self.STORAGE_URL}{self._requested_version.parts_str}/mac/en-GB")
-    return tuple(self._archive_urls(folder_url, self._requested_version))[0]
+        f"{self.STORAGE_URL}{self.requested_version.parts_str}/mac/en-GB")
+    return tuple(self._archive_urls(folder_url, self.requested_version))[0]
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
@@ -151,7 +151,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 
   @override
   def _requested_version_validation(self) -> None:
-    major_version: int = self._requested_version.major
+    major_version: int = self.requested_version.major
     if (self._browser_platform.is_macos and self._browser_platform.is_arm64 and
         major_version < self.MIN_MAC_ARM64_MILESTONE):
       raise ValueError(
@@ -161,12 +161,12 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
   @override
   def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
     assert self._browser_platform.is_macos
-    if self._browser_platform.is_arm64 and (self._requested_version
+    if self._browser_platform.is_arm64 and (self.requested_version
                                             < self.MIN_MAC_ARM64_MILESTONE):
       raise ValueError(
           "Firefox Arm64 Apple Silicon is only available starting with "
           f"{self.MIN_MAC_ARM64_MILESTONE}, "
-          f"but requested {self._requested_version} is too old.")
+          f"but requested {self.requested_version} is too old.")
     super()._download_archive(archive_url, tmp_dir)
 
   @override
@@ -183,13 +183,14 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 
   @override
   def _installed_app_path(self) -> LocalPath:
-    return self._out_dir / f"Firefox {self._requested_version}.app"
+    return self._out_dir / f"Firefox {self.requested_version}.app"
 
   @override
   def _install_archive(self, archive_path: LocalPath) -> None:
     extracted_path = self._extracted_path()
     DMGArchiveHelper.extract(self.host_platform, archive_path, extracted_path)
-    assert extracted_path.exists()
+    assert extracted_path.exists(), (
+        f"Could not extract {archive_path} into {extracted_path}")
 
 
 class FirefoxDownloaderWin(FirefoxDownloader):

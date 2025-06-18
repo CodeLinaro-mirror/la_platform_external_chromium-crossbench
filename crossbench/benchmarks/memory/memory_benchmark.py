@@ -225,7 +225,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
   """
   Create memory story
   Specify alloc-count, block-size, compressiblity,
-  prefill-constnat, random style to decide the
+  prefill-constant, random style to decide the
   memory workload.
   """
   stories: Sequence[Page]
@@ -292,25 +292,9 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
         "Equivalent to --tabs=infinity")
     return parser
 
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["args"] = args
-    return kwargs
-
-  def __init__(self,
-               story_cls: Type[Page],
-               patterns: Sequence[str],
-               args: argparse.Namespace,
-               separate: bool = False) -> None:
-    self._args: argparse.Namespace = args
-
-    super().__init__(story_cls, patterns, separate)
-
   @override
   def process_all(self, patterns: Sequence[str]) -> None:
-    self.stories = self.stories_from_cli_args(self._args)
+    self.stories = self.stories_from_cli_args(self.args)
 
   @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
@@ -330,7 +314,6 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
-    self.log_stories(self.stories)
     return self.stories
 
 
@@ -347,9 +330,8 @@ class MemoryBenchmark(SubStoryBenchmark):
   @classmethod
   @override
   def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser, aliases: Sequence[str] = ()
-  ) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
+      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
     parser.add_argument(
         "--skippable-tab-count",

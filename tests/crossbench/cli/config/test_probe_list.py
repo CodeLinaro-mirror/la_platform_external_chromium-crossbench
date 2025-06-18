@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-from unittest import mock
 
 import hjson
 
@@ -71,7 +70,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     }
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    args = mock.Mock(probe_config=file, probe=[])
+    args = self.mock_args(probe_config=file, probe=[])
     config = ProbeListConfig.from_cli_args(args)
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
@@ -83,7 +82,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     mock_d8_file = pth.LocalPath("out/d8")
     self.fs.create_file(mock_d8_file, st_size=8 * 1024)
     config_data = {"d8_binary": str(mock_d8_file)}
-    args = mock.Mock(probe_config=None, throw=True, wraps=False)
+    args = self.mock_args(probe_config=None, throw=True, wraps=False)
 
     args.probe = [
         ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}"),
@@ -111,13 +110,29 @@ class TestProbeListConfig(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}{trailing_brace}")
     with self.assertRaises(argparse.ArgumentTypeError):
-      ProbeConfig.parse("v8.log::")
+      ProbeConfig.parse("other.log")
+
+  def test_parse_with_typo(self):
+    v8_probe = ProbeConfig.parse("v8.log")
+    with self.assertLogs(level="ERROR") as cm:
+      v8_close_probe = ProbeConfig.parse("v8_log")
+    self.assertEqual(v8_probe, v8_close_probe)
+    output = "\n".join(cm.output)
+    self.assertIn("v8.log", output)
+    self.assertIn("v8_log", output)
+
+    with self.assertLogs(level="ERROR") as cm:
+      v8_close_probe = ProbeConfig.parse("v8_log:{}")
+    self.assertEqual(v8_probe, v8_close_probe)
+    output = "\n".join(cm.output)
+    self.assertIn("v8.log", output)
+    self.assertIn("v8_log", output)
 
   def test_inline_config_dir_instead_of_file(self):
     mock_dir = pth.LocalPath("some/dir")
     mock_dir.mkdir(parents=True)
     config_data = {"d8_binary": str(mock_dir)}
-    args = mock.Mock(
+    args = self.mock_args(
         probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
         probe_config=None,
         throw=True,
@@ -128,7 +143,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_inline_config_non_existent_file(self):
     config_data = {"d8_binary": "does/not/exist/d8"}
-    args = mock.Mock(
+    args = self.mock_args(
         probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
         probe_config=None,
         throw=True,
@@ -159,7 +174,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertEqual(powersampler_probe.bin_path, powersampler_bin)
 
   def test_parse_args_empty(self):
-    args = mock.Mock(probe_config=None, probe=[])
+    args = self.mock_args(probe_config=None, probe=[])
     probe_list = ProbeListConfig.from_cli_args(args)
     self.assertFalse(probe_list.probes)
 
@@ -191,7 +206,8 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertIsInstance(probes[1], V8LogProbe)
 
   def test_parse_args_single_probe_config(self):
-    args = mock.Mock(probe_config=None, probe=[ProbeConfig.parse("v8.log")])
+    args = self.mock_args(
+        probe_config=None, probe=[ProbeConfig.parse("v8.log")])
     probe_list = ProbeListConfig.from_cli_args(args)
     probes = probe_list.probes
     self.assertEqual(len(probes), 1)
@@ -199,7 +215,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertIsInstance(probe, V8LogProbe)
 
   def test_parse_args_multiple_probe_config(self):
-    args = mock.Mock(
+    args = self.mock_args(
         probe_config=None,
         probe=[
             ProbeConfig.parse("v8.log"),
@@ -215,7 +231,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     with self.platform.NamedTemporaryFile() as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
-      args = mock.Mock(probe_config=config_file, probe=[])
+      args = self.mock_args(probe_config=config_file, probe=[])
       probe_list = ProbeListConfig.from_cli_args(args)
       self.assertFalse(probe_list.probes)
 
@@ -223,7 +239,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     with self.platform.NamedTemporaryFile() as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
-      args = mock.Mock(
+      args = self.mock_args(
           probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
       probe_list = ProbeListConfig.from_cli_args(args)
       probes = probe_list.probes
@@ -235,7 +251,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     with self.platform.NamedTemporaryFile() as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
-      args = mock.Mock(
+      args = self.mock_args(
           probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
       probe_list = ProbeListConfig.from_cli_args(args)
       probes = probe_list.probes
@@ -248,7 +264,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     with self.platform.NamedTemporaryFile() as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
-      args = mock.Mock(
+      args = self.mock_args(
           probe_config=config_file, probe=[ProbeConfig.parse("v8.rcs")])
       probe_list = ProbeListConfig.from_cli_args(args)
       probes = probe_list.probes

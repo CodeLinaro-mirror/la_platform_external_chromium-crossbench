@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-import unittest
+import datetime as dt
 
-import hjson
-
+from crossbench import hjson as cb_hjson
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvironmentConfig
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
@@ -79,6 +78,7 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(low.merge(default).cpu_min_relative_speed, 0.5)
 
     self.assertEqual(high.merge(low).cpu_min_relative_speed, 1)
+    self.assertEqual(low.merge(high).cpu_min_relative_speed, 1)
 
   def test_combine_max_float_value(self):
     default = EnvironmentConfig()
@@ -97,13 +97,40 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(low.merge(default).cpu_max_usage_percent, 0)
 
     self.assertEqual(high.merge(low).cpu_max_usage_percent, 0)
+    self.assertEqual(low.merge(high).cpu_max_usage_percent, 0)
+
+  def test_combine_max_duration(self):
+    default = EnvironmentConfig()
+    self.assertIsNone(default.system_min_uptime)
+
+    high = EnvironmentConfig(system_min_uptime=dt.timedelta(minutes=10))
+    self.assertEqual(high.system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        high.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        default.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        high.merge(default).system_min_uptime, dt.timedelta(minutes=10))
+
+    low = EnvironmentConfig(system_min_uptime=dt.timedelta(minutes=1))
+    self.assertEqual(low.system_min_uptime, dt.timedelta(minutes=1))
+    self.assertEqual(low.merge(low).system_min_uptime, dt.timedelta(minutes=1))
+    self.assertEqual(
+        default.merge(low).system_min_uptime, dt.timedelta(minutes=1))
+    self.assertEqual(
+        low.merge(default).system_min_uptime, dt.timedelta(minutes=1))
+
+    self.assertEqual(
+        low.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+    self.assertEqual(
+        high.merge(low).system_min_uptime, dt.timedelta(minutes=10))
+
 
   def test_parse_example_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"
-    if not example_config_file.exists():
-      raise unittest.SkipTest(f"Test file {example_config_file} does not exist")
+    self.fs.add_real_file(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = hjson.load(f)
+      data = cb_hjson.load_unique_keys(f)
     EnvironmentConfig(**data["env"])
 
 

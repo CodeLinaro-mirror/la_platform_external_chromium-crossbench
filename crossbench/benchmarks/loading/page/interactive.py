@@ -95,18 +95,19 @@ class InteractivePage(Page):
     if self._run_login and (login_block := self.login_block):
       action_runner.run_login(run, self, login_block)
     if self._run_setup and (setup_block := self.setup_block):
+      run.browser.performance_mark("setup-start", self._name)
       action_runner.run_setup(run, self, setup_block)
+      run.browser.performance_mark("setup-end", self._name)
 
   @override
   def teardown(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     action_runner.teardown(run)
 
-  def run(self, run: Run) -> None:
+  def run_once(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     multiple_tabs = self.tabs.multiple_tabs
-    for _ in self._playback:
-      action_runner.run_interactive_page(run, self, multiple_tabs)
+    action_runner.run_interactive_page(run, self, multiple_tabs)
 
   @override
   def run_with(self, run: Run, action_runner: ActionRunner,

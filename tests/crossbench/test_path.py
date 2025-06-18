@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 
-from crossbench.path import safe_filename
+from crossbench.path import MAX_PART_LEN, safe_filename
 from tests import test_helper
 
 
@@ -20,6 +20,13 @@ class PlatformHelperTestCase(unittest.TestCase):
     self.assertEqual(safe_filename("äbc_ÂBC"), "abc_ABC")
     self.assertEqual(safe_filename("abc?*//\\ABC"), "abc_____ABC")
     self.assertEqual(safe_filename("äbc_**_ÂBC"), "abc____ABC")
+
+  def test_safe_filename_len(self):
+    test_str = "x" * 1024
+    with self.assertRaises(ValueError):
+      safe_filename(test_str, strict_len=True)
+    self.assertEqual(len(safe_filename(test_str)), MAX_PART_LEN)
+
 
 
 if __name__ == "__main__":

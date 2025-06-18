@@ -79,3 +79,6 @@ class Story(abc.ABC):
 
   def __str__(self) -> str:
     return f"Story(name={self.name})"
+
+  def help(self) -> str:
+    return self.name

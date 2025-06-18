@@ -5,9 +5,8 @@
 from __future__ import annotations
 
 import abc
-import argparse
 import logging
-from typing import TYPE_CHECKING, Optional, TextIO, Tuple, Type, cast
+from typing import TYPE_CHECKING, Final, Optional, TextIO, Tuple, Type, cast
 
 from typing_extensions import override
 
@@ -32,6 +31,7 @@ if TYPE_CHECKING:
 
 class ChromiumBased(Browser):
   MIN_HEADLESS_NEW_VERSION: int = 112
+  MIN_BENCHMARKING_EXTENSION_FLAG_MILESTONE: Final[int] = 139
   DEFAULT_FLAGS: Tuple[str, ...] = (
       "--no-default-browser-check",
       "--disable-component-update",
@@ -45,6 +45,10 @@ class ChromiumBased(Browser):
       "--disable-background-timer-throttling",
       "--disable-renderer-backgrounding",
   )
+  # Versions [M98, M100] don't respect the --no-first-run flag and always
+  # display a "What's New" tab on startup.
+  WHATS_NEW_UI_VERSION_RANGE: Final[range] = range(98, 100 + 1)
+
 
   @classmethod
   @abc.abstractmethod
@@ -53,8 +57,10 @@ class ChromiumBased(Browser):
 
   @classmethod
   @override
-  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
-    return ChromeFlags(initial_data)
+  def default_flags(cls,
+                    initial_data: FlagsData = None,
+                    milestone: int = 0) -> ChromeFlags:
+    return ChromeFlags.for_milestone(initial_data, milestone)
 
   def __init__(self,
                label: str,
@@ -78,23 +84,37 @@ class ChromiumBased(Browser):
   def _init_flags(self, settings: Settings) -> ChromeFlags:
     flags: Flags = settings.flags
     js_flags: Flags = settings.js_flags
-    self._flags = self.default_flags(self.DEFAULT_FLAGS)
+    self._flags = self.default_flags(self.DEFAULT_FLAGS, self.version.major)
     self._flags.update(flags)
 
     if "--allow-background-interventions" in self._flags.data:
       # The --allow-background-interventions flag should have no value.
       assert self._flags.get("--allow-background-interventions") is None
     else:
+      logging.warning(
+          "Disabling background interventions for chromium based browser. "
+          "Tests that rely on correct tab discarding or prioritization "
+          "behavior may not work as expected. Add "
+          "--allow-background-interventions to bypass this.")
       self._flags.update(self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS)
+
+    if self.version.major in self.WHATS_NEW_UI_VERSION_RANGE:
+      whatsnew_ui_feature = "ChromeWhatsNewUI"
+      if not self._flags.features:
+        logging.warning("Disabling %s", whatsnew_ui_feature)
+        self._flags.features.disable(whatsnew_ui_feature)
+      elif whatsnew_ui_feature not in self._flags.features:
+        logging.warning("Browser might show %s, hiding the main tab",
+                        whatsnew_ui_feature)
 
     # Explicitly disable field-trials by default on all chrome flavours:
     # By default field-trials are disabled on non-Chrome branded builds, but
     # are auto-enabled on everything else. This gives very confusing results
     # when comparing local builds to official binaries.
-    field_trial_flags: ChromeFlags = self._flags.field_trial_flags
+    field_trial_flags: ChromeFlags = self._flags.field_trial_enable_flags
     if not field_trial_flags:
       logging.info("Disabling experiments/finch/field-trials for %s", self)
-      for flag in ChromeFlags.NO_EXPERIMENTS_FLAGS:
+      for flag in ChromeFlags.FIELD_TRIAL_DISABLE_FLAGS:
         self._flags.set(flag)
     else:
       logging.warning("Running with field-trials or finch experiments.")
@@ -117,13 +137,7 @@ class ChromiumBased(Browser):
   @override
   def validate_flags(self) -> None:
     super().validate_flags()
-    field_trial_flags: ChromeFlags = self.flags.field_trial_flags
-    no_finch_flags = self.flags.no_experiments_flags
-    if field_trial_flags and no_finch_flags:
-      raise argparse.ArgumentTypeError(
-          f"Conflicting {self.type_name()} flags detected: "
-          f"{field_trial_flags} vs {no_finch_flags}.\n"
-          "Cannot enable and disable finch / field-trials at the same time.")
+    self.flags.validate()
 
   @override
   def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
@@ -141,16 +155,20 @@ class ChromiumBased(Browser):
     if user_data_dir:
       return user_data_dir
 
-    temp_dir = None
     if self.platform.is_android:
-      # On Android, not all apps have permission to write to /data/local/tmp.
-      # We use a folder on external storage instead.
-      # This does not affect the user-cache-dir which needs to be cleared
-      # separately.
-      temp_dir = "/storage/emulated/0/Documents"
+      # On Android, not all apps have permission to write to /data/local/tmp,
+      # so we can't just use a temp dir for user data as on other platforms.
+      # We can create a subdir in Chromium's default data dir, but that will
+      # be erased by chromedriver on session start.
+      # Another option is a folder on external storage, but access to external
+      # storage can be slow and this affects Chromium performance.
+      # So the only reliable thing for now is to keep Chromium using default
+      # user data dir. Note that unless --keep-browser-cache is specified,
+      # all user data is cleared by chromedriver before each browser session.
+      return None
+
     # Using a temp-dir on macos also forces the user-cache-dir to be there.
-    user_data_dir = self.platform.mkdtemp(
-        prefix=f"{self.type_name()}_", dir=temp_dir)
+    user_data_dir = self.platform.mkdtemp(prefix=f"{self.type_name()}_")
     return user_data_dir
 
   @property

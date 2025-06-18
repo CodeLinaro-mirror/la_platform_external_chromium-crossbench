@@ -9,8 +9,8 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
-from typing import (TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Type,
-                    cast)
+from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
+                    Type, cast)
 
 from typing_extensions import override
 
@@ -24,6 +24,7 @@ from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
 from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.process_meminfo import ProcessMeminfo
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -88,8 +89,10 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def default_flags(cls, initial_data: FlagsData = None) -> ChromeFlags:
-    return ChromeFlags(initial_data)
+  def default_flags(cls,
+                    initial_data: FlagsData = None,
+                    milestone: int = 0) -> ChromeFlags:
+    return ChromeFlags.for_milestone(initial_data, milestone)
 
   def __init__(self,
                label: str,
@@ -110,6 +113,9 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.tab_handler_generator = self._tab_handler_generator()
     self.tab_list: List[int] = [next(self.tab_handler_generator)]
     self._current_url: str = ""
+    self._default_js_return = None
+    self._performance_marks: List[str] = []
+    self._performance_marks_details: List[Any] = []
 
   def expect_js(
       self,
@@ -176,9 +182,13 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def js(self, script, timeout: Optional[dt.timedelta] = None, arguments=()):
+
     self.invoked_js.append(
         JsInvocation(
             result=None, script=script, arguments=arguments, timeout=timeout))
+
+    if self._default_js_return:
+      return self._default_js_return
 
     if self.expected_js is None:
       return None
@@ -216,6 +226,22 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return copy.deepcopy(expectation.result)
 
   @override
+  def performance_mark(self,
+                       name: str,
+                       detail: Any = None,
+                       prefix: str = "crossbench-") -> None:
+    self.performance_marks.append(prefix + name)
+    self.performance_marks_details.append(detail)
+
+  @property
+  def performance_marks(self) -> List[str]:
+    return self._performance_marks
+
+  @property
+  def performance_marks_details(self) -> List[Any]:
+    return self._performance_marks_details
+
+  @override
   def is_logged_in(self,
                    secret: UsernamePassword,
                    strict: bool = False) -> bool:
@@ -230,9 +256,19 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def set_current_url(self, url: str) -> None:
     self._current_url = url
 
+  def set_default_js_return(self, return_val: Any) -> None:
+    self._default_js_return = return_val
+
   @property
   def current_url(self) -> str:
     return self._current_url
+
+  @override
+  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+    return {
+        "process_1": ProcessMeminfo(1, 2, 3, 4),
+        "process_2": ProcessMeminfo(2, 3, 4, 5)
+    }
 
 
 def app_root(platform: plt.Platform) -> pathlib.Path:

@@ -45,6 +45,10 @@ class ChromiumBasedWebDriver(
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
   UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
 
+  def __init__(self, *args, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
+    self._script_identifier_kwargs: dict[Any, Any] | None = None
+
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
@@ -55,7 +59,12 @@ class ChromiumBasedWebDriver(
     return self.version.major == 0 or self.is_locally_compiled()
 
   def is_locally_compiled(self) -> bool:
-    return pth.LocalPath(self.app_path.parent / "args.gn").exists()
+    return bool(self.local_build_dir())
+
+  def local_build_dir(self) -> pth.LocalPath | None:
+    if path := helper.find_build_dir(self.path, self.host_platform):
+      return self.host_platform.local_path(path)
+    return None
 
   def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
                        cmd_args: dict):
@@ -123,8 +132,7 @@ class ChromiumBasedWebDriver(
 
     # pytype: disable=wrong-keyword-args
     assert self._stdout_log_file is None
-    self._stdout_log_file = self.log_file.with_suffix(
-        ".browser.stdout.log").open("w+")
+    self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
         service_args=service_args,
@@ -149,7 +157,7 @@ class ChromiumBasedWebDriver(
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
-    options.set_capability("pageLoadStrategy", "eager")
+    options.set_capability("pageLoadStrategy", "none")
     for arg in args:
       options.add_argument(arg)
     options.binary_location = os.fspath(self.path)
@@ -198,9 +206,18 @@ class ChromiumBasedWebDriver(
 
   @override
   def run_script_on_new_document(self, script: str) -> None:
-    self._execute_cdp_cmd(self._private_driver,
-                          "Page.addScriptToEvaluateOnNewDocument",
-                          {"source": script})
+    if self._script_identifier_kwargs is not None:
+      self._execute_cdp_cmd(self._private_driver,
+                            "Page.removeScriptToEvaluateOnNewDocument",
+                            self._script_identifier_kwargs)
+    self._script_identifier_kwargs = self._execute_cdp_cmd(
+        self._private_driver, "Page.addScriptToEvaluateOnNewDocument",
+        {"source": script})
+
+  @override
+  def quit(self) -> None:
+    self._script_identifier_kwargs = None
+    super().quit()
 
   @override
   def current_window_id(self) -> str:
@@ -216,8 +233,10 @@ class ChromiumBasedWebDriver(
       title: Optional[re.Pattern] = None,
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
+      relative_tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> str:
+    assert not (tab_index is not None and relative_tab_index is not None)
     driver = self._private_driver
     original_handle = driver.current_window_handle
     for _ in wait.wait_with_backoff(timeout):
@@ -227,6 +246,8 @@ class ChromiumBasedWebDriver(
       except ValueError as e:
         raise RuntimeError("Original starting tab no longer exists") from e
 
+      if relative_tab_index is not None:
+        tab_index = (i + relative_tab_index) % len(driver.window_handles)
       if tab_index is not None:
         handles = [driver.window_handles[tab_index]]
       else:
@@ -248,6 +269,8 @@ class ChromiumBasedWebDriver(
       error += f" with url matching {repr(url.pattern)}"
     if tab_index is not None:
       error += f" with tab_index matching {tab_index}"
+    if relative_tab_index is not None:
+      error += f" with relative_tab_index matching {tab_index}"
     raise RuntimeError(error)
 
   @override
@@ -256,6 +279,7 @@ class ChromiumBasedWebDriver(
       title: Optional[re.Pattern] = None,
       url: Optional[re.Pattern] = None,
       tab_index: Optional[int] = None,
+      relative_tab_index: Optional[int] = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> None:
     driver = self._private_driver
@@ -263,7 +287,8 @@ class ChromiumBasedWebDriver(
     tab_to_close = original_handle
 
     if title or url or (tab_index is not None):
-      tab_to_close = self.switch_tab(title, url, tab_index, timeout)
+      tab_to_close = self.switch_tab(title, url, tab_index, relative_tab_index,
+                                     timeout)
 
     driver.close()
 
