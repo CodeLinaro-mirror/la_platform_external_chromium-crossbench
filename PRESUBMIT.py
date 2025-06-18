@@ -47,6 +47,7 @@ def CheckChange(input_api, output_api, on_commit):
       input_api,
       output_api,
       files_to_check=pylint_file_patterns_to_check,
+      files_to_skip=[r"^android_protoc/frameworks.*", r"^third_party/.*"],
       pylintrc=".pylintrc",
       version="3.2")
 
@@ -164,8 +165,11 @@ def MypyFilesToCheck(input_api, on_commit, modified_py_files) -> list[str]:
   # TODO: enable mypy on all tests
   result = []
   for file in mypy_files_to_check:
-    if not file.startswith("tests/"):
-      result.append(file)
+    if file.startswith("tests/"):
+      continue
+    if file.startswith("android_protoc/"):
+      continue
+    result.append(file)
   return result
 
 
