@@ -27,6 +27,7 @@ from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.win import WinPlatform
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
@@ -93,6 +94,10 @@ class MockPlatformMixin:
   @property
   def has_display(self) -> bool:
     return True
+
+  @property
+  def port_manager(self) -> PortManager:
+    return self._default_port_manager
 
   def os_details(self):
     return {

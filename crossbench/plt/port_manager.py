@@ -27,13 +27,17 @@ class PortScope:
   """
 
   def __init__(self,
-               platform: Platform,
+               manager: PortManager,
                parent_scope: Self | None = None) -> None:
-    self._platform = platform
+    self._manager: PortManager = manager
     self._parent_scope: Self | None = parent_scope
     assert parent_scope is not self
     self.forwarded_ports: dict[int, int] = {}
     self.reverse_forwarded_ports: dict[int, int] = {}
+
+  @property
+  def platform(self) -> Platform:
+    return self._manager.platform
 
   @property
   def is_nested(self) -> bool:
@@ -42,6 +46,11 @@ class PortScope:
   @property
   def is_empty(self) -> bool:
     return not self.forwarded_ports and not self.reverse_forwarded_ports
+
+  @contextlib.contextmanager
+  def nested(self) -> Iterator[PortScope]:
+    with self._manager.nested() as scope:
+      yield scope
 
   def is_forwarded_port_used(self, local_port: int) -> bool:
     return bool(self.lookup_forwarded_port(local_port))
@@ -72,7 +81,7 @@ class PortScope:
       raise PortForwardException(
           f"Cannot forward local port {local_port} twice, "
           "it is already forwarded.")
-    local_port = self._platform.port_forward(local_port, remote_port)
+    local_port = self.platform.port_forward(local_port, remote_port)
     self.forwarded_ports[local_port] = remote_port
     return local_port
 
@@ -82,14 +91,14 @@ class PortScope:
           f"Cannot stop forwarding local port {local_port}, "
           f"it was never forwarded.")
     del self.forwarded_ports[local_port]
-    self._platform.stop_port_forward(local_port)
+    self.platform.stop_port_forward(local_port)
 
   def reverse_forward(self, remote_port: int, local_port: int) -> int:
     if self.is_reverse_forwarded_port_used(remote_port):
       raise PortForwardException(
           f"Cannot reverse forward remote port {remote_port} twice, "
           "it is already forwarded.")
-    remote_port = self._platform.reverse_port_forward(remote_port, local_port)
+    remote_port = self.platform.reverse_port_forward(remote_port, local_port)
     self.reverse_forwarded_ports[remote_port] = local_port
     return remote_port
 
@@ -99,7 +108,7 @@ class PortScope:
           f"Cannot stop reverse forwarding remote port {remote_port}, "
           f"it was never forwarded.")
     del self.reverse_forwarded_ports[remote_port]
-    self._platform.stop_reverse_port_forward(remote_port)
+    self.platform.stop_reverse_port_forward(remote_port)
 
 
 class PortManager:
@@ -120,11 +129,11 @@ class PortManager:
   """
 
   def __init__(self, platform: Platform, throw: bool = False) -> None:
-    self._platform = platform
-    self._throw = throw
+    self._platform: Platform = platform
+    self._throw: bool = throw
     self._is_active: bool = False
     # Keeps track of scoped ports.
-    self._port_scope: PortScope = PortScope(self._platform, None)
+    self._port_scope: PortScope = PortScope(self, None)
     self._start()
 
   def _start(self):
@@ -137,14 +146,18 @@ class PortManager:
   def scope(self) -> PortScope:
     return self._port_scope
 
+  @property
+  def platform(self) -> Platform:
+    return self._platform
+
   @contextlib.contextmanager
-  def nested(self) -> Iterator[PortManager]:
+  def nested(self) -> Iterator[PortScope]:
     """Open a nested port scope, all forwarded ports that were opened
     during this scope will be closed when leaving the scope. """
     old_scope = self._port_scope
-    self._port_scope = PortScope(self._platform, self._port_scope)
+    self._port_scope = PortScope(self, self._port_scope)
     try:
-      yield self
+      yield self._port_scope
     finally:
       try:
         self._stop_current_scoped_ports()

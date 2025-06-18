@@ -35,7 +35,7 @@ from crossbench.helper import wait
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
-from crossbench.plt.port_manager import PortManager
+from crossbench.plt.port_manager import PortManager, PortScope
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
@@ -571,8 +571,8 @@ class Platform(abc.ABC):
     return self.path(tempfile.gettempdir())
 
   @property
-  def ports(self) -> PortManager:
-    return self._default_port_manager
+  def ports(self) -> PortScope:
+    return self._default_port_manager.scope
 
   def port_forward(self, local_port: int, remote_port: int) -> int:
     """ Forwards a device remote_port to a local port."""

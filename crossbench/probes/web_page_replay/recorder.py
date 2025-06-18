@@ -213,7 +213,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     })
     self._recorder = WprRecorder(**kwargs)
     self._browser_platform = run.browser_platform
-    self._ports: PortScope = run.host_platform.ports.scope
+    self._ports: PortScope = run.host_platform.ports
 
   @override
   def setup(self) -> None:
@@ -245,7 +245,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     if self._browser_platform.is_remote:
       # TODO: Fix run.setup and teardown layering so they they're called with
       # the same active port scope.
-      self._ports = self._browser_platform.ports.scope
+      self._ports = self._browser_platform.ports
       self._ports.reverse_forward(self._recorder.http_port,
                                   self._recorder.http_port)
       self._ports.reverse_forward(self._recorder.https_port,
