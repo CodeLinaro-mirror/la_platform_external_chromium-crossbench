@@ -33,28 +33,44 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
   BENCHMARK_NAME: str = "LoadLine"
   BENCHMARK_VERSION: str = ""
 
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._scores_file: Optional[pth.LocalPath] = None
+    self._breakdown_file: Optional[pth.LocalPath] = None
+
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
-    logging.info("-" * 80)
     logging.critical("%s Benchmark (%s)", self.BENCHMARK_NAME,
                      self.BENCHMARK_VERSION)
-    logging.critical("%s results:", self.BENCHMARK_NAME)
-    logging.info("- " * 40)
+    logging.info("-" * 80)
+    logging.critical("%s scores:", self.BENCHMARK_NAME)
     logging.critical(
         tabulate(
-            pd.read_csv(
-                group.get_local_probe_result_path(self).with_suffix(".csv")),
-            headers="keys",
+            pd.read_csv(self._scores_file), headers="keys", tablefmt="plain"))
+    logging.info("- " * 40)
+    logging.critical("%s breakdown (loading stage durations, in ms):",
+                     self.BENCHMARK_NAME)
+    logging.critical(
+        tabulate(
+            pd.read_csv(self._breakdown_file), headers="keys",
             tablefmt="plain"))
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_file = group.get_local_probe_result_path(self).with_suffix(".csv")
-    self._compute_score(group).to_csv(csv_file)
-    return LocalProbeResult(csv=(csv_file,))
+    self._scores_file = group.get_local_probe_result_path(self).with_name(
+        "benchmark_score.csv")
+    self._compute_score(group).to_csv(self._scores_file)
+    self._breakdown_file = group.get_local_probe_result_path(self).with_name(
+        "breakdown.csv")
+    self._compute_breakdown(group).to_csv(self._breakdown_file)
+    return LocalProbeResult(csv=(self._scores_file, self._breakdown_file))
 
   @abc.abstractmethod
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
+    pass
+
+  @abc.abstractmethod
+  def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     pass
 
 

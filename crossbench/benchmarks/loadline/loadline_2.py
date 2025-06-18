@@ -57,6 +57,11 @@ class LoadLine2Probe(LoadLineProbe):
         columns=(["TOTAL_SCORE"] +
                  sorted(list(c for c in total.columns if c != "TOTAL_SCORE"))))
 
+  @override
+  def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
+    # TODO(crbug.com/425325733): Implement breakdown for LoadLine 2.
+    return pd.DataFrame(index=pd.Index([], name="Not implemented"))
+
 
 class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 
