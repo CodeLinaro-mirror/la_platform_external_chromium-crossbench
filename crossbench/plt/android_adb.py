@@ -20,6 +20,7 @@ from crossbench import path as pth
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
@@ -460,16 +461,26 @@ class Adb:
       self.shell(*cmd)
 
 
+class AndroidAdbPortManager(PortManager):
+
+  def __init__(self, platform: AndroidAdbPlatform, adb: Adb) -> None:
+    super().__init__(platform)
+    self._adb = adb
+
+
 class AndroidAdbPlatform(RemotePosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
                adb: Optional[Adb] = None) -> None:
-    super().__init__(host_platform)
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb = adb or Adb(host_platform, device_identifier)
+    super().__init__(host_platform)
+
+  def _create_port_manager(self) -> PortManager:
+    return AndroidAdbPortManager(self, self._adb)
 
   @property
   @override

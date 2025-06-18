@@ -9,11 +9,15 @@ import subprocess
 from typing import TYPE_CHECKING, Mapping, Optional
 
 from crossbench.plt.base import Platform
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.remote import RemotePlatformMixin
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, ListCmdArgs
 
+
+class SshPortManager(PortManager):
+  pass
 
 class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
 
@@ -24,6 +28,10 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
     self._port = port
     self._ssh_port = ssh_port
     self._ssh_user = ssh_user
+
+  @abc.abstractmethod
+  def _create_port_manager(self) -> PortManager:
+    pass
 
   @property
   def host(self) -> str:

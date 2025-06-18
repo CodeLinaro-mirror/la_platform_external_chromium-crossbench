@@ -109,7 +109,10 @@ class Platform(abc.ABC):
   def __init__(self) -> None:
     self._binary_lookup_override: dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
-    self._default_port_manager: PortManager = PortManager(self)
+    self._default_port_manager: PortManager = self._create_port_manager()
+
+  def _create_port_manager(self) -> PortManager:
+    return PortManager(self)
 
   def assert_is_local(self) -> None:
     if self.is_local:

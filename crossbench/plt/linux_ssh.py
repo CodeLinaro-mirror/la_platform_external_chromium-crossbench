@@ -16,11 +16,12 @@ from typing_extensions import override
 from crossbench import parse
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.linux import RemoteLinuxPlatform
-from crossbench.plt.ssh import SshPlatformMixin
+from crossbench.plt.ssh import SshPlatformMixin, SshPortManager
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath, LocalPath
   from crossbench.plt.base import CmdArg, CmdArgs, ListCmdArgs, Platform
+  from crossbench.plt.port_manager import PortManager
 
 
 class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
@@ -37,6 +38,9 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self._port_forward_popens: dict[int, subprocess.Popen] = {}
     self._reverse_port_forward_popens: dict[int, subprocess.Popen] = {}
     atexit.register(self._stop_all_port_forward)
+
+  def _create_port_manager(self) -> PortManager:
+    return SshPortManager(self)
 
   @property
   @override
