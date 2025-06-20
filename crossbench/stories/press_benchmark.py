@@ -84,7 +84,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     self._verify_url(self.URL_OFFICIAL, "URL_OFFICIAL")
     self._verify_url(self.URL_LOCAL, "URL_LOCAL")
     assert substories, f"No substories provided for {cls}"
-    self._substories: Sequence[str] = substories
+    self._substories: Tuple[str, ...] = tuple(substories)
     self._verify_substories()
     kwargs["name"] = self._get_unique_name()
     kwargs["duration"] = duration or self._get_initial_duration()
@@ -182,4 +182,6 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
 
   def log_run_test_url(self, run: Run) -> None:
     del run
+    if self.url != self.test_url:
+      logging.info("🔗 STORY URL:                %s", self.url)
     logging.info("🔗 STORY PUBLIC TEST URL:    %s", self.test_url)

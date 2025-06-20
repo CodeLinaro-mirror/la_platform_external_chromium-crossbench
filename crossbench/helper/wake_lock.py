@@ -13,7 +13,7 @@ if TYPE_CHECKING:
   from crossbench import plt
 
 
-class SystemSleepPreventer:
+class WakeLock:
   """
   Prevent the system from going to sleep while running the benchmark.
   """

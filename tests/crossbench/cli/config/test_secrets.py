@@ -5,11 +5,12 @@
 from __future__ import annotations
 
 import json
+import unittest
 
 import hjson
 
 from crossbench.cli.config.secrets import (GoogleUsernamePassword, Secrets,
-                                           ServiceAccount)
+                                           ServiceAccount, UsernamePassword)
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
@@ -20,6 +21,10 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets = Secrets.parse({})
     self.assertEqual(secrets.google, None)
 
+  def test_parse_interactive(self):
+    secrets = Secrets.parse({"google": "interactive"})
+    self.assertTrue(secrets.google.is_interactive)
+
   def test_parse_google(self):
     secrets = Secrets.parse(
         {"google": {
@@ -28,6 +33,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     self.assertEqual(secrets.google,
                      GoogleUsernamePassword("user@test.com", "pw"))
+    self.assertFalse(secrets.google.is_interactive)
     secrets = Secrets.parse(
         {"google": {
             "user": "user@test.com",
@@ -67,6 +73,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
             client_x509_cert_url="https://example.com/x509/my-project.cert",
             universe_domain="example.com",
         ))
+    self.assertFalse(secrets.bond.is_interactive)
 
   def test_equal_empty(self):
     secrets_1 = Secrets.parse({})
@@ -129,6 +136,19 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     merged = secrets_1.merge(fallback=secrets_2)
     self.assertEqual(secrets_1, merged)
+
+
+class UsernamePasswordTestCase(unittest.TestCase):
+
+  def test_parse_interactive(self):
+    secret = UsernamePassword.parse("interactive")
+    self.assertTrue(secret.is_interactive)
+
+  def test_google(self):
+    secret = GoogleUsernamePassword("user@test.com", "pw")
+    self.assertFalse(secret.is_interactive)
+    self.assertEqual(secret.username, "user@test.com")
+    self.assertEqual(secret.password, "pw")
 
 
 if __name__ == "__main__":

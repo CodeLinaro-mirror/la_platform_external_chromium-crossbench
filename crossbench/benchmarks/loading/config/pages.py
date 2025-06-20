@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
-                    Tuple)
+from typing import (TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Self,
+                    Sequence, Tuple)
 
 from typing_extensions import override
 
@@ -47,8 +47,10 @@ class PagesConfig(ConfigObject):
   @override
   def parse_str(cls, value: str) -> Self:
     """
-    Simple comma-separate config:
-    value = URL, [DURATION], ...
+    Variant 1: Full inline hjson:
+      { ... }
+    Variant 2: Simple comma-separate config:
+      value = URL, [DURATION], ...
     """
     value = ObjectParser.non_empty_str(value)
     if value[0] == "{":
@@ -67,6 +69,7 @@ class PagesConfig(ConfigObject):
         values[-1] = f"{previous_part},{part}"
         previous_part = None
       except DurationParseError:
+        # part is likely a URL
         previous_part = part
         values.append(part)
     return cls.parse_sequence(values)
@@ -241,7 +244,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
 
 class ListPagesConfig(PagesConfig):
 
-  VALID_EXTENSIONS: Tuple[str, ...] = (".txt", ".list")
+  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".txt", ".list")
 
   @classmethod
   @override

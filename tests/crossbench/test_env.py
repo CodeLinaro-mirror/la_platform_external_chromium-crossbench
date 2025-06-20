@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import datetime as dt
 import pathlib
 import unittest
 from typing import Any
@@ -13,11 +14,12 @@ from crossbench import plt
 from crossbench.browsers.settings import Settings
 from crossbench.env import (EnvironmentConfig, HostEnvironment, ValidationError,
                             ValidationMode)
+from crossbench.helper import url_helper
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import MockSafari
 from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
-                                          MockPlatform)
+                                          MockPlatform, RemoteLinuxMockPlatform)
 
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
@@ -61,19 +63,19 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_warn_mode_skip(self):
     config = EnvironmentConfig()
-    env = self.create_env(config, ValidationMode.SKIP)
+    env = self.create_env(config, validation_mode=ValidationMode.SKIP)
     env.handle_warning("foo")
 
   def test_warn_mode_fail(self):
     config = EnvironmentConfig()
-    env = self.create_env(config, ValidationMode.THROW)
+    env = self.create_env(config, validation_mode=ValidationMode.THROW)
     with self.assertRaises(ValidationError) as cm:
       env.handle_warning("custom env check warning")
     self.assertIn("custom env check warning", str(cm.exception))
 
   def test_warn_mode_prompt(self):
     config = EnvironmentConfig()
-    env = self.create_env(config, ValidationMode.PROMPT)
+    env = self.create_env(config, validation_mode=ValidationMode.PROMPT)
     with mock.patch("builtins.input", return_value="Y") as cm:
       env.handle_warning("custom env check warning")
     cm.assert_called_once()
@@ -86,18 +88,20 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_warn_mode_warn(self):
     config = EnvironmentConfig()
-    env = self.create_env(config, ValidationMode.WARN)
+    env = self.create_env(config, validation_mode=ValidationMode.WARN)
     with mock.patch("logging.warning") as cm:
       env.handle_warning("custom env check warning")
     cm.assert_called_once()
     self.assertIn("custom env check warning", cm.call_args[0][0])
 
   def test_validate_skip(self):
-    env = self.create_env(EnvironmentConfig(), ValidationMode.SKIP)
+    env = self.create_env(
+        EnvironmentConfig(), validation_mode=ValidationMode.SKIP)
     env.validate()
 
   def test_validate_warn(self):
-    env = self.create_env(EnvironmentConfig(), ValidationMode.WARN)
+    env = self.create_env(
+        EnvironmentConfig(), validation_mode=ValidationMode.WARN)
     with mock.patch("logging.warning") as cm:
       env.validate()
     cm.assert_not_called()
@@ -105,16 +109,36 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_validate_warn_no_probes(self):
     env = self.create_env(
-        EnvironmentConfig(require_probes=True), ValidationMode.WARN)
+        EnvironmentConfig(require_probes=True),
+        validation_mode=ValidationMode.WARN)
     with mock.patch("logging.warning") as cm:
       env.validate()
     cm.assert_called_once()
     self.assertFalse(self.platform.sh_cmds)
 
+  def test_failing_probe_validation(self):
+
+    def mock_validate_env(env):
+      env.handle_warning("invalid probe")
+
+    mock_probe = mock.Mock()
+    mock_probe.configure_mock(NAME="mock_probe")
+    mock_probe.validate_env.side_effect = mock_validate_env
+    self.mock_runner.probes = [mock_probe]
+    env = self.create_env(validation_mode=ValidationMode.THROW)
+
+    with self.assertRaises(ValidationError) as cm:
+      env.validate()
+    self.assertIn("mock_probe", str(cm.exception))
+
+    mock_probe.validate_env.assert_called_once()
+
+
   def test_request_battery_power_on(self):
     with self.patch_property(self.platform, "is_battery_powered") as mocked:
       env = self.create_env(
-          EnvironmentConfig(power_use_battery=True), ValidationMode.THROW)
+          EnvironmentConfig(power_use_battery=True),
+          validation_mode=ValidationMode.THROW)
       mocked.return_value = True
       env.validate()
 
@@ -125,7 +149,8 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
   def test_request_battery_power_off(self):
     env = self.create_env(
-        EnvironmentConfig(power_use_battery=False), ValidationMode.THROW)
+        EnvironmentConfig(power_use_battery=False),
+        validation_mode=ValidationMode.THROW)
     with self.patch_property(self.platform,
                              "is_battery_powered") as is_battery_powered:
       is_battery_powered.return_value = True
@@ -155,7 +180,8 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
       mock_probe.configure_mock(BATTERY_ONLY=True, name="mock_probe")
       self.mock_runner.probes = [mock_probe]
       env = self.create_env(
-          EnvironmentConfig(power_use_battery=False), ValidationMode.THROW)
+          EnvironmentConfig(power_use_battery=False),
+          validation_mode=ValidationMode.THROW)
 
       with self.assertRaises(ValidationError) as cm:
         env.validate()
@@ -169,7 +195,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
   def test_request_is_headless_default(self):
     env = self.create_env(
         EnvironmentConfig(browser_is_headless=EnvironmentConfig.IGNORE),
-        ValidationMode.THROW)
+        validation_mode=ValidationMode.THROW)
     mock_browser = mock.Mock(platform=self.platform)
     self.mock_runner.browsers = [mock_browser]
 
@@ -184,24 +210,23 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         platform=self.platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
-        EnvironmentConfig(browser_is_headless=True), ValidationMode.THROW)
+        EnvironmentConfig(browser_is_headless=True),
+        validation_mode=ValidationMode.THROW)
 
     with self.patch_property(self.platform, "has_display") as has_display:
       has_display.return_value = True
       mock_browser.viewport.is_headless = False
-      with self.assertRaises(ValidationError) as cm:
+      with self.assertRaisesRegex(ValidationError, "is_headless"):
         env.validate()
-      self.assertIn("is_headless", str(cm.exception))
-
-      has_display.return_value = False
-      with self.assertRaises(ValidationError) as cm:
-        env.validate()
-
-      has_display.return_value = True
       mock_browser.viewport.is_headless = True
-      env.validate()
+      with self.assertRaisesRegex(ValidationError, "is_headless"):
+        env.validate()
 
       has_display.return_value = False
+      mock_browser.viewport.is_headless = False
+      with self.assertRaisesRegex(ValidationError, "is_headless"):
+        env.validate()
+      mock_browser.viewport.is_headless = True
       env.validate()
 
   def test_request_is_headless_false(self):
@@ -211,22 +236,25 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         platform=self.platform, path=pathlib.Path("bin/browser_a"))
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
-        EnvironmentConfig(browser_is_headless=False), ValidationMode.THROW)
+        EnvironmentConfig(browser_is_headless=False),
+        validation_mode=ValidationMode.THROW)
     with self.patch_property(self.platform, "has_display") as has_display:
       has_display.return_value = True
+      self.assertTrue(self.platform.has_display)
+      mock_browser.viewport.is_headless = True
+      with self.assertRaisesRegex(ValidationError, " browser "):
+        env.validate()
       mock_browser.viewport.is_headless = False
       env.validate()
 
       has_display.return_value = False
       self.assertFalse(self.platform.has_display)
-      with self.assertRaises(ValidationError) as cm:
-        env.validate()
-
-      has_display.return_value = True
       mock_browser.viewport.is_headless = True
-      with self.assertRaises(ValidationError) as cm:
+      with self.assertRaisesRegex(ValidationError, "browser_is_headless"):
         env.validate()
-      self.assertIn("is_headless", str(cm.exception))
+      mock_browser.viewport.is_headless = False
+      with self.assertRaisesRegex(ValidationError, "browser_is_headless"):
+        env.validate()
 
   def test_results_dir_single(self):
     env = self.create_env()
@@ -330,6 +358,107 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     # success otherwise
     env.validate()
 
+  def test_validate_url_skip(self):
+    env = self.create_env(validation_mode=ValidationMode.SKIP)
+    self.assertTrue(env.validate_url("something://google....com"))
+
+  def test_validate_url_file(self):
+    env = self.create_env()
+    self.assertFalse(env.validate_url("file://some/test/"))
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      self.assertTrue(env.validate_url(f"file:///{tmp_dir}"))
+
+  def test_validate_url_unknown_protocol(self):
+    env = self.create_env()
+    self.assertFalse(env.validate_url("ftp://google.com"))
+
+  def test_validate_url_localhost_remote(self):
+    remote_platform = RemoteLinuxMockPlatform(self.platform)
+    env = self.create_env()
+    with mock.patch.object(url_helper, "get") as mock_get:
+      self.assertTrue(
+          env.validate_url("http://localhost:8000", remote_platform))
+      self.assertTrue(
+          env.validate_url("http://127.0.0.1:8000", remote_platform))
+      mock_get.assert_not_called()
+
+  def test_validate_url(self):
+    with mock.patch.object(url_helper, "get") as mock_get:
+      env = self.create_env()
+      self.assertTrue(env.validate_url("http://google.com"))
+      mock_get.assert_not_called()
+    with mock.patch.object(url_helper, "get") as mock_get:
+      env = self.create_env(validation_mode=ValidationMode.PROMPT)
+      self.assertTrue(env.validate_url("http://google.com"))
+      mock_get.assert_called_once()
+    with mock.patch.object(
+        url_helper, "get", side_effect=url_helper.HTTPError) as mock_get:
+      env = self.create_env(validation_mode=ValidationMode.PROMPT)
+      self.assertFalse(env.validate_url("http://google.com"))
+      mock_get.assert_called_once()
+
+  def test_cpu_max_usage_percent(self):
+    env = self.create_env(
+        EnvironmentConfig(cpu_max_usage_percent=50),
+        validation_mode=ValidationMode.THROW)
+    with mock.patch.object(
+        self.platform, "cpu_usage", return_value=0.4) as mock_cpu_usage:
+      env.validate()
+      mock_cpu_usage.assert_called_once()
+    with mock.patch.object(
+        self.platform, "cpu_usage", return_value=0.6) as mock_cpu_usage:
+      with self.assertRaises(ValidationError):
+        env.validate()
+      mock_cpu_usage.assert_called_once()
+
+  def test_cpu_min_relative_speed(self):
+    env = self.create_env(
+        EnvironmentConfig(cpu_min_relative_speed=0.8),
+        validation_mode=ValidationMode.THROW)
+    with mock.patch.object(
+        self.platform, "get_relative_cpu_speed",
+        return_value=0.9) as mock_relative_cpu_speed:
+      env.validate()
+      mock_relative_cpu_speed.assert_called_once()
+    with mock.patch.object(
+        self.platform, "get_relative_cpu_speed",
+        return_value=0.6) as mock_relative_cpu_speed:
+      with self.assertRaises(ValidationError):
+        env.validate()
+      mock_relative_cpu_speed.assert_called_once()
+
+  def test_disk_usage(self):
+    env = self.create_env(
+        EnvironmentConfig(disk_min_free_space_gib=1.1),
+        validation_mode=ValidationMode.THROW)
+    gib = 1024 * 1024 * 1024
+    with mock.patch.object(
+        self.platform, "disk_usage",
+        return_value=mock.Mock(free=0.7 * gib)) as mock_disk_usage:
+      with self.assertRaises(ValidationError):
+        env.validate()
+      mock_disk_usage.assert_called_once()
+    with mock.patch.object(
+        self.platform, "disk_usage",
+        return_value=mock.Mock(free=1.7 * gib)) as mock_disk_usage:
+      env.validate()
+      mock_disk_usage.assert_called_once()
+
+  def test_system_min_uptime(self):
+    env = self.create_env(
+        EnvironmentConfig(system_min_uptime=dt.timedelta(minutes=10)),
+        validation_mode=ValidationMode.THROW)
+    with mock.patch.object(
+        self.platform, "uptime",
+        return_value=dt.timedelta(minutes=11)) as mock_uptime:
+      env.validate()
+      mock_uptime.assert_called_once()
+    with mock.patch.object(
+        self.platform, "uptime",
+        return_value=dt.timedelta(minutes=1)) as mock_uptime:
+      with self.assertRaises(ValidationError):
+        env.validate()
+      mock_uptime.assert_called_once()
 
 
 class ValidationModeTestCase(unittest.TestCase):

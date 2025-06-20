@@ -237,6 +237,17 @@ class HostEnvironment:
           f"Relative speed is {cpu_speed}, "
           f"but expected at least {min_relative_speed}.")
 
+  def _check_system_min_uptime(self) -> None:
+    min_uptime = self._config.system_min_uptime
+    if min_uptime is EnvironmentConfig.IGNORE:
+      return
+    if uptime := self._platform.uptime():
+      if uptime < min_uptime:
+        self.handle_validation_warning(
+            f"Expected min system uptime {min_uptime} but got {uptime}. "
+            "The OS might not be ready for a clean measurement.")
+
+
   def _check_forbidden_system_process(self) -> None:
     # Verify that no terminals are running.
     # They introduce too much overhead. (As measured with powermetrics)
@@ -247,7 +258,7 @@ class HostEnvironment:
         system_forbidden_process_names)
     if process_found:
       self.handle_validation_warning(
-          f"Process:{process_found} found."
+          f"Process:{process_found} found. "
           "Make sure not to have a terminal opened. Use SSH.")
 
   def _check_screen_autobrightness(self) -> None:
@@ -328,24 +339,46 @@ class HostEnvironment:
           f"Requested main display brightness={brightness}%, "
           "but got {brightness}%")
 
+  def _check_screen_refresh_rate(self) -> None:
+    refresh_rate = self._config.screen_refresh_rate
+    if not self._platform.is_macos or refresh_rate is EnvironmentConfig.IGNORE:
+      return
+    success, log_msg = self._platform.set_display_refresh_rate(refresh_rate)
+    if success:
+      logging.debug(log_msg)
+    else:
+      self.handle_validation_warning(log_msg)
+
   def _check_headless(self) -> None:
-    # TODO: migrate to full viewport support
+    self._check_config_headless()
+    self._check_browser_headless()
+
+  def _check_config_headless(self) -> None:
     requested_headless = self._config.browser_is_headless
     if requested_headless is EnvironmentConfig.IGNORE:
       return
-    if self._platform.is_linux and not requested_headless:
-      # Check that the system can run browsers with a UI.
-      if not self._platform.has_display:
-        self.handle_validation_warning(
-            "Requested browser_is_headless=False, "
-            "but no DISPLAY is available to run with a UI.")
-    # Check that browsers are running in the requested display mode:
+    # Check that browsers are running in the requested headless mode:
     for browser in self.browsers:
       if browser.viewport.is_headless != requested_headless:
         self.handle_validation_warning(
             f"Requested browser_is_headless={requested_headless},"
             f"but browser {browser.unique_name} has conflicting "
             f"headless={browser.viewport.is_headless}.")
+      if browser.platform.is_headless != requested_headless:
+        self.handle_validation_warning(
+            "Requested browser_is_headless=False, "
+            f"but no display is available to run with a UI for {browser}.")
+
+  def _check_browser_headless(self) -> None:
+    for browser in self.browsers:
+      if browser.viewport.is_headless:
+        continue
+      if browser.platform.has_display:
+        continue
+      self.handle_validation_warning(
+          f"{browser} requires a {browser.viewport} "
+          f"but no display is available on {browser.platform}. "
+          "Use --headless to run chrome without a display.")
 
   def _check_probes(self) -> None:
     for probe in self._probes:
@@ -470,8 +503,10 @@ class HostEnvironment:
     self._check_cpu_usage()
     self._check_cpu_temperature()
     self._check_cpu_power_mode()
+    self._check_system_min_uptime()
     self._check_running_binaries()
     self._check_screen_brightness()
+    self._check_screen_refresh_rate()
     self._check_headless()
     self._check_results_dir()
     self._check_probes()

@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import collections
-import dataclasses
 import json
 import logging
 import zipfile
@@ -25,6 +24,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.replacements import Replacements
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -40,11 +40,7 @@ _QUERIES_DIR = pth.LocalPath(__file__).parent / "queries"
 _MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
 
 
-@dataclasses.dataclass(frozen=True)
 class TraceProcessorQueryConfig(ConfigObject):
-  name: str
-  sql: str
-
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
@@ -61,7 +57,25 @@ class TraceProcessorQueryConfig(ConfigObject):
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)
     parser.add_argument(
         "sql", type=ObjectParser.str_or_file_contents, required=True)
+    parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
+
+  @property
+  def name(self) -> str:
+    return self._name
+
+  @property
+  def sql(self) -> str:
+    return self._sql
+
+  def __init__(self,
+               name: str,
+               sql: str,
+               replacements: Optional[Replacements] = None) -> None:
+    self._name = name
+    self._sql = sql
+    if replacements:
+      self._sql = replacements.apply(self._sql)
 
 
 class CrossbenchTraceUriResolver(TraceUriResolver):
@@ -130,8 +144,14 @@ class TraceProcessorProbe(Probe):
         help="Name of query to be run (under probes/trace_processor/queries) "
         "or { name: str, sql: str } containing the name and SQL query to run")
     parser.add_argument(
+        "module_paths",
+        type=pth.LocalPath,
+        is_list=True,
+        default=tuple(),
+        help="Additional paths to include as trace processor modules.")
+    parser.add_argument(
         "trace_processor_bin",
-        type=PathParser.local_binary_path,
+        type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the trace_processor binary")
     return parser
 
@@ -139,6 +159,7 @@ class TraceProcessorProbe(Probe):
                batch: bool,
                metrics: Iterable[str],
                queries: Iterable[TraceProcessorQueryConfig],
+               module_paths: Iterable[pth.LocalPath],
                trace_processor_bin: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
     self._batch = batch
@@ -146,6 +167,7 @@ class TraceProcessorProbe(Probe):
     ObjectParser.unique_sequence([query.name for query in queries],
                                  name="query names")
     self._queries = tuple(queries)
+    self._module_paths = tuple([_MODULES_DIR]) + tuple(module_paths)
     self._trace_processor_bin: pth.LocalPath | None = None
     if trace_processor_bin:
       self._trace_processor_bin = plt.PLATFORM.parse_local_binary_path(
@@ -162,6 +184,10 @@ class TraceProcessorProbe(Probe):
   @property
   def queries(self) -> Tuple[TraceProcessorQueryConfig, ...]:
     return self._queries
+
+  @property
+  def module_paths(self) -> Tuple[pth.LocalPath, ...]:
+    return self._module_paths
 
   @property
   def has_work(self) -> bool:
@@ -181,13 +207,15 @@ class TraceProcessorProbe(Probe):
 
   @property
   def tp_config(self) -> TraceProcessorConfig:
-    extra_flags = [
-        "--add-sql-module",
-        _MODULES_DIR,
-    ]
+    extra_flags = []
+
+    for module_path in self.module_paths:
+      extra_flags.append("--override-sql-module")
+      extra_flags.append(str(module_path))
 
     return TraceProcessorConfig(
         bin_path=self.trace_processor_bin,
+        ingest_ftrace_in_raw=True,
         resolver_registry=ResolverRegistry(
             resolvers=[CrossbenchTraceUriResolver, PathUriResolver]),
         load_timeout=10,
@@ -334,9 +362,14 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
   def _merge_trace_files(self) -> LocalProbeResult:
     with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
-      with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
-        for f in self.run.results.all_traces():
-          zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
+      traces = list(self.run.results.all_traces())
+      if len(traces) == 1:
+        # Symlink the existing trace to save time and space
+        self.host_platform.symlink_or_copy(traces[0], self.merged_trace_path)
+      else:
+        with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
+          for f in traces:
+            zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
     return LocalProbeResult(trace=(self.merged_trace_path,))
 
   def _maybe_run_tp(self) -> ProbeResult:

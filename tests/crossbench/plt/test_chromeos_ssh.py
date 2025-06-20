@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+import json
 import pathlib
 
 from typing_extensions import override
@@ -108,6 +109,77 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
 
     self.assertEqual(port, expected_port)
 
+  def test_system_details(self):
+    self._init_platform()
+
+    self._expect_sh_ssh("uname -m", result="x86_64")
+    self._expect_sh_ssh("uname", result="Linux")
+    self._expect_sh_ssh("uname -r", result="1.0")
+    self._expect_sh_ssh("uname -v", result="definitely 1.0")
+    self._expect_sh_ssh("uname -a", result="still definitely 1.0")
+    self._expect_sh_ssh("which python3", result="/bin/python3.0")
+    self._expect_sh_ssh("'[' -e /bin/python3.0 ']'", result="")
+    self._expect_sh_ssh("/bin/python3.0 --version", result="Python 3.0")
+    self._expect_sh_ssh(
+        "/bin/python3.0 -c 'import sys; "
+        "print(64 if sys.maxsize > 2**32 else 32)'",
+        result="64")
+    self._expect_sh_ssh("cat /proc/cpuinfo", result="crossbench")
+    self._expect_sh_ssh(
+        "grep -E 'processor|core id|physical id' /proc/cpuinfo",
+        result="processor: 0\nphysical id: 0\ncore id: 0")
+    self._expect_sh_ssh(
+        "grep -E 'processor|core id|physical id' /proc/cpuinfo",
+        result="processor: 0\nphysical id: 0\ncore id: 0")
+
+    display_info = {
+        "embedded_display": {
+            "resolution_horizontal": 1,
+            "resolution_vertical": 2
+        }
+    }
+    self._expect_sh_ssh(
+        "cros-health-tool telem --category=display",
+        result=json.dumps(display_info))
+    self._expect_sh_ssh("which lscpu", result="/bin/lscpu")
+    self._expect_sh_ssh("'[' -e /bin/lscpu ']'", result="")
+    self._expect_sh_ssh("/bin/lscpu", result="definitely a real cpu")
+    self._expect_sh_ssh("which inxi", result="/bin/inxi")
+    self._expect_sh_ssh("'[' -e /bin/inxi ']'", result="")
+    self._expect_sh_ssh("/bin/inxi", result="CPU")
+
+    lsb_release = """
+CHROMEOS_RELEASE_APPID={E0DD1258-E890-493E-ADA3-0C755240B89C}
+CHROMEOS_BOARD_APPID={E0DD1258-E890-493E-ADA3-0C755240B89C}
+CHROMEOS_CANARY_APPID={90F229CE-83E2-4FAF-8479-E368A34938B1}
+DEVICETYPE=CHROMEBOOK
+CHROMEOS_RELEASE_NAME=Chrome OS
+CHROMEOS_AUSERVER=https://tools.google.com/service/update2
+CHROMEOS_DEVSERVER=
+CHROMEOS_ARC_VERSION=12899595
+CHROMEOS_ARC_ANDROID_SDK_VERSION=33
+CHROMEOS_RELEASE_BUILDER_PATH=dedede-release/R132-16093.83.0
+CHROMEOS_RELEASE_KEYSET=devkeys
+CHROMEOS_RELEASE_TRACK=testimage-channel
+CHROMEOS_RELEASE_BUILD_TYPE=Official Build
+CHROMEOS_RELEASE_DESCRIPTION=16093.83.0 (Official Build) dev-channel dedede test
+CHROMEOS_RELEASE_BOARD=dedede
+CHROMEOS_RELEASE_BRANCH_NUMBER=83
+CHROMEOS_RELEASE_BUILD_NUMBER=16093
+CHROMEOS_RELEASE_CHROME_MILESTONE=132
+CHROMEOS_RELEASE_PATCH_NUMBER=0
+CHROMEOS_RELEASE_VERSION=16093.83.0
+GOOGLE_RELEASE=16093.83.0
+CHROMEOS_RELEASE_UNIBUILD=1
+"""
+    self._expect_sh_ssh("cat /etc/lsb-release", result=lsb_release)
+
+    details = self.platform.system_details()
+
+    self.assertEqual(len(details["ChromeOS"]), 22)
+    self.assertEqual(details["ChromeOS"]["CHROMEOS_RELEASE_BOARD"], "dedede")
+    self.assertEqual(details["ChromeOS"]["CHROMEOS_RELEASE_BUILD_NUMBER"],
+                     "16093")
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

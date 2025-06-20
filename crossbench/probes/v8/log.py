@@ -14,10 +14,10 @@ from typing import TYPE_CHECKING, Iterable, List, Optional, Self, Type, cast
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.cli import ui
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import V8ToolsFinder
-from crossbench.helper.spinner import Spinner
 from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
@@ -212,7 +212,7 @@ class V8LogProbe(ChromiumProbe):
         continue
       logging.info("Run %d: %s", i + 1, run.name)
       largest_log_file = log_files[-1]
-      logging.critical("    %s : %s", largest_log_file,
+      logging.critical("    %s [%s]", largest_log_file,
                        fs_helper.get_file_size(largest_log_file))
       if len(log_files) > 1:
         logging.info("    %s/.*v8.log: %d files", largest_log_file.parent,
@@ -221,7 +221,7 @@ class V8LogProbe(ChromiumProbe):
       if not profview_files:
         continue
       largest_profview_file = profview_files[-1]
-      logging.critical("    %s : %s", largest_profview_file,
+      logging.critical("    %s [%s]", largest_profview_file,
                        fs_helper.get_file_size(largest_profview_file))
       if len(profview_files) > 1:
         logging.info("    %s/*.profview.json: %d more files",
@@ -254,7 +254,7 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     json_list: List[AnyPath] = []
     maybe_js_flags = getattr(self.browser, "js_flags", {})
     if _PROF_FLAG in maybe_js_flags or _LOG_ALL_FLAG in maybe_js_flags:
-      with Spinner():
+      with ui.spinner():
         json_list = self.probe.process_log_files(log_files)
     return self.browser_result(file=tuple(log_files), json=json_list)
 

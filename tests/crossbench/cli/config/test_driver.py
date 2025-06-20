@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import unittest
 
 import hjson
 
@@ -45,17 +44,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
     driver_path = self.out_dir / "driver"
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(str(driver_path))
-    self.assertIn(str(driver_path), str(cm.exception))
+    self.assertIn("/driver", str(cm.exception))
 
     self.fs.create_file(driver_path)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(str(driver_path))
     message = str(cm.exception)
-    self.assertIn(str(driver_path), message)
+    self.assertIn("/driver", message)
     self.assertIn("empty", message)
 
   def test_parse_driver_path(self):
-    chromedriver_path = self.out_dir / "chromedriver"
+    chromedriver_path = (self.out_dir / "chromedriver").resolve()
     self.fs.create_file(chromedriver_path, st_size=100)
     driver = DriverConfig.parse(str(chromedriver_path))
     self.assertEqual(str(driver.path), str(chromedriver_path))
@@ -64,6 +63,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
     driver_2 = DriverConfig.parse(config)
     self.assertEqual(driver_2.path, chromedriver_path)
     self.assertEqual(driver, driver_2)
+
+  def test_parse_driver_path_unresolved(self):
+    chromedriver_path = self.out_dir / "chromedriver"
+    expected_chromedriver_path = r".*\/chromedriver"
+    self.fs.create_file(chromedriver_path, st_size=100)
+    driver = DriverConfig.parse(str(chromedriver_path))
+    self.assertRegex(str(driver.path), expected_chromedriver_path)
+
+    config = {"path": str(chromedriver_path)}
+    driver_2 = DriverConfig.parse(config)
+    self.assertRegex(str(driver_2.path), expected_chromedriver_path)
 
   def test_parse_dict_device_id_conflict(self):
     self.platform.sh_results = []
@@ -207,8 +217,9 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
 
-  @unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
   def test_parse_ios_phone_serial(self):
+    if not plt.PLATFORM.is_macos:
+      return
     self.platform.sh_results = [
         ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT,
         XCTRACE_DEVICES_SINGLE_OUTPUT
@@ -221,6 +232,25 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, BrowserDriverType.IOS)
     self.assertEqual(config.device_id, "00001111-11AA22BB33DD")
 
+  def test_parse_custom_bundletool(self):
+    adb_bin = self.out_dir / "adb"
+    bundletool = self.out_dir / "bundletool"
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
+    config_dict = {
+        "type": "adb",
+        "device_id": "0a388e93",
+        "adb_bin": str(adb_bin),
+        "bundletool": str(bundletool)
+    }
+    self.fs.create_file(adb_bin, st_size=100)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      _ = DriverConfig.parse(hjson.dumps(config_dict))
+    self.assertIn(str(bundletool), str(cm.exception))
+    self.fs.create_file(bundletool, st_size=100)
+    config = DriverConfig.parse(hjson.dumps(config_dict))
+    assert isinstance(config, DriverConfig)
+    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.bundletool, bundletool)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

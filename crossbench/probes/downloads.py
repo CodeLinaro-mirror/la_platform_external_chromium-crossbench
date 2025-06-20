@@ -15,12 +15,9 @@ from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, ProbeResult
+from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
-
-  from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
 
 
@@ -68,18 +65,6 @@ class DownloadsProbe(Probe):
                                             self.CHROME_OS_DOWNLOADS_DIR)
     raise NotImplementedError(
         f"Probe({self}): Unsupported browser: {run.browser}")
-
-  def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
-    del group
-    # No need to merge downloads, users can find them in the individual run
-    # results folders.
-    return EmptyProbeResult()
-
-  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    del group
-    # No need to merge downloads, users can find them in the individual run
-    # results folders.
-    return EmptyProbeResult()
 
   @property
   def clear_downloads(self) -> bool:

@@ -248,7 +248,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config, config_local)
 
   def test_parse_local_file(self):
-    benchmark_folder = pth.LocalPath("third_party/speedometer/v3.0")
+    benchmark_folder = pth.LocalPath("third_party/speedometer/v3.0").resolve()
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse(benchmark_folder)
     self.assertIn(str(benchmark_folder), str(cm.exception))

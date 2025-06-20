@@ -55,7 +55,7 @@ class EdgeWebdriverTestCase(BaseCrossbenchTestCase):
     self.assertNotIn("--disable-field-trial-config", browser_field_trial.flags)
 
   def test_auto_disabling_field_trials_all(self):
-    for field_trial_flag in ChromeFlags.FIELD_TRIAL_FLAGS:
+    for field_trial_flag in ChromeFlags.FIELD_TRIAL_ENABLE_FLAGS:
       if field_trial_flag == "--enable-benchmarking":
         continue
       browser = EdgeWebDriverForTesting(
@@ -64,7 +64,7 @@ class EdgeWebdriverTestCase(BaseCrossbenchTestCase):
           settings=Settings(flags=[field_trial_flag], platform=self.platform))
       flags: ChromeFlags = browser.flags
       self.assertIn(field_trial_flag, flags)
-      self.assertFalse(flags.no_experiments_flags)
+      self.assertFalse(flags.field_trial_disable_flags)
 
   def test_is_local_build_mock_browser(self):
     self.assertTrue(self.browsers)

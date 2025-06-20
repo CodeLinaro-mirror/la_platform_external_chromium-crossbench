@@ -5,12 +5,14 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, Final, Self, Type
 
 from typing_extensions import override
 
 from crossbench.config import ConfigError, ConfigObject
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import ObjectParser
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
@@ -54,7 +56,8 @@ class ProbeConfig(ConfigObject):
     # 2. variant, inline hjson: "name:{hjson}"
     match = _PROBE_CONFIG_RE.fullmatch(value)
     if match is None:
-      raise ProbeConfigError(f"Could not parse probe argument: {value}")
+      probe_cls: Type[Probe] = cls._handle_unknown_probe_name("", value)
+      return cls(probe_cls)
     config = {"name": match["probe_name"]}
     if config_str := match["config"]:
       inline_config = ObjectParser.inline_hjson(config_str)
@@ -73,15 +76,24 @@ class ProbeConfig(ConfigObject):
   def parse_probe_dict(cls, probe_name: str, config: Dict[str, Any]) -> Self:
     if probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(probe_cls, config)
-    raise cls._unknown_probe_error(probe_name)
+    probe_cls = cls._handle_dict_unknown_probe_name(probe_name)
+    return cls(probe_cls, config)
 
   @classmethod
-  def _unknown_probe_error(cls, probe_name: str) -> ProbeConfigError:
-    additional_msg = ""
+  def _handle_dict_unknown_probe_name(cls, probe_name: str) -> Type[Probe]:
+    msg = ""
     if ":" in probe_name or "}" in probe_name:
-      additional_msg = "\n    Likely missing quotes for --probe argument"
-    msg = f"    Options are: {list(PROBE_LOOKUP.keys())}{additional_msg}"
-    return ProbeConfigError(f"Unknown probe name: '{probe_name}'\n{msg}")
+      msg = "\n    Likely missing quotes for --probe argument.\n"
+    return cls._handle_unknown_probe_name(msg, probe_name)
+
+  @classmethod
+  def _handle_unknown_probe_name(cls, msg: str, value: str) -> Type[Probe]:
+    choices_msg, alternative = close_matches_message(value, PROBE_LOOKUP.keys())
+    error_message = f"Unknown probe name {repr(value)}: {msg}{choices_msg}"
+    logging.error(error_message)
+    if alternative:
+      return PROBE_LOOKUP[alternative]
+    raise ProbeConfigError(error_message)
 
   @property
   def name(self) -> str:

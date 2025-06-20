@@ -17,6 +17,7 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
+from crossbench.action_runner.action.meminfo import MeminfoAction, MeminfoTarget
 from crossbench.action_runner.action.position import (CoordinatesConfig,
                                                       PositionConfig,
                                                       SelectorConfig)
@@ -25,6 +26,8 @@ from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
+from crossbench.action_runner.action.wait_for_condition import \
+    WaitForConditionAction
 from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
@@ -256,6 +259,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertIsNone(action.position.coordinates)
     self.assertTrue(action.has_timeout)
     self.assertIsNone(action.verify)
+    self.assertEqual(action.attempts, 1)
     action.validate()
 
     action_2 = ClickAction.parse_dict(action.to_json())
@@ -281,6 +285,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.position.coordinates.y, 2)
     self.assertTrue(action.has_timeout)
     self.assertIsNone(action.verify)
+    self.assertEqual(action.attempts, 1)
     action.validate()
 
     action_2 = ClickAction.parse_dict(action.to_json())
@@ -298,6 +303,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
             "wait": True,
         },
         "verify": "#id",
+        "attempts": 7,
         "timeout": "12s"
     }
     action = ClickAction.parse_dict(config_dict)
@@ -311,6 +317,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(action.position.selector.wait)
     self.assertTrue(action.has_timeout)
     self.assertEqual(action.verify, "#id")
+    self.assertEqual(action.attempts, 7)
     action.validate()
 
     action_2 = ClickAction.parse_dict(action.to_json())
@@ -338,7 +345,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
   def test_parse_click_invalid_selector(self):
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict({"action": "click", "selector": ""})
-    self.assertIn("Empty config value", str(cm.exception))
+    self.assertIn("Non-empty", str(cm.exception))
 
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict({"action": "click", "position": {"selector": ""}})
@@ -485,6 +492,56 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict(config_dict)
     self.assertIn("text", str(cm.exception))
+
+  def test_parse_text_input_keyevent(self):
+    config_dict = {
+        "action": "text_input",
+        "source": "keyboard",
+        "duration": "1s",
+        "keyevent": "KEYCODE_BACK"
+    }
+    action = TextInputAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.TEXT_INPUT)
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.input_source, InputSource.KEYBOARD)
+    self.assertIsNone(action.text)
+    self.assertEqual(action.keyevent, "KEYCODE_BACK")
+    self.assertEqual(action.duration, dt.timedelta(seconds=1))
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = TextInputAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_text_input_both(self):
+    config_dict = {
+        "action": "text_input",
+        "source": "keyboard",
+        "duration": "1s",
+        "text": "some text",
+        "keyevent": "KEYCODE_BACK"
+    }
+    with self.assertRaisesRegex(ValueError, "Exactly one"):
+      TextInputAction.parse_dict(config_dict)
+
+  def test_parse_wait_for_condition(self):
+    config_dict = {
+        "action": "wait_for_condition",
+        "condition": "return maybe",
+    }
+    action = WaitForConditionAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_CONDITION)
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    self.assertEqual(action.condition, "return maybe")
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = WaitForConditionAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
 
   def test_parse_wait_for_element(self):
     config_dict = {
@@ -802,6 +859,43 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaisesRegex(ValueError, "tab_index, title, or url"):
       SwitchTabAction.parse_dict(config_dict)
 
+  def test_parse_switch_tab_relative_tab_index(self):
+    config_dict = {
+        "action": "switch_tab",
+        "relative_tab_index": 17,
+        "title": "^Example.*",
+        "url": "http(s)?://example.com"
+    }
+    action = SwitchTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.SWITCH_TAB)
+    self.assertEqual(action.relative_tab_index, 17)
+    self.assertEqual(action.title.pattern, "^Example.*")
+    self.assertEqual(action.url.pattern, "http(s)?://example.com")
+    action.validate()
+
+    action_2 = SwitchTabAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_switch_tab_both_tab_index_raises(self):
+    config_dict = {
+        "action": "switch_tab",
+        "relative_tab_index": 17,
+        "tab_index": 17,
+    }
+    with self.assertRaises(ValueError):
+      SwitchTabAction.parse_dict(config_dict)
+
+  def test_parse_switch_tab_only_relative_tab_index(self):
+    config_dict = {
+        "action": "switch_tab",
+        "relative_tab_index": 17,
+    }
+    action = SwitchTabAction.parse_dict(config_dict)
+
+    self.assertEqual(action.relative_tab_index, 17)
+
   def test_parse_close_tab_all_args(self):
     config_dict = {
         "action": "close_tab",
@@ -866,8 +960,59 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
+  def test_parse_meminfo_default(self):
+    config_dict = {"action": "meminfo"}
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.target, MeminfoTarget.BROWSER)
+    self.assertIsNone(action.package)
 
-class PositionConfigTestCasse(unittest.TestCase):
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_browser(self):
+    config_dict = {"action": "meminfo", "target": "browser"}
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.target, MeminfoTarget.BROWSER)
+    self.assertIsNone(action.package)
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_invalid_target(self):
+    config_dict = {"action": "meminfo", "target": "notatarget"}
+
+    with self.assertRaisesRegex(ValueError, "target"):
+      MeminfoAction.parse_dict(config_dict)
+
+  def test_parse_meminfo_package_missing_name(self):
+    config_dict = {"action": "meminfo", "target": "package"}
+    with self.assertRaisesRegex(ValueError, "package"):
+      MeminfoAction.parse_dict(config_dict)
+
+  def test_parse_meminfo_package(self):
+    config_dict = {
+        "action": "meminfo",
+        "target": "package",
+        "package": "netflix"
+    }
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.target, MeminfoTarget.PACKAGE)
+    self.assertEqual(action.package, "netflix")
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+
+class PositionConfigTestCase(unittest.TestCase):
 
   def test_parse_position_from_coordinates(self):
     position = PositionConfig.from_coordinates(123, 456)
@@ -875,6 +1020,7 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertIsNotNone(position.coordinates)
     self.assertEqual(123, position.coordinates.x)
     self.assertEqual(456, position.coordinates.y)
+    self.assertIsNone(position.ui_selector)
 
   def test_parse_position_from_selector_defaults(self):
     position = PositionConfig.from_selector("#id")
@@ -884,6 +1030,7 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertTrue(position.selector.required)
     self.assertFalse(position.selector.scroll_into_view)
     self.assertFalse(position.selector.wait)
+    self.assertIsNone(position.ui_selector)
 
   def test_parse_position_from_selector_all(self):
     position = PositionConfig.from_selector(
@@ -894,6 +1041,15 @@ class PositionConfigTestCasse(unittest.TestCase):
     self.assertFalse(position.selector.required)
     self.assertTrue(position.selector.scroll_into_view)
     self.assertTrue(position.selector.wait)
+    self.assertIsNone(position.ui_selector)
+
+  def test_parse_position_from_ui_selector(self):
+    res = "com.google.android.apps.nexuslauncher:id/search_container_hotseat"
+    position = PositionConfig.from_ui_selector(res=res)
+    self.assertIsNone(position.selector)
+    self.assertIsNone(position.coordinates)
+    self.assertIsNotNone(position.ui_selector)
+    self.assertEqual(res, position.ui_selector.res)
 
   def test_selector_and_coordinates_raises(self):
     with self.assertRaisesRegex(ValueError, "exactly one"):

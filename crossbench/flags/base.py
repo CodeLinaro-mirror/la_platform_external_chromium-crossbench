@@ -226,6 +226,9 @@ class BasicFlags(Freezable, collections.UserDict):
   def to_dict(self) -> Dict[str, Optional[str]]:
     return dict(self.items())
 
+  def clear(self):
+    self.data.clear()
+
   def __iter__(self) -> Iterator[str]:
     for k, v in self.items():
       if v is None:
@@ -242,6 +245,14 @@ class BasicFlags(Freezable, collections.UserDict):
 
   def __str__(self) -> str:
     return " ".join(self)
+
+  def freeze(self: Self) -> Self:
+    self.validate()
+    super().freeze()
+    return self
+
+  def validate(self) -> None:
+    pass
 
 
 class Flags(BasicFlags):

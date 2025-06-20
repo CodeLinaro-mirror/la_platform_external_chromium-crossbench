@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import contextlib
 import datetime as dt
 import io
@@ -19,15 +20,20 @@ from typing_extensions import override
 import crossbench
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.benchmarks.loading.loadline_presets import \
-    LoadLineTabletBenchmark
+from crossbench.action_runner.action.wait_for_ready_state import \
+    WaitForReadyStateAction
+from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
+                                            LoadLine2TabletBenchmark)
+from crossbench.benchmarks.loading.playback_controller import \
+    PlaybackController
+from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
-from crossbench.helper.sleep_preventer import SystemSleepPreventer
+from crossbench.helper.wake_lock import WakeLock
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -50,8 +56,7 @@ class CrossbenchFakeFsTestCase(
     self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
     # This is platform specific and causes issues pending sh commands
-    self.sleep_preventer_patcher = mock.patch.object(SystemSleepPreventer,
-                                                     "__enter__")
+    self.sleep_preventer_patcher = mock.patch.object(WakeLock, "__enter__")
     self.addCleanup(self.sleep_preventer_patcher.stop)
     self.sleep_preventer_patcher.start()
 
@@ -65,7 +70,46 @@ class CrossbenchFakeFsTestCase(
 TEST_WARNING = "Test Warning"
 
 
-class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+class CrossbenchMockArgsMixin:
+
+  def mock_args(self, **kwargs) -> argparse.Namespace:
+    args = argparse.Namespace(
+        wraps=kwargs.pop("wraps", False),
+        throw=kwargs.pop("throw", False),
+        browser=kwargs.pop("browser", []),
+        driver_path=kwargs.pop("driver_path", None),
+        remote_driver_path=kwargs.pop("remote_driver_path", None),
+        network_config=kwargs.pop("network_config", None),
+        browser_config=kwargs.pop("browser_config", None),
+        probe_config=kwargs.pop("probe_config", None),
+        viewport=kwargs.pop("viewport", None),
+        splash_screen=kwargs.pop("splash_screen", None),
+        secrets=kwargs.pop("secrets", Secrets()),
+        driver_logging=kwargs.pop("driver_logging", False),
+        wipe_system_user_data=kwargs.pop("wipe_system_user_data", False),
+        http_request_timeout=kwargs.pop("", dt.timedelta()),
+        cache_dir=pathlib.Path("test_cache_dir"),
+        browser_cache_dir=kwargs.pop("browser_cache_dir", None),
+        clear_browser_cache_dir=kwargs.pop("clear_browser_cache_dir", None),
+        enable_features=kwargs.pop("enable_features", None),
+        disable_features=kwargs.pop("disable_features", None),
+        js_flags=kwargs.pop("js_flags", None),
+        sandbox=kwargs.pop("sandbox", None),
+        enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
+        network=kwargs.pop("network", NetworkConfig.default()),
+        probe=kwargs.pop("probe", []),
+        other_browser_args=kwargs.pop("other_browser_args", []),
+        playback=kwargs.pop("playback", PlaybackController.default()),
+        tabs=kwargs.pop("tabs", TabController.default()),
+        about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
+        run_login=kwargs.pop("run_login", True),
+        run_setup=kwargs.pop("run_setup", True))
+    assert not kwargs, f"got unused kwargs: {kwargs}"
+    return args
+
+
+class BaseCrossbenchTestCase(
+    CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
     return [url for url in urls if not url.startswith("data:")]
@@ -96,31 +140,14 @@ class BaseCrossbenchTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.expected_js, [])
-    self.mock_args = mock.Mock(
-        wraps=False,
-        driver_path=None,
-        remote_driver_path=None,
-        network_config=None,
-        browser_config=None,
-        viewport=None,
-        splash_screen=None,
-        secrets=Secrets(),
-        wipe_system_user_data=False,
-        http_request_timeout=dt.timedelta(),
-        cache_dir=pathlib.Path("test_cache_dir"),
-        browser_cache_dir=None,
-        clear_browser_cache_dir=None,
-        enable_features=None,
-        disable_features=None,
-        js_flags=None,
-        enable_field_trial_config=False,
-        network=NetworkConfig.default(),
-        probe=[],
-        other_browser_args=[],
-        driver_logging=False)
 
-  def setup_loadline_config(self):
-    config_dir = LoadLineTabletBenchmark.default_network_config_path().parent
+  def setup_loadline_configs(self):
+    self.setup_config_dir(
+        LoadLine1TabletBenchmark.default_network_config_path().parent)
+    self.setup_config_dir(
+        LoadLine2TabletBenchmark.default_network_config_path().parent)
+
+  def setup_config_dir(self, config_dir):
     self.fs.add_real_directory(
         config_dir,
         lazy_read=not test_helper.is_google_env())
@@ -155,6 +182,14 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     super().setUp()
 
     # tabulate and textwrap can be slow for tests, let's mock them out.
+    self.setup_tabulate_patcher()
+    self.setup_wrap_patcher()
+
+    self.setup_wait_for_ready_state_patcher()
+
+    self.setup_loadline_configs()
+
+  def setup_tabulate_patcher(self) -> None:
     def mock_tabulate(table, *args, **kwargs):
       del args, kwargs
       return str(table)
@@ -163,6 +198,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
+  def setup_wrap_patcher(self) -> None:
     def mock_wrap(text, *args, **kwargs):
       del args, kwargs
       return [text]
@@ -171,7 +207,11 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
-    self.setup_loadline_config()
+  def setup_wait_for_ready_state_patcher(self):
+    patcher = mock.patch.object(
+        WaitForReadyStateAction, "run_with", return_value=True)
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
   def run_cli_output(self,
                      *args,

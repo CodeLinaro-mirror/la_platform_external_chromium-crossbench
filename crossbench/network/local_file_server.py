@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import email.parser
 import http.server
@@ -17,6 +18,7 @@ from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
 from immutabledict import immutabledict
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.network.base import Network
 from crossbench.parse import ObjectParser
 
@@ -158,8 +160,10 @@ class LocalFileNetwork(Network):
     # TODO: support  https server using SSLContext.wrap_socket(httpd.socket)
     request_handler_cls = CustomHeadersRequestHandler.bind(
         self._path, self._extra_headers)
-    server = http.server.ThreadingHTTPServer((self._host, self._port),
-                                             request_handler_cls)
+    with exception.annotate(
+        f"Starting fileserver on {self.host}:{self.http_port}"):
+      server = http.server.ThreadingHTTPServer((self._host, self._port),
+                                               request_handler_cls)
     with self._server_thread(server):
       logging.info("%s custom host=%s, port=%s",
                    type(self).__name__, self.host, self.http_port)
@@ -187,9 +191,15 @@ class LocalFileNetwork(Network):
       # TODO: create port-forwarder service that is shut down properly.
       # TODO: make ports configurable
       browser_platform.reverse_port_forward(self._port, self._port)
+
+      def cleanup():
+        browser_platform.stop_reverse_port_forward(self._port)
+
+      atexit.register(cleanup)
     yield
     if browser_platform.is_remote:
-      browser_platform.stop_reverse_port_forward(self._port)
+      atexit.unregister(cleanup)
+      cleanup()
 
   @property
   @override
@@ -212,5 +222,5 @@ class LocalFileNetwork(Network):
     if self._extra_headers:
       formatted_headers = json.dumps(dict(self._extra_headers))
       extra_headers_str = f" extra_headers={formatted_headers}"
-    return ("LOCAL(path={self._path}, "
+    return (f"LOCAL(path={self._path}, "
             f"speed={self.traffic_shaper}{extra_headers_str})")

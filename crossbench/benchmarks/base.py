@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence,
-                    Tuple, Type, TypeAlias, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional,
+                    Sequence, Tuple, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -17,6 +17,7 @@ from typing_extensions import override
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.flags.base import Flags
 from crossbench.helper import txt_helper
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import ObjectParser
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from crossbench.stories.story import Story
@@ -39,7 +40,10 @@ class Benchmark(abc.ABC):
   def cli_help(cls) -> str:
     assert cls.__doc__, (f"Benchmark class {cls} must provide a doc string.")
     # Return the first non-empty line
-    return cls.__doc__.strip().splitlines()[0]
+    help_str: str = cls.__doc__.strip().splitlines()[0]
+    if aliases := cls.aliases():
+      help_str += f" [{', '.join(aliases)}]"
+    return help_str
 
   @classmethod
   def cli_description(cls) -> str:
@@ -55,15 +59,14 @@ class Benchmark(abc.ABC):
     return tuple()
 
   @classmethod
-  def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers) -> CrossBenchArgumentParser:
     parser = subparsers.add_parser(
         cls.NAME,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help=cls.cli_help(),
         description=cls.cli_description(),
         epilog=cls.cli_epilog(),
-        aliases=aliases)
+    )
     assert isinstance(parser, CrossBenchArgumentParser)
     return parser
 
@@ -114,6 +117,7 @@ class Benchmark(abc.ABC):
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
     self.stories: List[Story] = self._validate_stories(stories)
+    self.log_stories(self.stories)
 
   def _validate_stories(self, stories: Sequence[Story]) -> List[Story]:
     assert stories, "No stories provided"
@@ -127,11 +131,18 @@ class Benchmark(abc.ABC):
     del runner
 
 
+  def log_stories(self, stories: Sequence[StoryT]) -> None:
+    substory_names = [name for story in stories for name in story.substories]
+    stories_str = ", ".join(substory_names)
+    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s", len(stories),
+                 len(substory_names), stories_str)
+
+
 StoryT = TypeVar("StoryT", bound=Story)
 
 
 class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
-  CAN_COMBINE_STORIES: bool = True
+  DEFAULT_STORY_NAME: str = "default"
 
   @classmethod
   def add_cli_parser(
@@ -140,28 +151,30 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         "--stories",
         "--story",
         dest="stories",
-        default="default",
+        default=cls.DEFAULT_STORY_NAME,
         help="Comma-separated list of story names. "
         "Use 'all' for selecting all available stories. "
         "Use 'default' for the standard selection of stories.")
-    if cls.CAN_COMBINE_STORIES:
-      is_combined_group = parser.add_mutually_exclusive_group()
-      is_combined_group.add_argument(
-          "--combined",
-          dest="separate",
-          default=False,
-          action="store_false",
-          help="Run each story in the same session. (default)")
-      is_combined_group.add_argument(
-          "--separate",
-          action="store_true",
-          help="Run each story in a fresh browser.")
-
+    cls.add_story_grouping_parser(parser)
     return parser
 
   @classmethod
+  def add_story_grouping_parser(cls, parser: argparse.ArgumentParser) -> None:
+    is_combined_group = parser.add_mutually_exclusive_group()
+    is_combined_group.add_argument(
+        "--combined",
+        dest="separate",
+        default=False,
+        action="store_false",
+        help="Run each story in the same session. (default)")
+    is_combined_group.add_argument(
+        "--separate",
+        action="store_true",
+        help="Run each story in a fresh browser.")
+
+  @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
-    return {"patterns": args.stories.split(",")}
+    return {"patterns": args.stories.split(","), "args": args}
 
   @classmethod
   def from_cli_args(cls, story_cls: Type[StoryT],
@@ -172,7 +185,9 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def __init__(self,
                story_cls: Type[StoryT],
                patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
                separate: bool = False) -> None:
+    self._args = args
     self.story_cls: Type[StoryT] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
@@ -184,6 +199,12 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     self.process_all(patterns)
     self.stories = self.create_stories(separate)
 
+  @property
+  def args(self) -> argparse.Namespace:
+    if args := self._args:
+      return args
+    raise RuntimeError("Missing args for additional filtering")
+
   @abc.abstractmethod
   def process_all(self, patterns: Sequence[str]) -> None:
     pass
@@ -192,22 +213,9 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def create_stories(self, separate: bool) -> Sequence[StoryT]:
     pass
 
-  def log_stories(self, stories: Sequence[StoryT]) -> None:
-    substory_names = [name for story in stories for name in story.substories]
-    stories_str = ", ".join(substory_names)
-    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s", len(stories),
-                 len(substory_names), stories_str)
-
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS: Type[StoryFilter] = StoryFilter  # type: ignore
-
-  @classmethod
-  @override
-  def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
-    return parser
 
   @classmethod
   @override
@@ -241,8 +249,21 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   @override
   def describe(cls) -> Dict[str, Any]:
     data = super().describe()
-    data["stories"] = cls.all_story_names()
+    data["stories"] = cls.describe_stories()
     return data
+
+  @classmethod
+  def describe_stories(cls) -> Mapping[str, str]:
+    # TODO: use story objects instead
+    return {name: "" for name in cls.all_story_names()}
+
+  @classmethod
+  def all_stories(cls) -> Sequence[Story]:
+    all_args = argparse.Namespace()
+    return cls.STORY_FILTER_CLS(  # pylint: disable=abstract-class-instantiated
+        cls.DEFAULT_STORY_CLS, ["all"],
+        args=all_args,
+        separate=True).stories
 
   @classmethod
   def all_story_names(cls) -> Sequence[str]:
@@ -280,11 +301,12 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   def __init__(self,
                story_cls: Type[PressBenchmarkStoryT],
                patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
                separate: bool = False,
                url: Optional[str] = None) -> None:
     self.url: str | None = url
     self._selected_names: OrderedSet[str] = OrderedSet()
-    super().__init__(story_cls, patterns, separate)
+    super().__init__(story_cls, patterns, args, separate)
     assert issubclass(self.story_cls, PressBenchmarkStory)
     for name in self._known_names:
       assert name, "Invalid empty story name"
@@ -358,25 +380,37 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
         substory for substory in self._known_names if regexp.fullmatch(substory)
     ]
     if not substories:
-      logging.warning(
-          "No matching stories, using case-insensitive fallback regexp.")
-      iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
-      substories = [
-          substory for substory in self._known_names
-          if iregexp.fullmatch(substory)
-      ]
+      substories = self._regexp_match_ignorecase(regexp)
     if not substories:
-      raise ValueError(f"'{original_pattern}' didn't match any stories.")
+      return self._handle_no_match(original_pattern)
     if len(substories) == len(self._known_names) and self._selected_names:
       raise ValueError(f"'{original_pattern}' matched all and overrode all"
                        "previously filtered story names.")
     return substories
 
+  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> List[str]:
+    logging.warning(
+        "No matching stories, using case-insensitive fallback regexp.")
+    iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
+    return [
+        substory for substory in self._known_names
+        if iregexp.fullmatch(substory)
+    ]
+
+  def _handle_no_match(self, original_pattern: str) -> List[str]:
+    choices_ms, alternative = close_matches_message(original_pattern,
+                                                    self._known_names)
+    error_message: str = f"'{original_pattern}' didn't match any stories."
+    error_message += choices_ms
+    if alternative:
+      logging.error(error_message)
+      return [alternative]
+    raise ValueError(error_message)
+
   @override
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
     names = list(self._selected_names)
     stories = self.create_stories_from_names(names, separate)
-    self.log_stories(stories)
     return stories
 
   def create_stories_from_names(
@@ -430,14 +464,13 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(
-      cls, subparsers, aliases: Sequence[str] = ()) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers, aliases)
+  def add_cli_parser(cls, subparsers) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     benchmark_url_group = parser.add_mutually_exclusive_group()
-    live_url = cls.DEFAULT_STORY_CLS.URL
-    local_url = cls.DEFAULT_STORY_CLS.URL_LOCAL
-    official_url = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
+    live_url: str = cls.DEFAULT_STORY_CLS.URL
+    local_url: str = cls.DEFAULT_STORY_CLS.URL_LOCAL
+    official_url: str = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
     benchmark_url_group.add_argument(
         "--live",
         "--live-url",
@@ -467,6 +500,19 @@ class PressBenchmark(SubStoryBenchmark):
         const=local_url,
         help=(f"Use custom or locally (default={local_url}) "
               "hosted benchmark url."))
+
+    if custom_fork_url := getattr(cls.DEFAULT_STORY_CLS, "URL_CHROME_FORK",
+                                  None):
+      parser.add_argument(
+          "--custom",
+          "--chrome-custom-fork",
+          "--chrome-fork",
+          action="store_const",
+          dest="custom_benchmark_url",
+          const=custom_fork_url,
+          help=(f"Use custom chrome fork hosted on {custom_fork_url}. "
+                "This include additional options and performance.mark calls "
+                "for easier investigation."))
     cls.STORY_FILTER_CLS.add_cli_parser(parser)
     return parser
 

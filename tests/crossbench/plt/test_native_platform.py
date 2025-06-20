@@ -23,7 +23,10 @@ from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 
 
-class NativePlatformTestCase(unittest.TestCase):
+class BaseNativePlatformTestCase(unittest.TestCase):
+
+  # Explicitly disabled base test class
+  __test__ = False
 
   @override
   def setUp(self):
@@ -495,11 +498,16 @@ class NativePlatformTestCase(unittest.TestCase):
       self.assertEqual(value, native_value,
                        f"Mismatching values for {signal_name}")
 
+  def test_uptime(self):
+    uptime: dt.timedelta = self.platform.uptime()
+    self.assertLess(0, uptime.total_seconds())
 
 
-@unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
-class PosixNativePlatformTestCase(NativePlatformTestCase):
+
+class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   platform: PosixPlatform
+  # MacOs has custom subclass
+  __test__ = plt.PLATFORM.is_posix and not plt.PLATFORM.is_macos
 
   @override
   def setUp(self):
@@ -675,6 +683,26 @@ class PosixNativePlatformTestCase(NativePlatformTestCase):
     finally:
       popen.kill()
 
+  def test_display_details(self):
+    displays = self.platform.display_details()
+    if not self.platform.has_display:
+      self.assertFalse(displays)
+      return
+    self.assertTrue(displays)
+    self.assertTrue(json.dumps(displays))
+    for display in displays:
+      resolution = display.get("resolution")
+      self.assertEqual(len(resolution), 2)
+      self.assertGreater(resolution[0], 0)
+      self.assertGreater(resolution[1], 0)
+      refresh_rate = display.get("refresh_rate")
+      if refresh_rate != -1.0:
+        self.assertGreater(refresh_rate, 0)
+    # cached
+    displays_2 = self.platform.display_details()
+    self.assertIs(displays, displays_2)
+
+
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
 
   @property
@@ -703,11 +731,11 @@ class MockRemotePosixPlatform(type(plt.PLATFORM)):
     return self.copy_file(from_path, to_path)
 
 
-@unittest.skipIf(not plt.PLATFORM.is_posix, "Incompatible platform")
 class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   """All Posix operations should also work on a remote platform (e.g. via SSH).
   This test fakes this by temporarily changing the current PLATFORM's is_remote
   getter to return True"""
+  __test__ = plt.PLATFORM.is_posix
 
   @override
   def setUp(self):
@@ -738,9 +766,9 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
       self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
 
 
-@unittest.skipIf(not plt.PLATFORM.is_macos, "Incompatible platform")
 class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
   platform: plt.MacOSPlatform
+  __test__ = plt.PLATFORM.is_macos
 
   @override
   def setUp(self):
@@ -873,9 +901,9 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
       self.platform.exec_apple_script("something is not right 11")
 
 
-@unittest.skipIf(not plt.PLATFORM.is_win, "Incompatible platform")
-class WinNativePlatformTestCase(NativePlatformTestCase):
+class WinNativePlatformTestCase(BaseNativePlatformTestCase):
   platform: plt.WinPlatform
+  __test__ = plt.PLATFORM.is_win
 
   @override
   def setUp(self):

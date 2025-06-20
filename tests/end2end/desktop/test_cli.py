@@ -120,8 +120,9 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
   # TODO: speed up --browser=chrome-M111 and add it.
   _run_cli(
       "sp2.1",
-      "--browser=chrome-M113",
+      "--browser=chrome-M113-any",
       "--browser=chrome-111.0.5563.110",
+      "--browser=chrome-latest-dev",
       "--headless",
       "--iterations=1",
       "--env-validation=skip",
@@ -130,13 +131,11 @@ def test_speedometer_2_1_custom_chrome_download(test_env: TestEnv) -> None:
       test_env=test_env)
 
   browser_dirs = _get_browser_dirs(test_env.results_dir)
-  assert len(browser_dirs) == 2
+  assert len(browser_dirs) == 3
   v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert not v8_log_files
 
 
-@pytest.mark.skipif(
-    not plt.PLATFORM.is_macos, reason="Safari is only available on macos")
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
                                        test_chrome_name) -> None:
@@ -148,6 +147,8 @@ def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
   # This fails on the CQ bot, so make sure we skip it there:
   if driver_path:
     pytest.skip("Skipping test on CQ.")
+  if not plt.PLATFORM.is_macos:
+    return
   platform = plt.PLATFORM
   if not platform.is_macos and (not platform.exists(
       all_browsers.Safari.default_path(platform))):
@@ -280,7 +281,7 @@ def test_loading(test_env: TestEnv, test_chrome_name) -> None:
       f"--browser={test_chrome_name}",
       "--env-validation=skip",
       "--viewport=headless",
-      "--stories=cnn",
+      "--stories=wikipedia",
       "--cool-down-time=2.5",
       "--probe=performance.entries",
       test_env=test_env,

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import re
 import shutil
 
 import pytest
@@ -82,8 +83,9 @@ def _load_and_check_chromedriver(output_dir, chrome: ChromeWebDriver) -> None:
 
 def _delete_extracted_app(output_dir: pathlib.Path, app_version: str) -> None:
   browser_bin = output_dir / "browser_bin"
+  pattern = re.compile(app_version)
   for extracted_app_path in list(browser_bin.iterdir()):
-    if app_version in str(extracted_app_path):
+    if pattern.search(str(extracted_app_path)):
       shutil.rmtree(str(extracted_app_path))
 
 
@@ -92,7 +94,7 @@ def _delete_extracted_app(output_dir: pathlib.Path, app_version: str) -> None:
 def test_download_pre_115_canary(test_env: TestEnv) -> None:
   test_env.assert_empty_output_dir()
   _load_and_check_version(test_env.output_dir, test_env.archive_dir,
-                          "chrome-114.0.5735.2 canary", "114.0.5735.2")
+                          "chrome-114.0.5734.0 canary", "114.0.5734.0")
 
 
 def test_download_major_version_milestone(test_env: TestEnv) -> None:
@@ -120,6 +122,34 @@ def test_download_major_version_milestone(test_env: TestEnv) -> None:
       "chrome-M111",
       "111",
   )
+
+
+def test_download_any_channel_milestone(test_env: TestEnv) -> None:
+  test_env.assert_empty_output_dir()
+  _load_and_check_version(
+      test_env.output_dir,
+      test_env.archive_dir,
+      "chrome-M136-any",
+      "136",
+  )
+
+  # Re-downloading should reuse the extracted app.
+  app_path = _load_and_check_version(
+      test_env.output_dir,
+      test_env.archive_dir,
+      "chrome-M136-any",
+      "136",
+  )
+
+  _delete_extracted_app(test_env.output_dir, "M136.any")
+  assert not app_path.exists()
+  _load_and_check_version(
+      test_env.output_dir,
+      test_env.archive_dir,
+      "chrome-M136-any",
+      "136",
+  )
+
 
 
 def test_download_major_version_chrome_for_testing(test_env: TestEnv) -> None:
@@ -175,13 +205,14 @@ def test_download_specific_version_pre_115_stable(test_env: TestEnv) -> None:
   assert list(test_env.archive_dir.iterdir()) == [archive]
 
 
-@pytest.mark.skipif(
-    plt.PLATFORM.is_macos and plt.PLATFORM.is_arm64,
-    reason="Old versions only supported on intel machines.")
 def test_download_old_major_version(test_env: TestEnv) -> None:
+  if plt.PLATFORM.is_macos and plt.PLATFORM.is_arm64:
+    # Old versions only supported on intel machines.
+    return
   test_env.assert_empty_output_dir()
   _load_and_check_version(test_env.output_dir, test_env.archive_dir,
                           "chrome-M68", "68")
+
 
 
 if __name__ == "__main__":

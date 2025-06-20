@@ -33,6 +33,7 @@ class Speedometer21Story(Speedometer2Story):
   NAME: str = "speedometer_2.1"
   URL: str = "https://chromium-workloads.web.app/speedometer/v2.1/"
   URL_OFFICIAL: str = "https://browserbench.org/Speedometer2.1/"
+  URL_CHROME_FORK: str = "https://chromium-workloads.web.app/speedometer/v2.1-custom/"
 
 
 class Speedometer21Benchmark(SpeedometerBenchmark):
@@ -51,4 +52,4 @@ class Speedometer21Benchmark(SpeedometerBenchmark):
   @classmethod
   @override
   def aliases(cls) -> Tuple[str, ...]:
-    return ("sp", "speedometer", "sp2", "speedometer2") + super().aliases()
+    return ("sp2", "speedometer2", "speedometer_2") + super().aliases()

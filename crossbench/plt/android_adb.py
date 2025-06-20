@@ -12,12 +12,16 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
 
+from mobly.controllers import android_device
+from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
+from crossbench.plt.base import SubprocessError
 from crossbench.plt.posix import RemotePosixPlatform
+from crossbench.plt.process_meminfo import ProcessMeminfo
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
@@ -25,6 +29,7 @@ ANDROID_PERMISSIONS = ["POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO"]
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
+  from crossbench.plt.display_info import DisplayInfo
   from crossbench.types import JsonDict
 
 
@@ -72,16 +77,22 @@ class Adb:
   _serial_id: str
   _device_info: Dict[str, str]
   _adb_bin: pth.AnyPath
+  _bundletool: Optional[pth.AnyPath]
 
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
-               adb_bin: Optional[pth.AnyPath] = None) -> None:
+               adb_bin: Optional[pth.AnyPath] = None,
+               bundletool: Optional[pth.AnyPath] = None) -> None:
     self._host_platform = host_platform
     if adb_bin:
       self._adb_bin = host_platform.parse_binary_path(adb_bin)
     else:
       self._adb_bin = _find_adb_bin(host_platform)
+    if bundletool:
+      self._bundletool = host_platform.parse_binary_path(bundletool)
+    else:
+      self._bundletool = pth.LocalPath("bundletool")
     self.start_server()
     self._serial_id, self._device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", self._serial_id,
@@ -200,6 +211,16 @@ class Adb:
     return self._host_platform.sh_stdout_bytes(
         *adb_cmd, quiet=quiet, check=check, stdin=stdin)
 
+  def _get_main_user(self) -> str | None:
+    if self.build_version >= 14:
+      try:
+        return self.cmd("user", "get-main-user").strip()
+      except SubprocessError as e:
+        logging.info(
+            "get-main-user failed, return code %d, stderr %s, stdout %s",
+            e.returncode, e.stderr, e.stdout)
+    return None
+
   def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
     self._host_platform.validate_shell_args(args, shell)
     shell_cmd: ListCmdArgs = ["shell"]
@@ -286,8 +307,12 @@ class Adb:
     return adb_devices(self._host_platform, self._adb_bin)
 
   def forward(self, local: int, remote: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout(
-        "forward", f"{protocol}:{local}", f"{protocol}:{remote}")
+    stdout = self._adb_stdout("forward", f"{protocol}:{local}",
+                              f"{protocol}:{remote}").strip()
+    if not stdout:
+      used_ports = self._adb_stdout("forward", "--list")
+      raise ValueError(
+          f"Could not setup port-forwarding, ports in use:\n{used_ports}")
     local_port = NumberParser.port_number(stdout, "local_port")
     return local_port
 
@@ -295,8 +320,12 @@ class Adb:
     self._adb("forward", "--remove", f"{protocol}:{local}")
 
   def reverse(self, remote: int, local: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout(
-        "reverse", f"{protocol}:{remote}", f"{protocol}:{local}")
+    stdout = self._adb_stdout("reverse", f"{protocol}:{remote}",
+                              f"{protocol}:{local}").strip()
+    if not stdout:
+      used_ports = self._adb_stdout("reverse", "--list")
+      raise ValueError("Could not setup reverse port-forwarding, "
+                       f"ports in use:\n{used_ports}")
     remote_port = NumberParser.port_number(stdout, "remote_port")
     return remote_port
 
@@ -357,8 +386,7 @@ class Adb:
     if not package_name:
       raise ValueError("Got empty package name")
     cmd: ListCmdArgs = ["pm", "clear"]
-    if self.build_version >= 14:
-      user = self.cmd("user", "get-main-user").strip()
+    if user := self._get_main_user():
       cmd.extend(["--user", user])
     cmd.extend([package_name])
     self.shell(*cmd)
@@ -389,10 +417,14 @@ class Adb:
                    modules: Optional[str] = None) -> None:
     if not apks.exists():
       raise ValueError(f"APK {apks} does not exist.")
-    cmd = [
-        "bundletool",
+    if self._bundletool and self._bundletool.suffix == ".jar":
+      binary = ["java", "-jar", str(self._bundletool)]
+    else:
+      binary = [str(self._bundletool)]
+    cmd = binary + [
         "install-apks",
         f"--apks={apks}",
+        f"--adb={self._adb_bin}",
         f"--device-id={self._serial_id}",
     ]
     if allow_downgrade:
@@ -419,9 +451,7 @@ class Adb:
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    user: str | None = None
-    if self.build_version >= 14:
-      user = self.cmd("user", "get-main-user").strip()
+    user: str | None = self._get_main_user()
     for perm in ANDROID_PERMISSIONS:
       cmd: ListCmdArgs = ["pm", "grant"]
       if user:
@@ -466,11 +496,25 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self._adb.serial_id
 
   @functools.cached_property
+  def uiautomator_device(self) -> android_device.AndroidDevice:
+    ad = android_device.AndroidDevice(self.serial_id)
+    ad.services.register(
+      uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
+    )
+    return ad
+
+  @functools.cached_property
   @override
   def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     cpu_str = f"{variant} {platform}"
+
+    # Some android devices do not populate props for CPU info.
+    # In that case, fallback to attempting to parse /proc/cpuinfo
+    if not variant or not platform:
+      return super().cpu
+
     if num_cores := self.cpu_cores(logical=False):
       cpu_str = f"{cpu_str} {num_cores} cores"
     return cpu_str
@@ -671,6 +715,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       res.append({"pid": int(tokens[0]), "name": tokens[1]})
     return res
 
+  @override
+  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+    dumpsys_output = self.sh_stdout("dumpsys", "meminfo", "--package",
+                                    process_name)
+    return self._parse_dumpsys_meminfo(dumpsys_output)
+
   @functools.lru_cache(maxsize=1)
   @override
   def cpu_details(self) -> Dict[str, Any]:
@@ -715,7 +765,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
             "bits": "n/a",
     }
 
-
   @property
   @override
   def is_battery_powered(self) -> bool:
@@ -729,6 +778,10 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self.sh("screencap", "-p", result_path)
 
   _DUMPSYS_WINDOW_DISPLAYS_RE = re.compile(r" cur=(?P<x>\d+)x(?P<y>\d+) ")
+
+  @functools.lru_cache(maxsize=1)
+  def display_details(self) -> Tuple[DisplayInfo, ...]:
+    return ({"resolution": self.display_resolution(), "refresh_rate": -1},)
 
   @override
   def display_resolution(self) -> Tuple[int, int]:
@@ -744,3 +797,30 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
+
+  def _parse_dumpsys_meminfo(self,
+                             meminfo_output: str) -> Dict[str, ProcessMeminfo]:
+    pid_sections = re.split(r"\*\* MEMINFO in pid (\d+) \[(.*?)] \*\*",
+                            meminfo_output)[1:]
+
+    meminfos = {}
+
+    for i in range(0, len(pid_sections), 3):
+      pid = pid_sections[i]
+      process_name = pid_sections[i + 1].strip()
+      raw_process_info = pid_sections[i + 2]
+
+      pss_rss_total = re.search(
+          r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
+          r"\s+TOTAL SWAP \(KB\):\s+(?P<swap_total>\d+)", raw_process_info)
+
+      if not pss_rss_total:
+        raise ValueError("Failed to parse meminfo.")
+
+      meminfos[process_name] = ProcessMeminfo(
+          pid=int(pid),
+          pss_total=int(pss_rss_total["pss_total"]),
+          rss_total=int(pss_rss_total["rss_total"]),
+          swap_total=int(pss_rss_total["swap_total"]))
+
+    return meminfos
