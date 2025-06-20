@@ -583,3 +583,10 @@ class MacOSPlatform(PosixPlatform):
     # This is a semi-ideal solution as it creates a temporary local server.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
       return s.connect_ex(("localhost", port)) == 0
+
+  @override
+  def last_modified(self, path: pth.AnyPathLike) -> float:
+    if self.is_local:
+      return super().last_modified(path)
+    # Get seconds since epoch
+    return float(self.sh_stdout("stat", "-f", "%m", self.path(path)))

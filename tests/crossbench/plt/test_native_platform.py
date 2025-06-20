@@ -627,6 +627,19 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     version = self.platform.app_version(python_path)
     self.assertTrue(version)
 
+  def test_last_modified(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
+      self.platform.touch(tmp_file)
+      last_modified_timestamp = self.platform.last_modified(tmp_file)
+      self.assertGreater(last_modified_timestamp, 0)
+      # Sleep 1 second as the `stat` command used on posix platforms only has
+      # second-level precision for file modification times.
+      self.platform.sleep(1)
+      self.platform.touch(tmp_file)
+      new_last_modified_timestamp = self.platform.last_modified(tmp_file)
+      self.assertGreater(new_last_modified_timestamp, last_modified_timestamp)
+
   def test_shell_piping(self):
     with self.platform.NamedTemporaryFile() as file:
       result = self.platform.sh_stdout(

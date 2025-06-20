@@ -586,6 +586,26 @@ class Platform(abc.ABC):
     self.assert_is_local()
     return local_port
 
+  def forward_devtools_port(self, local_port: int,
+                            remote_identifier: str) -> int:
+    """Forwards a DevTools debugging port from a remote target to a local port.
+
+    Args:
+      local_port: The local port number to forward to. If 0, a free
+                  port will be chosen by the system.
+      remote_identifier: A string identifying the remote DevTools socket or
+                         service. For Android, this is typically a
+                         localabstract socket name like
+                         "chrome_devtools_remote".
+                         For other platforms, it might be a remote port number
+                         or other service identifier.
+
+    Returns:
+      The local port number that was actually used for forwarding.
+    """
+    raise NotImplementedError(
+        f"forward_devtools_port not implemented for {self}")
+
   def stop_port_forward(self, local_port: int) -> None:
     # TODO: Migrate forwarding methods to custom PortManager
     del local_port
@@ -837,6 +857,9 @@ class Platform(abc.ABC):
   def file_size(self, path: pth.AnyPathLike) -> int:
     # TODO: support remotely
     return self.local_path(path).stat().st_size
+
+  def last_modified(self, path: pth.AnyPathLike) -> float:
+    return self.local_path(path).stat().st_mtime
 
   def sh_stdout(self,
                 *args: CmdArg,

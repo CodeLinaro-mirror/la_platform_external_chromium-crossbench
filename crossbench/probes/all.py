@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Type
 
 from crossbench.probes.android_logcat import LogcatAndroidProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
+from crossbench.probes.chromium_pgo_probe import ChromiumPgoProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
@@ -89,6 +90,7 @@ assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
 GENERAL_PURPOSE_PROBES: tuple[Type[Probe], ...] = (
     BrowserProfilingProbe,
     ChromeHistogramsProbe,
+    ChromiumPgoProbe,
     DebuggerProbe,
     DownloadsProbe,
     DTraceProbe,

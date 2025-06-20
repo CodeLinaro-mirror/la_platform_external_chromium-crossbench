@@ -487,6 +487,13 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().user_id()
     return int(self.sh_stdout("id", "-u").strip())
 
+  @override
+  def last_modified(self, path: pth.AnyPathLike) -> float:
+    if self.is_local:
+      return super().last_modified(path)
+    # Get seconds since epoch
+    return float(self.sh_stdout("stat", "-c", "%Y", self.path(path)))
+
 
 class RemotePosixEnviron(Environ):
 

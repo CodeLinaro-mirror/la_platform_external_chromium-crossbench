@@ -16,6 +16,7 @@ from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
+from crossbench.flags.base import Flags, FlagsData
 from crossbench import path as pth
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
@@ -307,9 +308,19 @@ class Adb:
   def devices(self) -> dict[str, dict[str, str]]:
     return adb_devices(self._host_platform, self._adb_bin)
 
-  def forward(self, local: int, remote: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout("forward", f"{protocol}:{local}",
-                              f"{protocol}:{remote}").strip()
+  def forward(self,
+              local: int,
+              remote: int | str,
+              local_protocol: str = "tcp",
+              remote_protocol: str = "tcp",
+              flags_data: FlagsData = None) -> int:
+    cmd_args: list[Any] = ["forward"]
+    if flags_data:
+      parsed_flags = Flags(flags_data)
+      cmd_args.extend(list(parsed_flags))
+    cmd_args.append(f"{local_protocol}:{local}")
+    cmd_args.append(f"{remote_protocol}:{remote}")
+    stdout = self._adb_stdout(*cmd_args).strip()
     if not stdout:
       used_ports = self._adb_stdout("forward", "--list")
       raise ValueError(
@@ -673,9 +684,22 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def port_forward(self, local_port: int, remote_port: int) -> int:
     local_port = NumberParser.positive_zero_int(local_port, "local_port")
     remote_port = NumberParser.port_number(remote_port, "remote_port")
-    local_port = self.adb.forward(local_port, remote_port, protocol="tcp")
+    local_port = self.adb.forward(local_port, remote_port)
     logging.debug("Forwarded Remote Port: %s:%s <= %s:%s",
                   self._host_platform.name, local_port, self, remote_port)
+    return local_port
+
+  @override
+  def forward_devtools_port(self, local_port: int,
+                            remote_identifier: str) -> int:
+    local_port = NumberParser.positive_zero_int(local_port, "local_port")
+    local_port = self.adb.forward(
+        local=local_port,
+        remote=remote_identifier,
+        local_protocol="tcp",
+        remote_protocol="localabstract")
+    logging.debug("Forwarded DevTools Port: %s:%s <= %s:%s",
+                  self._host_platform.name, local_port, self, remote_identifier)
     return local_port
 
   @override
