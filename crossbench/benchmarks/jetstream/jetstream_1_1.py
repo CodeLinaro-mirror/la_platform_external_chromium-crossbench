@@ -96,7 +96,8 @@ class JetStream11Story(JetStreamStory):
           url=self.get_run_url(run),
           ready_state=ReadyState.COMPLETE,
           timeout=dt.timedelta(seconds=10))
-      actions.wait_js_condition("return !!JetStream;", min_wait=0.01, timeout=2)
+      actions.wait_js_condition(
+          "return !!JetStream;", min_interval=0.01, timeout=2)
       actions.js("JetStream.initialize();")
       # Intercept console.log to capture the raw results.
       actions.js("""
@@ -121,7 +122,7 @@ class JetStream11Story(JetStreamStory):
           return (summaryElement.innerHTML.indexOf("Score") >= 0);
           """,
           0.5,
-          self.slow_duration,
+          timeout=self.slow_duration,
           delay=self.substory_duration)
 
 

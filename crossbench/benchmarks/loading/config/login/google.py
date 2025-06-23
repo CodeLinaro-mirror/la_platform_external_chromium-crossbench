@@ -95,7 +95,9 @@ class GoogleLogin(PresetLoginBlock):
     action.wait_js_condition(
         ("return "
          f"document.querySelector(\"[aria-label='{aria_label}']\") != null &&"
-         f"document.getElementById({repr(button_name)}) != null;"), 0.2, 10)
+         f"document.getElementById({repr(button_name)}) != null;"),
+        0.2,
+        timeout=10)
     action.js("const inputField ="
               f" document.querySelector(\"[aria-label='{aria_label}']\");"
               f"inputField.value = {repr(input_val)};"
@@ -129,8 +131,7 @@ class GoogleLogin(PresetLoginBlock):
           self.timeout(secret))
       action.wait_for_ready_state(ReadyState.COMPLETE, self.timeout(secret))
 
-      wait_range = run.wait_range(0.2, self.timeout(secret), 0)
-
+      wait_range = run.wait_range(0.2, self.timeout(secret))
       for _, _, time_left in wait_range.wait_with_backoff():
         current_url = action.current_url()
 

@@ -116,9 +116,11 @@ class Run(ResultOrigin):
               measure: bool = True) -> Actions:
     return Actions(name, self, verbose=verbose, measure=measure)
 
-  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
-                 delay: AnyTimeUnit) -> WaitRange:
-    return self.runner.wait_range(min_wait, timeout, delay)
+  def wait_range(self,
+                 min_interval: AnyTimeUnit,
+                 timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit = 0) -> WaitRange:
+    return self.runner.wait_range(min_interval, timeout, delay)
 
   @property
   def info_stack(self) -> TInfoStack:

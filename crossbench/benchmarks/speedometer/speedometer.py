@@ -197,7 +197,8 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
     updated_url = self.get_run_url(run)
     with run.actions("Setup") as actions:
       actions.show_url(updated_url)
-      actions.wait_js_condition("return window.Suites !== undefined;", 0.5, 10)
+      actions.wait_js_condition(
+          "return window.Suites !== undefined;", 0.5, timeout=10)
       self._setup_substories(actions)
       self._setup_benchmark_client(actions)
       actions.wait(0.5)
@@ -257,7 +258,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
       actions.wait_js_condition(
           "return window.testDone",
           0.5,
-          self.slow_duration,
+          timeout=self.slow_duration,
           delay=self.substory_duration)
 
 

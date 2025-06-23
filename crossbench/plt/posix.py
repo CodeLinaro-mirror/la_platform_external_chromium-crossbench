@@ -556,7 +556,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
           self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
           stderr=stderr, stdin=stdin)
       # tmp_pid_file might not have been immediately flushed:
-      for _ in WaitRange(0.01, 2).wait_with_backoff():
+      for _ in WaitRange(0.01, timeout=2).wait_with_backoff():
         if pid_str := self.cat(temp_pid_file):
           remote_pid = int(pid_str)
           remote_popen.set_remote_pid(remote_pid)

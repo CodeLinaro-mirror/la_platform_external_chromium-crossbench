@@ -142,7 +142,9 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
           timeout=dt.timedelta(seconds=10))
       if self._substories != self.SUBSTORIES:
         actions.wait_js_condition(
-            "return globalThis?.JetStream?.benchmarks?.length > 0;", 0.1, 10)
+            "return globalThis?.JetStream?.benchmarks?.length > 0;",
+            0.1,
+            timeout=10)
         actions.js(
             """
         let benchmarks = arguments[0];
@@ -153,7 +155,9 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
       actions.wait_js_condition(
           """
         return document.querySelectorAll("#results>.benchmark").length > 0;
-      """, 1, self.duration + dt.timedelta(seconds=30))
+      """,
+          1,
+          timeout=self.duration + dt.timedelta(seconds=30))
 
 
 ProbeClsTupleT = tuple[Type[JetStream2Probe], ...]

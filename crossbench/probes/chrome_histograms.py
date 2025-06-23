@@ -380,7 +380,7 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
           ready_state=ReadyState.COMPLETE,
           timeout=dt.timedelta(seconds=10))
       actions.js(self.HISTOGRAM_SEND)
-      actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, 10.0)
+      actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, timeout=10.0)
       data = actions.js(self.HISTOGRAM_DATA)
       histogram_list = ObjectParser.sequence(data)
       histograms: dict[str, ChromeHistogramSample] = {}

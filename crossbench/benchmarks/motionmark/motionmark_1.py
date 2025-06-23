@@ -305,7 +305,7 @@ class MotionMark1Story(PressBenchmarkStory):
           return window.benchmarkRunnerClient.results._results != undefined
           """,
           0.5,
-          self.slow_duration,
+          timeout=self.slow_duration,
           delay=self.substory_duration / 4)
 
 

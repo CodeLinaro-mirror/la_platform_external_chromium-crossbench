@@ -440,11 +440,13 @@ class Runner:
   def has_browser_group(self) -> bool:
     return self._browser_group is not None
 
-  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
-                 delay: AnyTimeUnit) -> WaitRange:
+  def wait_range(self,
+                 min_interval: AnyTimeUnit,
+                 timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit = 0) -> WaitRange:
     timing = self.timing
     return WaitRange(
-        min=timing.timedelta(min_wait),
+        min=timing.timedelta(min_interval),
         timeout=timing.timeout_timedelta(timeout),
         delay=timing.timedelta(delay))
 

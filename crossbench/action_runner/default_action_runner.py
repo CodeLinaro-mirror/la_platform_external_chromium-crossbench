@@ -244,7 +244,7 @@ class DefaultActionRunner(ActionRunner):
     try:
       actions.wait_js_condition(
           selector_script,
-          min_wait=0.2,
+          min_interval=0.2,
           timeout=timeout,
           arguments=(selector,),
           success_condition=success_condition)
@@ -269,7 +269,7 @@ class DefaultActionRunner(ActionRunner):
                          action: i_action.WaitForConditionAction) -> None:
     with run.actions("WaitForConditionAction", measure=False) as actions:
       actions.wait_js_condition(
-          action.condition, min_wait=0.1, timeout=action.timeout)
+          action.condition, min_interval=0.1, timeout=action.timeout)
 
   @override
   def wait_for_ready_state(self, run: Run,
@@ -379,7 +379,7 @@ class DefaultActionRunner(ActionRunner):
                            f"{repr(self.info_stack)}")
       assert isinstance(ctx, DownloadsProbeContext)
 
-      wait_range = run.wait_range(min_wait=0.2, timeout=action.timeout, delay=0)
+      wait_range = run.wait_range(min_interval=0.2, timeout=action.timeout)
       for _ in wait_range.wait_with_backoff():
         if ctx.download_complete(action.pattern):
           return
