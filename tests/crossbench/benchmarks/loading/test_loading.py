@@ -511,6 +511,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         JsInvocation(True),
         # Return successful login URL
         JsInvocation("https://myaccount.google.com", re.compile(r".*URL.*")),
+        # No suspicious activity
+        JsInvocation(False),
     ]
     for browser in self.browsers:
       for script in expected_scripts:

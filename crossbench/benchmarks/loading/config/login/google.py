@@ -62,6 +62,27 @@ SKIP_HOME_ADDRESS: ClickAction = ClickAction.parse({
     "source": "js",
 })
 
+SUSPICIOUS_ACTIVITY_URL: str = "https://myaccount.google.com/notifications"
+CHCEK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse({
+    "action": "click",
+    "pos": {
+        "selector": "[aria-label='Check activity']",
+        "required": True,
+    },
+    "source": "js",
+})
+
+CLICK_YES_IT_WAS_ME: ClickAction = ClickAction.parse({
+    "action": "click",
+    "pos": {
+        "selector": "xpath///button[./span[text()='Yes, it was me']]",
+        "required": True,
+        "wait": True,
+    },
+    "source": "js",
+    "verify": "xpath///body[not(./button[./span[text()='Yes, it was me']])]",
+})
+
 
 class GoogleLogin(PresetLoginBlock):
   """Google-specific login steps."""
@@ -131,6 +152,9 @@ class GoogleLogin(PresetLoginBlock):
           self._dismiss_login_page(action, runner, run, SKIP_HOME_ADDRESS,
                                    ADD_HOME_ADDRESS_REDIRECT, time_left)
 
+      self._clear_suspicious_activity(action, runner, run)
+
+
   def _dismiss_login_page(self, action: Actions, runner: ActionRunner, run: Run,
                           click_action: ClickAction, current_url: str,
                           timeout: dt.timedelta) -> None:
@@ -138,3 +162,15 @@ class GoogleLogin(PresetLoginBlock):
     action.wait_js_condition(
         f"return !document.URL.startsWith('{current_url}');", 0.2, timeout)
     action.wait_for_ready_state(ReadyState.COMPLETE, timeout)
+
+  def _clear_suspicious_activity(self, action: Actions, runner: ActionRunner,
+                                 run: Run):
+    has_suspicious_activity = action.js(
+        "return document.querySelector("
+        "\"[aria-label='Check activity']\") != null;")
+
+    if not has_suspicious_activity:
+      return
+
+    runner.click(run, CHCEK_SUSPICIOUS_ACTIVITY)
+    runner.click(run, CLICK_YES_IT_WAS_ME)

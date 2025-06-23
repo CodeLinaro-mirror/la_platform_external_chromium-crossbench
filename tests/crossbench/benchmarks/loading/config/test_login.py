@@ -81,6 +81,8 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.browser.expect_js(result=True)
     # Return successful login URL
     self.browser.expect_js(result="https://myaccount.google.com")
+    # Check for suspicious activity
+    self.browser.expect_js(result=False)
 
   def test_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
@@ -111,7 +113,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])
 
-  def test_account_maintenance_redirects_dismissed(self):
+  def test_full_account_maintenance_flow(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
     page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
 
@@ -167,6 +169,18 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     # Return successful login URL
     self.browser.expect_js(result="https://myaccount.google.com")
+
+    # Return suspicious activity is present
+    self.browser.expect_js(result=True)
+    # Click suspicious activity button
+    self.browser.expect_js(result=1)
+    # Wait for 'yes' button
+    self.browser.expect_js(result=1)
+    # Click 'yes' button
+    self.browser.expect_js(result=1)
+    # Wait 'yes' button not present.
+    self.browser.expect_js(result=1)
+
 
     self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])
