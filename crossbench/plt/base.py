@@ -35,7 +35,8 @@ from crossbench.helper import wait
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
-from crossbench.plt.port_manager import PortManager, PortScope
+from crossbench.plt.port_manager import (LocalPortManager, PortManager,
+                                         PortScope)
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
@@ -112,7 +113,7 @@ class Platform(abc.ABC):
     self._default_port_manager: PortManager = self._create_port_manager()
 
   def _create_port_manager(self) -> PortManager:
-    return PortManager(self)
+    return LocalPortManager(self)
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -576,54 +577,6 @@ class Platform(abc.ABC):
   @property
   def ports(self) -> PortScope:
     return self._default_port_manager.scope
-
-  def port_forward(self, local_port: int, remote_port: int) -> int:
-    """ Forwards a device remote_port to a local port."""
-    # TODO: Migrate forwarding methods to custom PortManager
-    if remote_port != local_port:
-      raise ValueError("Cannot forward a remote port on a local platform.")
-    parse.NumberParser.port_number(local_port, "local_port")
-    self.assert_is_local()
-    return local_port
-
-  def forward_devtools_port(self, local_port: int,
-                            remote_identifier: str) -> int:
-    """Forwards a DevTools debugging port from a remote target to a local port.
-
-    Args:
-      local_port: The local port number to forward to. If 0, a free
-                  port will be chosen by the system.
-      remote_identifier: A string identifying the remote DevTools socket or
-                         service. For Android, this is typically a
-                         localabstract socket name like
-                         "chrome_devtools_remote".
-                         For other platforms, it might be a remote port number
-                         or other service identifier.
-
-    Returns:
-      The local port number that was actually used for forwarding.
-    """
-    raise NotImplementedError(
-        f"forward_devtools_port not implemented for {self}")
-
-  def stop_port_forward(self, local_port: int) -> None:
-    # TODO: Migrate forwarding methods to custom PortManager
-    del local_port
-    self.assert_is_local()
-
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
-    """ Forwards a local port to a device port."""
-    # TODO: Migrate forwarding methods to custom PortManager
-    if remote_port != local_port:
-      raise ValueError("Cannot forward a remote port on a local platform.")
-    parse.NumberParser.port_number(remote_port, "remote_port")
-    self.assert_is_local()
-    return remote_port
-
-  def stop_reverse_port_forward(self, remote_port: int) -> None:
-    # TODO: Migrate forwarding methods to custom PortManager
-    del remote_port
-    self.assert_is_local()
 
   def is_port_used(self, port: int) -> bool:
     self.assert_is_local()

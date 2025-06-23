@@ -4,12 +4,16 @@
 
 from __future__ import annotations
 
+import abc
 import atexit
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Iterator, Self
+from typing import TYPE_CHECKING, Iterator, Self, Tuple
+
+from typing_extensions import override
 
 from crossbench import exception
+from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -32,8 +36,8 @@ class PortScope:
     self._manager: PortManager = manager
     self._parent_scope: Self | None = parent_scope
     assert parent_scope is not self
-    self.forwarded_ports: dict[int, int] = {}
-    self.reverse_forwarded_ports: dict[int, int] = {}
+    self._forwarded_ports: dict[int, int | str] = {}
+    self._reverse_forwarded_ports: dict[int, int] = {}
 
   @property
   def platform(self) -> Platform:
@@ -45,7 +49,15 @@ class PortScope:
 
   @property
   def is_empty(self) -> bool:
-    return not self.forwarded_ports and not self.reverse_forwarded_ports
+    return not self._forwarded_ports and not self._reverse_forwarded_ports
+
+  @property
+  def forwarded_ports(self) -> Tuple[int, ...]:
+    return tuple(self._forwarded_ports.keys())
+
+  @property
+  def reverse_forwarded_ports(self) -> Tuple[int, ...]:
+    return tuple(self._reverse_forwarded_ports.keys())
 
   @contextlib.contextmanager
   def nested(self) -> Iterator[PortScope]:
@@ -60,13 +72,13 @@ class PortScope:
 
   def lookup_forwarded_port(self, local_port: int) -> PortScope | None:
     for current_scope in self:
-      if local_port in current_scope.forwarded_ports:
+      if local_port in current_scope._forwarded_ports:  # pylint: disable=protected-access
         return current_scope
     return None
 
   def lookup_reverse_forwarded_port(self, remote_port: int) -> PortScope | None:
     for current_scope in self:
-      if remote_port in current_scope.reverse_forwarded_ports:
+      if remote_port in current_scope._reverse_forwarded_ports:  # pylint: disable=protected-access
         return current_scope
     return None
 
@@ -77,41 +89,68 @@ class PortScope:
       current_scope = current_scope._parent_scope
 
   def forward(self, local_port: int, remote_port: int) -> int:
+    local_port = NumberParser.port_number_zero(local_port, "local_port")
     if self.is_forwarded_port_used(local_port):
       raise PortForwardException(
           f"Cannot forward local port {local_port} twice, "
           "it is already forwarded.")
-    local_port = self.platform.port_forward(local_port, remote_port)
-    self.forwarded_ports[local_port] = remote_port
+    local_port = self._manager.forward(local_port, remote_port)
+    self._forwarded_ports[local_port] = remote_port
+    return local_port
+
+  def forward_devtools(self, local_port: int, remote_identifier: str) -> int:
+    """Forwards a DevTools debugging port from a remote target to a local port.
+
+    Args:
+      local_port: The local port number to forward to. If 0, a free
+                  port will be chosen by the system.
+      remote_identifier: A string identifying the remote DevTools socket or
+                         service. For Android, this is typically a
+                         localabstract socket name like
+                         "chrome_devtools_remote".
+                         For other platforms, it might be a remote port number
+                         or other service identifier.
+
+    Returns:
+      The local port number that was actually used for forwarding.
+    """
+    local_port = NumberParser.port_number_zero(local_port, "local_port")
+    if self.is_forwarded_port_used(local_port):
+      raise PortForwardException(
+          f"Cannot forward local port {local_port} twice, "
+          "it is already forwarded.")
+    local_port = self._manager.forward_devtools(local_port, remote_identifier)
+    self._forwarded_ports[local_port] = remote_identifier
     return local_port
 
   def stop_forward(self, local_port: int) -> None:
-    if local_port not in self.forwarded_ports:
+    if local_port not in self._forwarded_ports:
       raise PortForwardException(
           f"Cannot stop forwarding local port {local_port}, "
           f"it was never forwarded.")
-    del self.forwarded_ports[local_port]
-    self.platform.stop_port_forward(local_port)
+    del self._forwarded_ports[local_port]
+    self._manager.stop_forward(local_port)
 
   def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    remote_port = NumberParser.port_number_zero(remote_port, "remote_port")
     if self.is_reverse_forwarded_port_used(remote_port):
       raise PortForwardException(
           f"Cannot reverse forward remote port {remote_port} twice, "
           "it is already forwarded.")
-    remote_port = self.platform.reverse_port_forward(remote_port, local_port)
-    self.reverse_forwarded_ports[remote_port] = local_port
+    remote_port = self._manager.reverse_forward(remote_port, local_port)
+    self._reverse_forwarded_ports[remote_port] = local_port
     return remote_port
 
   def stop_reverse_forward(self, remote_port: int) -> None:
-    if remote_port not in self.reverse_forwarded_ports:
+    if remote_port not in self._reverse_forwarded_ports:
       raise PortForwardException(
           f"Cannot stop reverse forwarding remote port {remote_port}, "
           f"it was never forwarded.")
-    del self.reverse_forwarded_ports[remote_port]
-    self.platform.stop_reverse_port_forward(remote_port)
+    del self._reverse_forwarded_ports[remote_port]
+    self._manager.stop_reverse_forward(remote_port)
 
 
-class PortManager:
+class PortManager(abc.ABC):
   """Keeps track of opened forwarded and reverse-forwarded ports.
   All ports are closed when the PortManager is closed.
   To limit the risk of leaking ports you can use the .nested() scope.
@@ -199,24 +238,64 @@ class PortManager:
 
   def _stop_scoped_ports(self, port_scope: PortScope,
                          exceptions: exception.Annotator) -> None:
-    for local_port in tuple(port_scope.forwarded_ports.keys()):
+    for local_port in port_scope.forwarded_ports:
       with exceptions.capture(f"Stopping forwarding {local_port}"):
         port_scope.stop_forward(local_port)
 
-    for remote_port in tuple(port_scope.reverse_forwarded_ports.keys()):
+    for remote_port in port_scope.reverse_forwarded_ports:
       with exceptions.capture(f"Stopping reverse forwarding {remote_port}"):
         port_scope.stop_reverse_forward(remote_port)
 
     assert self._port_scope.is_empty, "Expected empty PortScope"
 
+  @abc.abstractmethod
   def forward(self, local_port: int, remote_port: int) -> int:
-    return self._port_scope.forward(local_port, remote_port)
+    pass
 
+  def forward_devtools(self, local_port: int, remote_identifier: str) -> int:
+    del local_port, remote_identifier
+    raise NotImplementedError(
+        f"forward_devtools_port not implemented for {self}")
+
+  @abc.abstractmethod
   def stop_forward(self, local_port: int) -> None:
-    self._port_scope.stop_forward(local_port)
+    pass
 
+  @abc.abstractmethod
   def reverse_forward(self, remote_port: int, local_port: int) -> int:
-    return self._port_scope.reverse_forward(remote_port, local_port)
+    pass
 
+  @abc.abstractmethod
   def stop_reverse_forward(self, remote_port: int) -> None:
-    self._port_scope.stop_reverse_forward(remote_port)
+    pass
+
+
+class LocalPortManager(PortManager):
+
+  def __init__(self, platform: Platform, throw: bool = False) -> None:
+    super().__init__(platform, throw)
+    self.platform.assert_is_local()
+
+  @override
+  def forward(self, local_port: int, remote_port: int) -> int:
+    """ Forwards a device remote_port to a local port."""
+    if remote_port != local_port:
+      raise ValueError("Cannot forward a remote port on a local platform.")
+    local_port = NumberParser.port_number(local_port, "local_port")
+    self.platform.assert_is_local()
+    return local_port
+
+  @override
+  def stop_forward(self, local_port: int) -> None:
+    del local_port
+
+  @override
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    if remote_port != local_port:
+      raise ValueError("Cannot forward a remote port on a local platform.")
+    remote_port = NumberParser.port_number(remote_port, "remote_port")
+    return remote_port
+
+  @override
+  def stop_reverse_forward(self, remote_port: int) -> None:
+    del remote_port

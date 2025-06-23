@@ -32,7 +32,7 @@ class DevToolsClient:
     if self._ws and self._ws.connected:
       return
     try:
-      self._devtools_port = self._platform.forward_devtools_port(
+      self._devtools_port = self._platform.ports.forward_devtools(
           local_port=self._requested_local_port,
           remote_identifier=self._remote_devtools_identifier)
       self._ws = websocket.WebSocket()
@@ -59,7 +59,7 @@ class DevToolsClient:
     self._ws = None
     if self._devtools_port:
       try:
-        self._platform.stop_port_forward(self._devtools_port)
+        self._platform.ports.stop_forward(self._devtools_port)
       except Exception as e:  # pylint: disable=broad-except
         # Best effort to remove forwarding, log if it fails but don't crash
         logging.warning(

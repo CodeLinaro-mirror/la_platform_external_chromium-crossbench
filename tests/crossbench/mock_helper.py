@@ -27,7 +27,7 @@ from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
-from crossbench.plt.port_manager import PortManager
+from crossbench.plt.port_manager import LocalPortManager, PortManager
 from crossbench.plt.win import WinPlatform
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
@@ -71,6 +71,64 @@ class ShResult:
     return self._success
 
 
+class TrackingPortManagerMixin:
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.forwarded_ports: dict[int, int] = {}
+    self.reverse_forwarded_ports: dict[int, int] = {}
+
+  def forward(self, local_port: int, remote_port: int) -> int:
+    local_port = super().forward(local_port, remote_port)
+    self.forwarded_ports[local_port] = remote_port
+    return local_port
+
+  def stop_forward(self, local_port: int) -> None:
+    if local_port in self.forwarded_ports:
+      del self.forwarded_ports[local_port]
+
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    remote_port = super().reverse_forward(remote_port, local_port)
+    self.reverse_forwarded_ports[remote_port] = local_port
+    return remote_port
+
+  def stop_reverse_forward(self, remote_port: int) -> None:
+    if remote_port in self.reverse_forwarded_ports:
+      del self.reverse_forwarded_ports[remote_port]
+
+
+class MockRemoterPortManagerMixin:
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.current_port = 60000
+
+  def _next_port(self) -> int:
+    self.current_port += 1
+    return self.current_port
+
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    del local_port
+    if remote_port == 0:
+      return self._next_port()
+    return remote_port
+
+  def forward(self, local_port: int, remote_port: int) -> int:
+    del remote_port
+    if local_port == 0:
+      return self._next_port()
+    return local_port
+
+
+class MockLocalPortManager(TrackingPortManagerMixin, LocalPortManager):
+  pass
+
+
+class MockRemotePortManager(TrackingPortManagerMixin,
+                            MockRemoterPortManagerMixin, PortManager):
+  pass
+
+
 class MockPlatformMixin:
 
   def __init__(self, *args, is_battery_powered=False, **kwargs):
@@ -94,6 +152,11 @@ class MockPlatformMixin:
   @property
   def has_display(self) -> bool:
     return True
+
+  def _create_port_manager(self) -> PortManager:
+    if self.is_local:
+      return MockLocalPortManager(self)
+    return MockRemotePortManager(self)
 
   @property
   def port_manager(self) -> PortManager:

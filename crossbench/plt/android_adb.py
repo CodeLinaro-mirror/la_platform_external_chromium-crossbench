@@ -16,8 +16,8 @@ from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
-from crossbench.flags.base import Flags, FlagsData
 from crossbench import path as pth
+from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
@@ -476,7 +476,50 @@ class AndroidAdbPortManager(PortManager):
 
   def __init__(self, platform: AndroidAdbPlatform, adb: Adb) -> None:
     super().__init__(platform)
-    self._adb = adb
+    self._adb: Adb = adb
+
+  @property
+  def host_platform(self) -> Platform:
+    return self._platform.host_platform
+
+  @override
+  def forward(self, local_port: int, remote_port: int) -> int:
+    local_port = NumberParser.positive_zero_int(local_port, "local_port")
+    remote_port = NumberParser.port_number(remote_port, "remote_port")
+    local_port = self._adb.forward(
+        local_port, remote_port, local_protocol="tcp", remote_protocol="tcp")
+    logging.debug("Forwarded Remote Port: %s:%s <= %s:%s",
+                  self.host_platform.name, local_port, self, remote_port)
+    return local_port
+
+  @override
+  def forward_devtools(self, local_port: int, remote_identifier: str) -> int:
+    local_port = NumberParser.positive_zero_int(local_port, "local_port")
+    local_port = self._adb.forward(
+        local=local_port,
+        remote=remote_identifier,
+        local_protocol="tcp",
+        remote_protocol="localabstract")
+    logging.debug("Forwarded DevTools Port: %s:%s <= %s:%s",
+                  self.host_platform.name, local_port, self, remote_identifier)
+    return local_port
+
+  @override
+  def stop_forward(self, local_port: int) -> None:
+    self._adb.forward_remove(local_port, protocol="tcp")
+
+  @override
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
+    local_port = NumberParser.port_number(local_port, "local_port")
+    remote_port = self._adb.reverse(remote_port, local_port, protocol="tcp")
+    logging.debug("Forwarded Local Port: %s:%s => %s:%s", self.host_platform,
+                  local_port, self, remote_port)
+    return remote_port
+
+  @override
+  def stop_reverse_forward(self, remote_port: int) -> None:
+    self._adb.reverse_remove(remote_port, protocol="tcp")
 
 
 class AndroidAdbPlatform(RemotePosixPlatform):
@@ -679,45 +722,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(
         *args, shell=shell, stdin=stdin, env=env, quiet=quiet, check=check)
-
-  @override
-  def port_forward(self, local_port: int, remote_port: int) -> int:
-    local_port = NumberParser.positive_zero_int(local_port, "local_port")
-    remote_port = NumberParser.port_number(remote_port, "remote_port")
-    local_port = self.adb.forward(local_port, remote_port)
-    logging.debug("Forwarded Remote Port: %s:%s <= %s:%s",
-                  self._host_platform.name, local_port, self, remote_port)
-    return local_port
-
-  @override
-  def forward_devtools_port(self, local_port: int,
-                            remote_identifier: str) -> int:
-    local_port = NumberParser.positive_zero_int(local_port, "local_port")
-    local_port = self.adb.forward(
-        local=local_port,
-        remote=remote_identifier,
-        local_protocol="tcp",
-        remote_protocol="localabstract")
-    logging.debug("Forwarded DevTools Port: %s:%s <= %s:%s",
-                  self._host_platform.name, local_port, self, remote_identifier)
-    return local_port
-
-  @override
-  def stop_port_forward(self, local_port: int) -> None:
-    self.adb.forward_remove(local_port, protocol="tcp")
-
-  @override
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
-    remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
-    local_port = NumberParser.port_number(local_port, "local_port")
-    remote_port = self.adb.reverse(remote_port, local_port, protocol="tcp")
-    logging.debug("Forwarded Local Port: %s:%s => %s:%s", self._host_platform,
-                  local_port, self, remote_port)
-    return remote_port
-
-  @override
-  def stop_reverse_port_forward(self, remote_port: int) -> None:
-    self.adb.reverse_remove(remote_port, protocol="tcp")
 
   @override
   def pull(self, from_path: pth.AnyPath,

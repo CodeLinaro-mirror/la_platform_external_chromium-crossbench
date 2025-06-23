@@ -5,43 +5,18 @@
 from __future__ import annotations
 
 import unittest
+from typing import cast
 
 from crossbench.plt.port_manager import PortForwardException, PortManager
 from tests import test_helper
-from tests.crossbench.mock_helper import LinuxMockPlatform
+from tests.crossbench.mock_helper import (LinuxMockPlatform,
+                                          MockRemotePortManager)
 
 
 class FakePortLinuxMockPlatform(LinuxMockPlatform):
 
-  def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
-    self.forwarded_ports: dict[int, int] = {}
-    self.reverse_forwarded_ports: dict[int, int] = {}
-    self.current_port = 60000
-
-  def _next_port(self) -> int:
-    self.current_port += 1
-    return self.current_port
-
-  def port_forward(self, local_port: int, remote_port: int) -> int:
-    if local_port == 0:
-      local_port = self._next_port()
-    self.forwarded_ports[local_port] = remote_port
-    return local_port
-
-  def stop_port_forward(self, local_port: int) -> None:
-    if local_port in self.forwarded_ports:
-      del self.forwarded_ports[local_port]
-
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
-    if remote_port == 0:
-      remote_port = self._next_port()
-    self.reverse_forwarded_ports[remote_port] = local_port
-    return remote_port
-
-  def stop_reverse_port_forward(self, remote_port: int) -> None:
-    if remote_port in self.reverse_forwarded_ports:
-      del self.reverse_forwarded_ports[remote_port]
+  def _create_port_manager(self) -> PortManager:
+    return MockRemotePortManager(self)
 
 
 class PortManagerTestCase(unittest.TestCase):
@@ -50,11 +25,13 @@ class PortManagerTestCase(unittest.TestCase):
     super().setUp()
     self.platform = FakePortLinuxMockPlatform()
     self.port_scope = self.platform.ports
-    self.port_manager: PortManager = self.platform.port_manager
+    self.port_manager: MockRemotePortManager = cast(MockRemotePortManager,
+                                                    self.platform.port_manager)
+    self.assertIsInstance(self.port_manager, MockRemotePortManager)
 
   def tearDown(self):
-    self.assertFalse(self.platform.forwarded_ports)
-    self.assertFalse(self.platform.reverse_forwarded_ports)
+    self.assertFalse(self.port_manager.forwarded_ports)
+    self.assertFalse(self.port_manager.reverse_forwarded_ports)
     self.assertTrue(self.port_scope.is_empty)
     super().tearDown()
 
@@ -80,23 +57,23 @@ class PortManagerTestCase(unittest.TestCase):
     with self.port_scope.nested() as port_scope:
       returned_local_port = port_scope.forward(12345, 8080)
       self.assertEqual(returned_local_port, 12345)
-      self.assertIn(12345, self.platform.forwarded_ports)
-      self.assertEqual(self.platform.forwarded_ports[12345], 8080)
+      self.assertIn(12345, self.port_manager.forwarded_ports)
+      self.assertEqual(self.port_manager.forwarded_ports[12345], 8080)
       self.assertFalse(port_scope.is_empty)
-    self.assertFalse(self.platform.forwarded_ports)
+    self.assertFalse(self.port_manager.forwarded_ports)
     self.assertTrue(port_scope.is_empty)
 
   def test_forward_port_auto_assign(self):
     with self.port_scope.nested() as port_scope:
       returned_local_port = port_scope.forward(0, 8080)
       self.assertEqual(returned_local_port, 60001)
-      self.assertIn(60001, self.platform.forwarded_ports)
+      self.assertIn(60001, self.port_manager.forwarded_ports)
 
   def test_stop_forward_port(self):
     with self.port_scope.nested() as port_scope:
       port_scope.forward(12345, 8080)
       port_scope.stop_forward(12345)
-      self.assertNotIn(12345, self.platform.forwarded_ports)
+      self.assertNotIn(12345, self.port_manager.forwarded_ports)
 
   def test_forward_port_conflict(self):
     with self.port_scope.nested() as port_scope:
@@ -114,21 +91,21 @@ class PortManagerTestCase(unittest.TestCase):
     with self.port_scope.nested() as port_scope:
       returned_remote_port = port_scope.reverse_forward(54321, 8081)
       self.assertEqual(returned_remote_port, 54321)
-      self.assertIn(54321, self.platform.reverse_forwarded_ports)
-      self.assertEqual(self.platform.reverse_forwarded_ports[54321], 8081)
+      self.assertIn(54321, self.port_manager.reverse_forwarded_ports)
+      self.assertEqual(self.port_manager.reverse_forwarded_ports[54321], 8081)
       self.assertFalse(port_scope.is_empty)
 
   def test_reverse_forward_port_auto_assign(self):
     with self.port_scope.nested() as port_scope:
       returned_remote_port = port_scope.reverse_forward(0, 8081)
       self.assertEqual(returned_remote_port, 60001)
-      self.assertIn(60001, self.platform.reverse_forwarded_ports)
+      self.assertIn(60001, self.port_manager.reverse_forwarded_ports)
 
   def test_stop_reverse_forward_port(self):
     with self.port_scope.nested() as port_scope:
       port_scope.reverse_forward(54321, 8081)
       port_scope.stop_reverse_forward(54321)
-      self.assertNotIn(54321, self.platform.reverse_forwarded_ports)
+      self.assertNotIn(54321, self.port_manager.reverse_forwarded_ports)
 
   def test_reverse_forward_port_conflict(self):
     with self.port_scope.nested() as port_scope:
@@ -146,13 +123,13 @@ class PortManagerTestCase(unittest.TestCase):
     self.port_scope.forward(1111, 2222)
     with self.port_scope.nested() as port_scope:
       port_scope.forward(3333, 4444)
-    self.assertIn(1111, self.platform.forwarded_ports)
-    self.assertNotIn(3333, self.platform.forwarded_ports)
+    self.assertIn(1111, self.port_manager.forwarded_ports)
+    self.assertNotIn(3333, self.port_manager.forwarded_ports)
     self.assertFalse(self.port_manager.has_nested_scopes)
     self.port_manager.stop()
     self.assertTrue(self.port_scope.is_empty)
-    self.assertNotIn(1111, self.platform.forwarded_ports)
-    self.assertNotIn(3333, self.platform.forwarded_ports)
+    self.assertNotIn(1111, self.port_manager.forwarded_ports)
+    self.assertNotIn(3333, self.port_manager.forwarded_ports)
 
   def test_forward_nested_cleanup_stop_outer(self):
     self.port_scope.forward(1111, 2222)

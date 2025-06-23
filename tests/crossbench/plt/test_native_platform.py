@@ -19,8 +19,10 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
+from tests.crossbench.mock_helper import MockRemotePortManager
 
 
 class BaseNativePlatformTestCase(unittest.TestCase):
@@ -716,6 +718,10 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
 
 
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
+
+  @override
+  def _create_port_manager(self) -> PortManager:
+    return MockRemotePortManager(self)
 
   @property
   @override

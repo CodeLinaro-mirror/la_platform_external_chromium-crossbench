@@ -645,6 +645,13 @@ class NumberParser:
                   parse_str: bool = True) -> int:
     return cls.int_range(1, 65535, name, parse_str)(value)
 
+  @classmethod
+  def port_number_zero(cls,
+                       value: Any,
+                       name: str = "port",
+                       parse_str: bool = True) -> int:
+    return cls.int_range(0, 65535, name, parse_str)(value)
+
 
 class LateArgumentError(argparse.ArgumentTypeError):
   """Signals argument parse errors after parser.parse_args().
