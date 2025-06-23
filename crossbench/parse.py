@@ -10,7 +10,6 @@ import enum
 import json
 import logging
 import math
-import os
 import re
 import shlex
 from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, Optional,
@@ -37,7 +36,7 @@ class PathParser:
   PATH_PREFIX = re.compile(r"^(?:"
                            r"(?:\.\.?|~)?|"
                            r"[a-zA-Z]:"
-                           r")(\\|/)[^\\/]",)
+                           r")(\\|/)[^\\/]")
 
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
@@ -52,13 +51,6 @@ class PathParser:
     if not path_value:
       raise argparse.ArgumentTypeError("Invalid empty path.")
     try:
-      # Some tests (e.g. powerline) use locally-hosted web servers
-      if str(path_value).startswith("${crossbench_root}"):
-        dirname = os.path.abspath(
-          os.path.join(
-            os.path.dirname(__file__), os.path.pardir
-          ))
-        path_value = str(path_value).replace("${crossbench_root}", dirname, 1)
       path = pth.LocalPath(path_value).expanduser()
     except RuntimeError as e:
       raise argparse.ArgumentTypeError(

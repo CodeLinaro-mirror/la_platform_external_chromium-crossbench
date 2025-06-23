@@ -2,11 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import abc
 import argparse
 import datetime as dt
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Final
 
 from typing_extensions import override
 
@@ -21,19 +20,16 @@ from crossbench.helper import input_helper
 from crossbench.parse import DurationParser
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
+from crossbench.action_runner.action.enums import ReadyState
 
-PLAY_AUDIO_SCRIPT = """
-
-setTimeout(()=>{
+PLAY_AUDIO_SCRIPT: Final[str] = """
   document.getElementById('unmuteButton').click();
-}, 1000);
-
 """
 
-class PowerlineStory(Story, metaclass=abc.ABCMeta):
+class PowerlineStory(Story):
 
   STORY_NAME="podcast"
-  URL="http://localhost:8000"
+  URL="https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/podcast.html"
 
   def __init__(self, run_for: Optional[dt.timedelta] = dt.timedelta()):
     duration = (run_for or dt.timedelta(seconds=600))
@@ -45,11 +41,16 @@ class PowerlineStory(Story, metaclass=abc.ABCMeta):
       with run.actions("Show URL") as actions:
         actions.show_url(self.URL)
       with run.actions("Autoplay") as actions:
-        actions.wait(dt.timedelta(seconds=5))
+        actions.wait_for_ready_state(
+          ReadyState.COMPLETE, timeout=dt.timedelta(seconds=5)
+        )
         actions.js(PLAY_AUDIO_SCRIPT)
       with run.actions("Screen") as actions:
         actions.wait(dt.timedelta(seconds=5))
-        actions.platform.sh("input", "keyevent", "26")
+        if actions.platform.is_android:
+          # On Android, put the screen to sleep to simulate playing a
+          # podcast in the background.
+          actions.platform.sh("input", "keyevent", "26")
       self._wait_for_input()
       logging.info("Stopping benchmark...")
 
@@ -69,7 +70,7 @@ class PowerlineStory(Story, metaclass=abc.ABCMeta):
 
 
 
-class PowerlineBenchmark(Benchmark, metaclass=abc.ABCMeta):
+class PowerlineBenchmark(Benchmark):
   """
   Benchmark runner for the Powerline background power-consumption test.
 
@@ -93,11 +94,6 @@ class PowerlineBenchmark(Benchmark, metaclass=abc.ABCMeta):
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
     return config.config_dir() / "benchmark" / "powerline"
-
-  @classmethod
-  @override
-  def default_network_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "network_config.hjson"
 
   @classmethod
   @override
