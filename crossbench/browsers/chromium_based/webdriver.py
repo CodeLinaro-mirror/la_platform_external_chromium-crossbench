@@ -250,7 +250,8 @@ class ChromiumBasedWebDriver(
       if tab_index is not None:
         handles = [driver.window_handles[tab_index]]
       else:
-        handles = driver.window_handles[i:] + driver.window_handles[:i]
+        # Start searching with the tab after the current tab.
+        handles = driver.window_handles[i + 1:] + driver.window_handles[:i + 1]
 
       for handle in handles:
         driver.switch_to.window(handle)
