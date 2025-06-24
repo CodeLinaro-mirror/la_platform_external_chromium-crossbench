@@ -5,7 +5,7 @@
 
 import argparse
 import logging
-from typing import Dict, Sequence
+from typing import Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
@@ -29,7 +29,7 @@ class MergedTraceUriResolver(TraceUriResolver):
 
   def __init__(self, result_path: pth.LocalPath) -> None:
 
-    def metadata(path) -> Dict[str, str]:
+    def metadata(path) -> dict[str, str]:
       parts = str(path).split("/")
       return {
           "cb_browser": parts[-7],

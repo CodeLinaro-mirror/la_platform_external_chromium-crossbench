@@ -7,13 +7,14 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence
 
 import pandas as pd
 from tabulate import tabulate
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.benchmarks.base import RegexFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
@@ -33,28 +34,44 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
   BENCHMARK_NAME: str = "LoadLine"
   BENCHMARK_VERSION: str = ""
 
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._scores_file: Optional[pth.LocalPath] = None
+    self._breakdown_file: Optional[pth.LocalPath] = None
+
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
-    logging.info("-" * 80)
     logging.critical("%s Benchmark (%s)", self.BENCHMARK_NAME,
                      self.BENCHMARK_VERSION)
-    logging.critical("%s results:", self.BENCHMARK_NAME)
-    logging.info("- " * 40)
+    logging.info("-" * 80)
+    logging.critical("%s scores:", self.BENCHMARK_NAME)
     logging.critical(
         tabulate(
-            pd.read_csv(
-                group.get_local_probe_result_path(self).with_suffix(".csv")),
-            headers="keys",
+            pd.read_csv(self._scores_file), headers="keys", tablefmt="plain"))
+    logging.info("- " * 40)
+    logging.critical("%s breakdown (loading stage durations, in ms):",
+                     self.BENCHMARK_NAME)
+    logging.critical(
+        tabulate(
+            pd.read_csv(self._breakdown_file), headers="keys",
             tablefmt="plain"))
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_file = group.get_local_probe_result_path(self).with_suffix(".csv")
-    self._compute_score(group).to_csv(csv_file)
-    return LocalProbeResult(csv=(csv_file,))
+    self._scores_file = group.get_local_probe_result_path(self).with_name(
+        "benchmark_score.csv")
+    self._compute_score(group).to_csv(self._scores_file)
+    self._breakdown_file = group.get_local_probe_result_path(self).with_name(
+        "breakdown.csv")
+    self._compute_breakdown(group).to_csv(self._breakdown_file)
+    return LocalProbeResult(csv=(self._scores_file, self._breakdown_file))
 
   @abc.abstractmethod
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
+    pass
+
+  @abc.abstractmethod
+  def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     pass
 
 
@@ -63,10 +80,11 @@ class LoadLinePageFilter(LoadingPageFilter):
   @classmethod
   def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
-    cls.add_page_config_arg(page_config_group)
+    cls.add_page_config_arguments(page_config_group)
 
   @classmethod
-  def add_story_grouping_parser(cls, parser: argparse.ArgumentParser) -> None:
+  def _add_story_grouping_arguments(cls,
+                                    parser: argparse.ArgumentParser) -> None:
     # Loadline always needs separate substories for metrics calculation.
     parser.add_argument(
         "--separate",
@@ -76,12 +94,12 @@ class LoadLinePageFilter(LoadingPageFilter):
 
   @classmethod
   @override
-  def default_stories(cls) -> Tuple[Page, ...]:
+  def default_stories(cls) -> tuple[Page, ...]:
     return cls.all_stories()
 
   @classmethod
   @override
-  def all_stories(cls) -> Tuple[Page, ...]:
+  def all_stories(cls) -> tuple[Page, ...]:
     return tuple()
 
 
@@ -123,9 +141,28 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+    config = cls.get_pages_config(args)
+    assert cls._page_config is not None
+
+    if args.stories:
+      all_page_labels = [str(page.label) for page in config.pages]
+      regex_filter = RegexFilter(
+          all_names=all_page_labels, default_names=all_page_labels)
+      filtered_page_labels = regex_filter.process_all(args.stories.split(","))
+      filtered_pages = tuple(
+          page for page in config.pages if page.label in filtered_page_labels
+      )
+      config = PagesConfig(
+          pages=filtered_pages, secrets=cls._page_config.secrets)
+
+    return cls.STORY_FILTER_CLS.stories_from_config(args, config)
+
+  @classmethod
+  @override
   def describe_stories(cls) -> Mapping[str, str]:
     # TODO: Use full story objects
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for page_config in cls.get_pages_config().pages:
       result[page_config.any_label] = page_config.first_url
     return result

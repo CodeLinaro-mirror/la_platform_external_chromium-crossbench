@@ -11,7 +11,7 @@ import plistlib
 import re
 import shutil
 import tempfile
-from typing import TYPE_CHECKING, Final, Iterable, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Type
 
 from typing_extensions import override
 
@@ -247,13 +247,13 @@ class Downloader(abc.ABC):
     raise IncompatibleVersionError(msg)
 
   @abc.abstractmethod
-  def _find_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
     pass
 
   @abc.abstractmethod
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     pass
 
   @abc.abstractmethod

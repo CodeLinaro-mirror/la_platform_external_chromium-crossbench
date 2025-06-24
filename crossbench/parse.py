@@ -12,8 +12,8 @@ import logging
 import math
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Final, Iterable, List,
-                    Optional, Sequence, Tuple, Type, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, Optional,
+                    Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
 import hjson
@@ -23,6 +23,9 @@ from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench import plt
+
+  # mypy has issues if there is a dict instance-method.
+  PyDict = dict
 
 def type_str(value: Any) -> str:
   return type(value).__name__
@@ -267,14 +270,14 @@ class ObjectParser:
     return data
 
   @classmethod
-  def dict(cls, value: Any, name: str = "value") -> Dict:
+  def dict(cls, value: Any, name: str = "value") -> PyDict:
     if isinstance(value, dict):
       return value
     raise argparse.ArgumentTypeError(
         f"Expected dict, but {name} is {type_str(value)}: {repr(value)}")
 
   @classmethod
-  def non_empty_dict(cls, value: Any, name: str = "value") -> Dict:
+  def non_empty_dict(cls, value: Any, name: str = "value") -> PyDict:
     dict_value = cls.dict(value)
     if not dict_value:
       raise argparse.ArgumentTypeError(
@@ -348,7 +351,7 @@ class ObjectParser:
 
   PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
   INVALID_FUZZY_URL_RE = re.compile(r"[^./]+(?:/.+)?")
-  COMMON_URL_SCHEMES: Final[Tuple[str, ...]] = ("http", "https", "about",
+  COMMON_URL_SCHEMES: Final[tuple[str, ...]] = ("http", "https", "about",
                                                 "file", "data", "chrome")
 
   @classmethod
@@ -449,7 +452,7 @@ class ObjectParser:
     return value
 
   @classmethod
-  def sh_cmd(cls, value: Any) -> List[str]:
+  def sh_cmd(cls, value: Any) -> list[str]:
     value = cls.not_none(value, "shell cmd")
     if not value:
       raise argparse.ArgumentTypeError(
@@ -633,6 +636,13 @@ class NumberParser:
                   name: str = "port",
                   parse_str: bool = True) -> int:
     return cls.int_range(1, 65535, name, parse_str)(value)
+
+  @classmethod
+  def port_number_zero(cls,
+                       value: Any,
+                       name: str = "port",
+                       parse_str: bool = True) -> int:
+    return cls.int_range(0, 65535, name, parse_str)(value)
 
 
 class LateArgumentError(argparse.ArgumentTypeError):

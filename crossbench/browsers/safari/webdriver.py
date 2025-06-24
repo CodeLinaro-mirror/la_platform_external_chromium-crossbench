@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Optional, Set, Type
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -86,7 +86,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
   # TODO(cbruni): implement iOS platform
   def _start_driver_with_retries(
-      self, driver_kwargs: Dict[str, Any]) -> webdriver.Safari:
+      self, driver_kwargs: dict[str, Any]) -> webdriver.Safari:
     # safaridriver for iOS / technology preview seems to be brittle.
     # Let's give it several chances to start up.
     seen_exceptions: Set[Type[Exception]] = set()

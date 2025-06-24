@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from typing_extensions import override
 
@@ -30,7 +30,7 @@ class InteractivePage(Page):
 
   def __init__(self,
                name: str,
-               blocks: Tuple[ActionBlock, ...],
+               blocks: tuple[ActionBlock, ...],
                setup: Optional[ActionBlock] = None,
                login: Optional[LoginBlock] = None,
                secrets: Optional[Secrets] = None,
@@ -42,7 +42,7 @@ class InteractivePage(Page):
     assert name, "missing name"
     self._name: str = name
     assert isinstance(blocks, tuple)
-    self._blocks: Tuple[ActionBlock, ...] = blocks
+    self._blocks: tuple[ActionBlock, ...] = blocks
     assert self._blocks, "Must have at least 1 valid action"
     assert not any(block.is_login for block in blocks), (
         "No login blocks allowed as normal action block")
@@ -63,7 +63,7 @@ class InteractivePage(Page):
     return self._setup_block
 
   @property
-  def blocks(self) -> Tuple[ActionBlock, ...]:
+  def blocks(self) -> tuple[ActionBlock, ...]:
     return self._blocks
 
   @property

@@ -8,7 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Sequence, cast
 
 from typing_extensions import override
 
@@ -37,8 +37,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
     super().__init__(name, duration)
 
   def setup(self, run: Run) -> None:
-    # TODO(zbikowski): Set up webview flags (including --remote-allow-origins=*)
-    # TODO(zbikowski): Add a way to ensure embedder is installed and start it.
+    # TODO(zbikowski): Add a way to ensure embedder is installed.
     # Launching the Google Quick Search app
     run_browser = cast("WebviewEmbedder", run.browser)
     run.browser_platform.sh("am", "start", "-S", "-W", "-n",
@@ -62,7 +61,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
                             "-c", "android.intent.category.HOME")
 
   @classmethod
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ()
 
 

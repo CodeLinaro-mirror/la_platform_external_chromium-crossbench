@@ -5,11 +5,13 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 
 import hjson
 
-from crossbench.cli.config.secrets import (GoogleUsernamePassword, Secrets,
+from crossbench.cli.config.secrets import (CycledUsernamePassword,
+                                           GoogleUsernamePassword, Secrets,
                                            ServiceAccount, UsernamePassword)
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
@@ -137,6 +139,38 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     merged = secrets_1.merge(fallback=secrets_2)
     self.assertEqual(secrets_1, merged)
 
+  def test_cycled_account_default(self):
+    cycled_account = CycledUsernamePassword.parse({
+        "username": "user@user.com",
+        "password": "password"
+    })
+
+    self.assertEqual(cycled_account.username, "user@user.com")
+    self.assertEqual(cycled_account.password, "password")
+
+  def test_cycled_account_explicit_no_cycle(self):
+    cycled_account = CycledUsernamePassword.parse({
+        "username": "user@user.com",
+        "password": "password",
+        "use_range": False,
+        "start": 0,
+        "end": 10,
+    })
+
+    self.assertEqual(cycled_account.username, "user@user.com")
+    self.assertEqual(cycled_account.password, "password")
+
+  def test_cycled_account_explicit_cycle(self):
+    cycled_account = CycledUsernamePassword.parse({
+        "username": "user%d@user.com",
+        "password": "password",
+        "use_range": True,
+        "start": 0,
+        "end": 9,
+    })
+
+    self.assertTrue(re.match(r"user\d@user.com", cycled_account.username))
+    self.assertEqual(cycled_account.password, "password")
 
 class UsernamePasswordTestCase(unittest.TestCase):
 

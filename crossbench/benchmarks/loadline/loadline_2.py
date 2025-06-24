@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Sequence, Type
 
 import numpy as np
 import pandas as pd
@@ -12,17 +12,21 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
+from crossbench.benchmarks.loading.page.combined import CombinedPage
+from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
+                                                     LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.benchmarks.loadline.loadline import (
-    LoadLineProbe, LoadLineBenchmark)
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import ProbeContext
 
 if TYPE_CHECKING:
+  import argparse
+  from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
@@ -57,6 +61,11 @@ class LoadLine2Probe(LoadLineProbe):
         columns=(["TOTAL_SCORE"] +
                  sorted(list(c for c in total.columns if c != "TOTAL_SCORE"))))
 
+  @override
+  def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
+    # TODO(crbug.com/425325733): Implement breakdown for LoadLine 2.
+    return pd.DataFrame(index=pd.Index([], name="Not implemented"))
+
 
 class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 
@@ -77,6 +86,12 @@ class LoadLine2Benchmark(LoadLineBenchmark):
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
     return config.config_dir() / "benchmark" / "loadline2"
+
+  @classmethod
+  @override
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+    pages = super().stories_from_cli_args(args)
+    return (CombinedPage(pages),)
 
 
 class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
@@ -101,7 +116,7 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-phone",)
 
 
@@ -127,7 +142,7 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-tablet",)
 
   @classmethod
@@ -151,7 +166,7 @@ class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-phone-debug",)
 
 
@@ -169,5 +184,5 @@ class LoadLine2TabletDebugBenchmark(LoadLine2TabletBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("ld2-tablet-debug",)

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ class JetStreamMainStory(JetStream3Story):
   URL_CHROME_FORK: str = "https://chromium-workloads.web.app/jetstream/main-custom/"
   # Contents of running:
   # JSON.stringify(JetStream.benchmarks.map(e => e.name), undefined, " ")
-  SUBSTORIES: Tuple[str, ...] = (
+  SUBSTORIES: tuple[str, ...] = (
       "zlib-wasm",
       "WSL",
       "UniPoker",

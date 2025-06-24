@@ -14,8 +14,10 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli import ui
+from crossbench.cli.config.env import ValidationMode
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env import ValidationError
+from crossbench.env.run_env import RunEnv
+from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
@@ -35,7 +37,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.results_db.db import ResultsDB
@@ -55,23 +57,27 @@ class Temperature(StrEnumWithHelp):
 
 class Run(ResultOrigin):
 
-  def __init__(self,
-               runner: Runner,
-               browser_session: BrowserSessionRunGroup,
-               story: Story,
-               repetition: int,
-               is_warmup: bool,
-               temperature: str,
-               index: int,
-               name: Optional[str] = None,
-               timeout: dt.timedelta = dt.timedelta(),
-               throw: bool = False) -> None:
+  def __init__(
+      self,
+      runner: Runner,
+      browser_session: BrowserSessionRunGroup,
+      story: Story,
+      repetition: int,
+      is_warmup: bool,
+      temperature: str,
+      index: int,
+      name: Optional[str] = None,
+      timeout: dt.timedelta = dt.timedelta(),
+      throw: bool = False,
+      env_validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     super().__init__()
     self._state = StateMachine(State.INITIAL)
     self._runner = runner
     self._browser_session = browser_session
     self._browser: Browser = browser_session.browser
     browser_session.append(self)
+    self._env = RunEnv(self, self._browser.settings.env_config,
+                       env_validation_mode)
     self._story = story
     assert repetition >= 0
     self._repetition = repetition
@@ -110,9 +116,11 @@ class Run(ResultOrigin):
               measure: bool = True) -> Actions:
     return Actions(name, self, verbose=verbose, measure=measure)
 
-  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
-                 delay: AnyTimeUnit) -> WaitRange:
-    return self.runner.wait_range(min_wait, timeout, delay)
+  def wait_range(self,
+                 min_interval: AnyTimeUnit,
+                 timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit = 0) -> WaitRange:
+    return self.runner.wait_range(min_interval, timeout, delay)
 
   @property
   def info_stack(self) -> TInfoStack:
@@ -222,7 +230,7 @@ class Run(ResultOrigin):
     return self._browser
 
   @property
-  def environment(self) -> HostEnvironment:
+  def environment(self) -> RunnerEnv:
     # TODO: replace with custom BrowserEnvironment
     return self.runner.env
 
@@ -293,7 +301,7 @@ class Run(ResultOrigin):
     assert not file.exists(), f"Probe results file exists already. file={file}"
     return file
 
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
 

@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Dict, Hashable, List, Optional, Self, Set,
-                    Tuple, Type, TypeVar)
+from typing import TYPE_CHECKING, Hashable, Optional, Self, Set, Type, TypeVar
 
 from typing_extensions import override
 
@@ -24,8 +23,7 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
-  from crossbench.probes.results import ProbeResultDict
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.cache_temperatures import \
@@ -54,7 +52,7 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
 
 
 
-ProbeKeyT = Tuple[Tuple[str, Hashable], ...]
+ProbeKeyT = tuple[tuple[str, Hashable], ...]
 
 
 class Probe(ProbeResultKey, abc.ABC):
@@ -89,7 +87,7 @@ class Probe(ProbeResultKey, abc.ABC):
     return ProbeConfigParser(cls)
 
   @classmethod
-  def from_config(cls: Type[ProbeT], config_data: Dict) -> ProbeT:
+  def from_config(cls: Type[ProbeT], config_data: dict) -> ProbeT:
     return cls.config_parser().parse(config_data)
 
   @classmethod
@@ -159,7 +157,7 @@ class Probe(ProbeResultKey, abc.ABC):
         f"Probe={self.name} is attached multiple times to the same browser")
     self._browsers.add(browser)
 
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     """
     Part of the Checklist, make sure everything is set up correctly for a probe
     to run.
@@ -172,7 +170,7 @@ class Probe(ProbeResultKey, abc.ABC):
     for browser in self._browsers:
       self.validate_browser(env, browser)
 
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     """
     Validate that browser is compatible with this Probe.
     - Raise ProbeValidationError for hard-errors,
@@ -194,6 +192,10 @@ class Probe(ProbeResultKey, abc.ABC):
   def expect_macos(self, browser: Browser) -> None:
     if not browser.platform.is_macos:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on macOS")
+
+  def expect_android(self, browser: Browser) -> None:
+    if not browser.platform.is_android:
+      raise ProbeIncompatibleBrowser(self, browser, "Only supported on Android")
 
   def setup(self, runner) -> None:
     """Called before any runs or browsers have been started."""
@@ -218,7 +220,7 @@ class Probe(ProbeResultKey, abc.ABC):
 
     first_run_results: ProbeResult = first_run.results[self]
     group_dir: pth.LocalPath = group.path
-    symlinked_files: List[pth.LocalPath] = []
+    symlinked_files: list[pth.LocalPath] = []
     for file in first_run_results.all_files():
       group_result_symlink = group_dir / file.name
       if group_result_symlink.exists():

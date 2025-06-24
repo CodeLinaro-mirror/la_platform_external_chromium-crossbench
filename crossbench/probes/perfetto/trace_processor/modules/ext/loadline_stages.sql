@@ -1,3 +1,7 @@
+-- Create tables with page loading breakdown into stages for the LoadLine
+-- benchmark.
+-- TODO(crbug.com/425325733): Support LoadLine 2 as well.
+
 INCLUDE PERFETTO MODULE ext.loadline_benchmark;
 
 DROP VIEW IF EXISTS loadline_presentation;
@@ -5,25 +9,23 @@ CREATE VIEW loadline_presentation AS
 SELECT
   first_navigation_start() + 60e9 / loadline_benchmark_score() AS presentation;
 
+-- Finds the "Commit sent" moment which is the time when the browser gets the
+-- response from the network stack.
 DROP VIEW IF EXISTS loadline_request;
 CREATE VIEW loadline_request AS
-SELECT ts AS start_request, ts + dur AS end_request
+SELECT MIN(ts) AS end_request
 FROM slice
 WHERE
-  name = 'WillStartRequest'
-  AND ts >= first_navigation_start()
-ORDER BY ts
-LIMIT 1;
+  name = 'CommitSentToFirstSubresourceLoadStart'
+  AND ts >= first_navigation_start();
 
 DROP VIEW IF EXISTS loadline_renderer_ready;
 CREATE VIEW loadline_renderer_ready AS
-SELECT ts + dur AS renderer_ready
+SELECT MIN(ts) AS renderer_ready
 FROM slice
 WHERE
-  name = 'ReadyToCommitNavigation'
-  AND ts >= first_navigation_start()
-ORDER BY ts
-LIMIT 1;
+  name = 'DocumentLoader::CommitNavigation'
+  AND ts >= first_navigation_start();
 
 -- Find the frame in the pipeline which was chosen as the "loading complete"
 -- moment for the purpose of LoadLine score. The exact end timestamp might
@@ -69,7 +71,6 @@ DROP VIEW IF EXISTS loadline_stages;
 CREATE VIEW loadline_stages AS
 SELECT
   first_navigation_start() AS navigation_start,
-  start_request,
   end_request,
   renderer_ready,
   frame_commit,

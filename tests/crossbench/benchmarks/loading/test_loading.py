@@ -12,7 +12,7 @@ import json
 import pathlib
 import re
 import unittest
-from typing import List, Sequence
+from typing import Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -33,7 +33,7 @@ from crossbench.benchmarks.loading.playback_controller import \
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase
@@ -266,7 +266,7 @@ class TestPageLoadBenchmark(SubStoryTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         throw=throw,
@@ -494,14 +494,25 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                        ["first_page"] * 2 + ["second_page"] * 2 + [None, None])
 
   def setup_expected_google_login_js(self):
-    expected_scripts: List[JsInvocation] = [
+    expected_scripts: list[JsInvocation] = [
+        # Wait for email field
         JsInvocation(True, re.compile(r".*Email or phone.*")),
+        # Click submit email
         JsInvocation(None, re.compile(r".*user@test.com.*")),
+
+        # Wait for password field
         JsInvocation(True, re.compile(r".*passwordNext.*")),
-        JsInvocation(False, re.compile(r".*verifycontactNext.*")),
-        JsInvocation(True, re.compile(r".*Enter your password.*")),
-        JsInvocation(True, re.compile(r".*s3cr3t.*")),
-        JsInvocation(True, re.compile(r".*https://myaccount.google.com.*")),
+        # Click submit password
+        JsInvocation(None, re.compile(r".*s3cr3t.*")),
+
+        # Wait for redirect after password
+        JsInvocation(True, re.compile(r".*signin/challenge/pwd.*")),
+        # Wait for readystate complete
+        JsInvocation(True),
+        # Return successful login URL
+        JsInvocation("https://myaccount.google.com", re.compile(r".*URL.*")),
+        # No suspicious activity
+        JsInvocation(False),
     ]
     for browser in self.browsers:
       for script in expected_scripts:

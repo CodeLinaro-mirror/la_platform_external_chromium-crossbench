@@ -5,7 +5,7 @@
 import csv
 import pathlib
 import unittest
-from typing import List, Optional
+from typing import Optional
 
 from crossbench.probes import helper
 from tests import test_helper
@@ -17,7 +17,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
   def merge(self,
             *args,
             delimiter: str = "\t",
-            headers: Optional[List[str]] = None,
+            headers: Optional[list[str]] = None,
             row_header_len: int = 1):
     csv_files = []
     for index, content in enumerate(args):

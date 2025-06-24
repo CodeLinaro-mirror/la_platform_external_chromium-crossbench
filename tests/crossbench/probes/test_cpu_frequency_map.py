@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import argparse
-from typing import List
 
 from typing_extensions import override
 
@@ -143,7 +142,7 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
             pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 3,
         })
 
-  def _create_cpu_dir(self, cpu_name: str, available_frequencies: List[int]):
+  def _create_cpu_dir(self, cpu_name: str, available_frequencies: list[int]):
     cpu_dir = pth.AnyPosixPath(f"/sys/devices/system/cpu/{cpu_name}/cpufreq")
     self.platform.mkdir(cpu_dir, parents=True, exist_ok=True)
     self.platform.set_file_contents(

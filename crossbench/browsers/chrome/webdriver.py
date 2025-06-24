@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import selenium.common.exceptions
 from selenium import webdriver
@@ -48,7 +48,7 @@ class ChromeWebDriver(ChromeBaseMixin, ChromiumBasedWebDriver):
     try:
       return webdriver.Chrome(options=options, service=service)
     except selenium.common.exceptions.WebDriverException as e:
-      msg: List[str] = [f"Could not start WebDriver: {e.msg}"]
+      msg: list[str] = [f"Could not start WebDriver: {e.msg}"]
       if self.is_locally_compiled():
         msg.append(helper.build_chromedriver_instructions(self.app_path.parent))
       msg_str = "\n".join(msg)

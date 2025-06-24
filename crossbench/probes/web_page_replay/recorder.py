@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -17,6 +17,7 @@ from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
+from crossbench.plt.port_manager import PortScope
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult, ProbeResultDict)
@@ -153,7 +154,7 @@ class WebPageReplayProbe(Probe):
     results = [subgroup.results[self].file for subgroup in group.story_groups]
     return self.merge_group(results, group)
 
-  def merge_group(self, results: List[LocalPath],
+  def merge_group(self, results: list[LocalPath],
                   group: RunGroup) -> ProbeResult:
     result_file = group.get_local_probe_result_path(self)
     if not results:
@@ -167,7 +168,7 @@ class WebPageReplayProbe(Probe):
 
   def httparchive_merge(self, input_archive: LocalPath,
                         output_archive: LocalPath) -> None:
-    cmd: List[str | LocalPath] = [
+    cmd: list[str | LocalPath] = [
         "go",
         "run",
         self._wpr_go_bin.parent / "httparchive.go",
@@ -212,6 +213,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
     })
     self._recorder = WprRecorder(**kwargs)
     self._browser_platform = run.browser_platform
+    self._ports: PortScope = run.host_platform.ports
 
   @override
   def setup(self) -> None:
@@ -241,10 +243,13 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def _setup_port_forwarding(self) -> None:
     if self._browser_platform.is_remote:
-      self._browser_platform.reverse_port_forward(self._recorder.http_port,
-                                                  self._recorder.http_port)
-      self._browser_platform.reverse_port_forward(self._recorder.https_port,
-                                                  self._recorder.https_port)
+      # TODO: Fix run.setup and teardown layering so they they're called with
+      # the same active port scope.
+      self._ports = self._browser_platform.ports
+      self._ports.reverse_forward(self._recorder.http_port,
+                                  self._recorder.http_port)
+      self._ports.reverse_forward(self._recorder.https_port,
+                                  self._recorder.https_port)
 
   def start(self) -> None:
     if not self.probe.record_setup:
@@ -261,6 +266,5 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def _teardown_port_forwarding(self) -> None:
     if self._browser_platform.is_remote:
-      self._browser_platform.stop_reverse_port_forward(self._recorder.http_port)
-      self._browser_platform.stop_reverse_port_forward(
-          self._recorder.https_port)
+      self._ports.stop_reverse_forward(self._recorder.http_port)
+      self._ports.stop_reverse_forward(self._recorder.https_port)

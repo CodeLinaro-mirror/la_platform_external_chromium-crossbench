@@ -162,7 +162,7 @@ class D8(Browser):
       unquoted = json_result.strip()[1:-1]
       json_decoded = json.loads(unquoted)
       assert len(json_decoded) == 2, (
-          f"Expected Tuple[Any, Any], got {type(json_decoded)}: {json_decoded}")
+          f"Expectedtuple[Any, Any], got {type(json_decoded)}: {json_decoded}")
       result, is_success = json_decoded
     if not is_success:
       raise RuntimeError(f"D8 JS Exception: {result}")

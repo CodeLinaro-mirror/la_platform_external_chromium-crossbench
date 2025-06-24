@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-import os
 import logging
+import os
 import re
-from typing import (TYPE_CHECKING, Any, ClassVar, Dict, Iterator, List,
-                    Optional, Tuple, Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Type
 
 from typing_extensions import override
 
@@ -33,12 +32,12 @@ class XrandrDisplayInfo:
   REFRESH_RATE_RE: ClassVar[re.Pattern] = re.compile(r"(?P<freq>[0-9.]+)\*")
 
   header: str
-  resolutions: List[str] = dataclasses.field(default_factory=list)
+  resolutions: list[str] = dataclasses.field(default_factory=list)
 
   def is_connected(self) -> bool:
     return "disconnected" not in self.header
 
-  def resolution(self) -> Tuple[int, int] | None:
+  def resolution(self) -> tuple[int, int] | None:
     if match := self.RESOLUTION_RE.search(self.header):
       return (NumberParser.positive_int(match.group("resX")),
               NumberParser.positive_int(match.group("resY")))
@@ -64,7 +63,7 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
     1600x1200_60  60.00
     ...
   """
-  display_infos: List[XrandrDisplayInfo] = []
+  display_infos: list[XrandrDisplayInfo] = []
   current_info: XrandrDisplayInfo | None = None
   # Group display info and resolution entries:
   for line in xrandr_str.splitlines():
@@ -85,7 +84,7 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
 
 
 class LinuxPlatform(PosixPlatform):
-  SEARCH_PATHS: Tuple[pth.AnyPath, ...] = (
+  SEARCH_PATHS: tuple[pth.AnyPath, ...] = (
       pth.AnyPosixPath("."),
       pth.AnyPosixPath("/usr/local/sbin"),
       pth.AnyPosixPath("/usr/local/bin"),
@@ -140,7 +139,7 @@ class LinuxPlatform(PosixPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     details = super().system_details()
     for info_bin in ("lscpu", "inxi"):
       if info_bin_path := self.which(info_bin):
@@ -167,7 +166,7 @@ class LinuxPlatform(PosixPlatform):
     self.sh("gnome-screenshot", "--file", result_path)
 
   @functools.lru_cache(maxsize=1)
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     if not self.has_display:
       return tuple()
     if xrandr_str := self.sh_stdout("xrandr"):
@@ -175,10 +174,10 @@ class LinuxPlatform(PosixPlatform):
     return tuple()
 
   @override
-  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
     matching_pids = self.sh_stdout("pgrep", "-f", process_name).splitlines()
 
-    meminfos: Dict[str, ProcessMeminfo] = {}
+    meminfos: dict[str, ProcessMeminfo] = {}
 
     for pid in matching_pids:
       try:

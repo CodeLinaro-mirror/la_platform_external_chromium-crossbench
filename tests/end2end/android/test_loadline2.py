@@ -32,7 +32,7 @@ class BenchmarkType(enum.StrEnum):
 
 
 def _verify_default_metrics(out_dir, only_total=False):
-  result_csv = out_dir / "loadline2_probe.csv"
+  result_csv = out_dir / "benchmark_score.csv"
   with result_csv.open() as csv:
     lines = csv.readlines()
     assert len(lines) == 2

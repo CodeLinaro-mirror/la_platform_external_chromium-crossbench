@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import urllib.parse as urlparse
-from typing import Any, Callable, Dict, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional
 
 import requests
 
@@ -76,7 +76,7 @@ def to_seconds(delta: AnyTime) -> float:
   return delta
 
 
-def update_url_query(url: str, query_params: Dict[str, str]) -> str:
+def update_url_query(url: str, query_params: Mapping[str, str]) -> str:
   parsed_url = urlparse.urlparse(url)
   query = dict(urlparse.parse_qsl(parsed_url.query))
   query.update(query_params)

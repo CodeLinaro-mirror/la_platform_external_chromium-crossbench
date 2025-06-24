@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, Final, Self, Type
+from typing import TYPE_CHECKING, Any, Final, Self, Type
 
 from typing_extensions import override
 
@@ -24,7 +24,7 @@ class ProbeConfigError(ConfigError):
   pass
 
 
-PROBE_LOOKUP: Dict[str, Type[Probe]] = {
+PROBE_LOOKUP: dict[str, Type[Probe]] = {
     cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
 }
 
@@ -35,7 +35,7 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
 @dataclasses.dataclass(frozen=True)
 class ProbeConfig(ConfigObject):
   probe_cls: Type[Probe]
-  config: Dict[str, Any] = dataclasses.field(default_factory=dict)
+  config: dict[str, Any] = dataclasses.field(default_factory=dict)
 
   def __post_init__(self) -> None:
     if not self.probe_cls:
@@ -68,12 +68,12 @@ class ProbeConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     probe_name = ObjectParser.non_empty_str(config.pop("name"), "name")
     return cls.parse_probe_dict(probe_name, config)
 
   @classmethod
-  def parse_probe_dict(cls, probe_name: str, config: Dict[str, Any]) -> Self:
+  def parse_probe_dict(cls, probe_name: str, config: dict[str, Any]) -> Self:
     if probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(probe_cls, config)
     probe_cls = cls._handle_dict_unknown_probe_name(probe_name)

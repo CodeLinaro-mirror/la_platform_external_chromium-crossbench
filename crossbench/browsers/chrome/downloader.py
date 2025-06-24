@@ -10,8 +10,7 @@ import os
 import shutil
 import tempfile
 import zipfile
-from typing import (TYPE_CHECKING, Dict, Final, Iterable, List, Optional, Tuple,
-                    Type, cast)
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Type, cast
 
 from typing_extensions import override
 
@@ -35,7 +34,7 @@ class ChromeDownloader(Downloader):
   VERSION_URL = (
       "https://versionhistory.googleapis.com/v1/"
       "chrome/platforms/{platform}/channels/{channel}/versions?filter={filter}")
-  VERSION_URL_PLATFORM_LOOKUP: Dict[Tuple[str, str], str] = {
+  VERSION_URL_PLATFORM_LOOKUP: dict[tuple[str, str], str] = {
       ("win", "arm64"): "win_arm64",
       ("win", "ia32"): "win",
       ("win", "x64"): "win64",
@@ -108,13 +107,13 @@ class ChromeDownloader(Downloader):
     return ChromeVersion.parse_unique(version_identifier)
 
   @override
-  def _find_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
     # Quick probe for complete versions
     if self.requested_version.is_complete:
       return self._find_exact_archive_url()
     return self._find_milestone_archive_url()
 
-  def _find_milestone_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
+  def _find_milestone_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
     platform = self.VERSION_URL_PLATFORM_LOOKUP.get(self._browser_platform.key)
     if not platform:
       raise ValueError(f"Unsupported platform {self._browser_platform}")
@@ -139,7 +138,7 @@ class ChromeDownloader(Downloader):
         channel=channel,
         filter=f"{milestone_filter},{channel_filter}&")
     self.info(f"Listing all versions at {url}")
-    version_urls: List[Tuple[BrowserVersion, str]] = []
+    version_urls: list[tuple[BrowserVersion, str]] = []
     try:
       response = url_helper.get(url, retry=3, timeout=100)
       raw_infos = response.json()["versions"]
@@ -158,21 +157,21 @@ class ChromeDownloader(Downloader):
     return self._filter_candidate_urls(version_urls)
 
   def _create_version_url(
-      self, version: BrowserVersion) -> Tuple[BrowserVersion, str]:
+      self, version: BrowserVersion) -> tuple[BrowserVersion, str]:
     # TODO: respect channel
     assert version.has_complete_parts
     return (version,
             f"{self.STORAGE_URL}{version.parts_str}/{self._platform_name}/")
 
-  def _find_exact_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
+  def _find_exact_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
     # TODO: respect channel
     version, test_url = self._create_version_url(self.requested_version)
     self.info(f"LIST VERSIONS at {test_url}")
     return self._filter_candidate_urls([(version, test_url)])
 
   def _filter_candidate_urls(
-      self, versions_urls: List[Tuple[BrowserVersion, str]]
-  ) -> Tuple[BrowserVersion, Optional[str]]:
+      self, versions_urls: list[tuple[BrowserVersion, str]]
+  ) -> tuple[BrowserVersion, Optional[str]]:
     versions_urls.sort(key=lambda version_url: version_url[0], reverse=True)
     # Iterate from new to old version and and the first one that is older or
     # equal than the requested version.
@@ -217,7 +216,7 @@ class ChromeDownloader(Downloader):
 
 class ChromeDownloaderLinux(ChromeDownloader):
   ARCHIVE_SUFFIX: str = ".rpm"
-  CHANNEL_BINARY_LOOKUP: Dict[BrowserVersionChannel, str] = {
+  CHANNEL_BINARY_LOOKUP: dict[BrowserVersionChannel, str] = {
       BrowserVersionChannel.PRE_ALPHA: "chrome-canary",
       BrowserVersionChannel.ALPHA: "chrome-unstable",
       BrowserVersionChannel.BETA: "chrome-beta",
@@ -259,7 +258,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
   @override
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     parts_str = version.parts_str
     parts = version.parts
     stable = (ChromeVersion.stable(parts),
@@ -326,7 +325,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
   @override
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     # TODO: respect channel
     version_str: str = version.parts_str
     parts = version.parts
@@ -380,7 +379,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   ARM_64_BUILD: Final[str] = "arm_64"
   ARM_64_HIGH_BUILD: Final[str] = "high-arm_64"
 
-  CHANNEL_PACKAGE_LOOKUP: Dict[str, Tuple[str, BrowserVersionChannel]] = {
+  CHANNEL_PACKAGE_LOOKUP: dict[str, tuple[str, BrowserVersionChannel]] = {
       "Beta": (
           "com.chrome.beta",
           BrowserVersionChannel.BETA,
@@ -444,9 +443,9 @@ class ChromeDownloaderAndroid(ChromeDownloader):
   @override
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     prefix: str = f"{folder_url}"
-    urls: List[Tuple[BrowserVersion, str]] = []
+    urls: list[tuple[BrowserVersion, str]] = []
     # TODO: pass in correct sdk_level
     package = self._get_chrome_package(100)
     # TODO: respect version channel
@@ -592,7 +591,7 @@ class ChromeDownloaderWin(ChromeDownloader):
   @override
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     parts = version.parts
     stable = (ChromeVersion.stable(parts),
               f"{folder_url}{self._archive_stem}.zip")
