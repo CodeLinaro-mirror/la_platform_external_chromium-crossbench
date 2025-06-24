@@ -275,6 +275,110 @@ PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound=PressBenchmarkStory)
 
 
+class RegexFilter():
+
+  def __init__(self, all_names: Sequence[str], default_names: Sequence[str]):
+    self._all_names: dict[str, None] = dict.fromkeys(all_names)
+    self._default_names: dict[str, None] = dict.fromkeys(default_names)
+    self._selected_names: OrderedSet[str] = OrderedSet()
+    for name in self._all_names:
+      assert name, "Invalid empty story name"
+      assert not name.startswith("-"), (
+          f"Known story names cannot start with '-', but got '{name}'.")
+      assert not name == "all", "Known story name cannot match 'all'."
+
+  def process_all(self, patterns: Sequence[str]) -> OrderedSet[str]:
+    if not isinstance(patterns, (list, tuple)):
+      raise ValueError("Expected Sequence of story name or patterns "
+                       f"but got '{type(patterns)}'.")
+    for pattern in patterns:
+      self.process_pattern(pattern)
+    return self._selected_names
+
+  def process_pattern(self, pattern: str) -> None:
+    if pattern.startswith("-"):
+      self.remove(pattern[1:])
+    else:
+      self.add(pattern)
+
+  def add(self, pattern: str) -> None:
+    self._check_processed_pattern(pattern)
+    regexp = self._pattern_to_regexp(pattern)
+    self._add_matching(regexp, pattern)
+
+  def remove(self, pattern: str) -> None:
+    self._check_processed_pattern(pattern)
+    regexp = self._pattern_to_regexp(pattern)
+    self._remove_matching(regexp, pattern)
+
+  def _pattern_to_regexp(self, pattern: str) -> re.Pattern:
+    if pattern == "all":
+      return re.compile(".*")
+    if pattern == "default":
+      if self._default_names == self._all_names:
+        return re.compile(".*")
+      joined_names = "|".join(re.escape(name) for name in self._default_names)
+      return re.compile(f"^({joined_names})$")
+    if pattern in self._all_names:
+      return re.compile(re.escape(pattern))
+    return re.compile(pattern)
+
+  def _check_processed_pattern(self, pattern: str) -> None:
+    if not pattern:
+      raise ValueError("Empty pattern is not allowed")
+    if pattern == "-":
+      raise ValueError(f"Empty remove pattern not allowed: '{pattern}'")
+    if pattern[0] == "-":
+      raise ValueError(f"Unprocessed negative pattern not allowed: '{pattern}'")
+
+  def _add_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
+    substories = self._regexp_match(regexp, original_pattern)
+    self._selected_names.update(substories)
+
+  def _remove_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
+    substories = self._regexp_match(regexp, original_pattern)
+    for substory in substories:
+      try:
+        self._selected_names.remove(substory)
+      except KeyError as e:
+        raise ValueError(
+            "Removing Story failed: "
+            f"name='{substory}' extracted by pattern='{original_pattern}'"
+            "is not in the filtered story list") from e
+
+  def _regexp_match(self, regexp: re.Pattern,
+                    original_pattern: str) -> list[str]:
+    substories = [
+        substory for substory in self._all_names if regexp.fullmatch(substory)
+    ]
+    if not substories:
+      substories = self._regexp_match_ignorecase(regexp)
+    if not substories:
+      return self._handle_no_match(original_pattern)
+    if len(substories) == len(self._all_names) and self._selected_names:
+      raise ValueError(f"'{original_pattern}' matched all and overrode all"
+                       "previously filtered story names.")
+    return substories
+
+  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> list[str]:
+    logging.warning(
+        "No matching stories, using case-insensitive fallback regexp.")
+    iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
+    return [
+        substory for substory in self._all_names if iregexp.fullmatch(substory)
+    ]
+
+  def _handle_no_match(self, original_pattern: str) -> list[str]:
+    choices_ms, alternative = close_matches_message(original_pattern,
+                                                    self._all_names)
+    error_message: str = f"'{original_pattern}' didn't match any stories."
+    error_message += choices_ms
+    if alternative:
+      logging.error(error_message)
+      return [alternative]
+    raise ValueError(error_message)
+
+
 class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                                 Generic[PressBenchmarkStoryT]):
   """
@@ -309,104 +413,13 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     self._selected_names: OrderedSet[str] = OrderedSet()
     super().__init__(story_cls, patterns, args, separate)
     assert issubclass(self.story_cls, PressBenchmarkStory)
-    for name in self._known_names:
-      assert name, "Invalid empty story name"
-      assert not name.startswith("-"), (
-          f"Known story names cannot start with '-', but got '{name}'.")
-      assert not name == "all", "Known story name cannot match 'all'."
 
   @override
   def process_all(self, patterns: Sequence[str]) -> None:
-    if not isinstance(patterns, (list, tuple)):
-      raise ValueError("Expected Sequence of story name or patterns "
-                       f"but got '{type(patterns)}'.")
-    for pattern in patterns:
-      self.process_pattern(pattern)
-
-  def process_pattern(self, pattern: str) -> None:
-    if pattern.startswith("-"):
-      self.remove(pattern[1:])
-    else:
-      self.add(pattern)
-
-  def add(self, pattern: str) -> None:
-    self._check_processed_pattern(pattern)
-    regexp = self._pattern_to_regexp(pattern)
-    self._add_matching(regexp, pattern)
-
-  def remove(self, pattern: str) -> None:
-    self._check_processed_pattern(pattern)
-    regexp = self._pattern_to_regexp(pattern)
-    self._remove_matching(regexp, pattern)
-
-  def _pattern_to_regexp(self, pattern: str) -> re.Pattern:
-    if pattern == "all":
-      return re.compile(".*")
-    if pattern == "default":
-      default_story_names = self.story_cls.default_story_names()
-      if default_story_names == self.story_cls.all_story_names():
-        return re.compile(".*")
-      joined_names = "|".join(re.escape(name) for name in default_story_names)
-      return re.compile(f"^({joined_names})$")
-    if pattern in self._known_names:
-      return re.compile(re.escape(pattern))
-    return re.compile(pattern)
-
-  def _check_processed_pattern(self, pattern: str) -> None:
-    if not pattern:
-      raise ValueError("Empty pattern is not allowed")
-    if pattern == "-":
-      raise ValueError(f"Empty remove pattern not allowed: '{pattern}'")
-    if pattern[0] == "-":
-      raise ValueError(f"Unprocessed negative pattern not allowed: '{pattern}'")
-
-  def _add_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
-    substories = self._regexp_match(regexp, original_pattern)
-    self._selected_names.update(substories)
-
-  def _remove_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
-    substories = self._regexp_match(regexp, original_pattern)
-    for substory in substories:
-      try:
-        self._selected_names.remove(substory)
-      except KeyError as e:
-        raise ValueError(
-            "Removing Story failed: "
-            f"name='{substory}' extracted by pattern='{original_pattern}'"
-            "is not in the filtered story list") from e
-
-  def _regexp_match(self, regexp: re.Pattern,
-                    original_pattern: str) -> list[str]:
-    substories = [
-        substory for substory in self._known_names if regexp.fullmatch(substory)
-    ]
-    if not substories:
-      substories = self._regexp_match_ignorecase(regexp)
-    if not substories:
-      return self._handle_no_match(original_pattern)
-    if len(substories) == len(self._known_names) and self._selected_names:
-      raise ValueError(f"'{original_pattern}' matched all and overrode all"
-                       "previously filtered story names.")
-    return substories
-
-  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> list[str]:
-    logging.warning(
-        "No matching stories, using case-insensitive fallback regexp.")
-    iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
-    return [
-        substory for substory in self._known_names
-        if iregexp.fullmatch(substory)
-    ]
-
-  def _handle_no_match(self, original_pattern: str) -> list[str]:
-    choices_ms, alternative = close_matches_message(original_pattern,
-                                                    self._known_names)
-    error_message: str = f"'{original_pattern}' didn't match any stories."
-    error_message += choices_ms
-    if alternative:
-      logging.error(error_message)
-      return [alternative]
-    raise ValueError(error_message)
+    regex_filter = RegexFilter(
+        all_names=self.story_cls.all_story_names(),
+        default_names=self.story_cls.default_story_names())
+    self._selected_names = regex_filter.process_all(patterns)
 
   @override
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:

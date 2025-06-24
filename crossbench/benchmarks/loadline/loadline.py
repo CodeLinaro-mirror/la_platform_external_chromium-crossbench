@@ -14,6 +14,7 @@ from tabulate import tabulate
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.benchmarks.base import RegexFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
@@ -137,6 +138,25 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
       raise argparse.ArgumentTypeError(
           "--config is not supported with loadline.")
     return args.pages_config
+
+  @classmethod
+  @override
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+    config = cls.get_pages_config(args)
+    assert cls._page_config is not None
+
+    if args.stories:
+      all_page_labels = [str(page.label) for page in config.pages]
+      regex_filter = RegexFilter(
+          all_names=all_page_labels, default_names=all_page_labels)
+      filtered_page_labels = regex_filter.process_all(args.stories.split(","))
+      filtered_pages = tuple(
+          page for page in config.pages if page.label in filtered_page_labels
+      )
+      config = PagesConfig(
+          pages=filtered_pages, secrets=cls._page_config.secrets)
+
+    return cls.STORY_FILTER_CLS.stories_from_config(args, config)
 
   @classmethod
   @override
