@@ -70,9 +70,9 @@ def format_duration(duration: dt.timedelta) -> str:
 
   formatted = f"{round(seconds, 1)}s"
   if minutes:
-    formatted = "{minutes}m{formatted}"
+    formatted = f"{minutes}m{formatted}"
   if hours:
-    formatted = "{hours}h{formatted}"
+    formatted = f"{hours}h{formatted}"
   return formatted
 
 
