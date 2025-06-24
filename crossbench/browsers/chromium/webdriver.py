@@ -27,6 +27,7 @@ from crossbench.helper import wait
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.base import SubprocessError
 from crossbench.plt.bin import Binaries
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -113,7 +114,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self.adb_force_stop()
     if session.browser.wipe_system_user_data:
       self.adb_force_clear()
-      self.platform.adb.grant_permissions(self.android_package)
+      self._setup_binary_permissions()
     self._backup_chrome_flags()
     return self._start_chromedriver(session, driver_path)
 
@@ -187,7 +188,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self._setup_binary_permissions()
 
   def _setup_binary_permissions(self) -> None:
-    self.platform.adb.grant_permissions(self.android_package)
+    try:
+      self.platform.adb.grant_permissions(self.android_package)
+    except SubprocessError as e:
+      logging.warning("Error setting app permissions: %s", e)
 
   @override
   def _setup_window(self) -> None:  # pytype: disable=override-error
