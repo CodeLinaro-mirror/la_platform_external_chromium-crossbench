@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional,
-                    Sequence, Tuple, Type, TypeAlias, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Generic, Mapping, Optional, Sequence,
+                    Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 class Benchmark(abc.ABC):
   NAME: str = ""
   DEFAULT_STORY_CLS: Type[Story] = Story  # type: ignore
-  PROBES: Tuple[Type[BenchmarkProbeMixin], ...] = ()
+  PROBES: tuple[Type[BenchmarkProbeMixin], ...] = ()
   DEFAULT_REPETITIONS: int = 1
 
   @classmethod
@@ -55,7 +55,7 @@ class Benchmark(abc.ABC):
     return ""
 
   @classmethod
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return tuple()
 
   @classmethod
@@ -71,7 +71,7 @@ class Benchmark(abc.ABC):
     return parser
 
   @classmethod
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     return {
         "name":
             cls.NAME,
@@ -103,7 +103,7 @@ class Benchmark(abc.ABC):
     return Flags()
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     del args
     return {}
 
@@ -116,10 +116,10 @@ class Benchmark(abc.ABC):
     assert self.NAME is not None, f"{self} has no .NAME property"
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
-    self.stories: List[Story] = self._validate_stories(stories)
+    self.stories: list[Story] = self._validate_stories(stories)
     self.log_stories(self.stories)
 
-  def _validate_stories(self, stories: Sequence[Story]) -> List[Story]:
+  def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
     assert stories, "No stories provided"
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS), (
@@ -145,7 +145,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   DEFAULT_STORY_NAME: str = "default"
 
   @classmethod
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--stories",
@@ -155,11 +155,12 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         help="Comma-separated list of story names. "
         "Use 'all' for selecting all available stories. "
         "Use 'default' for the standard selection of stories.")
-    cls.add_story_grouping_parser(parser)
+    cls._add_story_grouping_arguments(parser)
     return parser
 
   @classmethod
-  def add_story_grouping_parser(cls, parser: argparse.ArgumentParser) -> None:
+  def _add_story_grouping_arguments(cls,
+                                    parser: argparse.ArgumentParser) -> None:
     is_combined_group = parser.add_mutually_exclusive_group()
     is_combined_group.add_argument(
         "--combined",
@@ -173,7 +174,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         help="Run each story in a fresh browser.")
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     return {"patterns": args.stories.split(","), "args": args}
 
   @classmethod
@@ -192,7 +193,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
     # Using order-preserving dict instead of set
-    self._known_names: Dict[str,
+    self._known_names: dict[str,
                             None] = dict.fromkeys(story_cls.all_story_names())
     self.stories: Sequence[StoryT] = []
     # TODO: only use one method.
@@ -235,7 +236,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["stories"] = cls.stories_from_cli_args(args)
     return kwargs
@@ -247,7 +248,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     data = super().describe()
     data["stories"] = cls.describe_stories()
     return data
@@ -274,53 +275,25 @@ PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound=PressBenchmarkStory)
 
 
-class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
-                                Generic[PressBenchmarkStoryT]):
-  """
-  Filter stories by name or regexp.
+class RegexFilter():
 
-  Syntax:
-    "all"     Include all stories (defaults to story_names).
-    "name"    Include story with the given name.
-    "-name"   Exclude story with the given name'
-    "foo.*"   Include stories whose name matches the regexp.
-    "-foo.*"  Exclude stories whose name matches the regexp.
-
-  These patterns can be combined:
-    [".*", "-foo", "-bar"] Includes all except the "foo" and "bar" story
-  """
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["separate"] = args.separate
-    kwargs["url"] = args.custom_benchmark_url
-    return kwargs
-
-  def __init__(self,
-               story_cls: Type[PressBenchmarkStoryT],
-               patterns: Sequence[str],
-               args: Optional[argparse.Namespace] = None,
-               separate: bool = False,
-               url: Optional[str] = None) -> None:
-    self.url: str | None = url
+  def __init__(self, all_names: Sequence[str], default_names: Sequence[str]):
+    self._all_names: dict[str, None] = dict.fromkeys(all_names)
+    self._default_names: dict[str, None] = dict.fromkeys(default_names)
     self._selected_names: OrderedSet[str] = OrderedSet()
-    super().__init__(story_cls, patterns, args, separate)
-    assert issubclass(self.story_cls, PressBenchmarkStory)
-    for name in self._known_names:
+    for name in self._all_names:
       assert name, "Invalid empty story name"
       assert not name.startswith("-"), (
           f"Known story names cannot start with '-', but got '{name}'.")
       assert not name == "all", "Known story name cannot match 'all'."
 
-  @override
-  def process_all(self, patterns: Sequence[str]) -> None:
+  def process_all(self, patterns: Sequence[str]) -> OrderedSet[str]:
     if not isinstance(patterns, (list, tuple)):
       raise ValueError("Expected Sequence of story name or patterns "
                        f"but got '{type(patterns)}'.")
     for pattern in patterns:
       self.process_pattern(pattern)
+    return self._selected_names
 
   def process_pattern(self, pattern: str) -> None:
     if pattern.startswith("-"):
@@ -342,12 +315,11 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     if pattern == "all":
       return re.compile(".*")
     if pattern == "default":
-      default_story_names = self.story_cls.default_story_names()
-      if default_story_names == self.story_cls.all_story_names():
+      if self._default_names == self._all_names:
         return re.compile(".*")
-      joined_names = "|".join(re.escape(name) for name in default_story_names)
+      joined_names = "|".join(re.escape(name) for name in self._default_names)
       return re.compile(f"^({joined_names})$")
-    if pattern in self._known_names:
+    if pattern in self._all_names:
       return re.compile(re.escape(pattern))
     return re.compile(pattern)
 
@@ -375,37 +347,79 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
             "is not in the filtered story list") from e
 
   def _regexp_match(self, regexp: re.Pattern,
-                    original_pattern: str) -> List[str]:
+                    original_pattern: str) -> list[str]:
     substories = [
-        substory for substory in self._known_names if regexp.fullmatch(substory)
+        substory for substory in self._all_names if regexp.fullmatch(substory)
     ]
     if not substories:
       substories = self._regexp_match_ignorecase(regexp)
     if not substories:
       return self._handle_no_match(original_pattern)
-    if len(substories) == len(self._known_names) and self._selected_names:
+    if len(substories) == len(self._all_names) and self._selected_names:
       raise ValueError(f"'{original_pattern}' matched all and overrode all"
                        "previously filtered story names.")
     return substories
 
-  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> List[str]:
+  def _regexp_match_ignorecase(self, regexp: re.Pattern) -> list[str]:
     logging.warning(
         "No matching stories, using case-insensitive fallback regexp.")
     iregexp: re.Pattern = re.compile(regexp.pattern, flags=re.IGNORECASE)
     return [
-        substory for substory in self._known_names
-        if iregexp.fullmatch(substory)
+        substory for substory in self._all_names if iregexp.fullmatch(substory)
     ]
 
-  def _handle_no_match(self, original_pattern: str) -> List[str]:
+  def _handle_no_match(self, original_pattern: str) -> list[str]:
     choices_ms, alternative = close_matches_message(original_pattern,
-                                                    self._known_names)
+                                                    self._all_names)
     error_message: str = f"'{original_pattern}' didn't match any stories."
     error_message += choices_ms
     if alternative:
       logging.error(error_message)
       return [alternative]
     raise ValueError(error_message)
+
+
+class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
+                                Generic[PressBenchmarkStoryT]):
+  """
+  Filter stories by name or regexp.
+
+  Syntax:
+    "all"     Include all stories (defaults to story_names).
+    "name"    Include story with the given name.
+    "-name"   Exclude story with the given name'
+    "foo.*"   Include stories whose name matches the regexp.
+    "-foo.*"  Exclude stories whose name matches the regexp.
+
+  These patterns can be combined:
+    [".*", "-foo", "-bar"] Includes all except the "foo" and "bar" story
+  """
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["separate"] = args.separate
+    kwargs["url"] = args.custom_benchmark_url
+    return kwargs
+
+  def __init__(self,
+               story_cls: Type[PressBenchmarkStoryT],
+               patterns: Sequence[str],
+               args: Optional[argparse.Namespace] = None,
+               separate: bool = False,
+               url: Optional[str] = None) -> None:
+    self.url: str | None = url
+    self._selected_names: OrderedSet[str] = OrderedSet()
+    super().__init__(story_cls, patterns, args, separate)
+    assert issubclass(self.story_cls, PressBenchmarkStory)
+
+  @override
+  def process_all(self, patterns: Sequence[str]) -> None:
+    regex_filter = RegexFilter(
+        all_names=self.story_cls.all_story_names(),
+        default_names=self.story_cls.default_story_names())
+    self._selected_names = regex_filter.process_all(patterns)
 
   @override
   def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
@@ -414,11 +428,11 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     return stories
 
   def create_stories_from_names(
-      self, names: List[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
+      self, names: list[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
     return self.story_cls.from_names(names, separate=separate, url=self.url)
 
 
-VersionParts: TypeAlias = Tuple[str] | Tuple[int, ...]
+VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS = PressBenchmarkStoryFilter
@@ -442,7 +456,7 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     raw_version: VersionParts = cls.version()
     is_branch_version = (
         len(raw_version) == 1 and isinstance(raw_version[0], str))
@@ -467,7 +481,14 @@ class PressBenchmark(SubStoryBenchmark):
   def add_cli_parser(cls, subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
-    benchmark_url_group = parser.add_mutually_exclusive_group()
+    cls._add_story_url_arguments(parser)
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
+    return parser
+
+  @classmethod
+  def _add_story_url_arguments(cls, parser) -> None:
+    benchmark_url_group = parser.add_argument_group(
+        "Story URL Options").add_mutually_exclusive_group()
     live_url: str = cls.DEFAULT_STORY_CLS.URL
     local_url: str = cls.DEFAULT_STORY_CLS.URL_LOCAL
     official_url: str = cls.DEFAULT_STORY_CLS.URL_OFFICIAL
@@ -503,7 +524,7 @@ class PressBenchmark(SubStoryBenchmark):
 
     if custom_fork_url := getattr(cls.DEFAULT_STORY_CLS, "URL_CHROME_FORK",
                                   None):
-      parser.add_argument(
+      benchmark_url_group.add_argument(
           "--custom",
           "--chrome-custom-fork",
           "--chrome-fork",
@@ -513,19 +534,17 @@ class PressBenchmark(SubStoryBenchmark):
           help=(f"Use custom chrome fork hosted on {custom_fork_url}. "
                 "This include additional options and performance.mark calls "
                 "for easier investigation."))
-    cls.STORY_FILTER_CLS.add_cli_parser(parser)
-    return parser
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["custom_url"] = args.custom_benchmark_url
     return kwargs
 
   @classmethod
   @override
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     data = super().describe()
     assert issubclass(cls.DEFAULT_STORY_CLS, PressBenchmarkStory)
     data["url"] = cls.DEFAULT_STORY_CLS.URL

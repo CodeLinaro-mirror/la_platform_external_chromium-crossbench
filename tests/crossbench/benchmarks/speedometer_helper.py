@@ -8,7 +8,7 @@ import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Type
+from typing import Optional, Sequence, Type
 from unittest import mock
 
 from typing_extensions import override
@@ -16,7 +16,7 @@ from typing_extensions import override
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
     SpeedometerStory)
-from crossbench.env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
@@ -185,7 +185,7 @@ class SpeedometerBaseTestCase(
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
@@ -204,7 +204,7 @@ class SpeedometerBaseTestCase(
   def _verify_results(
       self,
       runner: Runner,
-      expected_num_urls: Optional[int] = None) -> List[Dict[str, str]]:
+      expected_num_urls: Optional[int] = None) -> list[dict[str, str]]:
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
@@ -230,7 +230,7 @@ class SpeedometerBaseTestCase(
     csv_files = list(runner.out_dir.glob("speedometer*.csv"))
     self.assertEqual(len(csv_files), 1)
     csv_file = self.out_dir / f"{self.probe_cls.NAME}.csv"
-    rows: List[Dict[str, str]] = [{}]
+    rows: list[dict[str, str]] = [{}]
     with csv_file.open(encoding="utf-8") as f:
       reader = csv.DictReader(f, delimiter="\t")
       rows = list(reader)

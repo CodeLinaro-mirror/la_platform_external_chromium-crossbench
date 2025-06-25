@@ -10,8 +10,8 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generic, List, Optional,
-                    Tuple, Type, TypeVar)
+from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, Type,
+                    TypeVar)
 
 import xlsxwriter
 from tabulate import tabulate
@@ -76,9 +76,9 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return self.write_group_result(group, merger, csv_formatter=CSVFormatter)
 
   def merge_browsers_json_list(self, group: BrowsersRunGroup) -> ProbeResult:
-    merged_json: Dict[str, Dict[str, Any]] = {}
+    merged_json: dict[str, dict[str, Any]] = {}
     for story_group in group.story_groups:
-      browser_result: Dict[str, Any] = {}
+      browser_result: dict[str, Any] = {}
       merged_json[story_group.browser.unique_name] = browser_result
       browser_result["info"] = story_group.info
       browser_json_path = story_group.results[self].json
@@ -98,7 +98,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return LocalProbeResult(json=(merged_json_path,))
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_file_list: List[LocalPath] = []
+    csv_file_list: list[LocalPath] = []
     for story_group in group.story_groups:
       csv_file_list.append(story_group.results[self].csv)
     merged_table = helper.merge_csv(csv_file_list, row_header_len=-1)
@@ -116,7 +116,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   def write_group_result(
       self,
       group: RunGroup,
-      merged_data: Dict | List | MetricsMerger,
+      merged_data: dict | list | MetricsMerger,
       csv_formatter: Optional[Type[CSVFormatter]] = CSVFormatter,
       value_fn: Callable[[Any], Any] = metric_geomean) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)
@@ -150,7 +150,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     # 0 | metric 0 full path, metric path[0] ... metric path[N], metric 0 value
     #     ...                                                    ...
     # M | metric M full path, ...                                metric M value
-    headers: List[Tuple[str, Any]] = []
+    headers: list[tuple[str, Any]] = []
     for label, info_value in group.info.items():
       headers.append((label, info_value))
     csv_data = csv_formatter(
@@ -163,19 +163,19 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   LOG_SUMMARY_KEYS = ("label", "browser", "version", "os", "device", "cpu",
                       "runs", "failed runs")
 
-  def _log_result_metrics(self, data: Dict) -> None:
-    table: Dict[str, List[str]] = defaultdict(list)
+  def _log_result_metrics(self, data: dict) -> None:
+    table: dict[str, list[str]] = defaultdict(list)
     for browser_result in data.values():
       for info_key in self.LOG_SUMMARY_KEYS:
         table[info_key].append(browser_result["info"][info_key])
       data = browser_result["data"]
       self._extract_result_metrics_table(data, table)
-    flattened: List[List[str]] = list(
+    flattened: list[list[str]] = list(
         [label] + values for label, values in table.items())
     logging.critical(tabulate(flattened, tablefmt="plain"))
 
-  def _extract_result_metrics_table(self, metrics: Dict[str, Any],
-                                    table: Dict[str, List[str]]) -> None:
+  def _extract_result_metrics_table(self, metrics: dict[str, Any],
+                                    table: dict[str, list[str]]) -> None:
     """Add individual metrics to the table in here.
     Typically you only add score and total values for each benchmark or
     benchmark item."""
@@ -186,12 +186,12 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 class XLSXWriter:
 
   @classmethod
-  def write(cls, table: List[List[str]], path: pth.LocalPath) -> None:
+  def write(cls, table: list[list[str]], path: pth.LocalPath) -> None:
     instance = cls(table, path)
     instance.write_xlsx()
 
-  def __init__(self, table: List[List[str]], path: pth.LocalPath):
-    self._table: List[List[str]] = table
+  def __init__(self, table: list[list[str]], path: pth.LocalPath):
+    self._table: list[list[str]] = table
     self._nof_header_cols: int = self._detect_header_cols()
     self._nof_header_rows: int = self._detect_header_rows()
 
@@ -204,7 +204,7 @@ class XLSXWriter:
 
   def _detect_header_cols(self) -> int:
     nof_header_cols: int = 0
-    header_row: List[str] = self._table[0]
+    header_row: list[str] = self._table[0]
     for col, header in enumerate(header_row[1:]):
       nof_header_cols = col + 1
       if header:
@@ -229,7 +229,7 @@ class XLSXWriter:
     for row_index, row_data in enumerate(self._table):
       self._write_row(row_index, row_data)
 
-  def _write_row(self, row_index: int, row_data: List[str]) -> None:
+  def _write_row(self, row_index: int, row_data: list[str]) -> None:
     is_header_row: bool = row_index < self._nof_header_rows
     src_first_data_col_index: int = self._write_header_cols(row_index, row_data)
     dst_col_index: int = src_first_data_col_index

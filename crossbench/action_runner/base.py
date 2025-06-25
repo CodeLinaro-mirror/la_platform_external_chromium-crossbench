@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Iterable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Iterable, Optional, Sequence
 
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
@@ -64,7 +64,7 @@ class ActionRunner:
     # TODO: Don't share state across runs
     self._info_stack: exception.TInfoStack | None = None
 
-    self._failure_screenshot_annotations: List[ScreenshotAnnotation] = []
+    self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
 
   def set_listener(self, listener: ActionRunnerListener) -> None:
     self._listener = listener

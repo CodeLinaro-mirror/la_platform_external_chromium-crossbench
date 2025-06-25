@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, List, Self, Type
+from typing import TYPE_CHECKING, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -17,7 +17,7 @@ from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -89,7 +89,7 @@ class FrequencyProbe(EnvModifier):
     return super().key + (("cpus", self._cpu_frequency_map.key),)
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     # As long as a valid platform map can be derived, all is good.
     self._cpu_frequency_map.get_target_frequencies(browser.platform)
@@ -118,7 +118,7 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
 
   def __init__(self, probe: FrequencyProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._previous_frequencies: List[_FrequencyState] = []
+    self._previous_frequencies: list[_FrequencyState] = []
 
   def start(self) -> None:
     target_cpu_frequencies: immutabledict[pth.AnyPosixPath, int] = (

@@ -11,8 +11,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional,
-                    Sequence)
+from typing import (TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping,
+                    Optional, Sequence)
 
 import psutil
 from typing_extensions import override
@@ -27,6 +27,7 @@ from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
+from crossbench.plt.port_manager import LocalPortManager, PortManager
 from crossbench.plt.win import WinPlatform
 from crossbench.runner.run import Run
 from crossbench.stories.story import Story
@@ -70,29 +71,96 @@ class ShResult:
     return self._success
 
 
+class TrackingPortManagerMixin:
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.forwarded_ports: dict[int, int] = {}
+    self.reverse_forwarded_ports: dict[int, int] = {}
+
+  def forward(self, local_port: int, remote_port: int) -> int:
+    local_port = super().forward(local_port, remote_port)
+    self.forwarded_ports[local_port] = remote_port
+    return local_port
+
+  def stop_forward(self, local_port: int) -> None:
+    if local_port in self.forwarded_ports:
+      del self.forwarded_ports[local_port]
+
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    remote_port = super().reverse_forward(remote_port, local_port)
+    self.reverse_forwarded_ports[remote_port] = local_port
+    return remote_port
+
+  def stop_reverse_forward(self, remote_port: int) -> None:
+    if remote_port in self.reverse_forwarded_ports:
+      del self.reverse_forwarded_ports[remote_port]
+
+
+class MockRemoterPortManagerMixin:
+
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.current_port = 60000
+
+  def _next_port(self) -> int:
+    self.current_port += 1
+    return self.current_port
+
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    del local_port
+    if remote_port == 0:
+      return self._next_port()
+    return remote_port
+
+  def forward(self, local_port: int, remote_port: int) -> int:
+    del remote_port
+    if local_port == 0:
+      return self._next_port()
+    return local_port
+
+
+class MockLocalPortManager(TrackingPortManagerMixin, LocalPortManager):
+  pass
+
+
+class MockRemotePortManager(TrackingPortManagerMixin,
+                            MockRemoterPortManagerMixin, PortManager):
+  pass
+
+
 class MockPlatformMixin:
 
   def __init__(self, *args, is_battery_powered=False, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
-    self._sh_cmds: List[TupleCmdArgs] = []
-    self._expected_sh_cmds: List[TupleCmdArgs] | None = None
-    self._sh_results: List[ShResult] = []
-    self._download_results: List[DownloadMockData] = []
-    self.file_contents: Dict[pth.AnyPath, List[str]] = (
+    self._sh_cmds: list[TupleCmdArgs] = []
+    self._expected_sh_cmds: list[TupleCmdArgs] | None = None
+    self._sh_results: list[ShResult] = []
+    self._download_results: list[DownloadMockData] = []
+    self.file_contents: MutableMapping[pth.AnyPath, list[str]] = (
         collections.defaultdict(list))
-    self.sleeps: List[dt.timedelta] = []
+    self.sleeps: list[dt.timedelta] = []
     self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
     self._machine_arch: [MachineArch] = None  # type: ignore
-    self.popens: List[MockPopen] = []
+    self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
     super().__init__(*args, **kwargs)
 
   @property
   def has_display(self) -> bool:
     return True
+
+  def _create_port_manager(self) -> PortManager:
+    if self.is_local:
+      return MockLocalPortManager(self)
+    return MockRemotePortManager(self)
+
+  @property
+  def port_manager(self) -> PortManager:
+    return self._default_port_manager
 
   def os_details(self):
     return {
@@ -142,7 +210,7 @@ class MockPlatformMixin:
     return tuple(converted_args)
 
   @property
-  def sh_results(self) -> List[ShResult]:
+  def sh_results(self) -> list[ShResult]:
     return list(self._sh_results)
 
   @sh_results.setter
@@ -154,11 +222,11 @@ class MockPlatformMixin:
       self.expect_sh(result=result)
 
   @property
-  def sh_cmds(self) -> List[TupleCmdArgs]:
+  def sh_cmds(self) -> list[TupleCmdArgs]:
     return list(self._sh_cmds)
 
   @property
-  def expected_sh_cmds(self) -> Optional[List[TupleCmdArgs]]:
+  def expected_sh_cmds(self) -> Optional[list[TupleCmdArgs]]:
     if self._expected_sh_cmds is None:
       return None
     return list(self._expected_sh_cmds)
@@ -210,7 +278,7 @@ class MockPlatformMixin:
     return 0.1
 
   @functools.lru_cache(maxsize=1)
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
   def set_file_contents(self,
@@ -324,8 +392,8 @@ class MockPlatformMixin:
 class MockFd:
 
   def __init__(self):
-    self.expected_writes: List[bytes] = []
-    self.read_returns: List[bytes] = []
+    self.expected_writes: list[bytes] = []
+    self.read_returns: list[bytes] = []
 
   def __del__(self):
     assert not self.expected_writes

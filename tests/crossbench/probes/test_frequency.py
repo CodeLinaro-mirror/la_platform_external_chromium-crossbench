@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from typing import List
 from unittest import mock
 
 from immutabledict import immutabledict
@@ -10,7 +9,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
-from crossbench.env import HostEnvironment
+from crossbench.env.runner_env import RunnerEnv
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
 from crossbench.probes.frequency import FrequencyProbe, FrequencyProbeContext
@@ -43,7 +42,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
     browser = self._create_mock_browser()
 
     # Implicitly asserts no exception occurs.
-    probe.validate_browser(mock.Mock(spec=HostEnvironment), browser)
+    probe.validate_browser(mock.Mock(spec=RunnerEnv), browser)
     target_frequencies = probe.cpu_frequency_map.get_target_frequencies(
         browser.platform)
 
@@ -90,7 +89,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
     mock_browser.platform = self.platform
     return mock_browser
 
-  def _create_cpu_dir(self, cpu_name: str, available_frequencies: List[int]):
+  def _create_cpu_dir(self, cpu_name: str, available_frequencies: list[int]):
     cpu_dir = pth.AnyPosixPath(f"/sys/devices/system/cpu/{cpu_name}/cpufreq")
     self.platform.mkdir(cpu_dir, parents=True, exist_ok=True)
     self.platform.set_file_contents(

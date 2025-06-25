@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Dict, List, Self, TextIO, Tuple, Type
+from typing import TYPE_CHECKING, Self, TextIO, Type
 
 from typing_extensions import Final, override
 
@@ -22,7 +22,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import LocalPath
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
@@ -35,7 +35,7 @@ class Orientation(ConfigEnum):
   VERTICAL = ("vertical", "Align vertically.")
 
 
-FFMPEG_STACK_DIRECTION: Final[Dict[Orientation, str]] = {
+FFMPEG_STACK_DIRECTION: Final[dict[Orientation, str]] = {
     Orientation.HORIZONTAL: "hstack",
     Orientation.VERTICAL: "vstack",
 }
@@ -116,7 +116,7 @@ class VideoProbe(Probe):
     return self._merge_runs
 
   @override
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
     if env.repetitions > 10:
       env.handle_warning(
@@ -133,7 +133,7 @@ class VideoProbe(Probe):
     env.check_sh_success("montage", "--version")
     self._pre_check_viewport_size(env)
 
-  def _pre_check_viewport_size(self, env: HostEnvironment) -> None:
+  def _pre_check_viewport_size(self, env: RunnerEnv) -> None:
     first_viewport: Viewport = env.browsers[0].viewport
     for browser in env.browsers:
       viewport: Viewport = browser.viewport
@@ -175,7 +175,7 @@ class VideoProbe(Probe):
     group_files = [video_file]
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
-    video_file_inputs: List[str | LocalPath] = []
+    video_file_inputs: list[str | LocalPath] = []
     for run in runs:
       video_file_inputs += ["-i", run.results[self].file_list[0]]
     draw_text = ("fontfile='/Library/Fonts/Arial.ttf':"
@@ -209,8 +209,8 @@ class VideoProbe(Probe):
     groups = list(group.repetitions_groups)
     if not self.merge_runs or len(groups) <= 1:
       return super().merge_browsers(group)
-    grouped: Dict[Story,
-                  List[RepetitionsRunGroup]] = collection_helper.group_by(
+    grouped: dict[Story,
+                  list[RepetitionsRunGroup]] = collection_helper.group_by(
                       groups,
                       key=lambda repetitions_group: repetitions_group.story)
 
@@ -224,7 +224,7 @@ class VideoProbe(Probe):
 
   def _merge_stories_for_browser(
       self, result_dir: LocalPath, story: Story,
-      repetitions_groups: List[RepetitionsRunGroup]) -> LocalPath:
+      repetitions_groups: list[RepetitionsRunGroup]) -> LocalPath:
     story = repetitions_groups[0].story
     result_path = result_dir / f"{story.name}_combined.mp4"
 
@@ -234,7 +234,7 @@ class VideoProbe(Probe):
       self.host_platform.copy(input_file, result_path)
       return result_path
 
-    input_files: List[str] = []
+    input_files: list[str] = []
     for repetitions_group in repetitions_groups:
       result_files = repetitions_group.results[self].file_list
       input_files += ["-i", os.fspath(result_files[0])]
@@ -288,7 +288,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     # TODO: Add common start-story-delay on runner for these cases.
     self.host_platform.sleep(1)
 
-  def _record_cmd(self, viewport: Viewport) -> Tuple[str, ...]:
+  def _record_cmd(self, viewport: Viewport) -> tuple[str, ...]:
     if self.browser_platform.is_linux:
       env_display = os.environ.get("DISPLAY", ":0.0")
       return ("ffmpeg", "-hide_banner", "-video_size",

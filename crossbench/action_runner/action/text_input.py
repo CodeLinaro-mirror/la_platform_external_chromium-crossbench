@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from typing_extensions import override
 
@@ -83,7 +83,7 @@ class TextInputAction(InputSourceAction):
     return
 
   @override
-  def supported_input_sources(self) -> Tuple[InputSource, ...]:
+  def supported_input_sources(self) -> tuple[InputSource, ...]:
     return (InputSource.JS, InputSource.KEYBOARD)
 
   @override

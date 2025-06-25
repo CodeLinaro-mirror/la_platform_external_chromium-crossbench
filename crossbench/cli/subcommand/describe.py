@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypeAlias
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -18,7 +18,7 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
 if TYPE_CHECKING:
   import argparse
-  HelpData: TypeAlias = Dict[str, Dict[str, Any]]
+  HelpData: TypeAlias = dict[str, dict[str, Any]]
 
 
 class DescribeSubcommand(CrossbenchSubcommand):
@@ -50,7 +50,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
         default=False,
         action="store_true",
         help="Print the data as json data")
-    self.cli.add_verbosity_argument(describe_parser)
+    self.cli.add_debugging_arguments(describe_parser)
     return describe_parser
 
   @override
@@ -98,7 +98,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
       self.no_match_error(search_str)
 
   def _process_search_str(self, category: str,
-                          search_str: str | None) -> Tuple[str, str | None]:
+                          search_str: str | None) -> tuple[str, str | None]:
     if not search_str:
       return category, search_str
     search_str = search_str.lower()
@@ -153,7 +153,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def print_benchmarks(self, category: str, search_str: str | None,
                        data: HelpData):
     printed_any = False
-    table: List[List[Optional[str]]] = [["Benchmark", "Property", "Value"]]
+    table: list[list[Optional[str]]] = [["Benchmark", "Property", "Value"]]
     for benchmark_name, values in data["benchmarks"].items():
       table.append([
           benchmark_name,
@@ -193,10 +193,10 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def _benchmark_help(
       self,
       search_str: Optional[str] = None,
-  ) -> Dict[str, Any]:
-    benchmarks_data: Dict[str, Any] = {}
+  ) -> dict[str, Any]:
+    benchmarks_data: dict[str, Any] = {}
     for benchmark_cls in self.cli.BENCHMARKS:
-      aliases: Tuple[str, ...] = benchmark_cls.aliases()
+      aliases: tuple[str, ...] = benchmark_cls.aliases()
       if search_str:
         if benchmark_cls.NAME != search_str and search_str not in aliases:
           continue
@@ -205,18 +205,18 @@ class DescribeSubcommand(CrossbenchSubcommand):
       benchmarks_data[benchmark_cls.NAME] = benchmark_info
     return benchmarks_data
 
-  def _probe_help(self, search_str: str | None) -> Dict[str, Any]:
-    probe_data: Dict[str, Any] = {
+  def _probe_help(self, search_str: str | None) -> dict[str, Any]:
+    probe_data: dict[str, Any] = {
         str(probe_cls.NAME): probe_cls.help_text()
         for probe_cls in GENERAL_PURPOSE_PROBES
         if not search_str or probe_cls.NAME == search_str
     }
     return probe_data
 
-  def _network_help(self, search_str: str | None) -> Dict[str, Any]:
-    network_data: Dict[str, Any] = {
+  def _network_help(self, search_str: str | None) -> dict[str, Any]:
+    network_data: dict[str, Any] = {
         network_type.name: network_type.help
-        for network_type in NetworkType # pytype: disable=missing-parameter
+        for network_type in NetworkType  # pytype: disable=missing-parameter
         if not search_str or network_type.name.lower() == search_str
     }
     # Print config details if any network info is returned.

@@ -8,7 +8,7 @@ import contextlib
 import io
 import json
 import pathlib
-from typing import List, Optional, Tuple
+from typing import Optional
 from unittest import mock
 
 import pytest
@@ -30,7 +30,7 @@ class SysExitException(Exception):
 def _run_cli(*args: str,
              extra_flags: tuple[str, ...] = (),
              test_env: Optional[TestEnv] = None,
-             auto_headless: bool = False) -> Tuple[CrossBenchCLI, io.StringIO]:
+             auto_headless: bool = False) -> tuple[CrossBenchCLI, io.StringIO]:
   if test_env is not None:
     args += (f"--out-dir={test_env.results_dir}",) + test_env.cq_flags
   if auto_headless and not plt.PLATFORM.has_display:
@@ -45,13 +45,13 @@ def _run_cli(*args: str,
   return cli, stdout
 
 
-def _get_browser_dirs(results_dir: pathlib.Path) -> List[pathlib.Path]:
+def _get_browser_dirs(results_dir: pathlib.Path) -> list[pathlib.Path]:
   assert results_dir.is_dir()
   browser_dirs = [path for path in results_dir.iterdir() if path.is_dir()]
   return browser_dirs
 
 
-def _get_v8_log_files(results_dir: pathlib.Path) -> List[pathlib.Path]:
+def _get_v8_log_files(results_dir: pathlib.Path) -> list[pathlib.Path]:
   return list(results_dir.glob("**/*-v8.log"))
 
 

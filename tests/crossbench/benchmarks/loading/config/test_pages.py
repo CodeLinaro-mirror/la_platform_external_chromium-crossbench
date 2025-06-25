@@ -582,8 +582,10 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
   def test_direct_string_multiple(self):
     config = ListPagesConfig.parse_dict(
         {"pages": "http://a.com,12s,http://b.com,13s"})
-    self.assertEqual(len(config.pages), 2)
-    story_1, story_2 = config.pages
+    pages = config.pages
+    self.assertEqual(len(pages), 2)
+    story_1 = pages[0]
+    story_2 = pages[1]
     self.assertEqual(story_1.first_url, "http://a.com")
     self.assertEqual(story_2.first_url, "http://b.com")
     self.assertEqual(story_1.duration.total_seconds(), 12)

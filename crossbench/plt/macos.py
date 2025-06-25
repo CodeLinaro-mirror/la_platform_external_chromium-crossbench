@@ -14,7 +14,7 @@ import re
 import socket
 import traceback as tb
 from subprocess import SubprocessError
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Type
 
 import psutil
 from typing_extensions import override
@@ -32,7 +32,7 @@ DISPLAY_NDRV_RE = re.compile(
     "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")
 
 
-def parse_display_ndrvs(spdisplays_ndrvs: Dict) -> Iterator[DisplayInfo]:
+def parse_display_ndrvs(spdisplays_ndrvs: dict) -> Iterator[DisplayInfo]:
   """
   Parses `system_profiler SPDisplaysDataType` output.
   "SPDisplaysDataType" : [
@@ -70,7 +70,7 @@ def parse_display_ndrvs(spdisplays_ndrvs: Dict) -> Iterator[DisplayInfo]:
 
 
 class MacOSPlatform(PosixPlatform):
-  SEARCH_PATHS: Tuple[pth.AnyPath, ...] = (
+  SEARCH_PATHS: tuple[pth.AnyPath, ...] = (
       pth.AnyPosixPath("."),
       pth.AnyPosixPath("/Applications"),
       # TODO: support remote platforms
@@ -100,7 +100,7 @@ class MacOSPlatform(PosixPlatform):
     return self.sh_stdout("sw_vers", "-productVersion").strip()
 
   @functools.cached_property
-  def version_parts(self) -> Tuple[int, ...]:
+  def version_parts(self) -> tuple[int, ...]:
     return tuple(map(int, self.version.split(".")))
 
   @functools.cached_property
@@ -144,7 +144,7 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     details = super().system_details()
     details.update({
         "system_profiler":
@@ -157,7 +157,7 @@ class MacOSPlatform(PosixPlatform):
     return details
 
   @functools.lru_cache(maxsize=1)
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     display_info_raw = self.sh_stdout("system_profiler", "-json",
                                       "SPDisplaysDataType").strip()
     display_info = json.loads(display_info_raw)
@@ -166,7 +166,7 @@ class MacOSPlatform(PosixPlatform):
         return tuple(parse_display_ndrvs(spdisplays_ndrvs))
     return tuple()
 
-  def display_resolution(self) -> Tuple[int, int]:
+  def display_resolution(self) -> tuple[int, int]:
     return self.display_details()[0]["resolution"]
 
   def _cpu_freq(self) -> Optional[CPUFreqInfo]:
@@ -305,7 +305,7 @@ class MacOSPlatform(PosixPlatform):
       end run"""
     return self.sh_stdout("/usr/bin/osascript", "-e", script, *args)
 
-  def foreground_process(self) -> Optional[Dict[str, Any]]:
+  def foreground_process(self) -> Optional[dict[str, Any]]:
     foreground_process_info = self.sh_stdout("lsappinfo", "front").strip()
     if not foreground_process_info:
       return None
@@ -384,14 +384,14 @@ class MacOSPlatform(PosixPlatform):
     self.sh("sudo", falconctl, "unload")
     return True
 
-  def _get_main_display(self) -> Tuple[ctypes.CDLL, Any]:
+  def _get_main_display(self) -> tuple[ctypes.CDLL, Any]:
     assert self.is_local, "Operation not supported on remote platforms"
     core_graphics = ctypes.CDLL(
         "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
     main_display = core_graphics.CGMainDisplayID()
     return main_display, core_graphics
 
-  def _get_display_service(self) -> Tuple[ctypes.CDLL, Any]:
+  def _get_display_service(self) -> tuple[ctypes.CDLL, Any]:
     main_display, _ = self._get_main_display()
     display_services = ctypes.CDLL(
         "/System/Library/PrivateFrameworks/DisplayServices.framework"
@@ -496,7 +496,7 @@ class MacOSPlatform(PosixPlatform):
 
   def set_display_refresh_rate(self,
                                refresh_rate: int,
-                               retry: int = 3) -> Tuple[bool, str]:
+                               retry: int = 3) -> tuple[bool, str]:
     """Sets the refresh rate if the main display supports it.
 
     This function uses CoreGraphics and CoreFoundtation libraries:
@@ -583,3 +583,10 @@ class MacOSPlatform(PosixPlatform):
     # This is a semi-ideal solution as it creates a temporary local server.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
       return s.connect_ex(("localhost", port)) == 0
+
+  @override
+  def last_modified(self, path: pth.AnyPathLike) -> float:
+    if self.is_local:
+      return super().last_modified(path)
+    # Get seconds since epoch
+    return float(self.sh_stdout("stat", "-f", "%m", self.path(path)))

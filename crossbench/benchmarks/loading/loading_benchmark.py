@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Type)
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -50,9 +49,9 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(parser)
+    parser = super().add_cli_arguments(parser)
     cls.add_page_config_parser(parser)
     tab_group = parser.add_mutually_exclusive_group()
     tab_group.add_argument(
@@ -127,7 +126,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     return parser
 
   @classmethod
-  def add_page_config_arg(cls, group: argparse._ArgumentGroup) -> None:
+  def add_page_config_arguments(cls, group: argparse._ArgumentGroup) -> None:
     group.add_argument(
         "--page-config",
         "--pages-config",
@@ -146,7 +145,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "--url",
         dest="urls",
         help="List of urls and durations to load: url,seconds,...")
-    cls.add_page_config_arg(page_config_group)
+    cls.add_page_config_arguments(page_config_group)
     page_config_group.add_argument(
         "--url-file",
         "--urls-file",
@@ -164,7 +163,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
     return kwargs
@@ -184,11 +183,11 @@ class LoadingPageFilter(StoryFilter[Page]):
     self.stories = self.stories_from_config(self.args, config)
 
   @classmethod
-  def all_stories(cls) -> Tuple[Page, ...]:
+  def all_stories(cls) -> tuple[Page, ...]:
     return tuple(PAGE_LIST)
 
   @classmethod
-  def default_stories(cls) -> Tuple[Page, ...]:
+  def default_stories(cls) -> tuple[Page, ...]:
     return PAGE_LIST_SMALL
 
   @classmethod
@@ -197,7 +196,7 @@ class LoadingPageFilter(StoryFilter[Page]):
     labels = set(page_config.label for page_config in config.pages)
     use_labels = len(labels) == len(config.pages)
 
-    stories: List[Page] = []
+    stories: list[Page] = []
     for page_config in config.pages:
       stories.append(cls._story_from_config(args, page_config, use_labels))
 
@@ -270,7 +269,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
-    cls.STORY_FILTER_CLS.add_cli_parser(parser)
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     parser.add_argument(
         "--action-runner",
         type=ActionRunnerConfig.parse,
@@ -329,12 +328,12 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("load", "ld")
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["action_runner"] = args.action_runner
     return kwargs
@@ -342,7 +341,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   @classmethod
   @override
   def describe_stories(cls) -> Mapping[str, str]:
-    result: Dict[str, str] = {}
+    result: dict[str, str] = {}
     for story in cls.all_stories():
       story_help = story.help()
       if story_help == story.name:

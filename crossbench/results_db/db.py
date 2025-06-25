@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Type
 
 import sqlalchemy
 import sqlalchemy.engine as orm_engine
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-DEFAULT_CLASSES: Final[Tuple[Type[BaseRecord],
+DEFAULT_CLASSES: Final[tuple[Type[BaseRecord],
                              ...]] = (PlatformRecord, BrowserRecord, RunRecord,
                                       UnitRecord)
 
@@ -84,14 +84,14 @@ class ResultsDB:
     with orm.Session(self._engine) as session:
       yield session
 
-  def setup_runs(self, runs: List[Run]) -> None:
+  def setup_runs(self, runs: list[Run]) -> None:
     platforms = {run.browser_platform for run in runs}
     self.add_platforms(platforms)
     browsers = {run.browser for run in runs}
     self.add_browsers(browsers)
     self.add_runs(runs)
 
-  def add_runs(self, runs: List[Run]) -> None:
+  def add_runs(self, runs: list[Run]) -> None:
     with self.session() as session:
       for run in runs:
         record = RunRecord.create(session, run)

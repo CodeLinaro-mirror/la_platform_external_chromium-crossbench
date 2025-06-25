@@ -11,6 +11,7 @@ from crossbench import plt
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
+from crossbench.cli.config.env import EnvConfig
 from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.flags.js_flags import JSFlags
@@ -31,6 +32,7 @@ class SettingsTestCase(unittest.TestCase):
     self.assertTrue(settings.network.is_live)
     self.assertFalse(settings.wipe_system_user_data)
     self.assertEqual(settings.platform, plt.PLATFORM)
+    self.assertEqual(settings.env_config, EnvConfig.default())
 
   def test_custom(self):
     flags = Flags({"--one": "1", "--two": "2"}).freeze()
@@ -43,7 +45,7 @@ class SettingsTestCase(unittest.TestCase):
         viewport=Viewport.FULLSCREEN,
         driver_path=pth.LocalPath("driver"),
         splash_screen=SplashScreen.DETAILED,
-    )
+        env_config=EnvConfig(cpu_max_usage_percent=10))
     self.assertEqual(settings.flags, flags)
     self.assertEqual(settings.js_flags, js_flags)
     self.assertEqual(settings.cache_dir, pth.LocalPath("cache"))
@@ -52,6 +54,8 @@ class SettingsTestCase(unittest.TestCase):
     self.assertEqual(settings.driver_path, pth.LocalPath("driver"))
     self.assertEqual(settings.splash_screen, SplashScreen.DETAILED)
     self.assertTrue(settings.network.is_live)
+    self.assertEqual(settings.env_config, EnvConfig(cpu_max_usage_percent=10))
+
 
   def test_js_flags_alone(self):
     js_flags = Flags({"--js-one": "js-1", "--js-two": "js-2"}).freeze()

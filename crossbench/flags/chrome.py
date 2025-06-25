@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Final, Iterable, Optional, Tuple
+from typing import Final, Iterable, Optional
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class ChromeFlags(Flags):
   JS_FLAG: Final[str] = "--js-flags"
 
   # All flags that might affect how finch / field-trials are loaded.
-  FIELD_TRIAL_ENABLE_FLAGS: Tuple[str, ...] = (
+  FIELD_TRIAL_ENABLE_FLAGS: tuple[str, ...] = (
       "--force-fieldtrials",
       "--variations-server-url",
       "--variations-insecure-server-url",
@@ -38,7 +38,7 @@ class ChromeFlags(Flags):
       "--disable-variations-safe-mode",
   )
 
-  FIELD_TRIAL_DISABLE_FLAGS: Tuple[str, ...] = ("--disable-field-trial-config",)
+  FIELD_TRIAL_DISABLE_FLAGS: tuple[str, ...] = ("--disable-field-trial-config",)
 
   USER_DATA_DIR_FLAG: Final[str] = "--user-data-dir"
 
@@ -234,11 +234,11 @@ class ChromeFlags(Flags):
     for name, value in other.base_items():
       self.set(name, value)
 
-  def base_items(self) -> Iterable[Tuple[str, str | None]]:
+  def base_items(self) -> Iterable[tuple[str, str | None]]:
     yield from super().items()
 
   @override
-  def items(self) -> Iterable[Tuple[str, str | None]]:  # type: ignore
+  def items(self) -> Iterable[tuple[str, str | None]]:  # type: ignore
     yield from self.base_items()
     if self._js_flags:
       yield (self.JS_FLAG, str(self.js_flags))
@@ -263,7 +263,7 @@ class ChromeFlags(Flags):
 
 class ChromePreM139Flags(ChromeFlags):
   VERSION_RANGE: Final[range] = range(1, 139)
-  FIELD_TRIAL_ENABLE_FLAGS: Tuple[
+  FIELD_TRIAL_ENABLE_FLAGS: tuple[
       str, ...] = ChromeFlags.FIELD_TRIAL_ENABLE_FLAGS + (
           # The benchmarking flag without value is a no-field-trial flag.
           # However, when used as
@@ -271,7 +271,7 @@ class ChromePreM139Flags(ChromeFlags):
           # with field trials.
           "--enable-benchmarking",)
 
-  FIELD_TRIAL_DISABLE_FLAGS: Tuple[
+  FIELD_TRIAL_DISABLE_FLAGS: tuple[
       str, ...] = ChromeFlags.FIELD_TRIAL_DISABLE_FLAGS + (
           # The benchmarking flag without value is a no-field-trial flag.
           # However, when used as

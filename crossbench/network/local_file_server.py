@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import atexit
 import contextlib
 import email.parser
 import http.server
@@ -12,8 +11,8 @@ import json
 import logging
 import os
 import threading
-from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Tuple,
-                    Type, TypeVar)
+from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Type,
+                    TypeVar)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -111,7 +110,7 @@ class LocalFileNetwork(Network):
   def path(self) -> LocalPath:
     return self._path
 
-  def _parse_url(self, url: Optional[str]) -> Tuple[str, int]:
+  def _parse_url(self, url: Optional[str]) -> tuple[str, int]:
     host: str = _DEFAULT_HOST
     port: int = _DEFAULT_PORT
     if not url:
@@ -185,21 +184,17 @@ class LocalFileNetwork(Network):
   @contextlib.contextmanager
   def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
     browser_platform = session.browser_platform
+    ports = browser_platform.ports
     if browser_platform.is_remote:
       logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                    browser_platform)
-      # TODO: create port-forwarder service that is shut down properly.
       # TODO: make ports configurable
-      browser_platform.reverse_port_forward(self._port, self._port)
-
-      def cleanup():
-        browser_platform.stop_reverse_port_forward(self._port)
-
-      atexit.register(cleanup)
-    yield
-    if browser_platform.is_remote:
-      atexit.unregister(cleanup)
-      cleanup()
+      ports.reverse_forward(self._port, self._port)
+    try:
+      yield
+    finally:
+      if browser_platform.is_remote:
+        ports.stop_reverse_forward(self._port)
 
   @property
   @override

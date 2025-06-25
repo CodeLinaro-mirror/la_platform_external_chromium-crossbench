@@ -61,6 +61,10 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
 
 class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
 
+  def create_session(self):
+    return mock.Mock(
+        spec=BrowserSessionRunGroup, browser_platform=self.platform)
+
   def test_ts_proxy_traffic_shaper_no_tsproxy(self):
     with self.assertRaises(RuntimeError):
       TsProxyTrafficShaper(self.platform)
@@ -72,7 +76,7 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
   def test_ts_proxy_open(self):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
     network = Network(ts_proxy, self.platform)
-    session = mock.Mock(spec=BrowserSessionRunGroup)
+    session = self.create_session()
 
     with self.startup_process_mock() as proc:
       with ts_proxy.open(network, session):
@@ -85,7 +89,7 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
   def test_ts_proxy_pause(self):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
     network = Network(ts_proxy, self.platform)
-    session = mock.Mock(spec=BrowserSessionRunGroup)
+    session = self.create_session()
 
     with self.startup_process_mock() as proc:
       with ts_proxy.open(network, session):
@@ -110,7 +114,7 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
         in_kbps=102,
         out_kbps=103)
     network = Network(ts_proxy, self.platform)
-    session = mock.Mock(spec=BrowserSessionRunGroup)
+    session = self.create_session()
 
     with self.startup_process_mock() as proc:
       with ts_proxy.open(network, session):

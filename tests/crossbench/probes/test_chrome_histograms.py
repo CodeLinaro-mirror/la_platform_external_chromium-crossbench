@@ -4,7 +4,6 @@
 
 import argparse
 import unittest
-from typing import Dict
 
 import hjson
 import pytest
@@ -50,7 +49,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
 90 ------------------O        (18 = 18.0%) {82.0%}
 """
 
-  def _sample_json(self, name: str, header: str, body: str) -> Dict:
+  def _sample_json(self, name: str, header: str, body: str) -> dict:
     return {
         "name": name,
         "header": header,

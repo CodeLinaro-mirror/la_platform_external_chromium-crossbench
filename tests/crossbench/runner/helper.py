@@ -9,7 +9,7 @@ import collections
 import datetime as dt
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from typing_extensions import override
 
@@ -17,7 +17,7 @@ from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
-from crossbench.env import HostEnvironment
+from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import Annotator
 from crossbench.helper.wait import WaitRange
 from crossbench.path import safe_filename
@@ -84,7 +84,7 @@ class MockRun:
     self.did_teardown_browser = False
     self.is_dry_run: bool | None = None
 
-  def validate_env(self, env: HostEnvironment):
+  def validate_env(self, env: RunnerEnv):
     pass
 
   def setup(self, is_dry_run: bool) -> None:
@@ -120,8 +120,10 @@ class MockRun:
     assert not self.did_teardown
     self.did_teardown = True
 
-  def wait_range(self, min_wait: AnyTimeUnit, timeout: AnyTimeUnit,
-                 delay: AnyTimeUnit) -> WaitRange:
+  def wait_range(self,
+                 min_wait: AnyTimeUnit,
+                 timeout: AnyTimeUnit,
+                 delay: AnyTimeUnit = 0) -> WaitRange:
     timing = self.timing
     return WaitRange(
         min=timing.timedelta(min_wait),
@@ -165,8 +167,8 @@ class MockRunner:
     self.browsers: list[Browser] = []
     self.out_dir = pathlib.Path("results/out")
     self.timing = Timing()
-    self.env = HostEnvironment(self.platform, self.out_dir, self.browsers,
-                               self.probes, self.repetitions)
+    self.env = RunnerEnv(self.platform, self.out_dir, self.browsers,
+                         self.probes, self.repetitions)
     self.mock_waits: list[MockWait] = []
 
   def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:
@@ -225,10 +227,10 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         "chrome-dev", settings=Settings(platform=self.platform))
     self.mock_firefox = MockFirefox(
         "firefox-stable", settings=Settings(platform=self.platform))
-    self.browsers: List[Browser] = [self.mock_chrome_dev, self.mock_firefox]
+    self.browsers: list[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
   def default_runner(self,
-                     browsers: Optional[List[Browser]] = None,
+                     browsers: Optional[list[Browser]] = None,
                      benchmark: Optional[Benchmark] = None,
                      throw: bool = True) -> Runner:
     return Runner(

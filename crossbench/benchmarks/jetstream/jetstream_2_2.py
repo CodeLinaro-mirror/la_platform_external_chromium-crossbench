@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -54,5 +54,5 @@ class JetStream22Benchmark(JetStream2Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("js", "jetstream", "js2", "jetstream_2") + super().aliases()

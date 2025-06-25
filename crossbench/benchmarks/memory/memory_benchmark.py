@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Sequence, Type
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -110,7 +110,7 @@ class MemoryProbeContext(ActionRunnerListener,
     self._intensive_tab_switch_count = \
       cur_benchmark.get_intensive_tab_switch_count()
     # Records the navigation_start_time time for each window handle.
-    self._navigation_time_ms: Dict[str, float] = {}
+    self._navigation_time_ms: dict[str, float] = {}
     self._tab_count: int = 1
 
   def start(self) -> None:
@@ -233,9 +233,9 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def add_cli_parser(
+  def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = super().add_cli_parser(parser)
+    parser = super().add_cli_arguments(parser)
     parser.add_argument(
         "--alloc-count",
         type=NumberParser.positive_int,
@@ -298,7 +298,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
 
   @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
-    url_params = {
+    url_params: MutableMapping[str, str] = {
         "alloc": str(args.alloc_count),
         "blocksize": str(args.block_size),
         "compress": str(args.compressibility),
@@ -325,14 +325,14 @@ class MemoryBenchmark(SubStoryBenchmark):
   NAME = "memory"
   DEFAULT_STORY_CLS = Page
   STORY_FILTER_CLS = MemoryBenchmarkStoryFilter
-  PROBES: Tuple[Type[MemoryProbe], ...] = (MemoryProbe,)
+  PROBES: tuple[Type[MemoryProbe], ...] = (MemoryProbe,)
 
   @classmethod
   @override
   def add_cli_parser(
       cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
-    cls.STORY_FILTER_CLS.add_cli_parser(parser)
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     parser.add_argument(
         "--skippable-tab-count",
         type=NumberParser.positive_int,
@@ -347,7 +347,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["skippable_tab_count"] = args.skippable_tab_count
     kwargs["target_tab_count"] = args.tabs.count
@@ -363,7 +363,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ()
 
   def __init__(self,
@@ -388,7 +388,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def describe(cls) -> Dict[str, Any]:
+  def describe(cls) -> dict[str, Any]:
     data = super().describe()
     data["url"] = cls.STORY_FILTER_CLS.URL
     return data

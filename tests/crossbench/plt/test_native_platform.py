@@ -19,8 +19,10 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
+from tests.crossbench.mock_helper import MockRemotePortManager
 
 
 class BaseNativePlatformTestCase(unittest.TestCase):
@@ -503,7 +505,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertLess(0, uptime.total_seconds())
 
 
-
 class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   platform: PosixPlatform
   # MacOs has custom subclass
@@ -628,6 +629,19 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     version = self.platform.app_version(python_path)
     self.assertTrue(version)
 
+  def test_last_modified(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
+      self.platform.touch(tmp_file)
+      last_modified_timestamp = self.platform.last_modified(tmp_file)
+      self.assertGreater(last_modified_timestamp, 0)
+      # Sleep 1 second as the `stat` command used on posix platforms only has
+      # second-level precision for file modification times.
+      self.platform.sleep(1)
+      self.platform.touch(tmp_file)
+      new_last_modified_timestamp = self.platform.last_modified(tmp_file)
+      self.assertGreater(new_last_modified_timestamp, last_modified_timestamp)
+
   def test_shell_piping(self):
     with self.platform.NamedTemporaryFile() as file:
       result = self.platform.sh_stdout(
@@ -704,6 +718,10 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
 
 
 class MockRemotePosixPlatform(type(plt.PLATFORM)):
+
+  @override
+  def _create_port_manager(self) -> PortManager:
+    return MockRemotePortManager(self)
 
   @property
   @override

@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self
 
 from typing_extensions import override
 
@@ -41,8 +41,8 @@ class NetworkType(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class NetworkConfig(ConfigObject):
-  ARCHIVE_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".archive", ".wprgo")
-  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = (
+  ARCHIVE_EXTENSIONS: ClassVar[tuple[str, ...]] = (".archive", ".wprgo")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (
       ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS)
 
   type: NetworkType = NetworkType.LIVE
