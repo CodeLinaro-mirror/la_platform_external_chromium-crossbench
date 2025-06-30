@@ -190,13 +190,15 @@ class MockPlatformMixin:
       self.touch(path)
     return path
 
-  def expect_sh(self, *args: CmdArg,
-                result: str | ShResult = ShResult()) -> None:
+  def expect_sh(
+      self, *args: CmdArg, result: bytes | str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
       self._expected_sh_cmds.append(self._convert_sh_args(*args))
     if isinstance(result, str):
+      result = ShResult(result)
+    if isinstance(result, bytes):
       result = ShResult(result)
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
