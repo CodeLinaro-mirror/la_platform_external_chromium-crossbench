@@ -563,7 +563,9 @@ class Platform(abc.ABC):
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 
-  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str,
+              timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+    del process_name, timeout
     raise NotImplementedError(f"meminfo not implemented for {self}.")
 
   def foreground_process(self) -> Optional[dict[str, Any]]:

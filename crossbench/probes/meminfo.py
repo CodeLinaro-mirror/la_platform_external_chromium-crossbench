@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import csv
 import dataclasses
+import datetime as dt
 from typing import TYPE_CHECKING, Optional, Self, Type
 
 from typing_extensions import override
@@ -59,15 +60,16 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
   def stop(self) -> None:
     pass
 
-  def dump_meminfo(self, target: MeminfoTarget, package: Optional[str]) -> None:
+  def dump_meminfo(self, target: MeminfoTarget, timeout: dt.timedelta,
+                   package: Optional[str]) -> None:
     timestamp = self.browser_platform.sh_stdout("date",
                                                 "+%Y-%m-%d %H:%M:%S").rstrip()
 
     if target is MeminfoTarget.BROWSER:
-      meminfo = self.browser.meminfo()
+      meminfo = self.browser.meminfo(timeout)
       package_path = self.browser.unique_name
     elif package is not None:
-      meminfo = self.browser_platform.meminfo(package)
+      meminfo = self.browser_platform.meminfo(package, timeout)
       package_path = pth.safe_filename(package).lower()
     else:
       raise ValueError("Cannot dump meminfo without package name.")
