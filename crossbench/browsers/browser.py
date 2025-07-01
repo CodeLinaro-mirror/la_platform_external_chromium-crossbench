@@ -441,6 +441,9 @@ class Browser(abc.ABC):
     del timeout
     raise NotImplementedError(f"Closing tabs is not supported by {self}")
 
+  def close_all_tabs(self) -> None:
+    raise NotImplementedError(f"Closing all tabs is not supported by {self}")
+
   @property
   def current_url(self) -> str:
     raise NotImplementedError(f"Getting current url is not supported by {self}")

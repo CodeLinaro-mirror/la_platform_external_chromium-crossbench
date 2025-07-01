@@ -308,5 +308,8 @@ class ActionRunner:
   def close_tab(self, run: Run, action: i_action.CloseTabAction):
     raise ActionNotImplementedError(self, action)
 
+  def close_all_tabs(self, run: Run, action: i_action.CloseAllTabsAction):
+    raise ActionNotImplementedError(self, action)
+
   def wait_for_download(self, run: Run, action: i_action.WaitForDownloadAction):
     raise ActionNotImplementedError(self, action)

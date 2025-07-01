@@ -11,6 +11,7 @@ from crossbench.action_runner.action.action import (ACTION_TIMEOUT, ACTIONS,
                                                     Action)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.action_runner.action.get import GetAction
@@ -895,6 +896,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = SwitchTabAction.parse_dict(config_dict)
 
     self.assertEqual(action.relative_tab_index, 17)
+
+  def test_parse_close_all_tabs(self):
+    config_dict = {"action": "close_all_tabs"}
+
+    action = CloseAllTabsAction.parse(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.CLOSE_ALL_TABS)
 
   def test_parse_close_tab_all_args(self):
     config_dict = {

@@ -299,6 +299,22 @@ class ChromiumBasedWebDriver(
       # to switching to the first tab.
       driver.switch_to.window(driver.window_handles[0])
 
+  @override
+  def close_all_tabs(self) -> None:
+    driver = self._private_driver
+    current_handle = driver.current_window_handle
+
+    for handle in driver.window_handles:
+      driver.switch_to.window(handle)
+      if handle != current_handle:
+        driver.close()
+
+    # Closing every tab will cause the browser to exit.
+    # As a workaround navigate the final tab to about:blank.
+    driver.switch_to.window(current_handle)
+    self.show_url("about:blank")
+
+
   @property
   def current_url(self) -> str:
     return self._private_driver.current_url

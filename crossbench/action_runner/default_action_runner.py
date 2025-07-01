@@ -295,6 +295,13 @@ class DefaultActionRunner(ActionRunner):
       run.browser.close_tab(action.title, action.url, action.tab_index,
                             action.relative_tab_index, action.timeout)
 
+  @override
+  def close_all_tabs(self, run: Run,
+                     action: i_action.CloseAllTabsAction) -> None:
+    del action
+    with run.actions("CloseAllTabsAction", measure=False):
+      run.browser.close_all_tabs()
+
   def _get_scroll_field(self, has_selector: bool) -> str:
     if has_selector:
       return "scrollTop"
