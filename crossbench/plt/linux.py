@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import functools
 import logging
 import os
@@ -174,12 +175,17 @@ class LinuxPlatform(PosixPlatform):
     return tuple()
 
   @override
-  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
+  def meminfo(
+      self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
+  ) -> dict[str, ProcessMeminfo]:
+    deadline = dt.datetime.now() + timeout
     matching_pids = self.sh_stdout("pgrep", "-f", process_name).splitlines()
 
     meminfos: dict[str, ProcessMeminfo] = {}
 
     for pid in matching_pids:
+      if dt.datetime.now() > deadline:
+        raise TimeoutError("meminfo timed out")
       try:
         proc_name = self.cat(f"/proc/{pid}/cmdline")
       except (SubprocessError, OSError):
