@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import abc
 import enum
-import json
 from typing import TYPE_CHECKING, Optional, Self, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -175,7 +174,7 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
   @override
   def get_default_result_path(self) -> AnyPath:
     return (super().get_default_result_path().parent /
-            f"{self.browser.type_name()}.profile.json")
+            f"{self.browser.type_name()}.profile.pb.gz")
 
   @property
   def chromium(self) -> ChromiumBasedWebDriver:
@@ -188,14 +187,13 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
     with self.run.actions(f"Probe({self.probe}): extract DevTools profile."):
       profile = self.chromium.stop_profiling()
       local_result_path = self.local_result_path
-      with local_result_path.open("w", encoding="utf-8") as f:
-        json.dump(profile, f)
+      with local_result_path.open("wb") as f:
         # TODO(375390958): figure out why files aren't fully written to
         # pyfakefs here.
-        f.write("\n")
+        f.write(profile)
 
   def teardown(self) -> ProbeResult:
-    return self.browser_result(json=[self.result_path])
+    return self.browser_result(trace=[self.result_path])
 
 
 class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):

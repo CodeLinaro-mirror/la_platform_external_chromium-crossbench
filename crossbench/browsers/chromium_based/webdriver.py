@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import base64
 import datetime as dt
 import logging
 import os
@@ -17,6 +18,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.helper.wait import WaitRange
 from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
                                                         DriverNotFoundError)
 from crossbench.browsers.chromium.version import (ChromeDriverVersion,
@@ -30,11 +32,60 @@ from crossbench.helper import wait
 
 if TYPE_CHECKING:
   import re
+  from types import ModuleType
 
   from selenium import webdriver
+  from selenium.webdriver.remote.websocket_connection import WebSocketConnection
 
   from crossbench.browsers.version import BrowserVersion
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+
+
+class DevtoolsTracer:
+
+  def __init__(self, driver: webdriver.Remote) -> None:
+    module_and_socket = driver.start_devtools()
+    self._devtools: ModuleType = module_and_socket[0]
+    self._websocket: WebSocketConnection = module_and_socket[1]
+    # It's a devtools.io.StreamHandle. The devtools module is imported
+    # dynamically so adding a type annotation is infeasible.
+    self._out_stream: Any | None = None
+
+  def start(self) -> None:
+    config = self._devtools.tracing.TraceConfig()
+    config.included_categories = [
+        "devtools.timeline",
+        "v8.execute",
+        "disabled-by-default-devtools.timeline",
+        "disabled-by-default-devtools.timeline.frame",
+        "toplevel",
+        "blink.console",
+        "blink.user_timing",
+        "latencyInfo",
+        "disabled-by-default-devtools.timeline.stack",
+        "disabled-by-default-v8.cpu_profiler",
+    ]
+    self._websocket.on(self._devtools.tracing.TracingComplete,
+                       self._on_tracing_complete)
+    self._websocket.execute(
+        self._devtools.tracing.start(
+            transfer_mode="ReturnAsStream",
+            trace_config=config,
+            stream_format=self._devtools.tracing.StreamFormat.PROTO))
+
+  def end(self) -> bytes | None:
+    self._websocket.execute(self._devtools.tracing.end())
+    for _ in WaitRange().wait_with_backoff():
+      if self._out_stream:
+        break
+    base64_encoded, output, _ = self._websocket.execute(
+        self._devtools.io.read(self._out_stream))
+    return base64.b64decode(output) if base64_encoded else output.encode(
+        "utf-8")
+
+  def _on_tracing_complete(self, event) -> None:
+    self._out_stream = event.stream
+
 
 
 class ChromiumBasedWebDriver(
@@ -47,6 +98,7 @@ class ChromiumBasedWebDriver(
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
     self._script_identifier_kwargs: dict[Any, Any] | None = None
+    self._tracer: DevtoolsTracer | None = None
 
   @classmethod
   @override
@@ -319,31 +371,16 @@ class ChromiumBasedWebDriver(
   def current_url(self) -> str:
     return self._private_driver.current_url
 
+  # TODO(crbug.com/428953697): Consider unifying BrowserProfilingProbe with
+  # other similar ones.
   def start_profiling(self) -> None:
     assert isinstance(self._private_driver, ChromiumDriver)
-    # TODO: reuse the TraceProbe categories,
-    self._execute_cdp_cmd(
-        self._private_driver, "Tracing.start", {
-            "transferMode":
-                "ReturnAsStream",
-            "includedCategories": [
-                "devtools.timeline",
-                "v8.execute",
-                "disabled-by-default-devtools.timeline",
-                "disabled-by-default-devtools.timeline.frame",
-                "toplevel",
-                "blink.console",
-                "blink.user_timing",
-                "latencyInfo",
-                "disabled-by-default-devtools.timeline.stack",
-                "disabled-by-default-v8.cpu_profiler",
-            ],
-        })
+    self._tracer = DevtoolsTracer(self._private_driver)
+    self._tracer.start()
 
   def stop_profiling(self) -> Any:
     assert isinstance(self._private_driver, ChromiumDriver)
-    data = self._execute_cdp_cmd(self._private_driver,
-                                 "Tracing.tracingComplete", {})
-    # TODO: use webdriver bidi to get the async Tracing.end event.
-    # self._execute_cdp_cmd(self._driver, "Tracing.end", {})
-    return data
+    assert self._tracer is not None
+    output = self._tracer.end()
+    self._tracer = None
+    return output
