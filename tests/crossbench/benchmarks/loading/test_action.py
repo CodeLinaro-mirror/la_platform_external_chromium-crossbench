@@ -975,6 +975,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
     self.assertEqual(action.target, MeminfoTarget.BROWSER)
     self.assertIsNone(action.package)
+    self.assertIsNone(action.title)
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
@@ -987,6 +988,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
     self.assertEqual(action.target, MeminfoTarget.BROWSER)
     self.assertIsNone(action.package)
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_title(self):
+    config_dict = {"action": "meminfo", "title": "a_title"}
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.title, "a_title")
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)

@@ -42,15 +42,18 @@ class MeminfoAction(Action):
         "target", type=MeminfoTarget, default=MeminfoTarget.BROWSER)
     parser.add_argument(
         "package", type=ObjectParser.non_empty_str, default=None)
+    parser.add_argument("title", type=ObjectParser.non_empty_str, default=None)
     return parser
 
   def __init__(self,
                target: MeminfoTarget = MeminfoTarget.BROWSER,
                package: Optional[str] = None,
+               title: Optional[str] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._target = target
     self._package = package
+    self._title = title
     super().__init__(timeout, index)
 
   @override
@@ -68,12 +71,18 @@ class MeminfoAction(Action):
   def package(self) -> Optional[str]:
     return self._package
 
+  @property
+  def title(self) -> Optional[str]:
+    return self._title
+
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["target"] = self.target
     if self.package:
       details["package"] = self.package
+    if self.title:
+      details["title"] = self.title
     return details
 
   @override
