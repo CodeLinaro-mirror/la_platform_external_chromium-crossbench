@@ -15,25 +15,24 @@ from crossbench.helper import terminal
 class Spinner:
   CURSORS = "◐◓◑◒"
 
-  def __init__(self, is_atty: bool, sleep: float, title: str) -> None:
+  def __init__(self, sleep: float = 0.5, title: str = "") -> None:
     self._is_running: bool = False
-    # Only enable the spinner if the output is an interactive terminal.
-    self._is_atty: bool = is_atty
     self._sleep_time_seconds: float = sleep
     self._title: str = title
     self._message: str = ""
     self._cursor: str = " "
 
   def __enter__(self) -> None:
-    if self._is_atty:
+    # Only enable the spinner if the output is an interactive terminal.
+    is_atty = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+    if is_atty:
       self._is_running = True
       threading.Thread(target=self._spin).start()
-    elif self._title:
-      # Write single title line.
-      self._write_message()
 
   def __exit__(self, exc_type, exc_value, traceback) -> None:
-    self._is_running = False
+    if self._is_running:
+      self._is_running = False
+      self._sleep()
 
   def _cursors(self) -> Iterable[str]:
     while True:
@@ -41,9 +40,9 @@ class Spinner:
 
   def _spin(self) -> None:
     for cursor in self._cursors():
+      self._cursor = cursor
       if not self._is_running:
         return
-      self._cursor = cursor
       self._write_message()
       self._sleep()
 
@@ -64,12 +63,6 @@ class Spinner:
     self._write_message()
 
   def _write_message(self) -> None:
-    if self._is_atty:
-      self._write_interactive_message()
-    else:
-      print(f"{self._title}{self._message}")
-
-  def _write_interactive_message(self) -> None:
     stdout = sys.stdout
     stdout.write(f"{terminal.STORE_CURSOR_POS} {self._cursor} "
                  f"{self._title}{self._message}{terminal.CLEAR_END}"
