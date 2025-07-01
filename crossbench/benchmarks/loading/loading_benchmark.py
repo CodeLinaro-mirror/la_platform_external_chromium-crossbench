@@ -230,10 +230,18 @@ class LoadingPageFilter(StoryFilter[Page]):
     if not config.blocks:
       return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
-    return InteractivePage(label, config.blocks, config.setup, config.login,
-                           config.secrets, playback, tabs,
-                           args.about_blank_duration, args.run_login,
-                           args.run_setup)
+    return InteractivePage(
+        name=label,
+        blocks=config.blocks,
+        setup=config.setup,
+        teardown=config.teardown,
+        login=config.login,
+        secrets=config.secrets,
+        playback=playback,
+        tabs=tabs,
+        about_blank_duration=args.about_blank_duration,
+        run_login=args.run_login,
+        run_setup=args.run_setup)
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:

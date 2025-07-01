@@ -32,6 +32,7 @@ class InteractivePage(Page):
                name: str,
                blocks: tuple[ActionBlock, ...],
                setup: Optional[ActionBlock] = None,
+               teardown: Optional[ActionBlock] = None,
                login: Optional[LoginBlock] = None,
                secrets: Optional[Secrets] = None,
                playback: PlaybackController = PlaybackController.default(),
@@ -47,6 +48,7 @@ class InteractivePage(Page):
     assert not any(block.is_login for block in blocks), (
         "No login blocks allowed as normal action block")
     self._setup_block = setup
+    self._teardown_block: Optional[ActionBlock] = teardown
     self._login_block = login
     self._run_login = run_login
     self._run_setup = run_setup
@@ -61,6 +63,10 @@ class InteractivePage(Page):
   @property
   def setup_block(self) -> Optional[ActionBlock]:
     return self._setup_block
+
+  @property
+  def teardown_block(self) -> Optional[ActionBlock]:
+    return self._teardown_block
 
   @property
   def blocks(self) -> tuple[ActionBlock, ...]:
@@ -102,7 +108,9 @@ class InteractivePage(Page):
   @override
   def teardown(self, run: Run) -> None:
     action_runner = get_action_runner(run)
-    action_runner.teardown(run)
+    run.browser.performance_mark("teardown-start", self._name)
+    action_runner.teardown(run, self, self.teardown_block)
+    run.browser.performance_mark("teardown-end", self._name)
 
   def run_once(self, run: Run) -> None:
     action_runner = get_action_runner(run)

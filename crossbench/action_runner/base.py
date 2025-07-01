@@ -81,8 +81,22 @@ class ActionRunner:
   def bond(self) -> BondActionRunner:
     return BondActionRunner()
 
-  def teardown(self, run: Run) -> None:
-    del run
+  def teardown(self,
+               run: Run,
+               page: InteractivePage,
+               teardown: Optional[ActionBlock] = None) -> None:
+    if teardown:
+      try:
+        with exception.annotate("teardown"):
+          self._info_stack = ("teardown",)
+          teardown.run_with(self, run, page)
+      except Exception:
+        page.create_failure_artifacts(run, "failure")
+        raise
+
+    self._teardown_impl()
+
+  def _teardown_impl(self) -> None:
     pass
 
   def run_blocks(self, run: Run, page: InteractivePage,

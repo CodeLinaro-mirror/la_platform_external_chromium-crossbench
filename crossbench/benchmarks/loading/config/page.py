@@ -35,6 +35,7 @@ class PageConfig(ConfigObject):
   secrets: Secrets = Secrets()
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
+  teardown: Optional[ActionBlock] = None
   blocks: tuple[ActionBlock, ...] = tuple()
 
   @classmethod
@@ -99,6 +100,7 @@ class PageConfig(ConfigObject):
     parser.add_argument("secrets", type=Secrets, default=Secrets())
     parser.add_argument("login", type=LoginBlock)
     parser.add_argument("setup", type=ActionBlock)
+    parser.add_argument("teardown", type=ActionBlock)
     parser.add_argument(
         "blocks",
         aliases=("actions", "url", "urls"),
