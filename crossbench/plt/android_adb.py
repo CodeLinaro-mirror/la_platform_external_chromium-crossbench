@@ -369,6 +369,10 @@ class Adb:
     cmd: ListCmdArgs = ["dumpsys", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
+  def dumpsys_bytes(self, *args: str, quiet: bool = False) -> bytes:
+    cmd: ListCmdArgs = ["dumpsys", *args]
+    return self.shell_stdout_bytes(*cmd, quiet=quiet)
+
   def getprop(self,
               *args: str,
               quiet: bool = False,
@@ -678,7 +682,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def get_main_display_brightness(self) -> int:
-    display_info: str = self.adb.shell_stdout("dumpsys", "display")
+    display_info: str = self.adb.dumpsys("display")
     match_result = self._BRIGHTNESS_RE.search(display_info)
     if match_result is None:
       raise ValueError("Could not parse adb display brightness.")
@@ -762,9 +766,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
   ) -> dict[str, ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
-    dumpsys_output = self.sh_stdout_bytes("dumpsys", "-T", str(timeout_ms),
-                                          "meminfo", "--proto", "--package",
-                                          process_name)
+    dumpsys_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
+                                                   "meminfo", "--proto",
+                                                   "--package", process_name)
     return self._parse_dumpsys_meminfo(dumpsys_output)
 
   @functools.lru_cache(maxsize=1)
@@ -831,7 +835,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def display_resolution(self) -> tuple[int, int]:
-    displays_out = self.sh_stdout("dumpsys", "window", "displays")
+    displays_out = self.adb.dumpsys("window", "displays")
     match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
     if match_result is None:
       raise ValueError(
