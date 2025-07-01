@@ -26,7 +26,7 @@ from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
-from android_protoc import activitymanagerservice_pb2
+from android_protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
@@ -818,10 +818,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @property
   @override
   def is_battery_powered(self) -> bool:
-    battery_info = self.adb.dumpsys("battery").lower()
-    # Looking for any power source, i.e. 'AC powered: true'
-    has_external_power = " powered: true" in battery_info
-    return not has_external_power
+    battery_info_bytes = self.adb.dumpsys_bytes("battery", "--proto")
+    battery_info = battery_pb2.BatteryServiceDumpProto()
+    battery_info.ParseFromString(battery_info_bytes)
+    return (battery_info.plugged ==
+            enums_pb2.BatteryPluggedStateEnum.BATTERY_PLUGGED_NONE)
 
   @override
   def screenshot(self, result_path: pth.AnyPath) -> None:

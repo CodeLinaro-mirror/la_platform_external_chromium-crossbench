@@ -45,13 +45,13 @@ BrightnessSynchronizer
 """
 
 
-def load_dumpsys_meminfo_output():
-  meminfo_result_path = pth.LocalPath(
-      __file__).parent / "pb" / "dumpsys_meminfo.pb"
-  return meminfo_result_path.read_bytes()
+def load_pb(path: str):
+  return (pth.LocalPath(__file__).parent / "pb" / path).read_bytes()
 
 
-DUMPSYS_MEMINFO_OUTPUT = load_dumpsys_meminfo_output()
+DUMPSYS_MEMINFO_OUTPUT = load_pb("dumpsys_meminfo.pb")
+AC_POWERED_OUTPUT = load_pb("battery/ac_powered.pb")
+BATTERY_POWERED_OUTPUT = load_pb("battery/battery_powered.pb")
 
 DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b'''
 *** SERVICE 'meminfo' DUMP TIMEOUT (1ms) EXPIRED ***
@@ -97,21 +97,10 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertTrue(self.platform.is_android)
 
   def test_is_battery_powered(self):
-    dumpsys_battery_output = textwrap.dedent("""
-      AC powered: false
-      USB powered: false
-      Wireless powered: true
-      Max charging current: 3000000
-    """)
-    self.expect_sh("dumpsys battery", result=dumpsys_battery_output)
+    self.expect_sh("dumpsys battery --proto", result=AC_POWERED_OUTPUT)
     self.assertFalse(self.platform.is_battery_powered)
-    dumpsys_battery_output = textwrap.dedent("""
-      AC powered: false
-      USB powered: false
-      Wireless powered: false
-      Max charging current: 3000000
-    """)
-    self.expect_sh("dumpsys battery", result=dumpsys_battery_output)
+
+    self.expect_sh("dumpsys battery --proto", result=BATTERY_POWERED_OUTPUT)
     self.assertTrue(self.platform.is_battery_powered)
 
   def test_display_details(self):

@@ -25,7 +25,9 @@ import sys
 # List of modules we want to depend on. We will protoc this module and all its
 # dependencies.
 PROTO_MODULES = [
-    "frameworks.base.core.proto.android.server.activitymanagerservice_pb2"
+    "frameworks.base.core.proto.android.server.activitymanagerservice_pb2",
+    "frameworks.base.core.proto.android.service.battery_pb2",
+    "frameworks.proto_logging.stats.enums.os.enums_pb2",
 ]
 
 # Map of repo name to optional list of folders to sparse checkout
