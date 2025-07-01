@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 colorama.init()
 
+IS_ATTY: Final[bool] = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 COLOR_LOGGING: bool = True
 
 
@@ -91,12 +92,14 @@ DEFAULT_INTERVAL_S: Final[float] = 0.5
 @contextlib.contextmanager
 def timer(msg: str = "Elapsed Time",
           update_interval=DEFAULT_INTERVAL_S) -> Iterator[None]:
-  start_time = dt.datetime.now()
+  if not IS_ATTY:
+    yield
+    return
 
+  start_time = dt.datetime.now()
   def print_timer():
     delta = dt.datetime.now() - start_time
     write_indented(f"{msg}: {format_duration(delta)}")
-
   with RepeatTimer(interval=update_interval, function=print_timer):
     yield
   clear_indented()
@@ -106,13 +109,16 @@ def timer(msg: str = "Elapsed Time",
 def countdown(duration: dt.timedelta,
               msg: str = "Waiting",
               update_interval=DEFAULT_INTERVAL_S) -> Iterator[None]:
-  start_time = dt.datetime.now()
+  if not IS_ATTY:
+    print(f"{msg}: {format_duration(duration)}")
+    yield
+    return
 
+  start_time = dt.datetime.now()
   def print_timer():
     delta = dt.datetime.now() - start_time
     time_left = duration - delta
     write_indented(f"{msg}: {format_duration(time_left)}")
-
   with RepeatTimer(interval=update_interval, function=print_timer):
     yield
   clear_indented()
@@ -131,5 +137,5 @@ class RepeatTimer(threading.Timer):
     self.cancel()
 
 
-def spinner(*args, **kwargs) -> Spinner:
-  return Spinner(*args, **kwargs)
+def spinner(sleep: float = 0.5, title: str = "") -> Spinner:
+  return Spinner(IS_ATTY, sleep, title)
