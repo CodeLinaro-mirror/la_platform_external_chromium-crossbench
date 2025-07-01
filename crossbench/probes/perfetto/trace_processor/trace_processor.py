@@ -11,6 +11,7 @@ import zipfile
 from typing import TYPE_CHECKING, Iterable, Optional, Self, Type
 
 import pandas as pd
+from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig)
@@ -461,12 +462,13 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       proto_result = tp.trace_summary(
           specs=list(self.probe.metric_definitions), metric_ids=metric_ids)
 
-      proto_file = self.local_result_path / "v2_metrics.proto"
+      proto_file = self.local_result_path / "v2_metrics.pb"
+      proto_file.write_bytes(proto_result.SerializeToString())
 
-      with proto_file.open("wb") as f:
-        f.write(proto_result.SerializeToString())
+      textproto_file = self.local_result_path / "v2_metrics.textproto"
+      textproto_file.write_bytes(text_format.MessageToBytes(proto_result))
 
-      return LocalProbeResult(file=[proto_file])
+      return LocalProbeResult(file=[proto_file, textproto_file])
 
 
   @property
