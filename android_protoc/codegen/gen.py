@@ -26,6 +26,7 @@ import sys
 # dependencies.
 PROTO_MODULES = [
     "frameworks.base.core.proto.android.server.activitymanagerservice_pb2",
+    "frameworks.base.core.proto.android.server.windowmanagerservice_pb2",
     "frameworks.base.core.proto.android.service.battery_pb2",
     "frameworks.proto_logging.stats.enums.os.enums_pb2",
 ]

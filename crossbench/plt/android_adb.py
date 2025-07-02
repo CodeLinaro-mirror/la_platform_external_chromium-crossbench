@@ -26,7 +26,7 @@ from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
-from android_protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2
+from android_protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2, windowmanagerservice_pb2
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
@@ -836,15 +836,19 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def display_resolution(self) -> tuple[int, int]:
-    displays_out = self.adb.dumpsys("window", "displays")
-    match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
-    if match_result is None:
-      raise ValueError(
-          "Could not find display resolution in "
-          f"'adb shell -s {self.adb.serial_id} dumpsys window displays'")
-    x = NumberParser.positive_int(match_result.group("x"))
-    y = NumberParser.positive_int(match_result.group("y"))
-    return (x, y)
+    displays_bytes = self.adb.dumpsys_bytes("window", "displays", "--proto")
+
+    displays = windowmanagerservice_pb2.WindowManagerServiceDumpProto()
+    displays.ParseFromString(displays_bytes)
+
+    width = (
+        displays.root_window_container.window_container.configuration_container
+        .full_configuration.window_configuration.max_bounds.right)
+    height = (
+        displays.root_window_container.window_container.configuration_container
+        .full_configuration.window_configuration.max_bounds.bottom)
+
+    return (width, height)
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))

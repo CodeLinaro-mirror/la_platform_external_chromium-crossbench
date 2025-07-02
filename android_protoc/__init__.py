@@ -8,5 +8,6 @@ from android_protoc.sys_path import android_protoc_in_sys_path
 
 with android_protoc_in_sys_path():
   from frameworks.base.core.proto.android.server import activitymanagerservice_pb2
+  from frameworks.base.core.proto.android.server import windowmanagerservice_pb2
   from frameworks.base.core.proto.android.service import battery_pb2
   from frameworks.proto_logging.stats.enums.os import enums_pb2
