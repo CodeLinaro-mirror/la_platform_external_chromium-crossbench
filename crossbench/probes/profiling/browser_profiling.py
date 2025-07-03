@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Optional, Self, cast
 from selenium.webdriver.safari.options import Options as SafariOptions
 from typing_extensions import override
 
+import crossbench.probes.perfetto.traceconv as cb_traceconv
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
+from crossbench.helper.path_finder import TraceconvFinder
 from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
                                      ProbeKeyT)
 from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
@@ -22,9 +24,9 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
+  import crossbench.path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -99,27 +101,36 @@ class BrowserProfilingProbe(Probe):
         type=MozProfilerStartupFeatures,
         is_list=True,
         default=[])
+    cb_traceconv.add_argument(parser)
     return parser
 
-  def __init__(
-      self,
-      moz_profiler_startup_features: Optional[
-          list[MozProfilerStartupFeatures]] = None
-  ) -> None:
+  def __init__(self,
+               moz_profiler_startup_features: Optional[
+                   list[MozProfilerStartupFeatures]] = None,
+               traceconv: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
     self._moz_profiler_startup_features: list[
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []
+    self._traceconv: pth.LocalPath | None = traceconv
+    if not traceconv:
+      self._traceconv = TraceconvFinder(self.host_platform).local_path
 
   @property
   @override
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("moz_profiler_startup_features",
-         tuple(map(str, self.moz_profiler_startup_features))),)
+         tuple(map(str, self.moz_profiler_startup_features))),
+        ("traceconv", str(self._traceconv)),
+    )
 
   @property
   def moz_profiler_startup_features(self) -> list[MozProfilerStartupFeatures]:
     return self._moz_profiler_startup_features
+
+  @property
+  def traceconv(self) -> pth.LocalPath | None:
+    return self._traceconv
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -145,11 +156,11 @@ class BrowserProfilingProbe(Probe):
   def get_context(self, run: Run) -> BrowserProfilingProbeContext:
     attributes = run.browser.attributes()
     if attributes.is_chromium_based:
-      return ChromiumWebDriverBrowserProfilerProbeContext(self, run)
+      return ChromiumWebDriverBrowserProfilingProbeContext(self, run)
     if attributes.is_firefox:
-      return FirefoxBrowserProfilerProbeContext(self, run)
+      return FirefoxBrowserProfilingProbeContext(self, run)
     if attributes.is_safari:
-      return SafariWebdriverBrowserProfilerProbeContext(self, run)
+      return SafariWebdriverBrowserProfilingProbeContext(self, run)
     raise NotImplementedError(
         f"Probe({self}): Unsupported browser: {run.browser}")
 
@@ -168,11 +179,11 @@ class BrowserProfilingProbeContext(
     pass
 
 
-class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
-                                                  ):
+class ChromiumWebDriverBrowserProfilingProbeContext(BrowserProfilingProbeContext
+                                                   ):
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return (super().get_default_result_path().parent /
             f"{self.browser.type_name()}.profile.pb.gz")
 
@@ -185,21 +196,22 @@ class ChromiumWebDriverBrowserProfilerProbeContext(BrowserProfilingProbeContext
 
   def stop(self) -> None:
     with self.run.actions(f"Probe({self.probe}): extract DevTools profile."):
-      profile = self.chromium.stop_profiling()
-      local_result_path = self.local_result_path
-      with local_result_path.open("wb") as f:
-        # TODO(375390958): figure out why files aren't fully written to
-        # pyfakefs here.
-        f.write(profile)
+      profile_bytes = self.chromium.stop_profiling()
+      self.local_result_path.write_bytes(profile_bytes)
 
   def teardown(self) -> ProbeResult:
-    return self.browser_result(trace=[self.result_path])
+    trace_file = self.local_result_path
+    if legacy_json_file := cb_traceconv.convert_to_json(self.host_platform,
+                                                        self.probe.traceconv,
+                                                        trace_file):
+      return self.local_result(trace=(trace_file,), json=(legacy_json_file,))
+    return self.local_result(trace=(trace_file,))
 
 
-class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
+class FirefoxBrowserProfilingProbeContext(BrowserProfilingProbeContext):
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "firefox.profile.json"
 
   @override
@@ -220,10 +232,10 @@ class FirefoxBrowserProfilerProbeContext(BrowserProfilingProbeContext):
     return self.browser_result(json=[self.result_path])
 
 
-class SafariWebdriverBrowserProfilerProbeContext(BrowserProfilingProbeContext):
+class SafariWebdriverBrowserProfilingProbeContext(BrowserProfilingProbeContext):
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "safari.timeline.json"
 
   @override
