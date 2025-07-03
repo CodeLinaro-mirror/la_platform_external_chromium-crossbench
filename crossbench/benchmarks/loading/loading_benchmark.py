@@ -233,9 +233,9 @@ class LoadingPageFilter(StoryFilter[Page]):
     return InteractivePage(
         name=label,
         blocks=config.blocks,
+        login=config.login,
         setup=config.setup,
         teardown=config.teardown,
-        login=config.login,
         secrets=config.secrets,
         playback=playback,
         tabs=tabs,

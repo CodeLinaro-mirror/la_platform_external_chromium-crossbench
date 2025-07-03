@@ -223,8 +223,7 @@ class TestPageLoadBenchmark(SubStoryTestCase):
       # one mark for iteration start, one for iteration end
       self.assertListEqual(
           browser.performance_marks,
-          ["crossbench-iteration-start", "crossbench-iteration-end"] +
-          ["crossbench-teardown-start", "crossbench-teardown-end"] * 2)
+          ["crossbench-iteration-start", "crossbench-iteration-end"])
 
   def test_iteration_performance_marks_repeat_run(self):
     repeats: int = 3
@@ -239,8 +238,8 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     for browser in self.browsers:
       self.assertListEqual(
           browser.performance_marks,
-          (["crossbench-iteration-start", "crossbench-iteration-end"] * repeats)
-          + ["crossbench-teardown-start", "crossbench-teardown-end"] * 2)
+          (["crossbench-iteration-start", "crossbench-iteration-end"] *
+           repeats))
 
   def test_run_repeat_separate(self):
     url1 = "https://www.example.com/test1"

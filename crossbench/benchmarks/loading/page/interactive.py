@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Optional, cast
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.benchmarks.loading.config.login.custom import LoginBlock
+  from crossbench.browsers.browser import Browser
   from crossbench.cli.config.secrets import Secrets
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
@@ -31,46 +33,50 @@ class InteractivePage(Page):
   def __init__(self,
                name: str,
                blocks: tuple[ActionBlock, ...],
+               login: Optional[LoginBlock] = None,
                setup: Optional[ActionBlock] = None,
                teardown: Optional[ActionBlock] = None,
-               login: Optional[LoginBlock] = None,
                secrets: Optional[Secrets] = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta(),
                run_login: bool = True,
-               run_setup: bool = True) -> None:
+               run_setup: bool = True,
+               run_teardown: bool = True) -> None:
     assert name, "missing name"
     self._name: str = name
+    assert not any(block.is_login for block in blocks), (
+        "No login blocks allowed as normal action block")
+    self._login_block: LoginBlock | None = login
+    self._setup_block: ActionBlock | None = setup
     assert isinstance(blocks, tuple)
     self._blocks: tuple[ActionBlock, ...] = blocks
     assert self._blocks, "Must have at least 1 valid action"
-    assert not any(block.is_login for block in blocks), (
-        "No login blocks allowed as normal action block")
-    self._setup_block = setup
-    self._teardown_block: Optional[ActionBlock] = teardown
-    self._login_block = login
-    self._run_login = run_login
-    self._run_setup = run_setup
+    self._teardown_block: ActionBlock | None = teardown
+
+    self._run_login: bool = run_login
+    self._run_setup: bool = run_setup
+    self._run_teardown: bool = run_teardown
+
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration,
                      secrets)
 
   @property
-  def login_block(self) -> Optional[ActionBlock]:
+  def login_block(self) -> ActionBlock | None:
     return self._login_block
 
   @property
-  def setup_block(self) -> Optional[ActionBlock]:
+  def setup_block(self) -> ActionBlock | None:
     return self._setup_block
-
-  @property
-  def teardown_block(self) -> Optional[ActionBlock]:
-    return self._teardown_block
 
   @property
   def blocks(self) -> tuple[ActionBlock, ...]:
     return self._blocks
+
+  @property
+  def teardown_block(self) -> ActionBlock | None:
+    return self._teardown_block
 
   @property
   @override
@@ -95,22 +101,30 @@ class InteractivePage(Page):
     except Exception as e:  # pylint: disable=broad-except
       logging.error("Failed to dump HTML on failure: %s", str(e))
 
+  @contextlib.contextmanager
+  def _performance_mark_scope(self, run: Run, name: str):
+    browser: Browser = run.browser
+    browser.performance_mark(f"{name}-start", self._name)
+    yield
+    browser.performance_mark(f"{name}-end", self._name)
+
   @override
   def setup(self, run: Run) -> None:
     action_runner = get_action_runner(run)
     if self._run_login and (login_block := self.login_block):
-      action_runner.run_login(run, self, login_block)
+      with self._performance_mark_scope(run, "login"):
+        action_runner.run_login(run, self, login_block)
     if self._run_setup and (setup_block := self.setup_block):
-      run.browser.performance_mark("setup-start", self._name)
-      action_runner.run_setup(run, self, setup_block)
-      run.browser.performance_mark("setup-end", self._name)
+      with self._performance_mark_scope(run, "setup"):
+        action_runner.run_setup(run, self, setup_block)
 
   @override
   def teardown(self, run: Run) -> None:
     action_runner = get_action_runner(run)
-    run.browser.performance_mark("teardown-start", self._name)
-    action_runner.teardown(run, self, self.teardown_block)
-    run.browser.performance_mark("teardown-end", self._name)
+    if self._run_teardown and (teardown_block := self.teardown_block):
+      with self._performance_mark_scope(run, "teardown"):
+        action_runner.run_teardown(run, self, teardown_block)
+    action_runner.teardown()
 
   def run_once(self, run: Run) -> None:
     action_runner = get_action_runner(run)

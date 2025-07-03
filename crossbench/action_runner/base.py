@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Iterable, Optional, Sequence
 
@@ -78,23 +79,9 @@ class ActionRunner:
   def bond(self) -> BondActionRunner:
     return BondActionRunner()
 
-  def teardown(self,
-               run: Run,
-               page: InteractivePage,
-               teardown: Optional[ActionBlock] = None) -> None:
-    if teardown:
-      try:
-        with exception.annotate("teardown"):
-          self._info_stack = ("teardown",)
-          teardown.run_with(self, run, page)
-      except Exception:
-        page.create_failure_artifacts(run, "failure")
-        raise
-
-    self._teardown_impl()
-
-  def _teardown_impl(self) -> None:
-    pass
+  def annotate(self, *info_stack: str) -> exception.ExceptionAnnotationScope:
+    self._info_stack = info_stack
+    return exception.annotate(*info_stack)
 
   def run_blocks(self, run: Run, page: InteractivePage,
                  blocks: Iterable[ActionBlock]) -> None:
@@ -105,7 +92,7 @@ class ActionRunner:
     block_index = block.index
     # TODO: Instead maybe just pass context down.
     # Or pass unique path to every action __init__
-    with exception.annotate(f"Running block {block_index}: {block.label}"):
+    with self.annotate(f"Running block {block_index}: {block.label}"):
       for action_index, action in enumerate(block, start=1):
         self._info_stack = (f"block_{block_index}", f"action_{action_index}")
         self._failure_screenshot_annotations = []
@@ -292,26 +279,33 @@ class ActionRunner:
     else:
       self.run_interactive_page_once(run, page)
 
+  def run_login(self, run: Run, page: InteractivePage,
+                login: ActionBlock) -> None:
+    with self._management_block_scope(run, page, "login"):
+      with run.browser.network.traffic_shaper.pause():
+        login.run_with(self, run, page)
+
   def run_setup(self, run: Run, page: InteractivePage,
                 setup: ActionBlock) -> None:
+    with self._management_block_scope(run, page, "setup"):
+      setup.run_with(self, run, page)
+
+  def run_teardown(self, run: Run, page: InteractivePage,
+                   teardown: ActionBlock) -> None:
+    with self._management_block_scope(run, page, "teardown"):
+      teardown.run_with(self, run, page)
+
+  @contextlib.contextmanager
+  def _management_block_scope(self, run: Run, page: InteractivePage, name: str):
     try:
-      with exception.annotate("setup"):
-        self._info_stack = ("setup",)
-        setup.run_with(self, run, page)
+      with self.annotate(name):
+        yield
     except Exception:
       page.create_failure_artifacts(run, "failure")
       raise
 
-  def run_login(self, run: Run, page: InteractivePage,
-                login: ActionBlock) -> None:
-    try:
-      with exception.annotate("login"):
-        with run.browser.network.traffic_shaper.pause():
-          self._info_stack = ("login",)
-          login.run_with(self, run, page)
-    except Exception:
-      page.create_failure_artifacts(run, "failure")
-      raise
+  def teardown(self):
+    pass
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
     raise ActionNotImplementedError(self, action)

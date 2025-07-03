@@ -128,7 +128,7 @@ class DefaultActionRunner(ActionRunner):
     return self._bond
 
   @override
-  def _teardown_impl(self) -> None:
+  def teardown(self) -> None:
     if self._bond:
       self._bond.teardown()
 
