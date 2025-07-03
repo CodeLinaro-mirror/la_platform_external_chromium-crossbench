@@ -54,11 +54,17 @@ class DevToolsTracer:
     for _ in WaitRange().wait_with_backoff():
       if self._out_stream:
         break
-    base64_encoded, output, _ = self._websocket.execute(
-        self._devtools.io.read(self._out_stream))
-    if base64_encoded:
-      return base64.b64decode(output)
-    return output.encode("utf-8")
+    output = bytearray()
+    while True:
+      base64_encoded, chunk, eof = self._websocket.execute(
+          self._devtools.io.read(self._out_stream))
+      if chunk:
+        if base64_encoded:
+          output += base64.b64decode(chunk)
+        else:
+          output += chunk.encode("utf-8")
+      if eof:
+        return output
 
   def _on_tracing_complete(self, event) -> None:
     self._out_stream = event.stream
