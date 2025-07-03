@@ -32,10 +32,10 @@ from crossbench.runner.runner import Runner
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.cli.subcommand.base import CrossbenchSubcommand
   from crossbench.parse import LateArgumentError
   BenchmarkClsT = Type[Benchmark]
   BrowserLookupTableT = dict[str, tuple[Type[Browser], pth.LocalPath]]
-  from crossbench.cli.subcommand.base import CrossbenchSubcommand
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
