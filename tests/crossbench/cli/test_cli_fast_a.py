@@ -66,10 +66,18 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_describe_invalid_network(self):
     with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "network", "unknown benchmark")
+      self.run_cli("describe", "network", "unknown network")
     self.assertEqual(cm.exception.exit_code, 0)
     with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "network", "unknown benchmark", "--json")
+      self.run_cli("describe", "network", "unknown network", "--json")
+    self.assertEqual(cm.exception.exit_code, 0)
+
+  def test_describe_invalid_config_object(self):
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("describe", "configs", "unknown config")
+    self.assertEqual(cm.exception.exit_code, 0)
+    with self.assertRaises(SysExitTestException) as cm:
+      self.run_cli("describe", "configs", "unknown config", "--json")
     self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_all(self):
@@ -85,7 +93,9 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.run_cli("describe", "all")
 
   def test_describe_direct(self):
+    self.run_cli("describe", "loading")
     self.run_cli("describe", "v8.log")
+    self.run_cli("describe", "Secrets")
 
   def test_describe_typo(self):
     with self.assertRaises(SysExitTestException):
@@ -121,6 +131,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
     self.assertNotIn("networks", data)
+    self.assertNotIn("config-objects", data)
     self.assertIsInstance(data, dict)
     self.assertIn("v8.log", data)
 
@@ -132,8 +143,22 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
     self.assertNotIn("networks", data)
+    self.assertNotIn("config-objects", data)
     self.assertIsInstance(data, dict)
     self.assertIn("LIVE", data)
+
+  def test_describe_config_objects(self):
+    self.run_cli("describe", "config-objects")
+    _, stdout, stderr = self.run_cli_output("describe", "--json",
+                                            "config-objects")
+    self.assertFalse(stderr)
+    data = json.loads(stdout)
+    self.assertNotIn("benchmarks", data)
+    self.assertNotIn("probes", data)
+    self.assertNotIn("networks", data)
+    self.assertIsInstance(data, dict)
+    self.assertIn("Secrets", data)
+    self.assertIn("PageConfig", data)
 
   def test_describe_all(self):
     self.run_cli("describe", "all")

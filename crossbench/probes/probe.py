@@ -40,9 +40,13 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 class ProbeConfigParser(ConfigParser[ProbeT]):
 
   def __init__(self, probe_cls: Type[ProbeT]) -> None:
+    probe_name: str = probe_cls.NAME
+    if not probe_name:
+      raise ValueError("Missing probe name.")
     super().__init__(
         probe_cls,
-        f"{probe_cls.NAME} probe parser",
+        key=probe_name,
+        title=f"{probe_name} probe parser",
         unused_properties_mode=UnusedPropertiesMode.ERROR)
     self._probe_cls: Type[ProbeT] = probe_cls
 
