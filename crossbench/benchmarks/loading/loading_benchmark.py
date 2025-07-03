@@ -255,7 +255,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
 class LoadingBenchmark(SubStoryBenchmark):
   """
-  Benchmark runner for loading pages.
+  Benchmark runner for loading pages with complex interactions.
 
   Use --urls/--stories to either choose from an existing set of pages, or direct
   URLs. After each page you can also specify a custom wait/load duration in

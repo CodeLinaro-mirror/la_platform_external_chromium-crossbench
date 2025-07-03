@@ -34,9 +34,8 @@ class ActionNotImplementedError(NotImplementedError):
     self.action = action
 
     if msg_context:
-      msg_context = ". Context: " + msg_context
-
-    message = (f"{str(action.TYPE).capitalize()}-action "
+      msg_context = f", context: {msg_context}"
+    message = (f"{str(action.TYPE)}-action "
                f"not implemented in {type(runner).__name__}{msg_context}")
     super().__init__(message)
 
@@ -48,14 +47,12 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
                action: i_action.Action,
                input_source: InputSource,
                msg_context: str = "") -> None:
-
     if msg_context:
-      msg_context = ". Context: " + msg_context
-
-    input_source_message = (f"Source: '{input_source}'"
+      msg_context = f", context: {msg_context}"
+    input_source_message = (f"Source {repr(input_source)} "
                             f"not implemented{msg_context}")
-
     super().__init__(runner, action, input_source_message)
+
 
 class ActionRunner:
 

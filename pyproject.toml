@@ -47,6 +47,7 @@ xlsxwriter = "^3.2.2"
 crossbench = 'crossbench.scripts:crossbench'
 cb = 'crossbench.scripts:crossbench'
 cb_btp = 'crossbench.scripts:cb_btp'
+cb_validate_hjson= 'crossbench.scripts:cb_validate_hjson'
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "^1.6.3"

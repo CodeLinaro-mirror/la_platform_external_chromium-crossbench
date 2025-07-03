@@ -115,8 +115,8 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
     file.write("EXAMPLE:\n")
     file.write("  ./cb.py speedometer --browser=chrome-m131 "
                "--browser=out/release/chrome --probe=profiling\n\n")
-    readme_file = pth.AnyPath(__file__).parent / "README.md"
-    file.write(f"  See {readme_file} for more details.\n")
+    readme_file = pth.AnyPath(__file__).parents[2] / "README.md"
+    file.write(f"  See {readme_file} for more details and instructions.\n")
 
 class CrossBenchCLI:
   BENCHMARKS: tuple[BenchmarkClsT, ...] = (

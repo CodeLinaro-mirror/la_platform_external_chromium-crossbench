@@ -211,6 +211,14 @@ class DefaultActionRunner(ActionRunner):
       scroll_y = initial_scroll_y + distance
       actions.js(do_scroll_script, arguments=[selector, scroll_y])
 
+  def text_input_js(self, run: Run, action: i_action.TextInputAction) -> None:
+    with run.actions("TextInput", measure=False) as actions:
+      if text := action.text:
+        actions.js(
+            "document.activeElement.value = arguments[0]", arguments=[text])
+      else:
+        raise InputSourceNotImplementedError(self, action, action.input_source)
+
   def wait_for_element_impl(self,
                             actions: Actions,
                             selector: str,
