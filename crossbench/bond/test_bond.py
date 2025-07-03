@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import unittest
 
 from crossbench.bond.bond import (MAS_ONEPLATFORM_URL, MESI_APIARY_URL,
