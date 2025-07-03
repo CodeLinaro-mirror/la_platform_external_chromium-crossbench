@@ -244,8 +244,8 @@ class TracingProbe(ChromiumProbe):
       self._find_traceconv()
 
   def _find_traceconv(self) -> None:
-    if traceconv := TraceconvFinder(self.host_platform).path:
-      self._traceconv = self.host_platform.local_path(traceconv)
+    if traceconv := TraceconvFinder(self.host_platform).local_path:
+      self._traceconv = traceconv
       logging.debug("Using default traceconv: %s", traceconv)
 
   @property

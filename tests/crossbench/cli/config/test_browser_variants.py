@@ -1188,7 +1188,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     with self._patch_get_browser_cls(mock_browser.MockChromeStable), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
-      finder.return_value = mock.Mock(path=ts_proxy_path)
+      finder.return_value = mock.Mock(
+          path=ts_proxy_path, local_path=ts_proxy_path)
       config = BrowserVariantsConfig.parse_args(args,)
     browsers = config.browsers
     self.assertEqual(len(browsers), 3)

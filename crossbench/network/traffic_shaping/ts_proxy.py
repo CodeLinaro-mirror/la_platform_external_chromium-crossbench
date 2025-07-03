@@ -379,8 +379,7 @@ class TsProxyTrafficShaper(TrafficShaper):
                window: Optional[int] = None) -> None:
     super().__init__(browser_platform)
     if not ts_proxy_path:
-      if maybe_ts_proxy_path := TsProxyFinder(self.host_platform).path:
-        ts_proxy_path = self.host_platform.local_path(maybe_ts_proxy_path)
+      ts_proxy_path = TsProxyFinder(self.host_platform).local_path
     if not ts_proxy_path:
       raise RuntimeError(
           f"Could not find ts_proxy script on {self.host_platform}")

@@ -174,8 +174,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
   @override
   def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> None:
     if not wpr_go_bin:
-      if local_wpr_go := WprGoToolFinder(self.host_platform).path:
-        wpr_go_bin = self.host_platform.local_path(local_wpr_go)
+      if local_wpr_go := WprGoToolFinder(self.host_platform).local_path:
+        wpr_go_bin = local_wpr_go
     if not wpr_go_bin:
       raise RuntimeError(
           f"Could not find wpr.go binary on {self.host_platform}")
@@ -274,8 +274,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def _push_required_files(self) -> list[AnyPath]:
     host_platform = self.host_platform
-    if local_wpr_go := WprGoToolFinder(host_platform).path:
-      wpr_root = self.host_platform.local_path(local_wpr_go.parents[1])
+    if local_wpr_go := WprGoToolFinder(host_platform).local_path:
+      wpr_root = local_wpr_go.parents[1]
     else:
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 

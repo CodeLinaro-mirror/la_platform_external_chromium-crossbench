@@ -37,6 +37,7 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
 
   def test_find_none(self):
     self.assertIsNone(V8CheckoutFinder(self.platform).path)
+    self.assertIsNone(V8CheckoutFinder(self.platform).local_path)
 
   def test_D8_PATH(self):
     with mock.patch.dict(os.environ, {}, clear=True):
@@ -49,6 +50,8 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
     with mock.patch.dict(os.environ, {"D8_PATH": str(d8_path)}, clear=True):
       self.assertEqual(
           pathlib.Path(V8CheckoutFinder(self.platform).path), candidate_dir)
+      self.assertEqual(
+          V8CheckoutFinder(self.platform).local_path, candidate_dir)
     # Still NONE without custom D8_PATH env var.
     self.assertIsNone(V8CheckoutFinder(self.platform).path)
 

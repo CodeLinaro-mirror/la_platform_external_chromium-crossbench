@@ -84,8 +84,7 @@ class WebPageReplayProbe(Probe):
     super().__init__()
     host_platform = plt.PLATFORM
     if not wpr_go_bin:
-      if local_wpr_path := WprGoToolFinder(host_platform).path:
-        wpr_go_bin = host_platform.local_path(local_wpr_path)
+      wpr_go_bin = WprGoToolFinder(host_platform).local_path
     if not wpr_go_bin:
       raise RuntimeError(f"Could not find wpr.go on {host_platform}")
     self._wpr_go_bin: LocalPath = host_platform.parse_local_binary_path(
