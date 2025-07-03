@@ -75,10 +75,10 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def push(self, from_path: LocalPath, to_path: AnyPath) -> AnyPath:
     self.mkdir(to_path.parent, parents=True, exist_ok=True)
 
-    scp_cmd: CmdArgs = [
-        "scp", "-P", f"{self._ssh_port}", f"{from_path}",
-        f"{self._ssh_user}@{self._host}:{to_path}"
-    ]
+    scp_cmd: ListCmdArgs = ["scp", "-P", f"{self._ssh_port}"]
+    if from_path.is_dir():
+      scp_cmd.append("-r")
+    scp_cmd += [f"{from_path}", f"{self._ssh_user}@{self._host}:{to_path}"]
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
 

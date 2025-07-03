@@ -21,6 +21,7 @@ from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
+from crossbench.cli.config.extension import ExtensionConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
@@ -65,6 +66,7 @@ class BrowserConfig(ConfigObject):
 
   cache_dir: pth.AnyPath | None = None
   clear_cache: bool | None = None
+  extensions: tuple[ExtensionConfig, ...] = tuple()
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -334,6 +336,8 @@ class BrowserConfig(ConfigObject):
                  "clear_browser_cache_dir"),
         type=ObjectParser.optional_bool,
         default=None)
+    parser.add_argument(
+        "extensions", type=ExtensionConfig, is_list=True, default=())
     return parser
 
   @property

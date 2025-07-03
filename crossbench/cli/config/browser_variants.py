@@ -327,7 +327,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
         driver_logging=args.driver_logging,
         wipe_system_user_data=args.wipe_system_user_data,
         http_request_timeout=args.http_request_timeout,
-        env_config=env_config)
+        env_config=env_config,
+        extensions=browser_config.extensions)
     browser_variant = BrowserVariantConfig(label, browser_cls, browser_config,
                                            settings)
     if not self._check_unique_label(label):
