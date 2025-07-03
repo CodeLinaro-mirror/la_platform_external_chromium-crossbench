@@ -7,11 +7,12 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import urllib.parse as urlparse
-from typing import Any, Callable, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 
 import requests
 
-from crossbench.runner.timing import AnyTime
+if TYPE_CHECKING:
+  from crossbench.runner.timing import AnyTime
 
 DEFAULT_REQUEST_TIMEOUT = dt.timedelta(seconds=10)
 

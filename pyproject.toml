@@ -76,3 +76,17 @@ log_cli_level = "DEBUG"
 testpaths = [
     "tests",
 ]
+
+[tool.ruff.lint]
+extend-select = ["TCH"]
+ignore = [
+    "TC006", # Allow non-string type in casts
+]
+
+[tool.ruff.lint.flake8-type-checking]
+# Some types need to be runtime evaluated and thus
+# cannot be moved into TYPE_CHECKING blocks.
+runtime-evaluated-base-classes = [
+    "sqlalchemy.orm.DeclarativeBase",
+    "crossbench.results_db.records.base.BaseRecord"
+]

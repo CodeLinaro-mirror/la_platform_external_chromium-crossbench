@@ -14,7 +14,8 @@ from crossbench.parse import PathParser
 if TYPE_CHECKING:
   import crossbench.path as pth
   from crossbench.config import ConfigParser
-  from crossbench.plt.base import ListCmdArgs, Platform
+  from crossbench.plt.base import Platform
+  from crossbench.plt.types import ListCmdArgs
 
 
 def add_argument(parser: ConfigParser) -> None:

@@ -6,13 +6,14 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 from xml.sax.saxutils import escape
 
 from typing_extensions import override
 
-from crossbench.action_runner.display_rectangle import DisplayRectangle
-from crossbench.benchmarks.loading.point import Point
+if TYPE_CHECKING:
+  from crossbench.action_runner.display_rectangle import DisplayRectangle
+  from crossbench.benchmarks.loading.point import Point
 
 
 @dataclasses.dataclass(frozen=True)

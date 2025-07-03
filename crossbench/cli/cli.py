@@ -17,7 +17,6 @@ import tabulate as tbl
 import crossbench.benchmarks.all as benchmarks
 from crossbench import __version__
 from crossbench import path as pth
-from crossbench.benchmarks.base import Benchmark
 from crossbench.cli import exception_formatter, ui
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
@@ -27,12 +26,13 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
 from crossbench.cli.subcommand.help import HelpSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
 from crossbench.helper.collection_helper import close_matches_message
-from crossbench.parse import LateArgumentError
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.runner.runner import Runner
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.parse import LateArgumentError
   BenchmarkClsT = Type[Benchmark]
   BrowserLookupTableT = dict[str, tuple[Type[Browser], pth.LocalPath]]
   from crossbench.cli.subcommand.base import CrossbenchSubcommand

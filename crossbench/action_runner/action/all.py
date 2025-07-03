@@ -8,8 +8,8 @@ from typing import Type
 
 from crossbench.action_runner.action.action import ACTIONS, Action
 from crossbench.action_runner.action.click import ClickAction
-from crossbench.action_runner.action.close_tab import CloseTabAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
+from crossbench.action_runner.action.close_tab import CloseTabAction
 from crossbench.action_runner.action.dump_html import DumpHtmlAction
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \

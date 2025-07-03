@@ -11,14 +11,12 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 from typing_extensions import override
 
-from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
 from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.probes.downloads import DownloadsProbe, DownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
 from crossbench.probes.meminfo import MeminfoProbe, MeminfoProbeContext
@@ -26,7 +24,10 @@ from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action import all as i_action
   from crossbench.action_runner.bond_base import BondActionRunner
+  from crossbench.action_runner.screenshot_annotation import \
+      ScreenshotAnnotation
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 

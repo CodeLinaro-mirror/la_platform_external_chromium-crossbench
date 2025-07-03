@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Any, Final, Optional
@@ -21,6 +20,8 @@ from crossbench.parse import DurationParser
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  import argparse
+
   from crossbench import path as pth
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CrossBenchArgumentParser

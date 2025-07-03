@@ -15,7 +15,6 @@ from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli import ui
 from crossbench.cli.config.env import ValidationMode
-from crossbench.cli.config.secrets import Secrets
 from crossbench.env.run_env import RunEnv
 from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
@@ -29,7 +28,6 @@ from crossbench.runner.exception import StopStoryException
 from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
 from crossbench.runner.run_annotation import RunAnnotation
-from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
@@ -37,13 +35,14 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.cli.config.secrets import Secrets
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.results_db.db import ResultsDB
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
-  from crossbench.runner.timing import AnyTimeUnit
+  from crossbench.runner.timing import AnyTimeUnit, Timing
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
 

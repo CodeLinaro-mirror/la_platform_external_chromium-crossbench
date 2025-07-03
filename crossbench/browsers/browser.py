@@ -18,7 +18,6 @@ from crossbench import plt
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.flags.base import Flags, FlagsData, FlagsT
-from crossbench.plt.process_meminfo import ProcessMeminfo
 
 if TYPE_CHECKING:
   import re
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
+  from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.probes.probe import Probe
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.types import JsonDict

@@ -25,7 +25,6 @@ from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
 from crossbench.browsers.webdriver import WebDriverBrowser
-from crossbench.flags.base import FlagsT
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 
@@ -35,6 +34,7 @@ if TYPE_CHECKING:
   from selenium import webdriver
 
   from crossbench.browsers.version import BrowserVersion
+  from crossbench.flags.base import FlagsT
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 

@@ -11,7 +11,6 @@ import logging
 import pathlib
 import re
 import shlex
-import subprocess
 from typing import (TYPE_CHECKING, Any, Generator, Iterator, Mapping, Optional,
                     Set, Type)
 
@@ -25,8 +24,10 @@ from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
 from crossbench.plt.signals import PosixBaseSignal
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, ProcessLike
+  import subprocess
+
   from crossbench.plt.signals import AnyPosixSignals, Signals
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessLike
   from crossbench.types import JsonDict
 
 

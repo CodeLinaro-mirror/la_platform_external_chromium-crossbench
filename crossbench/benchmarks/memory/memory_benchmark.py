@@ -25,7 +25,6 @@ from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.runner.exception import StopStoryException
 
 if TYPE_CHECKING:
@@ -34,6 +33,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.path import LocalPath
+  from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup

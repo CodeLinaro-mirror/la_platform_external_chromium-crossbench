@@ -10,13 +10,14 @@ import logging
 import math
 import re
 import shlex
-import subprocess
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
+from android_protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
+                            windowmanagerservice_pb2)
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
@@ -26,15 +27,16 @@ from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
-from android_protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2, windowmanagerservice_pb2
-
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS = ["POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO"]
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
+  import subprocess
+
+  from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.types import CmdArg, ListCmdArgs
   from crossbench.types import JsonDict
 
 

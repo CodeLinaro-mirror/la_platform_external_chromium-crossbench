@@ -9,15 +9,16 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
-from crossbench.plt.arch import MachineArch
 from crossbench.plt.linux import RemoteLinuxPlatform
 from crossbench.plt.ssh import SshPlatformMixin
 from crossbench.plt.ssh_port_manager import SshPortManager
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath, LocalPath
-  from crossbench.plt.base import CmdArg, CmdArgs, ListCmdArgs, Platform
+  from crossbench.plt.arch import MachineArch
+  from crossbench.plt.base import Platform
   from crossbench.plt.port_manager import PortManager
+  from crossbench.plt.types import CmdArg, CmdArgs, ListCmdArgs
 
 
 class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):

@@ -26,8 +26,10 @@ from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, ProbeResult
+from crossbench.probes.probe import Probe, ProbeConfigParser
+from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
+                                       ProbeResult)
 from crossbench.replacements import Replacements
 
 if TYPE_CHECKING:
@@ -469,7 +471,6 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
       textproto_file.write_bytes(text_format.MessageToBytes(proto_result))
 
       return LocalProbeResult(file=[proto_file, textproto_file])
-
 
   @property
   def merged_trace_path(self) -> pth.LocalPath:

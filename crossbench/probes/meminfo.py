@@ -6,18 +6,18 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-import datetime as dt
 from typing import TYPE_CHECKING, Any, Optional, Self, Type
 
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.meminfo import MeminfoTarget
-from crossbench.probes.probe import Probe, ProbeConfigParser
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run

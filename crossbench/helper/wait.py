@@ -8,9 +8,10 @@ import datetime as dt
 import logging
 import math
 import time
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
-from crossbench.runner.timing import AnyTime, AnyTimeUnit
+if TYPE_CHECKING:
+  from crossbench.runner.timing import AnyTime, AnyTimeUnit
 
 
 def as_timedelta(value: int | float | dt.timedelta) -> dt.timedelta:

@@ -4,19 +4,21 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import enum
 import functools
 from typing import TYPE_CHECKING, Optional, Type
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import Action, ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.config import ConfigEnum
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run

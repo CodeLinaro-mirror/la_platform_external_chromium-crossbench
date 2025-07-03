@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, TypeVar
 
 from typing_extensions import override
 
-from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
@@ -21,6 +20,7 @@ from crossbench.plt import PLATFORM, Platform
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.flags.base import Flags
   from crossbench.network.base import TrafficShaper
   from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -203,7 +203,6 @@ class LocalWprReplayNetwork(WprReplayNetwork):
     logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                  browser_platform)
     # TODO: make ports configurable
-    ports = browser_platform.ports
     with browser_platform.ports.nested() as ports:
       ports.reverse_forward(http_port, http_port)
       ports.reverse_forward(https_port, https_port)

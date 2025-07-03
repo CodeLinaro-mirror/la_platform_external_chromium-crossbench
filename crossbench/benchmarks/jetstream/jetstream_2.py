@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import abc
-import argparse
 import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Sequence, Type
@@ -22,6 +21,8 @@ from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
+  import argparse
+
   from crossbench.runner.run import Run
 
 

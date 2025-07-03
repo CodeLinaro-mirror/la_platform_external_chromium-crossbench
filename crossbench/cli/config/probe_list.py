@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, Self, Sequence
 
@@ -16,6 +15,8 @@ from crossbench.config import ConfigObject
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  import argparse
+
   import crossbench.path as pth
   from crossbench.probes.probe import Probe
 

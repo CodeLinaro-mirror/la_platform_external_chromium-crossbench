@@ -21,7 +21,8 @@ from xlsxwriter.utility import xl_rowcol_to_cell
 from crossbench.probes import helper
 from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
                                       metric_geomean)
-from crossbench.probes.probe import Probe, ProbeContext
+from crossbench.probes.probe import Probe
+from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 

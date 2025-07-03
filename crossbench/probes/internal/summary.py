@@ -11,9 +11,9 @@ from typing_extensions import override
 
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
                                              InternalJsonResultProbeContext)
-from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
