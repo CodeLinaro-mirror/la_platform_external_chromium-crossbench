@@ -37,13 +37,10 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("unknown subcommand", "--invalid flag")
 
   def test_describe_invalid_empty(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "", "--json")
-    self.assertEqual(cm.exception.exit_code, 0)
+    self.run_cli("describe", "")
+    self.run_cli("describe", "", "--json")
 
+  def test_describe_invalid_arg_empty(self):
     with self.assertRaises(SysExitTestException) as cm:
       self.run_cli("describe", "--unknown")
     self.assertEqual(cm.exception.exit_code, 0)
@@ -86,6 +83,15 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_describe(self):
     self.run_cli("describe")
     self.run_cli("describe", "all")
+
+  def test_describe_direct(self):
+    self.run_cli("describe", "v8.log")
+
+  def test_describe_typo(self):
+    with self.assertRaises(SysExitTestException):
+      self.run_cli("describe", "al")
+
+  def test_describe_json(self):
     _, stdout, stderr = self.run_cli_output("describe", "--json")
     self.assertFalse(stderr)
     data = json.loads(stdout)

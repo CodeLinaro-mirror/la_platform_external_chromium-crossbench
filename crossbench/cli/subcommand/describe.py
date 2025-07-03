@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, Optional, Sequence, TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -14,6 +14,7 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.network_speed import NetworkSpeedConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
 if TYPE_CHECKING:
@@ -36,12 +37,13 @@ class DescribeSubcommand(CrossbenchSubcommand):
     describe_parser.add_argument(
         "category",
         nargs="?",
-        choices=self.CATEGORIES,
         default="all",
-        help="Limit output to the given category, defaults to 'all'")
+        help=("Limit output to the given category, defaults to 'all'. "
+              f"Choices: {self.CATEGORIES,}"))
     describe_parser.add_argument(
         "filter",
         nargs="?",
+        default=None,
         help=("Only display the given item from the provided category. "
               "By default all items are displayed. "
               "Example: describe probes v8.log"))
@@ -53,23 +55,34 @@ class DescribeSubcommand(CrossbenchSubcommand):
     self.cli.add_debugging_arguments(describe_parser)
     return describe_parser
 
+  def probe_names(self) -> list[str]:
+    return [probe_cls.NAME for probe_cls in GENERAL_PURPOSE_PROBES]
+
+  def benchmark_names(self) -> list[str]:
+    return [benchmark_cls.NAME for benchmark_cls in self.cli.BENCHMARKS]
+
+  def network_names(self) -> list[str]:
+    return [network_type.name for network_type in NetworkType]
+
   @override
   def run(self, args: argparse.Namespace) -> None:
-    self.describe(args.category, args.filter, args.json)
+    category: str = args.category
+    search_term: str | None = args.filter
+    if category not in self.CATEGORIES and not search_term:
+      search_term = category
+      category = "all"
+    self.describe(category, search_term, args.json)
 
   def run_from_help(self, args: argparse.Namespace) -> None:
-    search_terms = args.search_terms
-    category = "all"
-    search_str = ""
+    search_terms: Sequence[str] = args.search_terms
+    category: str = "all"
+    search_str: str = ""
     if len(search_terms) == 1:
       search_str = search_terms[0]
     elif len(search_terms) == 2:
       category, search_str = search_terms
     else:
       self.error(f"Invalid help args: {search_terms}")
-    if category not in self.CATEGORIES:
-      self.error(
-          f"Invalid category {repr(category)}, choices are {self.CATEGORIES}")
     self.describe(category, search_str)
 
   def describe(self,
@@ -99,6 +112,12 @@ class DescribeSubcommand(CrossbenchSubcommand):
 
   def _process_search_str(self, category: str,
                           search_str: str | None) -> tuple[str, str | None]:
+    if category not in self.CATEGORIES:
+      message, alternative = close_matches_message(category, self.CATEGORIES)
+      if not alternative:
+        self.error(f"Invalid category {repr(category)}. {message}")
+      else:
+        category = alternative
     if not search_str:
       return category, search_str
     search_str = search_str.lower()
@@ -118,40 +137,56 @@ class DescribeSubcommand(CrossbenchSubcommand):
     if category in self.PROBE_ALIAS:
       data = data["probes"]
       if not data:
-        self.error(f"No matching probe found: '{search_str}'")
+        self.choice_error("No matching probe found:", search_str,
+                          self.probe_names())
     elif category in self.BENCHMARK_ALIAS:
       data = data["benchmarks"]
       if not data:
-        self.error(f"No matching benchmark found: '{search_str}'")
+        self.choice_error("No matching benchmark found:", search_str,
+                          self.benchmark_names())
     elif category in self.NETWORK_ALIAS:
       data = data["networks"]
       if not data:
-        self.error(f"No matching network found: '{search_str}'")
+        self.choice_error("No matching network found:", search_str,
+                          self.network_names())
     else:
       assert category == "all", f"Got unknown category {category}"
       if not data["benchmarks"] and not data["probes"] and not data["networks"]:
         self.no_match_error(search_str)
     print(json.dumps(data, indent=2))
 
-  def no_match_error(self, search_str):
-    self.error(
-        f"No matching benchmarks, probes or networks found: '{search_str}'")
+  def no_match_error(self, search_str: str | None) -> None:
+    base_message = "No matching benchmarks, probes or networks found"
+    self.choice_error(base_message, search_str, self.CATEGORIES)
 
-  def print_probes(self, category: str, search_str: str | None, data: HelpData):
+  def choice_error(self, message, search_str: str | None,
+                   choices: Sequence[str]) -> None:
+    if search_str:
+      choices_message, alternative = close_matches_message(
+          search_str, self.CATEGORIES)
+      if alternative:
+        self.error(f"{message}: '{search_str}'. {choices_message}")
+        return
+    choices_str = ", ".join(choices)
+    self.error(f"{message}: '{search_str}'. Choices are {choices_str}")
+
+  def print_probes(self, category: str, search_str: str | None,
+                   data: HelpData) -> bool:
     printed_any: bool = False
     table = [["Probe", "Help"]]
     for probe_name, probe_desc in data["probes"].items():
       table.append([probe_name, probe_desc])
     if len(table) <= 1:
       if category != "all":
-        self.error(f"No matching probe found: '{search_str}'")
+        self.choice_error("No matching probe found:", search_str,
+                          self.probe_names())
     else:
       printed_any = True
       print(tbl.tabulate(table, tablefmt="grid"))
     return printed_any
 
   def print_benchmarks(self, category: str, search_str: str | None,
-                       data: HelpData):
+                       data: HelpData) -> bool:
     printed_any = False
     table: list[list[Optional[str]]] = [["Benchmark", "Property", "Value"]]
     for benchmark_name, values in data["benchmarks"].items():
@@ -170,21 +205,23 @@ class DescribeSubcommand(CrossbenchSubcommand):
         table.append([None, name, value])
     if len(table) <= 1:
       if category != "all":
-        self.error(f"No matching benchmark found: '{search_str}'")
+        self.choice_error("No matching benchmark found:", search_str,
+                          self.benchmark_names())
     else:
       printed_any = True
       print(tbl.tabulate(table, tablefmt="grid"))
     return printed_any
 
   def print_networks(self, category: str, search_str: str | None,
-                     data: HelpData):
+                     data: HelpData) -> bool:
     printed_any: bool = False
     table = [["Network", "Help"]]
     for network_name, network_desc in data["networks"].items():
       table.append([network_name, network_desc])
     if len(table) <= 1:
       if category != "all":
-        self.error(f"No matching network found: '{search_str}'")
+        self.choice_error("No matching network found:", search_str,
+                          self.network_names())
     else:
       printed_any = True
       print(tbl.tabulate(table, tablefmt="grid"))
