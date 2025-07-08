@@ -77,6 +77,7 @@ testpaths = [
     "tests",
 ]
 
+
 [tool.ruff.lint]
 extend-select = ["TCH"]
 ignore = [
@@ -90,3 +91,6 @@ runtime-evaluated-base-classes = [
     "sqlalchemy.orm.DeclarativeBase",
     "crossbench.results_db.records.base.BaseRecord"
 ]
+
+[tool.ruff.lint.isort]
+required-imports = [ "from __future__ import annotations" ]
