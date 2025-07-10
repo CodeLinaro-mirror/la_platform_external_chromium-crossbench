@@ -14,7 +14,8 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
+from crossbench.plt.android_adb import (Adb, AndroidAdbPlatform,
+                                        AndroidDeviceInfo)
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
@@ -207,12 +208,13 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_adb_basic_properties(self):
     self.assertEqual(self.adb.serial_id, self.DEVICE_ID)
-    self.assertDictEqual(
-        self.adb.device_info, {
-            "device": "generic_x86",
-            "model": "Android_SDK_built_for_x86",
-            "product": "sdk_google_phone_x86"
-        })
+    self.assertEqual(
+        self.adb.device_info,
+        AndroidDeviceInfo(
+            device_id=self.DEVICE_ID,
+            name="generic_x86",
+            model="Android_SDK_built_for_x86",
+            product="sdk_google_phone_x86"))
     self.assertIn(self.DEVICE_ID, str(self.adb))
 
   def test_has_root(self):

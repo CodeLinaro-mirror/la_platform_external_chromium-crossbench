@@ -112,8 +112,7 @@ class DriverConfig(ConfigObject):
       if pattern.fullmatch(serial):
         candidate_serials.append(serial)
         continue
-      print(info)
-      for key, info_value in info.items():
+      for key, info_value in info.asdict().items():
         if (pattern.fullmatch(f"{key}:{info_value}") or
             pattern.fullmatch(info_value)):
           candidate_serials.append(serial)
