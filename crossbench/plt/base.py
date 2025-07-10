@@ -23,8 +23,8 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
-                    Mapping, Optional, Sequence, Type)
+from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
+                    Iterator, Mapping, Optional, Sequence, Type)
 
 import psutil
 
@@ -745,37 +745,41 @@ class Platform(abc.ABC):
             exist_ok: bool = True) -> None:
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
+  def mkdtemp(self,
+              suffix: Optional[str] = None,
+              prefix: Optional[str] = None,
+              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    self.assert_is_local()
+    return self.path(tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir))
+
+  def mktemp(self,
+             suffix: Optional[str] = None,
+             prefix: Optional[str] = None,
+             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    self.assert_is_local()
+    fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
+    os.close(fd)
+    return self.path(name)
+
   @contextlib.contextmanager
   def NamedTemporaryFile(  # pylint: disable=invalid-name
       self,
+      suffix: Optional[str] = None,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_file: pth.AnyPath = self.mktemp(prefix, dir)
+    tmp_file: pth.AnyPath = self.mktemp(suffix, prefix, dir)
     try:
       yield tmp_file
     finally:
       self.rm(tmp_file, missing_ok=True)
 
-  def mkdtemp(self,
-              prefix: Optional[str] = None,
-              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    self.assert_is_local()
-    return self.path(tempfile.mkdtemp(prefix=prefix, dir=dir))
-
-  def mktemp(self,
-             prefix: Optional[str] = None,
-             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    self.assert_is_local()
-    fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
-    os.close(fd)
-    return self.path(name)
-
   @contextlib.contextmanager
   def TemporaryDirectory(  # pylint: disable=invalid-name
       self,
+      suffix: Optional[str] = None,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_dir = self.mkdtemp(prefix, dir)
+    tmp_dir = self.mkdtemp(suffix, prefix, dir)
     try:
       yield tmp_dir
     finally:

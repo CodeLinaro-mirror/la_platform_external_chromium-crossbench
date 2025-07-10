@@ -139,7 +139,29 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
     self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
     self.expect_sh("mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX")
-    self.platform.mkdtemp("custom_prefix")
+    self.platform.mkdtemp(prefix="custom_prefix.")
+
+  def test_mktemp_prefix_and_suffix(self):
+    # suffix need special handling on android.
+    self.assertTrue(self.platform.default_tmp_dir.is_absolute())
+    self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
+    self.expect_sh(
+        "mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX",
+        result="/data/local/tmp/custom_prefix.RANDOM")
+    self.expect_sh(("mv /data/local/tmp/custom_prefix.RANDOM "
+                    "/data/local/tmp/custom_prefix.RANDOM.custom_suffix"))
+    self.platform.mkdtemp(".custom_suffix", "custom_prefix.")
+
+  def test_mktemp_suffix(self):
+    # suffix need special handling on android.
+    self.assertTrue(self.platform.default_tmp_dir.is_absolute())
+    self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
+    self.expect_sh(
+        "mktemp -d /data/local/tmp/XXXXXXXXXXX",
+        result="/data/local/tmp/RANDOM")
+    self.expect_sh(
+        "mv /data/local/tmp/RANDOM /data/local/tmp/RANDOM.custom_suffix")
+    self.platform.mkdtemp(".custom_suffix")
 
   def test_push(self):
     local_path = self.mock_platform.path("C:/foo/push.local.data")

@@ -23,10 +23,11 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.action_runner.action_runner_test_case import ActionRunnerTestCase
+from tests.crossbench.action_runner.action_runner_test_case import \
+    ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
 from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform, MockPopen, MockFd)
+                                          LinuxMockPlatform, MockFd, MockPopen)
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
@@ -380,12 +381,12 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     for _ in range(touch_count):
       self.platform.expect_sh(
           "mktemp",
-          "/usr/local/tmp/None.XXXXXXXXXXX",
-          result="/usr/local/tmp/None.RANDOM")
+          "/usr/local/tmp/XXXXXXXXXXX",
+          result="/usr/local/tmp/RANDOM")
       self.platform.expect_sh("evemu-play --insert-slot0 /dev/input/event0 <"
-                              " /usr/local/tmp/None.RANDOM")
-      self.platform.expect_sh("[", "-e", "/usr/local/tmp/None.RANDOM", "]")
-      self.platform.expect_sh("rm", "/usr/local/tmp/None.RANDOM")
+                              " /usr/local/tmp/RANDOM")
+      self.platform.expect_sh("[", "-e", "/usr/local/tmp/RANDOM", "]")
+      self.platform.expect_sh("rm", "/usr/local/tmp/RANDOM")
 
   def expect_mouse_click(
       self,
@@ -402,13 +403,10 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.fs.create_file(path, contents="mouse")
 
     self.platform.expect_sh(
-        "mktemp",
-        "/usr/local/tmp/None.XXXXXXXXXXX",
-        result="/usr/local/tmp/None.RANDOM")
-    self.platform.expect_sh("python3", "/usr/local/tmp/None.RANDOM", "1920",
-                            "1080")
-    self.platform.expect_sh("[", "-e", "/usr/local/tmp/None.RANDOM", "]")
-    self.platform.expect_sh("rm", "/usr/local/tmp/None.RANDOM")
+        "mktemp", "/usr/local/tmp/XXXXXXXXXXX", result="/usr/local/tmp/RANDOM")
+    self.platform.expect_sh("python3", "/usr/local/tmp/RANDOM", "1920", "1080")
+    self.platform.expect_sh("[", "-e", "/usr/local/tmp/RANDOM", "]")
+    self.platform.expect_sh("rm", "/usr/local/tmp/RANDOM")
 
     mouse_process_stdin: MockFd = MockFd()
     mouse_process_stdout: MockFd = MockFd()

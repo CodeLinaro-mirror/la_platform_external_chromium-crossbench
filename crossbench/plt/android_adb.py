@@ -551,6 +551,7 @@ class AndroidAdbPortManager(PortManager):
 
 
 class AndroidAdbPlatform(RemotePosixPlatform):
+  # pylint: disable=redefined-builtin
 
   def __init__(self,
                host_platform: Platform,
@@ -767,6 +768,19 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     to_path = self.path(to_path)
     self.adb.push(self.host_path(from_path), to_path)
     return to_path
+
+  def _mktemp_sh(self,
+                 is_dir: bool,
+                 suffix: Optional[str] = None,
+                 prefix: Optional[str] = None,
+                 dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    temp_path = super()._mktemp_sh(is_dir, prefix=prefix, dir=dir)
+    if not suffix:
+      return temp_path
+    # android's mktemp does not support suffix on some platforms.
+    temp_path_with_suffix = temp_path.with_name(f"{temp_path.name}{suffix}")
+    self.rename(temp_path, temp_path_with_suffix)
+    return temp_path_with_suffix
 
   @override
   def processes(self,
