@@ -14,15 +14,18 @@ import stat
 import sys
 import tempfile
 import unittest
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from crossbench import plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
-from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 from tests.crossbench.mock_helper import MockRemotePortManager
+
+if TYPE_CHECKING:
+  from crossbench.plt.port_manager import PortManager
 
 
 class BaseNativePlatformTestCase(unittest.TestCase):

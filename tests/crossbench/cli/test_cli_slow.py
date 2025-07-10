@@ -10,7 +10,6 @@ from unittest import mock
 
 import hjson
 
-from crossbench import __version__
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig

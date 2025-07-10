@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-import pathlib
 import shutil
 import unittest
+from typing import TYPE_CHECKING
 
 from crossbench import plt
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
@@ -15,6 +15,9 @@ from crossbench.browsers.firefox.webdriver import (FirefoxDriverFinder,
 from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
+
+if TYPE_CHECKING:
+  import pathlib
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Only supported on macOS")

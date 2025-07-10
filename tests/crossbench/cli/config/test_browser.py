@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 import unittest
+from typing import TYPE_CHECKING
 
 import hjson
 from immutabledict import immutabledict
@@ -24,7 +25,6 @@ from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
 from crossbench.helper.cwd import ChangeCWD
-from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
@@ -32,6 +32,9 @@ from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import collections
 import dataclasses
-import datetime as dt
 import functools
 import pathlib
 import shlex
@@ -32,6 +31,8 @@ from crossbench.plt.win import WinPlatform
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.plt.types import CmdArg, ListCmdArgs, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner

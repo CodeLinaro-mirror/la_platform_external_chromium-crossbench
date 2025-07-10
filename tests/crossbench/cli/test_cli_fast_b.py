@@ -12,7 +12,7 @@ from unittest import mock
 
 import hjson
 
-from crossbench import __version__, plt
+from crossbench import plt
 from crossbench.browsers import viewport
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
 from crossbench.cli.config.browser import BrowserConfig

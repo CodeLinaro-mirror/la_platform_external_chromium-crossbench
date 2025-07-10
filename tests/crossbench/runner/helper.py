@@ -13,8 +13,6 @@ from typing import TYPE_CHECKING, Any, Optional, Type
 
 from typing_extensions import override
 
-from crossbench.benchmarks.base import Benchmark
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env.runner_env import RunnerEnv
@@ -32,6 +30,8 @@ from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
 from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.base import Benchmark
+  from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
   from crossbench.runner.timing import AnyTimeUnit
 

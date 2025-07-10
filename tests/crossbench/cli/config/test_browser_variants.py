@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 from unittest import mock
 
 import hjson
@@ -16,7 +16,6 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.version import ChromeVersion
@@ -44,6 +43,9 @@ from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
 
 
 class TestBrowserVariantsConfig(BaseConfigTestCase):
