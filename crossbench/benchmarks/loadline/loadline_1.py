@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
+import logging
 import numpy as np
 import pandas as pd
 from typing_extensions import override
@@ -26,7 +27,31 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING = "1.2.0"
+VERSION_STRING = "1.3.0"
+
+
+def process_scores(df: pd.DataFrame) -> pd.DataFrame:
+  df = df.groupby(["cb_browser",
+                   "cb_story"])["score"].mean().reset_index().pivot(
+                       columns=["cb_story"],
+                       index=["cb_browser"],
+                       values=["score"])
+  df = df.droplevel(0, axis=1)
+  df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
+  df.index.rename("browser", inplace=True)
+  df = df.reindex(
+      columns=(["TOTAL_SCORE"] +
+               sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
+  return df
+
+
+def process_breakdown(df: pd.DataFrame) -> pd.DataFrame:
+  df["os"] = df[["network", "process_launch"]].max(axis=1)
+  df = df.groupby(["cb_browser", "cb_story"
+                  ])[["os", "renderer", "compositor", "gpu",
+                      "surfaceflinger"]].mean()
+  df.index.names = ["browser", "story"]
+  return df
 
 
 class LoadLine1Probe(LoadLineProbe):
@@ -38,29 +63,30 @@ class LoadLine1Probe(LoadLineProbe):
   def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
     return LoadLine1ProbeContext
 
+  def _load_query_result(self, group: BrowsersRunGroup,
+                         query: str) -> pd.DataFrame:
+    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
+    query_result: pth.LocalPath | None = None
+    for result in all_results:
+      if result.stem == query:
+        query_result = result
+        break
+    assert query_result is not None, f"{self.NAME}: {query} result not found"
+    return pd.read_csv(query_result)
+
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    loadline_result: pth.LocalPath | None = None
-    for result in all_results:
-      # Look for the trace processor query result.
-      if result.name == "loadline_benchmark_score.csv":
-        loadline_result = result
-        break
-    assert loadline_result is not None, f"{self.NAME}: query result not found"
+    df = self._load_query_result(group, "loadline_benchmark_score")
+    return process_scores(df)
 
-    df = pd.read_csv(loadline_result)
-    df = df.groupby(["cb_browser",
-                     "cb_story"])["score"].mean().reset_index().pivot(
-                         columns=["cb_story"],
-                         index=["cb_browser"],
-                         values=["score"])
-    df = df.droplevel(0, axis=1)
-    df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
-    df.index.rename("browser", inplace=True)
-    return df.reindex(
-        columns=(["TOTAL_SCORE"] +
-                 sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
+  @override
+  def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
+    df = self._load_query_result(group, "loadline_breakdown")
+    if any(df["network"] > df["process_launch"]):
+      logging.warning("Some runs were affected by network latency. "
+                      "Results can be non-representative.")
+    return process_breakdown(df)
+
 
 
 class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
@@ -113,7 +139,7 @@ class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-phone", "ld-phone", "ld1-phone")
 
 
@@ -134,7 +160,7 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-tablet", "ld-tablet", "ld1-tablet")
 
   @classmethod
@@ -158,7 +184,7 @@ class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-phone-debug", "ld-phone-debug", "ld1-phone-debug")
 
 
@@ -176,7 +202,7 @@ class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-tablet-debug", "ld-tablet-debug", "ld1-tablet-debug")
 
 
@@ -189,7 +215,7 @@ class LoadLine1PhoneFastBenchmark(LoadLine1PhoneBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-phone-fast", "ld-phone-fast", "ld1-phone-fast")
 
 
@@ -202,5 +228,5 @@ class LoadLine1TabletFastBenchmark(LoadLine1TabletBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("loadline1-tablet-fast", "ld-tablet-fast", "ld1-tablet-fast")

@@ -11,13 +11,13 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Self, Sequence,
-                    Type)
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Self, Sequence, Type
 
 from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
@@ -26,7 +26,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -100,7 +100,7 @@ PERCENTILE_METRIC_RE: re.Pattern[str] = re.compile(r"^p(\d+)$")
 def parse_histogram_metrics(value: Any,
                             name: str = "value"
                            ) -> Sequence[ChromeHistogramMetric]:
-  result: List[ChromeHistogramMetric] = []
+  result: list[ChromeHistogramMetric] = []
   d = ObjectParser.dict(value, name)
   for k, v in d.items():
     histogram_name = ObjectParser.any_str(k, f"{name} name")
@@ -169,7 +169,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
   def use_baseline(self) -> bool:
     return self._use_baseline
 
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
 
@@ -194,7 +194,7 @@ class ChromeHistogramBucket:
   count: int
 
 
-ChromeHistogramBuckets = List[ChromeHistogramBucket]
+ChromeHistogramBuckets = list[ChromeHistogramBucket]
 
 
 class ChromeHistogramSample:
@@ -224,7 +224,8 @@ class ChromeHistogramSample:
                           r"(?: \(flags = (0x[0-9A-Fa-f]+)\))?$")
 
   @classmethod
-  def from_json(cls, histogram_dict: Dict) -> ChromeHistogramSample:
+  def from_json(cls, histogram_dict: Mapping[str,
+                                             Any]) -> ChromeHistogramSample:
     name = ObjectParser.any_str(histogram_dict["name"], "histogram name")
     header = ObjectParser.any_str(histogram_dict["header"], "histogram header")
     body = ObjectParser.any_str(histogram_dict["body"], "histogram body")
@@ -237,8 +238,8 @@ class ChromeHistogramSample:
     mean = float(m.group(2)) if m.group(2) is not None else None
     flags = int(m.group(3), 16) if m.group(3) is not None else 0
 
-    bucket_counts: Dict[int, int] = {}
-    bucket_maxes: Dict[int, int] = {}
+    bucket_counts: dict[int, int] = {}
+    bucket_maxes: dict[int, int] = {}
     prev_min: int | None = None
     for i, line in enumerate(body.splitlines(), start=1):
       m = re.match(cls._BUCKET_RE, line)
@@ -265,8 +266,8 @@ class ChromeHistogramSample:
                count: int = 0,
                mean: Optional[float] = 0,
                flags: int = 0,
-               bucket_counts: Optional[Dict[int, int]] = None,
-               bucket_maxes: Optional[Dict[int, int]] = None) -> None:
+               bucket_counts: Optional[dict[int, int]] = None,
+               bucket_maxes: Optional[dict[int, int]] = None) -> None:
     self._name = name
     self._count = count
     self._mean = mean
@@ -368,10 +369,10 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
 
   def __init__(self, probe: ChromeHistogramsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._baseline: Dict[str, ChromeHistogramSample] | None = None
-    self._delta: Dict[str, ChromeHistogramSample] | None = None
+    self._baseline: dict[str, ChromeHistogramSample] | None = None
+    self._delta: dict[str, ChromeHistogramSample] | None = None
 
-  def dump_histograms(self, name: str) -> Dict[str, ChromeHistogramSample]:
+  def dump_histograms(self, name: str) -> dict[str, ChromeHistogramSample]:
     with self.run.actions(
         f"Probe({self.probe.name}) dump histograms {name}") as actions:
       actions.show_url(
@@ -379,14 +380,17 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
           ready_state=ReadyState.COMPLETE,
           timeout=dt.timedelta(seconds=10))
       actions.js(self.HISTOGRAM_SEND)
-      actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, 10.0)
+      actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, timeout=10.0)
       data = actions.js(self.HISTOGRAM_DATA)
       histogram_list = ObjectParser.sequence(data)
-      histograms: Dict[str, ChromeHistogramSample] = {}
+      histograms: dict[str, ChromeHistogramSample] = {}
       for histogram_dict in histogram_list:
         histogram = ChromeHistogramSample.from_json(
             ObjectParser.dict(histogram_dict))
         histograms[histogram.name] = histogram
+      logging.debug(
+        "Extracted histograms:\n%s",
+        str.join("\n", histograms.keys()))
       return histograms
 
   def start(self) -> None:
@@ -397,7 +401,15 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
     super().start()
 
   def stop(self) -> None:
-    self._delta = self.dump_histograms("stop")
+    if isinstance(self.browser, WebviewEmbedder):
+      embedder_driver = self.browser.start_driver(self.session)
+    else:
+      embedder_driver = None
+    try:
+      self._delta = self.dump_histograms("stop")
+    finally:
+      if embedder_driver:
+        embedder_driver.quit()
     super().stop()
 
   @override

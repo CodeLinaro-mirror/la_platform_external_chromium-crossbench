@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import os
 import shutil
-from typing import TYPE_CHECKING, Dict, Final, Iterable, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Type
 
 from typing_extensions import override
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
-_PLATFORM_NAME_LOOKUP: Final[Dict[Tuple[str, str], str]] = {
+_PLATFORM_NAME_LOOKUP: Final[dict[tuple[str, str], str]] = {
     ("win", "ia32"): "win32",
     ("win", "x64"): "win64",
     ("win", "arm64"): "win-aarch64",
@@ -84,13 +84,13 @@ class FirefoxDownloader(Downloader):
     pass
 
   @override
-  def _find_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
     # Quick probe for complete versions
     if self.requested_version.is_complete:
       return self._find_exact_archive_url()
     raise NotImplementedError("Only full-release versions supported.")
 
-  def _find_exact_archive_url(self) -> Tuple[BrowserVersion, Optional[str]]:
+  def _find_exact_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
     folder_url = (
         f"{self.STORAGE_URL}{self.requested_version.parts_str}/mac/en-GB")
     return tuple(self._archive_urls(folder_url, self.requested_version))[0]
@@ -131,7 +131,7 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
   @override
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     return ((version, f"{folder_url}/firefox-{version.parts_str}.tar.bz2"),)
 
   @override
@@ -172,7 +172,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
   @override
   def _archive_urls(
       self, folder_url: str,
-      version: BrowserVersion) -> Iterable[Tuple[BrowserVersion, str]]:
+      version: BrowserVersion) -> Iterable[tuple[BrowserVersion, str]]:
     archive_name = url_helper.quote(f"firefox {version.parts_str}.dmg")
     return ((version, f"{folder_url}/{archive_name}"),)
 

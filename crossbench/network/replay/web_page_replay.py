@@ -12,7 +12,7 @@ import re
 import shlex
 import subprocess
 import time
-from typing import Iterable, Optional, TextIO, Tuple
+from typing import Iterable, Optional, TextIO
 
 from typing_extensions import override
 
@@ -113,9 +113,9 @@ class WprBase(abc.ABC):
         raise ValueError(f"Injected script path cannot contain ',': {script}")
       if not self._platform.is_file(script):
         raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts: Tuple[AnyPath, ...] = tuple(inject_scripts)
+    self._inject_scripts: tuple[AnyPath, ...] = tuple(inject_scripts)
 
-  def _validate_ports(self, http_port: int, https_port: int) -> Tuple[int, int]:
+  def _validate_ports(self, http_port: int, https_port: int) -> tuple[int, int]:
     if http_port == 0:
       logging.debug("WPR: using auto-port for http")
     else:
@@ -170,7 +170,7 @@ class WprBase(abc.ABC):
 
   def start(self) -> None:
     try:
-      atexit.register(self.stop)
+      atexit.register(self.stop, force_shutdown=True)
       self._start_wpr()
       logging.info("WPR: waiting for startup...")
       self._wait_for_startup()
@@ -217,20 +217,12 @@ class WprBase(abc.ABC):
   def _forward_ports(self) -> None:
     assert self._process, "Should not forward ports if WPR is not running"
     if self._platform.is_remote:
-      self._host_http_port = self._platform.port_forward(
-          0, self._device_http_port)
-      self._host_https_port = self._platform.port_forward(
-          0, self._device_https_port)
+      ports = self._platform.ports
+      self._host_http_port = ports.forward(0, self._device_http_port)
+      self._host_https_port = ports.forward(0, self._device_https_port)
     else:
       self._host_http_port = self._device_http_port
       self._host_https_port = self._device_https_port
-
-  def _stop_forward_ports(self) -> None:
-    if self._platform.is_remote:
-      if self._host_http_port:
-        self._platform.stop_port_forward(self._host_http_port)
-      if self._host_https_port:
-        self._platform.stop_port_forward(self._host_https_port)
 
   def _wait_for_startup(self) -> None:
     assert self._process, "process not started"
@@ -246,7 +238,7 @@ class WprBase(abc.ABC):
         if self._parse_wpr_log_line(line):
           break
     if self._process.poll():
-      self._raise_startup_failure()
+      raise self._startup_failure()
 
     self._forward_ports()
     time.sleep(0.1)
@@ -255,11 +247,11 @@ class WprBase(abc.ABC):
       return
     except url_helper.HTTPError as e:
       logging.debug("Could not query wpr server: %s", e)
-    self._raise_startup_failure()
+    raise self._startup_failure()
 
-  def _raise_startup_failure(self) -> None:
-    raise WprStartupError("Could not start wpr.go.\n"
-                          f"See log for more details: {self._log_path}")
+  def _startup_failure(self) -> WprStartupError:
+    return WprStartupError("Could not start wpr.go.\n"
+                           f"See log for more details: {self._log_path}")
 
   def _parse_wpr_log_line(self, line: str) -> bool:
     if "Failed to start server on" in line:
@@ -310,7 +302,6 @@ class WprBase(abc.ABC):
         self._platform.terminate_gracefully(self._process, timeout=1)
     finally:
       self._process = None
-      self._stop_forward_ports()
 
   def _shut_down(self) -> None:
     logging.info("WPR: shutting down %s.", self.NAME)

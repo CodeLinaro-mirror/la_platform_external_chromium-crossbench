@@ -12,6 +12,7 @@ from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
                                    NON_CONFIGURABLE_INTERNAL_PROBES,
                                    OPTIONAL_INTERNAL_PROBES)
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
+from crossbench.probes.chromium_pgo import ChromiumPgoProbe
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
@@ -73,6 +74,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
 
   def general_purpose_probe_instances(self):
     yield BrowserProfilingProbe()
+    yield ChromiumPgoProbe()
     yield DTraceProbe(pth.LocalPath("script.dtrace"))
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DownloadsProbe()

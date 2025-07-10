@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Tuple, Type
+from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
 
@@ -49,7 +49,7 @@ class JetStream11Story(JetStreamStory):
   # TODO: host v1.1-custom on chromium-workloads.web.app/
   # URL_CHROME_FORK: str = "https://chromium-workloads.web.app/jetstream/v1.1-custom/"
   URL_OFFICIAL: str = "https://browserbench.org/JetStream1.1/"
-  SUBSTORIES: Tuple[str, ...] = (
+  SUBSTORIES: tuple[str, ...] = (
       "3d-cube",
       "3d-raytrace",
       "base64",
@@ -96,7 +96,8 @@ class JetStream11Story(JetStreamStory):
           url=self.get_run_url(run),
           ready_state=ReadyState.COMPLETE,
           timeout=dt.timedelta(seconds=10))
-      actions.wait_js_condition("return !!JetStream;", min_wait=0.01, timeout=2)
+      actions.wait_js_condition(
+          "return !!JetStream;", min_interval=0.01, timeout=2)
       actions.js("JetStream.initialize();")
       # Intercept console.log to capture the raw results.
       actions.js("""
@@ -121,11 +122,11 @@ class JetStream11Story(JetStreamStory):
           return (summaryElement.innerHTML.indexOf("Score") >= 0);
           """,
           0.5,
-          self.slow_duration,
+          timeout=self.slow_duration,
           delay=self.substory_duration)
 
 
-ProbeClsTupleT = Tuple[Type[JetStream11Probe], ...]
+ProbeClsTupleT = tuple[Type[JetStream11Probe], ...]
 
 
 class JetStream11Benchmark(JetStreamBenchmark):

@@ -9,8 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, Optional, Sequence,
-                    Tuple)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence
 
 from ordered_set import OrderedSet
 
@@ -27,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.viewport import Viewport
   from crossbench.cli.config.secrets import Secrets, UsernamePassword
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
@@ -138,7 +137,7 @@ class Browser(abc.ABC):
     return self._settings.secrets
 
   @property
-  def settings(self):
+  def settings(self) -> Settings:
     return self._settings
 
   @property
@@ -206,14 +205,14 @@ class Browser(abc.ABC):
     # we don't get the status back.
     return False
 
-  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self) -> dict[str, ProcessMeminfo]:
     return self.platform.meminfo(str(self.path))
 
   @property
   def is_running(self) -> bool:
     return self._is_running
 
-  def validate_env(self, env: HostEnvironment) -> None:
+  def validate_env(self, env: RunnerEnv) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
 
@@ -347,7 +346,7 @@ class Browser(abc.ABC):
         "Previously used browser was not correctly stopped.")
 
   def _log_browser_start(self,
-                         args: Tuple[str, ...],
+                         args: tuple[str, ...],
                          driver_path: Optional[pth.AnyPath] = None) -> None:
     logging.info("🌐 STARTING BROWSER Binary:  %s", self.path)
     logging.info("🏷️  STARTING BROWSER Version: %s", self.version)
@@ -359,7 +358,7 @@ class Browser(abc.ABC):
     logging.info("🚩 STARTING BROWSER Flags:   %s", shlex.join(args))
 
   def _get_browser_flags_for_session(
-      self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
+      self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self.attributes()))

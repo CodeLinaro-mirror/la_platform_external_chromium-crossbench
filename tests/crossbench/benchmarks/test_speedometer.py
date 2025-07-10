@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import argparse
 import datetime as dt
 import json
 from dataclasses import dataclass
@@ -111,6 +110,7 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     story_viewport = None
     shuffle_seed = None
     detailed_metrics = False
+    measure_prepare = None
 
   EXAMPLE_STORY_DATA: dict[str, Any] = {}
 
@@ -185,7 +185,6 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, self.name)
-    self.assertEqual(story.measurement_method, MeasurementMethod.RAF)
     self.assertDictEqual(story.url_params, {})
 
     args.measurement_method = MeasurementMethod.TIMER
@@ -193,7 +192,6 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, self.name)
-    self.assertEqual(story.measurement_method, MeasurementMethod.TIMER)
     self.assertDictEqual(story.url_params, {"measurementMethod": "timer"})
 
   def test_all_stories_kwargs_url_params(self):
@@ -203,7 +201,6 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, "all")
-    self.assertEqual(story.measurement_method, MeasurementMethod.RAF)
     self.assertDictEqual(story.url_params,
                          {"suites": ",".join(story.SUBSTORIES)})
 
@@ -214,7 +211,6 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, "TodoMVC-jQuery")
-    self.assertEqual(story.measurement_method, MeasurementMethod.RAF)
     self.assertDictEqual(story.url_params, {"suites": "TodoMVC-jQuery"})
 
   def test_iterations_kwargs(self):
@@ -245,17 +241,12 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.sync_wait, dt.timedelta(0))
-
-    with self.assertRaises(argparse.ArgumentTypeError):
-      args.sync_wait = dt.timedelta(seconds=-123.4)
-      self.benchmark_cls.from_cli_args(args)
+      self.assertDictEqual(story.url_params, {})
 
     args.sync_wait = dt.timedelta(seconds=123.4)
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.sync_wait, dt.timedelta(seconds=123.4))
       self.assertDictEqual(story.url_params, {"waitBeforeSync": "123400"})
 
   def test_sync_warmup_kwargs(self):
@@ -263,17 +254,12 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.sync_warmup, dt.timedelta(0))
-
-    with self.assertRaises(argparse.ArgumentTypeError):
-      args.sync_warmup = dt.timedelta(seconds=-123.4)
-      self.benchmark_cls.from_cli_args(args)
+      self.assertFalse(story.url_params)
 
     args.sync_warmup = dt.timedelta(seconds=123.4)
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.sync_warmup, dt.timedelta(seconds=123.4))
       self.assertDictEqual(story.url_params, {"warmupBeforeSync": "123400"})
 
   def test_viewport_kwargs(self):
@@ -281,17 +267,12 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.viewport, None)
-
-    with self.assertRaises(argparse.ArgumentTypeError):
-      args.story_viewport = Viewport.FULLSCREEN
-      self.benchmark_cls.from_cli_args(args)
+      self.assertFalse(story.url_params)
 
     args.story_viewport = Viewport(999, 888)
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.viewport, Viewport(999, 888))
       self.assertDictEqual(story.url_params, {"viewport": "999x888"})
 
   def test_shuffle_seed_kwargs(self):
@@ -299,17 +280,12 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.shuffle_seed, None)
-
-    with self.assertRaises(argparse.ArgumentTypeError):
-      args.shuffle_seed = "some invalid value"
-      self.benchmark_cls.from_cli_args(args)
+      self.assertFalse(story.url_params)
 
     args.shuffle_seed = 1234
     benchmark = self.benchmark_cls.from_cli_args(args)
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
-      self.assertEqual(story.shuffle_seed, 1234)
       self.assertDictEqual(story.url_params, {"shuffleSeed": "1234"})
 
   def test_run_default(self):

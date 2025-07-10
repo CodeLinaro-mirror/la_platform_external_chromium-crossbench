@@ -6,12 +6,11 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, List, Sequence,
-                    Tuple)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -23,7 +22,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
 
   def create_runner(self,
                     stories: Sequence[Page],
-                    js_side_effects: List[Any] | Callable[[Page], List[Any]],
+                    js_side_effects: list[Any] | Callable[[Page], list[Any]],
                     separate: bool = False,
                     repetitions: int = 3,
                     warmup_repetitions: int = 0,
@@ -53,7 +52,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,
@@ -64,7 +63,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     return runner
 
   def get_non_empty_json_results(self, runner: Runner,
-                                probe: Probe) -> Tuple[Any, Any, Any, Any]:
+                                 probe: Probe) -> tuple[Any, Any, Any, Any]:
     story_json_file = runner.runs[0].results[probe].json
     with story_json_file.open() as f:
       story_json_data = json.load(f)
@@ -92,7 +91,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
       runner: Runner,
       probe: Probe,
       suffix: str,
-      has_browsers_data: bool = True) -> Tuple[str, str, str, str]:
+      has_browsers_data: bool = True) -> tuple[str, str, str, str]:
     story_file = runner.runs[0].results[probe].get_all(suffix)[0]
     story_data = story_file.read_text()
     self.assertTrue(story_data)

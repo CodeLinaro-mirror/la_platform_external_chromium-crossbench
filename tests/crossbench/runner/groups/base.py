@@ -22,7 +22,7 @@ class BaseRunGroupTestCase(BaseRunnerTestCase):
 
   def default_session(self,
                       browser: Optional[Browser] = None,
-                      throw: bool = True):
+                      throw: bool = True) -> BrowserSessionRunGroup:
     browser = browser or self.browsers[0]
     return BrowserSessionRunGroup(self.runner.env, self.runner.probes, browser,
                                   Flags(), 0, self.root_dir,

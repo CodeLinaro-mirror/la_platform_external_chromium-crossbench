@@ -16,9 +16,9 @@ import json
 import logging
 import re
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final,
-                    Generic, Iterable, List, Optional, Self, Set, Tuple, Type,
-                    TypeAlias, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
+                    Iterable, Optional, Self, Set, Type, TypeAlias, TypeVar,
+                    cast)
 from urllib.parse import urlparse
 
 import tabulate
@@ -230,12 +230,12 @@ class _ConfigArgParser:
 
   @property
   def help_text(self) -> str:
-    items: List[Tuple[str, str]] = []
+    items: list[tuple[str, str]] = []
     if self.type is None:
       if self.is_list:
         items.append(("type", "list"))
     elif self.is_list:
-      items.append(("type", f"List[{self.type.__qualname__}]"))
+      items.append(("type", f"list[{self.type.__qualname__}]"))
     else:
       items.append(("type", str(self.type.__qualname__)))
 
@@ -261,18 +261,18 @@ class _ConfigArgParser:
       return f"{self.help}\n{text}"
     return text
 
-  def _choices_help_text(self, choices: Iterable) -> Tuple[str, str]:
+  def _choices_help_text(self, choices: Iterable) -> tuple[str, str]:
     return ("choices", ", ".join(map(str, choices)))
 
-  def _enum_help_text(self) -> List[Tuple[str, str]]:
+  def _enum_help_text(self) -> list[tuple[str, str]]:
     if self.type and hasattr(self.type, "help_text_items"):
       # See str_enum_with_help.StrEnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
     assert self.choices
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
-  def parse(self, config_data: Dict[str, Any],
-            depending_kwargs: Dict[str, Any]) -> Any:
+  def parse(self, config_data: dict[str, Any],
+            depending_kwargs: dict[str, Any]) -> Any:
     data = None
     if self.name in config_data:
       data = config_data.pop(self.name)
@@ -309,7 +309,7 @@ class _ConfigArgParser:
       found = True
     return value
 
-  def _validate_depending_kwargs(self, depending_kwargs: Dict[str,
+  def _validate_depending_kwargs(self, depending_kwargs: dict[str,
                                                               Any]) -> None:
     if not self.depends_on and depending_kwargs:
       raise ValueError(f"{self.name} has no depending arguments, "
@@ -328,14 +328,14 @@ class _ConfigArgParser:
             "cannot be specified together.")
 
   def _validate_type_without_depending_kwargs(
-      self, depending_kwargs: Dict[str, Any]) -> None:
+      self, depending_kwargs: dict[str, Any]) -> None:
     if depending_kwargs:
       raise ValueError(
           f"{str(self.type)} does not accept "
           f"additional depending arguments, but got: {depending_kwargs}")
 
   def parse_list_data(self, data: Any,
-                      depending_kwargs: Dict[str, Any]) -> Tuple[Any]:
+                      depending_kwargs: dict[str, Any]) -> tuple[Any]:
     if isinstance(data, str):
       data = data.split(",")
     if not isinstance(data, (list, tuple)):
@@ -343,7 +343,7 @@ class _ConfigArgParser:
                        f"Expected sequence got {type(data).__name__}")
     return tuple(self.parse_data(value, depending_kwargs) for value in data)
 
-  def parse_data(self, data: Any, depending_kwargs: Dict[str, Any]) -> Any:
+  def parse_data(self, data: Any, depending_kwargs: dict[str, Any]) -> Any:
     if self.is_enum:
       self._validate_type_without_depending_kwargs(depending_kwargs)
       return self.parse_enum_data(data)
@@ -401,9 +401,9 @@ class ConfigObject(abc.ABC):
     objects contain other nested config-parsed objects,
   - It is then used to create a real instance of an object.
   """
-  VALID_CONFIG_EXTENSIONS: ClassVar[Tuple[str, ...]] = (".hjson", ".json")
-  VALID_EXTENSIONS: ClassVar[Tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
-  VALID_SCHEME: ClassVar[Tuple[str,
+  VALID_CONFIG_EXTENSIONS: ClassVar[tuple[str, ...]] = (".hjson", ".json")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
+  VALID_SCHEME: ClassVar[tuple[str,
                                ...]] = ("http", "https", "file", "gs", "ftp")
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
@@ -537,7 +537,7 @@ class ConfigObject(abc.ABC):
     raise exception.UnreachableError()
 
   @classmethod
-  def parse_dict(cls: Type[Self], config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls: Type[Self], config: dict[str, Any], **kwargs) -> Self:
     parser: ConfigParser[Self] = cls.config_parser()
     result: Self = parser.parse(config, **kwargs)
     return result
@@ -568,8 +568,8 @@ class _PrimitiveConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
-    result: Dict[str, Any] = {}
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
+    result: dict[str, Any] = {}
 
     for key, value in config.items():
       result[key] = _PrimitiveConfigObject.parse(value, **kwargs).value
@@ -603,7 +603,8 @@ class TemplateArg:
 
 ARG_NAME_PATTERN: re.Pattern = re.compile(r"^[A-Z\d_]+$")
 
-def template_args(value: Any) -> Dict[str, TemplateArg]:
+
+def template_args(value: Any) -> dict[str, TemplateArg]:
   dict_value = ObjectParser.dict(value)
 
   for arg_key, arg_value in dict_value.items():
@@ -645,10 +646,10 @@ class _TemplatedConfigParser(ConfigObject):
 
   def __init__(self,
                template: Any,
-               args: Optional[Dict[str, TemplateArg]] = None,
+               args: Optional[dict[str, TemplateArg]] = None,
                unbound_args: Optional[Iterable[str]] = None):
     self._template: Any = template
-    self._args: Dict[str, TemplateArg] = args if args else {}
+    self._args: dict[str, TemplateArg] = args if args else {}
     self._unbound_args: Set[str] = set(unbound_args) if unbound_args else set()
     self._missing_args: Set[str] = set()
 
@@ -710,7 +711,7 @@ class _TemplatedConfigParser(ConfigObject):
       raise ConfigTemplateError(f"The following arguments were not supplied"
                                 f" but are required: {self._missing_args}")
 
-    unused_args: List[str] = []
+    unused_args: list[str] = []
 
     for (arg_name, arg_value) in self._args.items():
       if not arg_value.used:
@@ -750,8 +751,8 @@ class _TemplatedConfigParser(ConfigObject):
 
     return value
 
-  def _substitute_dict(self, value: Dict[Any, Any]) -> Dict[Any, Any]:
-    result: Dict[Any, Any] = {}
+  def _substitute_dict(self, value: dict[Any, Any]) -> dict[Any, Any]:
+    result: dict[Any, Any] = {}
 
     for child_key, child_value in value.items():
       with exception.annotate(f"Processing ...['{child_key}']:"):
@@ -770,8 +771,8 @@ class _TemplatedConfigParser(ConfigObject):
 
     return None
 
-  def _substitute_list(self, value: List[Any]) -> List[Any]:
-    result: List[Any] = []
+  def _substitute_list(self, value: list[Any]) -> list[Any]:
+    result: list[Any] = []
     for index, child_value in enumerate(value):
       with exception.annotate(f"Parsing List index: {index}:"):
 
@@ -850,9 +851,9 @@ class _TemplatedConfigParser(ConfigObject):
 
 class _ConfigKwargsParser:
 
-  def __init__(self, parser: ConfigParser, config_data: Dict[str, Any]):
+  def __init__(self, parser: ConfigParser, config_data: dict[str, Any]):
     self._parser = parser
-    self._kwargs: Dict[str, Any] = {}
+    self._kwargs: dict[str, Any] = {}
     self._processed_args: Set[str] = set()
     self._config_data = config_data
     self._parse()
@@ -876,8 +877,8 @@ class _ConfigKwargsParser:
                                                 depending_kwargs)
 
   def _maybe_parse_depending_args(
-      self, arg_parser: _ConfigArgParser) -> Dict[str, Any]:
-    depending_args: Dict[str, Any] = {}
+      self, arg_parser: _ConfigArgParser) -> dict[str, Any]:
+    depending_args: dict[str, Any] = {}
     if not arg_parser.depends_on:
       return depending_args
     with exception.annotate(f"Parsing ...['{arg_parser.name}'].depends_on:"):
@@ -895,7 +896,7 @@ class _ConfigKwargsParser:
           f"Failure when parsing depending {arg_name}")
     return self._kwargs[arg_name]
 
-  def as_dict(self) -> Dict[str, Any]:
+  def as_dict(self) -> dict[str, Any]:
     return dict(self._kwargs)
 
 
@@ -928,7 +929,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
         raise TypeError(
             f"Default value '{default}' is not an instance of {cls.__name__}")
     self._default = default
-    self._args: Dict[str, _ConfigArgParser] = {}
+    self._args: dict[str, _ConfigArgParser] = {}
     self._arg_names: Set[str] = set()
     self._unused_properties_mode = unused_properties_mode
 
@@ -942,7 +943,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       type: Optional[ArgParserType],
       default: Optional[Any] = NOT_SET,
       choices: Optional[Iterable[Any]] = None,
-      aliases: Tuple[str, ...] = tuple(),
+      aliases: tuple[str, ...] = tuple(),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False,
@@ -962,7 +963,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def get_argument(self, arg_name: str) -> _ConfigArgParser:
     return self._args[arg_name]
 
-  def has_all_required_args(self, config_data: Dict[str, Any]) -> bool:
+  def has_all_required_args(self, config_data: dict[str, Any]) -> bool:
     config_keys: Set[str] = set(config_data.keys())
     for arg in self._args.values():
       if arg.required:
@@ -972,12 +973,12 @@ class ConfigParser(Generic[ConfigResultObjectT]):
           return False
     return True
 
-  def has_any_args(self, config_data: Dict[str, Any]) -> bool:
+  def has_any_args(self, config_data: dict[str, Any]) -> bool:
     config_keys: Set[str] = set(config_data.keys())
     return bool(config_keys.intersection(self._arg_names))
 
-  def kwargs_from_config(self, config_data: Dict[str, Any],
-                         **extra_kwargs) -> Dict[str, Any]:
+  def kwargs_from_config(self, config_data: dict[str, Any],
+                         **extra_kwargs) -> dict[str, Any]:
     with exception.annotate_argparsing(
         f"Parsing {self._cls.__name__} extra config kwargs:"):
       config_data = self._prepare_config_data(config_data, **extra_kwargs)
@@ -989,14 +990,14 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       return kwargs.as_dict()
     raise exception.UnreachableError()
 
-  def parse(self, config_data: Dict[str, Any], **kwargs) -> ConfigResultObjectT:
+  def parse(self, config_data: dict[str, Any], **kwargs) -> ConfigResultObjectT:
     if self._default and config_data == {} and not kwargs:
       return self._default
     kwargs = self.kwargs_from_config(config_data, **kwargs)
     return self.new_instance_from_kwargs(kwargs)
 
-  def _prepare_config_data(self, config_data: Dict[str, Any],
-                           **extra_kwargs) -> Dict[str, Any]:
+  def _prepare_config_data(self, config_data: dict[str, Any],
+                           **extra_kwargs) -> dict[str, Any]:
     config_data = dict(config_data)
     for extra_key, extra_data in extra_kwargs.items():
       if extra_data is None:
@@ -1009,11 +1010,11 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       config_data[extra_key] = extra_data
     return config_data
 
-  def new_instance_from_kwargs(self, kwargs: Dict[str,
+  def new_instance_from_kwargs(self, kwargs: dict[str,
                                                   Any]) -> ConfigResultObjectT:
     return self._cls(**kwargs)
 
-  def _handle_unused_config_data(self, unused_config_data: Dict[str,
+  def _handle_unused_config_data(self, unused_config_data: dict[str,
                                                                 Any]) -> None:
     if self._unused_properties_mode == UnusedPropertiesMode.IGNORE:
       return
@@ -1025,7 +1026,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
           f"{unused_keys}")
 
   @property
-  def arg_parsers(self) -> Tuple[_ConfigArgParser, ...]:
+  def arg_parsers(self) -> tuple[_ConfigArgParser, ...]:
     return tuple(self._args.values())
 
   @property
@@ -1048,7 +1049,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
   @functools.lru_cache(maxsize=1)
   def __str__(self) -> str:
-    parts: List[str] = []
+    parts: list[str] = []
     doc_string = self.doc
     width = 80
     if doc_string:

@@ -8,8 +8,7 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Iterable, List, Optional, Sequence,
-                    Tuple, Type, cast)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type, cast
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -43,7 +42,7 @@ class ChromiumBasedWebDriver(
 
   WEB_DRIVER_OPTIONS: Type[ChromiumOptions] = ChromiumOptions
   WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
-  UNSUPPORTED_FLAGS: Tuple[str, ...] = ()
+  UNSUPPORTED_FLAGS: tuple[str, ...] = ()
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
@@ -120,7 +119,7 @@ class ChromiumBasedWebDriver(
     options = self._create_options(session, args)
 
     self._log_browser_start(args, driver_path)
-    service_args: List[str] = []
+    service_args: list[str] = []
     if self._settings.driver_logging:
       service_args += [
           "--verbose", f"--log-path={os.fspath(self._setup_driver_log_file())}"
@@ -251,15 +250,16 @@ class ChromiumBasedWebDriver(
       if tab_index is not None:
         handles = [driver.window_handles[tab_index]]
       else:
-        handles = driver.window_handles[i:] + driver.window_handles[:i]
+        # Start searching with the tab after the current tab.
+        handles = driver.window_handles[i + 1:] + driver.window_handles[:i + 1]
 
       for handle in handles:
         driver.switch_to.window(handle)
         if title is not None:
-          if title.match(driver.title) is None:
+          if title.search(driver.title) is None:
             continue
         if url is not None:
-          if url.match(driver.current_url) is None:
+          if url.search(driver.current_url) is None:
             continue
         return handle
     error = "No new tab found"

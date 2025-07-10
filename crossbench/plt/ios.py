@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -27,10 +27,10 @@ class IOSDevice:
 
 
 def ios_devices(platform: Platform,
-                show_all: bool = False) -> Dict[str, IOSDevice]:
+                show_all: bool = False) -> dict[str, IOSDevice]:
   output = platform.sh_stdout("xcrun", "xctrace", "list", "devices")
   category_index = 0
-  results: Dict[str, IOSDevice] = {}
+  results: dict[str, IOSDevice] = {}
   for line in output.splitlines():
     if line.startswith("== "):
       category_index += 1

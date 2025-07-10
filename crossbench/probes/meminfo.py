@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-from typing import TYPE_CHECKING, List, Optional, Self, Type
+from typing import TYPE_CHECKING, Optional, Self, Type
 
 from typing_extensions import override
 
@@ -45,7 +45,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
 
   def __init__(self, probe: MeminfoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: List[AnyPath] = []
+    self._results: list[AnyPath] = []
 
   @override
   def get_default_result_path(self) -> AnyPath:

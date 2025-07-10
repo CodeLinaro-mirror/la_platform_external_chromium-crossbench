@@ -12,7 +12,7 @@ from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.memory.memory_benchmark import (
     MemoryBenchmark, MemoryBenchmarkStoryFilter, MemoryProbe)
-from crossbench.env import EnvironmentConfig, ValidationMode
+from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
@@ -88,7 +88,7 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
         self.out_dir,
         self.browsers,
         benchmark,
-        env_config=EnvironmentConfig(),
+        env_config=EnvConfig(),
         env_validation_mode=ValidationMode.SKIP,
         platform=self.platform,
         repetitions=repetitions,

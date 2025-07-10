@@ -6,6 +6,6 @@ AS
 SELECT
   -- Multiply by 60 to make the score per minutes rather than per second.
   60e9 / (
-    get_lcp_presentation_time('https://www.google.com/search?q=cats')
+    get_presentation_time('LoadLine2/google_search/result_added_to_dom')
     - get_event_time('LoadLine2/*/google_search_result_start'));
 

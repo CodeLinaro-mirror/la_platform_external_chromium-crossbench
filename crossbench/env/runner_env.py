@@ -7,23 +7,19 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
-
-import colorama
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from crossbench import plt
-from crossbench.cli.config.env import EnvironmentConfig, ValidationMode
+from crossbench.cli.config.env import EnvConfig, ValidationMode
+from crossbench.env.base import BaseEnv, ValidationError
 from crossbench.helper import collection_helper, url_helper
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import CmdArg, Platform
   from crossbench.probes.probe import Probe
-
-class ValidationError(Exception):
-  pass
 
 STALE_RESULT_ICONS = {
     75: "👻",
@@ -37,56 +33,36 @@ STALE_RESULT_ICONS = {
 }
 
 
-class HostEnvironment:
+class RunnerEnv(BaseEnv):
   """
-  HostEnvironment can check and enforce certain settings on a host
-  where we run benchmarks.
+  RunnerEnvironment can check and enforce certain settings on the host where
+  the benchmarks runner is.
 
-  Modes:
-    skip:     Do not perform any checks
-    warn:     Only warn about mismatching host conditions
-    enforce:  Tries to auto-enforce conditions and warns about others.
-    prompt:   Interactive mode to skip over certain conditions
-    fail:     Fast-fail on mismatch
+  Use ValidationMode to change how warnings/errors are handled.
   """
-
 
   def __init__(self,
                platform: Platform,
-               out_dir: LocalPath,
+               out_dir: pth.LocalPath,
                browsers: Iterable[Browser],
                probes: Iterable[Probe],
                repetitions: int,
-               config: Optional[EnvironmentConfig] = None,
+               config: Optional[EnvConfig] = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
-    self._wait_until = dt.datetime.now()
-    self._config = config or EnvironmentConfig()
-    self._out_dir = out_dir
-    self._browsers = tuple(browsers)
+    super().__init__(platform, config, validation_mode)
+    self._wait_until: dt.datetime = dt.datetime.now()
+    self._out_dir: pth.LocalPath = out_dir
+    self._browsers: tuple[Browser, ...] = tuple(browsers)
     self._probes = tuple(probes)
-    self._repetitions = repetitions
-    self._platform = platform
-    self._validation_mode = validation_mode
-
-  @property
-  def platform(self) -> Platform:
-    return self._platform
+    self._repetitions: int = repetitions
 
   @property
   def repetitions(self) -> int:
     return self._repetitions
 
   @property
-  def browsers(self) -> Tuple[Browser, ...]:
+  def browsers(self) -> tuple[Browser, ...]:
     return self._browsers
-
-  @property
-  def config(self) -> EnvironmentConfig:
-    return self._config
-
-  @property
-  def validation_mode(self) -> ValidationMode:
-    return self._validation_mode
 
   def _add_min_delay(self, seconds: float) -> None:
     end_time = dt.datetime.now() + dt.timedelta(seconds=seconds)
@@ -96,38 +72,6 @@ class HostEnvironment:
     delta = self._wait_until - dt.datetime.now()
     if delta > dt.timedelta(0):
       self._platform.sleep(delta)
-
-  def handle_validation_warning(self, message: str) -> None:
-    message = f"Runner/Host environment requests cannot be fulfilled: {message}"
-    self.handle_warning(message)
-
-  def handle_warning(self,
-                     message: str,
-                     allow_interactive: bool = True) -> None:
-    """Process a warning, depending on the requested mode, this will
-    - throw an error,
-    - log a warning,
-    - prompts for continue [Yn], or
-    - skips (and just debug logs) a warning.
-    If returned True (in the prompt mode) the env validation may continue.
-    """
-    if self._validation_mode == ValidationMode.SKIP:
-      logging.debug("Ignoring %s", message)
-      return
-    if self._validation_mode == ValidationMode.WARN:
-      logging.warning(message)
-      return
-    if self._validation_mode == ValidationMode.PROMPT:
-      if allow_interactive:
-        result = input(f"{colorama.Fore.RED}{message} Continue?"
-                       f"{colorama.Fore.RESET} [Yn]")
-        # Accept <enter> as default input to continue.
-        if result.lower() != "n":
-          return
-    elif self._validation_mode != ValidationMode.THROW:
-      raise ValueError(
-          f"Unknown environment validation mode={self._validation_mode}")
-    raise ValidationError(message)
 
   def validate_url(self,
                    url: str,
@@ -187,7 +131,7 @@ class HostEnvironment:
 
   def _check_disk_space(self) -> None:
     limit = self._config.disk_min_free_space_gib
-    if limit is EnvironmentConfig.IGNORE:
+    if limit is EnvConfig.IGNORE:
       return
     # Check the remaining disk space on the FS where we write the results.
     usage = self._platform.disk_usage(self._out_dir)
@@ -198,7 +142,7 @@ class HostEnvironment:
 
   def _check_power(self) -> None:
     use_battery = self._config.power_use_battery
-    if use_battery is EnvironmentConfig.IGNORE:
+    if use_battery is EnvConfig.IGNORE:
       return
     battery_probes = []
     # Certain probes may require battery power:
@@ -218,7 +162,7 @@ class HostEnvironment:
 
   def _check_cpu_usage(self) -> None:
     max_cpu_usage = self._config.cpu_max_usage_percent
-    if max_cpu_usage is EnvironmentConfig.IGNORE:
+    if max_cpu_usage is EnvConfig.IGNORE:
       return
     cpu_usage_percent = round(100 * self._platform.cpu_usage(), 1)
     if cpu_usage_percent > max_cpu_usage:
@@ -228,7 +172,7 @@ class HostEnvironment:
 
   def _check_cpu_temperature(self) -> None:
     min_relative_speed = self._config.cpu_min_relative_speed
-    if min_relative_speed is EnvironmentConfig.IGNORE:
+    if min_relative_speed is EnvConfig.IGNORE:
       return
     cpu_speed = self._platform.get_relative_cpu_speed()
     if cpu_speed < min_relative_speed:
@@ -239,7 +183,7 @@ class HostEnvironment:
 
   def _check_system_min_uptime(self) -> None:
     min_uptime = self._config.system_min_uptime
-    if min_uptime is EnvironmentConfig.IGNORE:
+    if min_uptime is EnvConfig.IGNORE:
       return
     if uptime := self._platform.uptime():
       if uptime < min_uptime:
@@ -247,12 +191,11 @@ class HostEnvironment:
             f"Expected min system uptime {min_uptime} but got {uptime}. "
             "The OS might not be ready for a clean measurement.")
 
-
   def _check_forbidden_system_process(self) -> None:
     # Verify that no terminals are running.
     # They introduce too much overhead. (As measured with powermetrics)
     system_forbidden_process_names = self._config.system_forbidden_process_names
-    if system_forbidden_process_names is EnvironmentConfig.IGNORE:
+    if system_forbidden_process_names is EnvConfig.IGNORE:
       return
     process_found = self._platform.process_running(
         system_forbidden_process_names)
@@ -277,22 +220,22 @@ class HostEnvironment:
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:
       return
-    grouped_browsers: Dict[plt.Platform,
-                           List[Browser]] = collection_helper.group_by(
+    grouped_browsers: dict[plt.Platform,
+                           list[Browser]] = collection_helper.group_by(
                                self.browsers,
                                key=lambda browser: browser.platform)
     for platform, browsers in grouped_browsers.items():
       self._check_running_binaries_on_platform(platform, browsers)
 
   def _check_running_binaries_on_platform(
-      self, platform: plt.Platform, platform_browsers: List[Browser]) -> None:
+      self, platform: plt.Platform, platform_browsers: list[Browser]) -> None:
     # On Android, an app's process lifetime is not controlled by the user or
     # the app itself. OS can start/terminate processes in the background, so
     # we don't check for those.
     if platform.is_android:
       return
 
-    browser_binaries: Dict[str, List[Browser]] = collection_helper.group_by(
+    browser_binaries: dict[str, list[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):
@@ -329,7 +272,7 @@ class HostEnvironment:
 
   def _check_screen_brightness(self) -> None:
     brightness = self._config.screen_brightness_percent
-    if brightness is EnvironmentConfig.IGNORE:
+    if brightness is EnvConfig.IGNORE:
       return
     assert 0 <= brightness <= 100, f"Invalid brightness={brightness}"
     self._platform.set_main_display_brightness(brightness)
@@ -341,7 +284,7 @@ class HostEnvironment:
 
   def _check_screen_refresh_rate(self) -> None:
     refresh_rate = self._config.screen_refresh_rate
-    if not self._platform.is_macos or refresh_rate is EnvironmentConfig.IGNORE:
+    if not self._platform.is_macos or refresh_rate is EnvConfig.IGNORE:
       return
     success, log_msg = self._platform.set_display_refresh_rate(refresh_rate)
     if success:
@@ -355,7 +298,7 @@ class HostEnvironment:
 
   def _check_config_headless(self) -> None:
     requested_headless = self._config.browser_is_headless
-    if requested_headless is EnvironmentConfig.IGNORE:
+    if requested_headless is EnvConfig.IGNORE:
       return
     # Check that browsers are running in the requested headless mode:
     for browser in self.browsers:
@@ -388,7 +331,7 @@ class HostEnvironment:
         raise ValidationError(
             f"Probe='{probe.NAME}' validation failed: {e}") from e
     require_probes = self._config.require_probes
-    if require_probes is EnvironmentConfig.IGNORE:
+    if require_probes is EnvConfig.IGNORE:
       return
     if self._config.require_probes and not self._probes:
       self.handle_validation_warning("No probes specified.")
@@ -444,7 +387,7 @@ class HostEnvironment:
       return
     self._file_access_access_warning(f"the parent result dir: {out_dir})")
 
-  def _has_read_write_access(self, test_dir: AnyPathLike) -> bool:
+  def _has_read_write_access(self, test_dir: pth.AnyPathLike) -> bool:
     try:
       self.platform.mkdir(test_dir, exist_ok=True, parents=True)
       with self.platform.NamedTemporaryFile(
@@ -469,7 +412,6 @@ class HostEnvironment:
         "Likely missing 'Full Disk Access' macOS Privacy & Security "
         f"permission for {term_program}.")
 
-
   def check_browser_focused(self, browser: Browser) -> None:
     if (self._config.browser_allow_background or not browser.pid or
         browser.viewport.is_headless):
@@ -483,9 +425,6 @@ class HostEnvironment:
           "was not in the foreground at the end of the benchmark. "
           "Background apps and tabs can be heavily throttled.",
           allow_interactive=False)
-
-  def setup(self) -> None:
-    self.validate()
 
   def validate(self) -> None:
     logging.info("-" * 80)
@@ -515,21 +454,3 @@ class HostEnvironment:
     self._check_screen_autobrightness()
     self._check_macos_terminal()
     self._check_file_access()
-
-  def check_installed(self,
-                      binaries: Iterable[str],
-                      message: str = "Missing binaries: {}") -> None:
-    assert not isinstance(binaries, str), "Expected iterable of strings."
-    missing_binaries = list(
-        binary for binary in binaries if not self._platform.which(binary))
-    if missing_binaries:
-      self.handle_validation_warning(message.format(missing_binaries))
-
-  def check_sh_success(self,
-                       *args: CmdArg,
-                       message: str = "Could not execute: {}") -> None:
-    assert args, "Missing sh arguments"
-    try:
-      assert self._platform.sh_stdout(*args, quiet=True)
-    except plt.SubprocessError as e:
-      self.handle_validation_warning(message.format(e))

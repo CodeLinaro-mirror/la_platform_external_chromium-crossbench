@@ -11,7 +11,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import Final, List, Optional, Sequence, Tuple, Type
+from typing import Final, Optional, Sequence, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -22,14 +22,15 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
-from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
-                                            LoadLine2TabletBenchmark)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
+                                            LoadLine2TabletBenchmark)
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
+from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
@@ -103,7 +104,8 @@ class CrossbenchMockArgsMixin:
         tabs=kwargs.pop("tabs", TabController.default()),
         about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
         run_login=kwargs.pop("run_login", True),
-        run_setup=kwargs.pop("run_setup", True))
+        run_setup=kwargs.pop("run_setup", True),
+        env=EnvConfig.default())
     assert not kwargs, f"got unused kwargs: {kwargs}"
     return args
 
@@ -111,7 +113,7 @@ class CrossbenchMockArgsMixin:
 class BaseCrossbenchTestCase(
     CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
 
-  def filter_splashscreen_urls(self, urls: Sequence[str]) -> List[str]:
+  def filter_splashscreen_urls(self, urls: Sequence[str]) -> list[str]:
     return [url for url in urls if not url.startswith("data:")]
 
   @override
@@ -129,7 +131,7 @@ class BaseCrossbenchTestCase(
       self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
     self.out_dir = pathlib.Path("/tmp/results/test")
     self.out_dir.parent.mkdir(parents=True)
-    self.browsers: List[mock_browser.MockBrowser] = [
+    self.browsers: list[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
         mock_browser.MockChromeStable(
@@ -216,7 +218,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   def run_cli_output(self,
                      *args,
                      raises=None,
-                     enable_logging: bool = True) -> Tuple[MockCLI, str, str]:
+                     enable_logging: bool = True) -> tuple[MockCLI, str, str]:
     with mock.patch(
         "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
             "sys.stderr", new_callable=io.StringIO) as mock_stderr:

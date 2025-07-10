@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import TYPE_CHECKING, Iterable, Tuple
+from typing import TYPE_CHECKING, Iterable
 
 from ordered_set import OrderedSet
 
@@ -65,11 +65,11 @@ class RunThreadGroup(threading.Thread):
     return self._runner
 
   @property
-  def runs(self) -> Tuple[Run, ...]:
+  def runs(self) -> tuple[Run, ...]:
     return tuple(self._runs)
 
   @property
-  def browser_sessions(self) -> Tuple[BrowserSessionRunGroup, ...]:
+  def browser_sessions(self) -> tuple[BrowserSessionRunGroup, ...]:
     return tuple(self._browser_sessions)
 
   @property

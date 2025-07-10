@@ -2,11 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from typing import Any, Dict
+from typing import Any
+
 import hjson
 
 
-def _check_for_duplicate_keys(key_values) -> Dict[str, Any]:
+def _check_for_duplicate_keys(key_values) -> dict[str, Any]:
   result = {}
   for key, value in key_values:
     if key in result:

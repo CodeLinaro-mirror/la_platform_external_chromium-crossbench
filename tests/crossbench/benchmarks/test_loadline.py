@@ -11,17 +11,19 @@ import argparse
 import datetime as dt
 from typing import Sequence
 
+import pandas as pd
 from typing_extensions import override
 
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
                                             LoadLine1TabletBenchmark)
+from crossbench.benchmarks.loadline import loadline_1
 from crossbench.benchmarks.loadline.loadline import LoadLinePageFilter
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from tests import test_helper
-from tests.crossbench.base import BaseCliTestCase
+from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
 
 
@@ -100,8 +102,49 @@ class LoadLine1BenchmarkCliTestCase(BaseCliTestCase):
     pass
 
 
+class TestLoadLine1Helpers(BaseCrossbenchTestCase):
+
+  def test_process_scores(self):
+    query_result = pd.DataFrame(
+        columns=["score", "cb_browser", "cb_story", "cb_temperature", "cb_run"],
+        data=[[4, "chrome", "story1", 0, 0], [6, "chrome", "story1", 0, 1],
+              [19, "chrome", "story2", 0, 0], [21, "chrome", "story2", 0, 1]])
+    scores = loadline_1.process_scores(query_result)
+
+    self.assertEqual(scores.shape, (1, 3))
+    self.assertAlmostEqual(scores["TOTAL_SCORE"][0], 10)
+    self.assertAlmostEqual(scores["story1"][0], 5)
+    self.assertAlmostEqual(scores["story2"][0], 20)
+
+  def test_process_breakdown(self):
+    query_result = pd.DataFrame(
+        columns=[
+            "network", "process_launch", "renderer", "compositor", "gpu",
+            "surfaceflinger", "cb_browser", "cb_story", "cb_temperature",
+            "cb_run"
+        ],
+        data=[[5, 3, 9, 11, 10, 10, "chrome", "story1", 0, 0],
+              [5, 3, 11, 9, 10, 10, "chrome", "story1", 0, 1],
+              [7, 10, 19, 21, 20, 20, "chrome", "story2", 0, 0],
+              [7, 10, 21, 19, 20, 20, "chrome", "story2", 0, 1]])
+    breakdown = loadline_1.process_breakdown(query_result)
+
+    self.assertEqual(breakdown.shape, (2, 5))
+    self.assertAlmostEqual(breakdown["os"][0], 5)
+    self.assertAlmostEqual(breakdown["os"][1], 10)
+    self.assertAlmostEqual(breakdown["renderer"][0], 10)
+    self.assertAlmostEqual(breakdown["renderer"][1], 20)
+    self.assertAlmostEqual(breakdown["compositor"][0], 10)
+    self.assertAlmostEqual(breakdown["compositor"][1], 20)
+    self.assertAlmostEqual(breakdown["gpu"][0], 10)
+    self.assertAlmostEqual(breakdown["gpu"][1], 20)
+    self.assertAlmostEqual(breakdown["surfaceflinger"][0], 10)
+    self.assertAlmostEqual(breakdown["surfaceflinger"][1], 20)
+
+
 # Don't expose abstract base test cases.
 del BaseLoadLineBenchmarkTestCase
+del BaseCrossbenchTestCase
 del BaseCliTestCase
 del SubStoryTestCase
 

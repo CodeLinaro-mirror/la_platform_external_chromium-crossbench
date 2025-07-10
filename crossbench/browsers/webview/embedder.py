@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
-import atexit
 import logging
+import os
 import shlex
-from typing import TYPE_CHECKING, Sequence, Tuple
+from typing import TYPE_CHECKING, Sequence
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -32,7 +32,6 @@ class WebviewEmbedder(Webview):
     # and kill any currently running Embedder app instances to make sure
     # it picks up the new flags when started by the Benchmark.
     self._backup_chrome_flags()
-    atexit.register(self._restore_chrome_flags)
     args = self._get_browser_flags_for_session(session)
     logging.debug("%s: setting flags file contents in %s", self,
                   self._chrome_command_line_path)
@@ -55,7 +54,7 @@ class WebviewEmbedder(Webview):
                     session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> ChromiumDriver:
     options = self._create_options(session, [])
-    service = webdriver.ChromeService(executable_path=driver_path)
+    service = webdriver.ChromeService(executable_path=os.fspath(driver_path))
     driver = webdriver.Chrome(options=options, service=service)
     return driver
 
@@ -78,7 +77,7 @@ class WebviewEmbedder(Webview):
 
   @override
   def _log_browser_start(self,
-                         args: Tuple[str, ...],
+                         args: tuple[str, ...],
                          driver_path: pth.AnyPath | None = None) -> None:
     super()._log_browser_start(args, driver_path)
     logging.info("📱 STARTING BROWSER Embedder: %s",

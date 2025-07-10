@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-if (window.location ==
-    'https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html') {
+if (window.location.href ===
+    'https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile' +
+        '-intl-hnk/index.html') {
   const button_id = 'headerMenuIcon';
   const menu_selector = '.header--active';
   let complete = false;

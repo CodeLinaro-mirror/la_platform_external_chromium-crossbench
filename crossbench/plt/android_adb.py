@@ -10,16 +10,18 @@ import math
 import re
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
+from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
@@ -48,18 +50,18 @@ def _find_adb_bin(platform: Platform) -> pth.AnyPath:
 
 def adb_devices(
     platform: Platform,
-    adb_bin: Optional[pth.AnyPath] = None) -> Dict[str, Dict[str, str]]:
+    adb_bin: Optional[pth.AnyPath] = None) -> dict[str, dict[str, str]]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
-  result: Dict[str, Dict[str, str]] = {}
+  result: dict[str, dict[str, str]] = {}
   for line in raw_lines:
     serial_id, details = line.split(" ", maxsplit=1)
     result[serial_id.strip()] = _parse_adb_device_info(details.strip())
   return result
 
 
-def _parse_adb_device_info(value: str) -> Dict[str, str]:
+def _parse_adb_device_info(value: str) -> dict[str, str]:
   """
   Convert a line from adb devices -l into a descriptive dictionary.
   `value` is a line of output, typically:
@@ -75,7 +77,7 @@ def _parse_adb_device_info(value: str) -> Dict[str, str]:
 class Adb:
 
   _serial_id: str
-  _device_info: Dict[str, str]
+  _device_info: dict[str, str]
   _adb_bin: pth.AnyPath
   _bundletool: Optional[pth.AnyPath]
 
@@ -101,7 +103,7 @@ class Adb:
 
   def _find_serial_id(
       self,
-      device_identifier: Optional[str] = None) -> Tuple[str, Dict[str, str]]:
+      device_identifier: Optional[str] = None) -> tuple[str, dict[str, str]]:
     devices = self.devices()
     if not devices:
       raise ValueError("adb could not find any attached devices."
@@ -115,7 +117,7 @@ class Adb:
       raise ValueError(f"Invalid device identifier: {repr(device_identifier)}")
     if device_identifier in devices:
       return device_identifier, devices[device_identifier]
-    matches: List[str] = []
+    matches: list[str] = []
     under_name = device_identifier.replace(" ", "_")
     for key, device_info in devices.items():
       for _, info_value in device_info.items():
@@ -151,7 +153,7 @@ class Adb:
     return int(self.getprop("ro.build.version.release"))
 
   @property
-  def device_info(self) -> Dict[str, str]:
+  def device_info(self) -> dict[str, str]:
     return self._device_info
 
   def _build_adb_cmd(self,
@@ -303,12 +305,22 @@ class Adb:
   def unroot(self) -> None:
     self._adb("unroot", use_serial_id=False)
 
-  def devices(self) -> Dict[str, Dict[str, str]]:
+  def devices(self) -> dict[str, dict[str, str]]:
     return adb_devices(self._host_platform, self._adb_bin)
 
-  def forward(self, local: int, remote: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout("forward", f"{protocol}:{local}",
-                              f"{protocol}:{remote}").strip()
+  def forward(self,
+              local: int,
+              remote: int | str,
+              local_protocol: str = "tcp",
+              remote_protocol: str = "tcp",
+              flags_data: FlagsData = None) -> int:
+    cmd_args: list[Any] = ["forward"]
+    if flags_data:
+      parsed_flags = Flags(flags_data)
+      cmd_args.extend(list(parsed_flags))
+    cmd_args.append(f"{local_protocol}:{local}")
+    cmd_args.append(f"{remote_protocol}:{remote}")
+    stdout = self._adb_stdout(*cmd_args).strip()
     if not stdout:
       used_ports = self._adb_stdout("forward", "--list")
       raise ValueError(
@@ -361,14 +373,14 @@ class Adb:
     cmd: ListCmdArgs = ["getprop", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding).strip()
 
-  def services(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:
+  def services(self, quiet: bool = False, encoding: str = "utf-8") -> list[str]:
     lines = list(
         self.cmd("-l", quiet=quiet, encoding=encoding).strip().splitlines())
     lines = lines[1:]
     lines.sort()
     return [line.strip() for line in lines]
 
-  def packages(self, quiet: bool = False, encoding: str = "utf-8") -> List[str]:
+  def packages(self, quiet: bool = False, encoding: str = "utf-8") -> list[str]:
     # adb shell cmd package list packages
     raw_list = self.cmd(
         "package", "list", "packages", quiet=quiet,
@@ -460,16 +472,69 @@ class Adb:
       self.shell(*cmd)
 
 
+class AndroidAdbPortManager(PortManager):
+
+  def __init__(self, platform: AndroidAdbPlatform, adb: Adb) -> None:
+    super().__init__(platform)
+    self._adb: Adb = adb
+
+  @property
+  def host_platform(self) -> Platform:
+    return self._platform.host_platform
+
+  @override
+  def forward(self, local_port: int, remote_port: int) -> int:
+    local_port = NumberParser.positive_zero_int(local_port, "local_port")
+    remote_port = NumberParser.port_number(remote_port, "remote_port")
+    local_port = self._adb.forward(
+        local_port, remote_port, local_protocol="tcp", remote_protocol="tcp")
+    logging.debug("Forwarded Remote Port: %s:%s <= %s:%s",
+                  self.host_platform.name, local_port, self, remote_port)
+    return local_port
+
+  @override
+  def forward_devtools(self, local_port: int, remote_identifier: str) -> int:
+    local_port = NumberParser.positive_zero_int(local_port, "local_port")
+    local_port = self._adb.forward(
+        local=local_port,
+        remote=remote_identifier,
+        local_protocol="tcp",
+        remote_protocol="localabstract")
+    logging.debug("Forwarded DevTools Port: %s:%s <= %s:%s",
+                  self.host_platform.name, local_port, self, remote_identifier)
+    return local_port
+
+  @override
+  def stop_forward(self, local_port: int) -> None:
+    self._adb.forward_remove(local_port, protocol="tcp")
+
+  @override
+  def reverse_forward(self, remote_port: int, local_port: int) -> int:
+    remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
+    local_port = NumberParser.port_number(local_port, "local_port")
+    remote_port = self._adb.reverse(remote_port, local_port, protocol="tcp")
+    logging.debug("Forwarded Local Port: %s:%s => %s:%s", self.host_platform,
+                  local_port, self, remote_port)
+    return remote_port
+
+  @override
+  def stop_reverse_forward(self, remote_port: int) -> None:
+    self._adb.reverse_remove(remote_port, protocol="tcp")
+
+
 class AndroidAdbPlatform(RemotePosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
                adb: Optional[Adb] = None) -> None:
-    super().__init__(host_platform)
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb = adb or Adb(host_platform, device_identifier)
+    super().__init__(host_platform)
+
+  def _create_port_manager(self) -> PortManager:
+    return AndroidAdbPortManager(self, self._adb)
 
   @property
   @override
@@ -589,12 +654,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> List[Dict[str, Any]]:
+                       recursive: bool = False) -> list[dict[str, Any]]:
     # TODO: implement
     return []
 
   @override
-  def foreground_process(self) -> Optional[Dict[str, Any]]:
+  def foreground_process(self) -> Optional[dict[str, Any]]:
     # adb shell dumpsys activity activities
     # TODO: implement
     return None
@@ -659,32 +724,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         *args, shell=shell, stdin=stdin, env=env, quiet=quiet, check=check)
 
   @override
-  def port_forward(self, local_port: int, remote_port: int) -> int:
-    local_port = NumberParser.positive_zero_int(local_port, "local_port")
-    remote_port = NumberParser.port_number(remote_port, "remote_port")
-    local_port = self.adb.forward(local_port, remote_port, protocol="tcp")
-    logging.debug("Forwarded Remote Port: %s:%s <= %s:%s",
-                  self._host_platform.name, local_port, self, remote_port)
-    return local_port
-
-  @override
-  def stop_port_forward(self, local_port: int) -> None:
-    self.adb.forward_remove(local_port, protocol="tcp")
-
-  @override
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
-    remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
-    local_port = NumberParser.port_number(local_port, "local_port")
-    remote_port = self.adb.reverse(remote_port, local_port, protocol="tcp")
-    logging.debug("Forwarded Local Port: %s:%s => %s:%s", self._host_platform,
-                  local_port, self, remote_port)
-    return remote_port
-
-  @override
-  def stop_reverse_port_forward(self, remote_port: int) -> None:
-    self.adb.reverse_remove(remote_port, protocol="tcp")
-
-  @override
   def pull(self, from_path: pth.AnyPath,
            to_path: pth.LocalPath) -> pth.LocalPath:
     device_path = self.path(from_path)
@@ -703,12 +742,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
     lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()
     if len(lines) == 1:
       return []
 
-    res: List[Dict[str, Any]] = []
+    res: list[dict[str, Any]] = []
     for line in lines[1:]:
       tokens = line.strip().split(maxsplit=1)
       assert len(tokens) == 2, f"Got invalid process tokens: {tokens}"
@@ -716,14 +755,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return res
 
   @override
-  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
     dumpsys_output = self.sh_stdout("dumpsys", "meminfo", "--package",
                                     process_name)
     return self._parse_dumpsys_meminfo(dumpsys_output)
 
   @functools.lru_cache(maxsize=1)
   @override
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
         "info": self.cpu,
@@ -741,15 +780,15 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     system_details = super().system_details()
     system_details.update({
         "Android": self._getprop_system_details(),
     })
     return system_details
 
-  def _getprop_system_details(self) -> Dict[str, Any]:
-    properties: Dict[str, str] = {}
+  def _getprop_system_details(self) -> dict[str, Any]:
+    properties: dict[str, str] = {}
     for line in self.adb.shell_stdout("getprop").strip().splitlines():
       result = self._GETPROP_RE.fullmatch(line)
       if result:
@@ -780,11 +819,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   _DUMPSYS_WINDOW_DISPLAYS_RE = re.compile(r" cur=(?P<x>\d+)x(?P<y>\d+) ")
 
   @functools.lru_cache(maxsize=1)
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     return ({"resolution": self.display_resolution(), "refresh_rate": -1},)
 
   @override
-  def display_resolution(self) -> Tuple[int, int]:
+  def display_resolution(self) -> tuple[int, int]:
     displays_out = self.sh_stdout("dumpsys", "window", "displays")
     match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
     if match_result is None:
@@ -799,7 +838,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
 
   def _parse_dumpsys_meminfo(self,
-                             meminfo_output: str) -> Dict[str, ProcessMeminfo]:
+                             meminfo_output: str) -> dict[str, ProcessMeminfo]:
     pid_sections = re.split(r"\*\* MEMINFO in pid (\d+) \[(.*?)] \*\*",
                             meminfo_output)[1:]
 
@@ -810,11 +849,20 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       process_name = pid_sections[i + 1].strip()
       raw_process_info = pid_sections[i + 2]
 
-      pss_rss_total = re.search(
+      pss_rss_total_v1 = re.search(
           r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
           r"\s+TOTAL SWAP \(KB\):\s+(?P<swap_total>\d+)", raw_process_info)
 
-      if not pss_rss_total:
+      # TOTAL PSS: 91273  TOTAL RSS: 259028  TOTAL SWAP PSS: 209
+      pss_rss_total_v2 = re.search(
+          r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
+          r"\s+TOTAL SWAP PSS:\s+(?P<swap_total>\d+)", raw_process_info)
+
+      if pss_rss_total_v1:
+        pss_rss_total = pss_rss_total_v1
+      elif pss_rss_total_v2:
+        pss_rss_total = pss_rss_total_v2
+      else:
         raise ValueError("Failed to parse meminfo.")
 
       meminfos[process_name] = ProcessMeminfo(
@@ -822,5 +870,4 @@ class AndroidAdbPlatform(RemotePosixPlatform):
           pss_total=int(pss_rss_total["pss_total"]),
           rss_total=int(pss_rss_total["rss_total"]),
           swap_total=int(pss_rss_total["swap_total"]))
-
     return meminfos

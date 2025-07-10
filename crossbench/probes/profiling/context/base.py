@@ -8,7 +8,7 @@ import abc
 import logging
 import subprocess
 from functools import cached_property
-from typing import TYPE_CHECKING, Tuple, cast
+from typing import TYPE_CHECKING, cast
 
 from typing_extensions import override
 
@@ -42,7 +42,7 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     self._story_ready = True
 
   @cached_property
-  def renderer_pid_tid(self) -> Tuple[int, int]:
+  def renderer_pid_tid(self) -> tuple[int, int]:
     assert self._story_ready, (
         "Fetching renderer PID/TID before the story is loaded could lead to "
         "the wrong PID/TID being used. This should never happen TM!")

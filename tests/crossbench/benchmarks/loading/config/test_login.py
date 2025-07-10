@@ -64,20 +64,31 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     self.action_runner = DefaultActionRunner()
 
-  def expect_google_login(self):
+  def expect_successful_google_login(self):
+    # Wait for email field
     self.browser.expect_js(result=True)
+    # Click submit email
+    self.browser.expect_js(result=None)
+
+    # Wait for password field
     self.browser.expect_js(result=True)
+    # Click submit password
+    self.browser.expect_js(result=None)
+
+    # Wait for redirect after password
     self.browser.expect_js(result=True)
+    # Wait for readystate complete
     self.browser.expect_js(result=True)
-    self.browser.expect_js(result=True)
-    self.browser.expect_js(result=True)
-    self.browser.expect_js(result=True)
+    # Return successful login URL
+    self.browser.expect_js(result="https://myaccount.google.com")
+    # Check for suspicious activity
+    self.browser.expect_js(result=False)
 
   def test_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
     page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
 
-    self.expect_google_login()
+    self.expect_successful_google_login()
 
     self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])
@@ -97,7 +108,79 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     self.browser.expect_is_logged_in(UsernamePassword("test", "s3cr3t"))
 
-    self.expect_google_login()
+    self.expect_successful_google_login()
+
+    self.run.story_secrets = page[0].secrets
+    config.pages[0].login.run_with(self.action_runner, self.run, page[0])
+
+  def test_full_account_maintenance_flow(self):
+    config = PagesConfig.parse(self._CONFIG_DATA)
+    page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
+
+    # Wait for email field
+    self.browser.expect_js(result=True)
+    # Click submit email
+    self.browser.expect_js(result=None)
+
+    # Wait for password field
+    self.browser.expect_js(result=True)
+    # Click submit password
+    self.browser.expect_js(result=None)
+
+    # Wait for redirect after password
+    self.browser.expect_js(result=True)
+    # Wait for readystate complete
+    self.browser.expect_js(result=True)
+
+    # Return passkey URL
+    self.browser.expect_js(
+        result="https://accounts.google.com/v3/signin/speedbump/passkeyenrollment"
+    )
+    # Wait for skip element
+    self.browser.expect_js(result=1)
+    # Click skip element
+    self.browser.expect_js(result=1)
+    # Wait for URL change
+    self.browser.expect_js(result=True)
+    # Wait for ready state complete
+    self.browser.expect_js(result=True)
+
+    # Return passkey URL
+    self.browser.expect_js(result="https://gds.google.com/web/recoveryoptions")
+    # Wait for skip element
+    self.browser.expect_js(result=1)
+    # Click skip element
+    self.browser.expect_js(result=1)
+    # Wait for URL change
+    self.browser.expect_js(result=True)
+    # Wait for ready state complete
+    self.browser.expect_js(result=True)
+
+    # Return passkey URL
+    self.browser.expect_js(result="https://gds.google.com/web/homeaddress")
+    # Wait for skip element
+    self.browser.expect_js(result=1)
+    # Click skip element
+    self.browser.expect_js(result=1)
+    # Wait for URL change
+    self.browser.expect_js(result=True)
+    # Wait for ready state complete
+    self.browser.expect_js(result=True)
+
+    # Return successful login URL
+    self.browser.expect_js(result="https://myaccount.google.com")
+
+    # Return suspicious activity is present
+    self.browser.expect_js(result=True)
+    # Click suspicious activity button
+    self.browser.expect_js(result=1)
+    # Wait for 'yes' button
+    self.browser.expect_js(result=1)
+    # Click 'yes' button
+    self.browser.expect_js(result=1)
+    # Wait 'yes' button not present.
+    self.browser.expect_js(result=1)
+
 
     self.run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.run, page[0])

@@ -244,7 +244,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     # TODO(cbruni): replace with terminate_gracefully
     self.browser_platform.terminate(self._perfetto_pid)
     try:
-      for _ in WaitRange(1, 30).wait_with_backoff():
+      for _ in WaitRange(1, timeout=30).wait_with_backoff():
         if not self.browser_platform.process_info(self._perfetto_pid):
           break
     except TimeoutError:

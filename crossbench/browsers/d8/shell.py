@@ -12,7 +12,7 @@ import shlex
 import subprocess
 import threading
 import time
-from typing import TYPE_CHECKING, Final, List, Optional, Sequence
+from typing import TYPE_CHECKING, Final, Optional, Sequence
 
 from crossbench.helper.state import BaseState, StateMachine
 
@@ -114,7 +114,7 @@ class D8Shell:
     time_left: float = timeout.total_seconds()
     expected_end_time = time.time() + time_left
 
-    buffer: List[str] = []
+    buffer: list[str] = []
     while time_left > 0:
       try:
         data = self._reader.get(self._poll_interval)

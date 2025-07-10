@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Self,
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self,
                     TypeAlias)
 
 from typing_extensions import override
@@ -40,8 +40,6 @@ def merge_bool(name: str, left: Optional[bool],
   return left
 
 
-
-
 def merge_number_max(name: str, left: Optional[Number],
                      right: Optional[Number]) -> Optional[Number]:
   del name
@@ -62,8 +60,8 @@ def merge_number_min(name: str, left: Optional[Number],
   return min(left, right)
 
 
-def merge_str_list(name: str, left: Optional[List[str]],
-                   right: Optional[List[str]]) -> Optional[List[str]]:
+def merge_str_list(name: str, left: Optional[list[str]],
+                   right: Optional[list[str]]) -> Optional[list[str]]:
   del name
   if left is None:
     return right
@@ -82,12 +80,12 @@ def merge_duration_max(name: str, left: Optional[dt.timedelta],
   return max(left, right)
 
 
-ENV_CONFIG_PRESETS: Dict[str, "EnvironmentConfig"] = {}
+ENV_CONFIG_PRESETS: dict[str, "EnvConfig"] = {}
 
 
 @dataclasses.dataclass(frozen=True)
-class EnvironmentConfig(ConfigObject):
-  IGNORE = None
+class EnvConfig(ConfigObject):
+  IGNORE: ClassVar[None] = None
 
   browser_allow_background: bool | None = IGNORE
   browser_allow_existing_process: bool | None = IGNORE
@@ -101,16 +99,16 @@ class EnvironmentConfig(ConfigObject):
   screen_brightness_percent: int | None = IGNORE
   screen_refresh_rate: int | None = IGNORE
   system_allow_monitoring: bool | None = IGNORE
-  system_forbidden_process_names: List[str] | None = IGNORE
+  system_forbidden_process_names: list[str] | None = IGNORE
   system_min_uptime: dt.timedelta | None = IGNORE
 
   @classmethod
-  def default(cls) -> EnvironmentConfig:
+  def default(cls) -> EnvConfig:
     return ENV_CONFIG_PRESETS["default"]
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> EnvironmentConfig:
+  def parse_str(cls, value: str) -> EnvConfig:
     value = ObjectParser.non_empty_str(value)
     if preset := ENV_CONFIG_PRESETS.get(value):
       return preset
@@ -122,7 +120,7 @@ class EnvironmentConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     if "env" in config:
       config = config["env"]
     return super().parse_dict(config, **kwargs)
@@ -167,8 +165,8 @@ class EnvironmentConfig(ConfigObject):
         "system_min_uptime", type=DurationParser.positive_or_zero_duration)
     return parser
 
-  def merge(self, other: EnvironmentConfig) -> EnvironmentConfig:
-    mergers: Dict[str, Callable[[str, Any, Any], Any]] = {
+  def merge(self, other: EnvConfig) -> EnvConfig:
+    mergers: dict[str, Callable[[str, Any, Any], Any]] = {
         "browser_allow_background": merge_bool,
         "browser_allow_existing_process": merge_bool,
         "browser_is_headless": merge_bool,
@@ -189,23 +187,23 @@ class EnvironmentConfig(ConfigObject):
       self_value = getattr(self, name)
       other_value = getattr(other, name)
       kwargs[name] = merger(name, self_value, other_value)
-    return EnvironmentConfig(**kwargs)
+    return EnvConfig(**kwargs)
 
 
-_config_default = EnvironmentConfig()
-_config_strict = EnvironmentConfig(
+_config_default = EnvConfig()
+_config_strict = EnvConfig(
     cpu_max_usage_percent=98,
     cpu_min_relative_speed=1,
     system_allow_monitoring=False,
     browser_allow_existing_process=False,
     require_probes=True,
     system_min_uptime=dt.timedelta(minutes=5))
-_config_battery: EnvironmentConfig = _config_strict.merge(
-    EnvironmentConfig(power_use_battery=True))
-_config_power: EnvironmentConfig = _config_strict.merge(
-    EnvironmentConfig(power_use_battery=False))
-_config_catan: EnvironmentConfig = _config_strict.merge(
-    EnvironmentConfig(
+_config_battery: EnvConfig = _config_strict.merge(
+    EnvConfig(power_use_battery=True))
+_config_power: EnvConfig = _config_strict.merge(
+    EnvConfig(power_use_battery=False))
+_config_catan: EnvConfig = _config_strict.merge(
+    EnvConfig(
         screen_brightness_percent=65,
         system_forbidden_process_names=["terminal", "iterm2"],
         screen_allow_autobrightness=False))

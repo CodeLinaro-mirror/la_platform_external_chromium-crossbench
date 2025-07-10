@@ -10,8 +10,7 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple,
-                    Type)
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
 
 import tabulate as tbl
 
@@ -35,7 +34,7 @@ from crossbench.runner.runner import Runner
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   BenchmarkClsT = Type[Benchmark]
-  BrowserLookupTableT = Dict[str, Tuple[Type[Browser], pth.LocalPath]]
+  BrowserLookupTableT = dict[str, tuple[Type[Browser], pth.LocalPath]]
   from crossbench.cli.subcommand.base import CrossbenchSubcommand
 
 
@@ -120,7 +119,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
     file.write(f"  See {readme_file} for more details.\n")
 
 class CrossBenchCLI:
-  BENCHMARKS: Tuple[BenchmarkClsT, ...] = (
+  BENCHMARKS: tuple[BenchmarkClsT, ...] = (
       benchmarks.EmbedderBenchmark,
       # JetStream:
       benchmarks.JetStream11Benchmark,
@@ -153,6 +152,8 @@ class CrossBenchCLI:
       benchmarks.MotionMark13Benchmark,
       benchmarks.MotionMark131Benchmark,
       benchmarks.MotionMarkMainBenchmark,
+      # Powerline
+      benchmarks.PowerlineBenchmark,
       # Speedometer:
       benchmarks.Speedometer10Benchmark,
       benchmarks.Speedometer20Benchmark,
@@ -167,7 +168,7 @@ class CrossBenchCLI:
   def __init__(self, enable_logging: bool = True) -> None:
     self._enable_logging: bool = enable_logging
     self._console_handler: logging.StreamHandler | None = None
-    self._benchmark_subcommands: Dict[BenchmarkClsT, BenchmarkSubcommand] = {}
+    self._benchmark_subcommands: dict[BenchmarkClsT, BenchmarkSubcommand] = {}
     self.parser = MainCrossBenchArgumentParser(
         description=("A cross browser and cross benchmark runner "
                      "with configurable measurement probes.\n"))
@@ -198,17 +199,8 @@ class CrossBenchCLI:
     return self._last_subcommand
 
   def _setup_parser(self) -> None:
-    self.add_verbosity_argument(self.parser)
-    # Disable colors by default when piped to a file.
-    has_color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
-    self.parser.add_argument(
-        "--no-color",
-        dest="color",
-        action="store_false",
-        default=has_color,
-        help="Disable colored output")
-    self.parser.add_argument(
-        "--version", action="version", version=f"%(prog)s {__version__}")
+    self.add_debugging_arguments(self.parser)
+    self.add_base_arguments(self.parser)
 
   def _setup_subparsers(
       self) -> argparse._SubParsersAction[CrossBenchArgumentParser]:
@@ -219,7 +211,19 @@ class CrossBenchCLI:
         parser_class=CrossBenchArgumentParser)
     return subparsers
 
-  def add_verbosity_argument(self, parser: argparse.ArgumentParser) -> None:
+  def add_base_arguments(self, parser) -> None:
+    # Disable colors by default when piped to a file.
+    has_color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+    parser.add_argument(
+        "--no-color",
+        dest="color",
+        action="store_false",
+        default=has_color,
+        help="Disable colored output")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}")
+
+  def add_debugging_arguments(self, parser: argparse.ArgumentParser):
     debug_group = parser.add_argument_group("Verbosity / Debugging Options")
     verbosity_group = debug_group.add_mutually_exclusive_group()
     verbosity_group.add_argument(
@@ -251,6 +255,7 @@ class CrossBenchCLI:
         action=EnableDebuggingAction,
         nargs=0,
         help="Enable debug output, equivalent to --throw -vvv")
+    return debug_group
 
   def _setup_subcommands(self) -> None:
     for benchmark_cls in self.BENCHMARKS:
@@ -267,7 +272,7 @@ class CrossBenchCLI:
 
   def run(self, argv: Sequence[str]) -> None:
     self._init_logging(argv)
-    unprocessed_argv: List[str] = []
+    unprocessed_argv: list[str] = []
     try:
       argv = self._rename_subcommand(argv)
       # Manually check for unprocessed_argv to print nicer error messages.

@@ -9,8 +9,7 @@ import contextlib
 import copy
 import dataclasses
 import pathlib
-from typing import (TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple,
-                    Type, cast)
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Type, cast
 
 from typing_extensions import override
 
@@ -40,7 +39,7 @@ if TYPE_CHECKING:
 class JsInvocation:
   result: Any
   script: str | re.Pattern | None = None
-  arguments: List[Any] | None = None
+  arguments: list[Any] | None = None
   timeout: dt.timedelta | None = None
 
 
@@ -105,17 +104,17 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     if maybe_driver := settings.driver_path:
       assert isinstance(maybe_driver, pathlib.Path) and maybe_driver.exists()
     super().__init__(label, path, settings=settings)
-    self.url_list: List[str] = []
-    self.expected_js: List[JsInvocation] = []
-    self.expected_is_logged_in: List[UsernamePassword] = []
-    self.invoked_js: List[JsInvocation] = []
+    self.url_list: list[str] = []
+    self.expected_js: list[JsInvocation] = []
+    self.expected_is_logged_in: list[UsernamePassword] = []
+    self.invoked_js: list[JsInvocation] = []
     self.did_run: bool = False
     self.tab_handler_generator = self._tab_handler_generator()
-    self.tab_list: List[int] = [next(self.tab_handler_generator)]
+    self.tab_list: list[int] = [next(self.tab_handler_generator)]
     self._current_url: str = ""
     self._default_js_return = None
-    self._performance_marks: List[str] = []
-    self._performance_marks_details: List[Any] = []
+    self._performance_marks: list[str] = []
+    self._performance_marks_details: list[Any] = []
 
   def expect_js(
       self,
@@ -234,11 +233,11 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.performance_marks_details.append(detail)
 
   @property
-  def performance_marks(self) -> List[str]:
+  def performance_marks(self) -> list[str]:
     return self._performance_marks
 
   @property
-  def performance_marks_details(self) -> List[Any]:
+  def performance_marks_details(self) -> list[Any]:
     return self._performance_marks_details
 
   @override
@@ -264,7 +263,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return self._current_url
 
   @override
-  def meminfo(self) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self) -> dict[str, ProcessMeminfo]:
     return {
         "process_1": ProcessMeminfo(1, 2, 3, 4),
         "process_2": ProcessMeminfo(2, 3, 4, 5)
@@ -572,7 +571,7 @@ class MockFirefoxNightly(MockFirefoxBrowser):
     return app_root(platform) / "firefox-trunk"
 
 
-ALL: Tuple[Type[MockBrowser], ...] = (
+ALL: tuple[Type[MockBrowser], ...] = (
     MockChromeCanary,
     MockChromeDev,
     MockChromeBeta,
