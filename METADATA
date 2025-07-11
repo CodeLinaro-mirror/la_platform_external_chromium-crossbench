@@ -9,12 +9,12 @@ third_party {
   last_upgrade_date {
     year: 2025
     month: 6
-    day: 9
+    day: 24
   }
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/crossbench"
-    version: "0441c23ea5e79827752fd4097d7fbae8d6e5c42e"
+    version: "dbd6b227436aba167bcaa53157d5aabd063178cc"
     primary_source: true
   }
 }

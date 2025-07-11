@@ -333,10 +333,34 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.port_number(65535), 65535)
     self.assertEqual(NumberParser.port_number("65535"), 65535)
 
+  def test_parse_port_number_zer(self):
+    self.assertEqual(NumberParser.port_number_zero(0), 0)
+    self.assertEqual(NumberParser.port_number_zero("0"), 0)
+    self.assertEqual(NumberParser.port_number(1), 1)
+    self.assertEqual(NumberParser.port_number("1"), 1)
+    self.assertEqual(NumberParser.port_number_zero(440), 440)
+    self.assertEqual(NumberParser.port_number_zero("440"), 440)
+    self.assertEqual(NumberParser.port_number_zero(65535), 65535)
+    self.assertEqual(NumberParser.port_number_zero("65535"), 65535)
+
   def test_parse_port_number_invalid(self):
-    for invalid in ("", "-1", "-1.2", "6553500", "inf", "-inf", "invalid"):
+    for invalid in ("", "-1", "-1.2", "6553500", 6553500, "inf", "-inf",
+                    "invalid", 0, "0"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number(invalid)
+
+  def test_parse_port_number_invalid_zero(self):
+    for invalid in (
+        "",
+        "-1",
+        "-1.2",
+        "6553500",
+        "inf",
+        "-inf",
+        "invalid",
+    ):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = NumberParser.port_number_zero(invalid)
 
   def _json_file_test_helper(self, parser) -> Any:
     with self.assertRaises(argparse.ArgumentTypeError):

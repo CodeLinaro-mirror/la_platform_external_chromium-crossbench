@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import enum
 import json
-from typing import TYPE_CHECKING, List, Optional, Self, cast
+from typing import TYPE_CHECKING, Optional, Self, cast
 
 from selenium.webdriver.safari.options import Options as SafariOptions
 from typing_extensions import override
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -105,10 +105,10 @@ class BrowserProfilingProbe(Probe):
   def __init__(
       self,
       moz_profiler_startup_features: Optional[
-          List[MozProfilerStartupFeatures]] = None
+          list[MozProfilerStartupFeatures]] = None
   ) -> None:
     super().__init__()
-    self._moz_profiler_startup_features: List[
+    self._moz_profiler_startup_features: list[
         MozProfilerStartupFeatures] = moz_profiler_startup_features or []
 
   @property
@@ -119,11 +119,11 @@ class BrowserProfilingProbe(Probe):
          tuple(map(str, self.moz_profiler_startup_features))),)
 
   @property
-  def moz_profiler_startup_features(self) -> List[MozProfilerStartupFeatures]:
+  def moz_profiler_startup_features(self) -> list[MozProfilerStartupFeatures]:
     return self._moz_profiler_startup_features
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     if browser.platform.is_remote:
       raise ProbeValidationError(
@@ -135,7 +135,7 @@ class BrowserProfilingProbe(Probe):
       self._validate_firefox(env, browser)
     raise ProbeIncompatibleBrowser(self, browser)
 
-  def _validate_firefox(self, env: HostEnvironment, browser: Browser) -> None:
+  def _validate_firefox(self, env: RunnerEnv, browser: Browser) -> None:
     browser_env = browser.platform.environ
     for env_var in list(FirefoxProfilerEnvVars):
       env_var_str = str(env_var)

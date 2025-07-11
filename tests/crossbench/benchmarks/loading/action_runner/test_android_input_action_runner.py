@@ -5,7 +5,7 @@
 import datetime as dt
 import pathlib
 import unittest
-from typing import Optional, Tuple
+from typing import Optional
 
 from typing_extensions import override
 
@@ -144,7 +144,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   def expect_action_setup(
       self,
       found_element: bool = True,
-      js_args: Optional[Tuple[str, bool]] = None,
+      js_args: Optional[tuple[str, bool]] = None,
       app_bounds: DisplayRectangle = DisplayRectangle(Point(0, 0), 10, 10),
       window_inner_height: Optional[int] = None,
       window_inner_width: Optional[int] = None,

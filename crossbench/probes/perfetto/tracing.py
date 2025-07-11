@@ -8,7 +8,8 @@ import argparse
 import enum
 import logging
 import sys
-from typing import FrozenSet, TYPE_CHECKING, Dict, Optional, Self, Sequence, Set, Type
+from typing import (TYPE_CHECKING, FrozenSet, Optional, Self, Sequence, Set,
+                    Type)
 
 from typing_extensions import override
 
@@ -89,7 +90,7 @@ V8_TRACE_CONFIG: FrozenSet[str] = frozenset((
 V8_GC_STATS_TRACE_CONFIG: FrozenSet[str] = V8_TRACE_CONFIG | frozenset(
     ("disabled-by-default-v8.gc_stats",))
 
-TRACE_PRESETS: Dict[str, frozenset[str]] = {
+TRACE_PRESETS: dict[str, frozenset[str]] = {
     "empty": frozenset(),
     "minimal": MINIMAL_CONFIG,
     "devtools": DEVTOOLS_TRACE_CONFIG,

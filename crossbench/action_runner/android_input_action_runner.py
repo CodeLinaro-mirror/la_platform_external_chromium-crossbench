@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
-from typing import TYPE_CHECKING, cast, List, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.base import InputSourceNotImplementedError
@@ -230,7 +230,7 @@ return [
         coordinates = Point(rect.mid_x, rect.mid_y)
 
       if not action.position.ui_selector:
-        cmd: List[str] = ["input"]
+        cmd: list[str] = ["input"]
 
         if use_mouse:
           cmd.append("mouse")

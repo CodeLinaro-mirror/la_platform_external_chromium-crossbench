@@ -45,6 +45,7 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     if expected_sh_cmds is not None:
       self.assertListEqual(expected_sh_cmds, [],
                            "Got additional unused shell cmds.")
+    self.assertTrue(self.platform.ports.is_empty)
     super().tearDown()
 
   def expect_sh(self, *args, result=""):
@@ -72,33 +73,39 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.assertFalse(self.platform.is_chromeos)
 
   def test_port_forward_invalid(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):
-      self.platform.port_forward(-1, -1)
+    with self.platform.ports.nested() as ports:
+      with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):
+        ports.forward(-1, -1)
 
   def test_reverse_port_forward_invalid(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
-      self.platform.reverse_port_forward(-1, -1)
+    with self.platform.ports.nested() as ports:
+      with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
+        ports.reverse_forward(-1, -1)
 
 
 class BaseLocalMockPlatformTestMixin:
 
   def test_local_port_forward_invalid(self):
-    with self.assertRaisesRegex(ValueError, "local platform"):
-      self.platform.port_forward(1000, 2000)
+    with self.platform.ports.nested() as ports:
+      with self.assertRaisesRegex(ValueError, "local platform"):
+        ports.forward(1000, 2000)
 
   def test_local_reverse_port_forward_invalid(self):
-    with self.assertRaisesRegex(ValueError, "local platform"):
-      self.platform.reverse_port_forward(1000, 2000)
+    with self.platform.ports.nested() as ports:
+      with self.assertRaisesRegex(ValueError, "local platform"):
+        ports.reverse_forward(1000, 2000)
 
   def test_local_reverse_port_forward(self):
-    port = self.platform.get_free_port()
-    self.assertEqual(self.platform.reverse_port_forward(port, port), port)
-    self.platform.stop_reverse_port_forward(port)
+    with self.platform.ports.nested() as ports:
+      port = self.platform.get_free_port()
+      self.assertEqual(ports.reverse_forward(port, port), port)
+      ports.stop_reverse_forward(port)
 
   def test_local_port_forward(self):
-    port = self.platform.get_free_port()
-    self.assertEqual(self.platform.port_forward(port, port), port)
-    self.platform.stop_port_forward(port)
+    with self.platform.ports.nested() as ports:
+      port = self.platform.get_free_port()
+      self.assertEqual(ports.forward(port, port), port)
+      ports.stop_forward(port)
 
 
 class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):

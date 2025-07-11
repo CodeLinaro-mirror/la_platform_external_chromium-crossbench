@@ -7,10 +7,10 @@ from __future__ import annotations
 import atexit
 import dataclasses
 import datetime as dt
-from math import ceil
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Self
+from math import ceil
+from typing import TYPE_CHECKING, Optional, Self
 
 import crossbench.path as pth
 from crossbench.action_runner.action import all as i_action
@@ -24,8 +24,6 @@ from crossbench.benchmarks.loading.point import Point
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
-  from typing import Optional, Tuple, Type
-
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -410,7 +408,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
   def _get_click_location(
       self, actions: Actions, action: i_action.ClickAction
-  ) -> Tuple[Optional[Point], ChromeOSViewportInfo]:
+  ) -> tuple[Optional[Point], ChromeOSViewportInfo]:
     if selector_config := action.position.selector:
       if selector_config.wait:
         self.wait_for_element_impl(

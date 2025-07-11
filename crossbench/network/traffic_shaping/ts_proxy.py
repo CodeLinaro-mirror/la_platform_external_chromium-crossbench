@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Self, TypeVar
+from typing import IO, TYPE_CHECKING, Iterator, Optional, Self, TypeVar
 
 from typing_extensions import override
 
@@ -316,7 +316,7 @@ class TsProxyProcess:
     if not success:
       raise TsProxyServerError(f"Failed to execute command: {command}")
 
-  def _wait_for_status_response(self, timeout: int | float) -> List[str]:
+  def _wait_for_status_response(self, timeout: int | float) -> list[str]:
     logging.debug("TsProxy: waiting for status response")
     command_output = []
     for _ in wait.wait_with_backoff(timeout):
@@ -449,14 +449,14 @@ class TsProxyTrafficShaper(TrafficShaper):
                      session: BrowserSessionRunGroup) -> Iterator:
     del network
     browser_platform = session.browser_platform
+    ports = browser_platform.ports
     ts_proxy_port = self._ts_proxy.socks_proxy_port
     # TODO; remap network port for remote browsers or when ports are occupied
     # already.
-    if browser_platform.is_remote:
-      browser_platform.reverse_port_forward(ts_proxy_port, ts_proxy_port)
-    yield
-    if browser_platform.is_remote:
-      browser_platform.stop_reverse_port_forward(ts_proxy_port)
+    with browser_platform.ports.nested() as ports:
+      if browser_platform.is_remote:
+        ports.reverse_forward(ts_proxy_port, ts_proxy_port)
+      yield
 
   @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final, Optional, TextIO, Tuple, Type, cast
+from typing import TYPE_CHECKING, Final, Optional, TextIO, Type, cast
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 class ChromiumBased(Browser):
   MIN_HEADLESS_NEW_VERSION: int = 112
   MIN_BENCHMARKING_EXTENSION_FLAG_MILESTONE: Final[int] = 139
-  DEFAULT_FLAGS: Tuple[str, ...] = (
+  DEFAULT_FLAGS: tuple[str, ...] = (
       "--no-default-browser-check",
       "--disable-component-update",
       "--disable-sync",
@@ -41,7 +41,7 @@ class ChromiumBased(Browser):
       # This could be enabled via feature-flags as well.
       "--disable-search-engine-choice-screen",
   )
-  FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: Tuple[str, ...] = (
+  FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: tuple[str, ...] = (
       "--disable-background-timer-throttling",
       "--disable-renderer-backgrounding",
   )
@@ -214,7 +214,7 @@ class ChromiumBased(Browser):
 
   @override
   def _get_browser_flags_for_session(
-      self, session: BrowserSessionRunGroup) -> Tuple[str, ...]:
+      self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
     js_flags_copy = self.js_flags.copy()
     js_flags_copy.update(session.extra_js_flags)
 

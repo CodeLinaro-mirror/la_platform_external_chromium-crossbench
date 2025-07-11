@@ -13,13 +13,12 @@ from crossbench.parse import ObjectParser
 from crossbench.probes.js import parse_javascript
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import (ProbeConfigParser,
-                                     ProbeIncompatibleBrowser)
+from crossbench.probes.probe import ProbeConfigParser, ProbeIncompatibleBrowser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
@@ -56,7 +55,7 @@ class WebviewEmbedderProbe(JsonResultProbe):
   def metric_js(self) -> str:
     return self._metric_js
 
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     if not isinstance(browser, WebviewEmbedder):
       raise ProbeIncompatibleBrowser(self, browser,
                                      "Only supported for WV embedders")

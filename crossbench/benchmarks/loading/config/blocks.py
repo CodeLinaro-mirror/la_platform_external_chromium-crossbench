@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import functools
-from typing import (TYPE_CHECKING, Any, Dict, Final, Iterator, List, Optional,
-                    Self, Sequence, Tuple, cast)
+from typing import (TYPE_CHECKING, Any, Final, Iterator, Optional, Self,
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ LOGIN_LABEL: Final[str] = "login"
 class ActionBlock(ConfigObject):
   label: str = "default"
   index: int = 0
-  actions: Tuple[Action, ...] = tuple()
+  actions: tuple[Action, ...] = tuple()
 
   @classmethod
   @override
@@ -54,7 +54,7 @@ class ActionBlock(ConfigObject):
   @override
   def parse_dict(  # pylint: disable=arguments-differ
       cls,
-      config: Dict[str, Any],
+      config: dict[str, Any],
       label: Optional[str] = None,
       index: Optional[int] = None,
       **kwargs) -> Self:
@@ -74,7 +74,7 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   def parse_sequence(cls,
-                     config: Sequence[Dict[str, Any]],
+                     config: Sequence[dict[str, Any]],
                      label: Optional[str] = None,
                      index: Optional[int] = None) -> Self:
     with exception.annotate_argparsing(
@@ -94,7 +94,7 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   def from_url(cls, url: str, duration: dt.timedelta) -> ActionBlock:
-    actions: Tuple[Action, ...] = (GetAction(url, duration),)
+    actions: tuple[Action, ...] = (GetAction(url, duration),)
     if not duration:
       actions += (WaitForReadyStateAction(),)
     return ActionBlock(actions=actions)
@@ -120,7 +120,7 @@ class ActionBlock(ConfigObject):
     del page
     runner.run_block(run, self)
 
-  def to_json(self) -> Dict[str, Any]:
+  def to_json(self) -> dict[str, Any]:
     return {
         "label": self.label,
         "actions": [action.to_json() for action in self.actions]
@@ -154,9 +154,9 @@ class ActionBlock(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class ActionBlockListConfig(ConfigObject):
-  blocks: Tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = tuple()
 
-  def to_argument_value(self) -> Tuple[ActionBlock, ...]:
+  def to_argument_value(self) -> tuple[ActionBlock, ...]:
     return self.blocks
 
   @classmethod
@@ -166,7 +166,7 @@ class ActionBlockListConfig(ConfigObject):
     return super().parse_other(value)
 
   @classmethod
-  def parse_sequence(cls, config: Sequence[Dict[str, Any]]) -> Self:
+  def parse_sequence(cls, config: Sequence[dict[str, Any]]) -> Self:
     """Parse either a sequence of blocks or a sequence of actions for an
     implicit default block.
 
@@ -196,17 +196,17 @@ class ActionBlockListConfig(ConfigObject):
     return cls._parse_blocks(block_config_data_gen())
 
   @classmethod
-  def _is_block_sequence_config(cls, config: Sequence[Dict[str, Any]]) -> bool:
+  def _is_block_sequence_config(cls, config: Sequence[dict[str, Any]]) -> bool:
     return "label" in config[0] or "actions" in config[0]
 
   @classmethod
-  def _is_default_block_actions(cls, config: Sequence[Dict[str, Any]]) -> bool:
+  def _is_default_block_actions(cls, config: Sequence[dict[str, Any]]) -> bool:
     sample = config[0]
     return isinstance(sample, str) or "action" in sample
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "blocks")
 
     def block_config_data_gen():
@@ -219,7 +219,7 @@ class ActionBlockListConfig(ConfigObject):
 
   @classmethod
   def _parse_blocks(cls, block_config_data_gen) -> Self:
-    blocks: List[ActionBlock] = []
+    blocks: list[ActionBlock] = []
     for index, label, block_data in block_config_data_gen:
       block = cls._parse_block(index, label, block_data)
       blocks.append(block)

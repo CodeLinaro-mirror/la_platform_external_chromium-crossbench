@@ -20,10 +20,7 @@ from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
                                          BasePosixMockPlatformTestCase)
 
 
-class LinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
-                                BasePosixMockPlatformTestCase):
-  __test__ = True
-
+class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -181,7 +178,12 @@ Locked:                0 kB
                      ProcessMeminfo(100, 2062, 19792, 0))
 
 
-class RemoteLinuxMockPlatformTestCase(LinuxMockPlatformTestCase):
+class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
+                                     _LinuxMockPlatformTestCase):
+  __test__ = True
+
+
+class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
 
   @override
   def mock_platform_setup(self) -> None:
@@ -349,6 +351,8 @@ class RemoteLinuxMockPlatformTestCase(LinuxMockPlatformTestCase):
   def test_local_port_forward(self):
     pass
 
+
+del _LinuxMockPlatformTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

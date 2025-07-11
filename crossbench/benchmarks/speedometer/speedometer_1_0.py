@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Tuple, Type
+from typing import TYPE_CHECKING, Any, Type
 
 from typing_extensions import override
 
@@ -48,7 +48,7 @@ class Speedometer10Story(SpeedometerStory):
   # URL: str = "https://chromium-workloads.web.app/speedometer/v1.0/"
   URL: str = "https://browserbench.org/Speedometer/"
   URL_OFFICIAL: str = "https://browserbench.org/Speedometer/"
-  SUBSTORIES: Tuple[str, ...] = (
+  SUBSTORIES: tuple[str, ...] = (
       "VanillaJS-TodoMVC",
       "EmberJS-TodoMVC",
       "BackboneJS-TodoMVC",
@@ -75,5 +75,5 @@ class Speedometer10Benchmark(SpeedometerBenchmark):
 
   @classmethod
   @override
-  def aliases(cls) -> Tuple[str, ...]:
+  def aliases(cls) -> tuple[str, ...]:
     return ("sp1", "speedometer1") + super().aliases()

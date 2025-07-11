@@ -24,9 +24,8 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
-                    Iterator, List, Mapping, Optional, Sequence, Tuple, Type,
-                    TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
+                    Mapping, Optional, Sequence, Type, TypeAlias)
 
 import psutil
 
@@ -36,6 +35,8 @@ from crossbench.helper import wait
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
+from crossbench.plt.port_manager import (LocalPortManager, PortManager,
+                                         PortScope)
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
@@ -50,8 +51,8 @@ if TYPE_CHECKING:
 
 CmdArg: TypeAlias = pth.AnyPathLike
 SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
-ListCmdArgs: TypeAlias = List[CmdArg]
-TupleCmdArgs: TypeAlias = Tuple[CmdArg, ...]
+ListCmdArgs: TypeAlias = list[CmdArg]
+TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
 CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
@@ -107,8 +108,12 @@ class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
-    self._binary_lookup_override: Dict[str, pth.AnyPath] = {}
+    self._binary_lookup_override: dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
+    self._default_port_manager: PortManager = self._create_port_manager()
+
+  def _create_port_manager(self) -> PortManager:
+    return LocalPortManager(self)
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -200,7 +205,7 @@ class Platform(abc.ABC):
     return self.machine == MachineArch.ARM_64
 
   @property
-  def key(self) -> Tuple[str, str]:
+  def key(self) -> tuple[str, str]:
     return (self.name, str(self.machine))
 
   @property
@@ -247,7 +252,7 @@ class Platform(abc.ABC):
     return not status.power_plugged
 
   @functools.lru_cache(maxsize=1)
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     self.assert_is_local()
     details = {
         "physical cores":
@@ -285,7 +290,7 @@ class Platform(abc.ABC):
 
 
   @functools.lru_cache(maxsize=1)
-  def system_details(self) -> Dict[str, Any]:
+  def system_details(self) -> dict[str, Any]:
     return {
         "machine": str(self.machine),
         "os": self.os_details(),
@@ -312,7 +317,7 @@ class Platform(abc.ABC):
         "bits": 64 if sys.maxsize > 2**32 else 32,
     }
 
-  def display_details(self) -> Tuple[DisplayInfo, ...]:
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     # TODO: implement on more platforms
     return tuple()
 
@@ -512,12 +517,12 @@ class Platform(abc.ABC):
       pass
 
   def processes(self,
-                attrs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
     # TODO(cbruni): support remote platforms
     assert self.is_local, "Only local platform supported"
     return self._collect_process_dict(psutil.process_iter(attrs=attrs))
 
-  def process_running(self, process_name_list: List[str]) -> Optional[str]:
+  def process_running(self, process_name_list: list[str]) -> Optional[str]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     for proc in psutil.process_iter(attrs=["name"]):
@@ -530,7 +535,7 @@ class Platform(abc.ABC):
 
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> List[Dict[str, Any]]:
+                       recursive: bool = False) -> list[dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -540,8 +545,8 @@ class Platform(abc.ABC):
     return self._collect_process_dict(process.children(recursive=recursive))
 
   def _collect_process_dict(
-      self, process_iterator: Iterable[psutil.Process]) -> List[Dict[str, Any]]:
-    process_info_list: List[Dict[str, Any]] = []
+      self, process_iterator: Iterable[psutil.Process]) -> list[dict[str, Any]]:
+    process_info_list: list[dict[str, Any]] = []
     for process in process_iterator:
       try:
         process_info_list.append(process.as_dict())
@@ -549,7 +554,7 @@ class Platform(abc.ABC):
         pass
     return process_info_list
 
-  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -558,10 +563,10 @@ class Platform(abc.ABC):
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 
-  def meminfo(self, process_name: str) -> Dict[str, ProcessMeminfo]:
+  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
     raise NotImplementedError(f"meminfo not implemented for {self}.")
 
-  def foreground_process(self) -> Optional[Dict[str, Any]]:
+  def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
 
   @property
@@ -569,29 +574,9 @@ class Platform(abc.ABC):
     self.assert_is_local()
     return self.path(tempfile.gettempdir())
 
-  def port_forward(self, local_port: int, remote_port: int) -> int:
-    """ Forwards a device remote_port to a local port."""
-    if remote_port != local_port:
-      raise ValueError("Cannot forward a remote port on a local platform.")
-    parse.NumberParser.port_number(local_port, "local_port")
-    self.assert_is_local()
-    return local_port
-
-  def stop_port_forward(self, local_port: int) -> None:
-    del local_port
-    self.assert_is_local()
-
-  def reverse_port_forward(self, remote_port: int, local_port: int) -> int:
-    """ Forwards a local port to a device port."""
-    if remote_port != local_port:
-      raise ValueError("Cannot forward a remote port on a local platform.")
-    parse.NumberParser.port_number(remote_port, "remote_port")
-    self.assert_is_local()
-    return remote_port
-
-  def stop_reverse_port_forward(self, remote_port: int) -> None:
-    del remote_port
-    self.assert_is_local()
+  @property
+  def ports(self) -> PortScope:
+    return self._default_port_manager.scope
 
   def is_port_used(self, port: int) -> bool:
     self.assert_is_local()
@@ -826,6 +811,9 @@ class Platform(abc.ABC):
     # TODO: support remotely
     return self.local_path(path).stat().st_size
 
+  def last_modified(self, path: pth.AnyPathLike) -> float:
+    return self.local_path(path).stat().st_mtime
+
   def sh_stdout(self,
                 *args: CmdArg,
                 shell: bool = False,
@@ -969,7 +957,7 @@ class Platform(abc.ABC):
 
   def set_display_refresh_rate(self,
                                refresh_rate: int,
-                               retry: int = 3) -> Tuple[bool, str]:
+                               retry: int = 3) -> tuple[bool, str]:
     raise NotImplementedError(
         "'set_display_refresh_rate' is only available on MacOS for now")
 
@@ -982,7 +970,7 @@ class Platform(abc.ABC):
     raise NotImplementedError(
         "'screenshot' is only available on MacOS for now")
 
-  def display_resolution(self) -> Tuple[int, int]:
+  def display_resolution(self) -> tuple[int, int]:
     raise NotImplementedError(
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-if (window.location == 'https://www.globo.com/') {
+if (window.location.href === 'https://www.globo.com/') {
   const button_selector = 'button[aria-label=Consent]';
   const banner_selector = 'div[class=fc-consent-root]';
   let banner_observer;

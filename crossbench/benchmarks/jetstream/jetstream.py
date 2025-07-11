@@ -10,8 +10,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Dict, Final, List, Optional, Sequence,
-                    Tuple, Type, cast)
+from typing import TYPE_CHECKING, Any, Final, Optional, Sequence, Type, cast
 
 from typing_extensions import override
 
@@ -83,8 +82,8 @@ class JetStreamProbe(
         self._log_result_metrics(data)
 
   @override
-  def _extract_result_metrics_table(self, metrics: Dict[str, Any],
-                                    table: Dict[str, List[str]]) -> None:
+  def _extract_result_metrics_table(self, metrics: dict[str, Any],
+                                    table: dict[str, list[str]]) -> None:
     for metric_key, metric_value in metrics.items():
       if not self._is_valid_metric_key(metric_key):
         continue
@@ -107,7 +106,7 @@ class JetStreamProbe(
     return self.write_group_result(group, merged, JetStreamCSVFormatter)
 
   def _compute_total_score(self, merged: MetricsMerger) -> Metric:
-    line_item_scores: List[List[float]] = []
+    line_item_scores: list[list[float]] = []
     for key, metric in merged.data.items():
       if self._is_valid_metric_key(key):
         line_item_scores.append(metric.values)
@@ -156,7 +155,7 @@ class JetStreamProbeContext(JsonResultProbeContext):
 """
 
   @override
-  def to_json(self, actions: Actions) -> Dict[str, float]:
+  def to_json(self, actions: Actions) -> dict[str, float]:
     # Use serialized json as transport format to preserve object key order.
     json_payload = actions.js(self.JS)
     json_data = json.loads(json_payload)
@@ -171,14 +170,14 @@ class JetStreamProbeContext(JsonResultProbeContext):
     json_data["Total"] = self._compute_total_metrics(json_data)
     return json_data
 
-  def _compute_total_metrics(self, json_data: Dict[str,
-                                                   Any]) -> Dict[str, float]:
+  def _compute_total_metrics(self, json_data: dict[str,
+                                                   Any]) -> dict[str, float]:
     # Manually add all total scores
     accumulated_metrics = defaultdict(list)
     for _, metrics in json_data.items():
       for metric, value in metrics.items():
         accumulated_metrics[metric].append(value)
-    total: Dict[str, float] = {}
+    total: dict[str, float] = {}
     for metric, values in accumulated_metrics.items():
       total[metric] = statistics.geometric_mean(values)
     return total
@@ -188,8 +187,8 @@ class JetStreamCSVFormatter(CSVFormatter):
   TOTAL_METRIC_KEY: Final[str] = JetStreamProbe.TOTAL_METRIC_KEY
 
   @override
-  def format_items(self, data: Dict[str, Json],
-                   sort: bool) -> Sequence[Tuple[str, Json]]:
+  def format_items(self, data: dict[str, Json],
+                   sort: bool) -> Sequence[tuple[str, Json]]:
     items = list(data.items())
     if sort:
       items.sort()
@@ -256,7 +255,7 @@ class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> Dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["detailed_metrics"] = args.detailed_metrics
     return kwargs

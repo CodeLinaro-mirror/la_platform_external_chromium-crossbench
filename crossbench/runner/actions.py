@@ -22,6 +22,7 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.exception import ExceptionAnnotationScope
+  from crossbench.helper.wait import WaitRange
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
   from crossbench.runner.timing import AnyTimeUnit, Timing
@@ -117,14 +118,24 @@ class Actions(TimeScope):
   def wait_js_condition(
       self,
       js_code: str,
-      min_wait: AnyTimeUnit,
+      min_interval: AnyTimeUnit,
       timeout: AnyTimeUnit,
       delay: AnyTimeUnit = 0,
       absolute_time: bool = False,
       arguments: Sequence[object] = (),
       success_condition: Callable[[Any], bool] = _default_success_condition
   ) -> None:
-    wait_range = self._run.wait_range(min_wait, timeout, delay)
+    """
+    Runs the `js_code` at a regular interval until either the `timeout` is
+    reached or the return value is true. The poll interval is exponentially
+    increasing with the WaitRange's default factor:
+    1. sleep for `delay`,                    check `js_code`
+    2. sleep for `min_interval`,             check `js_code`
+    2. sleep for `min_interval * 1.01 ** 1`, check `js_code`
+    ...
+    N. sleep for `min_interval * 1.01 ** N`, check `js_code`
+    """
+    wait_range : WaitRange = self._run.wait_range(min_interval, timeout, delay)
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
     for _, _, time_left in wait_range.wait_with_backoff():
@@ -145,7 +156,7 @@ class Actions(TimeScope):
         f"""
           let state = document.readyState;
           return state === '{ready_state}' || state === "complete";
-        """, 0.2, timeout.total_seconds())
+        """, 0.2, timeout)
 
   def show_url(
       self,
@@ -165,6 +176,9 @@ class Actions(TimeScope):
 
     if ready_state != ReadyState.ANY:
       self.wait_for_ready_state(ready_state, timeout)
+
+  def current_url(self) -> str:
+    return self.js("return document.URL;")
 
   def wait(self,
            time: AnyTimeUnit = dt.timedelta(seconds=1),

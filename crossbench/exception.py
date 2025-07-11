@@ -11,7 +11,7 @@ import sys
 import traceback as tb
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from crossbench.helper import collection_helper, txt_helper
 from crossbench.types import JsonList
@@ -19,14 +19,14 @@ from crossbench.types import JsonList
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
-TInfoStack = Tuple[str, ...]
+TInfoStack = tuple[str, ...]
 
-TExceptionTypes = Tuple[Type[BaseException], ...]
+TExceptionTypes = tuple[Type[BaseException], ...]
 
 
 @dataclass
 class Entry:
-  traceback: List[str]
+  traceback: list[str]
   exception: BaseException
   info_stack: TInfoStack
 
@@ -44,7 +44,7 @@ class MultiException(ValueError):
   def __len__(self) -> int:
     return len(self.exceptions)
 
-  def matching(self, *args: Type[BaseException]) -> List[BaseException]:
+  def matching(self, *args: Type[BaseException]) -> list[BaseException]:
     return self.exceptions.matching(*args)
 
   @property
@@ -64,7 +64,7 @@ class ExceptionAnnotationScope:
       annotator: ExceptionAnnotator,
       exception_types: TExceptionTypes,
       ignore_exception_types: TExceptionTypes,
-      entries: Tuple[str, ...],
+      entries: tuple[str, ...],
       throw_cls: Optional[Type[BaseException]] = None,
   ) -> None:
     logging.debug("EAS: %s%s", "  " * annotator.depth, " ".join(entries))
@@ -123,7 +123,7 @@ class ExceptionAnnotator:
   def __init__(self,
                throw: bool = False,
                throw_cls: Optional[Type[BaseException]] = None) -> None:
-    self._exceptions: List[Entry] = []
+    self._exceptions: list[Entry] = []
     self.throw: bool = throw
     self._throw_cls: Type[BaseException] | None = throw_cls
     # The info_stack adds additional meta information to handle exceptions.
@@ -133,7 +133,7 @@ class ExceptionAnnotator:
     # Associates raised exception with the info_stack at that time for later
     # use in the `handle` method.
     # This is cleared whenever we enter a  new ExceptionAnnotationScope.
-    self._pending_exceptions: Dict[BaseException, TInfoStack] = {}
+    self._pending_exceptions: dict[BaseException, TInfoStack] = {}
     self._depth = 0
 
   @property
@@ -145,7 +145,7 @@ class ExceptionAnnotator:
     return self._info_stack
 
   @property
-  def exceptions(self) -> List[Entry]:
+  def exceptions(self) -> list[Entry]:
     return self._exceptions
 
   @property
@@ -160,18 +160,18 @@ class ExceptionAnnotator:
   def __len__(self) -> int:
     return len(self._exceptions)
 
-  def enter(self, added_info_stack_entries: Tuple[str, ...]) -> Tuple[str, ...]:
+  def enter(self, added_info_stack_entries: tuple[str, ...]) -> tuple[str, ...]:
     self._depth += 1
     self._pending_exceptions.clear()
     previous_stack = self._info_stack
     self._info_stack = previous_stack + added_info_stack_entries
     return previous_stack
 
-  def leave(self, previous_stack: Tuple[str, ...]) -> None:
+  def leave(self, previous_stack: tuple[str, ...]) -> None:
     self._depth -= 1
     self._info_stack = previous_stack
 
-  def matching(self, *args: Type[BaseException]) -> List[BaseException]:
+  def matching(self, *args: Type[BaseException]) -> list[BaseException]:
     result = []
     for entry in self._exceptions:
       exception = entry.exception
@@ -242,7 +242,7 @@ class ExceptionAnnotator:
     traceback_str = tb.format_exc()
     logging.debug("Intermediate Exception %s:%s", type(exception), exception)
     logging.debug(traceback_str)
-    traceback: List[str] = traceback_str.splitlines()
+    traceback: list[str] = traceback_str.splitlines()
     if isinstance(exception, KeyboardInterrupt):
       # Fast exit on KeyboardInterrupts for a better user experience.
       sys.exit(0)
@@ -271,7 +271,7 @@ class ExceptionAnnotator:
       logging.debug("\n".join(entry.traceback))
       logging.debug("-" * 80)
     is_first_entry = True
-    grouped_entries: Dict[TInfoStack, List[Entry]] = collection_helper.group_by(
+    grouped_entries: dict[TInfoStack, list[Entry]] = collection_helper.group_by(
         self._exceptions, key=lambda entry: entry.info_stack, sort_key=None)
     for info_stack, entries in grouped_entries.items():
       logging_level = logging.ERROR if is_first_entry else logging.DEBUG
@@ -289,7 +289,7 @@ class ExceptionAnnotator:
         logging_level = logging.DEBUG
       logging.log(logging_level, "-" * 80)
 
-  def error_messages(self) -> List[str]:
+  def error_messages(self) -> list[str]:
     return [self.format_exception(entry) for entry in self._exceptions]
 
   def to_json(self) -> JsonList:

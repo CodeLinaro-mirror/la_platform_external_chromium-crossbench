@@ -8,7 +8,7 @@ import abc
 import re
 import shlex
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, List, Set
+from typing import TYPE_CHECKING, Iterable, Set
 
 import crossbench.path as pth
 from crossbench.parse import ObjectParser
@@ -97,7 +97,7 @@ class FileWatchDownloadsProbeContext(DownloadsProbeContext):
     super().__init__(probe, run)
     self._downloads_dir: pth.AnyPath = downloads_dir
     self._existing_downloads: Set[pth.AnyPath] = set()
-    self._results: List[pth.AnyPath] = []
+    self._results: list[pth.AnyPath] = []
 
   def downloads(self, include_pending: bool = True) -> Iterable[pth.AnyPath]:
     downloads = self.browser_platform.iterdir(self._downloads_dir)
@@ -144,11 +144,11 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
     super().__init__(probe, run)
     self._existing_downloads: Set[AndroidDownload] = set()
     self._user_id: str = str(self.browser_platform.user_id())
-    self._results: List[pth.AnyPath] = []
+    self._results: list[pth.AnyPath] = []
 
   def downloads(self,
                 include_pending: bool = True) -> Iterable[AndroidDownload]:
-    result: List[AndroidDownload] = []
+    result: list[AndroidDownload] = []
     args = [
         "content", "query", "--user", self._user_id, "--uri",
         "content://media/external/downloads", "--where", "is_download=1",

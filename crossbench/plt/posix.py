@@ -12,8 +12,8 @@ import pathlib
 import re
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Dict, Generator, Iterator, List,
-                    Mapping, Optional, Set, Type)
+from typing import (TYPE_CHECKING, Any, Generator, Iterator, Mapping, Optional,
+                    Set, Type)
 
 from typing_extensions import override
 
@@ -83,8 +83,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     entries = self.sh_stdout("grep", "-E", "processor|core id|physical id",
                              "/proc/cpuinfo")
     logical_cores: Set[int] = set()
-    core_ids: List[int] = []
-    physical_ids: List[int] = []
+    core_ids: list[int] = []
+    physical_ids: list[int] = []
 
     for line in entries.splitlines():
       line = line.strip()
@@ -116,7 +116,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @functools.lru_cache(maxsize=1)
   @override
-  def cpu_details(self) -> Dict[str, Any]:
+  def cpu_details(self) -> dict[str, Any]:
     if self.is_local:
       return super().cpu_details()
     return {
@@ -456,7 +456,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         pass
 
   @override
-  def process_info(self, process: ProcessLike) -> Optional[Dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
     if self.is_local:
       return super().process_info(process)
     try:
@@ -486,6 +486,13 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().user_id()
     return int(self.sh_stdout("id", "-u").strip())
+
+  @override
+  def last_modified(self, path: pth.AnyPathLike) -> float:
+    if self.is_local:
+      return super().last_modified(path)
+    # Get seconds since epoch
+    return float(self.sh_stdout("stat", "-c", "%Y", self.path(path)))
 
 
 class RemotePosixEnviron(Environ):
@@ -549,7 +556,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
           self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
           stderr=stderr, stdin=stdin)
       # tmp_pid_file might not have been immediately flushed:
-      for _ in WaitRange(0.01, 2).wait_with_backoff():
+      for _ in WaitRange(0.01, timeout=2).wait_with_backoff():
         if pid_str := self.cat(temp_pid_file):
           remote_pid = int(pid_str)
           remote_popen.set_remote_pid(remote_pid)

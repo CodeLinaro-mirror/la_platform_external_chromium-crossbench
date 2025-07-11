@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Final, Iterable, Optional, Tuple
+from typing import Any, Final, Iterable, Optional
 
 from ordered_set import OrderedSet
 
@@ -26,8 +26,8 @@ class ChromeExtensions(Freezable):
   LOAD_FLAG: Final[str] = "--load-extension"
   DISABLE_EXCEPT_FLAG: Final[str] = "--disable-extensions-except"
 
-  ENABLE_FLAGS: Final[Tuple[str, ...]] = (LOAD_FLAG, DISABLE_EXCEPT_FLAG)
-  FLAGS: Final[Tuple[str, ...]] = ENABLE_FLAGS + (DISABLE_FLAG,)
+  ENABLE_FLAGS: Final[tuple[str, ...]] = (LOAD_FLAG, DISABLE_EXCEPT_FLAG)
+  FLAGS: Final[tuple[str, ...]] = ENABLE_FLAGS + (DISABLE_FLAG,)
 
   def __init__(self, extensions: Optional[Iterable[str]] = None) -> None:
     super().__init__()
@@ -43,7 +43,7 @@ class ChromeExtensions(Freezable):
     self._mode = ExtensionsMode.DISABLED
 
   @property
-  def extensions(self) -> Tuple[str, ...]:
+  def extensions(self) -> tuple[str, ...]:
     return tuple(self._extensions)
 
   @property
@@ -155,12 +155,12 @@ class ChromeExtensions(Freezable):
                        f"{flag_name}={value}.")
     return value
 
-  def items(self) -> Iterable[Tuple[str, str | None]]:
+  def items(self) -> Iterable[tuple[str, str | None]]:
     flag, value = self.item()
     if flag:
       yield flag, value
 
-  def item(self) -> Tuple[str | None, str | None]:
+  def item(self) -> tuple[str | None, str | None]:
     match self._mode:
       case ExtensionsMode.DEFAULT:
         return None, None

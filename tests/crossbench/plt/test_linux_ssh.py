@@ -13,6 +13,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.plt.port_manager import PortForwardException
 from tests import test_helper
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
@@ -142,39 +143,43 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
       yield patcher
 
   def test_port_forward(self):
-    with self.mock_popen(
-        self.host_platform) as mock_popen, self.mock_wait_for_port(
-            self.host_platform) as mock_wait_for_port:
-      port = self.platform.port_forward(666, 33221)
-    mock_popen.assert_called_once()
-    mock_wait_for_port.assert_called_once()
-    self.assertEqual(port, 666)
-    with self.assertRaisesRegex(RuntimeError, "twice"):
-      port = self.platform.port_forward(666, 33221)
-    self.platform.stop_port_forward(port)
-
-  def test_port_forward_auto_port(self):
-    with self.mock_get_free_port(self.host_platform, 666) as mock_free_port:
-      with self.mock_popen(self.host_platform) as mock_popen:
-        with self.mock_wait_for_port(self.host_platform) as mock_wait_for_port:
-          port = self.platform.port_forward(0, 33221)
+    with self.platform.ports.nested() as ports:
+      with self.mock_popen(
+          self.host_platform) as mock_popen, self.mock_wait_for_port(
+              self.host_platform) as mock_wait_for_port:
+        port = ports.forward(666, 33221)
       mock_popen.assert_called_once()
       mock_wait_for_port.assert_called_once()
-    mock_free_port.assert_called_once()
-    self.assertEqual(port, 666)
-    with self.assertRaisesRegex(RuntimeError, "twice"):
-      port = self.platform.port_forward(666, 33221)
-    self.platform.stop_port_forward(port)
+      self.assertEqual(port, 666)
+      with self.assertRaisesRegex(PortForwardException, "twice"):
+        port = ports.forward(666, 33221)
+      ports.stop_forward(port)
+
+  def test_port_forward_auto_port(self):
+    with self.platform.ports.nested() as ports:
+      with self.mock_get_free_port(self.host_platform, 666) as mock_free_port:
+        with self.mock_popen(self.host_platform) as mock_popen:
+          with self.mock_wait_for_port(
+              self.host_platform) as mock_wait_for_port:
+            port = ports.forward(0, 33221)
+        mock_popen.assert_called_once()
+        mock_wait_for_port.assert_called_once()
+      mock_free_port.assert_called_once()
+      self.assertEqual(port, 666)
+      with self.assertRaisesRegex(PortForwardException, "twice"):
+        port = ports.forward(666, 33221)
+      ports.stop_forward(port)
 
   def test_reverse_port_forward(self):
-    self._expect_sh_ssh("ss -HOlnt sport = 666", result="666")
-    with self.mock_popen(self.host_platform) as mock_popen:
-      port = self.platform.reverse_port_forward(666, 33221)
-    mock_popen.assert_called_once()
-    with self.assertRaisesRegex(RuntimeError, "twice"):
-      self.platform.reverse_port_forward(666, 33221)
-    self.assertEqual(port, 666)
-    self.platform.stop_reverse_port_forward(port)
+    with self.platform.ports.nested() as ports:
+      self._expect_sh_ssh("ss -HOlnt sport = 666", result="666")
+      with self.mock_popen(self.host_platform) as mock_popen:
+        port = ports.reverse_forward(666, 33221)
+      mock_popen.assert_called_once()
+      with self.assertRaisesRegex(PortForwardException, "twice"):
+        ports.reverse_forward(666, 33221)
+      self.assertEqual(port, 666)
+      ports.stop_reverse_forward(port)
 
   def test_push_creates_dest_dir(self):
     self._expect_sh_ssh("mkdir -p remote/dest/path")

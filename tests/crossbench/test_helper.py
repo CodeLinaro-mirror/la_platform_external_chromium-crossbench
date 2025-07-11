@@ -6,7 +6,6 @@ import datetime as dt
 import enum
 import pathlib
 import unittest
-from typing import List, Tuple
 
 from typing_extensions import override
 
@@ -83,7 +82,7 @@ class WaitTestCase(unittest.TestCase):
         ])
 
   def test_wait_with_backoff(self):
-    data: List[Tuple[dt.timedelta, dt.timedelta]] = []
+    data: list[tuple[dt.timedelta, dt.timedelta]] = []
     delta = dt.timedelta(seconds=0.0005)
     expected_i = 0
     for i, time_spent, time_left in WaitRange(

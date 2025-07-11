@@ -3,15 +3,16 @@
 # found in the LICENSE file.
 
 import pathlib
-from typing import Dict, List, Type
+from typing import Type
 
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench.path
 from crossbench import plt
-from crossbench.benchmarks.loadline import (
-    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
-    LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark)
+from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
+                                            LoadLine1TabletDebugBenchmark,
+                                            LoadLine2TabletBenchmark,
+                                            LoadLine2TabletDebugBenchmark)
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import default_chromium_candidates
@@ -19,7 +20,7 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.probes.probe import Probe
 from tests import test_helper
 
-PROBE_LOOKUP: Dict[str, Type[Probe]] = {
+PROBE_LOOKUP: dict[str, Type[Probe]] = {
     probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
 }
 
@@ -50,7 +51,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.fs.create_file(perfetto_tools / "trace_processor")
 
   def _test_parse_config_dir(self,
-                             real_config_dir: pathlib.Path) -> List[Probe]:
+                             real_config_dir: pathlib.Path) -> list[Probe]:
     probes = []
     self._add_real_directory(real_config_dir)
     for probe_config in real_config_dir.glob("**/*.config.hjson"):
@@ -58,7 +59,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
         probes += self._parse_config(probe_config)
     return probes
 
-  def _parse_config(self, config_file: pathlib.Path) -> List[Probe]:
+  def _parse_config(self, config_file: pathlib.Path) -> list[Probe]:
     probe_name = config_file.parent.name
     if probe_name not in PROBE_LOOKUP:
       probe_name = config_file.name.split(".")[0]

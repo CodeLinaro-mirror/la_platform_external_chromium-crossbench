@@ -13,7 +13,7 @@ with corresponding changes in CBB in google3
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 from selenium import webdriver
 from typing_extensions import override
@@ -21,9 +21,9 @@ from typing_extensions import override
 import crossbench.benchmarks.all as benchmarks
 import crossbench.browsers.browser
 import crossbench.browsers.webdriver as cb_webdriver
-import crossbench.env
 import crossbench.runner.runner
 from crossbench import path as pth
+from crossbench.cli.config.env import ValidationMode
 from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
   from crossbench.stories.press_benchmark import PressBenchmarkStory
   from crossbench.stories.story import Story
 
-press_benchmarks: List[Type[PressBenchmark]] = [
+press_benchmarks: list[Type[PressBenchmark]] = [
     # Speedometer:
     benchmarks.Speedometer20Benchmark,
     benchmarks.Speedometer21Benchmark,
@@ -52,7 +52,7 @@ press_benchmarks: List[Type[PressBenchmark]] = [
     benchmarks.JetStreamMainBenchmark,
 ]
 
-press_benchmarks_dict: Dict[str, Type[PressBenchmark]] = {
+press_benchmarks_dict: dict[str, Type[PressBenchmark]] = {
     cls.NAME: cls for cls in press_benchmarks
 }
 
@@ -132,9 +132,10 @@ class CbbRunner(crossbench.runner.runner.Runner):
   @override
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
                  repetition: int, is_warmup: bool, temperature: str, index: int,
-                 name: str, timeout: dt.timedelta, throw: bool) -> Run:
+                 name: str, timeout: dt.timedelta, throw: bool,
+                 env_validation_mode: ValidationMode) -> Run:
     return CbbRun(self, browser_session, story, repetition, is_warmup,
-                  temperature, index, name, timeout, throw)
+                  temperature, index, name, timeout, throw, env_validation_mode)
 
 
 class CbbRun(Run):
@@ -146,7 +147,7 @@ class CbbRun(Run):
 
 
 def run_benchmark(output_folder: pth.LocalPathLike,
-                  browser_list: List[crossbench.browsers.browser.Browser],
+                  browser_list: list[crossbench.browsers.browser.Browser],
                   benchmark: PressBenchmark) -> None:
   """Runs the benchmark using crossbench runner.
 
@@ -160,6 +161,6 @@ def run_benchmark(output_folder: pth.LocalPathLike,
       out_dir=pth.LocalPath(output_folder),
       browsers=browser_list,
       benchmark=benchmark,
-      env_validation_mode=crossbench.env.ValidationMode.SKIP)
+      env_validation_mode=ValidationMode.SKIP)
 
   runner.run()

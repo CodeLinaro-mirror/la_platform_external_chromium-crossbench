@@ -22,7 +22,7 @@ class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):
     self.datetime_mock.now.return_value = init_time
 
     def sleep_side_effect(seconds):
-      self.datetime_mock.now.return_value += dt.timedelta(seconds)
+      self.datetime_mock.now.return_value += dt.timedelta(seconds=seconds)
       logging.debug("mocked time advanced %fs to %s", seconds,
                     self.datetime_mock.now.return_value)
 

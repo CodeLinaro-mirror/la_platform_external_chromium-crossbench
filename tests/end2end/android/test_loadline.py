@@ -78,7 +78,7 @@ def _browser_config(device_id, adb_path) -> str:
 
 def _batch_trace_process_config() -> str:
   return json.dumps({
-      "queries": ["loadline/benchmark_score"],
+      "queries": ["loadline/benchmark_score", "loadline/breakdown"],
       "batch": True,
   })
 
@@ -88,28 +88,64 @@ class BenchmarkType(enum.StrEnum):
   TABLET = "loadline-tablet"
 
 
-def _verify_default_metrics(out_dir, only_total=False):
-  result_csv = out_dir / "loadline_probe.csv"
+def _verify_default_metrics(out_dir,
+                            benchmark_type: BenchmarkType,
+                            only_total=False):
+  result_csv = out_dir / "benchmark_score.csv"
+  if benchmark_type == BenchmarkType.PHONE:
+    expected_titles = [
+        "browser", "TOTAL_SCORE", "amazon_product", "cnn_article",
+        "globo_homepage", "google_search_result", "wikipedia_article"
+    ]
+  else:
+    expected_titles = [
+        "browser", "TOTAL_SCORE", "amazon_product", "cnn_article", "google_doc",
+        "google_search_result", "youtube_video"
+    ]
+
   with result_csv.open() as csv:
     lines = csv.readlines()
     assert len(lines) == 2
 
-    titles = lines[0].split(",")
-    assert len(titles) == 7
-    assert titles[0] == "browser"
-    assert titles[1] == "TOTAL_SCORE"
+    titles = lines[0].strip().split(",")
+    assert titles == expected_titles, (
+        f"Titles mismatch: expected {expected_titles}, got {titles}")
 
     values = lines[1].split(",")
-    assert len(values) == 7
+    assert len(values) == len(titles)
     values_to_check = values[1:2] if only_total else values[1:]
     for value in values_to_check:
       assert value, f"Encountered empty value. CSV contents: {lines}"
       assert float(value) > 0, f"Expected positive number, but got {value}"
 
 
+def _verify_breakdown(out_dir):
+  result_csv = out_dir / "breakdown.csv"
+  with result_csv.open() as csv:
+    lines = csv.readlines()
+    assert len(lines) > 1
+
+    titles = lines[0].strip().split(",")
+    expected_titles = [
+        "browser", "story", "os", "renderer", "compositor", "gpu",
+        "surfaceflinger"
+    ]
+    assert titles == expected_titles, (
+        f"Titles mismatch: expected {expected_titles}, got {titles}")
+
+    has_values = False
+    for line in lines[1:]:
+      values = line.split(",")
+      assert len(values) == len(titles)
+      for value in values[2:]:
+        if value and float(value) > 0:
+          has_values = True
+    assert has_values
+
+
 def _verify_experimental_metrics(out_dir):
   expected_files = {
-      "loadline_benchmark_score.csv",
+      "loadline_benchmark_score.csv", "loadline_breakdown.csv",
       "loadline_experimental_interaction_latency.csv",
       "loadline_experimental_sequence_manager.csv",
       "loadline_experimental_v8_rcs.csv", "loadline_experimental_cpu.csv",
@@ -155,7 +191,8 @@ def _test_loadline_default(device_id, adb_path, benchmark_type: BenchmarkType,
   ] + list(test_env.cq_flags))
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check the total score here.
-  _verify_default_metrics(out_dir, only_total=True)
+  _verify_default_metrics(out_dir, benchmark_type, only_total=True)
+  _verify_breakdown(out_dir)
 
 
 def test_loadline_experimental(device_id, adb_path, test_env: TestEnv) -> None:
@@ -170,6 +207,7 @@ def test_loadline_experimental(device_id, adb_path, test_env: TestEnv) -> None:
       "--throw", f"--out-dir={out_dir}", f"--probe-config={probe_config}"
   ] + list(test_env.cq_flags))
   _verify_experimental_metrics(out_dir)
+  _verify_breakdown(out_dir)
 
 
 def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
@@ -183,7 +221,8 @@ def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
       "--throw", f"--out-dir={out_dir}", "--time-unit=2s",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ] + list(test_env.cq_flags))
-  _verify_default_metrics(out_dir)
+  _verify_default_metrics(out_dir, BenchmarkType.PHONE)
+  _verify_breakdown(out_dir)
 
 
 if __name__ == "__main__":

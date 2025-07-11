@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
@@ -25,7 +25,7 @@ class Replacements(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: Dict[str, Any], **kwargs) -> Self:
+  def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     dict_value = ObjectParser.dict(config)
     for replace_key, replace_value in dict_value.items():
       with exception.annotate_argparsing(
@@ -34,7 +34,7 @@ class Replacements(ConfigObject):
         ObjectParser.not_none(replace_value, "replacement value")
     return cls(config)
 
-  def __init__(self, replacements: Dict[str, Any]) -> None:
+  def __init__(self, replacements: dict[str, Any]) -> None:
     self._replacements = replacements
 
   def apply(self, raw_value: str) -> str:

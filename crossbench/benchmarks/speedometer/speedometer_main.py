@@ -4,17 +4,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, MutableMapping, Type
 
 from typing_extensions import override
 
 from crossbench.benchmarks.speedometer.speedometer_3 import (
-    Speedometer3Benchmark, Speedometer3Probe, Speedometer3ProbeContext,
-    Speedometer3Story)
+    Speedometer3Benchmark, Speedometer3BenchmarkStoryFilter, Speedometer3Probe,
+    Speedometer3ProbeContext, Speedometer3Story)
 
 if TYPE_CHECKING:
+  import argparse
+
   from crossbench.benchmarks.base import VersionParts
   from crossbench.benchmarks.speedometer.speedometer import ProbeClsTupleT
+  from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.stories.story import Story
 
 
 class SpeedometerMainProbe(Speedometer3Probe):
@@ -33,6 +37,31 @@ class SpeedometerMainProbeContext(Speedometer3ProbeContext):
   pass
 
 
+class SpeedometerMainBenchmarkStoryFilter(Speedometer3BenchmarkStoryFilter):
+  __doc__ = Speedometer3BenchmarkStoryFilter.__doc__
+
+  @classmethod
+  @override
+  def add_cli_arguments(
+      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser = super().add_cli_arguments(parser)
+    parser.add_argument(
+        "--measure-prepare",
+        default=False,
+        action="store_true",
+        help="Include benchmark setup time in score.")
+    return parser
+
+  @classmethod
+  @override
+  def url_params_from_cli(cls,
+                          args: argparse.Namespace) -> MutableMapping[str, Any]:
+    url_params: MutableMapping[str, str] = super().url_params_from_cli(args)
+    if args.measure_prepare:
+      url_params["measurePrepare"] = ""
+    return url_params
+
+
 class SpeedometerMainStory(Speedometer3Story):
   __doc__ = Speedometer3Story.__doc__
   NAME: str = "speedometer_main"
@@ -48,6 +77,7 @@ class SpeedometerMainBenchmark(Speedometer3Benchmark):
   NAME: str = "speedometer_main"
   DEFAULT_STORY_CLS = SpeedometerMainStory  # type: ignore
   PROBES: ProbeClsTupleT = (SpeedometerMainProbe,)
+  STORY_FILTER_CLS = SpeedometerMainBenchmarkStoryFilter
 
   @classmethod
   @override
