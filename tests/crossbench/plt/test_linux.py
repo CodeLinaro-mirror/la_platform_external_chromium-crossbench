@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import pathlib
 import textwrap
 from unittest import mock
@@ -18,6 +19,8 @@ from tests.crossbench.mock_helper import (LinuxMockPlatform,
                                           RemoteLinuxMockPlatform, ShResult)
 from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
                                          BasePosixMockPlatformTestCase)
+
+NOW_EPOCH = dt.datetime.now()
 
 
 class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
@@ -177,6 +180,26 @@ Locked:                0 kB
     self.assertEqual(meminfo[proc_100_cmdline],
                      ProcessMeminfo(100, 2062, 19792, 0))
 
+  @mock.patch("crossbench.plt.linux.dt.datetime")
+  def test_meminfo_timeout(self, mock_datetime):
+    mock_datetime.now.side_effect = [
+        NOW_EPOCH,  # compute deadline
+        NOW_EPOCH + dt.timedelta(seconds=10),  # after pgrep
+        NOW_EPOCH + dt.timedelta(seconds=11),  # after process 100, timeout
+    ]
+    process_name: str = "some_process"
+    proc_100_cmdline = "/usr/bin/some_process --some-flag"
+
+    pathlib.Path("/proc/100").mkdir(parents=True)
+    pathlib.Path("/proc/100/cmdline").write_text(proc_100_cmdline)
+    pathlib.Path("/proc/100/smaps_rollup").write_text(self._SMAPS_ROLLUP_DATA)
+
+    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="100\n6\n")
+
+    with self.assertRaises(TimeoutError):
+      self.mock_platform.meminfo(process_name, dt.timedelta(seconds=10))
+
+    mock_datetime.now.assert_has_calls([mock.call(), mock.call(), mock.call()])
 
 class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
                                      _LinuxMockPlatformTestCase):
@@ -340,6 +363,27 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
     self.assertTrue(proc_100_cmdline in meminfo)
     self.assertEqual(meminfo[proc_100_cmdline],
                      ProcessMeminfo(100, 2062, 19792, 0))
+
+  @mock.patch("crossbench.plt.linux.dt.datetime")
+  def test_meminfo_timeout(self, mock_datetime):
+    mock_datetime.now.side_effect = [
+        NOW_EPOCH,  # compute deadline
+        NOW_EPOCH + dt.timedelta(seconds=10),  # after pgrep
+        NOW_EPOCH + dt.timedelta(seconds=11),  # after process 100, timeout
+    ]
+    process_name: str = "some_process"
+    proc_100_cmdline = "/usr/bin/some_process --some-flag"
+
+    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="100\n6\n")
+    self.mock_platform.expect_sh(
+        "cat", "/proc/100/cmdline", result=proc_100_cmdline)
+    self.mock_platform.expect_sh(
+        "cat", "/proc/100/smaps_rollup", result=self._SMAPS_ROLLUP_DATA)
+
+    with self.assertRaises(TimeoutError):
+      self.mock_platform.meminfo(process_name, dt.timedelta(seconds=10))
+
+    mock_datetime.now.assert_has_calls([mock.call(), mock.call(), mock.call()])
 
   # TODO: implement more mock tests
   def test_local_reverse_port_forward_invalid(self):
