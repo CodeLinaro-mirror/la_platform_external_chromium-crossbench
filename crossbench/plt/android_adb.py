@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import functools
 import logging
 import math
@@ -24,6 +25,8 @@ from crossbench.plt.base import SubprocessError
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
+
+from android_protoc import activitymanagerservice_pb2
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
@@ -755,9 +758,13 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return res
 
   @override
-  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
-    dumpsys_output = self.sh_stdout("dumpsys", "meminfo", "--package",
-                                    process_name)
+  def meminfo(
+      self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
+  ) -> dict[str, ProcessMeminfo]:
+    timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
+    dumpsys_output = self.sh_stdout_bytes("dumpsys", "-T", str(timeout_ms),
+                                          "meminfo", "--proto", "--package",
+                                          process_name)
     return self._parse_dumpsys_meminfo(dumpsys_output)
 
   @functools.lru_cache(maxsize=1)
@@ -837,37 +844,21 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
 
-  def _parse_dumpsys_meminfo(self,
-                             meminfo_output: str) -> dict[str, ProcessMeminfo]:
-    pid_sections = re.split(r"\*\* MEMINFO in pid (\d+) \[(.*?)] \*\*",
-                            meminfo_output)[1:]
+  _DUMPSYS_TIMEOUT_RE = re.compile(
+      rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
 
+  def _parse_dumpsys_meminfo(
+      self, meminfo_output: bytes) -> dict[str, ProcessMeminfo]:
+    if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
+      raise TimeoutError("dumpsys meminfo timed out")
+    proto_dump = activitymanagerservice_pb2.MemInfoDumpProto()
+    proto_dump.ParseFromString(meminfo_output)
     meminfos = {}
-
-    for i in range(0, len(pid_sections), 3):
-      pid = pid_sections[i]
-      process_name = pid_sections[i + 1].strip()
-      raw_process_info = pid_sections[i + 2]
-
-      pss_rss_total_v1 = re.search(
-          r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
-          r"\s+TOTAL SWAP \(KB\):\s+(?P<swap_total>\d+)", raw_process_info)
-
-      # TOTAL PSS: 91273  TOTAL RSS: 259028  TOTAL SWAP PSS: 209
-      pss_rss_total_v2 = re.search(
-          r"TOTAL PSS:\s+(?P<pss_total>\d+)\s+TOTAL RSS:\s+(?P<rss_total>\d+)"
-          r"\s+TOTAL SWAP PSS:\s+(?P<swap_total>\d+)", raw_process_info)
-
-      if pss_rss_total_v1:
-        pss_rss_total = pss_rss_total_v1
-      elif pss_rss_total_v2:
-        pss_rss_total = pss_rss_total_v2
-      else:
-        raise ValueError("Failed to parse meminfo.")
-
-      meminfos[process_name] = ProcessMeminfo(
-          pid=int(pid),
-          pss_total=int(pss_rss_total["pss_total"]),
-          rss_total=int(pss_rss_total["rss_total"]),
-          swap_total=int(pss_rss_total["swap_total"]))
+    for app_process in proto_dump.app_processes:
+      mem_info = app_process.process_memory.total_heap.mem_info
+      meminfos[app_process.process_memory.process_name] = ProcessMeminfo(
+          pid=app_process.process_memory.pid,
+          pss_total=mem_info.total_pss_kb,
+          rss_total=mem_info.total_rss_kb,
+          swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb)
     return meminfos

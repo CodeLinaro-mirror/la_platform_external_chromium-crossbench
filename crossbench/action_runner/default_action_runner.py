@@ -368,7 +368,7 @@ class DefaultActionRunner(ActionRunner):
       logging.warning("No meminfo probe for dump on %s", repr(self.info_stack))
       return
     assert isinstance(ctx, MeminfoProbeContext)
-    ctx.dump_meminfo(action.target, action.package)
+    ctx.dump_meminfo(action.target, action.timeout, action.package)
 
   def wait_for_download(self, run: Run,
                         action: i_action.WaitForDownloadAction) -> None:

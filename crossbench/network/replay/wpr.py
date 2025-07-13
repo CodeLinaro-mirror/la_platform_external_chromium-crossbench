@@ -44,25 +44,25 @@ class WPRCloudBinary:
 # See third_party/catapult/telemetry/telemetry/binary_dependencies.json
 WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], WPRCloudBinary]] = {
     ("android", "arm64"):
-        WPRCloudBinary("7ed4026aaef69a46b99f65daeded6f73d1242f13"),
+        WPRCloudBinary("ea9c5a7b7199f29ae67e658a14a9cbd6d0cdcd32"),
     ("android", "arm32"):
-        WPRCloudBinary("98365cc4e722f0996b18529e00fd03b3de60bb9a"),
+        WPRCloudBinary("f8af16f14f785ce501c7857e8e16ec4ec9824518"),
     ("android", "x64"):
-        WPRCloudBinary("70e240a199128cd67cc25c6639ca3f785f941aa3"),
+        WPRCloudBinary("2a9db0cbbb6111182dbe8d866c16e5e90951119d"),
     # On arm64 ChromeOS, use the same binary as arm64 Linux.
     ("chromeos_ssh", "arm64"):
-        WPRCloudBinary("7ed4026aaef69a46b99f65daeded6f73d1242f13"),
+        WPRCloudBinary("ea9c5a7b7199f29ae67e658a14a9cbd6d0cdcd32"),
     # On x64 ChromeOS, use the same binary as x64 Linux.
     ("chromeos_ssh", "x64"):
-        WPRCloudBinary("70e240a199128cd67cc25c6639ca3f785f941aa3"),
+        WPRCloudBinary("2a9db0cbbb6111182dbe8d866c16e5e90951119d"),
     ("linux", "x64"):
-        WPRCloudBinary("70e240a199128cd67cc25c6639ca3f785f941aa3"),
+        WPRCloudBinary("2a9db0cbbb6111182dbe8d866c16e5e90951119d"),
     ("macos", "arm64"):
-        WPRCloudBinary("5f2b7d7d463c47ea365bf7ea8936bb5ad8a212f0"),
+        WPRCloudBinary("b85359c0cd8b9474e2e52749a83ab7ba8e00bbc4"),
     ("macos", "x64"):
-        WPRCloudBinary("fa01d104309b62d9ac10682252c595aad9239789"),
+        WPRCloudBinary("ea7a1780f7fd208f56b3c2089b481cfd04fec65c"),
     ("win", "x64"):
-        WPRCloudBinary("964bff63766054c8c1c1f1c01acedcf0770a8da7"),
+        WPRCloudBinary("ec8a28d05918b299f96d81039e8d656642fc0e9c"),
 }
 
 

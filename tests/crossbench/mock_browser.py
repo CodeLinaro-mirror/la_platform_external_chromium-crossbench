@@ -263,7 +263,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return self._current_url
 
   @override
-  def meminfo(self) -> dict[str, ProcessMeminfo]:
+  def meminfo(self, timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+    del timeout
     return {
         "process_1": ProcessMeminfo(1, 2, 3, 4),
         "process_2": ProcessMeminfo(2, 3, 4, 5)
