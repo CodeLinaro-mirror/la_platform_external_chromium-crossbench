@@ -12,10 +12,8 @@ with corresponding changes in CBB in google3
 
 from __future__ import annotations
 
-import datetime as dt
 from typing import TYPE_CHECKING, Optional, Type
 
-from selenium import webdriver
 from typing_extensions import override
 
 import crossbench.benchmarks.all as benchmarks
@@ -27,6 +25,10 @@ from crossbench.cli.config.env import ValidationMode
 from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
+  import datetime as dt
+
+  from selenium import webdriver
+
   from crossbench.benchmarks.base import PressBenchmark
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.stories.press_benchmark import PressBenchmarkStory

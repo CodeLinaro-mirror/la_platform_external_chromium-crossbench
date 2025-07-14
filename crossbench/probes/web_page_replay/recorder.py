@@ -17,7 +17,6 @@ from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
-from crossbench.plt.port_manager import PortScope
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult, ProbeResultDict)
@@ -25,6 +24,7 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.path import LocalPath
+  from crossbench.plt.port_manager import PortScope
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
@@ -84,8 +84,7 @@ class WebPageReplayProbe(Probe):
     super().__init__()
     host_platform = plt.PLATFORM
     if not wpr_go_bin:
-      if local_wpr_path := WprGoToolFinder(host_platform).path:
-        wpr_go_bin = host_platform.local_path(local_wpr_path)
+      wpr_go_bin = WprGoToolFinder(host_platform).local_path
     if not wpr_go_bin:
       raise RuntimeError(f"Could not find wpr.go on {host_platform}")
     self._wpr_go_bin: LocalPath = host_platform.parse_local_binary_path(

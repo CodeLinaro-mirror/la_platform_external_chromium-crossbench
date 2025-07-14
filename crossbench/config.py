@@ -544,7 +544,7 @@ class ConfigObject(abc.ABC):
 
   @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
-    raise NotImplementedError()
+    return ConfigParser(cls)
 
 
 class _PrimitiveConfigObject(ConfigObject):
@@ -914,16 +914,22 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def __init__(
       self,
       cls: Type[ConfigResultObjectT],
+      key: Optional[str] = None,
       title: Optional[str] = None,
       default: Optional[ConfigResultObjectT] = None,
       unused_properties_mode: UnusedPropertiesMode = UnusedPropertiesMode.WARN
   ) -> None:
     self._cls = cls
+    if key is None:
+      key = cls.__name__
+    if not key:
+      raise ValueError("Got empty key")
+    self._key: str = key
     if title is None:
       title = f"{cls.__name__} parser"
     if not title:
       raise ValueError("Got empty title.")
-    self.title = title
+    self._title: str = title
     if default:
       if not isinstance(default, cls):
         raise TypeError(
@@ -977,6 +983,19 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     config_keys: Set[str] = set(config_data.keys())
     return bool(config_keys.intersection(self._arg_names))
 
+  def arg_types(self) -> set[ArgParserType]:
+    types = set()
+    for arg in self._args.values():
+      if arg_type := arg.type:
+        types.add(arg_type)
+    return types
+
+  def config_arg_types(self) -> set[Type[ConfigObject]]:
+    return {
+        t for t in self.arg_types()
+        if inspect.isclass(t) and issubclass(t, ConfigObject)
+    }
+
   def kwargs_from_config(self, config_data: dict[str, Any],
                          **extra_kwargs) -> dict[str, Any]:
     with exception.annotate_argparsing(
@@ -1026,12 +1045,24 @@ class ConfigParser(Generic[ConfigResultObjectT]):
           f"{unused_keys}")
 
   @property
+  def title(self) -> str:
+    return self._title
+
+  @property
+  def key(self) -> str:
+    return self._key
+
+  @property
   def arg_parsers(self) -> tuple[_ConfigArgParser, ...]:
     return tuple(self._args.values())
 
   @property
   def cls(self) -> Type:
     return self._cls
+
+  @property
+  def cls_name(self) -> str:
+    return self.cls.__name__
 
   @property
   def doc(self) -> str:
@@ -1047,6 +1078,17 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def summary(self) -> str:
     return self.doc.splitlines()[0]
 
+  @property
+  def args_help(self) -> str:
+    parts: list[str] = []
+    width = 80
+    for arg in self._args.values():
+      parts.append(f"{arg.name}:")
+      parts.extend(
+          txt_helper.wrap_lines(arg.help_text, width=width, indent="  "))
+      parts.append("")
+    return "\n".join(parts)
+
   @functools.lru_cache(maxsize=1)
   def __str__(self) -> str:
     parts: list[str] = []
@@ -1061,11 +1103,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       return ""
     parts.append(f"{self.cls.__name__} Configuration/Settings:")
     parts.append("")
-    for arg in self._args.values():
-      parts.append(f"{arg.name}:")
-      parts.extend(
-          txt_helper.wrap_lines(arg.help_text, width=width, indent="  "))
-      parts.append("")
+    parts.append(self.args_help)
     return "\n".join(parts)
 
 

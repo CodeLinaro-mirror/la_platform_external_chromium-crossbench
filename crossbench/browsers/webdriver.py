@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
 import selenium.common.exceptions
 import urllib3
 from selenium import webdriver
-from selenium.webdriver.remote.remote_connection import RemoteConnection
 from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
   import datetime as dt
 
   from selenium.webdriver.common.timeouts import Timeouts
+  from selenium.webdriver.remote.remote_connection import RemoteConnection
 
   from crossbench.browsers.settings import Settings
   from crossbench.env.runner_env import RunnerEnv
@@ -100,9 +100,6 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def start(self, session: BrowserSessionRunGroup) -> None:
     super().start(session)
     assert self._driver_path
-    if timeout := self.http_request_timeout:
-      logging.debug("Setting http request timeout to %s", timeout)
-      RemoteConnection.set_timeout(timeout.total_seconds())
     try:
       self._private_driver = self._start_driver(session, self._driver_path)
     except selenium.common.exceptions.WebDriverException as e:
@@ -134,6 +131,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     """Adjust the global webdriver timeouts if the runner has custom timeout
     unit values.
     If timing.has_no_timeout each value is set to SAFE_MAX_TIMEOUT_TIMEDELTA."""
+    if http_timeout := self.http_request_timeout:
+      logging.debug("Setting http request timeout to %s", http_timeout)
+      executor = cast("RemoteConnection", self._private_driver.command_executor)
+      executor.client_config.timeout = http_timeout.total_seconds()
     timing = session.timing
     if not timing.timeout_unit:
       return

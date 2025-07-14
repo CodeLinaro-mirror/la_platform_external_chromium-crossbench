@@ -63,48 +63,58 @@ class TestMeminfoProbe(GenericProbeTestCase):
     meminfo_detail = self.browsers[0].performance_marks_details[
         self.browsers[0].performance_marks.index("crossbench-meminfo")]
 
-    self.assertEqual(meminfo_detail, [
-        {
-            "timestamp": "2025-05-20 12:45:59",
-            "pid": 1,
-            "name": "process_1",
-            "pss_total": 2,
-            "rss_total": 3,
-            "swap_total": 4
-        },
-        {
-            "timestamp": "2025-05-20 12:45:59",
-            "pid": 2,
-            "name": "process_2",
-            "pss_total": 3,
-            "rss_total": 4,
-            "swap_total": 5
-        },
-    ])
+    self.assertEqual(
+        meminfo_detail, {
+            "title":
+                "block_0_action_2",
+            "meminfos": [
+                {
+                    "timestamp": "2025-05-20 12:45:59",
+                    "pid": 1,
+                    "name": "process_1",
+                    "pss_total": 2,
+                    "rss_total": 3,
+                    "swap_total": 4
+                },
+                {
+                    "timestamp": "2025-05-20 12:45:59",
+                    "pid": 2,
+                    "name": "process_2",
+                    "pss_total": 3,
+                    "rss_total": 4,
+                    "swap_total": 5
+                },
+            ]
+        })
 
     self.assertTrue("crossbench-meminfo" in self.browsers[1].performance_marks)
 
     meminfo_detail = self.browsers[1].performance_marks_details[
         self.browsers[1].performance_marks.index("crossbench-meminfo")]
 
-    self.assertEqual(meminfo_detail, [
-        {
-            "timestamp": "2025-05-20 12:45:59",
-            "pid": 1,
-            "name": "process_1",
-            "pss_total": 2,
-            "rss_total": 3,
-            "swap_total": 4
-        },
-        {
-            "timestamp": "2025-05-20 12:45:59",
-            "pid": 2,
-            "name": "process_2",
-            "pss_total": 3,
-            "rss_total": 4,
-            "swap_total": 5
-        },
-    ])
+    self.assertEqual(
+        meminfo_detail, {
+            "title":
+                "block_0_action_2",
+            "meminfos": [
+                {
+                    "timestamp": "2025-05-20 12:45:59",
+                    "pid": 1,
+                    "name": "process_1",
+                    "pss_total": 2,
+                    "rss_total": 3,
+                    "swap_total": 4
+                },
+                {
+                    "timestamp": "2025-05-20 12:45:59",
+                    "pid": 2,
+                    "name": "process_2",
+                    "pss_total": 3,
+                    "rss_total": 4,
+                    "swap_total": 5
+                },
+            ]
+        })
 
 
 if __name__ == "__main__":

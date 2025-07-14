@@ -5,15 +5,16 @@
 from __future__ import annotations
 
 import abc
-import subprocess
 from typing import TYPE_CHECKING, Mapping, Optional
 
-from crossbench.plt.base import Platform
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.remote import RemotePlatformMixin
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs
+  import subprocess
+
+  from crossbench.plt.base import Platform
+  from crossbench.plt.types import CmdArg, ListCmdArgs
 
 
 class SshPortManager(PortManager):

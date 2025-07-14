@@ -25,18 +25,19 @@ from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
-from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
                                          FlagsGroupConfig, FlagsVariantConfig)
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.flags.base import Flags
 from crossbench.helper.cwd import ChangeCWD
-from crossbench.network.base import Network
 from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.cli.config.env import EnvConfig
+  from crossbench.network.base import Network
+
   FlagGroupItemT = tuple[str, str | None] | None
   BrowserLookupTableT = dict[str, tuple[Type[Browser], "BrowserConfig"]]
 
@@ -326,7 +327,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
         driver_logging=args.driver_logging,
         wipe_system_user_data=args.wipe_system_user_data,
         http_request_timeout=args.http_request_timeout,
-        env_config=env_config)
+        env_config=env_config,
+        extensions=browser_config.extensions)
     browser_variant = BrowserVariantConfig(label, browser_cls, browser_config,
                                            settings)
     if not self._check_unique_label(label):

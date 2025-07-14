@@ -11,13 +11,13 @@ from typing import Any, NamedTuple, Optional, Self, Type, cast
 import tabulate
 
 
-class StrHelpDataMixin(NamedTuple):
+class StrEnumWithHelpData(NamedTuple):
   value: str
   help: str
 
 
 
-class StrEnumWithHelp(StrHelpDataMixin, enum.Enum):
+class StrEnumWithHelp(StrEnumWithHelpData, enum.Enum):
 
   @classmethod
   def _missing_(cls: Type[Self], value: Any) -> Optional[Self]:

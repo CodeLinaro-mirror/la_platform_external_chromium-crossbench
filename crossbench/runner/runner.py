@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import datetime as dt
 import enum
 import logging
@@ -26,7 +25,6 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
-from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.results_db.db import ResultsDB
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
@@ -40,8 +38,11 @@ from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
+  import argparse
+
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.probes.thermal_monitor import ThermalStatus
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.timing import AnyTimeUnit
   from crossbench.stories.story import Story

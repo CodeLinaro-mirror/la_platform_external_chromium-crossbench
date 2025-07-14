@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
-from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.firefox.version import FirefoxVersion
@@ -16,6 +15,7 @@ from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.flags.base import Flags
   from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup

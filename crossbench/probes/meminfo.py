@@ -6,18 +6,18 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-import datetime as dt
-from typing import TYPE_CHECKING, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, Optional, Self, Type
 
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.meminfo import MeminfoTarget
-from crossbench.probes.probe import Probe, ProbeConfigParser
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -61,7 +61,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     pass
 
   def dump_meminfo(self, target: MeminfoTarget, timeout: dt.timedelta,
-                   package: Optional[str]) -> None:
+                   package: Optional[str], title: str) -> None:
     timestamp = self.browser_platform.sh_stdout("date",
                                                 "+%Y-%m-%d %H:%M:%S").rstrip()
 
@@ -74,12 +74,12 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     else:
       raise ValueError("Cannot dump meminfo without package name.")
 
-    meminfo_json = []
+    meminfo_json: dict[str, Any] = {"title": title, "meminfos": []}
     for proc_name, proc_meminfo in meminfo.items():
       proc_data = dataclasses.asdict(proc_meminfo)
       proc_data["timestamp"] = timestamp
       proc_data["name"] = proc_name
-      meminfo_json.append(proc_data)
+      meminfo_json["meminfos"].append(proc_data)
 
     self.browser.performance_mark("meminfo", detail=meminfo_json)
 
@@ -107,7 +107,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       )
       if write_header:
         writer.writeheader()
-      writer.writerows(meminfo_json)
+      writer.writerows(meminfo_json["meminfos"])
 
   @override
   def teardown(self) -> ProbeResult:

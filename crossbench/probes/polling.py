@@ -14,15 +14,15 @@ from typing import TYPE_CHECKING, Iterable, Self, Type
 from typing_extensions import override
 
 from crossbench.parse import DurationParser, ObjectParser
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
+                                     ProbeKeyT)
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import LocalPath
-  from crossbench.plt.base import CmdArg, TupleCmdArgs
+  from crossbench.plt.types import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
 
 

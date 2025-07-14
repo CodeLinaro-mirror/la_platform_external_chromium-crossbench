@@ -14,12 +14,12 @@ from crossbench.action_runner.screenshot_annotation import (
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Viewport
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 

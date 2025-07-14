@@ -61,6 +61,7 @@ class WebviewEmbedder(Webview):
   def start_driver(self, session: BrowserSessionRunGroup) -> ChromiumDriver:
     assert self._driver_path
     self._private_driver = self._start_driver(session, self._driver_path)
+    self._set_driver_timeouts(session)
     return self._private_driver
 
   @override

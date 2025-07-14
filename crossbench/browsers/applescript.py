@@ -8,7 +8,6 @@ import abc
 import json
 import logging
 import os
-import subprocess
 from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import psutil
@@ -20,6 +19,7 @@ from crossbench.env.runner_env import ValidationError
 
 if TYPE_CHECKING:
   import datetime as dt
+  import subprocess
 
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath

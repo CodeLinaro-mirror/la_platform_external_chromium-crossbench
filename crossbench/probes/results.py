@@ -15,10 +15,10 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.parse import ObjectParser
 from crossbench.probes.helper import INTERNAL_NAME_PREFIX
-from crossbench.probes.probe_result_key import ProbeResultKey
-from crossbench.runner.probe_result_origin import ProbeResultOrigin
 
 if TYPE_CHECKING:
+  from crossbench.probes.probe_result_key import ProbeResultKey
+  from crossbench.runner.probe_result_origin import ProbeResultOrigin
   from crossbench.types import JsonDict
 
 

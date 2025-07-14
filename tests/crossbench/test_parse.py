@@ -15,8 +15,8 @@ from urllib import parse as urlparse
 
 from typing_extensions import override
 
-from crossbench.parse import (DurationParser, NumberParser, ObjectParser,
-                              PathParser)
+from crossbench.parse import (DurationParseError, DurationParser, NumberParser,
+                              ObjectParser, PathParser, TimeUnit)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -78,6 +78,12 @@ class DurationParserTestCase(unittest.TestCase):
         DurationParser.positive_duration("200"), dt.timedelta(seconds=200))
     self.assertEqual(
         DurationParser.positive_duration(200), dt.timedelta(seconds=200))
+    self.assertEqual(
+        DurationParser.positive_duration_ms("200"),
+        dt.timedelta(milliseconds=200))
+    self.assertEqual(
+        DurationParser.positive_duration_ms(200),
+        dt.timedelta(milliseconds=200))
 
   def test_milliseconds(self):
     self.assertEqual(
@@ -776,6 +782,53 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
       ObjectParser.regexp("\\")
     pattern = ObjectParser.regexp("^abc$")
     self.assertEqual(pattern.pattern, "^abc$")
+
+
+class TimeUnitTestCase(unittest.TestCase):
+
+  def test_parse_microseconds(self):
+    for unit in ("us", "micros", "microseconds"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.MICROSECOND)
+
+  def test_parse_milliseconds(self):
+    for unit in ("ms", "millis", "milliseconds"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.MILLISECOND)
+
+  def test_parse_seconds(self):
+    for unit in ("s", "sec", "secs", "second", "seconds"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.SECOND)
+
+  def test_parse_minutes(self):
+    for unit in ("m", "min", "mins", "minute", "minutes"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.MINUTE)
+
+  def test_parse_hours(self):
+    for unit in ("h", "hrs", "hour", "hours"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.HOUR)
+
+  def test_parse_days(self):
+    for unit in ("d", "day", "days"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.DAY)
+
+  def test_parse_weeks(self):
+    for unit in ("w", "week", "weeks"):
+      self.assertIs(TimeUnit.parse(unit), TimeUnit.WEEK)
+
+  def test_parse_invalid(self):
+    for invalid in ("months", "yy", "ww", "i"):
+      with self.assertRaises(DurationParseError):
+        TimeUnit.parse(invalid)
+
+  def test_to_timedelta(self):
+    self.assertEqual(
+        TimeUnit.MICROSECOND.timedelta(123), dt.timedelta(microseconds=123))
+    self.assertEqual(
+        TimeUnit.MILLISECOND.timedelta(123), dt.timedelta(milliseconds=123))
+    self.assertEqual(TimeUnit.SECOND.timedelta(123), dt.timedelta(seconds=123))
+    self.assertEqual(TimeUnit.MINUTE.timedelta(123), dt.timedelta(minutes=123))
+    self.assertEqual(TimeUnit.HOUR.timedelta(123), dt.timedelta(hours=123))
+    self.assertEqual(TimeUnit.DAY.timedelta(123), dt.timedelta(days=123))
+    self.assertEqual(TimeUnit.WEEK.timedelta(123), dt.timedelta(weeks=123))
 
 
 if __name__ == "__main__":

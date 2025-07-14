@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING, Iterable, Iterator, Optional
 
 from typing_extensions import override
 
-from crossbench.exception import TInfoStack
-from crossbench.flags.base import Flags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.durations import Durations
@@ -29,6 +27,8 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.exception import TInfoStack
+  from crossbench.flags.base import Flags
   from crossbench.network.base import Network
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe

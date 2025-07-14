@@ -10,9 +10,8 @@ import logging
 import os
 import re
 import shlex
-import subprocess
 import time
-from typing import Iterable, Optional, TextIO
+from typing import TYPE_CHECKING, Iterable, Optional, TextIO
 
 from typing_extensions import override
 
@@ -21,7 +20,13 @@ from crossbench.helper.cwd import ChangeCWD
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
-from crossbench.plt import PLATFORM, Platform, TupleCmdArgs
+from crossbench.plt import PLATFORM, Platform
+
+if TYPE_CHECKING:
+  import subprocess
+
+  from crossbench.plt.types import TupleCmdArgs
+
 
 _WPR_PORT_RE: re.Pattern[str] = re.compile(r".*Starting server on "
                                            r"(?P<protocol>http|https)://"
@@ -74,8 +79,8 @@ class WprBase(abc.ABC):
       # Assuming the binary path is precompiled and executable.
       self._go_cmd = (self._bin_path,)
       if self._platform.is_local:
-        if local_wpr_go := WprGoToolFinder(self._platform).path:
-          wpr_root = self._platform.local_path(local_wpr_go.parents[1])
+        if local_wpr_go := WprGoToolFinder(self._platform).local_path:
+          wpr_root = local_wpr_go.parents[1]
         else:
           raise ValueError(
               f"Could not find web_page_replay_go on {self._platform}")

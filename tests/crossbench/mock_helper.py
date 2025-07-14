@@ -29,11 +29,11 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.port_manager import LocalPortManager, PortManager
 from crossbench.plt.win import WinPlatform
-from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, TupleCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, TupleCmdArgs
+  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
 

@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING, Iterable
 from typing_extensions import override
 
 from crossbench.helper import collection_helper
-from crossbench.path import LocalPath
 from crossbench.runner.groups.base import RunGroup
 
 if TYPE_CHECKING:
   from crossbench import exception
   from crossbench.browsers.browser import Browser
+  from crossbench.path import LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.cache_temperatures import \

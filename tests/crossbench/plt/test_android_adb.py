@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import argparse
 import pathlib
-import textwrap
 from typing import Final
 from unittest import mock, skipIf
 
@@ -45,13 +44,14 @@ BrightnessSynchronizer
 """
 
 
-def load_dumpsys_meminfo_output():
-  meminfo_result_path = pth.LocalPath(
-      __file__).parent / "pb" / "dumpsys_meminfo.pb"
-  return meminfo_result_path.read_bytes()
+def load_pb(path: str):
+  return (pth.LocalPath(__file__).parent / "pb" / path).read_bytes()
 
 
-DUMPSYS_MEMINFO_OUTPUT = load_dumpsys_meminfo_output()
+DUMPSYS_MEMINFO_OUTPUT = load_pb("dumpsys_meminfo.pb")
+AC_POWERED_OUTPUT = load_pb("battery/ac_powered.pb")
+BATTERY_POWERED_OUTPUT = load_pb("battery/battery_powered.pb")
+DUMPSYS_WINDOW_DISPLAYS_OUTPUT = load_pb("display/1080p.pb")
 
 DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b'''
 *** SERVICE 'meminfo' DUMP TIMEOUT (1ms) EXPIRED ***
@@ -97,37 +97,20 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertTrue(self.platform.is_android)
 
   def test_is_battery_powered(self):
-    dumpsys_battery_output = textwrap.dedent("""
-      AC powered: false
-      USB powered: false
-      Wireless powered: true
-      Max charging current: 3000000
-    """)
-    self.expect_sh("dumpsys battery", result=dumpsys_battery_output)
+    self.expect_sh("dumpsys battery --proto", result=AC_POWERED_OUTPUT)
     self.assertFalse(self.platform.is_battery_powered)
-    dumpsys_battery_output = textwrap.dedent("""
-      AC powered: false
-      USB powered: false
-      Wireless powered: false
-      Max charging current: 3000000
-    """)
-    self.expect_sh("dumpsys battery", result=dumpsys_battery_output)
+
+    self.expect_sh("dumpsys battery --proto", result=BATTERY_POWERED_OUTPUT)
     self.assertTrue(self.platform.is_battery_powered)
 
   def test_display_details(self):
-    dumpsys_window_output = textwrap.dedent("""
-      WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)
-        Display: mDisplayId=0 (organized)
-          init=1080x2400 480dpi mMinSizeOfResizeableTaskDp=220 cur=1080x2400 app=1080x2256 rng=1080x1008-2256x2184
-          deferred=false mLayoutNeeded=false mTouchExcludeRegion=SkRegion((0,0,1080,2400))
-
-        mLastOrientationSource=WindowedMagnification:0:31@1234567
-     """)
-    self.expect_sh("dumpsys window displays", result=dumpsys_window_output)
+    self.expect_sh(
+        "dumpsys window displays --proto",
+        result=DUMPSYS_WINDOW_DISPLAYS_OUTPUT)
     result = self.platform.display_details()
     self.assertEqual(len(result), 1)
     self.assertDictEqual(result[0], {
-        "resolution": (1080, 2400),
+        "resolution": (1920, 1080),
         "refresh_rate": -1
     })
 
@@ -546,15 +529,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_display_resolution(self):
     self.expect_sh(
-        "dumpsys window displays",
-        result="WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)\n"
-        "Display: mDisplayId=0 (organized)\n"
-        "init=1366x768 136dpi mMinSizeOfResizeableTaskDp=220 "
-        "cur=1366x768 app=1366x768 rng=768x768-1366x1366\n"
-        "deferred=false mLayoutNeeded=false")
+        "dumpsys window displays --proto",
+        result=DUMPSYS_WINDOW_DISPLAYS_OUTPUT)
     [horizontal, vertical] = self.platform.display_resolution()
-    self.assertEqual(horizontal, 1366)
-    self.assertEqual(vertical, 768)
+    self.assertEqual(horizontal, 1920)
+    self.assertEqual(vertical, 1080)
 
   def test_user_id(self):
     self.expect_sh("am get-current-user", result="10")

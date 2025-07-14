@@ -62,15 +62,15 @@ class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
 
   def _download_perfetto_tool(self, platform, key):
     platform.use_mock_name = False
-    download_path = platform.cache_dir("perfetto") / "v49.0/traceconv"
+    download_path = platform.cache_dir("perfetto") / "v51.2/traceconv"
     platform.expect_download(
         "https://commondatastorage.googleapis.com/perfetto-luci-artifacts/"
-        f"v49.0/{key}/traceconv", download_path)
+        f"v51.2/{key}/traceconv", download_path)
     platform.expect_sh(
         download_path,
         "--version",
-        result=("Perfetto v49.0-33a4fd078 "
-                "(33a4fd07897a9a648664926ea27769278a19ff13)"))
+        result=("Perfetto v51.2-7a9a6a0 "
+                "(7a9a6a0587348bffd1796b66a1da33cc1ea421d8)"))
     result = PerfettoToolDownloader("traceconv", platform=platform).download()
     self.assertTrue(platform.exists(result))
     # downloading the same will use the locally cached version

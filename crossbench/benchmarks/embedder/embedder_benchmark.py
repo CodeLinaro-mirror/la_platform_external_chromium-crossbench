@@ -16,7 +16,6 @@ from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
-from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.base import get_action_runner
 from crossbench.cli.ui import timer
 from crossbench.parse import ObjectParser
@@ -24,6 +23,7 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
+  from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.browsers.webview.embedder import WebviewEmbedder
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.runner.run import Run
