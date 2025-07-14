@@ -24,6 +24,7 @@ from crossbench.stories.press_benchmark import PressBenchmarkStory
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult, ProbeResultDict
@@ -262,10 +263,11 @@ class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
 
   def __init__(self,
                stories: Sequence[Story],
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                custom_url: Optional[str] = None,
                detailed_metrics: bool = False) -> None:
     self._detailed_metrics = detailed_metrics
-    super().__init__(stories, custom_url)
+    super().__init__(stories, action_runner_config, custom_url)
 
   @property
   def detailed_metrics(self) -> bool:

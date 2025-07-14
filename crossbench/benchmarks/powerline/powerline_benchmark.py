@@ -23,6 +23,7 @@ if TYPE_CHECKING:
   import argparse
 
   from crossbench import path as pth
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.runner.run import Run
@@ -93,9 +94,10 @@ class PowerlineBenchmark(Benchmark):
   # on it without manual intervention.
 
   def __init__(self,
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                run_for: Optional[dt.timedelta] = None) -> None:
     powerline_story = PowerlineStory(run_for)
-    super().__init__([powerline_story])
+    super().__init__([powerline_story], action_runner_config)
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:

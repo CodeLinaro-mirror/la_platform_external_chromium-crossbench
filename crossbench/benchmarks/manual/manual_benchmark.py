@@ -20,6 +20,7 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.runner.run import Run
 
@@ -95,12 +96,13 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   DEFAULT_STORY_CLS = ManualStory
 
   def __init__(self,
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                start_after: Optional[dt.timedelta] = None,
                run_for: Optional[dt.timedelta] = None,
                url: Optional[str] = None) -> None:
     manual_story = ManualStory(
         start_after=start_after, run_for=run_for, url=url)
-    super().__init__([manual_story])
+    super().__init__([manual_story], action_runner_config)
 
   @classmethod
   @override

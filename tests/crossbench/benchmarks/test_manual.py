@@ -52,7 +52,7 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
                 start_after: Optional[dt.timedelta] = None,
                 run_for: Optional[dt.timedelta] = None):
     repetitions = 3
-    benchmark = ManualBenchmark(start_after, run_for)  # pytype: disable=not-instantiable
+    benchmark = ManualBenchmark(None, start_after, run_for)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

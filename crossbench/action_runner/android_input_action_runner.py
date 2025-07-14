@@ -88,6 +88,7 @@ class ViewportInfo:
 
 
 class AndroidInputActionRunner(DefaultActionRunner):
+  """Custom ActionRunner for Android."""
 
   # Represents the position of the chrome main window relative to the entire
   # screen as reported by Android window manager.

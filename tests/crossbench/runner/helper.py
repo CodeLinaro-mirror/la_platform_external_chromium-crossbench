@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Optional, Type
 
 from typing_extensions import override
 
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env.runner_env import RunnerEnv
@@ -30,11 +31,11 @@ from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
 from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
   from crossbench.runner.timing import AnyTimeUnit
-
 
 
 class MockBrowser:
@@ -54,6 +55,7 @@ class MockRun:
                runner,
                browser_session,
                story="story",
+               action_runner: Optional[ActionRunner] = None,
                repetition=0,
                is_warmup=False,
                temperature="default",
@@ -73,6 +75,7 @@ class MockRun:
     self.is_success = True
     self.index = index
     self.story = story
+    self.action_runner: ActionRunner = action_runner or DefaultActionRunner()
     self.story_secrets = Secrets()
     self.out_dir = (
         browser_session.root_dir / safe_filename(self.browser.unique_name) /

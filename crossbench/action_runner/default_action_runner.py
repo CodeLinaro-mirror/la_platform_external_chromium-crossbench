@@ -33,6 +33,8 @@ if TYPE_CHECKING:
 
 
 class DefaultActionRunner(ActionRunner):
+  """Default action runner that uses JavaScript for most page interactions."""
+
   XPATH_SELECT_ELEMENT = """
       let elements = [];
       let xpathResult = document.evaluate(arguments[0], document);

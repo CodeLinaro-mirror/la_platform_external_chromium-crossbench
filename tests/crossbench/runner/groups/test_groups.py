@@ -1,19 +1,22 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file
+# found in the LICENSE file.
 
-from typing import Iterable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterable
 
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
     CacheTemperaturesRunGroup
 from crossbench.runner.groups.repetitions import RepetitionsRunGroup
 from crossbench.runner.groups.stories import StoriesRunGroup
-from crossbench.runner.run import Run
 from tests import test_helper
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockRun
 
+if TYPE_CHECKING:
+  from crossbench.runner.run import Run
 
 class RunGroupTestCase(BaseRunGroupTestCase):
 
@@ -43,8 +46,8 @@ class RunGroupTestCase(BaseRunGroupTestCase):
 
   def test_single_story_multiple_repetitions(self):
     session = self.default_session(throw=True)
-    run_0 = MockRun(self.runner, session, "story 0", repetition=0)
-    run_1 = MockRun(self.runner, session, "story 0", repetition=1)
+    run_0 = MockRun(self.runner, session, "story 0", None, repetition=0)
+    run_1 = MockRun(self.runner, session, "story 0", None, repetition=1)
     browser_group = self.create_groups([run_0, run_1])
     self.assertListEqual(list(browser_group.runs), [run_0, run_1])
     story_groups = list(browser_group.story_groups)
@@ -67,13 +70,13 @@ class RunGroupTestCase(BaseRunGroupTestCase):
   def test_single_story_multiple_repetitions_cache_temperatures(self):
     session = self.default_session(throw=True)
     run_0 = MockRun(
-        self.runner, session, "story 0", repetition=0, temperature="cold")
+        self.runner, session, "story 0", None, repetition=0, temperature="cold")
     run_1 = MockRun(
-        self.runner, session, "story 0", repetition=0, temperature="warm")
+        self.runner, session, "story 0", None, repetition=0, temperature="warm")
     run_2 = MockRun(
-        self.runner, session, "story 0", repetition=1, temperature="cold")
+        self.runner, session, "story 0", None, repetition=1, temperature="cold")
     run_3 = MockRun(
-        self.runner, session, "story 0", repetition=1, temperature="warm")
+        self.runner, session, "story 0", None, repetition=1, temperature="warm")
 
     browser_group = self.create_groups([run_0, run_1, run_2, run_3])
     self.assertListEqual(list(browser_group.runs), [run_0, run_1, run_2, run_3])

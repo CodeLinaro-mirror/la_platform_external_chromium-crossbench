@@ -8,21 +8,18 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Sequence, cast
+from typing import TYPE_CHECKING, Optional, Sequence, cast
 
 from typing_extensions import override
 
-from crossbench.action_runner.android_input_action_runner import \
-    AndroidInputActionRunner
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
-from crossbench.benchmarks.loading.page.base import get_action_runner
 from crossbench.cli.ui import timer
 from crossbench.parse import ObjectParser
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.browsers.webview.embedder import WebviewEmbedder
   from crossbench.cli.parser import CrossBenchArgumentParser
@@ -47,7 +44,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
   def run(self, run: Run) -> None:
     with timer():
       logging.info("-" * 80)
-      action_runner = get_action_runner(run)
+      action_runner = run.action_runner
       for block in self._actions:
         for action in block:
           action.run_with(run, action_runner)
@@ -72,15 +69,13 @@ class EmbedderBenchmark(SubStoryBenchmark):
   NAME = "embedder"
   DEFAULT_STORY_CLS = EmbedderStory
 
-  def __init__(self, stories: Sequence[Story]) -> None:
-    self._action_runner = AndroidInputActionRunner()
+  def __init__(
+      self,
+      stories: Sequence[Story],
+      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS)
-    super().__init__(stories)
-
-  @property
-  def action_runner(self) -> ActionRunner:
-    return self._action_runner
+    super().__init__(stories, action_runner_config)
 
   @classmethod
   @override

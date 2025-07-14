@@ -13,10 +13,10 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.benchmarks.jetstream.jetstream_2 import (JetStream2Benchmark,
-                                                         JetStream2Probe,
-                                                         JetStream2ProbeContext,
-                                                         JetStream2Story)
+from crossbench.action_runner.config import ActionRunnerConfig
+from crossbench.benchmarks.jetstream.jetstream_2 import (
+    JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext,
+    JetStream2Story)
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
@@ -155,6 +155,7 @@ class JetStream2BaseTestCase(
     separate: bool = False
     custom_benchmark_url: str | None = None
     detailed_metrics: bool = False
+    action_runner_config: ActionRunnerConfig | None = None
 
   def test_iterations_kwargs(self):
     args = self.Namespace()

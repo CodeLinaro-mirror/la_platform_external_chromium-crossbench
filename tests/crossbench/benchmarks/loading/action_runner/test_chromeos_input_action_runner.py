@@ -355,9 +355,8 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.session = BrowserSessionRunGroup(self.runner.env,
                                           self.runner.probes, self.browser,
                                           Flags(), 1, self.root_dir, True, True)
-    self.run = MockRun(self.runner, self.session, "run 1")
-
     self.action_runner = ChromeOSInputActionRunner()
+    self.run = MockRun(self.runner, self.session, "run 1", self.action_runner)
 
   def run_action(self, action: Action) -> None:
     action.run_with(self.run, self.action_runner)
