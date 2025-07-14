@@ -23,6 +23,7 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform, SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
+from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
@@ -476,6 +477,9 @@ class ChromeOsSshMockPlatform(PosixMockPlatformMixin, ChromeOsSshPlatform):
 class MacOsMockPlatform(PosixMockPlatformMixin, MacOSPlatform):
   pass
 
+
+class MacIOSMockPlatform(PosixMockPlatformMixin, IOSPlatform):
+  pass
 
 class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
   pass

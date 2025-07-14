@@ -220,6 +220,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
       return mock_browser.MockChromeDev
 
     self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
+    self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
     with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls) as get_browser_cls:
       url = "http://test.com"

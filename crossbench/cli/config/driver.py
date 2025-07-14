@@ -20,7 +20,7 @@ from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
-from crossbench.plt.ios import ios_devices
+from crossbench.plt.ios import IOSPlatform, ios_devices
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath, LocalPath
@@ -285,10 +285,7 @@ class DriverConfig(ConfigObject):
     if self.type == BrowserDriverType.ANDROID:
       return self.get_adb_platform()
     if self.type == BrowserDriverType.IOS:
-      # TODO(cbruni): use `xcrun xctrace list devices` to find the UDID
-      # for attached simulators or devices. Currently only a single device
-      # is supported
-      pass
+      return self.get_ios_platform()
     if self.type in (BrowserDriverType.LINUX_SSH,
                      BrowserDriverType.CHROMEOS_SSH):
       return self.get_ssh_platform()
@@ -337,6 +334,10 @@ class DriverConfig(ConfigObject):
   def get_adb_platform(self) -> plt.Platform:
     adb = Adb(plt.PLATFORM, self.device_id, self.adb_bin, self.bundletool)
     return AndroidAdbPlatform(plt.PLATFORM, self.device_id, adb)
+
+  def get_ios_platform(self) -> plt.Platform:
+    return IOSPlatform(plt.PLATFORM, self.device_id)
+
 
 def driver_device_id(device_id: Optional[str],
                      settings: Optional[immutabledict]) -> Optional[str]:
