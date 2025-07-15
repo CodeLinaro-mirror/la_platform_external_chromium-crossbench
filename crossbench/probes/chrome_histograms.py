@@ -21,12 +21,12 @@ from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.probes.probe import ProbeConfigParser
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup

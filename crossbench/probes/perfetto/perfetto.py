@@ -26,7 +26,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.plt.base import TupleCmdArgs
+  from crossbench.plt.types import TupleCmdArgs
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 

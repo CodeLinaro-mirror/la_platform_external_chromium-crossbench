@@ -85,7 +85,7 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
 
 class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   """
-  Benchmark runner for the manual mode.
+  Full manual benchmark.
 
   Just launches the browser and lets the user perform the desired interactions.
   Optionally waits for |start_after| seconds, then runs measurements for

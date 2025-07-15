@@ -19,7 +19,6 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import CSVFormatter, Metric, MetricsMerger
-from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
@@ -27,6 +26,7 @@ if TYPE_CHECKING:
 
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.path import LocalPath
+  from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup

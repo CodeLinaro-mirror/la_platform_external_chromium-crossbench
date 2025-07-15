@@ -10,14 +10,15 @@ import logging
 import sys
 import traceback as tb
 from dataclasses import dataclass
-from types import TracebackType
 from typing import TYPE_CHECKING, Any, Optional, Type
 
 from crossbench.helper import collection_helper, txt_helper
-from crossbench.types import JsonList
 
 if TYPE_CHECKING:
-  from crossbench.types import JsonDict
+  from types import TracebackType
+
+  from crossbench.types import JsonList
+
 
 TInfoStack = tuple[str, ...]
 

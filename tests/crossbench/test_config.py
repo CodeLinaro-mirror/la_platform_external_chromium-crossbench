@@ -295,15 +295,31 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_empty_title(self):
     with self.assertRaisesRegex(ValueError, "title"):
-      ConfigParser(CustomConfigObject, "")
+      ConfigParser(CustomConfigObject, title="")
+
+  def test_empty_key(self):
+    with self.assertRaisesRegex(ValueError, "key"):
+      ConfigParser(CustomConfigObject, key="")
 
   def test_title(self):
-    parser = ConfigParser(CustomConfigObject, None)
+    parser = ConfigParser(CustomConfigObject, title=None)
     self.assertEqual(parser.title, "CustomConfigObject parser")
     parser = ConfigParser(CustomConfigObject)
     self.assertEqual(parser.title, "CustomConfigObject parser")
-    parser = ConfigParser(CustomConfigObject, "ParsyMcParser")
+    parser = ConfigParser(CustomConfigObject, title="ParsyMcParser")
     self.assertEqual(parser.title, "ParsyMcParser")
+
+  def test_key(self):
+    parser = ConfigParser(CustomConfigObject, None)
+    self.assertEqual(parser.key, "CustomConfigObject")
+    parser = ConfigParser(CustomConfigObject)
+    self.assertEqual(parser.key, "CustomConfigObject")
+    parser = ConfigParser(CustomConfigObject, "ParsyMcParser")
+    self.assertEqual(parser.key, "ParsyMcParser")
+    parser = ConfigParser(CustomConfigObject, "ParsyMcParser",
+                          "Parsy parser for McParser")
+    self.assertEqual(parser.key, "ParsyMcParser")
+    self.assertEqual(parser.title, "Parsy parser for McParser")
 
   def test_invalid_default(self):
     with self.assertRaises(TypeError) as cm:

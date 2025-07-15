@@ -187,8 +187,17 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         "scp", "-P", self.SSH_PORT, "source/path/file",
         f"{self.SSH_USER}@{self.HOST}:remote/dest/path/file")
     self.platform.push(
-        self.platform.path("source/path/file"),
+        self.host_platform.path("source/path/file"),
         self.platform.path("remote/dest/path/file"))
+
+  def test_push_dir(self):
+    self._expect_sh_ssh("mkdir -p remote/dest/path")
+    self.mock_platform.expect_sh(
+        "scp", "-P", self.SSH_PORT, "-r", "source/path/dir",
+        f"{self.SSH_USER}@{self.HOST}:remote/dest/path/dir")
+    source_dir = self.host_platform.path("source/path/dir")
+    self.fs.create_dir(source_dir)
+    self.platform.push(source_dir, self.platform.path("remote/dest/path/dir"))
 
   def test_pull_creates_dest_dir(self):
     self.mock_platform.expect_sh(

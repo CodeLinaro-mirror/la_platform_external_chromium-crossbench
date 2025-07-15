@@ -13,7 +13,6 @@ import pandas as pd
 from tabulate import tabulate
 from typing_extensions import override
 
-from crossbench import path as pth
 from crossbench.benchmarks.base import RegexFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
@@ -23,8 +22,8 @@ from crossbench.probes.probe import Probe
 from crossbench.probes.results import LocalProbeResult
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.benchmarks.loading.page.base import Page
-  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 

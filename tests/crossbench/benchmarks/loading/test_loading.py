@@ -221,10 +221,9 @@ class TestPageLoadBenchmark(SubStoryTestCase):
 
     for browser in self.browsers:
       # one mark for iteration start, one for iteration end
-      self.assertEqual(len(browser.performance_marks), 2)
-      self.assertEqual(browser.performance_marks[0],
-                       "crossbench-iteration-start")
-      self.assertEqual(browser.performance_marks[1], "crossbench-iteration-end")
+      self.assertListEqual(
+          browser.performance_marks,
+          ["crossbench-iteration-start", "crossbench-iteration-end"])
 
   def test_iteration_performance_marks_repeat_run(self):
     repeats: int = 3
@@ -237,13 +236,10 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     self._test_run(stories)
 
     for browser in self.browsers:
-      # one mark for iteration start, one for iteration end
-      self.assertEqual(len(browser.performance_marks), 2 * repeats)
-      for i in range(repeats):
-        self.assertEqual(browser.performance_marks[i * 2],
-                         "crossbench-iteration-start")
-        self.assertEqual(browser.performance_marks[(i * 2) + 1],
-                         "crossbench-iteration-end")
+      self.assertListEqual(
+          browser.performance_marks,
+          (["crossbench-iteration-start", "crossbench-iteration-end"] *
+           repeats))
 
   def test_run_repeat_separate(self):
     url1 = "https://www.example.com/test1"
@@ -446,7 +442,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         self.assertListEqual([url_1, url_2],
                              browser.url_list[self.SPLASH_URLS_LEN:])
 
-  def multiple_pages_with_setup_blocks_config(self):
+  def multiple_pages_with_setup_and_teardown_blocks_config(self):
     config = {
         "pages": {
             "first_page": {
@@ -457,7 +453,11 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                 "actions": [{
                     "action": "wait",
                     "duration": "1s"
-                }]
+                }],
+                "teardown": [{
+                    "action": "js",
+                    "script": "TEARDOWN ONE",
+                }],
             },
             "second_page": {
                 "setup": [{
@@ -467,18 +467,24 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                 "actions": [{
                     "action": "wait",
                     "duration": "1s"
-                }]
+                }],
+                "teardown": [{
+                    "action": "js",
+                    "script": "TEARDOWN TWO",
+                }],
             }
         }
     }
     return config
 
-  def test_pages_with_multiple_setup_blocks(self):
+  def test_pages_with_multiple_setup_and_teardown_blocks(self):
     for browser in self.browsers:
       browser.expect_js(JsInvocation(None, "SETUP ONE"))
       browser.expect_js(JsInvocation(None, "SETUP TWO"))
+      browser.expect_js(JsInvocation(None, "TEARDOWN ONE"))
+      browser.expect_js(JsInvocation(None, "TEARDOWN TWO"))
 
-    config = self.multiple_pages_with_setup_blocks_config()
+    config = self.multiple_pages_with_setup_and_teardown_blocks_config()
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     with self._patch_get_browser():
@@ -489,9 +495,11 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.assertEqual(
           browser.performance_marks,
           ["crossbench-setup-start", "crossbench-setup-end"] * 2 +  # 2 pages
-          ["crossbench-iteration-start", "crossbench-iteration-end"])
+          ["crossbench-iteration-start", "crossbench-iteration-end"] +
+          ["crossbench-teardown-start", "crossbench-teardown-end"] * 2)
       self.assertEqual(browser.performance_marks_details,
-                       ["first_page"] * 2 + ["second_page"] * 2 + [None, None])
+                       ["first_page"] * 2 + ["second_page"] * 2 + [None, None] +
+                       ["first_page"] * 2 + ["second_page"] * 2)
 
   def setup_expected_google_login_js(self):
     expected_scripts: list[JsInvocation] = [

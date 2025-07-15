@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import datetime as dt
 import json
 import logging
 import urllib.request
@@ -23,6 +22,8 @@ from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.local_file_server import LocalFileNetwork
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   import crossbench.path as pth
   from crossbench.browsers.settings import Settings
   from crossbench.flags.base import FlagsData

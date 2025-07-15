@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import datetime as dt
 import enum
 import json
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 
   # mypy has issues if there is a dict instance-method.
   PyDict = dict
+
 
 def type_str(value: Any) -> str:
   return type(value).__name__
@@ -663,6 +665,34 @@ class DurationParseError(argparse.ArgumentTypeError):
   pass
 
 
+@dataclasses.dataclass(frozen=True)
+class TimeUnitData:
+  timedelta_kwarg: str
+  aliases: tuple[str, ...] = dataclasses.field(default_factory=tuple)
+
+
+@enum.unique
+class TimeUnit(TimeUnitData, enum.Enum):
+  MICROSECOND = ("microseconds", ("us", "micros", "microseconds"))
+  MILLISECOND = ("milliseconds", ("ms", "millis", "milliseconds"))
+  SECOND = ("seconds", ("s", "sec", "secs", "second", "seconds"))
+  MINUTE = ("minutes", ("m", "min", "mins", "minute", "minutes"))
+  HOUR = ("hours", ("h", "hrs", "hour", "hours"))
+  DAY = ("days", ("d", "day", "days"))
+  WEEK = ("weeks", ("w", "week", "weeks"))
+
+  @classmethod
+  def parse(cls, unit: str) -> TimeUnit:
+    for time_unit in cls:
+      if unit in time_unit.aliases:
+        return time_unit
+    raise DurationParseError(f"Error: {unit} is not supported for duration. "
+                             "Make sure to use a supported time unit/suffix")
+
+  def timedelta(self, value: int | float) -> dt.timedelta:
+    return dt.timedelta(**{self.timedelta_kwarg: value})
+
+
 class DurationParser:
 
   @classmethod
@@ -673,40 +703,42 @@ class DurationParser:
       r"(?P<value>(-?\d+(\.\d+)?)) ?(?P<unit>[a-z]+)?")
 
   @classmethod
-  def _to_timedelta(cls, value: float, suffix: str) -> dt.timedelta:
-    if suffix in {"ms", "millis", "milliseconds"}:
-      return dt.timedelta(milliseconds=value)
-    if suffix in {"s", "sec", "secs", "second", "seconds"}:
-      return dt.timedelta(seconds=value)
-    if suffix in {"m", "min", "mins", "minute", "minutes"}:
-      return dt.timedelta(minutes=value)
-    if suffix in {"h", "hrs", "hour", "hours"}:
-      return dt.timedelta(hours=value)
-    raise DurationParseError(f"Error: {suffix} is not supported for duration. "
-                             "Make sure to use a supported time unit/suffix")
+  def positive_duration_ms(cls,
+                           time_value: Any,
+                           name: str = "duration") -> dt.timedelta:
+    return cls.positive_duration(time_value, name, TimeUnit.MILLISECOND)
 
   @classmethod
-  def positive_duration(cls,
-                        time_value: Any,
-                        name: str = "duration") -> dt.timedelta:
-    duration: dt.timedelta = cls.any_duration(time_value)
+  def positive_duration(
+      cls,
+      time_value: Any,
+      name: str = "duration",
+      default_time_unit: TimeUnit = TimeUnit.SECOND) -> dt.timedelta:
+    duration: dt.timedelta = cls.any_duration(
+        time_value, name, default_time_unit=default_time_unit)
     if duration.total_seconds() <= 0:
       raise DurationParseError(f"Expected non-zero {name}, but got {duration}")
     return duration
 
+
   @classmethod
-  def positive_or_zero_duration(cls,
-                                time_value: Any,
-                                name: str = "duration") -> dt.timedelta:
-    duration: dt.timedelta = cls.any_duration(time_value, name)
+  def positive_or_zero_duration(
+      cls,
+      time_value: Any,
+      name: str = "duration",
+      default_time_unit: TimeUnit = TimeUnit.SECOND) -> dt.timedelta:
+    duration: dt.timedelta = cls.any_duration(
+        time_value, name, default_time_unit=default_time_unit)
     if duration.total_seconds() < 0:
       raise DurationParseError(f"Expected positive {name}, but got {duration}")
     return duration
 
   @classmethod
-  def any_duration(cls,
-                   time_value: Any,
-                   name: str = "duration") -> dt.timedelta:
+  def any_duration(
+      cls,
+      time_value: Any,
+      name: str = "duration",
+      default_time_unit: TimeUnit = TimeUnit.SECOND) -> dt.timedelta:
     """
     This function will parse the measurement and the value from string value.
 
@@ -718,7 +750,7 @@ class DurationParser:
     if isinstance(time_value, dt.timedelta):
       return time_value
     if isinstance(time_value, (int, float)):
-      return dt.timedelta(seconds=time_value)
+      return default_time_unit.timedelta(time_value)
     if not time_value:
       raise DurationParseError(f"Expected non-empty {name} value.")
     if not isinstance(time_value, str):
@@ -744,5 +776,5 @@ class DurationParser:
 
     if not time_unit:
       # If no time unit provided we assume it is in seconds.
-      return dt.timedelta(seconds=time_value)
-    return cls._to_timedelta(time_value, time_unit)
+      return default_time_unit.timedelta(time_value)
+    return TimeUnit.parse(time_unit).timedelta(time_value)

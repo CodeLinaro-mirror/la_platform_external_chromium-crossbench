@@ -7,17 +7,18 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-from collections.abc import Generator
 from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import override
 
-from crossbench import plt
 from crossbench.decor.target_protocol import DecoratorTargetProtocol
 from crossbench.probes.result_location import ResultLocation
 from crossbench.runner.probe_result_origin import ProbeResultOrigin
 
 if TYPE_CHECKING:
+  from collections.abc import Generator
+
+  from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.exception import (Annotator, ExceptionAnnotationScope,
                                     TExceptionTypes)

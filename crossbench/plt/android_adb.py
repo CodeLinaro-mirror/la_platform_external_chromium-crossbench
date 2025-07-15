@@ -10,13 +10,14 @@ import logging
 import math
 import re
 import shlex
-import subprocess
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
+from android_protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
+                            windowmanagerservice_pb2)
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
@@ -26,15 +27,16 @@ from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
-from android_protoc import activitymanagerservice_pb2
-
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS = ["POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO"]
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
+  import subprocess
+
+  from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.types import CmdArg, ListCmdArgs
   from crossbench.types import JsonDict
 
 
@@ -369,6 +371,10 @@ class Adb:
     cmd: ListCmdArgs = ["dumpsys", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
+  def dumpsys_bytes(self, *args: str, quiet: bool = False) -> bytes:
+    cmd: ListCmdArgs = ["dumpsys", *args]
+    return self.shell_stdout_bytes(*cmd, quiet=quiet)
+
   def getprop(self,
               *args: str,
               quiet: bool = False,
@@ -678,7 +684,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def get_main_display_brightness(self) -> int:
-    display_info: str = self.adb.shell_stdout("dumpsys", "display")
+    display_info: str = self.adb.dumpsys("display")
     match_result = self._BRIGHTNESS_RE.search(display_info)
     if match_result is None:
       raise ValueError("Could not parse adb display brightness.")
@@ -762,9 +768,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
   ) -> dict[str, ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
-    dumpsys_output = self.sh_stdout_bytes("dumpsys", "-T", str(timeout_ms),
-                                          "meminfo", "--proto", "--package",
-                                          process_name)
+    dumpsys_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
+                                                   "meminfo", "--proto",
+                                                   "--package", process_name)
     return self._parse_dumpsys_meminfo(dumpsys_output)
 
   @functools.lru_cache(maxsize=1)
@@ -814,10 +820,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @property
   @override
   def is_battery_powered(self) -> bool:
-    battery_info = self.adb.dumpsys("battery").lower()
-    # Looking for any power source, i.e. 'AC powered: true'
-    has_external_power = " powered: true" in battery_info
-    return not has_external_power
+    battery_info_bytes = self.adb.dumpsys_bytes("battery", "--proto")
+    battery_info = battery_pb2.BatteryServiceDumpProto()
+    battery_info.ParseFromString(battery_info_bytes)
+    return (battery_info.plugged ==
+            enums_pb2.BatteryPluggedStateEnum.BATTERY_PLUGGED_NONE)
 
   @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
@@ -831,15 +838,19 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def display_resolution(self) -> tuple[int, int]:
-    displays_out = self.sh_stdout("dumpsys", "window", "displays")
-    match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
-    if match_result is None:
-      raise ValueError(
-          "Could not find display resolution in "
-          f"'adb shell -s {self.adb.serial_id} dumpsys window displays'")
-    x = NumberParser.positive_int(match_result.group("x"))
-    y = NumberParser.positive_int(match_result.group("y"))
-    return (x, y)
+    displays_bytes = self.adb.dumpsys_bytes("window", "displays", "--proto")
+
+    displays = windowmanagerservice_pb2.WindowManagerServiceDumpProto()
+    displays.ParseFromString(displays_bytes)
+
+    width = (
+        displays.root_window_container.window_container.configuration_container
+        .full_configuration.window_configuration.max_bounds.right)
+    height = (
+        displays.root_window_container.window_container.configuration_container
+        .full_configuration.window_configuration.max_bounds.bottom)
+
+    return (width, height)
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))

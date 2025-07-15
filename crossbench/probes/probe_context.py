@@ -12,13 +12,13 @@ from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
 
 from typing_extensions import override
 
-from crossbench import plt
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        LocalProbeResult, ProbeResult)
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
+  from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe

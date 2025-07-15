@@ -12,7 +12,6 @@ from typing_extensions import override
 
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -22,6 +21,7 @@ from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
   from crossbench.cli.config.secrets import Secrets
   from crossbench.runner.run import Run

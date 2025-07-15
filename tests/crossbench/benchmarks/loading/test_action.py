@@ -11,6 +11,7 @@ from crossbench.action_runner.action.action import (ACTION_TIMEOUT, ACTIONS,
                                                     Action)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.action_runner.action.get import GetAction
@@ -896,6 +897,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
     self.assertEqual(action.relative_tab_index, 17)
 
+  def test_parse_close_all_tabs(self):
+    config_dict = {"action": "close_all_tabs"}
+
+    action = CloseAllTabsAction.parse(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.CLOSE_ALL_TABS)
+
   def test_parse_close_tab_all_args(self):
     config_dict = {
         "action": "close_tab",
@@ -967,6 +975,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
     self.assertEqual(action.target, MeminfoTarget.BROWSER)
     self.assertIsNone(action.package)
+    self.assertIsNone(action.title)
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
@@ -979,6 +988,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
     self.assertEqual(action.target, MeminfoTarget.BROWSER)
     self.assertIsNone(action.package)
+
+    action_2 = MeminfoAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_meminfo_title(self):
+    config_dict = {"action": "meminfo", "title": "a_title"}
+    action = MeminfoAction.parse_dict(config_dict)
+    action.validate()
+    self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertEqual(action.title, "a_title")
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import pathlib
+import re
 import unittest
 
 from tests import test_helper
@@ -13,7 +14,13 @@ RUN_SNIPPET = """
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
 """.strip()
+FUTURE_ANNOTATIONS_SNIPPET = "from __future__ import annotations"
+
+COMMENTS_ONLY_RE = re.compile(r"^(?:#.*|\s*)*$", re.MULTILINE)
+
 UNITTEST_DIR = pathlib.Path(__file__).parent
+ROOT_DIR = UNITTEST_DIR.parents[1]
+CROSSBENCH_DIR = ROOT_DIR / "crossbench"
 
 
 class MetaTestCase(unittest.TestCase):
@@ -28,6 +35,18 @@ class MetaTestCase(unittest.TestCase):
             test_file.read_text().rstrip().endswith(RUN_SNIPPET),
             f"{test_file} misses runner snippet: "
             "test_helper.run_pytest(__file__)")
+
+  def test_future_annotation(self):
+    for py_file in CROSSBENCH_DIR.glob("**/*.py"):
+      with self.subTest(py_file=str(py_file)):
+        text = py_file.read_text()
+        if FUTURE_ANNOTATIONS_SNIPPET in text:
+          continue
+        if "pytype: skip-file" in text:
+          continue
+        if py_file.name == "__init__.py" and COMMENTS_ONLY_RE.fullmatch(text):
+          continue
+        self.fail(f"{py_file} is missing future annotation")
 
 
 if __name__ == "__main__":

@@ -230,10 +230,18 @@ class LoadingPageFilter(StoryFilter[Page]):
     if not config.blocks:
       return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
-    return InteractivePage(label, config.blocks, config.setup, config.login,
-                           config.secrets, playback, tabs,
-                           args.about_blank_duration, args.run_login,
-                           args.run_setup)
+    return InteractivePage(
+        name=label,
+        blocks=config.blocks,
+        login=config.login,
+        setup=config.setup,
+        teardown=config.teardown,
+        secrets=config.secrets,
+        playback=playback,
+        tabs=tabs,
+        about_blank_duration=args.about_blank_duration,
+        run_login=args.run_login,
+        run_setup=args.run_setup)
 
   @override
   def create_stories(self, separate: bool) -> Sequence[Page]:
@@ -247,7 +255,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
 class LoadingBenchmark(SubStoryBenchmark):
   """
-  Benchmark runner for loading pages.
+  Benchmark runner for loading pages with complex interactions.
 
   Use --urls/--stories to either choose from an existing set of pages, or direct
   URLs. After each page you can also specify a custom wait/load duration in

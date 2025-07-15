@@ -5,3 +5,5 @@
 from __future__ import annotations
 
 from crossbench.benchmarks.embedder.embedder_benchmark import EmbedderBenchmark
+
+__all__ = ["EmbedderBenchmark"]

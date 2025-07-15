@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-import subprocess
 from typing import TYPE_CHECKING, cast
 
 from typing_extensions import override
@@ -16,7 +15,10 @@ from crossbench.plt.port_manager import PortManager
 from crossbench.plt.ssh import SshPlatformMixin
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
+  import subprocess
+
+  from crossbench.plt.base import Platform
+  from crossbench.plt.types import CmdArg, ListCmdArgs
 
 
 class SshPortManager(PortManager):

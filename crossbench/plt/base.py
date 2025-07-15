@@ -9,7 +9,6 @@ import atexit
 import collections.abc
 import contextlib
 import dataclasses
-import datetime as dt
 import functools
 import inspect
 import logging
@@ -25,7 +24,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
-                    Mapping, Optional, Sequence, Type, TypeAlias)
+                    Mapping, Optional, Sequence, Type)
 
 import psutil
 
@@ -40,20 +39,14 @@ from crossbench.plt.port_manager import (LocalPortManager, PortManager,
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
-  from asyncio.subprocess import Process
-  from subprocess import Popen
+  import datetime as dt
 
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
+  from crossbench.plt.types import CmdArg, ProcessLike, TupleCmdArgs
   from crossbench.types import JsonDict
-  ProcessLike: TypeAlias = Popen | Process | int
 
-CmdArg: TypeAlias = pth.AnyPathLike
-SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
-ListCmdArgs: TypeAlias = list[CmdArg]
-TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
-CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass

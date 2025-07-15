@@ -43,60 +43,45 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   pylint_file_patterns_to_check: list[str] = PylintFilePatternsToCheck(
       on_commit, modified_py_files)
-  tests += input_api.canned_checks.GetPylint(
-      input_api,
-      output_api,
-      files_to_check=pylint_file_patterns_to_check,
-      files_to_skip=[r"^android_protoc/frameworks.*", r"^third_party/.*"],
-      pylintrc=".pylintrc",
-      version="3.2")
+  if pylint_file_patterns_to_check:
+    tests += input_api.canned_checks.GetPylint(
+        input_api,
+        output_api,
+        files_to_check=pylint_file_patterns_to_check,
+        files_to_skip=[r"^android_protoc/frameworks.*", r"^third_party/.*"],
+        pylintrc=".pylintrc",
+        version="3.2")
 
   # ---------------------------------------------------------------------------
   # MyPy:
   # ---------------------------------------------------------------------------
   mypy_files_to_check: list[str] = MypyFilesToCheck(input_api, on_commit,
-                                                    modified_py_files)
-  tests.append(
-      input_api.Command(
-          name="mypy",
-          cmd=[
-              input_api.python3_executable,
-              "-m",
-              "mypy",
-              "--check-untyped-defs",
-              "--pretty",
-          ] + mypy_files_to_check,
-          message=output_api.PresubmitError,
-          kwargs={},
-          python3=True,
-      ))
+                                                  modified_py_files)
+  if mypy_files_to_check:
+    tests.append(
+        input_api.Command(
+            name="mypy",
+            cmd=[
+                input_api.python3_executable,
+                "-m",
+                "mypy",
+                "--check-untyped-defs",
+                "--pretty",
+            ] + mypy_files_to_check,
+            message=output_api.PresubmitError,
+            kwargs={},
+            python3=True,
+        ))
+
+  # ---------------------------------------------------------------------------
+  # isort:
+  # ---------------------------------------------------------------------------
+  SortImports(input_api, output_api, results, modified_py_files)
 
   # ---------------------------------------------------------------------------
   # hjson:
   # ---------------------------------------------------------------------------
-  for hjson_file in (modified_hjson_files or []):
-    full_hjson_path = pathlib.Path(
-        input_api.change.RepositoryRoot()) / hjson_file
-
-    try:
-      formatted_contents: str = FormatHjsonFile(input_api, full_hjson_path)
-    except ValueError as e:
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Malformed hjson file:",
-              items=[str(full_hjson_path)],
-              long_text=str(e)))
-      continue
-
-    original_contents = input_api.ReadFile(str(full_hjson_path), "r")
-
-    if original_contents != formatted_contents:
-      full_hjson_path.write_text(formatted_contents)
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Unformatted hjson file:",
-              items=[str(full_hjson_path)],
-              long_text="Please update your commit with the formatted file."))
+  FormatHjsonFiles(input_api, output_api, results, modified_hjson_files)
 
   # ---------------------------------------------------------------------------
   # Unittest:
@@ -124,6 +109,49 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   results += input_api.RunTests(tests)
   return results
+
+
+def SortImports(input_api, output_api, results, modified_py_files):
+  for py_file in (modified_py_files or []):
+    full_py_path = pathlib.Path(
+      input_api.change.RepositoryRoot()) / py_file
+    original_contents = input_api.ReadFile(str(full_py_path), "r")
+    subprocess.run([
+              input_api.python_executable,
+              "-m", "isort",
+              full_py_path], check=True)
+    formatted_contents = input_api.ReadFile(str(full_py_path), "r")
+    if original_contents != formatted_contents:
+      results.append(
+        output_api.PresubmitPromptWarning(
+            "Unsorted python imports in file:",
+            items=[str(full_py_path)],
+            long_text="Please update your commit with the formatted file."))
+
+
+def FormatHjsonFiles(input_api, output_api, results, modified_hjson_files):
+  for hjson_file in (modified_hjson_files or []):
+    full_hjson_path = pathlib.Path(
+      input_api.change.RepositoryRoot()) / hjson_file
+
+    try:
+      formatted_contents: str = FormatHjsonFile(input_api, full_hjson_path)
+    except ValueError as e:
+      results.append(
+        output_api.PresubmitPromptWarning(
+            "Malformed hjson file:",
+            items=[str(full_hjson_path)],
+            long_text=str(e)))
+      continue
+
+    original_contents = input_api.ReadFile(str(full_hjson_path), "r")
+    if original_contents != formatted_contents:
+      full_hjson_path.write_text(formatted_contents)
+      results.append(
+        output_api.PresubmitPromptWarning(
+            "Unformatted hjson file:",
+            items=[str(full_hjson_path)],
+            long_text="Please update your commit with the formatted file."))
 
 
 def ModifiedFiles(input_api,

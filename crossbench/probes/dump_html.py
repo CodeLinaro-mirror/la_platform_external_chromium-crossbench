@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Optional, Self, Type
 
 from typing_extensions import override
 
-from crossbench.probes.probe import Probe, ProbeConfigParser
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import abc
 import logging
-import subprocess
 from functools import cached_property
 from typing import TYPE_CHECKING, cast
 
@@ -17,6 +16,8 @@ from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.v8.log import V8LogProbe
 
 if TYPE_CHECKING:
+  import subprocess
+
   from crossbench.probes.profiling.system_profiling import ProfilingProbe
   from crossbench.runner.run import Run
 

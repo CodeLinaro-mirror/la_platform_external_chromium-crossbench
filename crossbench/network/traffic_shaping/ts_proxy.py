@@ -31,7 +31,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.network.base import Network
   from crossbench.path import AnyPath, LocalPath
-  from crossbench.plt.base import ListCmdArgs, Platform
+  from crossbench.plt.base import Platform
+  from crossbench.plt.types import ListCmdArgs
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 fcntl = None
@@ -379,8 +380,7 @@ class TsProxyTrafficShaper(TrafficShaper):
                window: Optional[int] = None) -> None:
     super().__init__(browser_platform)
     if not ts_proxy_path:
-      if maybe_ts_proxy_path := TsProxyFinder(self.host_platform).path:
-        ts_proxy_path = self.host_platform.local_path(maybe_ts_proxy_path)
+      ts_proxy_path = TsProxyFinder(self.host_platform).local_path
     if not ts_proxy_path:
       raise RuntimeError(
           f"Could not find ts_proxy script on {self.host_platform}")
@@ -449,7 +449,6 @@ class TsProxyTrafficShaper(TrafficShaper):
                      session: BrowserSessionRunGroup) -> Iterator:
     del network
     browser_platform = session.browser_platform
-    ports = browser_platform.ports
     ts_proxy_port = self._ts_proxy.socks_proxy_port
     # TODO; remap network port for remote browsers or when ports are occupied
     # already.
