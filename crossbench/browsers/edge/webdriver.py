@@ -59,7 +59,7 @@ class EdgeWebDriver(EdgeBaseMixin, ChromiumBasedWebDriver):
 
 
 class EdgeWebDriverDownloader:
-  BASE_URL = "https://msedgedriver.azureedge.net"
+  BASE_URL = "https://msedgedriver.microsoft.com"
 
   def __init__(self, browser: EdgeWebDriver) -> None:
     self.browser = browser
