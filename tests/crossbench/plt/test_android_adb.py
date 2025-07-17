@@ -577,19 +577,15 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     meminfo = self.platform.meminfo("com.android.chrome")
     self.assertEqual(len(meminfo), 4)
 
-    self.assertEqual(
-        meminfo, {
-            "com.android.chrome:privileged_process0":
-                ProcessMeminfo(20533, 37794, 186356, 203),
-            "com.android.chrome:sandboxed_process0:org.chromium.content.app."
-            "SandboxedProcessService0:0":
-                ProcessMeminfo(20527, 49907, 184636, 245),
-            "com.android.chrome:sandboxed_process0:org.chromium.content.app."
-            "SandboxedProcessService0:1":
-                ProcessMeminfo(20596, 30679, 156928, 244),
-            "com.android.chrome":
-                ProcessMeminfo(20438, 200986, 412436, 148)
-        })
+    privileged_process = "com.android.chrome:privileged_process0"
+    sandbox_prefix = ("com.android.chrome:sandboxed_process0:org.chromium."
+                      "content.app.SandboxedProcessService0:")
+    self.assertEqual(meminfo, [
+        ProcessMeminfo(20533, privileged_process, 37794, 186356, 203),
+        ProcessMeminfo(20527, f"{sandbox_prefix}0", 49907, 184636, 245),
+        ProcessMeminfo(20596, f"{sandbox_prefix}1", 30679, 156928, 244),
+        ProcessMeminfo(20438, "com.android.chrome", 200986, 412436, 148)
+    ])
 
   def test_meminfo_timeout(self):
     self.expect_sh(

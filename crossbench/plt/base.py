@@ -557,7 +557,7 @@ class Platform(abc.ABC):
       return None
 
   def meminfo(self, process_name: str,
-              timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+              timeout: dt.timedelta) -> list[ProcessMeminfo]:
     del process_name, timeout
     raise NotImplementedError(f"meminfo not implemented for {self}.")
 

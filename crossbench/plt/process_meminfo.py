@@ -10,6 +10,7 @@ import dataclasses
 @dataclasses.dataclass(frozen=True)
 class ProcessMeminfo:
   pid: int
+  name: str
   pss_total: int
   rss_total: int
   swap_total: int

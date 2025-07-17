@@ -799,7 +799,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def meminfo(
       self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
-  ) -> dict[str, ProcessMeminfo]:
+  ) -> list[ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
     dumpsys_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
                                                    "meminfo", "--proto",
@@ -891,18 +891,20 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   _DUMPSYS_TIMEOUT_RE = re.compile(
       rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
 
-  def _parse_dumpsys_meminfo(
-      self, meminfo_output: bytes) -> dict[str, ProcessMeminfo]:
+  def _parse_dumpsys_meminfo(self,
+                             meminfo_output: bytes) -> list[ProcessMeminfo]:
     if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
       raise TimeoutError("dumpsys meminfo timed out")
     proto_dump = activitymanagerservice_pb2.MemInfoDumpProto()
     proto_dump.ParseFromString(meminfo_output)
-    meminfos = {}
+    meminfos: list[ProcessMeminfo] = []
     for app_process in proto_dump.app_processes:
       mem_info = app_process.process_memory.total_heap.mem_info
-      meminfos[app_process.process_memory.process_name] = ProcessMeminfo(
-          pid=app_process.process_memory.pid,
-          pss_total=mem_info.total_pss_kb,
-          rss_total=mem_info.total_rss_kb,
-          swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb)
+      meminfos.append(
+          ProcessMeminfo(
+              pid=app_process.process_memory.pid,
+              name=app_process.process_memory.process_name,
+              pss_total=mem_info.total_pss_kb,
+              rss_total=mem_info.total_rss_kb,
+              swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb))
     return meminfos

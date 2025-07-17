@@ -75,10 +75,9 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       raise ValueError("Cannot dump meminfo without package name.")
 
     meminfo_json: dict[str, Any] = {"title": title, "meminfos": []}
-    for proc_name, proc_meminfo in meminfo.items():
+    for proc_meminfo in meminfo:
       proc_data = dataclasses.asdict(proc_meminfo)
       proc_data["timestamp"] = timestamp
-      proc_data["name"] = proc_name
       meminfo_json["meminfos"].append(proc_data)
 
     self.browser.performance_mark("meminfo", detail=meminfo_json)
