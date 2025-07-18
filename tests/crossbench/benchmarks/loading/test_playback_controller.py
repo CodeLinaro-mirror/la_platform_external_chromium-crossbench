@@ -79,24 +79,24 @@ class PlaybackControllerTestCase(unittest.TestCase):
     self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
 
   def test_once(self):
-    iterations = sum(1 for _ in PlaybackController.once())
-    self.assertEqual(iterations, 1)
-    iterations = sum(1 for _ in PlaybackController.default())
-    self.assertEqual(iterations, 1)
+    iterations = list(PlaybackController.once())
+    self.assertListEqual(iterations, [0])
+    iterations = list(PlaybackController.default())
+    self.assertListEqual(iterations, [0])
 
   def test_repeat(self):
-    iterations = sum(1 for _ in PlaybackController.repeat(1))
-    self.assertEqual(iterations, 1)
-    iterations = sum(1 for _ in PlaybackController.repeat(11))
-    self.assertEqual(iterations, 11)
+    iterations = list(PlaybackController.repeat(1))
+    self.assertListEqual(iterations, [0])
+    iterations = list(PlaybackController.repeat(11))
+    self.assertListEqual(iterations, list(range(11)))
 
   def test_timeout(self):
     # Even 0-duration playback should run once
-    iterations = sum(1 for _ in PlaybackController.timeout(dt.timedelta()))
-    self.assertEqual(iterations, 1)
-    iterations = sum(
-        1 for _ in PlaybackController.timeout(dt.timedelta(milliseconds=0.1)))
-    self.assertGreaterEqual(iterations, 1)
+    iterations = list(PlaybackController.timeout(dt.timedelta()))
+    self.assertListEqual(iterations, [0])
+    iterations = list(
+        PlaybackController.timeout(dt.timedelta(milliseconds=0.1)))
+    self.assertListEqual(iterations, list(range(len(iterations))))
 
   def test_timeout_mocked(self):
     controller = PlaybackController.timeout(dt.timedelta(seconds=1))
@@ -119,7 +119,8 @@ class PlaybackControllerTestCase(unittest.TestCase):
 
   def test_forever(self):
     count = 0
-    for _ in PlaybackController.forever():
+    for i in PlaybackController.forever():
+      self.assertEqual(count, i)
       # Just run for some large-ish amount of iterations to get code coverage.
       count += 1
       if count > 100:

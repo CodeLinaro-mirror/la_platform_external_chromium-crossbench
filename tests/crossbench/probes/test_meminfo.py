@@ -2,26 +2,75 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import json
+from typing import Any
+
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.live import InteractivePage
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.probes.meminfo import MeminfoProbe
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
+
+
+def mock_meminfo(info_stack: list[str],
+                 title: str | None = None) -> dict[str, Any]:
+  meminfo = {
+      "info_stack":
+          info_stack,
+      "processes": [
+          {
+              "name": "process_1",
+              "pid": 1,
+              "pss_total": 2,
+              "rss_total": 3,
+              "swap_total": 4,
+          },
+          {
+              "name": "process_2",
+              "pid": 2,
+              "pss_total": 3,
+              "rss_total": 4,
+              "swap_total": 5,
+          },
+      ],
+  }
+  if title is not None:
+    meminfo["title"] = title
+  return meminfo
 
 
 class TestMeminfoProbe(GenericProbeTestCase):
 
   def test_meminfo_dumped(self):
 
-    actions_config = [{
-        "action": "get",
-        "url": "https://google.com"
-    }, {
-        "action": "meminfo"
-    }]
-    action_block = ActionBlock.parse_sequence(actions_config)
     probe = MeminfoProbe.config_parser().parse({})
-    stories = [InteractivePage(name="google", blocks=tuple([action_block]))]
+
+    setup = ActionBlock.parse_sequence([{
+        "action": "meminfo",
+        "title": "test",
+    }])
+    blocks = tuple([
+        ActionBlock.parse_sequence([{
+            "action": "get",
+            "url": "https://google.com"
+        }, {
+            "action": "meminfo",
+            "title": "test",
+        }])
+    ])
+    teardown = ActionBlock.parse_sequence([{
+        "action": "meminfo",
+    }])
+    playback = PlaybackController.repeat(3)
+
+    page = InteractivePage(
+        name="google",
+        setup=setup,
+        blocks=blocks,
+        teardown=teardown,
+        playback=playback)
+    stories = [page]
     runner = self.create_runner(
         stories,
         js_side_effects=[
@@ -33,89 +82,45 @@ class TestMeminfoProbe(GenericProbeTestCase):
         repetitions=1)
     runner.attach_probe(probe)
 
-    # Twice for 2 browsers
-    self.platform.expect_sh(
-        "date", "+%Y-%m-%d %H:%M:%S", result="2025-05-20 12:45:59")
-    self.platform.expect_sh(
-        "date", "+%Y-%m-%d %H:%M:%S", result="2025-05-20 12:45:59")
-
     runner.run()
     self.assertTrue(runner.is_success)
-    meminfo_result_files = list(
-        runner.out_dir.glob(f"**/{probe.name}/**/*.csv"))
+    meminfo_result_files = list(runner.out_dir.glob(f"**/{probe.name}/*.json"))
 
-    self.assertEqual(len(meminfo_result_files), 2)
+    # 5 files per browser: 1 setup, 3 iterations, 1 teardown.
+    self.assertEqual(len(meminfo_result_files), 5 * len(self.browsers))
 
-    dev_meminfo = meminfo_result_files[0].read_text()
-    self.assertEqual(
-        dev_meminfo, "timestamp,pid,name,pss_total,rss_total,swap_total\n"
-        "2025-05-20 12:45:59,1,process_1,2,3,4\n"
-        "2025-05-20 12:45:59,2,process_2,3,4,5\n")
+    for browser in self.browsers:
+      mock_json = [
+          mock_meminfo(["setup", "block_0", "action_1"], title="test"),
+          mock_meminfo(["playback_0", "block_0", "action_2"], title="test"),
+          mock_meminfo(["playback_1", "block_0", "action_2"], title="test"),
+          mock_meminfo(["playback_2", "block_0", "action_2"], title="test"),
+          mock_meminfo(["teardown", "block_0", "action_1"]),
+      ]
 
-    stable_meminfo = meminfo_result_files[1].read_text()
-    self.assertEqual(
-        stable_meminfo, "timestamp,pid,name,pss_total,rss_total,swap_total\n"
-        "2025-05-20 12:45:59,1,process_1,2,3,4\n"
-        "2025-05-20 12:45:59,2,process_2,3,4,5\n")
+      # Check that there are 5 json dump files.
+      files = [
+          file for file in meminfo_result_files
+          if browser.unique_name in file.parts
+      ]
+      self.assertListEqual([file.name for file in files], [
+          "test.setup_block_0_action_1.json",
+          "test.playback_0_block_0_action_2.json",
+          "test.playback_1_block_0_action_2.json",
+          "test.playback_2_block_0_action_2.json",
+          "teardown_block_0_action_1.json",
+      ])
+      self.assertListEqual(
+          [json.loads(file.read_text(encoding="utf-8")) for file in files],
+          mock_json)
 
-    self.assertTrue("crossbench-meminfo" in self.browsers[0].performance_marks)
-
-    meminfo_detail = self.browsers[0].performance_marks_details[
-        self.browsers[0].performance_marks.index("crossbench-meminfo")]
-
-    self.assertEqual(
-        meminfo_detail, {
-            "title":
-                "block_0_action_2",
-            "meminfos": [
-                {
-                    "timestamp": "2025-05-20 12:45:59",
-                    "pid": 1,
-                    "name": "process_1",
-                    "pss_total": 2,
-                    "rss_total": 3,
-                    "swap_total": 4
-                },
-                {
-                    "timestamp": "2025-05-20 12:45:59",
-                    "pid": 2,
-                    "name": "process_2",
-                    "pss_total": 3,
-                    "rss_total": 4,
-                    "swap_total": 5
-                },
-            ]
-        })
-
-    self.assertTrue("crossbench-meminfo" in self.browsers[1].performance_marks)
-
-    meminfo_detail = self.browsers[1].performance_marks_details[
-        self.browsers[1].performance_marks.index("crossbench-meminfo")]
-
-    self.assertEqual(
-        meminfo_detail, {
-            "title":
-                "block_0_action_2",
-            "meminfos": [
-                {
-                    "timestamp": "2025-05-20 12:45:59",
-                    "pid": 1,
-                    "name": "process_1",
-                    "pss_total": 2,
-                    "rss_total": 3,
-                    "swap_total": 4
-                },
-                {
-                    "timestamp": "2025-05-20 12:45:59",
-                    "pid": 2,
-                    "name": "process_2",
-                    "pss_total": 3,
-                    "rss_total": 4,
-                    "swap_total": 5
-                },
-            ]
-        })
-
+      # Check that there are 5 performance marks all with the correct JSON.
+      details = [
+          browser.performance_marks_details[i]
+          for i, mark in enumerate(browser.performance_marks)
+          if mark == "crossbench-meminfo"
+      ]
+      self.assertListEqual(details, mock_json)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

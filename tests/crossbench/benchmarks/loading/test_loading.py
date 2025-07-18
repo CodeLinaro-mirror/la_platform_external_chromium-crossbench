@@ -500,7 +500,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
           ["crossbench-iteration-start", "crossbench-iteration-end"] +
           ["crossbench-teardown-start", "crossbench-teardown-end"] * 2)
       self.assertEqual(browser.performance_marks_details,
-                       ["first_page"] * 2 + ["second_page"] * 2 + [None, None] +
+                       ["first_page"] * 2 + ["second_page"] * 2 + [0, 0] +
                        ["first_page"] * 2 + ["second_page"] * 2)
 
   def setup_expected_google_login_js(self):

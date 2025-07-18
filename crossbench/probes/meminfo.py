@@ -4,21 +4,21 @@
 
 from __future__ import annotations
 
-import csv
 import dataclasses
-from typing import TYPE_CHECKING, Any, Optional, Self, Type
+import datetime as dt
+import json
+from typing import TYPE_CHECKING, Any, Self, Type
 
 from typing_extensions import override
 
-from crossbench import path as pth
-from crossbench.action_runner.action.meminfo import MeminfoTarget
+from crossbench import exception
+from crossbench.path import safe_filename
+from crossbench.plt.process_meminfo import ProcessMeminfo
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
-  import datetime as dt
-
-  from crossbench.path import AnyPath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -60,53 +60,47 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
   def stop(self) -> None:
     pass
 
-  def dump_meminfo(self, target: MeminfoTarget, timeout: dt.timedelta,
-                   package: Optional[str], title: str) -> None:
-    timestamp = self.browser_platform.sh_stdout("date",
-                                                "+%Y-%m-%d %H:%M:%S").rstrip()
+  def _dump_file(self, title: str | None,
+                 info_stack: exception.TInfoStack) -> AnyPath:
+    name = "_".join(info_stack)
+    if title:
+      name = f"{title}.{name}"
+    name = safe_filename(name).lower() + ".json"
+    return self._default_result_path / name
 
-    if target is MeminfoTarget.BROWSER:
-      meminfo = self.browser.meminfo(timeout)
-      package_path = self.browser.unique_name
-    elif package is not None:
-      meminfo = self.browser_platform.meminfo(package, timeout)
-      package_path = pth.safe_filename(package).lower()
-    else:
-      raise ValueError("Cannot dump meminfo without package name.")
+  def _timeout_from_deadline(self, deadline: dt.datetime) -> dt.timedelta:
+    timeout = deadline - dt.datetime.now()
+    if timeout <= dt.timedelta(0):
+      raise TimeoutError("dump_meminfo timed out")
+    return timeout
 
-    meminfo_json: dict[str, Any] = {"title": title, "meminfos": []}
-    for proc_meminfo in meminfo:
-      proc_data = dataclasses.asdict(proc_meminfo)
-      proc_data["timestamp"] = timestamp
-      meminfo_json["meminfos"].append(proc_data)
+  def dump_meminfo(self, timeout: dt.timedelta, browser: bool,
+                   packages: tuple[str, ...], title: str | None,
+                   info_stack: exception.TInfoStack) -> None:
+    deadline = dt.datetime.now() + timeout
+    process_meminfos: list[ProcessMeminfo] = []
+    for package in packages:
+      process_meminfos += self.browser_platform.meminfo(
+          package, self._timeout_from_deadline(deadline))
+
+    if browser:
+      process_meminfos += self.browser.meminfo(
+          self._timeout_from_deadline(deadline))
+
+    meminfo_json: dict[str, Any] = {
+        "info_stack": list(info_stack),
+        "processes": []
+    }
+
+    if title is not None:
+      meminfo_json["title"] = title
+
+    for process_meminfo in process_meminfos:
+      meminfo_json["processes"].append(dataclasses.asdict(process_meminfo))
 
     self.browser.performance_mark("meminfo", detail=meminfo_json)
-
-    csv_path = self.result_path / package_path / "meminfo.csv"
-
-    self.host_platform.mkdir(csv_path.parent, parents=True, exist_ok=True)
-
-    write_header = False
-
-    if not self.host_platform.exists(csv_path):
-      write_header = True
-      self._results.append(csv_path)
-
-    with open(csv_path, "a", encoding="utf-8", newline="") as f:
-      writer = csv.DictWriter(
-          f,
-          [
-              "timestamp",
-              "pid",
-              "name",
-              "pss_total",
-              "rss_total",
-              "swap_total",
-          ],
-      )
-      if write_header:
-        writer.writeheader()
-      writer.writerows(meminfo_json["meminfos"])
+    with open(self._dump_file(title, info_stack), "x", encoding="utf-8") as f:
+      json.dump(meminfo_json, f)
 
   @override
   def teardown(self) -> ProbeResult:
