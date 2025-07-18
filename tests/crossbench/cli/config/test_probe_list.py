@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+from typing import TYPE_CHECKING
 
 import hjson
 
@@ -14,9 +15,11 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
-from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 class TestProbeListConfig(BaseConfigTestCase):

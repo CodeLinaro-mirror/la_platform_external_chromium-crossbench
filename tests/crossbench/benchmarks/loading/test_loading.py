@@ -12,13 +12,12 @@ import json
 import pathlib
 import re
 import unittest
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 from unittest import mock
 
 from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
@@ -26,8 +25,8 @@ from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
                                                              LoadingPageFilter)
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.page.live import (PAGE_LIST, PAGE_LIST_SMALL,
-                                                     LivePage)
+from crossbench.benchmarks.loading.page.live import (PAGE_LIST,
+                                                     PAGE_LIST_SMALL, LivePage)
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -39,6 +38,9 @@ from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
 from tests.crossbench.mock_browser import JsInvocation
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.base import ActionRunner
 
 
 class TestPageLoadBenchmark(SubStoryTestCase):
@@ -498,7 +500,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
           ["crossbench-iteration-start", "crossbench-iteration-end"] +
           ["crossbench-teardown-start", "crossbench-teardown-end"] * 2)
       self.assertEqual(browser.performance_marks_details,
-                       ["first_page"] * 2 + ["second_page"] * 2 + [None, None] +
+                       ["first_page"] * 2 + ["second_page"] * 2 + [0, 0] +
                        ["first_page"] * 2 + ["second_page"] * 2)
 
   def setup_expected_google_login_js(self):

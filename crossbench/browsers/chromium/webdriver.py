@@ -148,7 +148,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self._restore_chrome_flags()
 
   @override
-  def meminfo(self, timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+  def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
     return self.platform.meminfo(self.android_package, timeout)
 
   def _restore_chrome_flags(self) -> None:

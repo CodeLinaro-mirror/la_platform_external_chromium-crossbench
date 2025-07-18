@@ -60,9 +60,8 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.session = BrowserSessionRunGroup(self.runner.env,
                                           self.runner.probes, self.browser,
                                           Flags(), 1, self.root_dir, True, True)
-    self.run = MockRun(self.runner, self.session, "run 1")
-
     self.action_runner = DefaultActionRunner()
+    self.run = MockRun(self.runner, self.session, "run 1", self.action_runner)
 
   def expect_successful_google_login(self):
     # Wait for email field

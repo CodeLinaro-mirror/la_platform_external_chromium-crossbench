@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
-from crossbench.benchmarks.loading.page.base import Page, get_action_runner
+from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -90,7 +90,7 @@ class InteractivePage(Page):
   def create_failure_artifacts(self,
                                run: Run,
                                message: str = "failure") -> None:
-    action_runner = get_action_runner(run)
+    action_runner = run.action_runner
     try:
       action_runner.failure_screenshot(run, message)
     except Exception as e:  # pylint: disable=broad-except
@@ -110,7 +110,7 @@ class InteractivePage(Page):
 
   @override
   def setup(self, run: Run) -> None:
-    action_runner = get_action_runner(run)
+    action_runner = run.action_runner
     if self._run_login and (login_block := self.login_block):
       with self._performance_mark_scope(run, "login"):
         action_runner.run_login(run, self, login_block)
@@ -120,14 +120,14 @@ class InteractivePage(Page):
 
   @override
   def teardown(self, run: Run) -> None:
-    action_runner = get_action_runner(run)
+    action_runner = run.action_runner
     if self._run_teardown and (teardown_block := self.teardown_block):
       with self._performance_mark_scope(run, "teardown"):
         action_runner.run_teardown(run, self, teardown_block)
     action_runner.teardown()
 
   def run_once(self, run: Run) -> None:
-    action_runner = get_action_runner(run)
+    action_runner = run.action_runner
     multiple_tabs = self.tabs.multiple_tabs
     action_runner.run_interactive_page(run, self, multiple_tabs)
 

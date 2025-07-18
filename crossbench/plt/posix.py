@@ -312,25 +312,30 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @override
   def mkdtemp(self,
+              suffix: Optional[str] = None,
               prefix: Optional[str] = None,
               dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
     if self.is_local:
-      return super().mkdtemp(prefix, dir)
-    return self._mktemp_sh(is_dir=True, prefix=prefix, dir=dir)
+      return super().mkdtemp(suffix, prefix, dir)
+    return self._mktemp_sh(is_dir=True, suffix=suffix, prefix=prefix, dir=dir)
 
   @override
   def mktemp(self,
+             suffix: Optional[str] = None,
              prefix: Optional[str] = None,
              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
     if self.is_local:
-      return super().mktemp(prefix, dir)
-    return self._mktemp_sh(is_dir=False, prefix=prefix, dir=dir)
+      return super().mktemp(suffix, prefix, dir)
+    return self._mktemp_sh(is_dir=False, suffix=suffix, prefix=prefix, dir=dir)
 
-  def _mktemp_sh(self, is_dir: bool, prefix: Optional[str],
-                 dir: Optional[pth.AnyPathLike]) -> pth.AnyPath:
+  def _mktemp_sh(self,
+                 is_dir: bool,
+                 suffix: Optional[str] = None,
+                 prefix: Optional[str] = None,
+                 dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
     if not dir:
       dir = self.default_tmp_dir
-    template = self.path(dir) / f"{prefix}.XXXXXXXXXXX"
+    template = self.path(dir) / f"{prefix or ''}XXXXXXXXXXX{suffix or ''}"
     args: ListCmdArgs = ["mktemp"]
     if is_dir:
       args.append("-d")

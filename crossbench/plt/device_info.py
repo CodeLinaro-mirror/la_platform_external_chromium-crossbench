@@ -4,13 +4,18 @@
 
 from __future__ import annotations
 
+import abc
 import dataclasses
+from typing import Any
 
 
 @dataclasses.dataclass(frozen=True)
-class ProcessMeminfo:
-  pid: int
+class DeviceInfo(abc.ABC):
+  device_id: str
   name: str
-  pss_total: int
-  rss_total: int
-  swap_total: int
+
+  def asdict(self) -> dict[str, Any]:
+    return dataclasses.asdict(self)
+
+  def __str__(self) -> str:
+    return f"{self.name} ({self.device_id})"

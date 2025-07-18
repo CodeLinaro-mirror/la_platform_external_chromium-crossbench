@@ -6,10 +6,13 @@ from __future__ import annotations
 
 import enum
 import json
+from typing import TYPE_CHECKING
 
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
-from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  from tests.test_helper import TestEnv
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name

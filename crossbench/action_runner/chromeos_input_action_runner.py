@@ -257,6 +257,7 @@ E: <time> 0000 0000 0
 
 
 class ChromeOSInputActionRunner(DefaultActionRunner):
+  """Custom ActionRunner for chromeOS devices."""
 
   def __init__(self) -> None:
     super().__init__()

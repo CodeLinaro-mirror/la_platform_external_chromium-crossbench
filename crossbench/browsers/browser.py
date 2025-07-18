@@ -205,7 +205,7 @@ class Browser(abc.ABC):
     # we don't get the status back.
     return False
 
-  def meminfo(self, timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+  def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
     return self.platform.meminfo(str(self.path), timeout)
 
   @property

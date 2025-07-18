@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Type
 
 from typing_extensions import override
 
-from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.loading.config.pages import (
     DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig)
@@ -26,7 +25,7 @@ from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.parse import DurationParser, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.stories.story import Story
 
@@ -278,11 +277,6 @@ class LoadingBenchmark(SubStoryBenchmark):
       cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     cls.STORY_FILTER_CLS.add_cli_arguments(parser)
-    parser.add_argument(
-        "--action-runner",
-        type=ActionRunnerConfig.parse,
-        help="Set the action runner for interactive pages.",
-        required=False)
     return parser
 
   @classmethod
@@ -341,13 +335,6 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["action_runner"] = args.action_runner
-    return kwargs
-
-  @classmethod
-  @override
   def describe_stories(cls) -> Mapping[str, str]:
     result: dict[str, str] = {}
     for story in cls.all_stories():
@@ -363,18 +350,10 @@ class LoadingBenchmark(SubStoryBenchmark):
     # TODO: Use StoryFilter for listing stories everywhere.
     return sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories())
 
-  def __init__(self,
-               stories: Sequence[Page],
-               action_runner: Optional[ActionRunner] = None) -> None:
-    self._action_runner = action_runner
+  def __init__(
+      self,
+      stories: Sequence[Page],
+      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
     for story in stories:
       assert isinstance(story, Page)
-    super().__init__(stories)
-
-  @property
-  def action_runner(self) -> Optional[ActionRunner]:
-    return self._action_runner
-
-  @action_runner.setter
-  def action_runner(self, action_runner: Optional[ActionRunner]) -> None:
-    self._action_runner = action_runner
+    super().__init__(stories, action_runner_config)

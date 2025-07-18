@@ -12,13 +12,13 @@ from crossbench import plt
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport
 from crossbench.cli.config.env import EnvConfig
-from crossbench.cli.config.extension import ExtensionConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
+  from crossbench.cli.config.extension import ExtensionConfig
   from crossbench.network.base import Network
 
 
