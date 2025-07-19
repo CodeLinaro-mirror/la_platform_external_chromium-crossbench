@@ -18,7 +18,7 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
-from crossbench.action_runner.action.meminfo import MeminfoAction, MeminfoTarget
+from crossbench.action_runner.action.meminfo import MeminfoAction
 from crossbench.action_runner.action.position import (CoordinatesConfig,
                                                       PositionConfig,
                                                       SelectorConfig)
@@ -973,8 +973,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = MeminfoAction.parse_dict(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertEqual(action.target, MeminfoTarget.BROWSER)
-    self.assertIsNone(action.package)
+    self.assertTrue(action.browser)
+    self.assertEqual(action.packages, ())
     self.assertIsNone(action.title)
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
@@ -982,12 +982,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action_2.validate()
 
   def test_parse_meminfo_browser(self):
-    config_dict = {"action": "meminfo", "target": "browser"}
+    config_dict = {"action": "meminfo", "browser": True}
     action = MeminfoAction.parse_dict(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertEqual(action.target, MeminfoTarget.BROWSER)
-    self.assertIsNone(action.package)
+    self.assertTrue(action.browser)
+    self.assertEqual(action.packages, ())
+    self.assertIsNone(action.title)
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
@@ -998,38 +999,38 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = MeminfoAction.parse_dict(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
+    self.assertTrue(action.browser)
+    self.assertEqual(action.packages, ())
     self.assertEqual(action.title, "a_title")
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
-  def test_parse_meminfo_invalid_target(self):
-    config_dict = {"action": "meminfo", "target": "notatarget"}
-
-    with self.assertRaisesRegex(ValueError, "target"):
-      MeminfoAction.parse_dict(config_dict)
-
-  def test_parse_meminfo_package_missing_name(self):
-    config_dict = {"action": "meminfo", "target": "package"}
-    with self.assertRaisesRegex(ValueError, "package"):
-      MeminfoAction.parse_dict(config_dict)
-
-  def test_parse_meminfo_package(self):
+  def test_parse_meminfo_packages(self):
     config_dict = {
         "action": "meminfo",
-        "target": "package",
-        "package": "netflix"
+        "browser": False,
+        "packages": ["netflix", "minecraft"],
     }
     action = MeminfoAction.parse_dict(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertEqual(action.target, MeminfoTarget.PACKAGE)
-    self.assertEqual(action.package, "netflix")
+    self.assertFalse(action.browser)
+    self.assertEqual(action.packages, ("netflix", "minecraft"))
+    self.assertIsNone(action.title)
 
     action_2 = MeminfoAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
+
+  def test_parse_meminfo_nothing(self):
+    config_dict = {
+        "action": "meminfo",
+        "browser": False,
+    }
+    with self.assertRaisesRegex(ValueError, "must specify at least one of"):
+      MeminfoAction.parse_dict(config_dict)
 
 
 class PositionConfigTestCase(unittest.TestCase):

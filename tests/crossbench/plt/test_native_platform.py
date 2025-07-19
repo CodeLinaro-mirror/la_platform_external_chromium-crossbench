@@ -14,15 +14,18 @@ import stat
 import sys
 import tempfile
 import unittest
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from crossbench import plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
-from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 from tests.crossbench.mock_helper import MockRemotePortManager
+
+if TYPE_CHECKING:
+  from crossbench.plt.port_manager import PortManager
 
 
 class BaseNativePlatformTestCase(unittest.TestCase):
@@ -208,9 +211,40 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
 
   def test_NamedTemporaryFile(self):
-    with self.platform.NamedTemporaryFile("custom_prefix") as path:
-      self.assertIn("custom_prefix", str(path))
+    with self.platform.NamedTemporaryFile() as path:
       self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.NamedTemporaryFile("custom_suffix") as path:
+      self.assertTrue(path.name.endswith("custom_suffix"), path.name)
+      self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.NamedTemporaryFile("AaA", "BbB") as path:
+      self.assertTrue(path.name.startswith("BbB"))
+      self.assertTrue(path.name.endswith("AaA"))
+      self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+  def test_TemporaryDirectory(self):
+    with self.platform.TemporaryDirectory() as path:
+      self.assertTrue(self.platform.is_dir(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.TemporaryDirectory("custom_suffix") as path:
+      self.assertTrue(path.name.endswith("custom_suffix"), path.name)
+      self.assertTrue(self.platform.is_dir(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.TemporaryDirectory("AaA", "BbB") as path:
+      self.assertTrue(path.name.startswith("BbB"))
+      self.assertTrue(path.name.endswith("AaA"))
+      self.assertTrue(self.platform.is_dir(path))
       self.assertTrue(self.platform.exists(path))
     self.assertFalse(self.platform.exists(path))
 

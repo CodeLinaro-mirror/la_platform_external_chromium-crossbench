@@ -14,7 +14,8 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
+from crossbench.plt.android_adb import (Adb, AndroidAdbPlatform,
+                                        AndroidDeviceInfo)
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
@@ -138,7 +139,29 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
     self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
     self.expect_sh("mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX")
-    self.platform.mkdtemp("custom_prefix")
+    self.platform.mkdtemp(prefix="custom_prefix.")
+
+  def test_mktemp_prefix_and_suffix(self):
+    # suffix need special handling on android.
+    self.assertTrue(self.platform.default_tmp_dir.is_absolute())
+    self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
+    self.expect_sh(
+        "mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX",
+        result="/data/local/tmp/custom_prefix.RANDOM")
+    self.expect_sh(("mv /data/local/tmp/custom_prefix.RANDOM "
+                    "/data/local/tmp/custom_prefix.RANDOM.custom_suffix"))
+    self.platform.mkdtemp(".custom_suffix", "custom_prefix.")
+
+  def test_mktemp_suffix(self):
+    # suffix need special handling on android.
+    self.assertTrue(self.platform.default_tmp_dir.is_absolute())
+    self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
+    self.expect_sh(
+        "mktemp -d /data/local/tmp/XXXXXXXXXXX",
+        result="/data/local/tmp/RANDOM")
+    self.expect_sh(
+        "mv /data/local/tmp/RANDOM /data/local/tmp/RANDOM.custom_suffix")
+    self.platform.mkdtemp(".custom_suffix")
 
   def test_push(self):
     local_path = self.mock_platform.path("C:/foo/push.local.data")
@@ -207,12 +230,13 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_adb_basic_properties(self):
     self.assertEqual(self.adb.serial_id, self.DEVICE_ID)
-    self.assertDictEqual(
-        self.adb.device_info, {
-            "device": "generic_x86",
-            "model": "Android_SDK_built_for_x86",
-            "product": "sdk_google_phone_x86"
-        })
+    self.assertEqual(
+        self.adb.device_info,
+        AndroidDeviceInfo(
+            device_id=self.DEVICE_ID,
+            name="generic_x86",
+            model="Android_SDK_built_for_x86",
+            product="sdk_google_phone_x86"))
     self.assertIn(self.DEVICE_ID, str(self.adb))
 
   def test_has_root(self):
@@ -553,19 +577,15 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     meminfo = self.platform.meminfo("com.android.chrome")
     self.assertEqual(len(meminfo), 4)
 
-    self.assertEqual(
-        meminfo, {
-            "com.android.chrome:privileged_process0":
-                ProcessMeminfo(20533, 37794, 186356, 203),
-            "com.android.chrome:sandboxed_process0:org.chromium.content.app."
-            "SandboxedProcessService0:0":
-                ProcessMeminfo(20527, 49907, 184636, 245),
-            "com.android.chrome:sandboxed_process0:org.chromium.content.app."
-            "SandboxedProcessService0:1":
-                ProcessMeminfo(20596, 30679, 156928, 244),
-            "com.android.chrome":
-                ProcessMeminfo(20438, 200986, 412436, 148)
-        })
+    privileged_process = "com.android.chrome:privileged_process0"
+    sandbox_prefix = ("com.android.chrome:sandboxed_process0:org.chromium."
+                      "content.app.SandboxedProcessService0:")
+    self.assertEqual(meminfo, [
+        ProcessMeminfo(20533, privileged_process, 37794, 186356, 203),
+        ProcessMeminfo(20527, f"{sandbox_prefix}0", 49907, 184636, 245),
+        ProcessMeminfo(20596, f"{sandbox_prefix}1", 30679, 156928, 244),
+        ProcessMeminfo(20438, "com.android.chrome", 200986, 412436, 148)
+    ])
 
   def test_meminfo_timeout(self):
     self.expect_sh(

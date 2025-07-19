@@ -7,8 +7,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-import pathlib
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from unittest import mock
 
 import pytest
@@ -18,7 +17,11 @@ from crossbench import plt
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper
 from tests.end2end.conftest import mock_patch_chrome_stable
-from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  import pathlib
+
+  from tests.test_helper import TestEnv
 
 
 class SysExitException(Exception):

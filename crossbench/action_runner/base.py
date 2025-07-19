@@ -80,10 +80,6 @@ class ActionRunner:
   def bond(self) -> BondActionRunner:
     return BondActionRunner()
 
-  def annotate(self, *info_stack: str) -> exception.ExceptionAnnotationScope:
-    self._info_stack = info_stack
-    return exception.annotate(*info_stack)
-
   def run_blocks(self, run: Run, page: InteractivePage,
                  blocks: Iterable[ActionBlock]) -> None:
     for block in blocks:
@@ -93,11 +89,12 @@ class ActionRunner:
     block_index = block.index
     # TODO: Instead maybe just pass context down.
     # Or pass unique path to every action __init__
-    with self.annotate(f"Running block {block_index}: {block.label}"):
-      for action_index, action in enumerate(block, start=1):
-        self._info_stack = (f"block_{block_index}", f"action_{action_index}")
-        self._failure_screenshot_annotations = []
-        action.run_with(run, self)
+    with exception.annotate(f"Running block {block_index}: {block.label}"):
+      with self._info_stack_annotate(f"block_{block_index}"):
+        for action_index, action in enumerate(block, start=1):
+          with self._info_stack_annotate(f"action_{action_index}"):
+            self._failure_screenshot_annotations = []
+            action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
     with run.actions("WaitAction", measure=False) as actions:
@@ -297,10 +294,29 @@ class ActionRunner:
       teardown.run_with(self, run, page)
 
   @contextlib.contextmanager
+  def playback_iteration(self, i: int):
+    assert self._info_stack is None
+    with self._info_stack_annotate(f"playback_{i}"):
+      yield
+
+  @contextlib.contextmanager
+  def _info_stack_annotate(self, name: str):
+    parent_info_stack = self._info_stack
+    try:
+      if self._info_stack is not None:
+        self._info_stack = self._info_stack + (name,)
+      else:
+        self._info_stack = (name,)
+      yield
+    finally:
+      self._info_stack = parent_info_stack
+
+  @contextlib.contextmanager
   def _management_block_scope(self, run: Run, page: InteractivePage, name: str):
     try:
-      with self.annotate(name):
-        yield
+      with exception.annotate(name):
+        with self._info_stack_annotate(name):
+          yield
     except Exception:
       page.create_failure_artifacts(run, "failure")
       raise

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import collections
 import dataclasses
-import datetime as dt
 import functools
 import pathlib
 import shlex
@@ -24,6 +23,7 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform, SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
+from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
@@ -32,6 +32,8 @@ from crossbench.plt.win import WinPlatform
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.plt.types import CmdArg, ListCmdArgs, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
@@ -475,6 +477,9 @@ class ChromeOsSshMockPlatform(PosixMockPlatformMixin, ChromeOsSshPlatform):
 class MacOsMockPlatform(PosixMockPlatformMixin, MacOSPlatform):
   pass
 
+
+class MacIOSMockPlatform(PosixMockPlatformMixin, IOSPlatform):
+  pass
 
 class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
   pass

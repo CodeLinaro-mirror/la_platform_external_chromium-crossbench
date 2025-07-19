@@ -33,6 +33,8 @@ if TYPE_CHECKING:
 
 
 class DefaultActionRunner(ActionRunner):
+  """Default action runner that uses JavaScript for most page interactions."""
+
   XPATH_SELECT_ELEMENT = """
       let elements = [];
       let xpathResult = document.evaluate(arguments[0], document);
@@ -383,8 +385,8 @@ class DefaultActionRunner(ActionRunner):
       logging.warning("No meminfo probe for dump on %s", repr(self.info_stack))
       return
     assert isinstance(ctx, MeminfoProbeContext)
-    ctx.dump_meminfo(action.target, action.timeout, action.package,
-                     action.title or "_".join(self.info_stack))
+    ctx.dump_meminfo(action.timeout, action.browser, action.packages,
+                     action.title, self.info_stack)
 
   def wait_for_download(self, run: Run,
                         action: i_action.WaitForDownloadAction) -> None:

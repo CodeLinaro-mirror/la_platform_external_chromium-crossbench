@@ -33,6 +33,7 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.cli.config.secrets import Secrets
@@ -61,6 +62,7 @@ class Run(ResultOrigin):
       runner: Runner,
       browser_session: BrowserSessionRunGroup,
       story: Story,
+      action_runner: ActionRunner,
       repetition: int,
       is_warmup: bool,
       temperature: str,
@@ -78,6 +80,7 @@ class Run(ResultOrigin):
     self._env = RunEnv(self, self._browser.settings.env_config,
                        env_validation_mode)
     self._story = story
+    self._action_runner = action_runner
     assert repetition >= 0
     self._repetition = repetition
     self._is_warmup = is_warmup
@@ -210,6 +213,10 @@ class Run(ResultOrigin):
   @override
   def runner(self) -> Runner:
     return self._runner
+
+  @property
+  def action_runner(self) -> ActionRunner:
+    return self._action_runner
 
   @property
   def results_db(self) -> ResultsDB:

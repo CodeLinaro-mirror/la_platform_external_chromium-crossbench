@@ -14,6 +14,7 @@ from typing import (TYPE_CHECKING, Any, Generic, Mapping, Optional, Sequence,
 from ordered_set import OrderedSet
 from typing_extensions import override
 
+from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.flags.base import Flags
 from crossbench.helper import txt_helper
@@ -24,8 +25,10 @@ from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   from crossbench import path as pth
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.plt.base import Platform
   from crossbench.runner.runner import Runner
 
 
@@ -68,6 +71,12 @@ class Benchmark(abc.ABC):
         epilog=cls.cli_epilog(),
     )
     assert isinstance(parser, CrossBenchArgumentParser)
+    parser.add_argument(
+        "--action-runner-config",
+        "--action-runner",
+        type=ActionRunnerConfig.parse,
+        help="Set the action runner for interactive pages.",
+        required=False)
     return parser
 
   @classmethod
@@ -104,20 +113,23 @@ class Benchmark(abc.ABC):
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    del args
-    return {}
+    return {"action_runner_config": args.action_runner_config}
 
   @classmethod
   def from_cli_args(cls, args: argparse.Namespace) -> Benchmark:
     kwargs = cls.kwargs_from_cli(args)
     return cls(**kwargs)
 
-  def __init__(self, stories: Sequence[Story]) -> None:
+  def __init__(
+      self,
+      stories: Sequence[Story],
+      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
     assert self.NAME is not None, f"{self} has no .NAME property"
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
     self.stories: list[Story] = self._validate_stories(stories)
     self.log_stories(self.stories)
+    self._action_runner_config = action_runner_config or ActionRunnerConfig()
 
   def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
     assert stories, "No stories provided"
@@ -127,9 +139,11 @@ class Benchmark(abc.ABC):
           f"class as {self.DEFAULT_STORY_CLS}")
     return list(stories)
 
+  def new_action_runner(self, platform: Platform) -> ActionRunner:
+    return self._action_runner_config.instantiate(platform)
+
   def setup(self, runner: Runner) -> None:
     del runner
-
 
   def log_stories(self, stories: Sequence[StoryT]) -> None:
     substory_names = [name for story in stories for name in story.substories]
@@ -555,8 +569,9 @@ class PressBenchmark(SubStoryBenchmark):
 
   def __init__(self,
                stories: Sequence[Story],
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                custom_url: Optional[str] = None) -> None:
-    super().__init__(stories)
+    super().__init__(stories, action_runner_config)
     self.custom_url = custom_url
     if custom_url:
       for story in stories:
