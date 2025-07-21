@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING, Type
 
 from typing_extensions import override
@@ -50,7 +51,11 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
     repetitions: list[JsonDict] = []
     browser: JsonDict | None = None
 
+    has_empty_results = False
     for run in group.runs:
+      if run.results[self].is_empty:
+        has_empty_results = True
+        continue
       source_file = run.results[self].json
       assert source_file.is_file()
       with source_file.open(encoding="utf-8") as f:
@@ -76,6 +81,8 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
         "success": group.is_success,
         "errors": group.exceptions.error_messages(),
     }
+    if has_empty_results:
+      logging.error("Probe %s produced empty results for some runs.", self.NAME)
     return self.write_group_result(group, merged_data, csv_formatter=None)
 
   @override
