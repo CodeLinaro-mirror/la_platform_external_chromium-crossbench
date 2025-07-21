@@ -11,11 +11,14 @@ from typing_extensions import override
 
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
                                              InternalJsonResultProbeContext)
+from crossbench.probes.results import EmptyProbeResult
 
 if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.cache_temperatures import \
+      CacheTemperaturesRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.types import Json, JsonDict
@@ -35,6 +38,12 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
   @override
   def is_attached(self) -> bool:
     return True
+
+  @override
+  def merge_cache_temperatures(self,
+                               group: CacheTemperaturesRunGroup) -> ProbeResult:
+    # If session setup failed, the results will not have been initialized.
+    return group.first_run.results.get(self, EmptyProbeResult())
 
   @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
