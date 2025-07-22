@@ -17,8 +17,6 @@ from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
-from android_protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
-                            windowmanagerservice_pb2)
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
@@ -28,6 +26,8 @@ from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
+from protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
+                    windowmanagerservice_pb2)
 
 if TYPE_CHECKING:
   import subprocess

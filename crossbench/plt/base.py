@@ -237,7 +237,7 @@ class Platform(abc.ABC):
   @property
   def is_battery_powered(self) -> bool:
     self.assert_is_local()
-    if not psutil.sensors_battery:
+    if not psutil.sensors_battery: # type: ignore
       return False
     status = psutil.sensors_battery()
     if not status:
