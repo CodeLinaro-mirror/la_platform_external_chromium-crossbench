@@ -74,13 +74,13 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       raise TimeoutError("dump_meminfo timed out")
     return timeout
 
-  def dump_meminfo(self, timeout: dt.timedelta, browser: bool,
+  def dump_meminfo(self, timeout: dt.timedelta, browser: bool, system: bool,
                    packages: tuple[str, ...], title: str | None,
                    info_stack: exception.TInfoStack) -> None:
     deadline = dt.datetime.now() + timeout
     process_meminfos: list[ProcessMeminfo] = []
     for package in packages:
-      process_meminfos += self.browser_platform.meminfo(
+      process_meminfos += self.browser_platform.process_meminfo(
           package, self._timeout_from_deadline(deadline))
 
     if browser:
@@ -94,6 +94,10 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
 
     if title is not None:
       meminfo_json["title"] = title
+
+    if system:
+      meminfo_json["system"] = self.browser_platform.system_meminfo(
+          self._timeout_from_deadline(deadline))
 
     for process_meminfo in process_meminfos:
       meminfo_json["processes"].append(dataclasses.asdict(process_meminfo))
