@@ -77,8 +77,8 @@ def test_wpr_record_and_replay(browser_config, tmp_dir, test_env) -> None:
   with wpr_logs[0].open() as wpr_log:
     lines = wpr_log.readlines()
   assert lines, "No logs"
-  assert any(
-      f"ServeHTTP({target_url}): serving 200 response" in l for l in lines)
+  assert any(f"ServeHTTP({target_url}): serving 200 response" in line
+             for line in lines)
 
 
 if __name__ == "__main__":

@@ -21,7 +21,8 @@ from xlsxwriter.utility import xl_rowcol_to_cell
 from crossbench.probes import helper
 from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
                                       metric_geomean)
-from crossbench.probes.probe import Probe, ProbeContext
+from crossbench.probes.probe import Probe
+from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
@@ -64,15 +65,21 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     if not self.AUTO_MERGE_REPETITIONS:
       return super().merge_repetitions(group)
     merger = MetricsMerger()
+    has_empty_results = False
     for run in group.runs:
       if self not in run.results:
         raise ProbeMissingDataError(
             f"Probe {self.NAME} produced no data to merge.")
+      if run.results[self].is_empty:
+        has_empty_results = True
+        continue
       source_file = run.results[self].json
       assert source_file.is_file(), (
           f"{source_file} from {run} is not a file or doesn't exist.")
       with source_file.open(encoding="utf-8") as f:
         merger.add(json.load(f))
+    if has_empty_results:
+      logging.error("Probe %s produced empty results for some runs.", self.NAME)
     return self.write_group_result(group, merger, csv_formatter=CSVFormatter)
 
   def merge_browsers_json_list(self, group: BrowsersRunGroup) -> ProbeResult:

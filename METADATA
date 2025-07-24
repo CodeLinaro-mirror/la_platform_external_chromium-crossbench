@@ -8,13 +8,13 @@ third_party {
   license_type: NOTICE
   last_upgrade_date {
     year: 2025
-    month: 6
-    day: 30
+    month: 7
+    day: 18
   }
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/crossbench"
-    version: "35b5a8e76d4dc449948f0b7f667e5cc508299ddb"
+    version: "09c7d1bc0aa5482791ca1de2a6fe27ed2f82016a"
     primary_source: true
   }
 }

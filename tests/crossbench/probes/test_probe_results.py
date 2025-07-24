@@ -3,13 +3,16 @@
 # found in the LICENSE file.
 
 import pathlib
+from typing import Optional
 
 from typing_extensions import override
 
+from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.probes.probe import Probe
-from crossbench.probes.results import (BrowserProbeResult, DuplicateProbeResult,
-                                       EmptyProbeResult, LocalProbeResult,
-                                       ProbeResultDict)
+from crossbench.probes.results import (BrowserProbeResult,
+                                       DuplicateProbeResult, EmptyProbeResult,
+                                       LocalProbeResult, ProbeResultDict)
 from tests import test_helper
 from tests.crossbench.base import (BaseCrossbenchTestCase,
                                    CrossbenchFakeFsTestCase)
@@ -52,7 +55,6 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     url_b = "http://foo.test.com"
     self.assertNotEqual(
         LocalProbeResult(url=(url,)), LocalProbeResult(url=(url_b,)))
-
 
   def test_invalid_files(self):
     with self.assertRaises(ValueError):
@@ -272,10 +274,14 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
 
 class MockRun:
 
-  def __init__(self, browser, browser_platform):
-    self.brower = browser
+  def __init__(self,
+               browser,
+               browser_platform,
+               action_runner: Optional[ActionRunner] = None):
+    self.browser = browser
     self.browser_platform = browser_platform
     self.is_remote = False
+    self.action_runner: ActionRunner = action_runner or DefaultActionRunner()
 
 
 class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
@@ -363,6 +369,7 @@ class MockProbe(Probe):
   @override
   def get_context_cls(self):
     pass
+
 
 class ProbeResultDictTestCase(CrossbenchFakeFsTestCase):
 

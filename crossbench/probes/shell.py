@@ -17,7 +17,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.plt.base import CmdArg, TupleCmdArgs
+  from crossbench.plt.types import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
 
 

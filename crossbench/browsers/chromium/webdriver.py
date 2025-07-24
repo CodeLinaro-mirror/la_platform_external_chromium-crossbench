@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import atexit
-import datetime as dt
 import logging
 import re
 import subprocess
@@ -34,6 +33,8 @@ from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from selenium import webdriver
   from selenium.webdriver.chromium.options import ChromiumOptions
   from selenium.webdriver.chromium.service import ChromiumService
@@ -147,7 +148,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self._restore_chrome_flags()
 
   @override
-  def meminfo(self, timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+  def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
     return self.platform.meminfo(self.android_package, timeout)
 
   def _restore_chrome_flags(self) -> None:

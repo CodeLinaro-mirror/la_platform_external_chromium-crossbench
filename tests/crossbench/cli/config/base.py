@@ -39,6 +39,18 @@ iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
 iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
 """)
 
+XCTRACE_DEVICES_NONE_OUTPUT = ShResult("""
+== Devices ==
+a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
+
+== Devices Offline ==
+An iPhone Pro (17.1.1) (00002222-11AA22BB33DD)
+
+== Simulators ==
+iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
+iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
+""")
+
 ADB_DEVICES_SINGLE_OUTPUT_RESULT = (
     "List of devices attached\n"
     "emulator-5556 device product:sdk_google_phone_x86_64 "

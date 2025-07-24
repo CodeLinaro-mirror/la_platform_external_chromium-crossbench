@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Iterable, Optional, Sequence
 
@@ -11,11 +12,12 @@ from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
 from crossbench.action_runner.bond_base import BondActionRunner
-from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.screenshot_annotation import \
+      ScreenshotAnnotation
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.benchmarks.loading.page.combined import CombinedPage
@@ -34,9 +36,8 @@ class ActionNotImplementedError(NotImplementedError):
     self.action = action
 
     if msg_context:
-      msg_context = ". Context: " + msg_context
-
-    message = (f"{str(action.TYPE).capitalize()}-action "
+      msg_context = f", context: {msg_context}"
+    message = (f"{str(action.TYPE)}-action "
                f"not implemented in {type(runner).__name__}{msg_context}")
     super().__init__(message)
 
@@ -48,14 +49,12 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
                action: i_action.Action,
                input_source: InputSource,
                msg_context: str = "") -> None:
-
     if msg_context:
-      msg_context = ". Context: " + msg_context
-
-    input_source_message = (f"Source: '{input_source}'"
+      msg_context = f", context: {msg_context}"
+    input_source_message = (f"Source {repr(input_source)} "
                             f"not implemented{msg_context}")
-
     super().__init__(runner, action, input_source_message)
+
 
 class ActionRunner:
 
@@ -81,10 +80,6 @@ class ActionRunner:
   def bond(self) -> BondActionRunner:
     return BondActionRunner()
 
-  def teardown(self, run: Run) -> None:
-    del run
-    pass
-
   def run_blocks(self, run: Run, page: InteractivePage,
                  blocks: Iterable[ActionBlock]) -> None:
     for block in blocks:
@@ -95,10 +90,11 @@ class ActionRunner:
     # TODO: Instead maybe just pass context down.
     # Or pass unique path to every action __init__
     with exception.annotate(f"Running block {block_index}: {block.label}"):
-      for action_index, action in enumerate(block, start=1):
-        self._info_stack = (f"block_{block_index}", f"action_{action_index}")
-        self._failure_screenshot_annotations = []
-        action.run_with(run, self)
+      with self._info_stack_annotate(f"block_{block_index}"):
+        for action_index, action in enumerate(block, start=1):
+          with self._info_stack_annotate(f"action_{action_index}"):
+            self._failure_screenshot_annotations = []
+            action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
     with run.actions("WaitAction", measure=False) as actions:
@@ -281,31 +277,60 @@ class ActionRunner:
     else:
       self.run_interactive_page_once(run, page)
 
+  def run_login(self, run: Run, page: InteractivePage,
+                login: ActionBlock) -> None:
+    with self._management_block_scope(run, page, "login"):
+      with run.browser.network.traffic_shaper.pause():
+        login.run_with(self, run, page)
+
   def run_setup(self, run: Run, page: InteractivePage,
                 setup: ActionBlock) -> None:
+    with self._management_block_scope(run, page, "setup"):
+      setup.run_with(self, run, page)
+
+  def run_teardown(self, run: Run, page: InteractivePage,
+                   teardown: ActionBlock) -> None:
+    with self._management_block_scope(run, page, "teardown"):
+      teardown.run_with(self, run, page)
+
+  @contextlib.contextmanager
+  def playback_iteration(self, i: int):
+    assert self._info_stack is None
+    with self._info_stack_annotate(f"playback_{i}"):
+      yield
+
+  @contextlib.contextmanager
+  def _info_stack_annotate(self, name: str):
+    parent_info_stack = self._info_stack
     try:
-      with exception.annotate("setup"):
-        self._info_stack = ("setup",)
-        setup.run_with(self, run, page)
+      if self._info_stack is not None:
+        self._info_stack = self._info_stack + (name,)
+      else:
+        self._info_stack = (name,)
+      yield
+    finally:
+      self._info_stack = parent_info_stack
+
+  @contextlib.contextmanager
+  def _management_block_scope(self, run: Run, page: InteractivePage, name: str):
+    try:
+      with exception.annotate(name):
+        with self._info_stack_annotate(name):
+          yield
     except Exception:
       page.create_failure_artifacts(run, "failure")
       raise
 
-  def run_login(self, run: Run, page: InteractivePage,
-                login: ActionBlock) -> None:
-    try:
-      with exception.annotate("login"):
-        with run.browser.network.traffic_shaper.pause():
-          self._info_stack = ("login",)
-          login.run_with(self, run, page)
-    except Exception:
-      page.create_failure_artifacts(run, "failure")
-      raise
+  def teardown(self):
+    pass
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
     raise ActionNotImplementedError(self, action)
 
   def close_tab(self, run: Run, action: i_action.CloseTabAction):
+    raise ActionNotImplementedError(self, action)
+
+  def close_all_tabs(self, run: Run, action: i_action.CloseAllTabsAction):
     raise ActionNotImplementedError(self, action)
 
   def wait_for_download(self, run: Run, action: i_action.WaitForDownloadAction):

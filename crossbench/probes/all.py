@@ -45,6 +45,7 @@ from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
+from crossbench.probes.video_acceleration import VideoAccelerationProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 
 if TYPE_CHECKING:
@@ -116,6 +117,7 @@ GENERAL_PURPOSE_PROBES: tuple[Type[Probe], ...] = (
     V8RCSProbe,
     V8TurbolizerProbe,
     VideoProbe,
+    VideoAccelerationProbe,
     WebPageReplayProbe,
 )
 

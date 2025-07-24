@@ -41,7 +41,8 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
         compressibility=50,
         random_per_page=False,
         block_size=128,
-        tabs=TabController.repeat(tab_count))
+        tabs=TabController.repeat(tab_count),
+        action_runner_config=None)
     stories = self.story_cls.stories_from_cli_args(args=args)
     return stories
 

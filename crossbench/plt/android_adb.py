@@ -4,38 +4,53 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import functools
 import logging
 import math
 import re
 import shlex
-import subprocess
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
+from android_protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
+                            windowmanagerservice_pb2)
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
+from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 
-from android_protoc import activitymanagerservice_pb2
+if TYPE_CHECKING:
+  import subprocess
+
+  from crossbench.plt.base import Platform
+  from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.types import CmdArg, ListCmdArgs
+  from crossbench.types import JsonDict
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
-ANDROID_PERMISSIONS = ["POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO"]
+ANDROID_PERMISSIONS = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 
-if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, Platform
-  from crossbench.plt.display_info import DisplayInfo
-  from crossbench.types import JsonDict
+
+@dataclasses.dataclass(frozen=True)
+class AndroidDeviceInfo(DeviceInfo):
+  model: str = ""
+  product: str = ""
+  transport_id: str = ""
+
+  @property
+  def serial_id(self) -> str:
+    return self.device_id
 
 
 def _find_adb_bin(platform: Platform) -> pth.AnyPath:
@@ -53,14 +68,21 @@ def _find_adb_bin(platform: Platform) -> pth.AnyPath:
 
 def adb_devices(
     platform: Platform,
-    adb_bin: Optional[pth.AnyPath] = None) -> dict[str, dict[str, str]]:
+    adb_bin: Optional[pth.AnyPath] = None) -> dict[str, AndroidDeviceInfo]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
-  result: dict[str, dict[str, str]] = {}
+  result: dict[str, AndroidDeviceInfo] = {}
   for line in raw_lines:
-    serial_id, details = line.split(" ", maxsplit=1)
-    result[serial_id.strip()] = _parse_adb_device_info(details.strip())
+    serial_id, details_str = line.split(" ", maxsplit=1)
+    details: dict[str, str] = _parse_adb_device_info(details_str)
+    device = AndroidDeviceInfo(
+        device_id=serial_id.strip(),
+        name=details.get("device", ""),
+        model=details.get("model", ""),
+        product=details.get("product", ""),
+        transport_id=details.get("transport_id", ""))
+    result[device.serial_id] = device
   return result
 
 
@@ -72,7 +94,7 @@ def _parse_adb_device_info(value: str) -> dict[str, str]:
 
   Some older versions of adb would not contain the `2-1` part.
   """
-  parts = value.split(" ")
+  parts = value.strip().split(" ")
   assert parts[0], "device"
   return dict(part.split(":") for part in parts[1:] if ":" in part)
 
@@ -80,7 +102,7 @@ def _parse_adb_device_info(value: str) -> dict[str, str]:
 class Adb:
 
   _serial_id: str
-  _device_info: dict[str, str]
+  _device_info: AndroidDeviceInfo
   _adb_bin: pth.AnyPath
   _bundletool: Optional[pth.AnyPath]
 
@@ -106,7 +128,7 @@ class Adb:
 
   def _find_serial_id(
       self,
-      device_identifier: Optional[str] = None) -> tuple[str, dict[str, str]]:
+      device_identifier: Optional[str] = None) -> tuple[str, AndroidDeviceInfo]:
     devices = self.devices()
     if not devices:
       raise ValueError("adb could not find any attached devices."
@@ -122,10 +144,9 @@ class Adb:
       return device_identifier, devices[device_identifier]
     matches: list[str] = []
     under_name = device_identifier.replace(" ", "_")
-    for key, device_info in devices.items():
-      for _, info_value in device_info.items():
-        if device_identifier in info_value or (under_name in info_value):
-          matches.append(key)
+    for key, device in devices.items():
+      if device_identifier in device.model or under_name in device.model:
+        matches.append(key)
     if not matches:
       raise ValueError(
           f"Could not find adb device matching: '{device_identifier}'")
@@ -137,7 +158,7 @@ class Adb:
 
   def __str__(self) -> str:
     info = f"info='{self._device_info}'"
-    if model := self._device_info.get("model"):
+    if model := self._device_info.model:
       info = f"model={repr(model)}"
     return f"adb(device_id={repr(self._serial_id)}, {info})"
 
@@ -156,7 +177,7 @@ class Adb:
     return int(self.getprop("ro.build.version.release"))
 
   @property
-  def device_info(self) -> dict[str, str]:
+  def device_info(self) -> AndroidDeviceInfo:
     return self._device_info
 
   def _build_adb_cmd(self,
@@ -308,7 +329,7 @@ class Adb:
   def unroot(self) -> None:
     self._adb("unroot", use_serial_id=False)
 
-  def devices(self) -> dict[str, dict[str, str]]:
+  def devices(self) -> dict[str, AndroidDeviceInfo]:
     return adb_devices(self._host_platform, self._adb_bin)
 
   def forward(self,
@@ -368,6 +389,10 @@ class Adb:
               encoding: str = "utf-8") -> str:
     cmd: ListCmdArgs = ["dumpsys", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
+
+  def dumpsys_bytes(self, *args: str, quiet: bool = False) -> bytes:
+    cmd: ListCmdArgs = ["dumpsys", *args]
+    return self.shell_stdout_bytes(*cmd, quiet=quiet)
 
   def getprop(self,
               *args: str,
@@ -526,6 +551,7 @@ class AndroidAdbPortManager(PortManager):
 
 
 class AndroidAdbPlatform(RemotePosixPlatform):
+  # pylint: disable=redefined-builtin
 
   def __init__(self,
                host_platform: Platform,
@@ -678,7 +704,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def get_main_display_brightness(self) -> int:
-    display_info: str = self.adb.shell_stdout("dumpsys", "display")
+    display_info: str = self.adb.dumpsys("display")
     match_result = self._BRIGHTNESS_RE.search(display_info)
     if match_result is None:
       raise ValueError("Could not parse adb display brightness.")
@@ -743,6 +769,19 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self.adb.push(self.host_path(from_path), to_path)
     return to_path
 
+  def _mktemp_sh(self,
+                 is_dir: bool,
+                 suffix: Optional[str] = None,
+                 prefix: Optional[str] = None,
+                 dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    temp_path = super()._mktemp_sh(is_dir, prefix=prefix, dir=dir)
+    if not suffix:
+      return temp_path
+    # android's mktemp does not support suffix on some platforms.
+    temp_path_with_suffix = temp_path.with_name(f"{temp_path.name}{suffix}")
+    self.rename(temp_path, temp_path_with_suffix)
+    return temp_path_with_suffix
+
   @override
   def processes(self,
                 attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
@@ -760,11 +799,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def meminfo(
       self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
-  ) -> dict[str, ProcessMeminfo]:
+  ) -> list[ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
-    dumpsys_output = self.sh_stdout_bytes("dumpsys", "-T", str(timeout_ms),
-                                          "meminfo", "--proto", "--package",
-                                          process_name)
+    dumpsys_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
+                                                   "meminfo", "--proto",
+                                                   "--package", process_name)
     return self._parse_dumpsys_meminfo(dumpsys_output)
 
   @functools.lru_cache(maxsize=1)
@@ -814,10 +853,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @property
   @override
   def is_battery_powered(self) -> bool:
-    battery_info = self.adb.dumpsys("battery").lower()
-    # Looking for any power source, i.e. 'AC powered: true'
-    has_external_power = " powered: true" in battery_info
-    return not has_external_power
+    battery_info_bytes = self.adb.dumpsys_bytes("battery", "--proto")
+    battery_info = battery_pb2.BatteryServiceDumpProto()
+    battery_info.ParseFromString(battery_info_bytes)
+    return (battery_info.plugged ==
+            enums_pb2.BatteryPluggedStateEnum.BATTERY_PLUGGED_NONE)
 
   @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
@@ -831,15 +871,19 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def display_resolution(self) -> tuple[int, int]:
-    displays_out = self.sh_stdout("dumpsys", "window", "displays")
-    match_result = self._DUMPSYS_WINDOW_DISPLAYS_RE.search(displays_out)
-    if match_result is None:
-      raise ValueError(
-          "Could not find display resolution in "
-          f"'adb shell -s {self.adb.serial_id} dumpsys window displays'")
-    x = NumberParser.positive_int(match_result.group("x"))
-    y = NumberParser.positive_int(match_result.group("y"))
-    return (x, y)
+    displays_bytes = self.adb.dumpsys_bytes("window", "displays", "--proto")
+
+    displays = windowmanagerservice_pb2.WindowManagerServiceDumpProto()
+    displays.ParseFromString(displays_bytes)
+
+    width = (
+        displays.root_window_container.window_container.configuration_container
+        .full_configuration.window_configuration.max_bounds.right)
+    height = (
+        displays.root_window_container.window_container.configuration_container
+        .full_configuration.window_configuration.max_bounds.bottom)
+
+    return (width, height)
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
@@ -847,18 +891,20 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   _DUMPSYS_TIMEOUT_RE = re.compile(
       rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
 
-  def _parse_dumpsys_meminfo(
-      self, meminfo_output: bytes) -> dict[str, ProcessMeminfo]:
+  def _parse_dumpsys_meminfo(self,
+                             meminfo_output: bytes) -> list[ProcessMeminfo]:
     if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
       raise TimeoutError("dumpsys meminfo timed out")
     proto_dump = activitymanagerservice_pb2.MemInfoDumpProto()
     proto_dump.ParseFromString(meminfo_output)
-    meminfos = {}
+    meminfos: list[ProcessMeminfo] = []
     for app_process in proto_dump.app_processes:
       mem_info = app_process.process_memory.total_heap.mem_info
-      meminfos[app_process.process_memory.process_name] = ProcessMeminfo(
-          pid=app_process.process_memory.pid,
-          pss_total=mem_info.total_pss_kb,
-          rss_total=mem_info.total_rss_kb,
-          swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb)
+      meminfos.append(
+          ProcessMeminfo(
+              pid=app_process.process_memory.pid,
+              name=app_process.process_memory.process_name,
+              pss_total=mem_info.total_pss_kb,
+              rss_total=mem_info.total_rss_kb,
+              swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb))
     return meminfos

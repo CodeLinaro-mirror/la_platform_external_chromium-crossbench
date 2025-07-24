@@ -7,11 +7,13 @@ from __future__ import annotations
 import argparse
 import unittest
 
+from crossbench import plt
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
-from crossbench.action_runner.config import ActionRunnerConfig
+from crossbench.action_runner.config import (ActionRunnerConfig,
+                                             ActionRunnerType)
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from tests import test_helper
 
@@ -26,15 +28,31 @@ class ActionRunnerConfigTest(unittest.TestCase):
 
   def test_parse_basic(self):
     action_runner = ActionRunnerConfig.parse("basic")
-    self.assertIsInstance(action_runner, DefaultActionRunner)
+    self.assertIsInstance(action_runner, ActionRunnerConfig)
+    self.assertEqual(action_runner.type, ActionRunnerType.BASIC)
+    self.assertIsInstance(
+        action_runner.instantiate(plt.PLATFORM), DefaultActionRunner)
+
+  def test_parse_auto(self):
+    action_runner = ActionRunnerConfig.parse("auto")
+    self.assertIsInstance(action_runner, ActionRunnerConfig)
+    self.assertEqual(action_runner.type, ActionRunnerType.AUTO)
+    self.assertIsInstance(
+        action_runner.instantiate(plt.PLATFORM), DefaultActionRunner)
 
   def test_parse_android(self):
     action_runner = ActionRunnerConfig.parse("android")
-    self.assertIsInstance(action_runner, AndroidInputActionRunner)
+    self.assertIsInstance(action_runner, ActionRunnerConfig)
+    self.assertEqual(action_runner.type, ActionRunnerType.ANDROID)
+    self.assertIsInstance(
+        action_runner.instantiate(plt.PLATFORM), AndroidInputActionRunner)
 
   def test_parse_chromeos(self):
     action_runner = ActionRunnerConfig.parse("chromeos")
-    self.assertIsInstance(action_runner, ChromeOSInputActionRunner)
+    self.assertIsInstance(action_runner, ActionRunnerConfig)
+    self.assertEqual(action_runner.type, ActionRunnerType.CHROMEOS)
+    self.assertIsInstance(
+        action_runner.instantiate(plt.PLATFORM), ChromeOSInputActionRunner)
 
 
 if __name__ == "__main__":

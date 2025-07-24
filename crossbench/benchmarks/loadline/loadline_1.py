@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Type
 
-import logging
 import numpy as np
 import pandas as pd
 from typing_extensions import override
@@ -18,7 +18,7 @@ from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
 from crossbench.flags.base import Flags
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
-from crossbench.probes.probe import ProbeContext
+from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes

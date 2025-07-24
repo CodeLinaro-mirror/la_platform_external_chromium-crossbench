@@ -7,15 +7,16 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Self, Type
 
-from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench import path as pth
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
 from crossbench.probes.env_modifier import EnvModifier
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 
 if TYPE_CHECKING:
+  from immutabledict import immutabledict
+
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.results import ProbeResult

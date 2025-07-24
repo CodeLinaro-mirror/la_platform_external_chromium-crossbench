@@ -191,6 +191,7 @@ For complex probe setups you can use `--probe-config=<file>`.
 The [example file](config/doc/probe.config.hjson) lists and explains all
 configuration details. For the specific probe configuration properties consult
 the `describe` command.
+You can find more examples in [config/doc/probe](config/doc/probe).
 
 ### 📏 Benchmarks
 Use the `describe` command to list all benchmark details:
@@ -227,6 +228,34 @@ as filter.
 # Exclude bomb-workers and segmentation:
 ./cb.py js --browser=chrome-m120-canary --stories='^(?!(segmentation|bomb-workers)).*'
 ```
+
+### Loading Benchmark and Stories
+
+For non-press benchmarks you should use the `loading` benchmark and you have
+multiple ways to specify the stories:
+
+| Flag | Description |
+| ---- | -- |
+| `--stories` or `--url`  | Use a comma-separate list of predefined pages or URLs for simple loading. |
+| `--page-config`  |  Page configs (see [`config/docs/page.config.hjson`](config/doc/page.config.hjson)) for a detailed example |
+| `--config` | All-in-one config including browser, probes and pages |
+
+
+```bash
+# Load https://cnn.com for 5 seconds:
+./cb.py loading --url=cnn.com,5s
+```
+
+```bash
+# Load cnn and facebook separately:
+./cb.py loading --url=cnn.com,5s,facebook.com,10s --separate
+```
+
+```bash
+# Use page-config for complex page interactions:
+./cb.py loading --page-config=config/doc/page.config.hjson --browser=chrome-canary
+```
+
 
 ### 🛜 Network
 

@@ -1,7 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-# pylint: disable=unused-import
+
 
 from __future__ import annotations
 
@@ -30,3 +30,33 @@ from crossbench.browsers.safari.webdriver import (SafariWebDriver,
                                                   SafariWebdriverIOS)
 from crossbench.browsers.webview.browser import WebviewBrowser
 from crossbench.browsers.webview.embedder import WebviewEmbedder
+
+__all__ = [
+    "Chrome",
+    "ChromeAppleScript",
+    "ChromeWebDriver",
+    "ChromeWebDriverAndroid",
+    "ChromeWebDriverChromeOsSsh",
+    "ChromeWebDriverSsh",
+    "Chromium",
+    "ChromiumAppleScript",
+    "ChromiumBased",
+    "ChromiumBasedWebDriver",
+    "ChromiumWebDriver",
+    "ChromiumWebDriverAndroid",
+    "ChromiumWebDriverChromeOsSsh",
+    "ChromiumWebDriverSsh",
+    "D8",
+    "Edge",
+    "EdgeWebDriver",
+    "Firefox",
+    "FirefoxWebDriver",
+    "LocalChromeWebDriverAndroid",
+    "LocalChromiumWebDriverAndroid",
+    "Safari",
+    "SafariAppleScript",
+    "SafariWebDriver",
+    "SafariWebdriverIOS",
+    "WebviewBrowser",
+    "WebviewEmbedder",
+]

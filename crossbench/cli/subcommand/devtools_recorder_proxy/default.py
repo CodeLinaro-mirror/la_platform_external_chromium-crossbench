@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import asyncio
 import enum
 import json
@@ -23,9 +22,10 @@ from crossbench import plt
 from crossbench.helper.state import BaseState, StateMachine
 
 if TYPE_CHECKING:
+  import argparse
   from asyncio.subprocess import Process
 
-  from crossbench.plt.base import ListCmdArgs
+  from crossbench.plt.types import ListCmdArgs
   from crossbench.types import JsonDict
 
 

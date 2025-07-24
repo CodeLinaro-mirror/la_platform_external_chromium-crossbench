@@ -19,10 +19,10 @@ from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 from crossbench.cli import ui
 from crossbench.helper.wait import WaitRange
+from crossbench.path import AnyPath, LocalPath
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -80,8 +80,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         driver.session_id)
     all_logs = list(self.platform.glob(logs, "safaridriver*"))
     if all_logs:
-      self._driver_log_file = all_logs[0]
-      assert self.platform.is_file(self._driver_log_file)
+      self._driver_log_file = LocalPath(all_logs[0])
+      assert self.platform.is_file(all_logs[0])
     return driver
 
   # TODO(cbruni): implement iOS platform

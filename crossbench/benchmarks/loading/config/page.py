@@ -36,6 +36,7 @@ class PageConfig(ConfigObject):
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
   blocks: tuple[ActionBlock, ...] = tuple()
+  teardown: ActionBlock | None = None
 
   @classmethod
   def parse_other(cls, value: Any, **kwargs) -> Self:
@@ -103,6 +104,7 @@ class PageConfig(ConfigObject):
         "blocks",
         aliases=("actions", "url", "urls"),
         type=ActionBlockListConfig)
+    parser.add_argument("teardown", type=ActionBlock)
     return parser
 
   @classmethod

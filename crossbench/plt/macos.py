@@ -117,7 +117,7 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.lru_cache(maxsize=2)
   @override
-  def cpu_cores(self, logical: bool = False) -> int:
+  def cpu_cores(self, logical: bool) -> int:
     if self.is_local:
       return super().cpu_cores(logical)
     sysctl_name = "hw.logicalcpu_max" if logical else "hw.physicalcpu_max"
@@ -146,15 +146,18 @@ class MacOSPlatform(PosixPlatform):
   @override
   def system_details(self) -> dict[str, Any]:
     details = super().system_details()
-    details.update({
+    details.update(self._macos_system_details())
+    return details
+
+  def _macos_system_details(self) -> dict[str, Any]:
+    return {
         "system_profiler":
             self.sh_stdout("system_profiler", "SPHardwareDataType"),
         "sysctl_machdep_cpu":
             self.sh_stdout("sysctl", "machdep.cpu"),
         "sysctl_hw":
             self.sh_stdout("sysctl", "hw"),
-    })
-    return details
+    }
 
   @functools.lru_cache(maxsize=1)
   def display_details(self) -> tuple[DisplayInfo, ...]:

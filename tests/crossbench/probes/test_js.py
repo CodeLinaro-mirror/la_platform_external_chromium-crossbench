@@ -2,9 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from unittest import mock
+
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.probes.js import JSProbe
+from crossbench.probes.js import JSProbe, JSProbeContext
+from crossbench.probes.results import EmptyProbeResult
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
@@ -79,6 +82,48 @@ class TestJSProbe(GenericProbeTestCase):
     self.assertIsInstance(stories_data, dict)
     self.assertIsInstance(browsers_data, dict)
     # TODO: check probe result contents
+
+  def test_merge_with_missing_results(self):
+    config = {
+        "setup": "globalThis.metrics = {};",
+        "js": "return globalThis.metrics;",
+    }
+    probe = JSProbe.config_parser().parse(config)
+    stories = [
+        LivePage("google", "https://google.com"),
+        LivePage("amazon", "https://amazon.com")
+    ]
+    repetitions = 2
+    runner = self.create_runner(
+        stories,
+        js_side_effects=[
+            # setup:
+            None,
+            # js:
+            {
+                "metric1": 1.1,
+                "metric2": 2.2
+            }
+        ],
+        repetitions=repetitions,
+        separate=True,
+        throw=True)
+    with mock.patch.object(JSProbeContext, "teardown") as mock_teardown:
+      mock_teardown.side_effect = EmptyProbeResult
+      runner.attach_probe(probe)
+      runner.run()
+
+    self.assertTrue(runner.is_success)
+    js_result_files = list(runner.out_dir.glob(f"**/{probe.name}.json"))
+    # All results per story repetition are missing
+    result_count = 0
+    # One merged result per story
+    result_count += len(self.browsers) * len(stories)
+    # One merged results per browser
+    result_count += len(self.browsers)
+    # One top-level
+    result_count += 1
+    self.assertEqual(len(js_result_files), result_count)
 
 
 if __name__ == "__main__":

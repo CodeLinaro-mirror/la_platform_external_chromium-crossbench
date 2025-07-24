@@ -18,10 +18,11 @@ from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
 from crossbench.flags.base import Flags
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
-from crossbench.probes.probe import ProbeContext
+from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
   import argparse
+
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.probes.results import ProbeResult

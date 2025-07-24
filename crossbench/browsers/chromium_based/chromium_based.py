@@ -36,7 +36,6 @@ class ChromiumBased(Browser):
       "--no-default-browser-check",
       "--disable-component-update",
       "--disable-sync",
-      "--disable-extensions",
       "--no-first-run",
       # This could be enabled via feature-flags as well.
       "--disable-search-engine-choice-screen",
@@ -68,6 +67,8 @@ class ChromiumBased(Browser):
                settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings=settings)
     self._stdout_log_file: TextIO | None = None
+    self._local_extension_tmp_dir: Optional[pth.LocalPath] = None
+    self._remote_extension_tmp_dir: Optional[pth.AnyPath] = None
     assert isinstance(self._flags, ChromeFlags)
 
   @override
@@ -86,6 +87,9 @@ class ChromiumBased(Browser):
     js_flags: Flags = settings.js_flags
     self._flags = self.default_flags(self.DEFAULT_FLAGS, self.version.major)
     self._flags.update(flags)
+
+    if not settings.extensions:
+      self._flags.set("--disable-extensions")
 
     if "--allow-background-interventions" in self._flags.data:
       # The --allow-background-interventions flag should have no value.
@@ -212,6 +216,42 @@ class ChromiumBased(Browser):
     details["js_flags"] = tuple(self.js_flags)
     return details
 
+  def _process_extensions(self) -> dict[str, str]:
+    assert not self._local_extension_tmp_dir
+    self._local_extension_tmp_dir = pth.LocalPath(self.host_platform.mkdtemp())
+
+    load_extension: list[str] = []
+    extension_paths: list[pth.LocalPath] = []
+    for extension in self.settings.extensions:
+      unpacked = extension.get_unpacked(self.version.version_str,
+                                        self._local_extension_tmp_dir,
+                                        self.host_platform)
+      extension_paths.append(unpacked)
+      load_extension.append(str(unpacked))
+
+    if self.platform.is_remote:
+      # Create a folder to load the extensions from on the remote device.
+      assert not self._remote_extension_tmp_dir
+      self._remote_extension_tmp_dir = self.platform.mkdtemp()
+      # Android needs executable permission on the temp folder.
+      self.platform.chmod(self._remote_extension_tmp_dir, 0o755)
+
+      # Push all the extensions to the device and update the paths we will pass
+      # to Chrome.
+      load_extension.clear()
+      for extension_path in extension_paths:
+        remote_path = self._remote_extension_tmp_dir / extension_path.name
+        logging.info("Pushing extension to device: %s", extension_path)
+        self.platform.push(extension_path, remote_path)
+        load_extension.append(str(remote_path))
+    assert not any("," in e for e in load_extension), "comma in extension path"
+    load_extension_str = ",".join(load_extension)
+
+    return {
+        "--load-extension": load_extension_str,
+        "--disable-features": "DisableLoadExtensionCommandLineSwitch",
+    }
+
   @override
   def _get_browser_flags_for_session(
       self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
@@ -234,6 +274,9 @@ class ChromiumBased(Browser):
     if self.log_file:
       flags_copy.set("--enable-logging")
       flags_copy["--log-file"] = str(self.chrome_log_file)
+
+    if self.settings.extensions:
+      flags_copy.update(self._process_extensions())
 
     flags_copy = self._filter_flags_for_run(flags_copy)
 
@@ -286,3 +329,9 @@ class ChromiumBased(Browser):
       if self._stdout_log_file:
         self._stdout_log_file.close()
         self._stdout_log_file = None
+      if self._local_extension_tmp_dir:
+        self.host_platform.rm(self._local_extension_tmp_dir, dir=True)
+        self._local_extension_tmp_dir = None
+      if self._remote_extension_tmp_dir:
+        self.platform.rm(self._remote_extension_tmp_dir, dir=True)
+        self._remote_extension_tmp_dir = None

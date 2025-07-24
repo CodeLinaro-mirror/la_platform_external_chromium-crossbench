@@ -10,7 +10,7 @@ import pathlib
 import re
 import sys
 import tempfile
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 from unittest import mock
 
 import psutil
@@ -22,13 +22,15 @@ from crossbench.browsers import all as browsers
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chromium.chromium import Chromium
 from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
-from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.parse import PathParser
-from crossbench.path import LocalPath
 from crossbench.plt.android_adb import adb_devices
 from crossbench.plt.bin import Binaries, BinaryNotFoundError
 from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  from crossbench.cli.config.browser import BrowserConfig
+  from crossbench.path import LocalPath
 
 WIN_APP_SUFFIX = [".exe", ".bat"]
 
