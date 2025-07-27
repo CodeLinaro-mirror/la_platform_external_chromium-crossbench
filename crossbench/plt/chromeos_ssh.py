@@ -18,8 +18,8 @@ from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import ListCmdArgs
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.types import ListCmdArgs
 
 
 class ChromeOsSshPlatform(LinuxSshPlatform):

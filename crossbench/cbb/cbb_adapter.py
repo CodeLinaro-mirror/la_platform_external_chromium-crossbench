@@ -12,10 +12,8 @@ with corresponding changes in CBB in google3
 
 from __future__ import annotations
 
-import datetime as dt
 from typing import TYPE_CHECKING, Optional, Type
 
-from selenium import webdriver
 from typing_extensions import override
 
 import crossbench.benchmarks.all as benchmarks
@@ -27,6 +25,11 @@ from crossbench.cli.config.env import ValidationMode
 from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
+  import datetime as dt
+
+  from selenium import webdriver
+
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import PressBenchmark
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.stories.press_benchmark import PressBenchmarkStory
@@ -131,11 +134,12 @@ class CbbRunner(crossbench.runner.runner.Runner):
 
   @override
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
-                 repetition: int, is_warmup: bool, temperature: str, index: int,
-                 name: str, timeout: dt.timedelta, throw: bool,
-                 env_validation_mode: ValidationMode) -> Run:
-    return CbbRun(self, browser_session, story, repetition, is_warmup,
-                  temperature, index, name, timeout, throw, env_validation_mode)
+                 action_runner: ActionRunner, repetition: int, is_warmup: bool,
+                 temperature: str, index: int, name: str, timeout: dt.timedelta,
+                 throw: bool, env_validation_mode: ValidationMode) -> Run:
+    return CbbRun(self, browser_session, story, action_runner, repetition,
+                  is_warmup, temperature, index, name, timeout, throw,
+                  env_validation_mode)
 
 
 class CbbRun(Run):

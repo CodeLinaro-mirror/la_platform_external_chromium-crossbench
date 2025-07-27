@@ -4,30 +4,23 @@
 
 from __future__ import annotations
 
-import datetime as dt
-import enum
 import functools
 from typing import TYPE_CHECKING, Optional, Type
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import Action, ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
+                                                    ActionT)
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.config import ConfigEnum
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
-
-
-@enum.unique
-class MeminfoTarget(ConfigEnum):
-  BROWSER = ("browser", "The current target browser")
-  PACKAGE = ("package",
-             "A different package. Specify using the package_name field")
 
 
 class MeminfoAction(Action):
@@ -38,42 +31,50 @@ class MeminfoAction(Action):
   @functools.lru_cache(maxsize=1)
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
+    parser.add_argument("browser", type=ObjectParser.bool, default=True)
     parser.add_argument(
-        "target", type=MeminfoTarget, default=MeminfoTarget.BROWSER)
-    parser.add_argument(
-        "package", type=ObjectParser.non_empty_str, default=None)
+        "packages", type=ObjectParser.non_empty_str, default=(), is_list=True)
+    parser.add_argument("title", type=ObjectParser.non_empty_str, default=None)
     return parser
 
   def __init__(self,
-               target: MeminfoTarget = MeminfoTarget.BROWSER,
-               package: Optional[str] = None,
+               browser: bool = True,
+               packages: tuple[str, ...] = tuple(),
+               title: Optional[str] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
-    self._target = target
-    self._package = package
+    self._browser = browser
+    self._packages = packages
+    self._title = title
     super().__init__(timeout, index)
 
   @override
   def validate(self) -> None:
     super().validate()
-    if self._target is MeminfoTarget.PACKAGE and not self.package:
+    if not self._browser and not self._packages:
       raise ValueError(
-          f"{self}.target is 'package' but no package name was specified")
+          f"{self} must specify at least one of 'browser' or 'packages'")
 
   @property
-  def target(self) -> MeminfoTarget:
-    return self._target
+  def browser(self) -> bool:
+    return self._browser
 
   @property
-  def package(self) -> Optional[str]:
-    return self._package
+  def packages(self) -> tuple[str, ...]:
+    return self._packages
+
+  @property
+  def title(self) -> Optional[str]:
+    return self._title
 
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["target"] = self.target
-    if self.package:
-      details["package"] = self.package
+    details["browser"] = self.browser
+    if self.packages:
+      details["packages"] = list(self.packages)
+    if self.title:
+      details["title"] = self.title
     return details
 
   @override

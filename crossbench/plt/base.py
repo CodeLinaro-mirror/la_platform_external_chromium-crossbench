@@ -9,7 +9,6 @@ import atexit
 import collections.abc
 import contextlib
 import dataclasses
-import datetime as dt
 import functools
 import inspect
 import logging
@@ -24,8 +23,8 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
-                    Mapping, Optional, Sequence, Type, TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
+                    Iterator, Mapping, Optional, Sequence, Type)
 
 import psutil
 
@@ -40,20 +39,14 @@ from crossbench.plt.port_manager import (LocalPortManager, PortManager,
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
-  from asyncio.subprocess import Process
-  from subprocess import Popen
+  import datetime as dt
 
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
+  from crossbench.plt.types import CmdArg, ProcessLike, TupleCmdArgs
   from crossbench.types import JsonDict
-  ProcessLike: TypeAlias = Popen | Process | int
 
-CmdArg: TypeAlias = pth.AnyPathLike
-SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
-ListCmdArgs: TypeAlias = list[CmdArg]
-TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
-CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass
@@ -564,7 +557,7 @@ class Platform(abc.ABC):
       return None
 
   def meminfo(self, process_name: str,
-              timeout: dt.timedelta) -> dict[str, ProcessMeminfo]:
+              timeout: dt.timedelta) -> list[ProcessMeminfo]:
     del process_name, timeout
     raise NotImplementedError(f"meminfo not implemented for {self}.")
 
@@ -752,37 +745,41 @@ class Platform(abc.ABC):
             exist_ok: bool = True) -> None:
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
+  def mkdtemp(self,
+              suffix: Optional[str] = None,
+              prefix: Optional[str] = None,
+              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    self.assert_is_local()
+    return self.path(tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir))
+
+  def mktemp(self,
+             suffix: Optional[str] = None,
+             prefix: Optional[str] = None,
+             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    self.assert_is_local()
+    fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
+    os.close(fd)
+    return self.path(name)
+
   @contextlib.contextmanager
   def NamedTemporaryFile(  # pylint: disable=invalid-name
       self,
+      suffix: Optional[str] = None,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_file: pth.AnyPath = self.mktemp(prefix, dir)
+    tmp_file: pth.AnyPath = self.mktemp(suffix, prefix, dir)
     try:
       yield tmp_file
     finally:
       self.rm(tmp_file, missing_ok=True)
 
-  def mkdtemp(self,
-              prefix: Optional[str] = None,
-              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    self.assert_is_local()
-    return self.path(tempfile.mkdtemp(prefix=prefix, dir=dir))
-
-  def mktemp(self,
-             prefix: Optional[str] = None,
-             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    self.assert_is_local()
-    fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
-    os.close(fd)
-    return self.path(name)
-
   @contextlib.contextmanager
   def TemporaryDirectory(  # pylint: disable=invalid-name
       self,
+      suffix: Optional[str] = None,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_dir = self.mkdtemp(prefix, dir)
+    tmp_dir = self.mkdtemp(suffix, prefix, dir)
     try:
       yield tmp_dir
     finally:

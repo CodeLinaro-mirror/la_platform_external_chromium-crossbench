@@ -35,7 +35,7 @@ python = ">=3.11,<3.13"
 python-dateutil = "2.7.3"
 pytz = "^2024.1"
 requests = "^2.32.3"
-selenium = "^4.1.0"
+selenium = "^4.34.0"
 snippet-uiautomator = "^1.1.2"
 tabulate = "^0.8.10"
 websockets = "^11.0.3"
@@ -47,6 +47,7 @@ xlsxwriter = "^3.2.2"
 crossbench = 'crossbench.scripts:crossbench'
 cb = 'crossbench.scripts:crossbench'
 cb_btp = 'crossbench.scripts:cb_btp'
+cb_validate_hjson= 'crossbench.scripts:cb_validate_hjson'
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "^1.6.3"
@@ -75,3 +76,21 @@ log_cli_level = "DEBUG"
 testpaths = [
     "tests",
 ]
+
+
+[tool.ruff.lint]
+extend-select = ["TCH"]
+ignore = [
+    "TC006", # Allow non-string type in casts
+]
+
+[tool.ruff.lint.flake8-type-checking]
+# Some types need to be runtime evaluated and thus
+# cannot be moved into TYPE_CHECKING blocks.
+runtime-evaluated-base-classes = [
+    "sqlalchemy.orm.DeclarativeBase",
+    "crossbench.results_db.records.base.BaseRecord"
+]
+
+[tool.ruff.lint.isort]
+required-imports = [ "from __future__ import annotations" ]

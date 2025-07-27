@@ -17,14 +17,15 @@ from crossbench.benchmarks.speedometer.speedometer import (
 from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
-from crossbench.stories.story import Story
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.runner.actions import Actions
+  from crossbench.stories.story import Story
   from crossbench.types import Json
 
   ShuffleSeedT = str | int | None
@@ -363,10 +364,11 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
 
   def __init__(self,
                stories: Sequence[Story],
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                custom_url: Optional[str] = None,
                detailed_metrics: bool = False) -> None:
     self._detailed_metrics = detailed_metrics
-    super().__init__(stories, custom_url)
+    super().__init__(stories, action_runner_config, custom_url)
 
   @property
   def detailed_metrics(self) -> bool:

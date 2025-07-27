@@ -18,13 +18,12 @@ from typing_extensions import override
 from crossbench import exception
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.config import ConfigError, ConfigObject
-from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.flags.base import FlagsData
+  from crossbench.flags.base import Flags, FlagsData
 
 
 DEFAULT_LABEL: Final[str] = "default"

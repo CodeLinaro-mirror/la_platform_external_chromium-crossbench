@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import override
 
-from crossbench.benchmarks.loading.page.base import Page, get_action_runner
+from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -79,7 +79,7 @@ class CombinedPage(Page):
       page.setup(run)
 
   def run_once(self, run: Run) -> None:
-    action_runner = get_action_runner(run)
+    action_runner = run.action_runner
     multiple_tabs = self.tabs.multiple_tabs
     action_runner.run_combined_page(run, self, multiple_tabs)
 

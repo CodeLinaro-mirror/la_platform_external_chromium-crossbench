@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import logging
-import pathlib
 import re
 import shutil
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -19,7 +19,11 @@ from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
 from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
-from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  import pathlib
+
+  from tests.test_helper import TestEnv
 
 
 def check_gsutil_access():

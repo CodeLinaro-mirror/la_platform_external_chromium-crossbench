@@ -6,13 +6,12 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, Tuple
 
 import websocket
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
-
 
 class DevToolsClient:
   """Manages communication with the Chrome DevTools Protocol."""
@@ -72,15 +71,48 @@ class DevToolsClient:
     self._disconnect_internal()
     logging.debug("DevTools disconnected")
 
-  def send_command(self, command_payload: dict[str, Any]) -> bool:
+  def send_command(self, command_payload: dict[str, Any]) -> Tuple[bool, dict]:
     """Sends a command to DevTools and checks the response ID.
 
     Args:
       command_payload: The command payload to send. Must include an 'id'.
 
     Returns:
-      True if the command was sent successfully and the response ID matches,
-      False otherwise.
+      Tuple of [bool, dict]
+      bool: True if the command was sent successfully and the response ID
+            matches, False otherwise.
+      dict: the full response message returned by the websocket. Empty on error.
+    """
+    if not self._ws or not self._ws.connected:
+      logging.error("DevTools is not connected. Cannot send command.")
+      return False, {}
+
+    expected_id = command_payload.get("id")
+    if expected_id is None:
+      logging.error("DevTools command requires an 'id' in the payload.")
+      return False, {}
+
+    try:
+      self._ws.send(json.dumps(command_payload).encode("utf-8"))
+      data = self._ws.recv()
+      response = json.loads(data)
+      return response.get("id") == expected_id, response
+    except (websocket.WebSocketException, ConnectionRefusedError,
+            TimeoutError) as e:
+      logging.error("DevTools communication error: %s", e)
+      return False, {}
+    except json.JSONDecodeError as e:
+      logging.error("Error decoding JSON response from DevTools: %s", e)
+      return False, {}
+
+  def dispatch_command(self, command_payload: dict[str, Any]) -> bool:
+    """Dispatches a command to DevTools. Does not wait for any response.
+
+    Args:
+      command_payload: The command payload to send. Must include an 'id'.
+
+    Returns:
+      bool: True if the command was sent successfully, False otherwise.
     """
     if not self._ws or not self._ws.connected:
       logging.error("DevTools is not connected. Cannot send command.")
@@ -93,9 +125,7 @@ class DevToolsClient:
 
     try:
       self._ws.send(json.dumps(command_payload).encode("utf-8"))
-      data = self._ws.recv()
-      response = json.loads(data)
-      return response.get("id") == expected_id
+      return True
     except (websocket.WebSocketException, ConnectionRefusedError,
             TimeoutError) as e:
       logging.error("DevTools communication error: %s", e)
@@ -103,6 +133,40 @@ class DevToolsClient:
     except json.JSONDecodeError as e:
       logging.error("Error decoding JSON response from DevTools: %s", e)
       return False
+
+  def poll_for_response(
+      self,
+      condition_fn: Callable[[], bool],
+      process_fn: Callable[[dict], None],
+      timeout: float = 1.0,
+  ) -> bool:
+    """Dispatches a command to DevTools. Does not wait for any response.
+
+    Args:
+      condition_fn: A boolean function that determines whether we should
+                    poll for more events.
+      process_fn:   Function that takes each response as input for
+                    processing.
+      timeout:      Number of seconds to wait before timeout due to no
+                    more incoming messages.
+
+    Returns:
+      bool: True if the condition was exited successfully, False otherwise.
+    """
+    if not self._ws or not self._ws.connected:
+      logging.error("DevTools is not connected. Cannot poll events.")
+      return False
+    try:
+      self._ws.settimeout(timeout)
+      while condition_fn():
+        data = self._ws.recv()
+        response = json.loads(data)
+        process_fn(response)
+    except (TimeoutError, json.JSONDecodeError):
+      return False
+    finally:
+      self._ws.settimeout(None)
+    return True
 
   def __enter__(self) -> DevToolsClient:
     self.connect()

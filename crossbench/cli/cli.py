@@ -17,7 +17,6 @@ import tabulate as tbl
 import crossbench.benchmarks.all as benchmarks
 from crossbench import __version__
 from crossbench import path as pth
-from crossbench.benchmarks.base import Benchmark
 from crossbench.cli import exception_formatter, ui
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
@@ -27,15 +26,16 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
 from crossbench.cli.subcommand.help import HelpSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
 from crossbench.helper.collection_helper import close_matches_message
-from crossbench.parse import LateArgumentError
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.runner.runner import Runner
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.cli.subcommand.base import CrossbenchSubcommand
+  from crossbench.parse import LateArgumentError
   BenchmarkClsT = Type[Benchmark]
   BrowserLookupTableT = dict[str, tuple[Type[Browser], pth.LocalPath]]
-  from crossbench.cli.subcommand.base import CrossbenchSubcommand
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
@@ -115,8 +115,8 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
     file.write("EXAMPLE:\n")
     file.write("  ./cb.py speedometer --browser=chrome-m131 "
                "--browser=out/release/chrome --probe=profiling\n\n")
-    readme_file = pth.AnyPath(__file__).parent / "README.md"
-    file.write(f"  See {readme_file} for more details.\n")
+    readme_file = pth.AnyPath(__file__).parents[2] / "README.md"
+    file.write(f"  See {readme_file} for more details and instructions.\n")
 
 class CrossBenchCLI:
   BENCHMARKS: tuple[BenchmarkClsT, ...] = (

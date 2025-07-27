@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.env.runner_env import EnvConfig, ValidationMode
-from crossbench.probes.probe import Probe
 from crossbench.runner.runner import Runner
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page
+  from crossbench.probes.probe import Probe
 
 class GenericProbeTestCase(BaseCrossbenchTestCase):
 
@@ -32,7 +32,10 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     if not separate and len(stories) > 1:
       stories = [CombinedPage(stories)]
     if isinstance(js_side_effects, list):
-      js_side_effects_fn = lambda story: js_side_effects  # pylint: disable=unnecessary-lambda-assignment
+
+      def js_side_effects_fn(story):
+        del story
+        return js_side_effects
     else:
       js_side_effects_fn = js_side_effects
     # The order should match Runner.get_runs

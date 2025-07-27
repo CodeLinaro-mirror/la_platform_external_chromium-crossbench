@@ -12,7 +12,7 @@ from unittest import mock
 
 import hjson
 
-from crossbench import __version__, plt
+from crossbench import plt
 from crossbench.browsers import viewport
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
 from crossbench.cli.config.browser import BrowserConfig
@@ -219,6 +219,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
                        mock_browser.MockChromeDev.mock_app_path(self.platform))
       return mock_browser.MockChromeDev
 
+    self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
     self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
     with self._patch_get_browser_cls(
         side_effect=mock_get_browser_cls) as get_browser_cls:

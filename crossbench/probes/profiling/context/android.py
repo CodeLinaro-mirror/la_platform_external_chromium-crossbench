@@ -19,7 +19,7 @@ from crossbench.probes.profiling.enum import CallGraphMode, TargetMode
 
 if TYPE_CHECKING:
   import crossbench.path as pth
-  from crossbench.plt.base import ListCmdArgs
+  from crossbench.plt.types import ListCmdArgs
   from crossbench.probes.results import ProbeResult
 
 

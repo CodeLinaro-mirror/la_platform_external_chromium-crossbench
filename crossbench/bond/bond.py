@@ -7,18 +7,21 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import enum
-from typing import Any, Mapping, Self, Sequence, Set
+from typing import TYPE_CHECKING, Any, Mapping, Self, Sequence, Set
 
 import google.auth.transport.requests
-import requests
 from google.auth.credentials import TokenState
 from google.oauth2 import service_account
 from typing_extensions import override
 
-from crossbench.cli.config.secrets import ServiceAccount
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser, ObjectParser
+
+if TYPE_CHECKING:
+  import requests
+
+  from crossbench.cli.config.secrets import ServiceAccount
 
 
 @enum.unique

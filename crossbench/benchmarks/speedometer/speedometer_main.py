@@ -17,8 +17,6 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import VersionParts
   from crossbench.benchmarks.speedometer.speedometer import ProbeClsTupleT
-  from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.stories.story import Story
 
 
 class SpeedometerMainProbe(Speedometer3Probe):

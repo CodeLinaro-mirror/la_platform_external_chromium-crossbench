@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import argparse
+import datetime as dt
 import unittest
 
 from crossbench.probes.all import V8LogProbe
@@ -25,6 +26,10 @@ class V8LogProbeTestCase(unittest.TestCase):
       V8LogProbe(js_flags=["--log-maps", "--no-log-maps"])
     with self.assertRaises(Exception):
       V8LogProbe(prof=True, js_flags=["--no-prof"])
+    with self.assertRaises(Exception):
+      V8LogProbe(
+          prof_sampling_interval=dt.timedelta(milliseconds=12),
+          js_flags=["--prof-sampling-interval=3"])
 
   def test_parse_invalid_config(self):
     with self.assertRaises(ValueError):
@@ -77,6 +82,16 @@ class V8LogProbeTestCase(unittest.TestCase):
     })
     self.assertSetEqual({"--prof", "--no-log-ic", "--no-log-maps"},
                         set(probe.js_flags.keys()))
+
+  def test_parse_config_prof_sampling_interval(self):
+    probe = V8LogProbe.from_config({"log_all": False, "sampling_interval": 12})
+    self.assertEqual("--prof,--prof-sampling-interval=12000",
+                     str(probe.js_flags))
+    probe = V8LogProbe.from_config({
+        "log_all": False,
+        "sampling_interval": "12us"
+    })
+    self.assertEqual("--prof,--prof-sampling-interval=12", str(probe.js_flags))
 
 
 if __name__ == "__main__":

@@ -13,7 +13,6 @@ from math import ceil
 from typing import TYPE_CHECKING, Optional, Self
 
 import crossbench.path as pth
-from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
@@ -24,6 +23,7 @@ from crossbench.benchmarks.loading.point import Point
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action import all as i_action
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -257,6 +257,7 @@ E: <time> 0000 0000 0
 
 
 class ChromeOSInputActionRunner(DefaultActionRunner):
+  """Custom ActionRunner for chromeOS devices."""
 
   def __init__(self) -> None:
     super().__init__()
