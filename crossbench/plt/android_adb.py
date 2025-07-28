@@ -237,15 +237,14 @@ class Adb:
     return self._host_platform.sh_stdout_bytes(
         *adb_cmd, quiet=quiet, check=check, stdin=stdin)
 
-  def _get_main_user(self) -> str | None:
-    if self.build_version >= 14:
-      try:
-        return self.cmd("user", "get-main-user").strip()
-      except SubprocessError as e:
-        logging.info(
-            "get-main-user failed, return code %d, stderr %s, stdout %s",
-            e.returncode, e.stderr, e.stdout)
-    return None
+  def _get_current_user(self) -> str | None:
+    try:
+      return self.shell_stdout("am", "get-current-user").strip()
+    except SubprocessError as e:
+      logging.info(
+          "get-current-user failed, return code %d, stderr %s, stdout %s",
+          e.returncode, e.stderr, e.stdout)
+      return None
 
   def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
     self._host_platform.validate_shell_args(args, shell)
@@ -426,7 +425,7 @@ class Adb:
     if not package_name:
       raise ValueError("Got empty package name")
     cmd: ListCmdArgs = ["pm", "clear"]
-    if user := self._get_main_user():
+    if user := self._get_current_user():
       cmd.extend(["--user", user])
     cmd.extend([package_name])
     self.shell(*cmd)
@@ -491,7 +490,7 @@ class Adb:
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    user: str | None = self._get_main_user()
+    user: str | None = self._get_current_user()
     for perm in ANDROID_PERMISSIONS:
       cmd: ListCmdArgs = ["pm", "grant"]
       if user:
