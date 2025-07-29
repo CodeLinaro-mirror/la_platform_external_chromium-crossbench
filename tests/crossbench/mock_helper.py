@@ -286,14 +286,14 @@ class MockPlatformMixin:
   def cpu_details(self) -> dict[str, Any]:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
-  def set_file_contents(self,
-                        file: pth.AnyPathLike,
-                        data: str,
-                        encoding: str = "utf-8") -> None:
+  def write_text(self,
+                 file: pth.AnyPathLike,
+                 data: str,
+                 encoding: str = "utf-8") -> None:
     file_path = self.path(file)
     self.file_contents[file_path].append(data)
     if self.use_fs:
-      super().set_file_contents(file_path, data, encoding)
+      super().write_text(file_path, data, encoding)
 
   @functools.lru_cache(maxsize=1)
   def system_details(self):

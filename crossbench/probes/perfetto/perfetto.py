@@ -188,7 +188,7 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
           f"{repr(binary)} cannot be found on {self.browser_platform}")
 
   def _setup_push_perfetto_config(self) -> None:
-    self.host_platform.set_file_contents(
+    self.host_platform.write_text(
         self._host_config_file,
         proto_text_format.MessageToString(self.probe.trace_config))
     self.browser_platform.push(self._host_config_file,

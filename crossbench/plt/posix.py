@@ -372,17 +372,28 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return to_path
 
   @override
-  def set_file_contents(self,
-                        file: pth.AnyPathLike,
-                        data: str,
-                        encoding: str = "utf-8") -> None:
+  def write_text(self,
+                 file: pth.AnyPathLike,
+                 data: str,
+                 encoding: str = "utf-8") -> None:
     if self.is_local:
-      super().set_file_contents(file, data, encoding)
+      super().write_text(file, data, encoding)
       return
     # TODO: implement stdin bypass for small content
     dest_file = self.path(file)
     with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
-      self.host_platform.set_file_contents(tmp_file, data, encoding=encoding)
+      self.host_platform.write_text(tmp_file, data, encoding=encoding)
+      self.push(tmp_file, dest_file)
+
+  @override
+  def write_bytes(self, file: pth.AnyPathLike, data: bytes) -> None:
+    if self.is_local:
+      super().write_bytes(file, data)
+      return
+    # TODO: implement stdin bypass for small content
+    dest_file = self.path(file)
+    with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
+      self.host_platform.write_bytes(tmp_file, data)
       self.push(tmp_file, dest_file)
 
   @override
