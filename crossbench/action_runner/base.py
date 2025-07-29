@@ -62,8 +62,11 @@ class ActionRunner:
     self._listener = ActionRunnerListener()
     # TODO: Don't share state across runs
     self._info_stack: exception.TInfoStack | None = None
-
+    self._step_by_step_mode: bool = False
     self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
+
+  def set_step_by_step_mode(self, step_by_step_mode: bool):
+    self._step_by_step_mode = step_by_step_mode
 
   def set_listener(self, listener: ActionRunnerListener) -> None:
     self._listener = listener
@@ -92,6 +95,11 @@ class ActionRunner:
     with exception.annotate(f"Running block {block_index}: {block.label}"):
       with self._info_stack_annotate(f"block_{block_index}"):
         for action_index, action in enumerate(block, start=1):
+          if self._step_by_step_mode:
+            logging.critical("[STEP-BY-STEP MODE] Next step: %s",
+                             action.to_json())
+            logging.critical("[STEP-BY-STEP MODE] Press Enter to continue")
+            input()
           with self._info_stack_annotate(f"action_{action_index}"):
             self._failure_screenshot_annotations = []
             action.run_with(run, self)
