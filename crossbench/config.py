@@ -409,6 +409,10 @@ class ConfigObject(abc.ABC):
   def value_has_path_prefix(cls, value: str) -> bool:
     return PathParser.value_has_path_prefix(value)
 
+  @classmethod
+  def is_hjson_like(cls, value: str) -> bool:
+    return ObjectParser.is_hjson_like(value)
+
   def __post_init__(self) -> None:
     self.validate()
 

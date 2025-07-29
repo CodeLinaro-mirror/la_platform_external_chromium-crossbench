@@ -104,14 +104,14 @@ class BrowserConfig(ConfigObject):
     network: NetworkConfig | None = None
     env: EnvConfig | None = None
     if ":" not in value or cls.value_has_path_prefix(value):
-      # Variant 1: $PATH_OR_IDENTIFIER
+      # Variant: $PATH_OR_IDENTIFIER
       path = cls._parse_path_or_identifier(value)
-    elif value[0] != "{":
-      # Variant 2: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}:${NETWORK}
-      driver, path, network, env = cls._parse_inline_short_form(value)
-    else:
-      # Variant 3: Full inline hjson
+    elif cls.is_hjson_like(value):
+      # Variant: full hjson config
       return cls.parse_inline_hjson(value)
+    else:
+      # Variant: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}:${NETWORK}
+      driver, path, network, env = cls._parse_inline_short_form(value)
     assert path, "Invalid path"
     return cls(path, driver, network, env)
 

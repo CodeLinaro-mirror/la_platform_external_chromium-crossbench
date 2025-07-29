@@ -419,8 +419,12 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(pathlib.Path("file.json"), result)
 
   def test_parse_inline_hjson(self):
-    with self.assertRaises(argparse.ArgumentTypeError):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
       ObjectParser.inline_hjson("")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "braces"):
+      ObjectParser.inline_hjson("{")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "braces"):
+      ObjectParser.inline_hjson("[]")
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.inline_hjson("{invalid json}")
     with self.assertRaises(argparse.ArgumentTypeError):

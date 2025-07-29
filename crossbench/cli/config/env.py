@@ -112,7 +112,7 @@ class EnvConfig(ConfigObject):
     value = ObjectParser.non_empty_str(value)
     if preset := ENV_CONFIG_PRESETS.get(value):
       return preset
-    if value[0] == "{":
+    if cls.is_hjson_like(value):
       return cls.parse_inline_hjson(value)
     raise argparse.ArgumentTypeError(
         f"Unknown host config preset {repr(value)}. "

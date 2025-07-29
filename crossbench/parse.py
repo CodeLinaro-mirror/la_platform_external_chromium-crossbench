@@ -217,9 +217,15 @@ class ObjectParser:
                                      f"Choices are {choices_str}.")
 
   @classmethod
+  def is_hjson_like(cls, value: str) -> bool:
+    if len(value) < 2:
+      return False
+    return value[0] == "{" and value[-1] == "}"
+
+  @classmethod
   def inline_hjson(cls, value: Any) -> Any:
     value_str = cls.non_empty_str(value, "hjson")
-    if value_str[0] != "{" or value_str[-1] != "}":
+    if not cls.is_hjson_like(value_str):
       raise argparse.ArgumentTypeError(
           "Invalid inline hjson, missing braces: '{value_str}'")
     try:

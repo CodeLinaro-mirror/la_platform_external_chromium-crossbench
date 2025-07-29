@@ -52,7 +52,7 @@ class PagesConfig(ConfigObject):
       value = URL, [DURATION], ...
     """
     value = ObjectParser.non_empty_str(value)
-    if value[0] == "{":
+    if cls.is_hjson_like(value):
       return cls.parse_inline_hjson(value)
 
     values: list[str] = []

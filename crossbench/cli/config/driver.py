@@ -73,10 +73,10 @@ class DriverConfig(ConfigObject):
       if cls.value_has_path_prefix(value):
         raise argparse.ArgumentTypeError(
             f"Driver path does not exist: {repr(value)}")
-      if value[0] == "{":
-        # Variant 1: full hjson config
+      if cls.is_hjson_like(value):
+        # Variant: full hjson config
         return cls.parse_inline_hjson(value)
-      # Variant 2: $DRIVER_TYPE
+      # Variant: $DRIVER_TYPE
       try:
         driver_type = BrowserDriverType.parse(value)
       except argparse.ArgumentTypeError as original_error:

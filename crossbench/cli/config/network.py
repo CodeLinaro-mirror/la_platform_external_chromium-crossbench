@@ -126,7 +126,7 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
       return cls.default(type)
-    if value[0] == "{":
+    if cls.is_hjson_like(value):
       return cls.parse_inline_hjson(value, type=type)
     # TODO(346197734): Move to load_url once available.
     if value.startswith(GS_PREFIX):
