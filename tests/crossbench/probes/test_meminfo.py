@@ -7,27 +7,30 @@ from typing import Any
 
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.live import InteractivePage
-from crossbench.benchmarks.loading.playback_controller import PlaybackController
+from crossbench.benchmarks.loading.playback_controller import \
+    PlaybackController
 from crossbench.probes.meminfo import MeminfoProbe
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
 
 def mock_meminfo(info_stack: list[str],
-                 title: str | None = None) -> dict[str, Any]:
+                 name: str,
+                 title: str | None = None,
+                 system: bool = False) -> dict[str, Any]:
   meminfo = {
       "info_stack":
           info_stack,
       "processes": [
           {
-              "name": "process_1",
+              "name": name,
               "pid": 1,
               "pss_total": 2,
               "rss_total": 3,
               "swap_total": 4,
           },
           {
-              "name": "process_2",
+              "name": name,
               "pid": 2,
               "pss_total": 3,
               "rss_total": 4,
@@ -37,6 +40,13 @@ def mock_meminfo(info_stack: list[str],
   }
   if title is not None:
     meminfo["title"] = title
+  if system:
+    meminfo["system"] = {
+        "total_ram_kb": 5,
+        "cached_pss_kb": 4,
+        "cached_kernel_kb": 3,
+        "free_kb": 2,
+    }
   return meminfo
 
 
@@ -57,10 +67,12 @@ class TestMeminfoProbe(GenericProbeTestCase):
         }, {
             "action": "meminfo",
             "title": "test",
+            "system": True,
         }])
     ])
     teardown = ActionBlock.parse_sequence([{
         "action": "meminfo",
+        "system": True,
     }])
     playback = PlaybackController.repeat(3)
 
@@ -91,11 +103,24 @@ class TestMeminfoProbe(GenericProbeTestCase):
 
     for browser in self.browsers:
       mock_json = [
-          mock_meminfo(["setup", "block_0", "action_1"], title="test"),
-          mock_meminfo(["playback_0", "block_0", "action_2"], title="test"),
-          mock_meminfo(["playback_1", "block_0", "action_2"], title="test"),
-          mock_meminfo(["playback_2", "block_0", "action_2"], title="test"),
-          mock_meminfo(["teardown", "block_0", "action_1"]),
+          mock_meminfo(["setup", "block_0", "action_1"],
+                       str(browser.path),
+                       title="test"),
+          mock_meminfo(["playback_0", "block_0", "action_2"],
+                       str(browser.path),
+                       title="test",
+                       system=True),
+          mock_meminfo(["playback_1", "block_0", "action_2"],
+                       str(browser.path),
+                       title="test",
+                       system=True),
+          mock_meminfo(["playback_2", "block_0", "action_2"],
+                       str(browser.path),
+                       title="test",
+                       system=True),
+          mock_meminfo(["teardown", "block_0", "action_1"],
+                       str(browser.path),
+                       system=True),
       ]
 
       # Check that there are 5 json dump files.

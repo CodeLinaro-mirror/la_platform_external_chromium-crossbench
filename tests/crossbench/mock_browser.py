@@ -21,7 +21,6 @@ from crossbench.browsers.settings import Settings
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
 from crossbench.network.base import Network
 from crossbench.plt.android_adb import AndroidAdbPlatform
-from crossbench.plt.process_meminfo import ProcessMeminfo
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -261,14 +260,6 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   @property
   def current_url(self) -> str:
     return self._current_url
-
-  @override
-  def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
-    del timeout
-    return [
-        ProcessMeminfo(1, "process_1", 2, 3, 4),
-        ProcessMeminfo(2, "process_2", 3, 4, 5),
-    ]
 
 
 def app_root(platform: plt.Platform) -> pathlib.Path:

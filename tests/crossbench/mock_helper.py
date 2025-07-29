@@ -28,6 +28,7 @@ from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.port_manager import LocalPortManager, PortManager
+from crossbench.plt.process_meminfo import ProcessMeminfo
 from crossbench.plt.win import WinPlatform
 from crossbench.stories.story import Story
 
@@ -391,6 +392,23 @@ class MockPlatformMixin:
             exist_ok: bool = True) -> None:
     super().mkdir(path, parents, exist_ok)
     self.mkdir_calls += 1
+
+  def process_meminfo(self, process_name: str,
+                      timeout: dt.timedelta) -> list[ProcessMeminfo]:
+    del timeout
+    return [
+        ProcessMeminfo(1, process_name, 2, 3, 4),
+        ProcessMeminfo(2, process_name, 3, 4, 5),
+    ]
+
+  def system_meminfo(self, timeout: dt.timedelta) -> dict[str, float]:
+    del timeout
+    return {
+        "total_ram_kb": 5,
+        "cached_pss_kb": 4,
+        "cached_kernel_kb": 3,
+        "free_kb": 2,
+    }
 
 
 class MockFd:

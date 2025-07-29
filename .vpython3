@@ -22,6 +22,11 @@ wheel: <
 >
 
 wheel: <
+  name: "infra/python/wheels/types-psutil-py3"
+  version: "version:5.8.23"
+>
+
+wheel: <
   name: "infra/python/wheels/selenium-py3"
   version: "version:4.34.0"
 >
@@ -294,7 +299,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/protobuf-py3"
-  version: "version:4.25.3"
+  version: "version:5.29.3"
 >
 
 wheel: <

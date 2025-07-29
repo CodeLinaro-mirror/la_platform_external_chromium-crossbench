@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final, Optional, TextIO, Type, cast
+from typing import TYPE_CHECKING, Final, Optional, Type, cast
 
 from typing_extensions import override
 
@@ -66,7 +66,6 @@ class ChromiumBased(Browser):
                path: pth.AnyPath,
                settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings=settings)
-    self._stdout_log_file: TextIO | None = None
     self._local_extension_tmp_dir: Optional[pth.LocalPath] = None
     self._remote_extension_tmp_dir: Optional[pth.AnyPath] = None
     assert isinstance(self._flags, ChromeFlags)
@@ -326,9 +325,6 @@ class ChromiumBased(Browser):
     try:
       super().quit()
     finally:
-      if self._stdout_log_file:
-        self._stdout_log_file.close()
-        self._stdout_log_file = None
       if self._local_extension_tmp_dir:
         self.host_platform.rm(self._local_extension_tmp_dir, dir=True)
         self._local_extension_tmp_dir = None
