@@ -23,8 +23,15 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertIn("config", str(cm.exception))
 
   def test_parse_config(self):
-    probe: PerfettoProbe = PerfettoProbe.from_config({"textproto": "TEXTPROTO"})
-    self.assertEqual("TEXTPROTO", probe.textproto)
+    trace_config = """
+        buffers: {
+            size_kb: 1234
+            fill_policy: DISCARD
+        }
+    """
+    probe: PerfettoProbe = PerfettoProbe.from_config(
+        {"trace_config": trace_config})
+    self.assertEqual(probe.trace_config.buffers[0].size_kb, 1234)
     self.assertEqual(pth.AnyPath("perfetto"), probe.perfetto_bin)
 
   def test_parse_example_config(self):
