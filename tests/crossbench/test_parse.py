@@ -15,6 +15,7 @@ from urllib import parse as urlparse
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.parse import (DurationParseError, DurationParser, NumberParser,
                               ObjectParser, PathParser, TimeUnit)
 from tests import test_helper
@@ -141,7 +142,32 @@ class DurationParserTestCase(unittest.TestCase):
         dt.timedelta(hours=27.5))
 
 
-class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
+class PathParserTestCase(CrossbenchFakeFsTestCase):
+
+  def test_existing_path(self):
+    path = pth.LocalPath("foo.txt")
+    self.assertFalse(path.exists())
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.existing_path(str(path))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.existing_path(path)
+    path.touch()
+    self.assertEqual(path, PathParser.existing_path(str(path)))
+    self.assertEqual(path, PathParser.existing_path(path))
+
+  def test_not_existing_path(self):
+    path = pth.LocalPath("foo.txt")
+    self.assertFalse(path.exists())
+    self.assertEqual(path, PathParser.not_existing_path(str(path)))
+    self.assertEqual(path, PathParser.not_existing_path(path))
+    path.touch()
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.not_existing_path(str(path))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.not_existing_path(path)
+
+
+class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   @override
   def setUp(self):
