@@ -29,7 +29,7 @@ PROBE_LOOKUP: dict[str, Type[Probe]] = {
 }
 
 _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
-    r"(?P<probe_name>[\w.]+)(:?(?P<config>\{.*\}))?", re.MULTILINE | re.DOTALL)
+    r"(?P<probe_name>[\w.-]+):?(?P<config>.*)", re.MULTILINE | re.DOTALL)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -46,24 +46,38 @@ class ProbeConfig(ConfigObject):
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
-    # 1. variant: known probe
+    # Variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
     if cls.value_has_path_prefix(value):
       # ConfigObject.parse handles .hjson paths already, additional paths are
       # not supported in ProbeConfig.loads.
       raise ProbeConfigError(f"Probe config path does not exist: {value}")
-    # 2. variant, inline hjson: "name:{hjson}"
-    match = _PROBE_CONFIG_RE.fullmatch(value)
-    if match is None:
-      probe_cls: Type[Probe] = cls._handle_unknown_probe_name("", value)
-      return cls(probe_cls)
-    config = {"name": match["probe_name"]}
-    if config_str := match["config"]:
+    if probe := cls._parse_inline_config(value):
+      return probe
+    probe_cls: Type[Probe] = cls._handle_unknown_probe_name("", value)
+    return cls(probe_cls)
+
+  @classmethod
+  def _parse_inline_config(cls, value: str) -> Self | None:
+    match = _PROBE_CONFIG_RE.match(value)
+    if not match:
+      return None
+    probe_name: str = match["probe_name"]
+    config_str: str = match["config"]
+    if probe_name not in PROBE_LOOKUP:
+      return None
+    config = {"name": probe_name}
+    inline_config: dict = {}
+    if cls.value_has_path_prefix(config_str):
+      # Variant, hjson path: "name:path/to/config.hjson"
+      inline_config = ObjectParser.hjson_file(config_str)
+    if cls.is_hjson_like(config_str):
+      # Variant, inline hjson: "name:{hjson}"
       inline_config = ObjectParser.inline_hjson(config_str)
-      if "name" in inline_config:
-        raise ProbeConfigError("Inline hjson cannot redefine 'name'.")
-      config.update(inline_config)
+    if inline_config.get("name", probe_name) is not probe_name:
+      raise ProbeConfigError("Inline hjson cannot redefine 'name'.")
+    config.update(inline_config)
     return cls.parse_dict(config)
 
   @classmethod
