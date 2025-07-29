@@ -54,6 +54,16 @@ class TraceProcessorQueryConfig(ConfigObject):
 
   @classmethod
   @override
+  def parse_any_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    return cls.parse_str(str(path))
+
+  @classmethod
+  @override
+  def resolve_path(cls, path: pth.LocalPath) -> pth.LocalPath:
+    return path
+
+  @classmethod
+  @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)

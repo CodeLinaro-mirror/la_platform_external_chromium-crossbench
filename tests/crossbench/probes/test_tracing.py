@@ -124,7 +124,7 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(trace_config_file)
     self.assertTrue(trace_config_file.is_file())
 
-    probes = ProbeListConfig.parse_path(config_file).probes
+    probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 1)
     probe = probes[0]
     self.assertIsInstance(probe, TracingProbe)

@@ -49,7 +49,7 @@ class ProbeConfig(ConfigObject):
     # Variant: known probe
     if value in PROBE_LOOKUP:
       return cls(PROBE_LOOKUP[value])
-    if cls.value_has_path_prefix(value):
+    if cls.has_path_prefix(value):
       # ConfigObject.parse handles .hjson paths already, additional paths are
       # not supported in ProbeConfig.loads.
       raise ProbeConfigError(f"Probe config path does not exist: {value}")
@@ -69,7 +69,7 @@ class ProbeConfig(ConfigObject):
       return None
     config = {"name": probe_name}
     inline_config: dict = {}
-    if cls.value_has_path_prefix(config_str):
+    if cls.has_path_prefix(config_str):
       # Variant, hjson path: "name:path/to/config.hjson"
       inline_config = ObjectParser.hjson_file(config_str)
     if cls.is_hjson_like(config_str):

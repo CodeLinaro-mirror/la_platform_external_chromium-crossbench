@@ -221,6 +221,7 @@ class ObjectParser:
 
   @classmethod
   def is_hjson_like(cls, value: str) -> bool:
+    value = value.strip()
     if len(value) < 2:
       return False
     return value[0] == "{" and value[-1] == "}"

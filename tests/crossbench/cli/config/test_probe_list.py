@@ -277,7 +277,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertIsInstance(probes[1], V8RCSProbe)
 
   def test_empty_config_file(self):
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(probe_config=config_file, probe=[])
@@ -285,7 +285,7 @@ class TestProbeListConfig(BaseConfigTestCase):
       self.assertFalse(probe_list.probes)
 
   def test_merge_empty_config_file_with_single_probe(self):
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(
@@ -297,7 +297,7 @@ class TestProbeListConfig(BaseConfigTestCase):
       self.assertIsInstance(probe, V8LogProbe)
 
   def test_merge_config_file_single_probe(self):
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(
@@ -310,7 +310,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_merge_config_file_conflict(self):
     # By default --probe args override --probe-config args
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(

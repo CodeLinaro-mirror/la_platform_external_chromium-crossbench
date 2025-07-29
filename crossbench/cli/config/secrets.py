@@ -35,8 +35,6 @@ class Secrets(ConfigObject):
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
-    if cls.is_hjson_like(value):
-      return cls.parse_inline_hjson(value)
     raise NotImplementedError("Cannot create secrets from string")
 
   def merge(self, fallback: Secrets) -> Self:
