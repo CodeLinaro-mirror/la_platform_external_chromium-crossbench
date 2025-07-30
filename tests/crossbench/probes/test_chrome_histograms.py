@@ -67,13 +67,12 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     return ChromeHistogramSample.from_json(json)
 
   def test_parse_histogram_metrics_invalid(self):
-    with pytest.raises(
-        argparse.ArgumentTypeError,
-        match="invalid.metric foo is not a valid metric"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "'invalid.metric' 'foo' is not a valid metric"):
       parse_histogram_metrics({"invalid.metric": ["foo"]})
-    with pytest.raises(
+    with self.assertRaisesRegex(
         argparse.ArgumentTypeError,
-        match="invalid.metric p101 is not a valid percentile"):
+        "'invalid.metric' 'p101' is not a valid percentile"):
       parse_histogram_metrics({"invalid.metric": ["p101"]})
 
   def _parse_one_metric(self, histogram_name: str,
