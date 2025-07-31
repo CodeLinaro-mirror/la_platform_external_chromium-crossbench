@@ -206,7 +206,7 @@ class Browser(abc.ABC):
     return False
 
   def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
-    return self.platform.meminfo(str(self.path), timeout)
+    return self.platform.process_meminfo(str(self.path), timeout)
 
   @property
   def is_running(self) -> bool:

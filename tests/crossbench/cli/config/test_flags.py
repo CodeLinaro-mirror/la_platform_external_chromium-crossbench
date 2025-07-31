@@ -320,6 +320,26 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo=1 --bar")
 
+  def test_parse_dict_duplicates(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "duplicates"):
+      FlagsGroupConfig.parse({
+          "--foo": [None, "1", "1"],
+      })
+
+  def test_parse_dict_invalid_values(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Invalid flag variant value"):
+      FlagsGroupConfig.parse({
+          "--foo": [None, "1", 1],
+      })
+
+  def test_parse_invalid_value(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Invalid flag variant value"):
+      FlagsGroupConfig.parse({
+          "--foo": 1,
+      })
+
   def test_parse_dict_multiple_3_x_1(self):
     group = FlagsGroupConfig.parse({
         "--foo": [None, "1", "2"],

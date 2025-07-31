@@ -38,7 +38,7 @@ java_genrule_host {
         "config/**/*.*",
         "crossbench/**/*.*",
         "tests/**/*.*",
-        "android_protoc/**/*.*",
+        "protoc/**/*.*",
         "*.py",
         "*.ini",
     ],
