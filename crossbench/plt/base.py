@@ -26,11 +26,13 @@ import urllib.request
 from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
                     Iterator, Mapping, Optional, Sequence, Type)
 
+import google.cloud.storage as gcloud_storage
 import psutil
 
 from crossbench import parse
 from crossbench import path as pth
 from crossbench.helper import wait
+from crossbench.parse import ObjectParser
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
@@ -40,6 +42,8 @@ from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
   import datetime as dt
+
+  import google.cloud.storage.blob as gcloud_blob
 
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
@@ -939,6 +943,23 @@ class Platform(abc.ABC):
     assert self.exists(path), (
         f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
     return path
+
+  def download_gcs_file(self, gcs_url: str, local_path: pth.LocalPath) -> None:
+    blob: gcloud_blob.Blob = self.prepare_gcs_request(gcs_url)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    blob.download_to_filename(str(local_path))
+
+  def prepare_gcs_request(self, gcs_url: str) -> gcloud_blob.Blob:
+    parsed = ObjectParser.url(gcs_url, schemes=("gs",))
+    bucket_name = parsed.netloc
+    object_name = parsed.path.lstrip("/")
+    if not bucket_name:
+      raise ValueError(f"Missing bucket name in URL: {gcs_url}")
+    client = gcloud_storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob: gcloud_blob.Blob = bucket.blob(object_name)
+    blob.reload()
+    return blob
 
   def concat_files(self,
                    inputs: Iterable[pth.LocalPath],

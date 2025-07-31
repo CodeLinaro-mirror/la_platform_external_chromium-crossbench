@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import re
 from typing import TYPE_CHECKING, Iterator, Optional, TypeVar
 from urllib.parse import urlparse
 
@@ -26,8 +25,6 @@ if TYPE_CHECKING:
 
 
 GS_PREFIX = "gs://"
-GSUTIL_LS_MD5_RE: re.Pattern[str] = re.compile(
-    r"Hash \(md5\):\s*([A-Za-z0-9+/]+)=*")
 
 ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
@@ -67,13 +64,12 @@ class ReplayNetwork(Network):
     yield
 
   def _generate_filename(self, url: str) -> str:
-    metadata = self.host_platform.sh_stdout("gsutil", "ls", "-L", url)
-    if md5_search := GSUTIL_LS_MD5_RE.search(metadata):
-      md5 = md5_search.group(1)
+    blob = self.host_platform.prepare_gcs_request(url)
+    if md5 := blob.md5_hash:
       safe_md5 = pth.safe_filename(md5)
       url_path = pth.AnyPosixPath(urlparse(url).path)
       return f"{url_path.stem}_{safe_md5}{url_path.suffix}"
-    raise RuntimeError(f"Could not find md5 hash in gsutil output: {metadata}")
+    raise RuntimeError(f"Could not find md5 hash in blob: {url}")
 
   def _download_gcloud_archive(self, url: str) -> LocalPath:
     title: str = f"Downloading {url}"
@@ -85,7 +81,7 @@ class ReplayNetwork(Network):
         logging.info("Found cached WPR archive: %s", local_path)
         return local_path
       logging.info("Downloading WPR archive from %s to %s", url, local_path)
-      self.host_platform.sh("gsutil", "cp", url, local_path)
+      self.host_platform.download_gcs_file(url, local_path)
     return local_path
 
   def _ensure_archive(self, archive: pth.LocalPath | str) -> LocalPath:
