@@ -713,6 +713,12 @@ class _TemplatedConfigParser(ConfigObject):
   # Matches escape sequences of the above: $[[ARG]
   ESCAPED_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\[([A-Z\d_]+)\]")
 
+  TEMPLATE_LIKE_KEYS: Final[frozenset] = frozenset([
+      "template",
+      "args",
+      "unbound_args",
+  ])
+
   VALID_KEYS_FOR_TEMPLATE_OBJECT: Final[frozenset] = frozenset([
       frozenset(["template", "args"]),
       frozenset(["template", "unbound_args"]),
@@ -751,8 +757,21 @@ class _TemplatedConfigParser(ConfigObject):
 
   @classmethod
   def is_template_invocation(cls, value: Any) -> bool:
-    return isinstance(value, dict) and set(
-        value.keys()) in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT
+    if not isinstance(value, dict):
+      return False
+
+    keys: Set[str] = set(value.keys())
+
+    if keys in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT:
+      return True
+
+    if any(key in keys for key in cls.TEMPLATE_LIKE_KEYS):
+      logging.warning(
+          "Value was not detected as a template but contains template-like "
+          "keys. Config template invocations must contain only valid "
+          "template keys: %s", json.dumps(value, indent=2))
+
+    return False
 
   @classmethod
   @override
