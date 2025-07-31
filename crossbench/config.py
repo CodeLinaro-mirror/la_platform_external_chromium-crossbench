@@ -661,6 +661,11 @@ class _PrimitiveConfigObject(ConfigObject):
       return cls(result)
     return cls(value)
 
+  @classmethod
+  @override
+  def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
+    return cls(url.geturl())
+
 
 @dataclasses.dataclass(frozen=False)
 class TemplateArg:

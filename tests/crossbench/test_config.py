@@ -1229,6 +1229,24 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
     config = CustomConfigObject.parse(config)
 
+  def test_parse_nested_templated_config_urls(self):
+    config = {
+        "template": {
+            "name": "name",
+            "nested": "$[ARG]"
+        },
+        "args": {
+            "ARG": {
+                "name": "https://www.google.com"
+            }
+        }
+    }
+
+    config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.nested.name, "https://www.google.com")
+
   def test_parse_templated_config_filepaths_in_template_list(self):
     template_dir = pathlib.Path("/templates")
     template_dir.mkdir()
