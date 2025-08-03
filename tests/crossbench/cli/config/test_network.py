@@ -110,7 +110,13 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse(str(path))
     message = str(cm.exception)
-    self.assertIn("wpr.go archive", message)
+    self.assertIn(str(path), message)
+    self.assertIn("exist", message)
+
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse(path)
+    message = str(cm.exception)
+    self.assertIn(str(path), message)
     self.assertIn("exist", message)
 
     self.fs.create_file(path)
@@ -136,6 +142,15 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.type, NetworkType.WPR)
     self.assertEqual(config.url, url)
     self.assertEqual(config.speed, NetworkSpeedConfig.default())
+
+  def test_parse_invalid_wprgo_archive_url(self):
+    url = "http://bucket/wprgo.archive"
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, url):
+      _ = NetworkConfig.parse(url)
+    url = "://bucket/wprgo.archive"
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "bucket/wprgo.archive"):
+      _ = NetworkConfig.parse(url)
 
   def test_invalid_constructor_params(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -168,7 +183,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
         NetworkConfig.parse_wpr(invalid)
 
   def test_parse_wpr(self):
-    archive_path = pth.LocalPath("test/archive.wprgo")
+    archive_path = pth.LocalPath("/test/archive.wprgo")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse_wpr(archive_path)
     self.assertIn(str(archive_path), str(cm.exception))
@@ -178,6 +193,10 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.speed, NetworkSpeedConfig.default())
     self.assertEqual(config.path, archive_path)
     self.assertEqual(config, NetworkConfig.parse(archive_path))
+    config_2 = NetworkConfig.parse_wpr("test/archive.wprgo")
+    self.assertEqual(config, config_2)
+    config_2 = NetworkConfig.parse_wpr(pth.LocalPath("test/archive.wprgo"))
+    self.assertEqual(config, config_2)
 
   def test_parse_dict_default(self):
     config = NetworkConfig.parse({})
@@ -202,7 +221,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config, config_1)
 
   def test_parse_dict_wpr(self):
-    archive_path = pth.LocalPath("test/archive.wprgo")
+    archive_path = pth.LocalPath("/test/archive.wprgo")
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse({"type": "wpr", "path": archive_path})
     self.assertIn(str(archive_path), str(cm.exception))

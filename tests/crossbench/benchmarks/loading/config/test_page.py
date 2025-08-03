@@ -76,6 +76,10 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertIsNone(config.label)
     self.assertEqual(config.any_label, "123.a.com")
 
+  def test_parse_url_numbers_params(self):
+    config = PageConfig.parse("www.123.a.com/foo?bar=1")
+    self.assertEqual(config.first_url, "https://www.123.a.com/foo?bar=1")
+
   def test_parse_with_duration(self):
     config = PageConfig.parse("http://news.b.com,123s")
     self.assertEqual(config.first_url, "http://news.b.com")

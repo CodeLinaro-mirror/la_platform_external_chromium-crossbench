@@ -167,8 +167,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     else:
       logging.debug("%s: restoring previous flags file contents in %s", self,
                     self._chrome_command_line_path)
-      self.platform.set_file_contents(self._chrome_command_line_path,
-                                      self._previous_command_line_contents)
+      self.platform.write_text(self._chrome_command_line_path,
+                               self._previous_command_line_contents)
     self._needs_restore_chrome_flags = False
     self._previous_command_line_contents = None
 

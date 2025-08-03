@@ -35,9 +35,8 @@ class WebviewEmbedder(Webview):
     args = self._get_browser_flags_for_session(session)
     logging.debug("%s: setting flags file contents in %s", self,
                   self._chrome_command_line_path)
-    self.platform.set_file_contents(
-        self._chrome_command_line_path,
-        shlex.join(("webview", *args)))
+    self.platform.write_text(self._chrome_command_line_path,
+                             shlex.join(("webview", *args)))
     self.platform.sh("pkill", "-f", self.android_package)
     self._log_browser_start(args)
     self._is_running = True

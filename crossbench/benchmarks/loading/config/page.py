@@ -7,7 +7,8 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Sequence, cast
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Self,
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -30,6 +31,8 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class PageConfig(ConfigObject):
+  VALID_SCHEMES: ClassVar[tuple[str, ...]] = ObjectParser.COMMON_URL_SCHEMES
+
   label: str | None = None
   playback: PlaybackController | None = None
   secrets: Secrets = Secrets()

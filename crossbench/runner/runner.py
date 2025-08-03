@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Type
 from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
@@ -150,7 +149,6 @@ class Runner:
         action="store_const",
         help=("Repeat each run with different cache temperatures without "
               "closing the browser in between."))
-
     run_group.add_argument(
         "--thread-mode",
         "--parallel",
@@ -158,6 +156,10 @@ class Runner:
         type=ThreadMode,  # type: ignore
         help=("Change how Runs are executed.\n" +
               ThreadMode.help_text(indent=2)))
+    run_group.add_argument(
+        "--step-by-step-mode",
+        action="store_true",
+        help="Wait for user input before executing each action.")
 
   @classmethod
   def _add_output_arguments(cls, benchmark_cls: Type[Benchmark],
@@ -219,6 +221,7 @@ class Runner:
         "throw": args.throw,
         "create_symlinks": args.create_symlinks,
         "cool_down_threshold": args.cool_down_threshold,
+        "step_by_step_mode": args.step_by_step_mode,
     }
 
   def __init__(self,
@@ -237,8 +240,8 @@ class Runner:
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
                create_symlinks: bool = True,
-               in_memory_result_db: bool = False) -> None:
-    self._action_runner = DefaultActionRunner()
+               in_memory_result_db: bool = False,
+               step_by_step_mode: bool = False) -> None:
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
@@ -275,6 +278,7 @@ class Runner:
     self._story_groups: tuple[StoriesRunGroup, ...] = ()
     self._browser_group: BrowsersRunGroup | None = None
     self._create_symlinks: bool = create_symlinks
+    self._step_by_step_mode: bool = step_by_step_mode
 
   def _prepare_benchmark(self) -> None:
     benchmark_validator.validate_cls(type(self._benchmark))
@@ -555,6 +559,7 @@ class Runner:
               name_parts.append(f"temperature={temperature_icon(temperature)}")
             name_parts.append(f"index={index}")
             action_runner = self.benchmark.new_action_runner(browser.platform)
+            action_runner.set_step_by_step_mode(self._step_by_step_mode)
             yield self.create_run(
                 browser_session,
                 story,
