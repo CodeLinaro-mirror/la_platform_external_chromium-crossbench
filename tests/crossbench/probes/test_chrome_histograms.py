@@ -67,13 +67,12 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     return ChromeHistogramSample.from_json(json)
 
   def test_parse_histogram_metrics_invalid(self):
-    with pytest.raises(
-        argparse.ArgumentTypeError,
-        match="invalid.metric foo is not a valid metric"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "'invalid.metric' 'foo' is not a valid metric"):
       parse_histogram_metrics({"invalid.metric": ["foo"]})
-    with pytest.raises(
+    with self.assertRaisesRegex(
         argparse.ArgumentTypeError,
-        match="invalid.metric p101 is not a valid percentile"):
+        "'invalid.metric' 'p101' is not a valid percentile"):
       parse_histogram_metrics({"invalid.metric": ["p101"]})
 
   def _parse_one_metric(self, histogram_name: str,
@@ -169,7 +168,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         test_helper.config_dir() / "doc/probe/chrome_histograms.hjson")
     self.fs.add_real_file(config_file)
     self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.parse_path(config_file).probes
+    probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 1)
     probe = probes[0]
     self.assertIsInstance(probe, ChromeHistogramsProbe)

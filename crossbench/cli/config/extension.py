@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Optional, Self
 import zipfile
+from typing import TYPE_CHECKING, Optional, Self
 
 from typing_extensions import override
 
@@ -26,9 +26,20 @@ EXTENSION_ID_PATTERN: re.Pattern = re.compile(r"^[a-p]{32}$")
 
 @dataclasses.dataclass(frozen=True)
 class ExtensionConfig(ConfigObject):
+  VALID_EXTENSIONS = (".crx",)
   crx: Optional[LocalPath] = None
   id: Optional[str] = None
   unpacked: Optional[LocalPath] = None
+
+  @classmethod
+  @override
+  def maybe_valid_path(cls, path: LocalPath) -> LocalPath | None:
+    if super().maybe_valid_path(path):
+      return path
+    manifest_path = path / "manifest.json"
+    if manifest_path.is_file():
+      return path
+    return None
 
   @classmethod
   @override
@@ -36,16 +47,13 @@ class ExtensionConfig(ConfigObject):
     if "," in str(path):
       raise argparse.ArgumentTypeError("Extension paths must not contain ','")
     if path.is_file():
-      if path.suffix != ".crx":
-        raise argparse.ArgumentTypeError(
-            f"Extension files must be crx: {repr(str(path))}")
+      assert path.suffix == ".crx", (
+          f"Extension files must be crx: {repr(str(path))}")
       return cls(crx=path, id=None, unpacked=None)
-
-    # Extension is unpackled in a directory.
+    # Extension is unpacked in a directory.
     manifest_path = path / "manifest.json"
-    if not manifest_path.exists():
-      raise argparse.ArgumentTypeError(
-          f"Extension dirs must contain a manifest.json: {repr(str(path))}")
+    assert manifest_path.exists(), (
+        f"Extension dirs must contain a manifest.json: {repr(str(path))}")
     return cls(crx=None, id=None, unpacked=path)
 
   @classmethod

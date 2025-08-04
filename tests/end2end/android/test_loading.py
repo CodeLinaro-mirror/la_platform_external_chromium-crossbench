@@ -7,8 +7,8 @@ from __future__ import annotations
 import json
 import pathlib
 import tempfile
-from typing import Any, Optional
 import urllib.parse
+from typing import Any, Optional
 
 import pytest
 
@@ -22,7 +22,8 @@ def _run_loading_test(browser_config: str,
                       test_env: Any,
                       probe_config_file: Optional[pathlib.Path] = None) -> None:
   with tempfile.NamedTemporaryFile(
-      mode="w", encoding="utf-8") as page_config_file:
+      suffix="page.config.json", mode="w",
+      encoding="utf-8") as page_config_file:
     json.dump(page_config, page_config_file)
     page_config_file.flush()
 
@@ -42,7 +43,8 @@ def _run_loading_test(browser_config: str,
 def _run_loading_test_with_probes(browser_config: str, page_config: Any,
                                   test_env: Any, probe_config: Any) -> None:
   with tempfile.NamedTemporaryFile(
-      mode="w", encoding="utf-8") as probe_config_file:
+      suffix="probe.config.json", mode="w",
+      encoding="utf-8") as probe_config_file:
     json.dump(probe_config, probe_config_file)
     probe_config_file.flush()
 

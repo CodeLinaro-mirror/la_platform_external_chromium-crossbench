@@ -64,7 +64,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     path = self.result_path / f"{label}.html"
     html = self.browser.js("return document.children[0].outerHTML",
                            dt.timedelta(seconds=10))
-    self.host_platform.set_file_contents(path, html)
+    self.host_platform.write_text(path, html)
     self._results.append(path)
 
   @override

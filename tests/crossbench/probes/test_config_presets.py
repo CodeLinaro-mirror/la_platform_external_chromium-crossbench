@@ -7,6 +7,7 @@ from typing import Type
 
 from pyfakefs import fake_filesystem_unittest
 
+import crossbench.config
 import crossbench.path
 from crossbench import plt
 from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
@@ -54,7 +55,9 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
                              real_config_dir: pathlib.Path) -> list[Probe]:
     probes = []
     self._add_real_directory(real_config_dir)
-    for probe_config in real_config_dir.glob("**/*.config.hjson"):
+    # make sure we have a fakefs path
+    fake_config_dir = pathlib.Path(real_config_dir)
+    for probe_config in fake_config_dir.glob("**/*.config.hjson"):
       with ChangeCWD(probe_config.parent):
         probes += self._parse_config(probe_config)
     return probes
@@ -65,7 +68,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
       probe_name = config_file.name.split(".")[0]
     probe_cls = PROBE_LOOKUP[probe_name]
 
-    probes = ProbeListConfig.parse_path(config_file).probes
+    probes = ProbeListConfig.parse(config_file).probes
     self.assertTrue(probes)
     self.assertTrue(
         any(map(lambda probe: isinstance(probe, probe_cls), probes)))
@@ -109,9 +112,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
                 LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
       probe_config = cls.default_probe_config_path()
       self._add_real_file(probe_config)
-      probes = ProbeListConfig.parse_path(probe_config).probes
+      probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)
-
-
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -17,7 +17,9 @@ from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, Optional,
                     Sequence, Type, TypeVar, cast)
 from urllib import parse as urlparse
 
+import google.protobuf.message
 import hjson
+from google.protobuf import text_format
 
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
@@ -192,6 +194,7 @@ class PathParser:
 EnumT = TypeVar("EnumT", bound=enum.Enum)
 NotNoneT = TypeVar("NotNoneT")
 SequenceT = TypeVar("SequenceT", bound=Sequence)
+ProtoClassT = TypeVar("ProtoClassT", bound=google.protobuf.message.Message)
 
 
 class ObjectParser:
@@ -217,9 +220,16 @@ class ObjectParser:
                                      f"Choices are {choices_str}.")
 
   @classmethod
+  def is_hjson_like(cls, value: str) -> bool:
+    value = value.strip()
+    if len(value) < 2:
+      return False
+    return value[0] == "{" and value[-1] == "}"
+
+  @classmethod
   def inline_hjson(cls, value: Any) -> Any:
     value_str = cls.non_empty_str(value, "hjson")
-    if value_str[0] != "{" or value_str[-1] != "}":
+    if not cls.is_hjson_like(value_str):
       raise argparse.ArgumentTypeError(
           "Invalid inline hjson, missing braces: '{value_str}'")
     try:
@@ -328,6 +338,69 @@ class ObjectParser:
         return str_value
     path = PathParser.file_path(value, name=name)
     return cls.non_empty_str(path.read_text(encoding="utf-8"), name=name)
+
+  @classmethod
+  def bytes_or_file_contents(cls, value: Any, name: str = "value") -> bytes:
+    if isinstance(value, str):
+      str_value: str = cls.non_empty_str(value, name=name)
+      if not PathParser.value_has_path_prefix(str_value):
+        return str_value.encode("utf-8")
+    path = PathParser.file_path(value, name=name)
+    return path.read_bytes()
+
+  @classmethod
+  def proto_or_file(
+      cls, proto_cls: Type[ProtoClassT]) -> Callable[[Any], ProtoClassT]:
+
+    def parser(value: Any) -> ProtoClassT:
+      data: bytes = ObjectParser.bytes_or_file_contents(value)
+      proto_instance = proto_cls()
+      return cls.parse_text_or_binary_proto(proto_instance, data)
+
+    help_name = f"{proto_cls.__name__} proto"
+    parser.__name__ = help_name
+    parser.__qualname__ = help_name
+    return parser
+
+  @classmethod
+  def parse_text_or_binary_proto(cls, proto_instance: ProtoClassT,
+                                 value: bytes) -> ProtoClassT:
+    try:
+      value_str = value.decode("utf-8")
+    except UnicodeDecodeError:
+      return cls.parse_binary_proto(proto_instance, value)
+    try:
+      return cls.parse_text_proto(proto_instance, value_str)
+    except argparse.ArgumentTypeError as text_proto_e:
+      try:
+        # Low chances.. but we might have still a valid binary proto.
+        return cls.parse_binary_proto(proto_instance, value)
+      except argparse.ArgumentTypeError as binary_proto_e:
+        raise text_proto_e from binary_proto_e
+
+  @classmethod
+  def parse_text_proto(cls, proto_instance: ProtoClassT,
+                       value: str) -> ProtoClassT:
+    try:
+      text_format.Parse(value, proto_instance)
+      return proto_instance
+    except text_format.ParseError as decode_e:
+      raise argparse.ArgumentTypeError(
+          f"Failed to parse {type(proto_instance).__name__}: {decode_e}"
+      ) from decode_e
+
+  @classmethod
+  def parse_binary_proto(cls, proto_instance: ProtoClassT,
+                         value: bytes) -> ProtoClassT:
+    try:
+      proto_instance.Clear()
+      proto_instance.ParseFromString(value)
+      return proto_instance
+    except google.protobuf.message.DecodeError as decode_e:
+      raise argparse.ArgumentTypeError(
+          f"Failed to parse {type(proto_instance).__name__}: {decode_e}"
+      ) from decode_e
+
 
   @classmethod
   def url_str(cls,

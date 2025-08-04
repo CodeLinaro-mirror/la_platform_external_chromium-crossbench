@@ -244,8 +244,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         self.host_platform.local_cache_dir("wpr") /
         str(self.browser_platform.machine) / "wpr_go")
     if not check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash):
-      self.host_platform.sh("gsutil", "cp", wpr_cloud_binary.url,
-                            local_wpr_go_bin)
+      self.host_platform.download_gcs_file(wpr_cloud_binary.url,
+                                           local_wpr_go_bin)
     assert check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash)
 
     return local_wpr_go_bin

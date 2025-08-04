@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import shlex
+import subprocess
 import time
 from typing import TYPE_CHECKING, Iterable, Optional, TextIO
 
@@ -23,8 +24,6 @@ from crossbench.path import AnyPath, LocalPath
 from crossbench.plt import PLATFORM, Platform
 
 if TYPE_CHECKING:
-  import subprocess
-
   from crossbench.plt.types import TupleCmdArgs
 
 
@@ -203,7 +202,10 @@ class WprBase(abc.ABC):
     with ChangeCWD(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(
-          *go_cmd, stdout=self._log_file, stderr=self._log_file)
+          *go_cmd,
+          stdout=self._log_file,
+          stderr=self._log_file,
+          stdin=subprocess.DEVNULL)
     if not self._process:
       raise WprStartupError(f"Could not start {type(self).__name__}")
 
