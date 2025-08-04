@@ -58,6 +58,39 @@ DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b'''
 *** SERVICE 'meminfo' DUMP TIMEOUT (1ms) EXPIRED ***
 '''
 
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT = b'''
+          0K: GL mtrack
+          0K: Other mtrack
+
+Total RAM: 7,698,860K (status normal)
+ Free RAM: 1,234K (2,345K cached pss + 3,456K cached kernel + 4,567K free)
+DMA-BUF:   817,715K (      152K mapped +   817,563K unmapped)
+DMA-BUF Heaps:    24,844K
+DMA-BUF Heaps pool:         0K
+      GPU:   258,796K (  258,796K dmabuf +         0K private)
+      Kernel CMA:         0K
+ Used RAM: 3,528,301K (1,772,358K used pss + 1,755,943K kernel)
+ Lost RAM:   362,207K
+     ZRAM:   557,480K physical used for 1,723,064K in swap (11,284K total swap)
+   Tuning: 192 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
+'''
+
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF = b'''
+        800K: Ashmem
+        324K: .ttf mmap
+          0K: Cursor
+          0K: Other mtrack
+
+Total RAM: 3,486,196K (status moderate)
+ Free RAM: 1,234K (2,345K cached pss + 3,456K cached kernel + 4,567K free)
+      ION:   132,124K (  6,924K mapped +   125,200K unmapped +   0K pools)
+      GPU:   194,788K
+ Used RAM: 2,835,979K (2,170,795K used pss +   665,184K kernel)
+ Lost RAM:   282,400K
+     ZRAM:   203,732K physical used for 745,216K in swap (4,194,300K total swap)
+   Tuning: 256 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
+'''
+
 class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"
   platform: AndroidAdbPlatform
@@ -563,18 +596,18 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("am get-current-user", result="10")
     self.assertEqual(self.platform.user_id(), 10)
 
-  def test_meminfo_no_process(self):
+  def test_process_meminfo_no_process(self):
     self.expect_sh(
         "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
         result=b"")
-    meminfo = self.platform.meminfo("com.android.chrome")
+    meminfo = self.platform.process_meminfo("com.android.chrome")
     self.assertEqual(len(meminfo), 0)
 
-  def test_meminfo(self):
+  def test_process_meminfo(self):
     self.expect_sh(
         "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
         result=DUMPSYS_MEMINFO_OUTPUT)
-    meminfo = self.platform.meminfo("com.android.chrome")
+    meminfo = self.platform.process_meminfo("com.android.chrome")
     self.assertEqual(len(meminfo), 4)
 
     privileged_process = "com.android.chrome:privileged_process0"
@@ -587,13 +620,48 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         ProcessMeminfo(20438, "com.android.chrome", 200986, 412436, 148)
     ])
 
-  def test_meminfo_timeout(self):
+  def test_process_meminfo_timeout(self):
     self.expect_sh(
         "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
         result=DUMPSYS_MEMINFO_TIMEOUT_OUTPUT)
 
     with self.assertRaises(TimeoutError):
-      self.platform.meminfo("com.android.chrome")
+      self.platform.process_meminfo("com.android.chrome")
+
+  def test_system_meminfo(self):
+    self.expect_sh(
+        "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT)
+    meminfo = self.platform.system_meminfo()
+    self.assertDictEqual(
+        meminfo, {
+            "total_ram_kb": 7698860.0,
+            "cached_pss_kb": 2345.0,
+            "cached_kernel_kb": 3456.0,
+            "free_kb": 4567.0,
+            "dma_buf_kb": 817715.0,
+            "dma_buf_mapped_kb": 152.0,
+            "dma_buf_unmapped_kb": 817563.0,
+        })
+
+  def test_system_meminfo_no_dma_buf(self):
+    self.expect_sh(
+        "dumpsys -T 10000 meminfo",
+        result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF)
+    meminfo = self.platform.system_meminfo()
+    self.assertDictEqual(
+        meminfo, {
+            "total_ram_kb": 3486196.0,
+            "cached_pss_kb": 2345.0,
+            "cached_kernel_kb": 3456.0,
+            "free_kb": 4567.0,
+        })
+
+  def test_system_meminfo_timeout(self):
+    self.expect_sh(
+        "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_TIMEOUT_OUTPUT)
+
+    with self.assertRaises(TimeoutError):
+      self.platform.system_meminfo()
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

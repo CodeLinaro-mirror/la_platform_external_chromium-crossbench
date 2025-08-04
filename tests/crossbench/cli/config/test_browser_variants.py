@@ -668,6 +668,30 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         ["--no-sandbox", "--enable-features=ConsumeCompileHints"],
         list(browsers[1].flags))
 
+  def test_js_flags_user_data_dir(self):
+    config = BrowserVariantsConfigDict(
+        {
+            "flags": {
+                "custom-js-flags": {
+                    "--js-flags": [None, "--no-opt"]
+                }
+            },
+            "browsers": {
+                "chrome-release": {
+                    "path": "chrome-stable",
+                    "flags": ["--user-data-dir=/tmp/dir", "custom-js-flags"]
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args())
+    self.assertEqual(len(config.variants), 2)
+    browser_a = config.variants[0]
+    browser_b = config.variants[1]
+    self.assertEqual(str(browser_a.flags), "--user-data-dir=/tmp/dir")
+    self.assertEqual(
+        str(browser_b.flags), "--user-data-dir=/tmp/dir --js-flags=--no-opt")
+
   def test_conflicting_chrome_features(self):
     with self.assertRaises(ConfigError) as cm:
       _ = BrowserVariantsConfigDict(

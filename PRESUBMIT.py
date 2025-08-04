@@ -13,6 +13,23 @@ from typing import Iterable, Optional
 
 USE_PYTHON3 = True
 
+SOURCE_SKIP_RE = [r"^protoc/gen.*", r"^third_party/.*"]
+
+def SourceFileFilter(input_api):
+  """Returns filter that selects source code files only."""
+  files_to_skip = list(input_api.DEFAULT_FILES_TO_SKIP) + SOURCE_SKIP_RE
+  files_to_check = list(input_api.DEFAULT_FILES_TO_CHECK)
+  return lambda x: input_api.FilterSourceFile(
+      x, files_to_check=files_to_check, files_to_skip=files_to_skip)
+
+
+def GlobalSkipChecks(input_api, file_path: str):
+  if input_api.fnmatch.fnmatch(file_path, "*protoc/gen/*"):
+    return True
+  if input_api.fnmatch.fnmatch(file_path, "*third_party/*"):
+    return True
+  return False
+
 
 def CheckChange(input_api, output_api, on_commit):
   tests = []
@@ -23,6 +40,7 @@ def CheckChange(input_api, output_api, on_commit):
   testing_env["PYTHONPATH"] = input_api.os_path.pathsep.join(
       map(str, [root_path, crossbench_test_path]))
   # ---------------------------------------------------------------------------
+  source_file_filter = SourceFileFilter(input_api)
   modified_py_files: list[str] | None = ModifiedFiles(input_api, on_commit)
   modified_hjson_files: list[str] | None = ModifiedFiles(
       input_api, False, filename_pattern="*.hjson")
@@ -36,7 +54,9 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   # License header checks:
   # ---------------------------------------------------------------------------
-  results += input_api.canned_checks.CheckLicense(input_api, output_api)
+  results += input_api.canned_checks.CheckLicense(
+      input_api, output_api,
+      source_file_filter=source_file_filter)
 
   # ---------------------------------------------------------------------------
   # Pylint:
@@ -48,7 +68,7 @@ def CheckChange(input_api, output_api, on_commit):
         input_api,
         output_api,
         files_to_check=pylint_file_patterns_to_check,
-        files_to_skip=[r"^android_protoc/frameworks.*", r"^third_party/.*"],
+        files_to_skip=SOURCE_SKIP_RE,
         pylintrc=".pylintrc",
         version="3.2")
 
@@ -113,6 +133,8 @@ def CheckChange(input_api, output_api, on_commit):
 
 def SortImports(input_api, output_api, results, modified_py_files):
   for py_file in (modified_py_files or []):
+    if GlobalSkipChecks(input_api, py_file):
+      continue
     full_py_path = pathlib.Path(
       input_api.change.RepositoryRoot()) / py_file
     original_contents = input_api.ReadFile(str(full_py_path), "r")
@@ -164,6 +186,8 @@ def ModifiedFiles(input_api,
   for file_path in files:
     if not input_api.fnmatch.fnmatch(file_path, filename_pattern):
       continue
+    if GlobalSkipChecks(input_api, file_path):
+      continue
     if not input_api.os_path.exists(file_path):
       continue
     file_path = input_api.os_path.relpath(file_path,
@@ -195,7 +219,7 @@ def MypyFilesToCheck(input_api, on_commit, modified_py_files) -> list[str]:
   for file in mypy_files_to_check:
     if file.startswith("tests/"):
       continue
-    if file.startswith("android_protoc/"):
+    if GlobalSkipChecks(input_api, file):
       continue
     result.append(file)
   return result

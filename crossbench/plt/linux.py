@@ -184,7 +184,7 @@ class LinuxPlatform(PosixPlatform):
       flags=re.DOTALL)
 
   @override
-  def meminfo(
+  def process_meminfo(
       self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
   ) -> list[ProcessMeminfo]:
     del timeout

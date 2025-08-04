@@ -34,6 +34,7 @@ class MeminfoAction(Action):
     parser.add_argument("browser", type=ObjectParser.bool, default=True)
     parser.add_argument(
         "packages", type=ObjectParser.non_empty_str, default=(), is_list=True)
+    parser.add_argument("system", type=ObjectParser.bool, default=False)
     parser.add_argument("title", type=ObjectParser.non_empty_str, default=None)
     return parser
 
@@ -41,10 +42,12 @@ class MeminfoAction(Action):
                browser: bool = True,
                packages: tuple[str, ...] = tuple(),
                title: Optional[str] = None,
+               system: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._browser = browser
     self._packages = packages
+    self._system = system
     self._title = title
     super().__init__(timeout, index)
 
@@ -64,6 +67,10 @@ class MeminfoAction(Action):
     return self._packages
 
   @property
+  def system(self) -> bool:
+    return self._system
+
+  @property
   def title(self) -> Optional[str]:
     return self._title
 
@@ -71,6 +78,7 @@ class MeminfoAction(Action):
   def to_json(self) -> JsonDict:
     details = super().to_json()
     details["browser"] = self.browser
+    details["system"] = self.system
     if self.packages:
       details["packages"] = list(self.packages)
     if self.title:

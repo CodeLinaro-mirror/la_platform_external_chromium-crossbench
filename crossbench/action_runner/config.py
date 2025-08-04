@@ -30,7 +30,7 @@ class ActionRunnerType(ConfigEnum):
 
 @dataclasses.dataclass(frozen=True)
 class ActionRunnerConfig(ConfigObject):
-  type: ActionRunnerType = ActionRunnerType.BASIC
+  type: ActionRunnerType = ActionRunnerType.AUTO
 
   @classmethod
   def parse_str(cls, value: str) -> Self:
@@ -41,7 +41,7 @@ class ActionRunnerConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "type", type=ActionRunnerType, default=ActionRunnerType.BASIC)
+        "type", type=ActionRunnerType, default=ActionRunnerType.AUTO)
     return parser
 
   def instantiate(self, platform: Platform) -> ActionRunner:
