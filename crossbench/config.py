@@ -666,6 +666,22 @@ class _PrimitiveConfigObject(ConfigObject):
   def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
     return cls(url.geturl())
 
+  @classmethod
+  @override
+  def parse_path_like(cls, original_value: str, path: pth.LocalPath,
+                      **kwargs) -> Self:
+    # Config parsing automatically changes the cwd to allow for
+    # resolving relative paths.
+    # For PrimitiveConfigObjects resulting from template substitution,
+    # the cwd might change after the object is parsed and substituted
+    # into a file that exists in a different path.
+    # Because of this, primitive config objects should return the fully
+    # resolved path in case the template and its invocation do not exist in
+    # the same directory.
+    if path.is_file() or path.is_dir():
+      return cls(str(path.resolve()))
+
+    return cls(original_value)
 
 @dataclasses.dataclass(frozen=False)
 class TemplateArg:
