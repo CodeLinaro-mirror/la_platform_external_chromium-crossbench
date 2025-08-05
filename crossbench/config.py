@@ -641,19 +641,22 @@ class _PrimitiveConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> Self:
+  def parse_str(cls, value: str, **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
     return cls(value)
 
   @classmethod
   @override
   def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
     result: dict[str, Any] = {}
     for key, value in config.items():
       result[key] = _PrimitiveConfigObject.parse(value, **kwargs).value
     return cls(result)
 
   @classmethod
-  def parse_other(cls, value: Any) -> Self:
+  def parse_other(cls, value: Any, **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
     if isinstance(value, Iterable):
       result = []
       for value_entry in value:
@@ -664,12 +667,14 @@ class _PrimitiveConfigObject(ConfigObject):
   @classmethod
   @override
   def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
     return cls(url.geturl())
 
   @classmethod
   @override
   def parse_path_like(cls, original_value: str, path: pth.LocalPath,
                       **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
     # Config parsing automatically changes the cwd to allow for
     # resolving relative paths.
     # For PrimitiveConfigObjects resulting from template substitution,
