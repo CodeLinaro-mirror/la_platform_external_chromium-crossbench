@@ -1003,6 +1003,11 @@ class Platform(abc.ABC):
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")
 
+  @contextlib.contextmanager
+  def low_power_mode(self) -> Generator[None, Any, None]:
+    raise NotImplementedError("'low_power_mode' is only supported on Android")
+
+
   def user_id(self) -> int:
     self.assert_is_local()
     return os.getuid()
