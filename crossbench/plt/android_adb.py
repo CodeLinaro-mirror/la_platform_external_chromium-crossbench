@@ -17,8 +17,6 @@ from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
-from android_protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
-                            windowmanagerservice_pb2)
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.parse import NumberParser
@@ -28,6 +26,8 @@ from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
+from protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
+                    windowmanagerservice_pb2)
 
 if TYPE_CHECKING:
   import subprocess
@@ -237,15 +237,14 @@ class Adb:
     return self._host_platform.sh_stdout_bytes(
         *adb_cmd, quiet=quiet, check=check, stdin=stdin)
 
-  def _get_main_user(self) -> str | None:
-    if self.build_version >= 14:
-      try:
-        return self.cmd("user", "get-main-user").strip()
-      except SubprocessError as e:
-        logging.info(
-            "get-main-user failed, return code %d, stderr %s, stdout %s",
-            e.returncode, e.stderr, e.stdout)
-    return None
+  def _get_current_user(self) -> str | None:
+    try:
+      return self.shell_stdout("am", "get-current-user").strip()
+    except SubprocessError as e:
+      logging.info(
+          "get-current-user failed, return code %d, stderr %s, stdout %s",
+          e.returncode, e.stderr, e.stdout)
+      return None
 
   def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
     self._host_platform.validate_shell_args(args, shell)
@@ -426,7 +425,7 @@ class Adb:
     if not package_name:
       raise ValueError("Got empty package name")
     cmd: ListCmdArgs = ["pm", "clear"]
-    if user := self._get_main_user():
+    if user := self._get_current_user():
       cmd.extend(["--user", user])
     cmd.extend([package_name])
     self.shell(*cmd)
@@ -491,7 +490,7 @@ class Adb:
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    user: str | None = self._get_main_user()
+    user: str | None = self._get_current_user()
     for perm in ANDROID_PERMISSIONS:
       cmd: ListCmdArgs = ["pm", "grant"]
       if user:
@@ -796,15 +795,80 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       res.append({"pid": int(tokens[0]), "name": tokens[1]})
     return res
 
+  _DUMPSYS_TIMEOUT_RE = re.compile(
+      rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
+
   @override
-  def meminfo(
+  def process_meminfo(
       self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
   ) -> list[ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
-    dumpsys_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
+    meminfo_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
                                                    "meminfo", "--proto",
                                                    "--package", process_name)
-    return self._parse_dumpsys_meminfo(dumpsys_output)
+    if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
+      raise TimeoutError("dumpsys meminfo timed out")
+    proto_dump = activitymanagerservice_pb2.MemInfoDumpProto()
+    proto_dump.ParseFromString(meminfo_output)
+    meminfos: list[ProcessMeminfo] = []
+    for app_process in proto_dump.app_processes:
+      mem_info = app_process.process_memory.total_heap.mem_info
+      meminfos.append(
+          ProcessMeminfo(
+              pid=app_process.process_memory.pid,
+              name=app_process.process_memory.process_name,
+              pss_total=mem_info.total_pss_kb,
+              rss_total=mem_info.total_rss_kb,
+              swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb))
+    return meminfos
+
+  _DUMPSYS_SYSTEM_TOTAL_FREE_RE = re.compile(
+      br"Total RAM: (?P<total_ram_kb>[0-9][,0-9]*)K.*"
+      br"\n Free RAM: [0-9][,0-9]*K \( *"
+      br"(?P<cached_pss_kb>[0-9][,0-9]*)K cached pss \+ +"
+      br"(?P<cached_kernel_kb>[0-9][,0-9]*)K cached kernel \+ +"
+      br"(?P<free_kb>[0-9][,0-9]*)K free\)"
+      # Include other footer lines so we don't have to parse the whole output
+      # for optional fields.
+      br".*$",
+      re.DOTALL)
+
+  _DUMPSYS_SYSTEM_DMA_BUF_RE = re.compile(
+      br"DMA-BUF: +(?P<dma_buf_kb>[0-9][,0-9]*)K \("
+      br" +(?P<dma_buf_mapped_kb>[0-9][,0-9]*)K mapped \+"
+      br" +(?P<dma_buf_unmapped_kb>[0-9][,0-9]*)K unmapped\)", re.DOTALL)
+
+  def _groupdict_to_system_meminfo(
+      self, groupdict: dict[str, bytes]) -> dict[str, float]:
+    return {
+        key: float(value.replace(b",", b""))
+        for [key, value] in groupdict.items()
+    }
+
+  def system_meminfo(
+      self,
+      timeout: dt.timedelta = dt.timedelta(seconds=10)) -> dict[str, float]:
+    timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
+    # TODO: switch to proto parsing if/when DMA-BUF counters are in proto
+    # output.
+    meminfo_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
+                                                   "meminfo")
+    if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
+      raise TimeoutError("dumpsys meminfo timed out")
+
+    meminfo: dict[str, float] = {}
+    footer_match = self._DUMPSYS_SYSTEM_TOTAL_FREE_RE.search(meminfo_output)
+    if not footer_match:
+      raise RuntimeError("No 'Total RAM' line found in dumpsys meminfo output")
+    meminfo.update(self._groupdict_to_system_meminfo(footer_match.groupdict()))
+
+    dma_buf_match = self._DUMPSYS_SYSTEM_DMA_BUF_RE.search(footer_match[0])
+    if dma_buf_match:
+      meminfo.update(
+          self._groupdict_to_system_meminfo(dma_buf_match.groupdict()))
+
+    return meminfo
+
 
   @functools.lru_cache(maxsize=1)
   @override
@@ -887,24 +951,3 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
-
-  _DUMPSYS_TIMEOUT_RE = re.compile(
-      rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
-
-  def _parse_dumpsys_meminfo(self,
-                             meminfo_output: bytes) -> list[ProcessMeminfo]:
-    if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
-      raise TimeoutError("dumpsys meminfo timed out")
-    proto_dump = activitymanagerservice_pb2.MemInfoDumpProto()
-    proto_dump.ParseFromString(meminfo_output)
-    meminfos: list[ProcessMeminfo] = []
-    for app_process in proto_dump.app_processes:
-      mem_info = app_process.process_memory.total_heap.mem_info
-      meminfos.append(
-          ProcessMeminfo(
-              pid=app_process.process_memory.pid,
-              name=app_process.process_memory.process_name,
-              pss_total=mem_info.total_pss_kb,
-              rss_total=mem_info.total_rss_kb,
-              swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb))
-    return meminfos

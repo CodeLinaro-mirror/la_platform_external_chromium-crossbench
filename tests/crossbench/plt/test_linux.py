@@ -11,7 +11,8 @@ from unittest import mock
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
-from crossbench.plt.linux import SCRIPTS_DIR, parse_display_xrandr
+from crossbench.plt.linux import (SCRIPTS_DIR, LinuxPlatform,
+                                  parse_display_xrandr)
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
 from tests.crossbench.mock_helper import (LinuxMockPlatform,
@@ -75,7 +76,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.fs.create_file(path, contents="meminfo")
 
     self.mock_platform.sh_results = [ShResult()]
-    meminfo = self.mock_platform.meminfo("some_process")
+    meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
     self.assertEqual(len(meminfo), 0)
 
   _MEMINFO_SCRIPT_OUTPUT = """
@@ -110,7 +111,7 @@ Swap:                400 kB
     self.fs.create_file(path, contents="meminfo")
 
     self.mock_platform.sh_results = [ShResult(self._MEMINFO_SCRIPT_OUTPUT)]
-    meminfo = self.mock_platform.meminfo("some_process")
+    meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
     self.assertListEqual(meminfo, [
         ProcessMeminfo(926961, "/usr/bin/some_process -a", 17815, 80364, 0),
         ProcessMeminfo(930293, "/usr/bin/some_process -b", 5074, 44860, 0),

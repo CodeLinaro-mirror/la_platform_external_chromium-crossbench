@@ -35,6 +35,17 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
+def _get_http_timeout(driver: webdriver.Remote) -> int:
+  executor = cast("RemoteConnection", driver.command_executor)
+  return executor.client_config.timeout
+
+
+def _set_http_timeout(driver: webdriver.Remote, timeout: float):
+  logging.debug("Setting http request timeout to %s", timeout)
+  executor = cast("RemoteConnection", driver.command_executor)
+  executor.client_config.timeout = timeout
+
+
 class DriverException(RuntimeError):
   """Wrapper for more readable error messages than the default
   WebDriver exceptions."""
@@ -50,6 +61,39 @@ class DriverException(RuntimeError):
       browser_prefix = f"browser={self._browser}: "
     return f"{browser_prefix}{self._msg}"
 
+
+class JsTimeoutContext:
+  """
+    A context manager to temporarily adjust Selenium WebDriver and JS timeouts
+    and restore them afterwards.
+    """
+
+  def __init__(self, driver: webdriver.Remote, timeout: Optional[dt.timedelta]):
+    if timeout is not None and timeout.total_seconds() <= 0:
+      raise ValueError("Timeout must be a positive duration.")
+
+    self._driver = driver
+    self._new_timeout = timeout
+
+  def __enter__(self):
+    if self._new_timeout is None:
+      return
+
+    self._original_command_executor_timeout: float = _get_http_timeout(
+        self._driver)
+    self._original_script_timeout: float = self._driver.timeouts.script
+
+    _set_http_timeout(self._driver, self._new_timeout.total_seconds())
+    self._driver.set_script_timeout(self._new_timeout.total_seconds())
+    return
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    if self._new_timeout is None:
+      return
+
+    if self._original_command_executor_timeout is not None:
+      _set_http_timeout(self._driver, self._original_command_executor_timeout)
+      self._driver.set_script_timeout(self._original_script_timeout)
 
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   # TODO: properly annotate this lazily initialized instance variable.
@@ -132,9 +176,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     unit values.
     If timing.has_no_timeout each value is set to SAFE_MAX_TIMEOUT_TIMEDELTA."""
     if http_timeout := self.http_request_timeout:
-      logging.debug("Setting http request timeout to %s", http_timeout)
-      executor = cast("RemoteConnection", self._private_driver.command_executor)
-      executor.client_config.timeout = http_timeout.total_seconds()
+      _set_http_timeout(self._private_driver, http_timeout.total_seconds())
     timing = session.timing
     if not timing.timeout_unit:
       return
@@ -244,11 +286,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                   script)
     assert self._is_running
     try:
-      if timeout is not None:
-        assert timeout.total_seconds() > 0, (
-            f"timeout must be a positive number, got: {timeout}")
-        self._private_driver.set_script_timeout(timeout.total_seconds())
-      return self._private_driver.execute_script(script, *arguments)
+      with JsTimeoutContext(self._private_driver, timeout):
+        return self._private_driver.execute_script(script, *arguments)
     except selenium.common.exceptions.WebDriverException as e:
       # pylint: disable=raise-missing-from
       raise ValueError(f"Could not execute JS: {e.msg}")

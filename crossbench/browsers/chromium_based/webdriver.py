@@ -8,7 +8,8 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type, cast
+from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
+                    Type, cast)
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -49,6 +50,7 @@ class ChromiumBasedWebDriver(
     super().__init__(*args, **kwargs)
     self._script_identifier_kwargs: dict[Any, Any] | None = None
     self._tracer: DevToolsTracer | None = None
+    self._stdout_log_file: TextIO | None = None
 
   @classmethod
   @override
@@ -133,6 +135,7 @@ class ChromiumBasedWebDriver(
 
     # pytype: disable=wrong-keyword-args
     assert self._stdout_log_file is None
+    # On desktop platforms service logs contain browser stdout, hence the name.
     self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
@@ -333,3 +336,12 @@ class ChromiumBasedWebDriver(
     output = self._tracer.end()
     self._tracer = None
     return output
+
+  @override
+  def force_quit(self) -> None:
+    try:
+      super().force_quit()
+    finally:
+      if self._stdout_log_file:
+        self._stdout_log_file.close()
+        self._stdout_log_file = None
