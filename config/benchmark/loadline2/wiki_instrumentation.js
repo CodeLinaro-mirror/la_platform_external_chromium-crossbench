@@ -33,7 +33,9 @@ if (window.location.href === 'https://en.m.wikipedia.org/wiki/Taylor_Swift') {
 
   const image_observer = new MutationObserver(mutations => {
     const image = document.querySelector(image_selector);
-    if (!image) return;
+    if (!image) {
+      return;
+    }
     image_observer.disconnect();
     performance.mark('LoadLine2/wikipedia_article/image_shown');
   });

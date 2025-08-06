@@ -6,8 +6,8 @@ if (window.location.href === 'https://www.google.com/search?q=cats') {
   let complete = false;
 
   const button_observer = new MutationObserver(mutations => {
-    const button = document.querySelector(".tHlp8d");
-    const menu = document.querySelector(".cGY8if");
+    const button = document.querySelector('.tHlp8d');
+    const menu = document.querySelector('.cGY8if');
 
     if (!button || !menu) {
       return;
@@ -24,7 +24,9 @@ if (window.location.href === 'https://www.google.com/search?q=cats') {
     attribute_observer.observe(menu, {attributes: true});
 
     click = function() {
-      if (complete) return;
+      if (complete) {
+        return;
+      }
       button.click();
       setTimeout(click, 10);
     };

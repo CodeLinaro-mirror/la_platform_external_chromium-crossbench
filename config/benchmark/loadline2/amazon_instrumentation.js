@@ -29,7 +29,9 @@ if (window.location.href ===
 
   const buy_observer = new MutationObserver(mutations => {
     const buy = document.getElementById(buy_id);
-    if (!buy) return;
+    if (!buy) {
+      return;
+    }
     buy_observer.disconnect();
     performance.mark('LoadLine2/amazon_product/buy_shown');
   });

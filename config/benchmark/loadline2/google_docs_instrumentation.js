@@ -24,12 +24,12 @@ if (window.location.href ===
   function simulateRealisticClick(element) {
     const rect = element.getBoundingClientRect();
     const properties = {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: rect.left + rect.width / 2,
-        clientY: rect.top + rect.height / 2,
-    }
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    };
     element.dispatchEvent(new MouseEvent('mousedown', properties));
     element.dispatchEvent(new MouseEvent('mouseup', properties));
     element.dispatchEvent(new MouseEvent('click', properties));
@@ -52,9 +52,11 @@ if (window.location.href ===
   });
 
   const menu_observer = new MutationObserver(unused => {
-    const menu = document.evaluate('//div[text()=\'100%\']', document, null,
-                                   XPathResult.FIRST_ORDERED_NODE_TYPE, null)
-                                  .singleNodeValue.parentElement.parentElement;
+    const menu = document
+                     .evaluate(
+                         '//div[text()=\'100%\']', document, null,
+                         XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+                     .singleNodeValue.parentElement.parentElement;
     if (!menu) {
       return;
     }

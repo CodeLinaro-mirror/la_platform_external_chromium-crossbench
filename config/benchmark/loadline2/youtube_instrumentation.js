@@ -36,7 +36,9 @@ if (window.location.href ===
 
   const comment_observer = new MutationObserver(mutations => {
     const comment = document.getElementById(comment_id);
-    if (!comment) return;
+    if (!comment) {
+      return;
+    }
     comment_observer.disconnect();
     performance.mark('LoadLine2/youtube_video/comment_shown');
   });
