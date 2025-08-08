@@ -83,7 +83,7 @@ class BTPUtil:
   def run(self, argv: Sequence[str]) -> None:
     args = self.parser.parse_args(argv)
 
-    probe_config = ProbeListConfig.parse_path(args.probe_config)
+    probe_config = ProbeListConfig.parse(args.probe_config)
     tp: TraceProcessorProbe | None = None
     for probe in probe_config.probes:
       if isinstance(probe, TraceProcessorProbe):

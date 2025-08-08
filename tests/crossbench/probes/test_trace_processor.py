@@ -33,7 +33,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     config_file = (
         test_helper.config_dir() / "doc/probe/trace_processor.config.hjson")
     self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.parse_path(config_file).probes
+    probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 2)
     probe = probes[0]
     self.assertIsInstance(probe, TraceProcessorProbe)

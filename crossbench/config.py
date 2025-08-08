@@ -19,7 +19,6 @@ import textwrap
 from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
                     Iterable, Optional, Self, Set, Type, TypeAlias, TypeVar,
                     cast)
-from urllib.parse import urlparse
 
 import tabulate
 from typing_extensions import override
@@ -33,6 +32,7 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   ArgParserType: TypeAlias = Callable[..., Any] | Type
+  import urllib.parse as urlparse
 
 
 class ConfigError(argparse.ArgumentTypeError):
@@ -160,7 +160,6 @@ class _ConfigArgParser:
                        f"but got default={repr(default)}")
     if self.is_enum:
       return self._validate_enum_default(default)
-    # TODO: Remove once pytype can handle self.type
     maybe_class: ArgParserType | None = self.type
     if self.is_list:
       self._validate_list_default(default, maybe_class)
@@ -394,6 +393,8 @@ class ConfigEnum(StrEnumWithHelp):
     return ObjectParser.enum(cls.__name__, cls, value, cls)
 
 
+HAS_PATH_SEPARATORS_RE: re.Pattern = re.compile(r"\/|\\")
+
 class ConfigObject(abc.ABC):
   """A ConfigObject is a placeholder object with parsed values from
   a ConfigParser.
@@ -401,13 +402,9 @@ class ConfigObject(abc.ABC):
     objects contain other nested config-parsed objects,
   - It is then used to create a real instance of an object.
   """
-  VALID_CONFIG_EXTENSIONS: ClassVar[tuple[str, ...]] = (".hjson", ".json")
-  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = VALID_CONFIG_EXTENSIONS
-  VALID_SCHEME: ClassVar[tuple[str,
-                               ...]] = ("http", "https", "file", "gs", "ftp")
-  @classmethod
-  def value_has_path_prefix(cls, value: str) -> bool:
-    return PathParser.value_has_path_prefix(value)
+  HJSON_EXTENSIONS: ClassVar[tuple[str, ...]] = (".hjson", ".json")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = tuple()
+  VALID_SCHEMES: ClassVar[tuple[str, ...]] = ()
 
   def __post_init__(self) -> None:
     self.validate()
@@ -444,34 +441,96 @@ class ConfigObject(abc.ABC):
     if value is None:
       raise ConfigError(f"{cls.__name__}: Empty config value")
     if isinstance(value, pth.LocalPath):
-      return cls.parse_path(value, **kwargs)
+      return cls._maybe_parse_path(value, value, **kwargs)
     if isinstance(value, str):
       return cls._parse_str(value, **kwargs)
     return cls.parse_other(value, **kwargs)
 
   @classmethod
-  def _parse_str(cls, value: Any, **kwargs) -> Self:
-    if cls.is_valid_url(value):
-      # TODO(346197734): use parse_url here
-      return cls.parse_str(value, **kwargs)
+  def _parse_str(cls, value: str, **kwargs) -> Self:
+    if cls.is_hjson_like(value):
+      return cls.parse_inline_hjson(value, **kwargs)
     if value:
+      if url := cls._resolve_url(value):
+        if valid_url := cls.maybe_valid_url(url):
+          return cls.parse_url(valid_url, **kwargs)
+        return cls.parse_any_url(url, **kwargs)
       try:
-        maybe_path = cls._resolve_path(value)
-        if cls.is_valid_path(maybe_path):
-          return cls.parse_path(maybe_path, **kwargs)
-        if cls.value_has_path_prefix(value):
-          return cls.parse_unknown_path(maybe_path, **kwargs)
+        return cls._maybe_parse_path(value, pth.LocalPath(value), **kwargs)
       except OSError:
         pass
     return cls.parse_str(value, **kwargs)
 
   @classmethod
-  def _resolve_path(cls, value: Any) -> pth.LocalPath:
-    maybe_path = pth.LocalPath(value)
-    if str(maybe_path)[0] == "~":
-      maybe_path = maybe_path.expanduser()
-    maybe_path = maybe_path.resolve()
-    return maybe_path
+  def _maybe_parse_path(cls, original_value: Any, path: pth.LocalPath,
+                        **kwargs) -> Self:
+    path = cls.resolve_path(path)
+    if valid_path := cls.maybe_valid_path(path):
+      return cls.parse_path(valid_path, **kwargs)
+    # Allow json / hjson as VALID_EXTENSIONS to take precedence over the
+    # default external config parsing.
+    if valid_hjson_path := cls.maybe_valid_hjson_path(path):
+      return cls.parse_hjson_path(valid_hjson_path, **kwargs)
+    if isinstance(original_value, pth.LocalPath):
+      return cls.parse_any_path(path, **kwargs)
+    if isinstance(original_value, str):
+      if cls.is_path_like(original_value):
+        return cls.parse_path_like(original_value, path, **kwargs)
+      return cls.parse_str(original_value, **kwargs)
+    raise argparse.ArgumentTypeError(
+        f"Unsupported path type {type(original_value)}: {original_value}")
+
+  @classmethod
+  def resolve_path(cls, path: pth.LocalPath) -> pth.LocalPath:
+    if str(path)[0] == "~":
+      path = path.expanduser()
+    path = path.resolve()
+    return path
+
+  @classmethod
+  def _resolve_url(cls, value: str) -> urlparse.ParseResult | None:
+    try:
+      url: urlparse.ParseResult = ObjectParser.url(value)
+      if url.scheme:
+        return url
+    except argparse.ArgumentTypeError:
+      pass
+    return None
+
+  @classmethod
+  def has_path_prefix(cls, value: str) -> bool:
+    return PathParser.value_has_path_prefix(value)
+
+  @classmethod
+  def is_path_like(cls, value: str) -> bool:
+    """ Return True on strings that have a valid path-prefix
+    or contains simple path parts (with path separators) and no ':"
+    (to filter out URLs)."""
+    return cls.has_path_prefix(value) or (bool(
+        HAS_PATH_SEPARATORS_RE.search(value)) and ":" not in value)
+
+  @classmethod
+  def is_hjson_like(cls, value: str) -> bool:
+    return ObjectParser.is_hjson_like(value)
+
+  @classmethod
+  def maybe_valid_path(cls, path: pth.LocalPath) -> pth.LocalPath | None:
+    if path.suffix in cls.VALID_EXTENSIONS and path.is_file():
+      return path
+    return None
+
+  @classmethod
+  def maybe_valid_hjson_path(cls, path: pth.LocalPath) -> pth.LocalPath | None:
+    if path.suffix in cls.HJSON_EXTENSIONS and path.is_file():
+      return path
+    return None
+
+  @classmethod
+  def maybe_valid_url(cls,
+                      url: urlparse.ParseResult) -> urlparse.ParseResult | None:
+    if url.scheme in cls.VALID_SCHEMES:
+      return url
+    return None
 
   @classmethod
   def parse_other(cls, value: Any) -> Self:
@@ -486,49 +545,63 @@ class ConfigObject(abc.ABC):
     raise NotImplementedError()
 
   @classmethod
-  def is_valid_path(cls, path: pth.LocalPath) -> bool:
-    try:
-      if path.is_file():
-        return path.suffix in cls.VALID_EXTENSIONS
-    except OSError:
-      # Ignore any OSError caused by too long path names.
-      pass
-    return False
+  def parse_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
+    """Called for urls that pass the is_valid_url() test."""
+    return cls.parse_str(url.geturl(), **kwargs)
 
   @classmethod
-  def is_valid_url(cls, value: Any) -> bool:
-    return urlparse(value).scheme in cls.VALID_SCHEME
+  def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
+    """Called for urls that do not pass the is_valid_url() test."""
+    raise argparse.ArgumentTypeError(
+        f"Cannot parse unsupported url: {url.geturl()}")
 
   @classmethod
-  def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> Self:
-    # TODO: this should be redirected to parse_config_path
+  def parse_path_like(cls, original_value: str, path: pth.LocalPath,
+                      **kwargs) -> Self:
+    """Called for strings that pass the is_path_like() test."""
+    del path
+    return cls.parse_str(original_value, **kwargs)
 
+  @classmethod
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    """Default method called for paths with VALID_EXTENSIONS suffix."""
+    return cls.parse_any_path(path, **kwargs)
+
+  @classmethod
+  def parse_any_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    """Called for paths that do exist, but don't have VALID_EXTENSIONS."""
     # _PrimitiveConfigObject will always parse paths as strings
     # directly and end up calling parse_unknown_path unless they
     # point to a .hjson config file. In these cases the paths
     # will be correctly parsed in their final class later so
     # calling parse_unknown_path is not necessarily an
     # indication of a bad path.
-    if cls is not _PrimitiveConfigObject:
-      logging.warning(
-          "Parsing value as unknown path. "
-          "This probably means the supplied path is incorrect: %s",
-          str(path))
-    return cls.parse_str(str(path), **kwargs)
-
-  @classmethod
-  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
-    return cls.parse_config_path(path, **kwargs)
+    if cls is _PrimitiveConfigObject:
+      return cls.parse_str(str(path), **kwargs)
+    if path.suffix in cls.VALID_EXTENSIONS:
+      msg = f"Path does not exist: {path}"
+    else:
+      msg = f"Cannot parse unsupported path: {path}"
+    raise argparse.ArgumentTypeError(msg)
 
   @classmethod
   def parse_inline_hjson(cls, value: str, **kwargs) -> Self:
+    """Called on strings which pass is_hjson_like() test."""
     with exception.annotate(f"Parsing inline {cls.__name__}"):
       data = ObjectParser.inline_hjson(value)
       return cls.parse_dict(data, **kwargs)
     raise exception.UnreachableError()
 
   @classmethod
+  def parse_hjson_path(cls, path: pth.LocalPathLike, **kwargs) -> Self:
+    """Called on paths that pass the is_valid_hjson_path() test. """
+    return cls.parse_config_path(path, **kwargs)
+
+  @classmethod
   def parse_config_path(cls, path: pth.LocalPathLike, **kwargs) -> Self:
+    """Called by default for parse_hjson_path().
+    This is used to allow sub-configs to be specified in separate files.
+    """
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       file_path = PathParser.existing_file_path(path)
       data = ObjectParser.non_empty_hjson_file(file_path)
@@ -545,6 +618,11 @@ class ConfigObject(abc.ABC):
   @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
     return ConfigParser(cls)
+
+  @classmethod
+  def expect_no_extra_kwargs(cls, kwargs: dict[str, Any]) -> None:
+    if kwargs:
+      raise TypeError(f"Got unexpected keyword arguments: {kwargs}")
 
 
 class _PrimitiveConfigObject(ConfigObject):
@@ -570,10 +648,8 @@ class _PrimitiveConfigObject(ConfigObject):
   @override
   def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     result: dict[str, Any] = {}
-
     for key, value in config.items():
       result[key] = _PrimitiveConfigObject.parse(value, **kwargs).value
-
     return cls(result)
 
   @classmethod
@@ -583,8 +659,12 @@ class _PrimitiveConfigObject(ConfigObject):
       for value_entry in value:
         result.append(_PrimitiveConfigObject.parse(value_entry).value)
       return cls(result)
-
     return cls(value)
+
+  @classmethod
+  @override
+  def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
+    return cls(url.geturl())
 
 
 @dataclasses.dataclass(frozen=False)
@@ -638,6 +718,12 @@ class _TemplatedConfigParser(ConfigObject):
   # Matches escape sequences of the above: $[[ARG]
   ESCAPED_ARG_PATTERN: re.Pattern = re.compile(r"\$\[\[([A-Z\d_]+)\]")
 
+  TEMPLATE_LIKE_KEYS: Final[frozenset] = frozenset([
+      "template",
+      "args",
+      "unbound_args",
+  ])
+
   VALID_KEYS_FOR_TEMPLATE_OBJECT: Final[frozenset] = frozenset([
       frozenset(["template", "args"]),
       frozenset(["template", "unbound_args"]),
@@ -676,8 +762,21 @@ class _TemplatedConfigParser(ConfigObject):
 
   @classmethod
   def is_template_invocation(cls, value: Any) -> bool:
-    return isinstance(value, dict) and set(
-        value.keys()) in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT
+    if not isinstance(value, dict):
+      return False
+
+    keys: Set[str] = set(value.keys())
+
+    if keys in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT:
+      return True
+
+    if any(key in keys for key in cls.TEMPLATE_LIKE_KEYS):
+      logging.warning(
+          "Value was not detected as a template but contains template-like "
+          "keys. Config template invocations must contain only valid "
+          "template keys: %s", json.dumps(value, indent=2))
+
+    return False
 
   @classmethod
   @override
@@ -721,11 +820,9 @@ class _TemplatedConfigParser(ConfigObject):
       logging.warning("The following config args were supplied but unused:")
       for unused_arg in unused_args:
         logging.warning(unused_arg)
-
     logging.debug(
         "Argument substitution resulted in the following config object:")
     logging.debug(json.dumps(result, indent=2))
-
     return result
 
   def _substitute_args(self, value: Any) -> Any:

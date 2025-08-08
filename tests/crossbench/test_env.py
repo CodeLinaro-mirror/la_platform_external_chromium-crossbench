@@ -19,7 +19,8 @@ from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import MockSafari
 from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
-                                          MockPlatform, RemoteLinuxMockPlatform)
+                                          MockPlatform,
+                                          RemoteLinuxMockPlatform)
 
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
@@ -330,7 +331,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
       env = self.create_env()
       with self.assertRaisesRegex(ValidationError, str(out_dir.parent)):
         env.validate()
-    with mock.patch.object(self.platform, "get_file_contents", side_effect=""):
+    with mock.patch.object(self.platform, "read_text", side_effect=""):
       env = self.create_env()
       with self.assertRaisesRegex(ValidationError, str(out_dir.parent)):
         env.validate()
@@ -348,7 +349,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     mock_browser = MockSafari("sf", settings=Settings(platform=self.platform))
     self.mock_runner.browsers = [mock_browser]
 
-    with mock.patch.object(self.platform, "get_file_contents", side_effect=""):
+    with mock.patch.object(self.platform, "read_text", side_effect=""):
       env = self.create_env()
       with self.assertRaisesRegex(ValidationError, "Safari"):
         env.validate()

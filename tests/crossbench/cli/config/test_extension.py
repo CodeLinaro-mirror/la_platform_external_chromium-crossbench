@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import argparse
 import pathlib
 
@@ -14,16 +15,18 @@ from tests.crossbench.cli.config.base import BaseConfigTestCase
 class ExtensionConfigTestCase(BaseConfigTestCase):
 
   def test_crx(self):
-    crx_file = pathlib.Path("extension.crx")
+    crx_file = pathlib.Path("/extension.crx")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "extension.crx"):
+      ExtensionConfig.parse(crx_file)
     self.fs.create_file(crx_file, st_size=501)
     config = ExtensionConfig.parse(str(crx_file))
     self.assertEqual(config.crx, crx_file)
     self.assertEqual(config.id, None)
     self.assertEqual(config.unpacked, None)
-    config = ExtensionConfig.parse(crx_file)
-    self.assertEqual(config.crx, crx_file)
-    self.assertEqual(config.id, None)
-    self.assertEqual(config.unpacked, None)
+    config_2 = ExtensionConfig.parse(crx_file)
+    self.assertEqual(config, config_2)
+    config_3 = ExtensionConfig.parse("extension.crx")
+    self.assertEqual(config, config_3)
 
   def test_id(self):
     config = ExtensionConfig.parse("abcdefghijklmnopabcdefghijklmnop")
@@ -32,7 +35,7 @@ class ExtensionConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.unpacked, None)
 
   def test_unpacked(self):
-    manifest_file = pathlib.Path("dir/manifest.json")
+    manifest_file = pathlib.Path("/dir/manifest.json")
     self.fs.create_file(manifest_file, st_size=501)
     unpacked_dir = manifest_file.parent
     config = ExtensionConfig.parse(str(unpacked_dir))

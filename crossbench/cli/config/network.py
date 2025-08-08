@@ -17,13 +17,15 @@ from crossbench.cli.config.network_speed import (NetworkSpeedConfig,
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_file_server import LocalFileNetwork
-from crossbench.network.replay.wpr import (GS_PREFIX, LocalWprReplayNetwork,
+from crossbench.network.replay.wpr import (LocalWprReplayNetwork,
                                            RemoteWprReplayNetwork)
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
 from crossbench.parse import PathParser
 
 if TYPE_CHECKING:
+  import urllib.parse as urlparse
+
   from crossbench import path as pth
   from crossbench.network.base import Network
   from crossbench.network.traffic_shaping.base import TrafficShaper
@@ -44,6 +46,7 @@ class NetworkConfig(ConfigObject):
   ARCHIVE_EXTENSIONS: ClassVar[tuple[str, ...]] = (".archive", ".wprgo")
   VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (
       ConfigObject.VALID_EXTENSIONS + ARCHIVE_EXTENSIONS)
+  VALID_SCHEMES: ClassVar[tuple[str, ...]] = ("gs",)
 
   type: NetworkType = NetworkType.LIVE
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
@@ -126,14 +129,6 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
       return cls.default(type)
-    if value[0] == "{":
-      return cls.parse_inline_hjson(value, type=type)
-    # TODO(346197734): Move to load_url once available.
-    if value.startswith(GS_PREFIX):
-      if type and type is not NetworkType.WPR:
-        raise argparse.ArgumentTypeError(
-            f"Network type mismatch, expected WPR, got {type}")
-      return cls.parse_wpr_archive_url(value)
     if type and type is not NetworkType.LIVE:
       raise argparse.ArgumentTypeError(
           f"Network type mismatch expected LIVE, got {type}")
@@ -147,17 +142,26 @@ class NetworkConfig(ConfigObject):
     raise exception.UnreachableError()
 
   @classmethod
+  def parse_url(cls,
+                url: urlparse.ParseResult,
+                type: Optional[NetworkType] = None,
+                **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
+    if type and type is not NetworkType.WPR:
+      raise argparse.ArgumentTypeError(
+          f"Network type mismatch, expected WPR, got {type}")
+    assert url.scheme == "gs"
+    return cls.parse_wpr_archive_url(url.geturl())
+
+  @classmethod
   @override
-  def is_valid_path(cls, path: pth.LocalPath) -> bool:
-    if path.suffix in cls.ARCHIVE_EXTENSIONS:
-      return True
+  def maybe_valid_path(cls, path: pth.LocalPath) -> pth.LocalPath | None:
+    if valid_path := super().maybe_valid_path(path):
+      return valid_path
     # for local file server
-    try:
-      if path.is_dir():
-        return True
-    except OSError:
-      pass
-    return super().is_valid_path(path)
+    if path.is_dir():
+      return path
+    return None
 
   @classmethod
   def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
@@ -166,6 +170,12 @@ class NetworkConfig(ConfigObject):
     if path.is_dir():
       return cls(NetworkType.LOCAL, path=path)
     return super().parse_path(path, **kwargs)
+
+  @classmethod
+  def parse_path_like(cls, original_value: str, path: pth.LocalPath,
+                      **kwargs) -> Self:
+    del original_value
+    return cls.parse_any_path(path, **kwargs)
 
   @classmethod
   def parse_wpr_archive_path(cls, path: pth.LocalPath) -> Self:

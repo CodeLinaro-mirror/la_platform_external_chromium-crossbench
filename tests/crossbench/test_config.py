@@ -67,7 +67,6 @@ class CustomBoolConfigObject(ConfigObject):
   def parse_other(cls, value: Any) -> Self:
     if not isinstance(value, bool):
       raise ValueError("Only bool values are supported")
-
     return cls(boolean=value)
 
   @classmethod
@@ -130,6 +129,12 @@ class CustomConfigObject(ConfigObject):
     if not value:
       raise ValueError("Got empty input")
     return cls(name=value)
+
+  @classmethod
+  @override
+  def parse_path_like(cls, original_value: str, path: pathlib.Path,
+                      **kwargs) -> Self:
+    return super().parse_path(path, **kwargs)
 
   @classmethod
   def parse_depending_nested(
@@ -383,17 +388,36 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("depending_nested", help_text)
     self.assertIn("depending_many", help_text)
 
-  def test_value_has_path_prefix(self):
+  def test_has_path_prefix(self):
     for value in ("/foo/bar", "~/foo/bar", "../foo/bar", "..\\foo\\bar",
                   "./foo/bar", "C:\\foo\\bar", "C:/foo/bar"):
       with self.subTest(value=value):
-        self.assertTrue(CustomConfigObject.value_has_path_prefix(value))
+        self.assertTrue(CustomConfigObject.has_path_prefix(value))
+        self.assertTrue(CustomConfigObject.is_path_like(value))
     for value in ("foo/bar", "foo:bar", "foo", "{foo:'/foo/bar'}", "http://foo",
                   "c://", "c://bar", "C:../bar", "..//foo", "..//foo/bar",
                   "~:bar", "~.bar", "~//df", "foo/~bar", "foo~bar/foo",
                   "http://someurl.com/~myproject/index.html"):
       with self.subTest(value=value):
-        self.assertFalse(CustomConfigObject.value_has_path_prefix(value))
+        self.assertFalse(CustomConfigObject.has_path_prefix(value))
+
+  def test_is_path_like(self):
+    for value in ("foo/bar", "foo\\bar"):
+      with self.subTest(value=value):
+        self.assertFalse(CustomConfigObject.has_path_prefix(value))
+        self.assertTrue(CustomConfigObject.is_path_like(value))
+    for value in ("adb:foo/bar", "adb:foo\\bar:local", "http://foo/bar"):
+      with self.subTest(value=value):
+        self.assertFalse(CustomConfigObject.has_path_prefix(value))
+        self.assertFalse(CustomConfigObject.is_path_like(value))
+
+  def test_is_hjson_like(self):
+    for value in ("{}", " {}", " { foo: 2} "):
+      with self.subTest(value=value):
+        self.assertTrue(CustomConfigObject.is_hjson_like(value))
+    for value in ("{", "2", " bar/foo{}asdf"):
+      with self.subTest(value=value):
+        self.assertFalse(CustomConfigObject.is_hjson_like(value))
 
   def test_parse_invalid_str(self):
     for invalid in ("", None, 1, []):
@@ -537,7 +561,23 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "a name")
 
+  def test_parse_path_missing_file_str(self):
+    path = pathlib.Path("/invalid.file")
+    self.assertFalse(path.exists())
+    with self.assertRaises(argparse.ArgumentTypeError):
+      CustomConfigObject.parse(str(path))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      CustomConfigObject.parse_path(path)
+
   def test_parse_path_missing_file(self):
+    path = pathlib.Path("/invalid.file")
+    self.assertFalse(path.exists())
+    with self.assertRaises(argparse.ArgumentTypeError):
+      CustomConfigObject.parse(path)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      CustomConfigObject.parse_path(path)
+
+  def test_parse_path_missing_file_by_type(self):
     path = pathlib.Path("invalid.file")
     self.assertFalse(path.exists())
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -582,7 +622,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump({"name": "Config Name"}, f)
-    config = CustomConfigObject.parse_path(path)
+    config = CustomConfigObject.parse(path)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     self.assertIsNone(config.array)
@@ -601,7 +641,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     path = pathlib.Path("test_file.json")
     with path.open("w", encoding="utf-8") as f:
       json.dump(dict(self.TEST_DICT), f)
-    config = CustomConfigObject.parse_path(path)
+    config = CustomConfigObject.parse(path)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     self.assertListEqual(config.array, [1, 3])
@@ -1152,7 +1192,6 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ARG": "hello",
         }
     }
-
     with self.assertRaisesRegex(MultiException, "'NOT_AN_ARG'"):
       config = CustomConfigObject.parse(config)
 
@@ -1165,7 +1204,6 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ARG": "some other $[ARG] text"
         }
     }
-
     with self.assertRaisesRegex(MultiException, "self-referencing"):
       config = CustomConfigObject.parse(config)
 
@@ -1178,7 +1216,6 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ARG": "some other $[[ARG] text"
         }
     }
-
     config = CustomConfigObject.parse(config)
 
   def test_self_referencing_detection_arg_name_no_arg_sequence(self):
@@ -1190,26 +1227,40 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ARG": "some other arg text"
         }
     }
+    config = CustomConfigObject.parse(config)
+
+  def test_parse_nested_templated_config_urls(self):
+    config = {
+        "template": {
+            "name": "name",
+            "nested": "$[ARG]"
+        },
+        "args": {
+            "ARG": {
+                "name": "https://www.google.com"
+            }
+        }
+    }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsInstance(config, CustomConfigObject)
+
+    self.assertEqual(config.nested.name, "https://www.google.com")
 
   def test_parse_templated_config_filepaths_in_template_list(self):
     template_dir = pathlib.Path("/templates")
     template_dir.mkdir()
-
     template_path = template_dir / "template.hjson"
     template = {"name": "$[NAME]", "array": ["./test_file"]}
 
     with template_path.open("w", encoding="utf-8") as f:
       json.dump(template, f)
 
-    config = {"template": str(template_path), "args": {"NAME": "name"}}
-
-    config = CustomConfigObject.parse(config)
+    config_dict = {"template": str(template_path), "args": {"NAME": "name"}}
+    config = CustomConfigObject.parse(config_dict)
     self.assertIsInstance(config, CustomConfigObject)
-
     self.assertEqual(config.name, "name")
-    self.assertEqual(config.array[0], "/templates/test_file")
+    self.assertEqual(config.array[0], "./test_file")
 
   def test_template_list_spread_in_non_list_does_nothing(self):
     config = {
@@ -1220,7 +1271,6 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "NAME": ["my name",]
         }
     }
-
     config = CustomConfigObject.parse(config)
     self.assertEqual(config.name, "$[...NAME]")
 
@@ -1233,7 +1283,6 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ARG": "arg_value"
         }
     }
-
     with self.assertRaisesRegex(MultiException, "is not a list"):
       config = CustomConfigObject.parse(config)
 
@@ -1380,7 +1429,6 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
-
     self.assertListEqual(config.nested.array, ["first", "second", "third"])
 
 

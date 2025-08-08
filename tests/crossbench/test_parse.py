@@ -15,8 +15,10 @@ from urllib import parse as urlparse
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.parse import (DurationParseError, DurationParser, NumberParser,
                               ObjectParser, PathParser, TimeUnit)
+from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -141,7 +143,32 @@ class DurationParserTestCase(unittest.TestCase):
         dt.timedelta(hours=27.5))
 
 
-class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
+class PathParserTestCase(CrossbenchFakeFsTestCase):
+
+  def test_existing_path(self):
+    path = pth.LocalPath("foo.txt")
+    self.assertFalse(path.exists())
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.existing_path(str(path))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.existing_path(path)
+    path.touch()
+    self.assertEqual(path, PathParser.existing_path(str(path)))
+    self.assertEqual(path, PathParser.existing_path(path))
+
+  def test_not_existing_path(self):
+    path = pth.LocalPath("foo.txt")
+    self.assertFalse(path.exists())
+    self.assertEqual(path, PathParser.not_existing_path(str(path)))
+    self.assertEqual(path, PathParser.not_existing_path(path))
+    path.touch()
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.not_existing_path(str(path))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PathParser.not_existing_path(path)
+
+
+class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   @override
   def setUp(self):
@@ -419,8 +446,12 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(pathlib.Path("file.json"), result)
 
   def test_parse_inline_hjson(self):
-    with self.assertRaises(argparse.ArgumentTypeError):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
       ObjectParser.inline_hjson("")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "braces"):
+      ObjectParser.inline_hjson("{")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "braces"):
+      ObjectParser.inline_hjson("[]")
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.inline_hjson("{invalid json}")
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -782,6 +813,85 @@ class ObjectParserHelperTestCase(CrossbenchFakeFsTestCase):
       ObjectParser.regexp("\\")
     pattern = ObjectParser.regexp("^abc$")
     self.assertEqual(pattern.pattern, "^abc$")
+
+  def test_bytes_or_file_contents_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.bytes_or_file_contents(None)
+
+  def test_bytes_or_file_contents(self):
+    result: bytes = ObjectParser.bytes_or_file_contents("some data")
+    self.assertEqual(result, b"some data")
+
+    file = pathlib.Path("file")
+    with file.open("w", encoding="utf-8") as f:
+      f.write("some data")
+    result = ObjectParser.bytes_or_file_contents(file)
+    self.assertEqual(result, b"some data")
+
+  def test_proto_or_file_textproto(self):
+    text_proto_file = pathlib.Path("trace_config.textproto")
+    text_config: str = """
+      buffers: {
+            size_kb: 123456
+            fill_policy: DISCARD
+        }
+    """
+    parser = ObjectParser.proto_or_file(trace_config_pb2.TraceConfig)
+    proto_instance: trace_config_pb2.TraceConfig = parser(text_config)
+    self.assertEqual(len(proto_instance.buffers), 1)
+    self.assertEqual(proto_instance.buffers[0].size_kb, 123456)
+
+    with text_proto_file.open("w", encoding="utf-8") as f:
+      f.write(text_config)
+    proto_instance_2 = parser(text_proto_file)
+    self.assertEqual(len(proto_instance_2.buffers), 1)
+    self.assertEqual(proto_instance_2.buffers[0].size_kb, 123456)
+    self.assertEqual(proto_instance, proto_instance_2)
+
+  def test_proto_or_file_invalid(self):
+    text_proto_file = pathlib.Path("trace_config.textproto")
+    text_config: str = """
+      buffers-invalid: {
+            size_kb: 123456
+            fill_policy: DISCARD
+        }
+    """
+    parser = ObjectParser.proto_or_file(trace_config_pb2.TraceConfig)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "buffers-invalid"):
+      parser(text_config)
+
+    with text_proto_file.open("w", encoding="utf-8") as f:
+      f.write(text_config)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "buffers-invalid"):
+      parser(text_proto_file)
+
+  def test_proto_or_file_binary(self):
+    text_proto_file = pathlib.Path("trace_config.textproto")
+    binary_proto_file = pathlib.Path("trace_config.proto")
+    text_config: str = """
+      buffers: {
+            size_kb: 123456
+            fill_policy: DISCARD
+        }
+    """
+    with text_proto_file.open("w", encoding="utf-8") as f:
+      f.write(text_config)
+    parser = ObjectParser.proto_or_file(trace_config_pb2.TraceConfig)
+    proto_instance = parser(text_proto_file)
+    with binary_proto_file.open("wb") as f:
+      f.write(proto_instance.SerializeToString())
+
+    proto_instance_2 = parser(binary_proto_file)
+    self.assertEqual(len(proto_instance_2.buffers), 1)
+    self.assertEqual(proto_instance_2.buffers[0].size_kb, 123456)
+    self.assertEqual(proto_instance, proto_instance_2)
+
+  def test_proto_or_file_binary_invalid_format(self):
+    binary_proto_file = pathlib.Path("trace_config.proto")
+    self.fs.create_file(binary_proto_file, contents="invalid data")
+    parser = ObjectParser.proto_or_file(trace_config_pb2.TraceConfig)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "TraceConfig"):
+      parser(binary_proto_file)
 
 
 class TimeUnitTestCase(unittest.TestCase):
