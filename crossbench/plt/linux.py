@@ -192,7 +192,7 @@ class LinuxPlatform(PosixPlatform):
     script = (SCRIPTS_DIR / "meminfo.sh").read_text()
 
     with self.NamedTemporaryFile() as script_file:
-      self.set_file_contents(script_file, script)
+      self.write_text(script_file, script)
       # Script outputs the following format repeated per process:
       # ==== process <pid> ====
       # <proc/cmdline>

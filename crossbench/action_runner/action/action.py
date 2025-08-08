@@ -18,6 +18,8 @@ from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
 if TYPE_CHECKING:
+  import urllib.parse as urlparse
+
   from crossbench.action_runner.base import ActionRunner
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
@@ -59,6 +61,12 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   @override
   def parse_str(cls, value: str) -> Action:
     return ACTIONS[ActionType.GET].parse_str(value)
+
+  @classmethod
+  @override
+  def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Action:
+    cls.expect_no_extra_kwargs(kwargs)
+    return ACTIONS[ActionType.GET].parse_any_url(url)
 
   @classmethod
   @override

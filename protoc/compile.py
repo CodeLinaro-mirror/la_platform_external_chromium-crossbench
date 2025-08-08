@@ -25,6 +25,7 @@ PROTO_MODULES = [
     "frameworks.base.core.proto.android.service.battery_pb2",
     "frameworks.proto_logging.stats.enums.os.enums_pb2",
     "protos.perfetto.config.trace_config_pb2",
+    "protos.perfetto.trace_summary.file_pb2",
 ]
 
 
@@ -187,7 +188,7 @@ def check_protoc_version(protoc_bin: str) -> None:
                   protoc_version, pkg_version)
     raise ValueError(
         f"protoc={repr(protoc_version_str)} and "
-        f"protobuf={repr(protoc_version_str)} versions must match.")
+        f"protobuf={repr(pkg_version)} versions must match.")
 
 
 ROOT_DIR = Path(__file__).parent.resolve()

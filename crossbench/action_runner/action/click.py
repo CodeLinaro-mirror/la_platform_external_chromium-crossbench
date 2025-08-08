@@ -13,7 +13,8 @@ from typing_extensions import override
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
-from crossbench.action_runner.action.position import PositionConfig
+from crossbench.action_runner.action.position import (PositionConfig,
+                                                      SelectorConfig)
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
@@ -62,6 +63,12 @@ class ClickAction(InputSourceAction):
   @property
   def position(self) -> PositionConfig:
     return self._position
+
+  @property
+  def selector(self) -> SelectorConfig:
+    if selector := self._position.selector:
+      return selector
+    raise ValueError(f"{self.position} has no selector")
 
   @property
   def attempts(self) -> int:

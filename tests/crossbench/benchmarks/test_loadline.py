@@ -15,13 +15,13 @@ import pandas as pd
 from typing_extensions import override
 
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
-from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
-                                            LoadLine1TabletBenchmark)
-from crossbench.benchmarks.loadline import loadline_1
-from crossbench.benchmarks.loadline.loadline import LoadLinePageFilter
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
+                                            LoadLine1TabletBenchmark,
+                                            loadline_1)
+from crossbench.benchmarks.loadline.loadline import LoadLinePageFilter
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
@@ -112,9 +112,9 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
     scores = loadline_1.process_scores(query_result)
 
     self.assertEqual(scores.shape, (1, 3))
-    self.assertAlmostEqual(scores["TOTAL_SCORE"][0], 10)
-    self.assertAlmostEqual(scores["story1"][0], 5)
-    self.assertAlmostEqual(scores["story2"][0], 20)
+    self.assertAlmostEqual(scores["TOTAL_SCORE"].iloc[0], 10)
+    self.assertAlmostEqual(scores["story1"].iloc[0], 5)
+    self.assertAlmostEqual(scores["story2"].iloc[0], 20)
 
   def test_process_breakdown(self):
     query_result = pd.DataFrame(
@@ -130,16 +130,16 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
     breakdown = loadline_1.process_breakdown(query_result)
 
     self.assertEqual(breakdown.shape, (2, 5))
-    self.assertAlmostEqual(breakdown["os"][0], 5)
-    self.assertAlmostEqual(breakdown["os"][1], 10)
-    self.assertAlmostEqual(breakdown["renderer"][0], 10)
-    self.assertAlmostEqual(breakdown["renderer"][1], 20)
-    self.assertAlmostEqual(breakdown["compositor"][0], 10)
-    self.assertAlmostEqual(breakdown["compositor"][1], 20)
-    self.assertAlmostEqual(breakdown["gpu"][0], 10)
-    self.assertAlmostEqual(breakdown["gpu"][1], 20)
-    self.assertAlmostEqual(breakdown["surfaceflinger"][0], 10)
-    self.assertAlmostEqual(breakdown["surfaceflinger"][1], 20)
+    self.assertAlmostEqual(breakdown["os"].iloc[0], 5)
+    self.assertAlmostEqual(breakdown["os"].iloc[1], 10)
+    self.assertAlmostEqual(breakdown["renderer"].iloc[0], 10)
+    self.assertAlmostEqual(breakdown["renderer"].iloc[1], 20)
+    self.assertAlmostEqual(breakdown["compositor"].iloc[0], 10)
+    self.assertAlmostEqual(breakdown["compositor"].iloc[1], 20)
+    self.assertAlmostEqual(breakdown["gpu"].iloc[0], 10)
+    self.assertAlmostEqual(breakdown["gpu"].iloc[1], 20)
+    self.assertAlmostEqual(breakdown["surfaceflinger"].iloc[0], 10)
+    self.assertAlmostEqual(breakdown["surfaceflinger"].iloc[1], 20)
 
 
 # Don't expose abstract base test cases.

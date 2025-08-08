@@ -390,7 +390,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     script = (SCRIPTS_DIR / "text_input.py").read_text()
 
     with browser_platform.NamedTemporaryFile() as script_file:
-      browser_platform.set_file_contents(script_file, script)
+      browser_platform.write_text(script_file, script)
       typing_process: subprocess.Popen | None = None
       try:
         typing_process = browser_platform.popen(
@@ -498,7 +498,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     script = (SCRIPTS_DIR / "mouse.py").read_text()
 
     with browser_platform.NamedTemporaryFile() as script_file:
-      browser_platform.set_file_contents(script_file, script)
+      browser_platform.write_text(script_file, script)
 
       mouse_process = browser_platform.popen(
           "python3",
@@ -537,7 +537,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     browser_platform = run.browser_platform
 
     with browser_platform.NamedTemporaryFile() as playback_file:
-      browser_platform.set_file_contents(playback_file, touch_event_cmds)
+      browser_platform.write_text(playback_file, touch_event_cmds)
       # Then run evemu-play with the input redirected from the temp file.
       run.browser_platform.sh(
           f"evemu-play --insert-slot0 "

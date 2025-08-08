@@ -55,7 +55,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_driver_path(self):
     chromedriver_path = (self.out_dir / "chromedriver").resolve()
-    self.fs.create_file(chromedriver_path, st_size=100)
+    self.fs.create_file(chromedriver_path, contents="binary data")
     driver = DriverConfig.parse(str(chromedriver_path))
     self.assertEqual(str(driver.path), str(chromedriver_path))
 
@@ -64,10 +64,15 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(driver_2.path, chromedriver_path)
     self.assertEqual(driver, driver_2)
 
+    driver_3 = DriverConfig.parse(chromedriver_path)
+    self.assertEqual(driver_3.path, chromedriver_path)
+    self.assertEqual(driver, driver_3)
+
+
   def test_parse_driver_path_unresolved(self):
     chromedriver_path = self.out_dir / "chromedriver"
     expected_chromedriver_path = r".*\/chromedriver"
-    self.fs.create_file(chromedriver_path, st_size=100)
+    self.fs.create_file(chromedriver_path, contents="binary data")
     driver = DriverConfig.parse(str(chromedriver_path))
     self.assertRegex(str(driver.path), expected_chromedriver_path)
 
