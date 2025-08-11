@@ -955,7 +955,7 @@ class Platform(abc.ABC):
     object_name = parsed.path.lstrip("/")
     if not bucket_name:
       raise ValueError(f"Missing bucket name in URL: {gcs_url}")
-    client = gcloud_storage.Client()
+    client = gcloud_storage.Client(project="")
     bucket = client.bucket(bucket_name)
     blob: gcloud_blob.Blob = bucket.blob(object_name)
     blob.reload()
