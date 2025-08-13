@@ -1250,6 +1250,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_filepaths_in_template_list(self):
     template_dir = pathlib.Path("/templates")
     template_dir.mkdir()
+    (template_dir / "test_file").write_text("test file")
     template_path = template_dir / "template.hjson"
     template = {"name": "$[NAME]", "array": ["./test_file"]}
 
@@ -1260,7 +1261,26 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse(config_dict)
     self.assertIsInstance(config, CustomConfigObject)
     self.assertEqual(config.name, "name")
-    self.assertEqual(config.array[0], "./test_file")
+    self.assertEqual(config.array[0], "/templates/test_file")
+
+  def test_parse_templated_config_relative_filepaths_as_str_preserved(self):
+    config = {"template": "./templates/template.hjson", "args": {"UNUSED": "",}}
+    config_file = pathlib.Path("/config.hjson")
+    config_file.write_text(json.dumps(config, indent=2), encoding="utf-8")
+
+    template_dir = pathlib.Path("/templates")
+    template_dir.mkdir()
+
+    name_file = template_dir / "name.weird_extension"
+    name_file.write_text("name")
+
+    template_file = template_dir / "template.hjson"
+    template = {"name": "./name.weird_extension"}
+    template_file.write_text(json.dumps(template, indent=2), encoding="utf-8")
+
+    config = CustomConfigObject.parse("/config.hjson")
+    self.assertIsInstance(config, CustomConfigObject)
+    self.assertEqual(config.name, "/templates/name.weird_extension")
 
   def test_template_list_spread_in_non_list_does_nothing(self):
     config = {
