@@ -19,11 +19,6 @@
         data_sources {
           config {
             name: "track_event"
-            chrome_config {
-              trace_config: "{\"record_mode\":\"record-continuously\",\"included_categories\":[\"audio\",\"media\",\"media_router\",\"toplevel\",\"toplevel.flow\",\"scheduler\",\"sequence_manager\",\"disabled-by-default-toplevel.flow\",\"base\",\"disabled-by-default-audio\",\"webaudio\",\"disabled-by-default-webaudio\",\"webaudio.audionode\",\"disabled-by-default-webaudio.audionode\",\"webrtc\",\"disabled-by-default-webrtc\",\"audio-worklet\",\"disabled-by-default-audio-worklet\",\"mediastream\",\"disabled-by-default-mediastream\",\"v8.gc\",\"disabled-by-default-v8.gc\",\"disabled-by-default-toplevel\",\"wakeup.flow\",\"disabled-by-default-wakeup.flow\",\"cpu_profiler\",\"disabled-by-default-cpu_profiler\",\"disabled-by-default-scheduler\",\"p2p\",\"disabled-by-default-p2p\",\"net\",\"disabled-by-default-net\",\"gpu\",\"gpu.capture\",\"disabled-by-default-video_and_image_capture\"],\"excluded_categories\":[\"*\"]}"
-              privacy_filtering_enabled: false
-              client_priority: USER_INITIATED
-            }
             track_event_config {
               disabled_categories: "*"
               enabled_categories: "audio"
@@ -71,22 +66,12 @@
         }
         data_sources {
           config {
-            name: "org.chromium.trace_metadata"
-            chrome_config {
-              trace_config: "{\"record_mode\":\"record-continuously\",\"included_categories\":[\"audio\",\"media\",\"media_router\",\"toplevel\",\"toplevel.flow\",\"scheduler\",\"sequence_manager\",\"disabled-by-default-toplevel.flow\",\"base\",\"disabled-by-default-audio\",\"webaudio\",\"disabled-by-default-webaudio\",\"webaudio.audionode\",\"disabled-by-default-webaudio.audionode\",\"webrtc\",\"disabled-by-default-webrtc\",\"audio-worklet\",\"disabled-by-default-audio-worklet\",\"mediastream\",\"disabled-by-default-mediastream\",\"v8.gc\",\"disabled-by-default-v8.gc\",\"disabled-by-default-toplevel\",\"wakeup.flow\",\"disabled-by-default-wakeup.flow\",\"cpu_profiler\",\"disabled-by-default-cpu_profiler\",\"disabled-by-default-scheduler\",\"p2p\",\"disabled-by-default-p2p\",\"net\",\"disabled-by-default-net\",\"gpu\",\"gpu.capture\",\"disabled-by-default-video_and_image_capture\"],\"excluded_categories\":[\"*\"]}"
-              privacy_filtering_enabled: false
-              client_priority: USER_INITIATED
-            }
+            name: "org.chromium.trace_metadata2"
           }
         }
         data_sources {
           config {
             name: "org.chromium.sampler_profiler"
-            chrome_config {
-              trace_config: "{\"record_mode\":\"record-continuously\",\"included_categories\":[\"audio\",\"media\",\"media_router\",\"toplevel\",\"toplevel.flow\",\"scheduler\",\"sequence_manager\",\"disabled-by-default-toplevel.flow\",\"base\",\"disabled-by-default-audio\",\"webaudio\",\"disabled-by-default-webaudio\",\"webaudio.audionode\",\"disabled-by-default-webaudio.audionode\",\"webrtc\",\"disabled-by-default-webrtc\",\"audio-worklet\",\"disabled-by-default-audio-worklet\",\"mediastream\",\"disabled-by-default-mediastream\",\"v8.gc\",\"disabled-by-default-v8.gc\",\"disabled-by-default-toplevel\",\"wakeup.flow\",\"disabled-by-default-wakeup.flow\",\"cpu_profiler\",\"disabled-by-default-cpu_profiler\",\"disabled-by-default-scheduler\",\"p2p\",\"disabled-by-default-p2p\",\"net\",\"disabled-by-default-net\",\"gpu\",\"gpu.capture\",\"disabled-by-default-video_and_image_capture\"],\"excluded_categories\":[\"*\"]}"
-              privacy_filtering_enabled: false
-              client_priority: USER_INITIATED
-            }
           }
         }
         data_sources {
