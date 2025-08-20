@@ -12,6 +12,7 @@ from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
 
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
                                        LocalProbeResult, ProbeResult)
 
@@ -178,6 +179,13 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def teardown(self) -> ProbeResult:
     pass
+
+  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
+             **kwargs) -> None:
+    """
+    Called from the "probe" action in the ActionRunner.
+    """
+    raise RuntimeError(f"Invoke not implemented for probe: {self}")
 
 
 class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):

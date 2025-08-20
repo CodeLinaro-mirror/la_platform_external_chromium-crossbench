@@ -22,6 +22,7 @@ from crossbench.action_runner.action.meminfo import MeminfoAction
 from crossbench.action_runner.action.position import (CoordinatesConfig,
                                                       PositionConfig,
                                                       SelectorConfig)
+from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
@@ -34,6 +35,7 @@ from crossbench.action_runner.action.wait_for_element import \
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.probes.js import JSProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -1041,6 +1043,34 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaisesRegex(ValueError, "must specify at least one of"):
       MeminfoAction.parse_dict(config_dict)
 
+  def test_parse_probe_no_probe(self):
+    config_dict = {"action": "probe"}
+
+    with self.assertRaisesRegex(ValueError, "No value"):
+      ProbeAction.parse(config_dict)
+
+  def test_parse_probe_invalid_probe(self):
+    config_dict = {"action": "probe", "probe": "this is not a probe"}
+
+    with self.assertRaisesRegex(ValueError, "Invalid"):
+      ProbeAction.parse(config_dict)
+
+  def test_parse_probe_no_kwargs(self):
+    config_dict = {"action": "probe", "probe": "js"}
+
+    action = ProbeAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.PROBE)
+    self.assertEqual(action.probe_cls, JSProbe)
+    self.assertFalse(action.kwargs)
+
+  def test_parse_probe_with_kwargs(self):
+    kwargs = {"arg_one": 1, "arg_two": "two"}
+    config_dict = {"action": "probe", "probe": "js", "kwargs": kwargs}
+
+    action = ProbeAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.PROBE)
+    self.assertEqual(action.probe_cls, JSProbe)
+    self.assertDictEqual(action.kwargs, kwargs)
 
 class PositionConfigTestCase(unittest.TestCase):
 

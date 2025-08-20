@@ -201,6 +201,9 @@ class ActionRunner:
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)
 
+  def invoke_probe(self, run: Run, action: i_action.ProbeAction) -> None:
+    raise ActionNotImplementedError(self, action)
+
   def screenshot_impl(
       self,
       run: Run,

@@ -355,6 +355,18 @@ class DefaultActionRunner(ActionRunner):
             "action's duration otherwise the action may timeout.")
 
   @override
+  def invoke_probe(self, run: Run, action: i_action.ProbeAction) -> None:
+    ctx = run.find_probe_context(action.probe_cls)
+
+    if ctx is None:
+      raise RuntimeError(
+          f"No active probe for probe action: {action.probe_cls}")
+
+    with run.actions(f"Invoke Probe ({action.probe_cls.NAME})", measure=False):
+      ctx.invoke(
+          info_stack=self.info_stack, timeout=action.timeout, **action.kwargs)
+
+  @override
   def screenshot_impl(
       self,
       run: Run,
