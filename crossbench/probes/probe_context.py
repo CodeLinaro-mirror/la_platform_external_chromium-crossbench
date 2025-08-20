@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import datetime as dt
-from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
+from typing import (TYPE_CHECKING, Any, Generic, Iterable, Iterator, Optional,
                     TypeVar)
 
 from typing_extensions import override
@@ -179,6 +179,11 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def teardown(self) -> ProbeResult:
     pass
+
+  @classmethod
+  def expect_no_extra_kwargs(cls, kwargs: dict[str, Any]) -> None:
+    if kwargs:
+      raise RuntimeError(f"Got unexpected keyword arguments: {kwargs}")
 
   def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
              **kwargs) -> None:

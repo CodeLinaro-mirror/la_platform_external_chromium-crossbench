@@ -23,6 +23,7 @@ from crossbench.action_runner.action.position import (CoordinatesConfig,
                                                       PositionConfig,
                                                       SelectorConfig)
 from crossbench.action_runner.action.probe import ProbeAction
+from crossbench.action_runner.action.screenshot import ScreenshotAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
@@ -36,6 +37,7 @@ from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.probes.js import JSProbe
+from crossbench.probes.screenshot import ScreenshotProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -1071,6 +1073,15 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.PROBE)
     self.assertEqual(action.probe_cls, JSProbe)
     self.assertDictEqual(action.kwargs, kwargs)
+
+  def test_parse_screenshot(self):
+    config_dict = {"action": "screenshot"}
+    action = ScreenshotAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.SCREENSHOT)
+    self.assertEqual(action.probe_cls, ScreenshotProbe)
+    self.assertFalse(action.kwargs)
+
+
 
 class PositionConfigTestCase(unittest.TestCase):
 

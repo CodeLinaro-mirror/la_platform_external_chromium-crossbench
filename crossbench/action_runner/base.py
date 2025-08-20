@@ -16,6 +16,7 @@ from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.action.base_probe import BaseProbeAction
   from crossbench.action_runner.screenshot_annotation import \
       ScreenshotAnnotation
   from crossbench.benchmarks.loading.config.pages import ActionBlock
@@ -201,7 +202,7 @@ class ActionRunner:
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)
 
-  def invoke_probe(self, run: Run, action: i_action.ProbeAction) -> None:
+  def invoke_probe(self, run: Run, action: BaseProbeAction) -> None:
     raise ActionNotImplementedError(self, action)
 
   def screenshot_impl(
@@ -218,11 +219,6 @@ class ActionRunner:
 
   def failure_screenshot(self, run: Run, suffix: str) -> None:
     self.screenshot_impl(run, suffix, self._failure_screenshot_annotations)
-
-  def screenshot(self, run: Run, action: i_action.ScreenshotAction) -> None:
-    del action
-    with run.actions("Screenshot", measure=False):
-      self.screenshot_impl(run, "screenshot")
 
   def dump_html_impl(self, run: Run, suffix: str) -> None:
     del run, suffix

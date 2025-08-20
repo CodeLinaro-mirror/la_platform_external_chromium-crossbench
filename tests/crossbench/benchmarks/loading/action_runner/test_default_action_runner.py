@@ -11,6 +11,7 @@ from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.probes.js import JSProbe
 from crossbench.probes.probe import Probe
+from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
@@ -53,6 +54,13 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
     with self.assertRaisesRegex(MultiException,
                                 "Invoke not implemented for probe"):
       self.action_runner.run_block(self.run, action_block)
+
+  def test_probe_action_screenshot(self):
+    self.set_up_with_probe(ScreenshotProbe())
+    action_block = ActionBlock(
+        actions=[ProbeAction(probe="screenshot", kwargs={})])
+    self.action_runner.run_block(self.run, action_block)
+    self.assertEqual(len(self.platform.screenshots), 1)
 
 
 if __name__ == "__main__":

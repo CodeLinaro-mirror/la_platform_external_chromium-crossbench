@@ -25,6 +25,7 @@ from crossbench.probes.screenshot import (ScreenshotProbe,
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.action.base_probe import BaseProbeAction
   from crossbench.action_runner.bond_base import BondActionRunner
   from crossbench.action_runner.screenshot_annotation import \
       ScreenshotAnnotation
@@ -355,7 +356,7 @@ class DefaultActionRunner(ActionRunner):
             "action's duration otherwise the action may timeout.")
 
   @override
-  def invoke_probe(self, run: Run, action: i_action.ProbeAction) -> None:
+  def invoke_probe(self, run: Run, action: BaseProbeAction) -> None:
     ctx = run.find_probe_context(action.probe_cls)
 
     if ctx is None:
