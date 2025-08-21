@@ -13,6 +13,7 @@ from crossbench.flags.base import Flags
 from crossbench.probes.downloads import (DownloadsProbe,
                                          FileWatchDownloadsProbeContext)
 from crossbench.probes.js import JSProbe
+from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -96,6 +97,30 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
 
     with self.assertRaisesRegex(MultiException, "Waited for"):
       self.action_runner.run_block(self.run, action_block)
+
+  def test_probe_action_meminfo_no_kwargs(self):
+    self.set_up_with_probe(MeminfoProbe())
+    action_block = ActionBlock(
+        actions=[ProbeAction(probe="meminfo", kwargs={})])
+
+    self.action_runner.run_block(self.run, action_block)
+    self.assertEqual(self.browser.performance_marks[-1], "crossbench-meminfo")
+
+  def test_probe_action_meminfo_all_kwargs(self):
+    self.set_up_with_probe(MeminfoProbe())
+    action_block = ActionBlock(actions=[
+        ProbeAction(
+            probe="meminfo",
+            kwargs={
+                "browser": False,
+                "system": False,
+                "packages": [],
+                "title": ""
+            })
+    ])
+
+    self.action_runner.run_block(self.run, action_block)
+    self.assertEqual(self.browser.performance_marks[-1], "crossbench-meminfo")
 
 
 if __name__ == "__main__":

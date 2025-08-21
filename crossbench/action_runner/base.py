@@ -229,14 +229,6 @@ class ActionRunner:
     with run.actions("Dump HTML", measure=False):
       self.dump_html_impl(run, "dump")
 
-  def dump_meminfo_impl(self, run: Run, action: i_action.MeminfoAction) -> None:
-    del run, action
-    raise NotImplementedError("dump_meminfo_impl not implemented")
-
-  def dump_meminfo(self, run: Run, action: i_action.MeminfoAction) -> None:
-    with run.actions("Meminfo", measure=False):
-      self.dump_meminfo_impl(run, action)
-
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
       run.browser.show_url("about:blank")
