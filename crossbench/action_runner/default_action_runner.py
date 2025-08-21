@@ -17,7 +17,6 @@ from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
 from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
 
@@ -378,13 +377,3 @@ class DefaultActionRunner(ActionRunner):
       return
     assert isinstance(ctx, ScreenshotProbeContext)
     ctx.screenshot("_".join(self.info_stack) + f"_{suffix}", annotations)
-
-  @override
-  def dump_html_impl(self, run: Run, suffix: str) -> None:
-    ctx = run.find_probe_context(DumpHtmlProbe)
-    if not ctx:
-      logging.warning("No dump_html probe for dump on %s",
-                      repr(self.info_stack))
-      return
-    assert isinstance(ctx, DumpHtmlProbeContext)
-    ctx.dump_html("_".join(self.info_stack) + f"_{suffix}")

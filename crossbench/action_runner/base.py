@@ -220,15 +220,6 @@ class ActionRunner:
   def failure_screenshot(self, run: Run, suffix: str) -> None:
     self.screenshot_impl(run, suffix, self._failure_screenshot_annotations)
 
-  def dump_html_impl(self, run: Run, suffix: str) -> None:
-    del run, suffix
-    raise NotImplementedError("dump_html_impl not implemented")
-
-  def dump_html(self, run: Run, action: i_action.DumpHtmlAction) -> None:
-    del action
-    with run.actions("Dump HTML", measure=False):
-      self.dump_html_impl(run, "dump")
-
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
       run.browser.show_url("about:blank")

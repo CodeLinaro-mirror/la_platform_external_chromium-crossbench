@@ -12,6 +12,7 @@ from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.probes.downloads import (DownloadsProbe,
                                          FileWatchDownloadsProbeContext)
+from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.probe import Probe, ProbeContext
@@ -121,6 +122,15 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
 
     self.action_runner.run_block(self.run, action_block)
     self.assertEqual(self.browser.performance_marks[-1], "crossbench-meminfo")
+
+  def test_probe_action_dump_html(self):
+    self.set_up_with_probe(DumpHtmlProbe())
+    action_block = ActionBlock(
+        actions=[ProbeAction(probe="dump_html", kwargs={})])
+    self.browser.set_default_js_return(True)
+    self.action_runner.run_block(self.run, action_block)
+    self.assertEqual(self.browser.invoked_js[-1].script,
+                     "return document.children[0].outerHTML")
 
 
 if __name__ == "__main__":
