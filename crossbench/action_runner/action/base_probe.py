@@ -54,6 +54,9 @@ class BaseProbeAction(Action):
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
     action_runner.invoke_probe(run, self)
 
+  def kwargs_to_json(self) -> JsonDict:
+    return self.kwargs
+
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
@@ -62,5 +65,5 @@ class BaseProbeAction(Action):
     # action.
     details["type"] = str(ActionType.PROBE)
     details["probe"] = self.probe_cls.NAME
-    details["kwargs"] = self.kwargs
+    details["kwargs"] = self.kwargs_to_json()
     return details

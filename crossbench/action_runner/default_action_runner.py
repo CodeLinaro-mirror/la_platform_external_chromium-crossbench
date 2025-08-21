@@ -17,7 +17,6 @@ from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.probes.downloads import DownloadsProbe, DownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
 from crossbench.probes.meminfo import MeminfoProbe, MeminfoProbeContext
 from crossbench.probes.screenshot import (ScreenshotProbe,
@@ -400,17 +399,3 @@ class DefaultActionRunner(ActionRunner):
     assert isinstance(ctx, MeminfoProbeContext)
     ctx.dump_meminfo(action.timeout, action.browser, action.system,
                      action.packages, action.title, self.info_stack)
-
-  def wait_for_download(self, run: Run,
-                        action: i_action.WaitForDownloadAction) -> None:
-    with run.actions("WaitForDownload", measure=False):
-      ctx = run.find_probe_context(DownloadsProbe)
-      if not ctx:
-        raise RuntimeError("No downloads probe for wait_for_download on "
-                           f"{repr(self.info_stack)}")
-      assert isinstance(ctx, DownloadsProbeContext)
-
-      wait_range = run.wait_range(min_interval=0.2, timeout=action.timeout)
-      for _ in wait_range.wait_with_backoff():
-        if ctx.download_complete(action.pattern):
-          return

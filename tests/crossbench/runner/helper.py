@@ -131,12 +131,12 @@ class MockRun:
     self.did_teardown = True
 
   def wait_range(self,
-                 min_wait: AnyTimeUnit,
+                 min_interval: AnyTimeUnit,
                  timeout: AnyTimeUnit,
                  delay: AnyTimeUnit = 0) -> WaitRange:
     timing = self.timing
     return WaitRange(
-        min=timing.timedelta(min_wait),
+        min=timing.timedelta(min_interval),
         timeout=timing.timeout_timedelta(timeout),
         delay=timing.timedelta(delay))
 

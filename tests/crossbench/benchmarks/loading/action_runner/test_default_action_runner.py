@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import pathlib
+from typing import Any, Type
 
 from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -9,8 +10,10 @@ from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.browsers.settings import Settings
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
+from crossbench.probes.downloads import (DownloadsProbe,
+                                         FileWatchDownloadsProbeContext)
 from crossbench.probes.js import JSProbe
-from crossbench.probes.probe import Probe
+from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
@@ -23,7 +26,11 @@ from tests.crossbench.runner.helper import MockRun, MockRunner
 
 class DefaultActionRunnerTestCase(ActionRunnerTestCase):
 
-  def set_up_with_probe(self, probe: Probe) -> None:
+  def set_up_with_probe(
+      self,
+      probe: Probe,
+      probe_context_cls: Type[ProbeContext] | None = None,
+      probe_context_args: dict[str, Any] | None = None) -> None:
     pathlib.Path("/usr/bin").mkdir(parents=True, exist_ok=True)
     pathlib.Path("/usr/bin/google-chrome").write_text("definitely a browser")
 
@@ -44,7 +51,14 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         "run 1",
         self.action_runner,
         probe=self.probe)
-    self.probe_context = self.probe.get_context_cls()(self.probe, self.run)
+
+    if not probe_context_cls:
+      self.probe_context = self.probe.get_context(self.run)
+    else:
+      self.probe_context = probe_context_cls(
+          self.probe, self.run,
+          **(probe_context_args if probe_context_args else {}))
+
     self.run.set_probe_context(self.probe_context)
 
   def test_probe_action_unsupported_probe(self):
@@ -61,6 +75,27 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         actions=[ProbeAction(probe="screenshot", kwargs={})])
     self.action_runner.run_block(self.run, action_block)
     self.assertEqual(len(self.platform.screenshots), 1)
+
+  def test_probe_action_wait_for_download_missing_pattern(self):
+    self.set_up_with_probe(DownloadsProbe(), FileWatchDownloadsProbeContext,
+                           {"downloads_dir": "/Downloads"})
+    action_block = ActionBlock(
+        actions=[ProbeAction(probe="downloads", kwargs={})])
+
+    with self.assertRaisesRegex(MultiException, "pattern"):
+      self.action_runner.run_block(self.run, action_block)
+
+  def test_probe_action_wait_for_download(self):
+    downloads_dir = pathlib.Path("/Downloads")
+    downloads_dir.mkdir()
+    self.set_up_with_probe(DownloadsProbe(), FileWatchDownloadsProbeContext,
+                           {"downloads_dir": downloads_dir})
+    action_block = ActionBlock(actions=[
+        ProbeAction(probe="downloads", kwargs={"pattern": "a_download"})
+    ])
+
+    with self.assertRaisesRegex(MultiException, "Waited for"):
+      self.action_runner.run_block(self.run, action_block)
 
 
 if __name__ == "__main__":
