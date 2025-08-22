@@ -5,12 +5,16 @@
 from __future__ import annotations
 
 import abc
+import datetime as dt
 import re
 import shlex
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Set
 
+from typing_extensions import override
+
 import crossbench.path as pth
+from crossbench import exception
 from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
@@ -84,9 +88,28 @@ class DownloadsProbeContext(ProbeContext[DownloadsProbe]):
     self.browser_platform.mkdir(downloads_dir)
     return downloads_dir
 
+  @override
+  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
+             **kwargs) -> None:
+    del info_stack
+    self._wait_for_download(timeout, **kwargs)
+
+  def _wait_for_download(self, timeout: dt.timedelta, pattern: str | re.Pattern,
+                         **kwargs) -> None:
+    self.expect_no_extra_kwargs(kwargs)
+
+    if not isinstance(pattern, re.Pattern):
+      pattern = re.compile(pattern)
+
+    wait_range = self.run.wait_range(min_interval=0.2, timeout=timeout)
+    for _ in wait_range.wait_with_backoff():
+      if self.download_complete(pattern):
+        return
+
   @abc.abstractmethod
   def download_complete(self, pattern: re.Pattern) -> bool:
     pass
+
 
 
 class FileWatchDownloadsProbeContext(DownloadsProbeContext):
@@ -125,6 +148,7 @@ class FileWatchDownloadsProbeContext(DownloadsProbeContext):
   def teardown(self) -> ProbeResult:
     return self.browser_result(file=self._results)
 
+  @override
   def download_complete(self, pattern: re.Pattern) -> bool:
     return any(pattern.search(file.name) for file in self.downloads())
 
@@ -204,6 +228,7 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
   def teardown(self) -> ProbeResult:
     return self.browser_result(file=self._results)
 
+  @override
   def download_complete(self, pattern: re.Pattern) -> bool:
     downloads = self.downloads(include_pending=False)
     return any(pattern.search(download.display_name) for download in downloads)

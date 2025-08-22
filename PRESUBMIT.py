@@ -26,7 +26,7 @@ def SourceFileFilter(input_api):
 def GlobalSkipChecks(input_api, file_path: str):
   if input_api.fnmatch.fnmatch(file_path, "*protoc/gen/*"):
     return True
-  if input_api.fnmatch.fnmatch(file_path, "*third_party/*"):
+  if input_api.fnmatch.fnmatch(file_path, "*crossbench/third_party/*"):
     return True
   return False
 
