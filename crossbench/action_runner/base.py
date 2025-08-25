@@ -16,6 +16,7 @@ from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.action.base_probe import BaseProbeAction
   from crossbench.action_runner.screenshot_annotation import \
       ScreenshotAnnotation
   from crossbench.benchmarks.loading.config.pages import ActionBlock
@@ -201,6 +202,9 @@ class ActionRunner:
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     raise ActionNotImplementedError(self, action)
 
+  def invoke_probe(self, run: Run, action: BaseProbeAction) -> None:
+    raise ActionNotImplementedError(self, action)
+
   def screenshot_impl(
       self,
       run: Run,
@@ -215,28 +219,6 @@ class ActionRunner:
 
   def failure_screenshot(self, run: Run, suffix: str) -> None:
     self.screenshot_impl(run, suffix, self._failure_screenshot_annotations)
-
-  def screenshot(self, run: Run, action: i_action.ScreenshotAction) -> None:
-    del action
-    with run.actions("Screenshot", measure=False):
-      self.screenshot_impl(run, "screenshot")
-
-  def dump_html_impl(self, run: Run, suffix: str) -> None:
-    del run, suffix
-    raise NotImplementedError("dump_html_impl not implemented")
-
-  def dump_html(self, run: Run, action: i_action.DumpHtmlAction) -> None:
-    del action
-    with run.actions("Dump HTML", measure=False):
-      self.dump_html_impl(run, "dump")
-
-  def dump_meminfo_impl(self, run: Run, action: i_action.MeminfoAction) -> None:
-    del run, action
-    raise NotImplementedError("dump_meminfo_impl not implemented")
-
-  def dump_meminfo(self, run: Run, action: i_action.MeminfoAction) -> None:
-    with run.actions("Meminfo", measure=False):
-      self.dump_meminfo_impl(run, action)
 
   def _maybe_navigate_to_about_blank(self, run: Run, page: Page) -> None:
     if duration := page.about_blank_duration:
@@ -339,7 +321,4 @@ class ActionRunner:
     raise ActionNotImplementedError(self, action)
 
   def close_all_tabs(self, run: Run, action: i_action.CloseAllTabsAction):
-    raise ActionNotImplementedError(self, action)
-
-  def wait_for_download(self, run: Run, action: i_action.WaitForDownloadAction):
     raise ActionNotImplementedError(self, action)

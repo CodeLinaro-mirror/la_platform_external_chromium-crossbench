@@ -150,6 +150,7 @@ class MockPlatformMixin:
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
+    self.screenshots: list[pth.AnyPath] = []
     super().__init__(*args, **kwargs)
 
   @property
@@ -409,6 +410,10 @@ class MockPlatformMixin:
         "cached_kernel_kb": 3,
         "free_kb": 2,
     }
+
+  @override
+  def screenshot(self, result_path: pth.AnyPath) -> None:
+    self.screenshots.append(result_path)
 
 
 class MockFd:

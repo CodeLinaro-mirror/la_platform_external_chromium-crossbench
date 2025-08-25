@@ -48,7 +48,7 @@ class ChromiumBasedWebDriver(
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
-    self._script_identifier_kwargs: dict[Any, Any] | None = None
+    self._script_id_kwargs_by_window_id: dict[str, Any] = {}
     self._tracer: DevToolsTracer | None = None
     self._stdout_log_file: TextIO | None = None
 
@@ -210,17 +210,18 @@ class ChromiumBasedWebDriver(
 
   @override
   def run_script_on_new_document(self, script: str) -> None:
-    if self._script_identifier_kwargs is not None:
+    window_id = self.current_window_id()
+    if window_id in self._script_id_kwargs_by_window_id:
       self._execute_cdp_cmd(self._private_driver,
                             "Page.removeScriptToEvaluateOnNewDocument",
-                            self._script_identifier_kwargs)
-    self._script_identifier_kwargs = self._execute_cdp_cmd(
+                            self._script_id_kwargs_by_window_id[window_id])
+    self._script_id_kwargs_by_window_id[window_id] = self._execute_cdp_cmd(
         self._private_driver, "Page.addScriptToEvaluateOnNewDocument",
         {"source": script})
 
   @override
   def quit(self) -> None:
-    self._script_identifier_kwargs = None
+    self._script_id_kwargs_by_window_id.clear()
     super().quit()
 
   @override
