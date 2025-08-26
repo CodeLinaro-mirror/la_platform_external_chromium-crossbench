@@ -505,6 +505,9 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def setup_expected_google_login_js(self):
     expected_scripts: list[JsInvocation] = [
+        # Wait for readystate interactive
+        JsInvocation(True),
+
         # Wait for email field
         JsInvocation(True, re.compile(r".*Email or phone.*")),
         # Click submit email

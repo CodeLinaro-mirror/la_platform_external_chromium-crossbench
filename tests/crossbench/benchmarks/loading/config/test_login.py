@@ -64,6 +64,9 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.run = MockRun(self.runner, self.session, "run 1", self.action_runner)
 
   def expect_successful_google_login(self):
+    # Wait for readystate interactive
+    self.browser.expect_js(result=True)
+
     # Wait for email field
     self.browser.expect_js(result=True)
     # Click submit email
@@ -115,6 +118,9 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
   def test_full_account_maintenance_flow(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
     page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
+
+    # Wait for readystate interactive
+    self.browser.expect_js(result=True)
 
     # Wait for email field
     self.browser.expect_js(result=True)
