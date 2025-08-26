@@ -360,9 +360,7 @@ class WprReplayServer(WprBase):
                platform: Platform = PLATFORM) -> None:
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, platform)
-    self._rules_file: AnyPath | None = None
-    if rules_file:
-      self._rules_file = PathParser.non_empty_file_path(rules_file)
+    self._rules_file: AnyPath | None = rules_file
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 

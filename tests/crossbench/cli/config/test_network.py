@@ -241,7 +241,10 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       NetworkConfig.parse({"type": "live", "run_on_device": True})
     self.assertIn("can only be used for the WPR", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      NetworkConfig.parse({"type": "live", "skip_injection": True})
+      NetworkConfig.parse({
+          "type": "live",
+          "skip_deterministic_script_injection": True
+      })
     self.assertIn("can only be used for the WPR", str(cm.exception))
 
   def test_parse_dict_local(self):

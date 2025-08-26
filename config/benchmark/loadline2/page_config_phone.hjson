@@ -2,11 +2,6 @@
   pages: {
     amazon_product: [
       {
-        action: inject_new_document_script
-        script_path: amazon_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
@@ -33,11 +28,6 @@
       }
     ]
     cnn_article: [
-      {
-        action: inject_new_document_script
-        script_path: cnn_instrumentation.js
-        timeout: 5s
-      }
       {
         action: js
         script:
@@ -66,11 +56,6 @@
     ]
     wikipedia_article: [
       {
-        action: inject_new_document_script
-        script_path: wiki_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
@@ -98,11 +83,6 @@
     ]
     globo_homepage: [
       {
-        action: inject_new_document_script
-        script_path: globo_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
@@ -129,11 +109,6 @@
       }
     ]
     google_search_result: [
-      {
-        action: inject_new_document_script
-        script_path: google_search_instrumentation.js
-        timeout: 5s
-      }
       {
         action: js
         script:
