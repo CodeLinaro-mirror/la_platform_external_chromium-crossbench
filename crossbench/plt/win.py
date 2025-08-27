@@ -59,12 +59,12 @@ class WinPlatform(Platform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+  def version(self) -> str:
     return self.cmd_stdout("ver").strip()
 
   @functools.cached_property
   @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+  def cpu(self) -> str:
     return self.powershell_stdout(
         "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
     ).strip().splitlines()[2].strip()

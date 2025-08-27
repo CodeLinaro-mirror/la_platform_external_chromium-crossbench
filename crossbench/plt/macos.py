@@ -105,12 +105,12 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:  #pylint: disable=invalid-overridden-method
+  def device(self) -> str:
     return self.sh_stdout("sysctl", "-n", "hw.model").strip()
 
   @functools.cached_property
   @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+  def cpu(self) -> str:
     brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
     num_cores = self.cpu_cores(logical=True)
     return f"{brand} {num_cores} cores"

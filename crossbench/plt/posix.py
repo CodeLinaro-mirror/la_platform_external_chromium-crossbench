@@ -44,7 +44,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @functools.cached_property
   @override
-  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+  def version(self) -> str:
     return self.sh_stdout("uname", "-r").strip()
 
   @functools.lru_cache(maxsize=1)
@@ -55,7 +55,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @functools.cached_property
   @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+  def cpu(self) -> str:
     cpu_str = "UNKNOWN"
     for line in self.cat(self.path("/proc/cpuinfo")).splitlines():
       if line.startswith("model name"):
