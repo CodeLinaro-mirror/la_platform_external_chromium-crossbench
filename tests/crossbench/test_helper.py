@@ -259,7 +259,7 @@ class GroupByTestCase(unittest.TestCase):
     }, grouped)
 
   def test_custom_group(self):
-    grouped: dict[str, list[Any]] = collection_helper.group_by(
+    grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
         [1, 1, 1, 2, 2, 3], key=str, group=lambda key: ["custom"])
     self.assertDictEqual(
         {
@@ -269,7 +269,7 @@ class GroupByTestCase(unittest.TestCase):
         }, grouped)
 
   def test_custom_group_out_of_order(self):
-    grouped: dict[str, list[Any]] = collection_helper.group_by(
+    grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
         [1, 1, 1, 3, 2, 2], key=str, group=lambda key: ["custom"])
     self.assertDictEqual(
         {

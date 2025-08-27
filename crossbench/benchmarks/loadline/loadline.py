@@ -33,7 +33,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
   BENCHMARK_NAME: str = "LoadLine"
   BENCHMARK_VERSION: str = ""
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
     self._scores_file: Optional[pth.LocalPath] = None
     self._breakdown_file: Optional[pth.LocalPath] = None
