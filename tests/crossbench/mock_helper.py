@@ -195,7 +195,8 @@ class MockPlatformMixin:
     return path
 
   def expect_sh(
-      self, *args: CmdArg, result: bytes | str | ShResult = ShResult()) -> None:
+      self, *args: CmdArg | int,
+      result: bytes | str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
@@ -207,7 +208,7 @@ class MockPlatformMixin:
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
-  def _convert_sh_args(self, *args: CmdArg) -> TupleCmdArgs:
+  def _convert_sh_args(self, *args: CmdArg | int) -> TupleCmdArgs:
     converted_args : ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):

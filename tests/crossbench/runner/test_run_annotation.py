@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from typing import MutableSet
 
 from ordered_set import OrderedSet
 
@@ -62,7 +63,7 @@ class RunAnnotationTestCase(unittest.TestCase):
       annotation.log()
 
   def test_log_all(self):
-    annotations = OrderedSet()
+    annotations: MutableSet[RunAnnotation] = OrderedSet()
     for level in WarnLevel:
       for i in range(10):
         annotations.add(RunAnnotation(f"Annotation {level.name} {i}", level))

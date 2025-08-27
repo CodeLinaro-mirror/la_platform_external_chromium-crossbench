@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Type
 from unittest import mock
 
 import hjson
@@ -59,7 +59,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   @override
   def setUp(self):
     super().setUp()
-    self.browser_lookup: dict[str, tuple[
+    self.browser_lookup: Mapping[str, tuple[
         Type[mock_browser.MockBrowser], BrowserConfig]] = {
             "chr-stable":
                 (mock_browser.MockChromeStable,
@@ -279,6 +279,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("chrome-stable-custom", message)
 
   def test_parse_invalid_browser_type(self):
+    invalid: Any
     for invalid in (None, 1, []):
       with self.assertRaises(ConfigError) as cm:
         _ = BrowserVariantsConfigDict(

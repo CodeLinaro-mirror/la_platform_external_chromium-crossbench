@@ -12,7 +12,7 @@ import json
 import pathlib
 import re
 import unittest
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -639,6 +639,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 class ActionBlockListConfigTestCase(unittest.TestCase):
 
   def test_parse_invalid(self):
+    invalid: Any
     for invalid in ("", (), {}, 1):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):

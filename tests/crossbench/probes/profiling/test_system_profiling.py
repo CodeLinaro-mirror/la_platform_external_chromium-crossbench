@@ -41,10 +41,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
-            cpus=None,
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-t", "5678", "--call-graph", "dwarf",
                 "--post-unwind=yes", "-o", output_path
@@ -61,10 +61,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
-            cpus=None,
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-p", "1234", "--call-graph", "dwarf",
                 "--post-unwind=yes", "-o", output_path
@@ -81,10 +81,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
-            cpus=None,
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "--app", "com.chrome.beta",
                 "--call-graph", "dwarf", "--post-unwind=yes", "-o", output_path
@@ -101,10 +101,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.DWARF,
             frequency=None,
             count=None,
-            cpus=None,
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "dwarf",
                 "--post-unwind=yes", "-o", output_path
@@ -121,10 +121,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.FRAME_POINTER,
             frequency=1234,
             count=None,
-            cpus=None,
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
                 "1234", "-o", output_path
@@ -141,10 +141,10 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.FRAME_POINTER,
             frequency=None,
             count=5,
-            cpus=None,
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "-c", "5",
                 "-o", output_path
@@ -161,10 +161,14 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.FRAME_POINTER,
             frequency=None,
             count=None,
-            cpus=[0, 1, 2],
-            events=None,
-            grouped_events=None,
-            add_counters=None,
+            cpus=(
+                0,
+                1,
+                2,
+            ),
+            events=tuple(),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "--call-graph", "fp", "--cpu",
                 "0,1,2", "-o", output_path
@@ -181,10 +185,13 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
             frequency=1234,
             count=5,
-            cpus=None,
-            events=["cpu-cycles", "instructions"],
-            grouped_events=None,
-            add_counters=None,
+            cpus=tuple(),
+            events=(
+                "cpu-cycles",
+                "instructions",
+            ),
+            grouped_events=tuple(),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "-f", "1234", "-c", "5", "-e",
                 "cpu-cycles,instructions", "-o", output_path
@@ -201,10 +208,13 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
             frequency=1234,
             count=5,
-            cpus=None,
-            events=None,
-            grouped_events=["cpu-cycles", "instructions"],
-            add_counters=None,
+            cpus=tuple(),
+            events=tuple(),
+            grouped_events=(
+                "cpu-cycles",
+                "instructions",
+            ),
+            add_counters=tuple(),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "-f", "1234", "-c", "5",
                 "--group", "cpu-cycles,instructions", "-o", output_path
@@ -221,10 +231,13 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
             frequency=1234,
             count=5,
-            cpus=None,
-            events=["sched:sched_switch"],
-            grouped_events=None,
-            add_counters=["cpu-cycles", "instructions"],
+            cpus=tuple(),
+            events=("sched:sched_switch",),
+            grouped_events=tuple(),
+            add_counters=(
+                "cpu-cycles",
+                "instructions",
+            ),
             output_path=output_path), [
                 "simpleperf", "record", "-a", "-f", "1234", "-c", "5", "-e",
                 "sched:sched_switch", "--add-counter",

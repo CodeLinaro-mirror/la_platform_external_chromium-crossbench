@@ -67,7 +67,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         element_rect=DisplayRectangle(Point(196, 196), 8, 8))
 
     element_center = config.element_center()
-    self.assertTrue(element_center)
+    assert element_center
     self.assertEqual(element_center.x, 50)
     self.assertEqual(element_center.y, 50)
 
@@ -82,7 +82,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         element_rect=DisplayRectangle(Point(99, 99), 2, 2))
 
     element_center = config.element_center()
-    self.assertTrue(element_center)
+    assert element_center
     self.assertEqual(element_center.x, 300)
     self.assertEqual(element_center.y, 300)
 
@@ -96,7 +96,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         element_rect=DisplayRectangle(Point(49, 49), 2, 2))
 
     element_center = config.element_center()
-    self.assertTrue(element_center)
+    assert element_center
     self.assertEqual(element_center.x, 150)
     self.assertEqual(element_center.y, 250)
 
@@ -108,7 +108,7 @@ class ViewportInfoTestCase(unittest.TestCase):
         element_rect=DisplayRectangle(Point(10, 20), 80, 70))
 
     element_center = config.element_center()
-    self.assertTrue(element_center)
+    assert element_center
     self.assertEqual(element_center.x, 50)
     self.assertEqual(element_center.y, 55)
 

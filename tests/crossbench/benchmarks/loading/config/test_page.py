@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import unittest
+from typing import Any
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
@@ -102,6 +103,7 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.any_label, "b.com")
 
   def test_parse_invalid(self):
+    invalid: Any
     for invalid in ("", {}, [], None):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -189,6 +191,7 @@ class PageConfigTestsCase(unittest.TestCase):
     }
     config = PageConfig.parse(config_data)
     login = config.login
+    assert login
     self.assertTrue(login.is_login)
     self.assertIsNone(config.setup)
     self.assertIsNone(config.teardown)
@@ -224,6 +227,7 @@ class PageConfigTestsCase(unittest.TestCase):
     config_data = {"login": "google", "urls": ["http://test.com/charts",]}
     config = PageConfig.parse(config_data)
     login = config.login
+    assert login
     self.assertTrue(login.is_login)
     self.assertIsInstance(login, GoogleLogin)
     self.assertIsNone(config.setup)

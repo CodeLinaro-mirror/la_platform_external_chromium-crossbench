@@ -10,6 +10,7 @@ from unittest import mock
 
 import hjson
 
+from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
@@ -237,7 +238,7 @@ class CliSlowTestCase(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    browsers = []
+    browsers: list[Browser] = []
 
     def get_browser(self, args: argparse.Namespace):
       session = Settings(

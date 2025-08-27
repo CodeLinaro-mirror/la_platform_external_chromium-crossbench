@@ -328,7 +328,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}}
+    config_data: dict[str, dict] = {"probes": {}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
@@ -342,7 +342,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_invalid_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {"invalid probe name": {}}}
+    config_data: dict[str, dict] = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self._patch_get_browser():
@@ -372,7 +372,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_probe_config_file_invalid_probe(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {"invalid probe name": {}}}
+    config_data: dict[str, dict] = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -383,7 +383,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_empty_config_file_properties(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}, "network": {}}
+    config_data: dict[str, dict] = {
+        "probes": {},
+        "env": {},
+        "browsers": {},
+        "network": {}
+    }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -395,7 +400,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_empty_config_files(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {}
+    config_data: dict[str, dict] = {}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -407,7 +412,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_conflicting_config_flags(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}, "network": {}}
+    config_data: dict[str, dict] = {
+        "probes": {},
+        "env": {},
+        "browsers": {},
+        "network": {}
+    }
     for config_flag in ("--probe-config", "--env-config", "--browser-config",
                         "--network-config"):
       with config_file.open("w", encoding="utf-8") as f:

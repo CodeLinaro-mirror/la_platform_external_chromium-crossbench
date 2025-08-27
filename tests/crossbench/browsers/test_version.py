@@ -26,9 +26,9 @@ from tests import test_helper
 class BrowserVersionChannelTestCase(unittest.TestCase):
 
   def test_unique(self):
-    channels = set()
-    names = set()
-    indices = set()
+    channels: set[BrowserVersionChannel] = set()
+    names: set[str] = set()
+    indices: set[int] = set()
     for channel in BrowserVersionChannel:
       self.assertNotIn(channel, channels)
       self.assertNotIn(channel.name, names)

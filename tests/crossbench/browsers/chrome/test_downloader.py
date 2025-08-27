@@ -39,7 +39,7 @@ class AbstractChromeDownloaderTestCase(
       ChromeDownloader.load(pathlib.Path("custom"), self.platform)
 
   def test_load_valid_non_googler(self) -> None:
-    self.platform.which = lambda x: None
+    self.platform.which = lambda binary_name: None
     with self.assertRaises(ValueError):
       ChromeDownloader.load("chrome-111.0.5563.110", self.platform)
 
