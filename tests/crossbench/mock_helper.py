@@ -562,6 +562,6 @@ class MockCLI(CrossBenchCLI):
   runner: Runner
   platform: Platform
 
-  def __init__(self, *args, **kwargs) -> None:
-    self.platform = kwargs.pop("platform")
-    super().__init__(*args, **kwargs)
+  def __init__(self, platform: Platform, enable_logging: bool = True) -> None:
+    self.platform = platform
+    super().__init__(enable_logging=enable_logging)
