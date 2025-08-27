@@ -118,7 +118,7 @@ class IOSPlatform(MacOSPlatform):
 
   @property
   @override
-  def version(self) -> str:
+  def version_str(self) -> str:
     return self._device.version
 
   @functools.lru_cache(maxsize=1)

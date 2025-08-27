@@ -192,13 +192,10 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   @override
   def setUp(self) -> None:
     super().setUp()
-
     # tabulate and textwrap can be slow for tests, let's mock them out.
     self.setup_tabulate_patcher()
     self.setup_wrap_patcher()
-
     self.setup_wait_for_ready_state_patcher()
-
     self.setup_loadline_configs()
 
   def setup_tabulate_patcher(self) -> None:

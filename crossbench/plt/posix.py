@@ -44,7 +44,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @functools.cached_property
   @override
-  def version(self) -> str:
+  def version_str(self) -> str:
     return self.sh_stdout("uname", "-r").strip()
 
   @functools.lru_cache(maxsize=1)

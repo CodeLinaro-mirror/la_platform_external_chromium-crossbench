@@ -913,8 +913,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(self.platform.name, "macos")
 
   def test_version(self):
-    self.assertTrue(self.platform.version)
-    self.assertRegex(self.platform.version, r"[0-9]+\.[0-9]")
+    self.assertTrue(self.platform.version_str)
+    self.assertRegex(self.platform.version_str, r"[0-9]+\.[0-9]")
 
   def test_device(self):
     self.assertTrue(self.platform.device)
@@ -1007,7 +1007,7 @@ class WinNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertIn(self.platform.has_display, (True, False))
 
   def test_version(self):
-    self.assertTrue(self.platform.version)
+    self.assertTrue(self.platform.version_str)
 
 
 if __name__ == "__main__":

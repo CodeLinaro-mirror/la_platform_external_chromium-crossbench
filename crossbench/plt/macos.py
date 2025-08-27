@@ -96,12 +96,12 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:
+  def version_str(self) -> str:
     return self.sh_stdout("sw_vers", "-productVersion").strip()
 
   @functools.cached_property
   def version_parts(self) -> tuple[int, ...]:
-    return tuple(map(int, self.version.split(".")))
+    return tuple(map(int, self.version_str.split(".")))
 
   @functools.cached_property
   @override

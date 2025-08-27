@@ -577,7 +577,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:
+  def version_str(self) -> str:
     return str(self.adb.build_version)
 
   @functools.cached_property

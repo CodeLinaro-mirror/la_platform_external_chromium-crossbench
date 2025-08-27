@@ -257,7 +257,7 @@ class MockPlatformMixin:
     self._machine_arch = value
 
   @property
-  def version(self) -> str:
+  def version_str(self) -> str:
     return "1.2.3.4.5"
 
   @property

@@ -59,7 +59,7 @@ class WinPlatform(Platform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:
+  def version_str(self) -> str:
     return self.cmd_stdout("ver").strip()
 
   @functools.cached_property
