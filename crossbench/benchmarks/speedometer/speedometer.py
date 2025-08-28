@@ -191,14 +191,12 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
       params["iterationCount"] = str(self.iterations)
     return params
 
-
   @override
   def setup(self, run: Run) -> None:
     updated_url = self.get_run_url(run)
     with run.actions("Setup") as actions:
       actions.show_url(updated_url)
-      actions.wait_js_condition(
-          "return window.Suites !== undefined;", 0.5, timeout=10)
+      self._wait_for_ready(actions)
       self._setup_substories(actions)
       self._setup_benchmark_client(actions)
       actions.wait(0.5)
@@ -210,6 +208,10 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
     if url != self.url:
       logging.info("CUSTOM URL: %s", url)
     return url
+
+  def _wait_for_ready(self, actions: Actions) -> None:
+    actions.wait_js_condition(
+        "return window.Suites !== undefined;", 0.5, timeout=10)
 
   def _setup_substories(self, actions: Actions) -> None:
     if self._substories == self.SUBSTORIES:

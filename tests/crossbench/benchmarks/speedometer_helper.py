@@ -2,25 +2,31 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import abc
 import argparse
 import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import Optional, Sequence, Type
+from typing import TYPE_CHECKING, Optional, Sequence, Type
 from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.action_runner.config import ActionRunnerConfig
-from crossbench.benchmarks.speedometer.speedometer import (
-    SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
-    SpeedometerStory)
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
+if TYPE_CHECKING:
+  from crossbench.action_runner.config import ActionRunnerConfig
+  from crossbench.benchmarks.speedometer.speedometer import (
+      SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
+      SpeedometerStory)
+  from crossbench.stories.story import Story
+  from crossbench.types import Json
+  from tests.crossbench.mock_browser import MockBrowser
 
 class SpeedometerBaseTestCase(
     helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta):
@@ -166,21 +172,12 @@ class SpeedometerBaseTestCase(
             iterations, story)
 
         for browser in self.browsers:
-          # Page is ready
-          browser.expect_js(result=True)
-          # _setup_substories
-          browser.expect_js()
-          # _setup_benchmark_client
-          browser.expect_js()
-          # _run_stories
-          browser.expect_js()
-          # Wait until done
-          browser.expect_js(result=True)
-          browser.expect_js(result=json.dumps(speedometer_probe_results))
+          self._setup_run_js_expect(browser, speedometer_probe_results)
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    benchmark = self.benchmark_cls(stories, custom_url=custom_url)  # pytype: disable=not-instantiable
+    benchmark: SpeedometerBenchmark = self.benchmark_cls(
+        stories, custom_url=custom_url)  # pytype: disable=not-instantiable
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,
@@ -197,6 +194,20 @@ class SpeedometerBaseTestCase(
       runner.run()
     cm.assert_called_once()
     return runner
+
+  def _setup_run_js_expect(self, browser: MockBrowser,
+                           speedometer_probe_results: Json) -> None:
+    # Page is ready
+    browser.expect_js(result=True)
+    # _setup_substories
+    browser.expect_js()
+    # _setup_benchmark_client
+    browser.expect_js()
+    # _run_stories
+    browser.expect_js()
+    # Wait until done
+    browser.expect_js(result=True)
+    browser.expect_js(result=json.dumps(speedometer_probe_results))
 
   @abc.abstractmethod
   def _generate_test_probe_results(self, iterations, story):
@@ -341,7 +352,7 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
   }
 
   @override
-  def _generate_test_probe_results(self, iterations, story):
+  def _generate_test_probe_results(self, iterations: int, story: Story) -> Json:
     return [{
         "tests": {
             substory_name: copy.deepcopy(self.EXAMPLE_STORY_DATA)

@@ -2,10 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import annotations
+
 import datetime as dt
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -23,13 +25,16 @@ from crossbench.benchmarks.speedometer.speedometer_3_1 import (
     Speedometer31Benchmark, Speedometer31Probe, Speedometer31ProbeContext,
     Speedometer31Story)
 from crossbench.benchmarks.speedometer.speedometer_main import (
-    SpeedometerMainBenchmark, SpeedometerMainProbe, SpeedometerMainProbeContext,
-    SpeedometerMainStory)
+    SpeedometerMainBenchmark, SpeedometerMainProbe,
+    SpeedometerMainProbeContext, SpeedometerMainStory)
 from crossbench.browsers.viewport import Viewport
 from tests import test_helper
 from tests.crossbench.benchmarks.speedometer_helper import (
     Speedometer2BaseTestCase, SpeedometerBaseTestCase)
 
+if TYPE_CHECKING:
+  from crossbench.types import Json
+  from tests.crossbench.mock_browser import MockBrowser
 
 class Speedometer20TestCase(Speedometer2BaseTestCase):
 
@@ -102,6 +107,18 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
   def name_all(self):
     return "all"
 
+  def _setup_run_js_expect(self, browser: MockBrowser,
+                           speedometer_probe_results: Json) -> None:
+    # Page is ready
+    browser.expect_js(result=True)
+    # _setup_benchmark_client
+    browser.expect_js()
+    # _run_stories
+    browser.expect_js()
+    # Wait until done
+    browser.expect_js(result=True)
+    browser.expect_js(result=json.dumps(speedometer_probe_results))
+
   @dataclass
   class Namespace(SpeedometerBaseTestCase.Namespace):
     sync_wait = dt.timedelta(0)
@@ -130,7 +147,7 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     }
 
   @override
-  def _generate_test_probe_results(self, iterations, story):
+  def _generate_test_probe_results(self, iterations, story) -> Json:
     values = [21.3] * iterations
     probe_result = {}
     for substory_name in story.substories:
