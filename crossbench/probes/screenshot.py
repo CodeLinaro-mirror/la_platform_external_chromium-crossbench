@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Optional, Self, Sequence, Type
 
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.action_runner.screenshot_annotation import (
     ScreenshotAnnotation, annotate_screenshot_svg)
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -90,6 +91,12 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
     svg_path = self.result_path / f"{label}.svg"
     self.browser_platform.write_text(svg_path, svg)
     self._results.append(svg_path)
+
+  @override
+  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
+             **kwargs) -> None:
+    self.expect_no_extra_kwargs(kwargs)
+    self.screenshot()
 
   def screenshot(
       self,

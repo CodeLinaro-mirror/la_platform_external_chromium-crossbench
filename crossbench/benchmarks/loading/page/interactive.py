@@ -13,6 +13,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
@@ -97,7 +98,8 @@ class InteractivePage(Page):
       logging.error("Failed to take a failure screenshot: %s", str(e))
 
     try:
-      action_runner.dump_html_impl(run, message)
+      action_runner.invoke_probe(
+          run, ProbeAction(probe="dump_html", kwargs={"suffix": message}))
     except Exception as e:  # pylint: disable=broad-except
       logging.error("Failed to dump HTML on failure: %s", str(e))
 
