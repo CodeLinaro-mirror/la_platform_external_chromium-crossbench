@@ -38,17 +38,23 @@ def _verify_default_metrics(out_dir, only_total=False):
   result_csv = out_dir / "benchmark_score.csv"
   with result_csv.open() as csv:
     lines = csv.readlines()
-    assert len(lines) == 2
+    assert len(lines) == 12
 
     titles = lines[0].split(",")
-    assert len(titles) == 7
-    assert titles[0] == "browser"
-    assert titles[1] == "TOTAL_SCORE"
+    assert len(titles) == 2
+    assert titles[0] == "Metric"
 
-    values = lines[1].split(",")
-    assert len(values) == 7
-    values_to_check = values[1:2] if only_total else values[1:]
-    for value in values_to_check:
+    metrics = dict(line.split(",") for line in lines[1:])
+
+    assert "TOTAL_SCORE" in metrics, f"Total score missing: {lines}"
+    value = metrics["TOTAL_SCORE"]
+    assert value, f"Encountered empty value. CSV contents: {lines}"
+    assert float(value) > 0, f"Expected positive number, but got {value}"
+    if only_total:
+      return
+
+    for metric, value in metrics:
+      assert metric, f"Encountered empty metric name. CSV contents: {lines}"
       assert value, f"Encountered empty value. CSV contents: {lines}"
       assert float(value) > 0, f"Expected positive number, but got {value}"
 

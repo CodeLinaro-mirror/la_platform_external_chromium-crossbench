@@ -74,11 +74,26 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       raise TimeoutError("dump_meminfo timed out")
     return timeout
 
-  def dump_meminfo(self, timeout: dt.timedelta, browser: bool, system: bool,
-                   packages: tuple[str, ...], title: str | None,
-                   info_stack: exception.TInfoStack) -> None:
+  @override
+  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
+             **kwargs) -> None:
+    self._dump_meminfo(info_stack, timeout, **kwargs)
+
+  def _dump_meminfo(self,
+                    info_stack: exception.TInfoStack,
+                    timeout: dt.timedelta,
+                    browser: bool = True,
+                    system: bool = False,
+                    packages: tuple[str, ...] | None = None,
+                    title: str | None = None,
+                    **kwargs) -> None:
+    self.expect_no_extra_kwargs(kwargs)
+
     deadline = dt.datetime.now() + timeout
     process_meminfos: list[ProcessMeminfo] = []
+
+    if packages is None:
+      packages = tuple()
     for package in packages:
       process_meminfos += self.browser_platform.process_meminfo(
           package, self._timeout_from_deadline(deadline))

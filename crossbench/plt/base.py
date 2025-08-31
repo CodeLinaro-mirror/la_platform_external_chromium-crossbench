@@ -955,7 +955,7 @@ class Platform(abc.ABC):
     object_name = parsed.path.lstrip("/")
     if not bucket_name:
       raise ValueError(f"Missing bucket name in URL: {gcs_url}")
-    client = gcloud_storage.Client()
+    client = gcloud_storage.Client(project="")
     bucket = client.bucket(bucket_name)
     blob: gcloud_blob.Blob = bucket.blob(object_name)
     blob.reload()
@@ -1002,6 +1002,11 @@ class Platform(abc.ABC):
     raise NotImplementedError(
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")
+
+  @contextlib.contextmanager
+  def low_power_mode(self) -> Generator[None, Any, None]:
+    raise NotImplementedError("'low_power_mode' is only supported on Android")
+
 
   def user_id(self) -> int:
     self.assert_is_local()

@@ -663,5 +663,23 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertRaises(TimeoutError):
       self.platform.system_meminfo()
 
+  def test_doze(self):
+    self.expect_sh("dumpsys deviceidle force-idle")
+    self.platform.doze()
+
+  def test_exit_doze(self):
+    self.expect_sh("dumpsys deviceidle unforce")
+    self.expect_sh("dumpsys battery reset")
+    self.platform.exit_doze()
+
+  def test_lock_screen(self):
+    self.expect_sh("input keyevent KEYCODE_POWER")
+    self.platform.lock_screen()
+
+  def test_unlock_screen(self):
+    self.expect_sh("input keyevent KEYCODE_WAKEUP")
+    self.expect_sh("input keyevent KEYCODE_MENU")
+    self.platform.unlock_screen()
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

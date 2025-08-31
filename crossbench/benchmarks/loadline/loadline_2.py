@@ -57,10 +57,9 @@ class LoadLine2Probe(LoadLineProbe):
     total = df.drop(columns=["cb_story", "cb_temperature", "cb_run"]).groupby(
         ["cb_browser"]).mean()
     total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
-    total.index.rename("browser", inplace=True)
-    return total.reindex(
-        columns=(["TOTAL_SCORE"] +
-                 sorted(list(c for c in total.columns if c != "TOTAL_SCORE"))))
+    transposed = total.transpose()
+    transposed.index.names = ["Metric"]
+    return transposed
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
@@ -82,7 +81,7 @@ class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 
 class LoadLine2Benchmark(LoadLineBenchmark):
   PROBES = (LoadLine2Probe,)
-  DEFAULT_REPETITIONS = 100
+  DEFAULT_REPETITIONS = 50
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:

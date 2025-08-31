@@ -7,6 +7,7 @@ if (window.location.href ===
         '-intl-hnk/index.html') {
   const button_id = 'headerMenuIcon';
   const menu_selector = '.header--active';
+  const headline_text_id = 'maincontent';
   let complete = false;
 
   const button_observer = new MutationObserver(mutations => {
@@ -37,8 +38,18 @@ if (window.location.href ===
     complete = true;
   });
 
+  const headline_observer = new MutationObserver(mutations => {
+    const headline = document.getElementById(headline_text_id);
+    if (!headline) {
+      return;
+    }
+    headline_observer.disconnect();
+    performance.mark('LoadLine2/cnn_article/headline_shown');
+  });
+
   // Make sure the cookie banner doesn't pop up
   document.cookie = 'OptanonAlertBoxClosed=' + new Date().toISOString()
   button_observer.observe(document, {childList: true, subtree: true});
   menu_observer.observe(document, {childList: true, subtree: true});
+  headline_observer.observe(document, {childList: true, subtree: true});
 }

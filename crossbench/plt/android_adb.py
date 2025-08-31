@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import datetime as dt
 import functools
@@ -11,7 +12,7 @@ import logging
 import math
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Generator
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -951,3 +952,30 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
+
+  @override
+  @contextlib.contextmanager
+  def low_power_mode(self) -> Generator[None, Any, None]:
+    try:
+      self.lock_screen()
+      self.doze()
+      yield
+    finally:
+      self.exit_doze()
+      self.unlock_screen()
+
+  def doze(self) -> None:
+    self.adb.dumpsys("deviceidle", "force-idle")
+
+  def exit_doze(self) -> None:
+    self.adb.dumpsys("deviceidle", "unforce")
+    self.adb.dumpsys("battery", "reset")
+
+  def lock_screen(self) -> None:
+    self.adb.shell("input", "keyevent", "KEYCODE_POWER")
+
+  def unlock_screen(self) -> None:
+    # Wake up the device
+    self.adb.shell("input", "keyevent", "KEYCODE_WAKEUP")
+    # Unlock the device
+    self.adb.shell("input", "keyevent", "KEYCODE_MENU")

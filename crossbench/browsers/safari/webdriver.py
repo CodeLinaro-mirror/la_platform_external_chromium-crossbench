@@ -20,6 +20,7 @@ from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 from crossbench.cli import ui
 from crossbench.helper.wait import WaitRange
 from crossbench.path import AnyPath, LocalPath
+from crossbench.plt.ios import IOSPlatform
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
@@ -170,12 +171,13 @@ class SafariWebdriverIOS(SafariWebDriver):
   def _get_driver_options(self,
                           session: BrowserSessionRunGroup) -> SafariOptions:
     options = super()._get_driver_options(session)
+    assert isinstance(self.platform, IOSPlatform)
     desired_cap = {
         # "browserName": "Safari",
         # "browserVersion": "17.0.3", # iOS version
         # "safari:deviceType": "iPhone",
         # "safari:deviceName": "XXX's iPhone",
-        # "safari:deviceUDID": "...",
+        "safari:deviceUDID": self.platform.udid,
         "platformName": "iOS",
         "safari:initialUrl": "about:blank",
         "safari:openLinksInBackground": True,
