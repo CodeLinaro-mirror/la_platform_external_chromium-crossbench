@@ -622,5 +622,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig.parse(v8_path),
         BrowserConfig(pth.LocalPosixPath(v8_path)))
 
+  def test_parse_webkit_download(self):
+    if not self.platform.is_macos:
+      self.skipTest("Unsupported platform")
+    version_str = "webkit-nightly-299105@main"
+    config = BrowserConfig.parse(version_str)
+    self.assertEqual(config.browser, version_str)
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

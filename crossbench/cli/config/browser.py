@@ -18,6 +18,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
+from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
@@ -28,8 +29,8 @@ from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 
 SUPPORTED_EMBEDDER = ("googlequicksearchbox",)
-SUPPORTED_BROWSER = ("chromium", "chrome", "safari", "edge", "firefox",
-                     "d8") + SUPPORTED_EMBEDDER
+SUPPORTED_BROWSER = ("chrome", "chromium", "d8", "edge", "firefox", "safari",
+                     "webkit") + SUPPORTED_EMBEDDER
 
 # Split inputs like:
 # - "/out/x64.release/chrome"
@@ -208,11 +209,10 @@ class BrowserConfig(ConfigObject):
   def _is_downloadable_identifier(cls, maybe_path_or_identifier: str) -> bool:
     # TODO: handle remote platforms.
     platform = plt.PLATFORM
-    if ChromeDownloader.is_valid(maybe_path_or_identifier, platform):
-      return True
-    if FirefoxDownloader.is_valid(maybe_path_or_identifier, platform):
-      return True
-    return False
+    return any(
+        downloader_cls.is_valid(maybe_path_or_identifier, platform)
+        for downloader_cls in (ChromeDownloader, FirefoxDownloader,
+                               WebKitDownloader))
 
   @classmethod
   def _try_parse_short_name(
@@ -340,7 +340,8 @@ class BrowserConfig(ConfigObject):
 
   @property
   def path(self) -> pth.AnyPath:
-    assert isinstance(self.browser, pth.AnyPath)
+    assert isinstance(self.browser,
+                      pth.AnyPath), f"Expected path got {self.browser}"
     return self.browser
 
   def get_platform(self) -> plt.Platform:

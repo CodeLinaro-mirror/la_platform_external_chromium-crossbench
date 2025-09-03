@@ -38,16 +38,20 @@ class FirefoxDownloader(Downloader):
 
   @classmethod
   @override
-  def _get_loader_cls(cls,
-                      browser_platform: Platform) -> Type[FirefoxDownloader]:
+  def name(cls) -> str:
+    return "Firefox"
+
+  @classmethod
+  @override
+  def _get_loader_cls(
+      cls, browser_platform: Platform) -> Type[FirefoxDownloader] | None:
     if browser_platform.is_macos:
       return FirefoxDownloaderMacOS
     if browser_platform.is_linux:
       return FirefoxDownloaderLinux
     if browser_platform.is_win:
       return FirefoxDownloaderWin
-    raise ValueError("Downloading Firefox is not supported "
-                     f"{browser_platform.name} {browser_platform.machine}")
+    return None
 
   @classmethod
   @override

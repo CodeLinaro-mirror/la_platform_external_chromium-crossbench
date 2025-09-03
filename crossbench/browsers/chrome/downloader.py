@@ -44,9 +44,10 @@ class ChromeDownloader(Downloader):
       ("android", "arm64"): "android",
   }
 
-  def __init__(self, *args, **kwargs) -> None:
-    self._gsutil: pth.AnyPath | None = None
-    super().__init__(*args, **kwargs)
+  @classmethod
+  @override
+  def name(cls) -> str:
+    return "Chrome"
 
   @classmethod
   @override
@@ -64,8 +65,8 @@ class ChromeDownloader(Downloader):
 
   @classmethod
   @override
-  def _get_loader_cls(cls,
-                      browser_platform: Platform) -> Type[ChromeDownloader]:
+  def _get_loader_cls(
+      cls, browser_platform: Platform) -> Type[ChromeDownloader] | None:
     if browser_platform.is_macos:
       return ChromeDownloaderMacOS
     if browser_platform.is_linux:
@@ -74,9 +75,11 @@ class ChromeDownloader(Downloader):
       return ChromeDownloaderWin
     if browser_platform.is_android:
       return ChromeDownloaderAndroid
-    raise ValueError(
-        "Downloading chrome is only supported on linux and macOS, "
-        f"but not on {browser_platform.name} {browser_platform.machine}")
+    return None
+
+  def __init__(self, *args, **kwargs) -> None:
+    self._gsutil: pth.AnyPath | None = None
+    super().__init__(*args, **kwargs)
 
   @override
   def _pre_check(self,
