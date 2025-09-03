@@ -2,7 +2,8 @@
   probes: {
     trace_processor: {
       queries: [
-        "loadline2/benchmark_score_tablet",
+        "loadline2/benchmark_score",
+        "loadline2/breakdown",
       ],
     },
     perfetto: {

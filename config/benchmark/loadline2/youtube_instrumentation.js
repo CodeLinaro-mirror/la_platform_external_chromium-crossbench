@@ -24,7 +24,7 @@ if (window.location.href ===
       for (m of e) {
         if (m.type === 'attributes' && banner_node.style.display === 'none') {
           banner_observer.disconnect();
-          performance.mark('LoadLine2/youtube_video/cookie_banner_gone');
+          performance.mark('LoadLine2/youtube_video/interactive');
           break;
         }
       }
@@ -40,7 +40,7 @@ if (window.location.href ===
       return;
     }
     comment_observer.disconnect();
-    performance.mark('LoadLine2/youtube_video/comment_shown');
+    performance.mark('LoadLine2/youtube_video/visual');
   });
 
   comment_observer.observe(document, {childList: true, subtree: true});

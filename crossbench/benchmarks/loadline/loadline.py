@@ -18,6 +18,8 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
                                                              LoadingPageFilter)
+from crossbench.probes.perfetto.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.probes.probe import Probe
 from crossbench.probes.results import LocalProbeResult
 
@@ -64,6 +66,17 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
         "breakdown.csv")
     self._compute_breakdown(group).to_csv(self._breakdown_file)
     return LocalProbeResult(csv=(self._scores_file, self._breakdown_file))
+
+  def _load_query_result(self, group: BrowsersRunGroup,
+                         query: str) -> pd.DataFrame:
+    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
+    query_result: pth.LocalPath | None = None
+    for result in all_results:
+      if result.stem == query:
+        query_result = result
+        break
+    assert query_result is not None, f"{self.NAME}: {query} result not found"
+    return pd.read_csv(query_result)
 
   @abc.abstractmethod
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:

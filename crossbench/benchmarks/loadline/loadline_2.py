@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Sequence, Type
 
 import numpy as np
@@ -16,8 +17,6 @@ from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
@@ -45,26 +44,28 @@ class LoadLine2Probe(LoadLineProbe):
 
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    loadline2_result: pth.LocalPath | None = None
-    for result in all_results:
-      if result.name.startswith("loadline2_benchmark_score"):
-        loadline2_result = result
-        break
-    assert loadline2_result is not None, "LoadLine 2: query result not found"
-
-    df = pd.read_csv(loadline2_result)
+    df = self._load_query_result(group, "loadline2_benchmark_score")
     total = df.drop(columns=["cb_story", "cb_temperature", "cb_run"]).groupby(
-        ["cb_browser"]).mean()
-    total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
-    transposed = total.transpose()
-    transposed.index.names = ["Metric"]
-    return transposed
+        ["cb_browser", "metric"]).mean().reset_index().pivot(
+            columns="cb_browser", index="metric", values="value")
+    total.loc["TOTAL_SCORE", :] = np.exp(np.log(total).mean())
+    total.index.name = "Metric"
+    return total
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    # TODO(crbug.com/425325733): Implement breakdown for LoadLine 2.
-    return pd.DataFrame(index=pd.Index([], name="Not implemented"))
+    df = self._load_query_result(group, "loadline2_breakdown")
+    if any(df["network"] > df["process_launch"]):
+      logging.warning("Some runs were affected by network latency. "
+                      "Results can be non-representative.")
+
+    df["os"] = df[["network", "process_launch"]].max(axis=1)
+    df = df.groupby(["cb_browser", "page"])[[
+        "os", "renderer_visual", "renderer_interactive", "gpu_visual",
+        "gpu_interactive"
+    ]].mean()
+    df.index.names = ["browser", "story"]
+    return df
 
 
 class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
@@ -86,6 +87,11 @@ class LoadLine2Benchmark(LoadLineBenchmark):
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
     return config.config_dir() / "benchmark" / "loadline2"
+
+  @classmethod
+  @override
+  def default_probe_config_path(cls) -> pth.LocalPath:
+    return cls._base_dir() / "probe_config.hjson"
 
   @classmethod
   @override
@@ -111,11 +117,6 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_phone.hjson"
-
-  @classmethod
-  @override
   def aliases(cls) -> tuple[str, ...]:
     return ("ld2-phone",)
 
@@ -134,11 +135,6 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   @override
   def default_network_config_path(cls) -> pth.LocalPath:
     return cls._base_dir() / "network_config_tablet.hjson"
-
-  @classmethod
-  @override
-  def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_tablet.hjson"
 
   @classmethod
   @override
@@ -162,7 +158,7 @@ class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_phone_debug.hjson"
+    return cls._base_dir() / "probe_config_debug.hjson"
 
   @classmethod
   @override
@@ -180,7 +176,7 @@ class LoadLine2TabletDebugBenchmark(LoadLine2TabletBenchmark):
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_tablet_debug.hjson"
+    return cls._base_dir() / "probe_config_debug.hjson"
 
   @classmethod
   @override

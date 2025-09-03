@@ -16,8 +16,6 @@ from crossbench import path as pth
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
@@ -62,17 +60,6 @@ class LoadLine1Probe(LoadLineProbe):
   @override
   def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
     return LoadLine1ProbeContext
-
-  def _load_query_result(self, group: BrowsersRunGroup,
-                         query: str) -> pd.DataFrame:
-    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    query_result: pth.LocalPath | None = None
-    for result in all_results:
-      if result.stem == query:
-        query_result = result
-        break
-    assert query_result is not None, f"{self.NAME}: {query} result not found"
-    return pd.read_csv(query_result)
 
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
