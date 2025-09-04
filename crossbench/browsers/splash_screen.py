@@ -8,7 +8,7 @@ import abc
 import dataclasses
 import html
 from argparse import ArgumentTypeError
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import override
 
@@ -54,8 +54,8 @@ class SplashScreen:
     pass
 
 
-_BLANK_PAGE_HTML = "<html></html>"
-_BLANK_PAGE_DATA_URL = (
+_BLANK_PAGE_HTML: Final = "<html></html>"
+_BLANK_PAGE_DATA_URL: Final = (
     f"data:text/html;charset=utf-8,{url_helper.quote(_BLANK_PAGE_HTML)}")
 
 class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):

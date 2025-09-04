@@ -8,7 +8,8 @@ import abc
 import argparse
 import enum
 import re
-from typing import TYPE_CHECKING, Any, Hashable, Mapping, Pattern, TypeAlias
+from typing import (TYPE_CHECKING, Any, Final, Hashable, Mapping, Pattern,
+                    TypeAlias)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -22,13 +23,13 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 # Directory exposing info & controls for the frequency of all CPUs.
-_CPUS_DIR: pth.AnyPosixPath = pth.AnyPosixPath("/sys/devices/system/cpu")
+_CPUS_DIR: Final = pth.AnyPosixPath("/sys/devices/system/cpu")
 
 # Used to specify behavior for all CPUs.
-_WILDCARD_CONFIG_KEY = "*"
+_WILDCARD_CONFIG_KEY: Final = "*"
 
 # Matches the CPU names exposed by the system in _CPUS_DIR.
-_CPU_NAME_REGEX: Pattern[str] = re.compile("cpu[0-9]+$")
+_CPU_NAME_REGEX: Final[Pattern[str]] = re.compile("cpu[0-9]+$")
 
 
 class _ExtremeFrequency(enum.StrEnum):

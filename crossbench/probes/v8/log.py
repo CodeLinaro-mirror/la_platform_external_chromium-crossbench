@@ -10,7 +10,7 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Optional, Self, Type, cast
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Self, Type, cast
 
 from typing_extensions import override
 
@@ -32,8 +32,8 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-_PROF_FLAG = "--prof"
-_LOG_ALL_FLAG = "--log-all"
+_PROF_FLAG: Final = "--prof"
+_LOG_ALL_FLAG: Final = "--log-all"
 
 
 class V8LogProbe(ChromiumProbe):
@@ -48,7 +48,7 @@ class V8LogProbe(ChromiumProbe):
   NAME = "v8.log"
   RESULT_LOCATION = ResultLocation.BROWSER
 
-  _FLAG_RE = re.compile("^--(prof|log-|no-log-).*$")
+  _FLAG_RE: Final[re.Pattern] = re.compile("^--(prof|log-|no-log-).*$")
 
   @classmethod
   @override

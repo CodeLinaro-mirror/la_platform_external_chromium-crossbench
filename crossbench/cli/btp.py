@@ -14,6 +14,7 @@ from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 FailureHandling)
 from perfetto.trace_processor.api import TraceProcessorConfig
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
+from typing_extensions import Final
 
 from crossbench import path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
@@ -22,9 +23,9 @@ from crossbench.parse import PathParser
 from crossbench.probes.perfetto.trace_processor.trace_processor import (
     _MODULES_DIR, _QUERIES_DIR, TraceProcessorProbe)
 
-ROOT_DIR = pth.LocalPath(__file__).parents[2]
-DEFAULT_RESULT_DIR = ROOT_DIR / "results" / "latest"
-DEFAULT_CONFIG_PATH = (
+ROOT_DIR: Final = pth.LocalPath(__file__).parents[2]
+DEFAULT_RESULT_DIR: Final = ROOT_DIR / "results" / "latest"
+DEFAULT_CONFIG_PATH: Final = (
     ROOT_DIR / "config" / "benchmark" / "loadline" / "probe_config.hjson")
 
 class MergedTraceUriResolver(TraceUriResolver):

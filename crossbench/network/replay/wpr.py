@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 # use value for pylint
 assert GS_PREFIX
 
-WPR_BASE_URL = "gs://chromium-telemetry/binary_dependencies"
+WPR_BASE_URL: Final = "gs://chromium-telemetry/binary_dependencies"
 
 
 @dataclasses.dataclass

@@ -8,7 +8,7 @@ import collections
 import json
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Iterable, Optional, Self, Type
+from typing import TYPE_CHECKING, Final, Iterable, Optional, Self, Type
 
 import pandas as pd
 from google.protobuf import text_format
@@ -38,8 +38,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
-_QUERIES_DIR = pth.LocalPath(__file__).parent / "queries"
-_MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
+_QUERIES_DIR: Final = pth.LocalPath(__file__).parent / "queries"
+_MODULES_DIR: Final = pth.LocalPath(__file__).parent / "modules/ext"
 
 
 class TraceProcessorQueryConfig(ConfigObject):

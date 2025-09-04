@@ -49,10 +49,11 @@ class VideoProbe(Probe):
   """
   NAME = "video"
   RESULT_LOCATION = ResultLocation.BROWSER
-  VIDEO_QUALITY = ["-vcodec", "libx264", "-crf", "20"]
-  IMAGE_FORMAT = "png"
-  TIMESTRIP_FILE_SUFFIX = f".timestrip.{IMAGE_FORMAT}"
-  FRAMERATE = 60
+
+  VIDEO_QUALITY: Final = ("-vcodec", "libx264", "-crf", "20")
+  IMAGE_FORMAT: Final = "png"
+  TIMESTRIP_FILE_SUFFIX: Final = f".timestrip.{IMAGE_FORMAT}"
+  FRAMERATE: Final = 60
 
   @classmethod
   @override
@@ -253,8 +254,8 @@ class VideoProbe(Probe):
 
 
 class VideoProbeContext(ProbeContext[VideoProbe]):
-  IMAGE_FORMAT = "png"
-  FFMPEG_TIMELINE_TEXT = (
+  IMAGE_FORMAT: Final = "png"
+  FFMPEG_TIMELINE_TEXT: Final = (
       "drawtext="
       "fontfile=/Library/Fonts/Arial.ttf:"
       "text='%{eif\\:t\\:d}.%{eif\\:t*100-floor(t)*100\\:d}s':"

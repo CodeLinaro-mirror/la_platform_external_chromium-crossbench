@@ -9,7 +9,7 @@ import datetime as dt
 import re
 import shlex
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, Set
+from typing import TYPE_CHECKING, Final, Iterable, Set
 
 from typing_extensions import override
 
@@ -160,8 +160,9 @@ class AndroidDownload:
 
 
 class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
-  CONTENT_QUERY_RE = re.compile(r"Row: \d+ _display_name=(.*), _id=(\d+)")
-  CONTENT_QUERY_NO_RESULTS = "No result found."
+  CONTENT_QUERY_RE: Final[re.Pattern] = re.compile(
+      r"Row: \d+ _display_name=(.*), _id=(\d+)")
+  CONTENT_QUERY_NO_RESULTS: Final = "No result found."
 
   def __init__(self, probe: DownloadsProbe, run: Run) -> None:
     super().__init__(probe, run)

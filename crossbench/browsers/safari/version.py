@@ -14,15 +14,16 @@ from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 if TYPE_CHECKING:
   VersionParseResult = tuple[tuple[int, ...], BrowserVersionChannel, str]
 
-_SIMPLE_VERSION_RE = re.compile(
+_SIMPLE_VERSION_RE: Final[re.Pattern] = re.compile(
     r"(?P<name>Safari(?: Technology Preview)?) "
     r"(?P<parts>(?:[\d.]+)+)", re.I)
-_COMPLEX_VERSION_RE = re.compile(r"[^\d]*"
-                                 r"(?P<major_parts>[\d.]+)"
-                                 r".*\("
-                                 r"(?P<version>(Release (?P<release>\d+), )?"
-                                 r"(?P<parts>[\d.]+))"
-                                 r"\).*")
+_COMPLEX_VERSION_RE: Final[re.Pattern] = re.compile(
+    r"[^\d]*"
+    r"(?P<major_parts>[\d.]+)"
+    r".*\("
+    r"(?P<version>(Release (?P<release>\d+), )?"
+    r"(?P<parts>[\d.]+))"
+    r"\).*")
 
 class SafariVersion(BrowserVersion):
   _MIN_MAJOR_PARTS_LEN: Final[int] = 3

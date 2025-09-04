@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import functools
 import json
-from typing import TYPE_CHECKING, Any, Self, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Self, Type, TypeVar
 
 from typing_extensions import override
 
@@ -43,9 +43,9 @@ class ActionTypeConfigParser(ConfigParser):
     return ActionType(kwargs["action"])  # type: ignore
 
 
-_ACTION_TYPE_CONFIG_PARSER = ActionTypeConfigParser()
+_ACTION_TYPE_CONFIG_PARSER: Final = ActionTypeConfigParser()
 
-ACTION_TIMEOUT = dt.timedelta(seconds=20)
+ACTION_TIMEOUT: Final = dt.timedelta(seconds=20)
 
 # Lazily initialized Action class lookup.
 ACTIONS: dict[ActionType, Type[Action]] = {}

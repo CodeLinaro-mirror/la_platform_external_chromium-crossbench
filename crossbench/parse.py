@@ -37,10 +37,10 @@ def type_str(value: Any) -> str:
 
 class PathParser:
 
-  PATH_PREFIX = re.compile(r"^(?:"
-                           r"(?:\.\.?|~)?|"
-                           r"[a-zA-Z]:"
-                           r")(\\|/)[^\\/]")
+  PATH_PREFIX: Final[re.Pattern] = re.compile(r"^(?:"
+                                              r"(?:\.\.?|~)?|"
+                                              r"[a-zA-Z]:"
+                                              r")(\\|/)[^\\/]")
 
   @classmethod
   def value_has_path_prefix(cls, value: str) -> bool:
@@ -424,8 +424,8 @@ class ObjectParser:
       raise argparse.ArgumentTypeError(
           f"Invalid {name}: {repr(value)}, {e}") from e
 
-  PORT_URL_PATH_RE = re.compile(r"^[0-9]+(?:/|$)")
-  INVALID_FUZZY_URL_RE = re.compile(r"[^./]+(?:/.+)?")
+  PORT_URL_PATH_RE: Final[re.Pattern] = re.compile(r"^[0-9]+(?:/|$)")
+  INVALID_FUZZY_URL_RE: Final[re.Pattern] = re.compile(r"[^./]+(?:/.+)?")
   COMMON_URL_SCHEMES: Final[tuple[str, ...]] = ("http", "https", "about",
                                                 "file", "data", "chrome")
 

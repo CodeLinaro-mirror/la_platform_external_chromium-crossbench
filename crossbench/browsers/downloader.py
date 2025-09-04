@@ -30,7 +30,7 @@ class IncompatibleVersionError(ValueError):
 class Downloader(abc.ABC):
   ARCHIVE_SUFFIX: str = ""
   ANY_MARKER: Final = 9999
-  APP_VERSION_RE = re.compile(r"(?P<version>[\d\.ab]+)")
+  APP_VERSION_RE: Final[re.Pattern] = re.compile(r"(?P<version>[\d\.ab]+)")
 
   @classmethod
   @abc.abstractmethod

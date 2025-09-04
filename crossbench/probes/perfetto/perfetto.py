@@ -8,7 +8,7 @@ import abc
 import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Self, cast
+from typing import TYPE_CHECKING, Final, Iterable, Self, cast
 
 import google.protobuf.text_format as proto_text_format
 from typing_extensions import override
@@ -32,10 +32,11 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-_PERFETTO_CONFIG_REMOTE_DIR_ANDROID = pth.AnyPath(
+_PERFETTO_CONFIG_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
     "/data/misc/perfetto-configs/")
-_PERFETTO_TRACE_REMOTE_DIR_ANDROID = pth.AnyPath("/data/misc/perfetto-traces/")
-_PERFETTO_REMOTE_DIR_CROS = pth.AnyPath("/usr/local/tmp")
+_PERFETTO_TRACE_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
+    "/data/misc/perfetto-traces/")
+_PERFETTO_REMOTE_DIR_CROS: Final = pth.AnyPath("/usr/local/tmp")
 
 
 class PerfettoProbe(Probe):

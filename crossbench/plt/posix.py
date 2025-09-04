@@ -11,8 +11,8 @@ import logging
 import pathlib
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Generator, Iterator, Mapping, Optional,
-                    Set, Type)
+from typing import (TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping,
+                    Optional, Set, Type)
 
 from typing_extensions import override
 
@@ -155,12 +155,13 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       }
     return {"version": "unknown", "bits": 64}
 
-  UPTIME_RE = re.compile(r"up\s+"
-                         r"(?:(?P<days>\d+)\s+days?,\s*)?"
-                         r"(?:"
-                         r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
-                         r"(?:(?P<mins_only>\d+)\s+min)"
-                         r")")
+  UPTIME_RE: Final[re.Pattern] = re.compile(
+      r"up\s+"
+      r"(?:(?P<days>\d+)\s+days?,\s*)?"
+      r"(?:"
+      r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
+      r"(?:(?P<mins_only>\d+)\s+min)"
+      r")")
 
   @override
   def uptime(self) -> dt.timedelta:

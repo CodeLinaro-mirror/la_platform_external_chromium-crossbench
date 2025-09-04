@@ -11,7 +11,7 @@ import os
 from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import psutil
-from typing_extensions import override
+from typing_extensions import Final, override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser
@@ -100,7 +100,7 @@ def try_get_parent_app_name(platform: plt.Platform) -> str:
   return ""
 
 
-SYSTEM_EVENTS_CHECK = (
+SYSTEM_EVENTS_CHECK: Final[str] = (
     'tell application "System Events" to log (count of windows)')
 
 class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):

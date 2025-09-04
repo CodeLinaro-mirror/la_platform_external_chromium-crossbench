@@ -23,7 +23,7 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
+from typing import (TYPE_CHECKING, Any, Callable, Final, Generator, Iterable,
                     Iterator, Mapping, Optional, Sequence, Type)
 
 import google.cloud.storage as gcloud_storage
@@ -99,7 +99,7 @@ class CPUFreqInfo:
   current: float
 
 
-DEFAULT_CACHE_DIR = pth.LocalPath(__file__).parents[2] / "cache"
+DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
 class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin

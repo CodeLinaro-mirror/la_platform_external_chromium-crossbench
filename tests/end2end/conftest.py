@@ -10,7 +10,7 @@ import pathlib
 import re
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Final, Iterator, Optional
 from unittest import mock
 
 import psutil
@@ -32,17 +32,17 @@ if TYPE_CHECKING:
   from crossbench.cli.config.browser import BrowserConfig
   from crossbench.path import LocalPath
 
-WIN_APP_SUFFIX = [".exe", ".bat"]
+WIN_APP_SUFFIX: Final = (".exe", ".bat")
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
-ADB_DEVICE_ID_FLAG = "--adb-device-id"
-ADB_PATH_FLAG = "--adb-path"
-BUNDLETOOL_FLAG = "--bundletool"
-CAS_ARCHIVE_FLAG = "--cas-archive"
-TEST_BROWSER_FLAG = "--test-browser-path"
-TEST_DRIVER_FLAG = "--test-driver-path"
-TEST_GSUTIL_FLAG = "--test-gsutil-path"
+ADB_DEVICE_ID_FLAG: Final = "--adb-device-id"
+ADB_PATH_FLAG: Final = "--adb-path"
+BUNDLETOOL_FLAG: Final = "--bundletool"
+CAS_ARCHIVE_FLAG: Final = "--cas-archive"
+TEST_BROWSER_FLAG: Final = "--test-browser-path"
+TEST_DRIVER_FLAG: Final = "--test-driver-path"
+TEST_GSUTIL_FLAG: Final = "--test-gsutil-path"
 
 def pytest_addoption(parser):
   parser.addoption(

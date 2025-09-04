@@ -33,9 +33,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
-
-RENDERER_CMD_PATH: Final[pth.LocalPath] = pth.LocalPath(
+V8_INTERPRETED_FRAMES_FLAG: Final = "--interpreted-frames-native-stack"
+RENDERER_CMD_PATH: Final = pth.LocalPath(
     __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
 
 

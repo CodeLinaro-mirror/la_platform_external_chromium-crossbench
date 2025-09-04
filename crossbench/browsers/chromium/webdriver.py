@@ -9,7 +9,7 @@ import logging
 import re
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, Sequence, cast
 
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
@@ -275,7 +275,7 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
 
   # Example ss output line (with whitespace shortened):
   # LISTEN 0 5 127.0.0.1:34595 0.0.0.0:* users:(("chromedriver",pid=80388,fd=8))
-  SS_CHROMEDRIVER_LINE_RE = re.compile(
+  SS_CHROMEDRIVER_LINE_RE: Final[re.Pattern] = re.compile(
       r"^LISTEN\s+"
       # Recv-Q
       r"\d+\s+"
@@ -291,7 +291,6 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
       r"\)\)\s*$",
       re.MULTILINE)
 
-  _platform: LinuxSshPlatform
   _forward_port: int
   _chromedriver: subprocess.Popen | None
 
@@ -301,8 +300,8 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
       chromedriver_path: Optional[pth.AnyPath],
       options: ChromiumOptions,
   ) -> None:
+    self._platform: Final[LinuxSshPlatform] = platform
     with exception.annotate("Starting chromedriver"):
-      self._platform = platform
       self._killall_chromedriver()
       self._chromedriver = platform.popen(
           chromedriver_path or Binaries.CHROMEDRIVER.resolve(platform),

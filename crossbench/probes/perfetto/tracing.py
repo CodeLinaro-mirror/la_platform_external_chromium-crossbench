@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import argparse
 import enum
-from typing import (TYPE_CHECKING, FrozenSet, Optional, Self, Sequence, Set,
-                    Type)
+from typing import (TYPE_CHECKING, Final, FrozenSet, Optional, Self, Sequence,
+                    Set, Type)
 
 from typing_extensions import override
 
@@ -25,13 +25,13 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
 
 # TODO: go over these again and clean the categories.
-MINIMAL_CONFIG: FrozenSet[str] = frozenset((
+MINIMAL_CONFIG: Final[FrozenSet[str]] = frozenset((
     "blink.user_timing",
     "toplevel",
     "v8",
     "v8.execute",
 ))
-DEVTOOLS_TRACE_CONFIG: FrozenSet[str] = frozenset((
+DEVTOOLS_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
     "blink.console",
     "blink.user_timing",
     "devtools.timeline",
@@ -49,7 +49,7 @@ DEVTOOLS_TRACE_CONFIG: FrozenSet[str] = frozenset((
     "toplevel",
     "v8.execute",
 ))
-V8_TRACE_CONFIG: FrozenSet[str] = frozenset((
+V8_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
     "blink",
     "blink.user_timing",
     "browser",
@@ -85,10 +85,10 @@ V8_TRACE_CONFIG: FrozenSet[str] = frozenset((
     "v8.execute",
     "wayland",
 ))
-V8_GC_STATS_TRACE_CONFIG: FrozenSet[str] = V8_TRACE_CONFIG | frozenset(
+V8_GC_STATS_TRACE_CONFIG: Final[FrozenSet[str]] = V8_TRACE_CONFIG | frozenset(
     ("disabled-by-default-v8.gc_stats",))
 
-TRACE_PRESETS: dict[str, frozenset[str]] = {
+TRACE_PRESETS: Final[dict[str, frozenset[str]]] = {
     "empty": frozenset(),
     "minimal": MINIMAL_CONFIG,
     "devtools": DEVTOOLS_TRACE_CONFIG,
@@ -138,7 +138,7 @@ def parse_trace_config_file_path(value: str) -> pth.LocalPath:
   return config_file_path.absolute()
 
 
-ANDROID_TRACE_CONFIG_PATH = pth.AnyPosixPath(
+ANDROID_TRACE_CONFIG_PATH: Final = pth.AnyPosixPath(
     "/data/local/chrome-trace-config.json")
 
 

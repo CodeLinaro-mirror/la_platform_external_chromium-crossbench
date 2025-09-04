@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
+from typing import (TYPE_CHECKING, Any, Callable, Final, Optional, Sequence,
+                    cast)
 
 from typing_extensions import override
 
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
 class DefaultActionRunner(ActionRunner):
   """Default action runner that uses JavaScript for most page interactions."""
 
-  XPATH_SELECT_ELEMENT = """
+  XPATH_SELECT_ELEMENT: Final[str] = """
       let elements = [];
       let xpathResult = document.evaluate(arguments[0], document);
       let currentElement = xpathResult.iterateNext();
@@ -44,42 +45,42 @@ class DefaultActionRunner(ActionRunner):
       }
   """
 
-  CSS_SELECT_ELEMENT = """
+  CSS_SELECT_ELEMENT: Final[str] = """
       let elements = document.querySelectorAll(arguments[0]);
       let element = elements[0];
   """
 
-  CHECK_ELEMENT_EXISTS = """
+  CHECK_ELEMENT_EXISTS: Final[str] = """
       if (!element) return 0;
   """
 
-  ELEMENT_SCROLL_INTO_VIEW = """
+  ELEMENT_SCROLL_INTO_VIEW: Final[str] = """
       element.scrollIntoView();
   """
 
-  CHECK_ELEMENT_RECT = """
+  CHECK_ELEMENT_RECT: Final[str] = """
       const rect = element.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return 0;
   """
 
-  ELEMENT_CLICK = """
+  ELEMENT_CLICK: Final[str] = """
       element.click();
   """
 
-  RETURN_SUCCESS = """
+  RETURN_SUCCESS: Final[str] = """
       return elements.length;
   """
 
-  SELECT_WINDOW = """
+  SELECT_WINDOW: Final[str] = """
       let elements = [window];
       let element = window;
   """
 
-  SCROLL_ELEMENT_TO = """
+  SCROLL_ELEMENT_TO: Final[str] = """
       element.scrollTo({top:arguments[1], behavior:'smooth'});
   """
 
-  GET_CURRENT_SCROLL_POSITION = """
+  GET_CURRENT_SCROLL_POSITION: Final[str] = """
       if (!element) return [0, 0];
       return [elements.length, element[arguments[1]]];
   """

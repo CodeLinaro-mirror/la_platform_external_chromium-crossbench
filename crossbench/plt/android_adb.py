@@ -12,7 +12,7 @@ import logging
 import math
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Generator, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Final, Generator, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
-ANDROID_PERMISSIONS = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
+ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -620,7 +620,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def adb(self) -> Adb:
     return self._adb
 
-  _MACHINE_ARCH_LOOKUP = {
+  _MACHINE_ARCH_LOOKUP: Final = {
       "arm64-v8a": MachineArch.ARM_64,
       "armeabi-v7a": MachineArch.ARM_32,
       "x86": MachineArch.IA32,
@@ -667,7 +667,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def home(self) -> pth.AnyPath:
     raise RuntimeError("Cannot access home dir on (non-rooted) android device")
 
-  _VERSION_NAME_RE = re.compile(r"versionName=(?P<version>.+)")
+  _VERSION_NAME_RE: Final[re.Pattern] = re.compile(
+      r"versionName=(?P<version>.+)")
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
@@ -699,7 +700,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     # TODO: implement.
     return True
 
-  _BRIGHTNESS_RE = re.compile(
+  _BRIGHTNESS_RE: Final[re.Pattern] = re.compile(
       r"mLatestFloatBrightness=(?P<brightness>[0-9]+\.[0-9]+)")
 
   @override
@@ -796,7 +797,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       res.append({"pid": int(tokens[0]), "name": tokens[1]})
     return res
 
-  _DUMPSYS_TIMEOUT_RE = re.compile(
+  _DUMPSYS_TIMEOUT_RE: Final[re.Pattern] = re.compile(
       rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
 
   @override
@@ -823,7 +824,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
               swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb))
     return meminfos
 
-  _DUMPSYS_SYSTEM_TOTAL_FREE_RE = re.compile(
+  _DUMPSYS_SYSTEM_TOTAL_FREE_RE: Final[re.Pattern] = re.compile(
       br"Total RAM: (?P<total_ram_kb>[0-9][,0-9]*)K.*"
       br"\n Free RAM: [0-9][,0-9]*K \( *"
       br"(?P<cached_pss_kb>[0-9][,0-9]*)K cached pss \+ +"
@@ -834,7 +835,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       br".*$",
       re.DOTALL)
 
-  _DUMPSYS_SYSTEM_DMA_BUF_RE = re.compile(
+  _DUMPSYS_SYSTEM_DMA_BUF_RE: Final[re.Pattern] = re.compile(
       br"DMA-BUF: +(?P<dma_buf_kb>[0-9][,0-9]*)K \("
       br" +(?P<dma_buf_mapped_kb>[0-9][,0-9]*)K mapped \+"
       br" +(?P<dma_buf_unmapped_kb>[0-9][,0-9]*)K unmapped\)", re.DOTALL)
@@ -887,7 +888,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         "current frequency": "n/a",
     }
 
-  _GETPROP_RE = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
+  _GETPROP_RE: Final[re.Pattern] = re.compile(
+      r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
 
   @functools.lru_cache(maxsize=1)
   @override
@@ -928,7 +930,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)
 
-  _DUMPSYS_WINDOW_DISPLAYS_RE = re.compile(r" cur=(?P<x>\d+)x(?P<y>\d+) ")
+  _DUMPSYS_WINDOW_DISPLAYS_RE: Final[re.Pattern] = re.compile(
+      r" cur=(?P<x>\d+)x(?P<y>\d+) ")
 
   @functools.lru_cache(maxsize=1)
   def display_details(self) -> tuple[DisplayInfo, ...]:
