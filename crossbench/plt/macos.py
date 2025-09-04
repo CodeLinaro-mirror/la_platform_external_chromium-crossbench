@@ -21,8 +21,9 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.parse import NumberParser
-from crossbench.plt.posix import PosixPlatform
+from crossbench.plt.posix import PosixPlatform, PosixVersion
 from crossbench.plt.signals import MacOSSignals
+from crossbench.plt.version import PlatformVersion
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CPUFreqInfo
@@ -69,6 +70,9 @@ def parse_display_ndrvs(spdisplays_ndrvs: dict) -> Iterator[DisplayInfo]:
       }
 
 
+class MacOsVersion(PosixVersion):
+  pass
+
 class MacOSPlatform(PosixPlatform):
   SEARCH_PATHS: tuple[pth.AnyPath, ...] = (
       pth.AnyPosixPath("."),
@@ -100,8 +104,9 @@ class MacOSPlatform(PosixPlatform):
     return self.sh_stdout("sw_vers", "-productVersion").strip()
 
   @functools.cached_property
-  def version_parts(self) -> tuple[int, ...]:
-    return tuple(map(int, self.version_str.split(".")))
+  @override
+  def version(self) -> PlatformVersion:
+    return MacOsVersion.parse(self.version_str)
 
   @functools.cached_property
   @override

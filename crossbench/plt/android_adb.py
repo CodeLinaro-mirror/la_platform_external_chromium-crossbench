@@ -25,7 +25,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
-from crossbench.plt.posix import RemotePosixPlatform
+from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
                     windowmanagerservice_pb2)
@@ -52,7 +52,6 @@ class AndroidDeviceInfo(DeviceInfo):
   @property
   def serial_id(self) -> str:
     return self.device_id
-
 
 def _find_adb_bin(platform: Platform) -> pth.AnyPath:
   adb_bin = platform.search_platform_binary(
@@ -176,6 +175,10 @@ class Adb:
   @functools.cached_property
   def build_version(self) -> int:
     return int(self.getprop("ro.build.version.release"))
+
+  @functools.cached_property
+  def build_description(self) -> str:
+    return self.getprop("ro.build.description")
 
   @property
   def device_info(self) -> AndroidDeviceInfo:
@@ -550,6 +553,9 @@ class AndroidAdbPortManager(PortManager):
     self._adb.reverse_remove(remote_port, protocol="tcp")
 
 
+class AndroidVersion(PosixVersion):
+  pass
+
 class AndroidAdbPlatform(RemotePosixPlatform):
   # pylint: disable=redefined-builtin
 
@@ -579,6 +585,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def version_str(self) -> str:
     return str(self.adb.build_version)
+
+  @functools.cached_property
+  @override
+  def version(self) -> AndroidVersion:
+    return AndroidVersion.parse(self.adb.build_description)
 
   @functools.cached_property
   @override

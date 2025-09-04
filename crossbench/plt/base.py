@@ -49,6 +49,7 @@ if TYPE_CHECKING:
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.plt.types import CmdArg, ProcessLike, TupleCmdArgs
+  from crossbench.plt.version import PlatformVersion
   from crossbench.types import JsonDict
 
 
@@ -134,6 +135,15 @@ class Platform(abc.ABC):
   @abc.abstractmethod
   def version_str(self) -> str:
     pass
+
+  @property
+  @abc.abstractmethod
+  def version(self) -> PlatformVersion:
+    pass
+
+  @property
+  def version_parts(self) -> tuple[int, ...]:
+    return self.version.parts
 
   @property
   @abc.abstractmethod

@@ -147,6 +147,7 @@ class MockPlatformMixin:
     self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
+    self.mock_version_str: str | None = "1.2.3.4.5"
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
@@ -258,7 +259,9 @@ class MockPlatformMixin:
 
   @property
   def version_str(self) -> str:
-    return "1.2.3.4.5"
+    if self.mock_version_str:
+      return self.mock_version_str
+    return super().version_str
 
   @property
   def device(self) -> str:

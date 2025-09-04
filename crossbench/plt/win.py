@@ -16,6 +16,12 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.plt.base import Platform
 from crossbench.plt.signals import WinSignals
+from crossbench.plt.version import PlatformVersion
+
+
+class WinVersion(PlatformVersion):
+  pass
+
 
 
 class WinPlatform(Platform):
@@ -61,6 +67,11 @@ class WinPlatform(Platform):
   @override
   def version_str(self) -> str:
     return self.cmd_stdout("ver").strip()
+
+  @functools.cached_property
+  @override
+  def version(self) -> WinVersion:
+    return WinVersion.parse(self.version_str)
 
   @functools.cached_property
   @override
