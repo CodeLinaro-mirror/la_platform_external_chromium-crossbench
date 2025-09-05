@@ -97,7 +97,7 @@ class LoadLine2Benchmark(LoadLineBenchmark):
   @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
     pages = super().stories_from_cli_args(args)
-    return (CombinedPage(pages),)
+    return (CombinedPage(pages, playback=args.playback),)
 
 
 class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
