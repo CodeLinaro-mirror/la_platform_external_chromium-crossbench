@@ -10,8 +10,8 @@ from typing import Self
 from typing_extensions import override
 
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.replacements import Replacements
 from crossbench.parse import ObjectParser
+from crossbench.replacements import Replacements
 from tests import test_helper
 
 
@@ -34,7 +34,7 @@ class CustomConfigObjectWithReplacements(ConfigObject):
   def name(self) -> str:
     return self._name
 
-  def __init__(self, name: str, replacements: Replacements = None) -> None:
+  def __init__(self, name: str, replacements: Replacements) -> None:
     self._name = replacements.apply(name)
 
 

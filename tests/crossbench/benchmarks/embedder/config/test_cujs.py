@@ -6,12 +6,11 @@ from __future__ import annotations
 
 import argparse
 import pathlib
-from typing import Sequence
+from typing import Any, Sequence
 
 import hjson
 
-from crossbench.benchmarks.embedder.config.cujs import (
-  CUJConfig, CUJsConfig)
+from crossbench.benchmarks.embedder.config.cujs import CUJConfig, CUJsConfig
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -24,7 +23,7 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("type", str(cm.exception))
 
   def test_parse_empty_actions(self):
-    config_data = {"cujs": {"Google Story": []}}
+    config_data: dict[str, dict] = {"cujs": {"Google Story": []}}
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       CUJsConfig.parse(config_data)
     self.assertIn("empty", str(cm.exception).lower())
@@ -79,10 +78,9 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
       CUJsConfig.parse_dict({"cujs": {}})
 
   def test_scenario_invalid_actions(self):
-    invalid_actions = [None, "", [], {}, "invalid string", 12]
-    invalid_actions = ["invalid string", 12]
+    invalid_actions: list[Any] = [None, "", [], {}, "invalid string", 12]
     for invalid_action in invalid_actions:
-      config_dict = {"cujs": {"name": invalid_action}}
+      config_dict: dict[str, dict] = {"cujs": {"name": invalid_action}}
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
           CUJsConfig.parse_dict(config_dict)
@@ -99,7 +97,7 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("Invalid data:", str(cm.exception))
 
   def test_invalid_action(self):
-    invalid_actions = [None, "", [], {}, "unknown action name", 12]
+    invalid_actions: list[Any] = [None, "", [], {}, "unknown action name", 12]
     for invalid_action in invalid_actions:
       config_dict = {
           "cujs": {

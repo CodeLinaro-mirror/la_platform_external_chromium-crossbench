@@ -171,6 +171,12 @@ class TraceProcessorProbe(Probe):
         help="Name of query to be run (under probes/trace_processor/queries) "
         "or { name: str, sql: str } containing the name and SQL query to run")
     parser.add_argument(
+        "symbolize_profile",
+        type=ObjectParser.bool,
+        default=True,
+        help="Auto symbolize data from system profiles for "
+        "locally compiled browsers.")
+    parser.add_argument(
         "module_paths",
         type=pth.LocalPath,
         is_list=True,
@@ -188,18 +194,21 @@ class TraceProcessorProbe(Probe):
                summary_metrics: Iterable[str],
                metrics: Iterable[str],
                queries: Iterable[TraceProcessorQueryConfig],
+               symbolize_profile : bool,
                module_paths: Iterable[pth.LocalPath],
                trace_processor_bin: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
-    self._batch = batch
-    self._metrics = tuple(metrics)
+    self._batch : bool  = batch
+    self._metrics : tuple[str, ...]  = tuple(metrics)
     self._metric_definitions: tuple[str, ...] = tuple(metric_definitions)
     self._summary_metrics: tuple[str,
                                  ...] = tuple(metrics) + tuple(summary_metrics)
     ObjectParser.unique_sequence([query.name for query in queries],
                                  name="query names")
-    self._queries = tuple(queries)
-    self._module_paths = tuple([_MODULES_DIR]) + tuple(module_paths)
+    self._queries: tuple[TraceProcessorQueryConfig, ...] = tuple(queries)
+    self._symbolize_profile: bool = symbolize_profile
+    self._module_paths: tuple[pth.LocalPath, ...] = (
+        tuple([_MODULES_DIR]) + tuple(module_paths))
     self._trace_processor_bin: pth.LocalPath | None = None
     if trace_processor_bin:
       self._trace_processor_bin = plt.PLATFORM.parse_local_binary_path(

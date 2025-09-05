@@ -110,7 +110,7 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("bool_argument_name", type=bool, default=False)
 
-    config_data = {}
+    config_data: dict = {}
     kwargs = parser.kwargs_from_config(config_data)
     self.assertDictEqual(config_data, {})
     self.assertDictEqual(kwargs, {"bool_argument_name": False})

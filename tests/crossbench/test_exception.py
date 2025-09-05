@@ -5,12 +5,16 @@
 import argparse
 import unittest
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from unittest import mock
 
 from crossbench.exception import (ArgumentTypeMultiException, Entry,
                                   ExceptionAnnotator, MultiException, annotate,
                                   annotate_argparsing)
 from tests import test_helper
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonList
 
 
 class CustomException(Exception):
@@ -152,7 +156,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
         annotator.append(e)
     self.assertEqual(cm.exception, exception)
     self.assertFalse(annotator.is_success)
-    serialized = annotator.to_json()
+    serialized: JsonList = annotator.to_json()
     self.assertEqual(len(serialized), 1)
     self.assertEqual(serialized[0]["title"], str(exception))
 

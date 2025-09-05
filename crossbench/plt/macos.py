@@ -96,21 +96,21 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:
+  def version_str(self) -> str:
     return self.sh_stdout("sw_vers", "-productVersion").strip()
 
   @functools.cached_property
   def version_parts(self) -> tuple[int, ...]:
-    return tuple(map(int, self.version.split(".")))
+    return tuple(map(int, self.version_str.split(".")))
 
   @functools.cached_property
   @override
-  def device(self) -> str:  #pylint: disable=invalid-overridden-method
+  def device(self) -> str:
     return self.sh_stdout("sysctl", "-n", "hw.model").strip()
 
   @functools.cached_property
   @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+  def cpu(self) -> str:
     brand = self.sh_stdout("sysctl", "-n", "machdep.cpu.brand_string").strip()
     num_cores = self.cpu_cores(logical=True)
     return f"{brand} {num_cores} cores"

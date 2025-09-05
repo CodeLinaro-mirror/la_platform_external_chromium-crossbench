@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import dataclasses
+import json
 import logging
 from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, TypeVar
 
@@ -16,7 +17,7 @@ from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.path import check_hash
-from crossbench.plt import PLATFORM, Platform
+from crossbench.plt import Platform
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
@@ -70,18 +71,17 @@ WprReplayNetworkT = TypeVar("WprReplayNetworkT", bound="WprReplayNetwork")
 
 class WprReplayNetwork(ReplayNetwork):
 
-  def __init__(self,
-               archive: LocalPath | str,
-               traffic_shaper: Optional[TrafficShaper] = None,
-               wpr_go_bin: Optional[LocalPath] = None,
-               browser_platform: Platform = PLATFORM,
-               persist_server: bool = False,
-               inject_deterministic_script: bool = True) -> None:
+  def __init__(self, archive: LocalPath | str,
+               traffic_shaper: Optional[TrafficShaper],
+               wpr_go_bin: Optional[LocalPath], browser_platform: Platform,
+               persist_server: bool, inject_deterministic_script: bool,
+               response_transformations_file: LocalPath | None) -> None:
     super().__init__(archive, traffic_shaper, browser_platform)
     self._server: WprReplayServer | None = None
     self._tmp_dir: AnyPath | None = None
     self._persist_server = persist_server
     self._inject_deterministic_script = inject_deterministic_script
+    self._response_transformations_file = response_transformations_file
     self._ensure_wpr_go(wpr_go_bin)
 
   @override
@@ -161,10 +161,6 @@ class WprReplayNetwork(ReplayNetwork):
     assert self._server, "WPR is not running"
     return self._server.host
 
-  @property
-  def inject_deterministic_script(self) -> bool:
-    return self._inject_deterministic_script
-
   def __str__(self) -> str:
     return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"
 
@@ -212,12 +208,13 @@ class LocalWprReplayNetwork(WprReplayNetwork):
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     inject_scripts: list[AnyPath] | None = (
-        None if self.inject_deterministic_script else [])
+        None if self._inject_deterministic_script else [])
     return WprReplayServer(
         self.archive_path,
         self._wpr_go_bin,
         inject_scripts=inject_scripts,
         log_path=log_dir / "network.wpr.log",
+        rules_file=self._response_transformations_file,
         platform=self.host_platform)
 
 
@@ -271,30 +268,27 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     self.browser_platform.push(path, remote_path)
     return remote_path
 
-  def _push_required_files(self) -> list[AnyPath]:
+  @override
+  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     host_platform = self.host_platform
     if local_wpr_go := WprGoToolFinder(host_platform).local_path:
       wpr_root = local_wpr_go.parents[1]
     else:
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 
-    all_files: list[LocalPath] = [
-        self._archive_path, wpr_root / "ecdsa_key.pem",
-        wpr_root / "ecdsa_cert.pem", wpr_root / "deterministic.js"
-    ]
-    remote_files = [self._push_file(path) for path in all_files]
-
-    remote_wpr_go_bin = self._push_file(self._wpr_go_bin)
-    self.browser_platform.sh("chmod", "+x", remote_wpr_go_bin)
-
-    return [remote_wpr_go_bin] + remote_files
-
-  @override
-  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
-    wpr_go_bin, archive, key_file, cert_file, inject_script = (
-        self._push_required_files())
-    inject_scripts: list[AnyPath] = ([inject_script] if
-                                     self.inject_deterministic_script else [])
+    wpr_go_bin = self._push_file(self._wpr_go_bin)
+    self.browser_platform.sh("chmod", "+x", wpr_go_bin)
+    archive: AnyPath = self._push_file(self._archive_path)
+    key_file: AnyPath = self._push_file(wpr_root / "ecdsa_key.pem")
+    cert_file: AnyPath = self._push_file(wpr_root / "ecdsa_cert.pem")
+    inject_scripts: list[AnyPath] = ([
+        self._push_file(wpr_root / "deterministic.js")
+    ] if self._inject_deterministic_script else [])
+    rules_file: AnyPath | None = (
+        self._push_file(self._response_transformations_file)
+        if self._response_transformations_file else None)
+    for script in self._get_injected_scripts():
+      self._push_file(script)
     return WprReplayServer(
         archive_path=archive,
         bin_path=wpr_go_bin,
@@ -302,4 +296,32 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         cert_file=cert_file,
         inject_scripts=inject_scripts,
         log_path=log_dir / "network.wpr.log",
-        platform=self.browser_platform)
+        platform=self.browser_platform,
+        rules_file=rules_file)
+
+  def _get_injected_scripts(self) -> list[LocalPath]:
+    if not self._response_transformations_file:
+      return []
+
+    try:
+      transformations = json.loads(
+          self._response_transformations_file.read_text())
+      assert isinstance(transformations, list)
+      assert all(isinstance(t, dict) for t in transformations)
+    except Exception as exception:
+      raise ValueError(
+          f"{self._response_transformations_file} has invalid JSON format"
+      ) from exception
+
+    scripts: list[LocalPath] = []
+    for t in transformations:
+      if "InjectedScript" not in t:
+        continue
+      script = (
+          self._response_transformations_file.parent / t["InjectedScript"])
+      if not script.exists():
+        raise ValueError(
+            f"{self._response_transformations_file} attempts to inject "
+            f"{script} but the script was not found")
+      scripts.append(script)
+    return scripts

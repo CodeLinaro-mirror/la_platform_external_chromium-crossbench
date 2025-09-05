@@ -280,9 +280,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_version(self):
     self.expect_sh("getprop ro.build.version.release", result="999")
-    self.assertEqual(self.platform.version, "999")
+    self.assertEqual(self.platform.version_str, "999")
     # Subsequent calls are cached.
-    self.assertEqual(self.platform.version, "999")
+    self.assertEqual(self.platform.version_str, "999")
 
   def test_device(self):
     self.expect_sh("getprop ro.product.model", result="Pixel 999")

@@ -76,13 +76,13 @@ class ThreadMode(StrEnumWithHelp):
     groups: dict[Any, list[Run]] = {}
     if self == ThreadMode.SESSION:
       groups = collection_helper.group_by(
-          runs, lambda run: run.browser_session, sort_key=None)
+          runs, key=lambda run: run.browser_session, sort_key=None)
     elif self == ThreadMode.PLATFORM:
       groups = collection_helper.group_by(
-          runs, lambda run: run.browser_platform, sort_key=None)
+          runs, key=lambda run: run.browser_platform, sort_key=None)
     elif self == ThreadMode.BROWSER:
       groups = collection_helper.group_by(
-          runs, lambda run: run.browser, sort_key=None)
+          runs, key=lambda run: run.browser, sort_key=None)
     else:
       raise ValueError(f"Unexpected thread mode: {self}")
     return [

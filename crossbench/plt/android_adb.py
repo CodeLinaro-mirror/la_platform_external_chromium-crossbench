@@ -12,7 +12,7 @@ import logging
 import math
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Generator
+from typing import TYPE_CHECKING, Any, Generator, Mapping, Optional
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -577,12 +577,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+  def version_str(self) -> str:
     return str(self.adb.build_version)
 
   @functools.cached_property
   @override
-  def device(self) -> str:  #pylint: disable=invalid-overridden-method
+  def device(self) -> str:
     return self.adb.getprop("ro.product.model")
 
   @property
@@ -599,7 +599,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+  def cpu(self) -> str:
     variant = self.adb.getprop("dalvik.vm.isa.arm.variant")
     platform = self.adb.getprop("ro.board.platform")
     cpu_str = f"{variant} {platform}"
@@ -629,7 +629,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def machine(self) -> MachineArch:  #pylint: disable=invalid-overridden-method
+  def machine(self) -> MachineArch:
     cpu_abi = self.adb.getprop("ro.product.cpu.abi")
     arch = self._MACHINE_ARCH_LOOKUP.get(cpu_abi, None)
     if not arch:
