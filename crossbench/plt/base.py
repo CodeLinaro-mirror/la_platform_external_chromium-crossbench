@@ -262,25 +262,15 @@ class Platform(abc.ABC):
   def cpu_details(self) -> dict[str, Any]:
     self.assert_is_local()
     details = {
-        "physical cores":
-            self.cpu_cores(logical=False),
-        "logical cores":
-            self.cpu_cores(logical=True),
-        "usage":
-            psutil.cpu_percent(  # pytype: disable=attribute-error
-                percpu=True, interval=0.1),
-        "total usage":
-            psutil.cpu_percent(),
-        "system load":
-            psutil.getloadavg(),
-        "info":
-            self.cpu,
-        "min frequency":
-            "N/A",
-        "max frequency":
-            "N/A",
-        "current frequency":
-            "N/A",
+        "physical cores": self.cpu_cores(logical=False),
+        "logical cores": self.cpu_cores(logical=True),
+        "usage": psutil.cpu_percent(percpu=True, interval=0.1),
+        "total usage": psutil.cpu_percent(),
+        "system load": psutil.getloadavg(),
+        "info": self.cpu,
+        "min frequency": "N/A",
+        "max frequency": "N/A",
+        "current frequency": "N/A",
     }
     if cpu_freq := self._cpu_freq():
       details.update({

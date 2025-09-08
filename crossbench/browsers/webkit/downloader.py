@@ -7,7 +7,8 @@ from __future__ import annotations
 import os
 import shutil
 import zipfile
-from typing import TYPE_CHECKING, Final, Iterable, Mapping, Optional, Type
+from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Mapping,
+                    Optional, Type)
 
 from typing_extensions import override
 
@@ -76,8 +77,9 @@ class WebKitDownloader(Downloader):
 
 
 class WebKitDownloaderMacOS(WebKitDownloader):
-  BASE_URL = "https://s3-us-west-2.amazonaws.com/minified-archives.webkit.org/"
-  ARCHIVE_SUFFIX: str = ".zip"
+  BASE_URL: ClassVar[
+      str] = "https://s3-us-west-2.amazonaws.com/minified-archives.webkit.org/"
+  ARCHIVE_SUFFIX: ClassVar[str] = ".zip"
 
   @classmethod
   @override

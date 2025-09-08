@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Type
 
 from typing_extensions import override
 
@@ -64,10 +64,8 @@ class FrequencyProbe(EnvModifier):
   [1] https://docs.kernel.org/admin-guide/pm/cpufreq.html#:~:text=scaling_available_frequencies
   """
 
-  NAME = "frequency"
-
-  IS_GENERAL_PURPOSE = True
-  PRODUCES_DATA = False
+  NAME: ClassVar = "frequency"
+  PRODUCES_DATA: ClassVar = False
 
   def __init__(self, cpus: CPUFrequencyMap) -> None:
     super().__init__()

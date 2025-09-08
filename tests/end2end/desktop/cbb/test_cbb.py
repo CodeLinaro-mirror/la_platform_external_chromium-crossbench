@@ -26,13 +26,12 @@ def get_benchmark(benchmark_cls) -> PressBenchmark:
   story_class = cbb_adapter.get_pressbenchmark_story_cls(benchmark_cls.NAME)
   assert story_class
   stories = story_class.default_story_names()[:1]
-  workload = story_class(  # pytype: disable=not-instantiable
-      substories=stories)
+  workload = story_class(substories=stories)
   benchmark_cls_lookup = cbb_adapter.get_pressbenchmark_cls(benchmark_cls.NAME)
   assert benchmark_cls_lookup, (
       f"Could not find benchmark class for '{benchmark_cls.NAME}'")
   assert benchmark_cls_lookup == benchmark_cls
-  benchmark = benchmark_cls_lookup(stories=[workload])  # pytype: disable=not-instantiable
+  benchmark = benchmark_cls_lookup(stories=[workload])
   return benchmark
 
 

@@ -320,7 +320,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def _network_help_data(self, search_str: str | None) -> dict[str, Any]:
     network_data: dict[str, Any] = {
         network_type.name: network_type.help
-        for network_type in NetworkType  # pytype: disable=missing-parameter
+        for network_type in NetworkType
         if not search_str or network_type.name.lower() == search_str
     }
     # Print config details if any network info is returned.

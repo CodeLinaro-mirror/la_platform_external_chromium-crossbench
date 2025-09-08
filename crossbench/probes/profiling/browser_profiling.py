@@ -241,7 +241,7 @@ class SafariWebdriverBrowserProfilingProbeContext(BrowserProfilingProbeContext):
   @override
   def setup_selenium_options(self, options: BaseOptions) -> None:
     assert isinstance(options, SafariOptions)
-    cast(SafariOptions, options).automatic_profiling = True
+    options.automatic_profiling = True
 
   @override
   def stop(self) -> None:

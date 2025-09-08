@@ -7,18 +7,16 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import json
-from typing import TYPE_CHECKING, Any, Self, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Self, Type
 
 from typing_extensions import override
 
-from crossbench import exception
-from crossbench.path import safe_filename
-from crossbench.plt.process_meminfo import ProcessMeminfo
+from crossbench.path import AnyPath, safe_filename
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
-  from crossbench.path import AnyPath, LocalPath
+  from crossbench import exception
+  from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -26,10 +24,8 @@ if TYPE_CHECKING:
 class MeminfoProbe(Probe):
   """
     General-purpose Probe that records the specified meminfo.
-    """
-
-  NAME = "meminfo"
-  RESULT_LOCATION = ResultLocation.LOCAL
+  """
+  NAME: ClassVar = "meminfo"
 
   @classmethod
   @override

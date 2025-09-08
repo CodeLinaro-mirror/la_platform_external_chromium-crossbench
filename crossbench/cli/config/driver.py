@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import Any, Optional, Self, Type, cast
+from typing import Any, Optional, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -264,7 +264,6 @@ class DriverConfig(ConfigObject):
     platform = self.get_platform()
     assert isinstance(platform, ChromeOsSshPlatform), \
            f"Invalid platform: {platform}"
-    platform = cast(ChromeOsSshPlatform, platform)
     if not platform.exists(platform.AUTOLOGIN_PATH):
       raise ValueError(f"Could not find `autotest` on {platform.host}."
                        "Please ensure that it is running a test image:"

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import argparse
 import enum
-from typing import (TYPE_CHECKING, Final, FrozenSet, Optional, Self, Sequence,
-                    Set, Type)
+from typing import (TYPE_CHECKING, ClassVar, Final, FrozenSet, Optional, Self,
+                    Sequence, Set, Type)
 
 from typing_extensions import override
 
@@ -154,9 +154,9 @@ class TracingProbe(ChromiumProbe):
   - trace_config: Use a predefined trace config file that overrides the two
                   previous options.
   """
-  NAME = "tracing"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  CHROMIUM_FLAGS = ("--enable-perfetto",)
+  NAME: ClassVar = "tracing"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
+  CHROMIUM_FLAGS: ClassVar[tuple[str, ...]] = ("--enable-perfetto",)
 
   @classmethod
   @override

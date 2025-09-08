@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 # New probe actions should not have individual class implementations.
 # They should just be used as ProbeActions directly.
 class ScreenshotAction(BaseProbeAction):
-  TYPE: ActionType = ActionType.SCREENSHOT
+  TYPE: ClassVar[ActionType] = ActionType.SCREENSHOT
 
   def __init__(self,
                timeout: dt.timedelta = ACTION_TIMEOUT,

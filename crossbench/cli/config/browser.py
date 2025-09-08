@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Optional, Self, cast
+from typing import Any, Optional, Self
 
 from typing_extensions import override
 
@@ -42,7 +42,7 @@ SUPPORTED_BROWSER = ("chrome", "chromium", "d8", "edge", "firefox", "safari",
 # - "selenium:C:\out\x64.release\chrome"
 # - "selenium:C:\out\x64.release\chrome:4G"
 NETWORK_PRESETS: str = "|".join(
-    re.escape(preset.value) for preset in NetworkSpeedPreset)  # pytype: disable=missing-parameter
+    re.escape(preset.value) for preset in NetworkSpeedPreset)
 ENV_PRESETS: str = "|".join(re.escape(preset) for preset in ENV_CONFIG_PRESETS)
 
 SHORT_FORM_RE: re.Pattern[str] = re.compile(
@@ -291,7 +291,7 @@ class BrowserConfig(ConfigObject):
           "Browser short form: missing path or browser identifier.")
     driver = DriverConfig.default()
     if driver_identifier := match.group("driver"):
-      driver = cast(DriverConfig, DriverConfig.parse(driver_identifier))
+      driver = DriverConfig.parse(driver_identifier)
     path: pth.AnyPathLike = cls._parse_path_or_identifier(
         path_or_identifier, driver.type)
     network = None

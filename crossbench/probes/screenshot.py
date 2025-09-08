@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Optional, Self, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Optional, Self, Sequence, Type
 
 from typing_extensions import override
 
-from crossbench import exception
 from crossbench.action_runner.screenshot_annotation import (
     ScreenshotAnnotation, annotate_screenshot_svg)
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -17,6 +16,7 @@ from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench import exception
   from crossbench.browsers.browser import Viewport
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import AnyPath
@@ -28,9 +28,9 @@ class ScreenshotProbe(Probe):
   """
   General-purpose Probe that collects screenshots.
   """
-  NAME = "screenshot"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  IMAGE_FORMAT = "png"
+  NAME: ClassVar = "screenshot"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
+  IMAGE_FORMAT: ClassVar = "png"
 
   @classmethod
   @override

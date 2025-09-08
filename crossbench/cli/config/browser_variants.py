@@ -10,7 +10,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import (TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional,
-                    Self, Sequence, Set, TextIO, Type, cast)
+                    Self, Sequence, Set, TextIO, Type)
 
 from typing_extensions import override
 
@@ -450,7 +450,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
           path_or_identifier]
     else:
       browser_config = self._config_for_maybe_downloaded_binary(
-          cast(BrowserConfig, BrowserConfig.parse(raw_browser_data)))
+          BrowserConfig.parse(raw_browser_data))
       browser_cls = self.get_browser_cls(browser_config)
     assert browser_cls
 

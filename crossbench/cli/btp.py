@@ -7,14 +7,13 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Sequence
+from typing import Final, Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
                                                 FailureHandling)
 from perfetto.trace_processor.api import TraceProcessorConfig
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
-from typing_extensions import Final
 
 from crossbench import path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig

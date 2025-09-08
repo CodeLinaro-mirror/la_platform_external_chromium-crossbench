@@ -10,7 +10,8 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Final, Iterable, Optional, Self, Type, cast
+from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self,
+                    Type, cast)
 
 from typing_extensions import override
 
@@ -45,7 +46,7 @@ class V8LogProbe(ChromiumProbe):
   http://v8.dev/tools/head/profview. See de d8_binary and v8_checkout
   config-properties for more details.
   """
-  NAME = "v8.log"
+  NAME: ClassVar = "v8.log"
   RESULT_LOCATION = ResultLocation.BROWSER
 
   _FLAG_RE: Final[re.Pattern] = re.compile("^--(prof|log-|no-log-).*$")

@@ -215,7 +215,7 @@ class ObjectParser:
     for enum_instance in choices:
       if data in (enum_instance, enum_instance.value):
         return enum_instance
-    choices_str: str = ", ".join(repr(item.value) for item in choices)  # pytype: disable=missing-parameter
+    choices_str: str = ", ".join(repr(item.value) for item in choices)
     raise argparse.ArgumentTypeError(f"Unknown {label}: {repr(data)}.\n"
                                      f"Choices are {choices_str}.")
 

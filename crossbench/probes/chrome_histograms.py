@@ -11,8 +11,8 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Final, Mapping, Optional, Self,
-                    Sequence, Type)
+from typing import (TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional,
+                    Self, Sequence, Type)
 
 from typing_extensions import override
 
@@ -22,7 +22,6 @@ from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -133,8 +132,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
   """
   Probe that collects UMA histogram metrics from Chrome.
   """
-  NAME = "chrome_histograms"
-  RESULT_LOCATION = ResultLocation.LOCAL
+  NAME: ClassVar = "chrome_histograms"
 
   @classmethod
   @override

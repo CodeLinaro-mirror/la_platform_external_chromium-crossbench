@@ -8,7 +8,7 @@ import abc
 import dataclasses
 import html
 from argparse import ArgumentTypeError
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from typing_extensions import override
 
@@ -28,10 +28,10 @@ class SplashScreenData:
 
 
 class SplashScreen:
-  NONE: SplashScreen
-  MINIMAL: SplashScreen
-  DETAILED: SplashScreen
-  DEFAULT: SplashScreen
+  NONE: ClassVar[SplashScreen]
+  MINIMAL: ClassVar[SplashScreen]
+  DETAILED: ClassVar[SplashScreen]
+  DEFAULT: ClassVar[SplashScreen]
 
   @classmethod
   def parse(cls, value: str) -> SplashScreen:

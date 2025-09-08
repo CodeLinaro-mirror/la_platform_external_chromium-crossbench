@@ -8,7 +8,7 @@ import abc
 import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Final, Iterable, Self, cast
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, cast
 
 import google.protobuf.text_format as proto_text_format
 from typing_extensions import override
@@ -56,10 +56,8 @@ class PerfettoProbe(Probe):
   After the run, the trace will be found among the results as
   "perfetto.trace.pb.gz".
   """
-  NAME = "perfetto"
-  RESULT_LOCATION = ResultLocation.BROWSER
-
-  IS_GENERAL_PURPOSE = True
+  NAME: ClassVar = "perfetto"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   @classmethod
   @override
@@ -337,7 +335,7 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
   def browser_platform(self) -> AndroidAdbPlatform:
     browser_platform = super().browser_platform
     assert isinstance(browser_platform, AndroidAdbPlatform)
-    return cast(AndroidAdbPlatform, browser_platform)
+    return browser_platform
 
 
 class ChromeOsPerfettoProbeContext(PerfettoProbeContext):

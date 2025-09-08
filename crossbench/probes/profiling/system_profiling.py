@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 import shlex
-from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Self,
-                    Sequence, cast)
+from typing import (TYPE_CHECKING, Any, ClassVar, Final, Iterable, Optional,
+                    Self, Sequence, cast)
 
 from typing_extensions import override
 
@@ -57,9 +57,8 @@ class ProfilingProbe(Probe):
   from V8. For Googlers it additionally can auto-upload symbolized profiles to
   pprof.
   """
-  NAME = "profiling"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  IS_GENERAL_PURPOSE = True
+  NAME: ClassVar = "profiling"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   @classmethod
   @override

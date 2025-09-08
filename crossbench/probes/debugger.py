@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Final, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, Type
 
 from typing_extensions import override
 
@@ -34,9 +34,8 @@ class DebuggerProbe(Probe):
   """
   Probe debugging chrome's renderer process.
   """
-  NAME = "debugger"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  IS_GENERAL_PURPOSE = True
+  NAME: ClassVar = "debugger"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   @classmethod
   @override

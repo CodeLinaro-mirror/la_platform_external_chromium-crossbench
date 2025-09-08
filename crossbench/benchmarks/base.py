@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, Generic, Mapping, Optional, Sequence,
-                    Type, TypeAlias, TypeVar, cast)
+from typing import (TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional,
+                    Sequence, Type, TypeAlias, TypeVar, cast)
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -34,10 +34,10 @@ if TYPE_CHECKING:
 
 
 class Benchmark(abc.ABC):
-  NAME: str = ""
-  DEFAULT_STORY_CLS: Type[Story] = Story  # type: ignore
-  PROBES: tuple[Type[BenchmarkProbeMixin], ...] = ()
-  DEFAULT_REPETITIONS: int = 1
+  NAME: ClassVar[str] = ""
+  DEFAULT_STORY_CLS: ClassVar[Type[Story]] = Story  # type: ignore
+  PROBES: ClassVar[tuple[Type[BenchmarkProbeMixin], ...]] = ()
+  DEFAULT_REPETITIONS: ClassVar[int] = 1
 
   @classmethod
   def cli_help(cls) -> str:
@@ -156,7 +156,7 @@ StoryT = TypeVar("StoryT", bound=Story)
 
 
 class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
-  DEFAULT_STORY_NAME: str = "default"
+  DEFAULT_STORY_NAME: ClassVar[str] = "default"
 
   @classmethod
   def add_cli_arguments(
@@ -230,7 +230,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS: Type[StoryFilter] = StoryFilter  # type: ignore
+  STORY_FILTER_CLS: ClassVar[Type[StoryFilter]] = StoryFilter  # type: ignore
 
   @classmethod
   @override
@@ -449,9 +449,9 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
 class PressBenchmark(SubStoryBenchmark):
-  STORY_FILTER_CLS = PressBenchmarkStoryFilter
-  DEFAULT_STORY_CLS: Type[
-      PressBenchmarkStory] = PressBenchmarkStory  # type: ignore
+  STORY_FILTER_CLS: ClassVar = PressBenchmarkStoryFilter
+  DEFAULT_STORY_CLS: ClassVar[
+      Type[PressBenchmarkStory]] = PressBenchmarkStory  # type: ignore
 
   @classmethod
   @abc.abstractmethod

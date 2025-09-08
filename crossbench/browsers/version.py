@@ -217,7 +217,7 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
   def with_channel(self, channel: BrowserVersionChannel) -> Self:
     if self.channel == channel:
       return self
-    return type(self)(self.parts, channel, self.version_str)  # pytype: disable=not-instantiable
+    return type(self)(self.parts, channel, self.version_str)
 
   def __str__(self) -> str:
     if not self._version_str:

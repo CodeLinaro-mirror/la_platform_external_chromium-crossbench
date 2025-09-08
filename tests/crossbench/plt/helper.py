@@ -37,7 +37,7 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     patcher.start()
 
   def mock_platform_setup(self):
-    self.mock_platform = MockPlatform()  # pytype: disable=not-instantiable
+    self.mock_platform = MockPlatform()
     self.platform = self.mock_platform
 
   def tearDown(self):

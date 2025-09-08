@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, ClassVar, Mapping, Optional, Sequence
 
 import pandas as pd
 from tabulate import tabulate
@@ -31,9 +31,9 @@ if TYPE_CHECKING:
 
 
 class LoadLineProbe(BenchmarkProbeMixin, Probe):
-  IS_GENERAL_PURPOSE = False
-  BENCHMARK_NAME: str = "LoadLine"
-  BENCHMARK_VERSION: str = ""
+  IS_GENERAL_PURPOSE: ClassVar = False
+  BENCHMARK_NAME: ClassVar[str] = "LoadLine"
+  BENCHMARK_VERSION: ClassVar[str] = ""
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
@@ -45,17 +45,17 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
     logging.critical("%s Benchmark (%s)", self.BENCHMARK_NAME,
                      self.BENCHMARK_VERSION)
     logging.info("-" * 80)
-    logging.critical("%s scores:", self.BENCHMARK_NAME)
-    logging.critical(
-        tabulate(
-            pd.read_csv(self._scores_file), headers="keys", tablefmt="plain"))
-    logging.info("- " * 40)
-    logging.critical("%s breakdown (loading stage durations, in ms):",
-                     self.BENCHMARK_NAME)
-    logging.critical(
-        tabulate(
-            pd.read_csv(self._breakdown_file), headers="keys",
-            tablefmt="plain"))
+    if scores_file := self._scores_file:
+      logging.critical("%s scores:", self.BENCHMARK_NAME)
+      logging.critical(
+          tabulate(pd.read_csv(scores_file), headers="keys", tablefmt="plain"))
+      logging.info("- " * 40)
+    if breakdown_file := self._breakdown_file:
+      logging.critical("%s breakdown (loading stage durations, in ms):",
+                       self.BENCHMARK_NAME)
+      logging.critical(
+          tabulate(
+              pd.read_csv(breakdown_file), headers="keys", tablefmt="plain"))
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
@@ -69,7 +69,9 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
 
   def _load_query_result(self, group: BrowsersRunGroup,
                          query: str) -> pd.DataFrame:
-    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
+    trace_result = group.results.get_by_name(TraceProcessorProbe.NAME)
+    assert trace_result, f"{group} has no TraceProcessorProbe result"
+    all_results = trace_result.csv_list
     query_result: pth.LocalPath | None = None
     for result in all_results:
       if result.stem == query:
@@ -116,7 +118,7 @@ class LoadLinePageFilter(LoadingPageFilter):
 
 
 class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS = LoadLinePageFilter
+  STORY_FILTER_CLS: ClassVar = LoadLinePageFilter
 
   _page_config: PagesConfig | None = None
 

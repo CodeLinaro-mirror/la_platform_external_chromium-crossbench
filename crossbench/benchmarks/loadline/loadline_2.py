@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
 
 import numpy as np
-import pandas as pd
 from typing_extensions import override
 
 from crossbench import config
@@ -22,6 +21,8 @@ from crossbench.probes.probe_context import ProbeContext
 if TYPE_CHECKING:
   import argparse
 
+  import pandas as pd
+
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.probes.results import ProbeResult
@@ -30,13 +31,13 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING = "experimental"
+VERSION_STRING: Final[str] = "experimental"
 
 
 class LoadLine2Probe(LoadLineProbe):
-  NAME = "loadline2_probe"
-  BENCHMARK_NAME = "LoadLine2"
-  BENCHMARK_VERSION = VERSION_STRING
+  NAME: ClassVar = "loadline2_probe"
+  BENCHMARK_NAME: ClassVar = "LoadLine2"
+  BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
   def get_context_cls(self,) -> Type[LoadLine2ProbeContext]:
@@ -81,8 +82,8 @@ class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 
 
 class LoadLine2Benchmark(LoadLineBenchmark):
-  PROBES = (LoadLine2Probe,)
-  DEFAULT_REPETITIONS = 50
+  PROBES: ClassVar = (LoadLine2Probe,)
+  DEFAULT_REPETITIONS: ClassVar = 50
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
@@ -103,7 +104,7 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
   """LoadLine 2 benchmark for phones.
   """
-  NAME = "loadline2-phone"
+  NAME: ClassVar = "loadline2-phone"
 
   @classmethod
   @override
@@ -124,7 +125,7 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   """LoadLine 2 benchmark for tablets.
   """
-  NAME = "loadline2-tablet"
+  NAME: ClassVar = "loadline2-tablet"
 
   @classmethod
   @override
@@ -152,8 +153,8 @@ class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):
   """LoadLine 2 benchmark for phones, with more tracing categories, for easier
   performance analysis.
   """
-  NAME = "loadline2-phone-debug"
-  DEFAULT_REPETITIONS = 1
+  NAME: ClassVar = "loadline2-phone-debug"
+  DEFAULT_REPETITIONS: ClassVar = 1
 
   @classmethod
   @override
@@ -170,8 +171,8 @@ class LoadLine2TabletDebugBenchmark(LoadLine2TabletBenchmark):
   """LoadLine 2 benchmark for tablets, with more tracing categories, for easier
   performance analysis.
   """
-  NAME = "loadline2-tablet-debug"
-  DEFAULT_REPETITIONS = 1
+  NAME: ClassVar = "loadline2-tablet-debug"
+  DEFAULT_REPETITIONS: ClassVar = 1
 
   @classmethod
   @override

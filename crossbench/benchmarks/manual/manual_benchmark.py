@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from typing_extensions import override
 
@@ -92,8 +92,8 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   Optionally waits for |start_after| seconds, then runs measurements for
   |run_for| seconds, then closes the browser.
   """
-  NAME = "manual"
-  DEFAULT_STORY_CLS = ManualStory
+  NAME: ClassVar = "manual"
+  DEFAULT_STORY_CLS: ClassVar = ManualStory
 
   def __init__(self,
                action_runner_config: Optional[ActionRunnerConfig] = None,

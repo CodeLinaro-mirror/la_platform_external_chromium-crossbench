@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import functools
 import json
-from typing import TYPE_CHECKING, Any, Final, Self, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, Type, TypeVar
 
 from typing_extensions import override
 
@@ -55,7 +55,7 @@ ACTIONS: dict[ActionType, Type[Action]] = {}
 ActionT = TypeVar("ActionT", bound="Action")
 
 class Action(ConfigObject, metaclass=abc.ABCMeta):
-  TYPE: ActionType = ActionType.GET
+  TYPE: ClassVar[ActionType] = ActionType.GET
 
   @classmethod
   @override

@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from enum import IntEnum
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, ClassVar, Iterable, Optional
 
 from typing_extensions import override
 
@@ -17,7 +17,6 @@ from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import (InternalJsonResultProbe,
                                              InternalJsonResultProbeContext)
 from crossbench.probes.probe import ProbeIncompatibleBrowser
-from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 
 if TYPE_CHECKING:
@@ -66,8 +65,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
   """
   Internal probe to monitor device thermal status.
   """
-  NAME = "cb.thermal_monitor"
-  RESULT_LOCATION = ResultLocation.LOCAL
+  NAME: ClassVar = "cb.thermal_monitor"
 
   def __init__(self,
                cool_down_time: dt.timedelta = dt.timedelta(),

@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 from typing import TYPE_CHECKING, Self, TextIO, Type
 
-from typing_extensions import Final, override
+from typing_extensions import ClassVar, Final, override
 
 from crossbench.config import ConfigEnum
 from crossbench.helper import collection_helper
@@ -47,9 +47,9 @@ class VideoProbe(Probe):
   It can also produce a timestrip png and creates merged versions of these files
   for visually comparing various browsers / variants / cb.stories
   """
-  NAME = "video"
-  RESULT_LOCATION = ResultLocation.BROWSER
-
+  NAME: ClassVar = "video"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
+  # TODO: Add Final[ClassVar] once supported.
   VIDEO_QUALITY: Final = ("-vcodec", "libx264", "-crf", "20")
   IMAGE_FORMAT: Final = "png"
   TIMESTRIP_FILE_SUFFIX: Final = f".timestrip.{IMAGE_FORMAT}"

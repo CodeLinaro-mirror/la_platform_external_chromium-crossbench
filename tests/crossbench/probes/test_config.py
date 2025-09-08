@@ -5,6 +5,7 @@
 import argparse
 import enum
 import unittest
+from typing import ClassVar
 
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -15,7 +16,7 @@ class MockProbe(Probe):
   """
   Probe DOC Text
   """
-  NAME: str = "mock-probe"
+  NAME: ClassVar[str] = "mock-probe"
 
 
 class CustomArgType:

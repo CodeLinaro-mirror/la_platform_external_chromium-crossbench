@@ -10,8 +10,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping,
-                    Optional, Sequence)
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Mapping,
+                    MutableMapping, Optional, Sequence)
 
 import psutil
 from typing_extensions import override
@@ -558,7 +558,7 @@ class MockStory(Story):
 
 class MockBenchmark(SubStoryBenchmark):
   NAME = "mock-benchmark"
-  DEFAULT_STORY_CLS = MockStory
+  DEFAULT_STORY_CLS: ClassVar = MockStory
 
 
 class MockCLI(CrossBenchCLI):

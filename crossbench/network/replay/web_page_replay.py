@@ -12,7 +12,7 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, Optional, TextIO
+from typing import TYPE_CHECKING, ClassVar, Iterable, Optional, TextIO
 
 from typing_extensions import override
 
@@ -38,7 +38,7 @@ class WprStartupError(RuntimeError):
 
 
 class WprBase(abc.ABC):
-  NAME: str = ""
+  NAME: ClassVar[str] = ""
 
   _key_file: AnyPath
   _cert_file: AnyPath
@@ -321,7 +321,7 @@ class WprBase(abc.ABC):
 
 
 class WprRecorder(WprBase):
-  NAME: str = "recorder"
+  NAME: ClassVar[str] = "recorder"
 
   @property
   def cert_file(self) -> LocalPath:
@@ -342,7 +342,7 @@ class WprRecorder(WprBase):
 
 
 class WprReplayServer(WprBase):
-  NAME: str = "replay"
+  NAME: ClassVar[str] = "replay"
 
   def __init__(self,
                archive_path: AnyPath,

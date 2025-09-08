@@ -79,10 +79,10 @@ class SpeedometerBaseTestCase(
     args = self.Namespace()
     self.benchmark_cls.from_cli_args(args)
     with self.assertRaises(argparse.ArgumentTypeError):
-      args.iterations = "-10"  # pytype: disable=annotation-type-mismatch
+      args.iterations = "-10"
       self.benchmark_cls.from_cli_args(args)
     with self.assertRaises(argparse.ArgumentTypeError):
-      args.iterations = "1234"  # pytype: disable=annotation-type-mismatch
+      args.iterations = "1234"
       benchmark = self.benchmark_cls.from_cli_args(args)
     args.iterations = 1234
     benchmark = self.benchmark_cls.from_cli_args(args)
@@ -181,7 +181,7 @@ class SpeedometerBaseTestCase(
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     benchmark: SpeedometerBenchmark = self.benchmark_cls(
-        stories, custom_url=custom_url)  # pytype: disable=not-instantiable
+        stories, custom_url=custom_url)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

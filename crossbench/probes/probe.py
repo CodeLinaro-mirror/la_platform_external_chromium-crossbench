@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Hashable, Optional, Self, Set, Type, TypeVar
+from typing import (TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set,
+                    Type, TypeVar)
 
 from typing_extensions import override
 
@@ -86,7 +87,15 @@ class Probe(ProbeResultKey, abc.ABC):
   - teardown(): Used for high-overhead Probe cleanup
 
   """
-  NAME: str = ""
+  NAME: ClassVar[str] = ""
+  # Set to False if the Probe cannot be used with arbitrary Stories or Pages.
+  IS_GENERAL_PURPOSE: ClassVar[bool] = True
+  PRODUCES_DATA: ClassVar[bool] = True
+  # Set the default probe result location, used to figure out whether result
+  # files need to be transferred from a remote machine.
+  RESULT_LOCATION: ClassVar[ResultLocation] = ResultLocation.LOCAL
+  # Set to True if the probe only works on battery power with single runs.
+  BATTERY_ONLY: ClassVar[bool] = False
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser[Self]:
@@ -103,15 +112,6 @@ class Probe(ProbeResultKey, abc.ABC):
   @classmethod
   def summary_text(cls) -> str:
     return cls.config_parser().summary
-
-  # Set to False if the Probe cannot be used with arbitrary Stories or Pages
-  IS_GENERAL_PURPOSE: bool = True
-  PRODUCES_DATA: bool = True
-  # Set the default probe result location, used to figure out whether result
-  # files need to be transferred from a remote machine.
-  RESULT_LOCATION = ResultLocation.LOCAL
-  # Set to True if the probe only works on battery power with single runs
-  BATTERY_ONLY: bool = False
 
   def __init__(self) -> None:
     assert self.name is not None, "A Probe must define a name"

@@ -11,7 +11,7 @@ import plistlib
 import re
 import shutil
 import tempfile
-from typing import TYPE_CHECKING, Final, Iterable, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Type
 
 from typing_extensions import override
 
@@ -28,9 +28,9 @@ class IncompatibleVersionError(ValueError):
 
 
 class Downloader(abc.ABC):
-  ARCHIVE_SUFFIX: str = ""
+  ARCHIVE_SUFFIX: ClassVar[str] = ""
   ANY_MARKER: Final = 9999
-  APP_VERSION_RE: Final[re.Pattern] = re.compile(r"(?P<version>[\d\.ab]+)")
+  APP_VERSION_RE: ClassVar[re.Pattern] = re.compile(r"(?P<version>[\d\.ab]+)")
 
   @classmethod
   @abc.abstractmethod
