@@ -1,34 +1,25 @@
-# Copyright 2022 The Chromium Authors
+# Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+from __future__ import annotations
 
 import abc
 import copy
 import csv
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.benchmarks.motionmark.motionmark_1 import (
-    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
-    MotionMark1Story)
-from crossbench.benchmarks.motionmark.motionmark_1_2 import (
-    MotionMark12Benchmark, MotionMark12Probe, MotionMark12ProbeContext,
-    MotionMark12Story)
-from crossbench.benchmarks.motionmark.motionmark_1_3 import (
-    MotionMark13Benchmark, MotionMark13Probe, MotionMark13ProbeContext,
-    MotionMark13Story)
-from crossbench.benchmarks.motionmark.motionmark_1_3_1 import (
-    MotionMark131Benchmark, MotionMark131Probe, MotionMark131ProbeContext,
-    MotionMark131Story)
-from crossbench.benchmarks.motionmark.motionmark_main import (
-    MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
-    MotionMarkMainStory)
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
-from tests import test_helper
 from tests.crossbench.benchmarks import helper
+
+if TYPE_CHECKING:
+  from crossbench.benchmarks.motionmark.motionmark_1 import (
+      MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
+      MotionMark1Story)
 
 
 class MotionMark1BaseTestCase(
@@ -55,7 +46,6 @@ class MotionMark1BaseTestCase(
   @abc.abstractmethod
   def probe_context_cls(self) -> Type[MotionMark1ProbeContext]:
     pass
-
 
   EXAMPLE_PROBE_DATA = [{
       "testsResults": {
@@ -187,101 +177,3 @@ class MotionMark1BaseTestCase(
             # One padding element (after "label"):
             "": "",
         })
-
-
-class MotionMark12TestCase(MotionMark1BaseTestCase):
-
-  @property
-  @override
-  def benchmark_cls(self):
-    return MotionMark12Benchmark
-
-  @property
-  @override
-  def story_cls(self):
-    return MotionMark12Story
-
-  @property
-  @override
-  def probe_cls(self):
-    return MotionMark12Probe
-
-  @property
-  @override
-  def probe_context_cls(self):
-    return MotionMark12ProbeContext
-
-
-class MotionMark13TestCase(MotionMark1BaseTestCase):
-
-  @property
-  @override
-  def benchmark_cls(self):
-    return MotionMark13Benchmark
-
-  @property
-  @override
-  def story_cls(self):
-    return MotionMark13Story
-
-  @property
-  @override
-  def probe_cls(self):
-    return MotionMark13Probe
-
-  @property
-  @override
-  def probe_context_cls(self):
-    return MotionMark13ProbeContext
-
-
-class MotionMark131TestCase(MotionMark1BaseTestCase):
-
-  @property
-  @override
-  def benchmark_cls(self):
-    return MotionMark131Benchmark
-
-  @property
-  @override
-  def story_cls(self):
-    return MotionMark131Story
-
-  @property
-  @override
-  def probe_cls(self):
-    return MotionMark131Probe
-
-  @property
-  @override
-  def probe_context_cls(self):
-    return MotionMark131ProbeContext
-
-
-class MotionMarkMainTestCase(MotionMark1BaseTestCase):
-
-  @property
-  @override
-  def benchmark_cls(self):
-    return MotionMarkMainBenchmark
-
-  @property
-  @override
-  def story_cls(self):
-    return MotionMarkMainStory
-
-  @property
-  @override
-  def probe_cls(self):
-    return MotionMarkMainProbe
-
-  @property
-  @override
-  def probe_context_cls(self):
-    return MotionMarkMainProbeContext
-
-
-del MotionMark1BaseTestCase
-
-if __name__ == "__main__":
-  test_helper.run_pytest(__file__)

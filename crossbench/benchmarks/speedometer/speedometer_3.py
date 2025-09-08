@@ -244,6 +244,14 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
         tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
               if data["enabled"]))
 
+  @override
+  def _wait_for_ready(self, actions: Actions) -> None:
+    actions.wait_js_condition(
+        "return !!window.benchmarkClient", 0.5, timeout=10)
+
+  def _setup_substories(self, actions: Actions) -> None:
+    # Handled via URL params
+    pass
 
   @property
   @override

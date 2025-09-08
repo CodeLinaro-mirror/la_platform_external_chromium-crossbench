@@ -195,7 +195,8 @@ class MockPlatformMixin:
     return path
 
   def expect_sh(
-      self, *args: CmdArg, result: bytes | str | ShResult = ShResult()) -> None:
+      self, *args: CmdArg | int,
+      result: bytes | str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
@@ -207,7 +208,7 @@ class MockPlatformMixin:
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
-  def _convert_sh_args(self, *args: CmdArg) -> TupleCmdArgs:
+  def _convert_sh_args(self, *args: CmdArg | int) -> TupleCmdArgs:
     converted_args : ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
@@ -256,7 +257,7 @@ class MockPlatformMixin:
     self._machine_arch = value
 
   @property
-  def version(self) -> str:
+  def version_str(self) -> str:
     return "1.2.3.4.5"
 
   @property
@@ -561,6 +562,6 @@ class MockCLI(CrossBenchCLI):
   runner: Runner
   platform: Platform
 
-  def __init__(self, *args, **kwargs) -> None:
-    self.platform = kwargs.pop("platform")
-    super().__init__(*args, **kwargs)
+  def __init__(self, platform: Platform, enable_logging: bool = True) -> None:
+    self.platform = platform
+    super().__init__(enable_logging=enable_logging)

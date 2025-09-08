@@ -288,15 +288,22 @@ class FastCliTestCasePartB(BaseCliTestCase):
                    "--urls=http://test.com", "--env-validation=skip")
 
   def test_env_config_inline_invalid(self):
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", "--env=not a valid name",
-                   "--urls=http://test.com", "--env-validation=skip")
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", "--env={not valid hjson}",
-                   "--urls=http://test.com", "--env-validation=skip")
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", "--env={unknown_property:1}",
-                   "--urls=http://test.com", "--env-validation=skip")
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", "--env=not a valid name", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", "--env={not valid hjson}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", "--env={unknown_property:1}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
 
   def test_conflicting_driver_path(self):
     mock_browsers: list[Type[mock_browser.MockBrowser]] = [
@@ -322,23 +329,30 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
   def test_env_config_invalid_file(self):
     config = pathlib.Path("/test.config.hjson")
-    # No "env" property
-    with config.open("w", encoding="utf-8") as f:
-      hjson.dump({}, f)
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", f"--env-config={config}",
-                   "--urls=http://test.com", "--env-validation=skip")
-    # "env" not a dict
-    with config.open("w", encoding="utf-8") as f:
-      hjson.dump({"env": []}, f)
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", f"--env-config={config}",
-                   "--urls=http://test.com", "--env-validation=skip")
-    with config.open("w", encoding="utf-8") as f:
-      hjson.dump({"env": {"unknown_property_name": 1}}, f)
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", f"--env-config={config}",
-                   "--urls=http://test.com", "--env-validation=skip")
+    with self.cli() as cli:
+      # No "env" property
+      with config.open("w", encoding="utf-8") as f:
+        hjson.dump({}, f)
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", f"--env-config={config}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      # "env" not a dict
+      with config.open("w", encoding="utf-8") as f:
+        hjson.dump({"env": []}, f)
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", f"--env-config={config}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      with config.open("w", encoding="utf-8") as f:
+        hjson.dump({"env": {"unknown_property_name": 1}}, f)
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", f"--env-config={config}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
 
   def test_parse_env_config_file(self):
     config = pathlib.Path("/test.config.hjson")

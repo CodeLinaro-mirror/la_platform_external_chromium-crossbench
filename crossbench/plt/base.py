@@ -132,7 +132,7 @@ class Platform(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def version(self) -> str:
+  def version_str(self) -> str:
     pass
 
   @property
@@ -154,7 +154,7 @@ class Platform(abc.ABC):
 
   @property
   def full_version(self) -> str:
-    return f"{self.name} {self.version} {self.machine}"
+    return f"{self.name} {self.version_str} {self.machine}"
 
   def __str__(self) -> str:
     return ".".join(self.key) + (".remote" if self.is_remote else ".local")

@@ -61,9 +61,13 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
                                           self.runner.probes, self.browser,
                                           Flags(), 1, self.root_dir, True, True)
     self.action_runner = DefaultActionRunner()
-    self.run = MockRun(self.runner, self.session, "run 1", self.action_runner)
+    self.mock_run = MockRun(self.runner, self.session, "run 1",
+                            self.action_runner)
 
   def expect_successful_google_login(self):
+    # Wait for readystate interactive
+    self.browser.expect_js(result=True)
+
     # Wait for email field
     self.browser.expect_js(result=True)
     # Click submit email
@@ -89,8 +93,8 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     self.expect_successful_google_login()
 
-    self.run.story_secrets = page[0].secrets
-    config.pages[0].login.run_with(self.action_runner, self.run, page[0])
+    self.mock_run.story_secrets = page[0].secrets
+    config.pages[0].login.run_with(self.action_runner, self.mock_run, page[0])
 
   def test_logged_in_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
@@ -98,8 +102,8 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     self.browser.expect_is_logged_in(GoogleUsernamePassword("test", "s3cr3t"))
 
-    self.run.story_secrets = page[0].secrets
-    config.pages[0].login.run_with(self.action_runner, self.run, page[0])
+    self.mock_run.story_secrets = page[0].secrets
+    config.pages[0].login.run_with(self.action_runner, self.mock_run, page[0])
 
   def test_logged_in_non_google_account(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
@@ -109,12 +113,15 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     self.expect_successful_google_login()
 
-    self.run.story_secrets = page[0].secrets
-    config.pages[0].login.run_with(self.action_runner, self.run, page[0])
+    self.mock_run.story_secrets = page[0].secrets
+    config.pages[0].login.run_with(self.action_runner, self.mock_run, page[0])
 
   def test_full_account_maintenance_flow(self):
     config = PagesConfig.parse(self._CONFIG_DATA)
     page = LoadingPageFilter.stories_from_config(self.mock_args(), config)
+
+    # Wait for readystate interactive
+    self.browser.expect_js(result=True)
 
     # Wait for email field
     self.browser.expect_js(result=True)
@@ -181,8 +188,8 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.browser.expect_js(result=1)
 
 
-    self.run.story_secrets = page[0].secrets
-    config.pages[0].login.run_with(self.action_runner, self.run, page[0])
+    self.mock_run.story_secrets = page[0].secrets
+    config.pages[0].login.run_with(self.action_runner, self.mock_run, page[0])
 
 
 if __name__ == "__main__":

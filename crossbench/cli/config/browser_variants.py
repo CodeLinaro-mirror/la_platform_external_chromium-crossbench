@@ -9,8 +9,8 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Iterator, Optional, Self,
-                    Sequence, Set, TextIO, Type, cast)
+from typing import (TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional,
+                    Self, Sequence, Set, TextIO, Type, cast)
 
 from typing_extensions import override
 
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
 
   FlagGroupItemT = tuple[str, str | None] | None
-  BrowserLookupTableT = dict[str, tuple[Type[Browser], "BrowserConfig"]]
+  BrowserLookupTableT = Mapping[str, tuple[Type[Browser], "BrowserConfig"]]
 
 # Add some slack for buffer for browser + platform names. Note that ultimately
 # this is going to get cropped to MAX_PART_LEN.

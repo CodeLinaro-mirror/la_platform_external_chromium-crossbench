@@ -133,3 +133,8 @@ class JetStreamMainBenchmark(JetStream3Benchmark):
   @override
   def version(cls) -> VersionParts:
     return ("main",)
+
+  @classmethod
+  @override
+  def aliases(cls) -> tuple[str, ...]:
+    return ("jetstream_3", "js3") + super().aliases()

@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import pathlib
-from typing import Optional
+from typing import Any, Optional
 
 from typing_extensions import override
 
@@ -83,7 +83,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(result.url, url)
     self.assertListEqual(result.url_list, [url])
     self.assertListEqual(list(result.all_files()), [])
-    failed = None
+    failed: Any = None
     with self.assertRaises(ValueError):
       failed = result.file
     with self.assertRaises(ValueError):
@@ -107,7 +107,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(result.file, path)
     self.assertListEqual(result.file_list, [path])
     self.assertListEqual(list(result.all_files()), [path])
-    failed = None
+    failed: Any = None
     with self.assertRaises(ValueError):
       failed = result.url
     with self.assertRaises(ValueError):
@@ -132,7 +132,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertListEqual(result.get_all("csv"), [path])
     self.assertListEqual(list(result.all_files()), [path])
     self.assertEqual(result.file, path)
-    failed = None
+    failed: Any = None
     with self.assertRaises(ValueError):
       failed = result.url
     with self.assertRaises(ValueError):
@@ -157,7 +157,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertListEqual(result.get_all("json"), [path])
     self.assertListEqual(list(result.all_files()), [path])
     self.assertEqual(result.file, path)
-    failed = None
+    failed: Any = None
     with self.assertRaises(ValueError):
       failed = result.url
     with self.assertRaises(ValueError):

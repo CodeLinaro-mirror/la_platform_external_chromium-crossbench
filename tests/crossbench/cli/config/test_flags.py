@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import unittest
+from typing import Any
 
 from crossbench.cli.config.browser_variants import (FlagsConfig,
                                                     FlagsGroupConfig,
@@ -228,6 +229,7 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
 class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_empty(self):
+    empty: Any
     for empty in (None, [], (), {}, "", "  "):
       with self.subTest(flags=empty):
         self.assertFalse(FlagsGroupConfig.parse(empty))
