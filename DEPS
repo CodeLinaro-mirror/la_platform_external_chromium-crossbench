@@ -39,13 +39,23 @@ git_dependencies = 'SYNC'
 use_relative_paths = True
 
 vars = {
+  'buildtools_git': 'https://chromium.googlesource.com/chromium/src/buildtools.git',
   'chromium_tsproxy_git': 'https://chromium.googlesource.com/external/github.com/catchpoint/WebPageTest.tsproxy.git',
   'chromium_webpagereplay_git': 'https://chromium.googlesource.com/webpagereplay',
+  'clang_format_git': 'https://chromium.googlesource.com/external/github.com/llvm/llvm-project/clang/tools/clang-format.git',
   'hjson_js_git': 'https://chromium.googlesource.com/external/github.com/hjson/hjson-js',
 
   # This variable is overridden in Chromium's DEPS file.
   'build_with_chromium': False,
 
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling tsproxy
+  # and whatever else without interference from each other.
+  'buildtools_revision': '813bee86eeb7d00fa170b81e221120576a18517a',
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling tsproxy
+  # and whatever else without interference from each other.
+  'clang_format_revision': '1a899c914f87a7701b6793d12510b1ad19758468',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
@@ -68,6 +78,14 @@ allowed_hosts = [
 ]
 
 deps = {
+  'buildtools': {
+    'url': Var('buildtools_git') + '@' + Var('buildtools_revision'),
+    'condition': 'not build_with_chromium',
+  },
+  'third_party/clang-format/script': {
+    'url': Var('clang_format_git') + '@' + Var('clang_format_revision'),
+    'condition': 'not build_with_chromium',
+  },
   'third_party/hjson_js': Var('hjson_js_git') + '@' + Var('hjson_js_revision'),
   'third_party/node/linux': {
       'dep_type': 'gcs',
