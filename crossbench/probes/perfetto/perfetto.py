@@ -153,7 +153,8 @@ class PerfettoProbe(Probe):
       logging.critical("  - %s : %s", result_file,
                        fs_helper.get_file_size(result_file))
 
-  def get_context(self, run: Run) -> PerfettoProbeContext:
+  @override
+  def create_context(self, run: Run) -> PerfettoProbeContext:
     # TODO: support more platforms
     if run.browser_platform.is_chromeos:
       return ChromeOsPerfettoProbeContext(self, run)

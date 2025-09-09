@@ -523,7 +523,7 @@ class ProfilingProbe(Probe):
     logging.info("    %s/%s: %d more files", largest_perf_file.parent, glob,
                  len(perf_files))
 
-  def get_context(self, run: Run) -> ProfilingContext:
+  def create_context(self, run: Run) -> ProfilingContext:
     if run.browser_platform.is_linux:
       return LinuxProfilingContext(self, run)
     if run.browser_platform.is_macos:

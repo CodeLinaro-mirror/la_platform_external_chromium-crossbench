@@ -93,10 +93,14 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
     self._results.append(svg_path)
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
+  def invoke(self,
+             info_stack: exception.TInfoStack,
+             timeout: dt.timedelta,
+             label: Optional[str] = None,
+             annotations: Optional[Sequence[ScreenshotAnnotation]] = None,
              **kwargs) -> None:
     self.expect_no_extra_kwargs(kwargs)
-    self.screenshot()
+    self.screenshot(label, annotations)
 
   def screenshot(
       self,

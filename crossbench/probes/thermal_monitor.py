@@ -162,7 +162,8 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
       logging.error("Significant thermal throttling detected during execution, "
                     "scores are not representative of the device performance.")
 
-  def get_context(self, run: Run) -> Optional[ProbeContext]:
+  @override
+  def create_context(self, run: Run) -> ProbeContext:
     if run.browser.platform.is_android:
       return AndroidThermalMonitorProbeContext(self, run)
     return ThermalMonitorProbeContext(self, run)

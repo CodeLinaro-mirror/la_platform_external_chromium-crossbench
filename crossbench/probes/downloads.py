@@ -60,7 +60,8 @@ class DownloadsProbe(Probe):
     self._clear_downloads: bool = clear_downloads
     self._save_downlaods: bool = save_downloads
 
-  def get_context(self, run: Run) -> DownloadsProbeContext:
+  @override
+  def create_context(self, run: Run) -> DownloadsProbeContext:
     if run.browser_platform.is_android:
       return AndroidWebDriverDownloadsProbeContext(self, run)
 

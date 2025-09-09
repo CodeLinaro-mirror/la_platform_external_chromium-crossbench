@@ -254,16 +254,16 @@ class Probe(ProbeResultKey, abc.ABC):
     """
     return self.symlinked_single_run_result(group)
 
-  def get_context(self: Self, run: Run) -> Optional[ProbeContext[Self]]:
+  def create_context(self: Self, run: Run) -> ProbeContext[Self]:
     probe_cls: Type[ProbeContext[Self]] = self.get_context_cls()
     return probe_cls(self, run)
 
   def get_context_cls(self: Self) -> Type[ProbeContext[Self]]:
     raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
-  def get_session_context(  # pylint: disable=useless-return
+  def create_session_context(  # pylint: disable=useless-return
       self: Self,
-      session: BrowserSessionRunGroup) -> Optional[ProbeSessionContext[Self]]:
+      session: BrowserSessionRunGroup) -> ProbeSessionContext[Self] | None:
     del session
     return None
 
