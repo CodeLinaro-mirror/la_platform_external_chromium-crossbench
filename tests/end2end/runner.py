@@ -22,6 +22,9 @@ REPO_DIR: Final = pathlib.Path(__file__).absolute().parents[2]
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))
 
+from tests.test_helper import (  # pylint: disable=wrong-import-position
+    DEFAULT_PYTEST_FLAGS, to_flags)
+
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]
   more_flags = []
@@ -29,6 +32,7 @@ if __name__ == "__main__":
   parser.add_argument("--ignore-tests", required=False)
   parser.add_argument("--adb-device-id", required=False)
   parser.add_argument("--test-gsutil-path", required=False)
+
   args, _ = parser.parse_known_args()
   if args.ignore_tests:
     subfolders = args.ignore_tests.split(",")
@@ -42,9 +46,10 @@ if __name__ == "__main__":
     updated_path = f"'{current_path}:{new_path}'"
     os.environ["PATH"] = updated_path
     os.environ["DEPOT_TOOLS_UPDATE"] = "0"
+
   return_code = pytest.main([
-      "--verbose", "--numprocesses=1", "--log-cli-level=DEBUG", "-o",
-      "log_cli=True", "-rs",
-      str(END2END_TEST_DIR), *pass_through_args
+      *to_flags(DEFAULT_PYTEST_FLAGS),
+      str(END2END_TEST_DIR),
+      *pass_through_args,
   ] + more_flags)
   sys.exit(return_code)

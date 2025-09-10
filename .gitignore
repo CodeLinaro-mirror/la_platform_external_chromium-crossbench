@@ -9,3 +9,4 @@ binary_cache
 buildtools
 third_party
 cache
+pytest.out.txt

@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
+from immutabledict import immutabledict
+from typing_extensions import Final
 
 from crossbench import config
 
@@ -71,6 +73,21 @@ class TestEnv():
   def assert_empty_output_dir(self):
     assert not tuple(self.output_dir.glob("**/*"))
 
+
+DEFAULT_PYTEST_FLAGS: Final[immutabledict[str, str | None]] = immutabledict({
+    "--verbose": None,
+    "--log-file-level": "DEBUG",
+    "-r": "s",
+    "--numprocesses": "1",
+})
+
+
+def to_flags(flag_dict):
+  for k, v in flag_dict.items():
+    if v:
+      yield f"{k}={v}"
+    else:
+      yield k
 
 def run_pytest(path: str | pathlib.Path, *args):
   extra_args = [*args, *sys.argv[1:]]
