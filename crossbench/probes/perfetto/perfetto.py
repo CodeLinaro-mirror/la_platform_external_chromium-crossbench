@@ -231,11 +231,12 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
         "--out",
         self.result_path,
     )
-    proc = self.browser_platform.sh(*cmd, capture_output=True)
-    if proc.returncode > 0:
-      logging.error("perfetto command failed with stderr: %s", proc.stderr)
-      raise subprocess.CalledProcessError(proc.returncode, proc.args,
-                                          proc.stdout, proc.stderr)
+    try:
+      proc = self.browser_platform.sh(*cmd, capture_output=True)
+    except subprocess.CalledProcessError as e:
+      logging.error("perfetto command failed with stderr: %s",
+                    e.stderr.decode(encoding="utf-8"))
+      raise
 
     self._perfetto_pid = NumberParser.positive_int(
         proc.stdout.decode("utf-8").rstrip(), "perfetto pid")
