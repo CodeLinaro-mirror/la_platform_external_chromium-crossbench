@@ -82,7 +82,7 @@ class WprBase(abc.ABC):
           wpr_root = local_wpr_go.parents[1]
         else:
           raise ValueError(
-              f"Could not find web_page_replay_go on {self._platform}")
+              f"Could not find webpagereplay on {self._platform}")
       else:
         assert key_file is not None
         assert cert_file is not None

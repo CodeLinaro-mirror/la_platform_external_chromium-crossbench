@@ -39,7 +39,7 @@ class WebPageReplayProbe(Probe):
   replayed using a local proxy server.
 
   Chrome telemetry's wpr.go:
-  https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/README.md
+  https://chromium.googlesource.com/webpagereplay/+/HEAD/README.md
   """
 
   NAME: ClassVar = "wpr"
