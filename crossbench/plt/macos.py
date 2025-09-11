@@ -23,11 +23,11 @@ from crossbench import path as pth
 from crossbench.parse import NumberParser
 from crossbench.plt.posix import PosixPlatform, PosixVersion
 from crossbench.plt.signals import MacOSSignals
-from crossbench.plt.version import PlatformVersion
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CPUFreqInfo
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.version import PlatformVersion
 
 DISPLAY_NDRV_RE: Final[re.Pattern] = re.compile(
     "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")

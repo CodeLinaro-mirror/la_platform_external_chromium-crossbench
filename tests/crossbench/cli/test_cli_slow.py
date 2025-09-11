@@ -5,12 +5,11 @@
 import argparse
 import json
 import pathlib
-from typing import Type
+from typing import TYPE_CHECKING, Type
 from unittest import mock
 
 import hjson
 
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
@@ -23,6 +22,8 @@ from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 from tests.crossbench.mock_helper import MockCLI
 
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
 
 class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running

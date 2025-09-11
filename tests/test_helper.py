@@ -9,11 +9,10 @@ import pathlib
 import shutil
 import sys
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from immutabledict import immutabledict
-from typing_extensions import Final
 
 from crossbench import config
 

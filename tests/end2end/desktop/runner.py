@@ -17,7 +17,7 @@ REPO_DIR = FILE_PATH.absolute().parents[3]
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))
 
-from tests.test_helper import (  # pylint: disable=wrong-import-position
+from tests.test_helper import (  # pylint: disable=wrong-import-position # noqa: E402
     DEFAULT_PYTEST_FLAGS, to_flags)
 
 if __name__ == "__main__":

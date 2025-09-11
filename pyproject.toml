@@ -80,6 +80,13 @@ testpaths = [
     "tests",
 ]
 
+[tool.ruff]
+# The `exclude` list takes a glob pattern of directories and files to ignore.
+# The paths are relative to the project root.
+exclude = [
+    "protoc/gen/*",
+]
+target-version = "py311"
 
 [tool.ruff.lint]
 extend-select = ["TCH"]
@@ -98,3 +105,5 @@ runtime-evaluated-base-classes = [
 [tool.ruff.lint.isort]
 required-imports = [ "from __future__ import annotations" ]
 
+[tool.pyre]
+source_directories = ["crossbench"]
