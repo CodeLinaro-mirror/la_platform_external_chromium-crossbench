@@ -8,10 +8,10 @@ import abc
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence
 
 import psutil
-from typing_extensions import Final, override
+from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser

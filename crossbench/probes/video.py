@@ -9,9 +9,9 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Self, TextIO, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO, Type
 
-from typing_extensions import ClassVar, Final, override
+from typing_extensions import override
 
 from crossbench.config import ConfigEnum
 from crossbench.helper import collection_helper
