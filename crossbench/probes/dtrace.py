@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import atexit
 import subprocess
-from typing import TYPE_CHECKING, Self, TextIO, Type
+from typing import TYPE_CHECKING, ClassVar, Self, TextIO, Type
 
 from typing_extensions import override
 
@@ -29,8 +29,8 @@ class DTraceProbe(Probe):
   Probe to collect data using DTrace.
   """
 
-  NAME = "dtrace"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  NAME: ClassVar = "dtrace"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   @classmethod
   @override

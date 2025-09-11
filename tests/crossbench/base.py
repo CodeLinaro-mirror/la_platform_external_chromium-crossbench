@@ -125,7 +125,7 @@ class BaseCrossbenchTestCase(
     # Instantiate MockPlatform before setting up fake_filesystem so we can
     # still interact with the original, real plt.Platform object for extracting
     # basic system information.
-    self.platform = MockPlatform()  # pytype: disable=not-instantiable
+    self.platform = MockPlatform()
     self.platform.use_fs = True
     super().setUp()
     self._default_log_level = logging.getLogger().getEffectiveLevel()

@@ -11,8 +11,8 @@ import logging
 import pathlib
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Generator, Iterator, Mapping, Optional,
-                    Set, Type)
+from typing import (TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping,
+                    Optional, Set, Type)
 
 from typing_extensions import override
 
@@ -22,6 +22,7 @@ from crossbench.plt import proc_helper
 from crossbench.plt.base import Environ, Platform, SubprocessError
 from crossbench.plt.remote import RemotePlatformMixin, RemotePopen
 from crossbench.plt.signals import PosixBaseSignal
+from crossbench.plt.version import PlatformVersion
 
 if TYPE_CHECKING:
   import subprocess
@@ -29,6 +30,10 @@ if TYPE_CHECKING:
   from crossbench.plt.signals import AnyPosixSignals, Signals
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessLike
   from crossbench.types import JsonDict
+
+
+class PosixVersion(PlatformVersion):
+  pass
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
@@ -46,6 +51,11 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   @override
   def version_str(self) -> str:
     return self.sh_stdout("uname", "-r").strip()
+
+  @functools.cached_property
+  @override
+  def version(self) -> PlatformVersion:
+    return PosixVersion.parse(self.version_str)
 
   @functools.lru_cache(maxsize=1)
   def _raw_machine_arch(self) -> str:
@@ -155,12 +165,13 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       }
     return {"version": "unknown", "bits": 64}
 
-  UPTIME_RE = re.compile(r"up\s+"
-                         r"(?:(?P<days>\d+)\s+days?,\s*)?"
-                         r"(?:"
-                         r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
-                         r"(?:(?P<mins_only>\d+)\s+min)"
-                         r")")
+  UPTIME_RE: Final[re.Pattern] = re.compile(
+      r"up\s+"
+      r"(?:(?P<days>\d+)\s+days?,\s*)?"
+      r"(?:"
+      r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
+      r"(?:(?P<mins_only>\d+)\s+min)"
+      r")")
 
   @override
   def uptime(self) -> dt.timedelta:

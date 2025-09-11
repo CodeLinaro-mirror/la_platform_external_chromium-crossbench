@@ -43,7 +43,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
     config = NetworkSpeedConfig.parse("4G")
     self.assertNotEqual(config, NetworkSpeedConfig.default())
 
-    for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
+    for preset in NetworkSpeedPreset:
       config = NetworkSpeedConfig.parse(str(preset))
       self.assertEqual(config, NetworkSpeedConfig.parse_preset(preset))
 
@@ -161,7 +161,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       _ = NetworkConfig(type=NetworkType.WPR, path=None)
 
   def test_parse_speed_preset(self):
-    for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
+    for preset in NetworkSpeedPreset:
       config = NetworkConfig.parse_str(preset.value)
       self.assertEqual(config.speed, NetworkSpeedConfig.parse_preset(preset))
 

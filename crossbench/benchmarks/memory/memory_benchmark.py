@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, MutableMapping, Optional, Sequence, Type
+from typing import (TYPE_CHECKING, Any, ClassVar, MutableMapping, Optional,
+                    Sequence, Type)
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -45,7 +46,7 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   Memory-specific Probe.
   Extracts the number of alive tabs.
   """
-  NAME: str = "memory_probe"
+  NAME: ClassVar[str] = "memory_probe"
 
   @override
   def get_context_cls(self) -> Type[MemoryProbeContext]:
@@ -227,8 +228,9 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
   prefill-constant, random style to decide the
   memory workload.
   """
+  URL: ClassVar = (
+      "https://chromium-workloads.web.app/web-tests/main/synthetic/memory")
   stories: Sequence[Page]
-  URL = "https://chromium-workloads.web.app/web-tests/main/synthetic/memory"
 
   @classmethod
   @override
@@ -321,10 +323,10 @@ class MemoryBenchmark(SubStoryBenchmark):
   Benchmark runner for memory stress test.
   """
 
-  NAME = "memory"
-  DEFAULT_STORY_CLS = Page
-  STORY_FILTER_CLS = MemoryBenchmarkStoryFilter
-  PROBES: tuple[Type[MemoryProbe], ...] = (MemoryProbe,)
+  NAME: ClassVar = "memory"
+  DEFAULT_STORY_CLS: ClassVar = Page
+  STORY_FILTER_CLS: ClassVar = MemoryBenchmarkStoryFilter
+  PROBES: ClassVar[tuple[Type[MemoryProbe], ...]] = (MemoryProbe,)
 
   @classmethod
   @override

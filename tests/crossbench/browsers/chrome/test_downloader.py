@@ -22,6 +22,9 @@ class AbstractChromeDownloaderTestCase(
     AbstractDownloaderTestCase, metaclass=abc.ABCMeta):
   __test__ = False
 
+  def test_name(self):
+    self.assertEqual(ChromeDownloader.name(), "Chrome")
+
   def test_wrong_versions(self) -> None:
     with self.assertRaises(ValueError):
       ChromeDownloader.load("", self.platform)

@@ -221,7 +221,7 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_invalid_type(self):
     with self.assertRaises(TypeError):
-      self.parser.add_argument("foo", type="something")  # pytype: disable=wrong-arg-types
+      self.parser.add_argument("foo", type="something")
 
   def test_invalid_alias(self):
     with self.assertRaises(ValueError):
@@ -242,7 +242,7 @@ class ConfigParserTestCase(unittest.TestCase):
       self.parser.add_argument(
           "custom",
           type=CustomConfigObject.parse_depending_nested,
-          depends_on="other")  # pytype: disable=wrong-arg-types
+          depends_on="other")
 
   def test_invalid_depends_on_nof_arguments(self):
     with self.assertRaises(TypeError) as cm:
@@ -328,9 +328,7 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_invalid_default(self):
     with self.assertRaises(TypeError) as cm:
-      ConfigParser(  # pytype: disable=wrong-arg-types
-          CustomConfigObject,
-          default="something else")
+      ConfigParser(CustomConfigObject, default="something else")
     self.assertIn("instance", str(cm.exception))
 
   def test_config_object_to_argument_value(self):

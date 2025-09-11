@@ -10,7 +10,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import (TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional,
-                    Self, Sequence, Set, TextIO, Type, cast)
+                    Self, Sequence, Set, TextIO, Type)
 
 from typing_extensions import override
 
@@ -23,6 +23,7 @@ from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
+from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
@@ -204,6 +205,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if not BrowserConfig.is_supported_browser_path(path):
       raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
     path_str = str(browser_config.path).lower()
+    if "webkit" in path_str:
+      return all_browsers.WebKitWebDriver
     if "safari" in path_str:
       return cls.get_safari_browser_cls(browser_config)
     if "webview" in path_str:
@@ -284,14 +287,13 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if isinstance(path_or_identifier, pth.AnyPath):
       return browser_config
     browser_platform: plt.Platform = self._get_browser_platform(browser_config)
-    if ChromeDownloader.is_valid(path_or_identifier, browser_platform):
-      downloaded = ChromeDownloader.load(path_or_identifier, browser_platform)
-    elif FirefoxDownloader.is_valid(path_or_identifier, browser_platform):
-      downloaded = FirefoxDownloader.load(path_or_identifier, browser_platform)
-    else:
-      raise ValueError(
-          f"No version-download support for browser: {path_or_identifier}")
-    return BrowserConfig(downloaded, browser_config.driver)
+    for downloader_cls in (ChromeDownloader, FirefoxDownloader,
+                           WebKitDownloader):
+      if downloader_cls.is_valid(path_or_identifier, browser_platform):
+        downloaded = downloader_cls.load(path_or_identifier, browser_platform)
+        return BrowserConfig(downloaded, browser_config.driver)
+    raise ValueError(
+        f"No version-download support for browser: {path_or_identifier}")
 
   def _get_driver_path(self, args: argparse.Namespace,
                        browser_config: BrowserConfig) -> Optional[pth.AnyPath]:
@@ -448,7 +450,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
           path_or_identifier]
     else:
       browser_config = self._config_for_maybe_downloaded_binary(
-          cast(BrowserConfig, BrowserConfig.parse(raw_browser_data)))
+          BrowserConfig.parse(raw_browser_data))
       browser_cls = self.get_browser_cls(browser_config)
     assert browser_cls
 

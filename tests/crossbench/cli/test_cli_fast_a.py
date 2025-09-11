@@ -318,7 +318,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
-        self.assertIn("--log-all", browser.js_flags)
+        self.assertIn("--log-deopt", browser.js_flags)
 
   def test_invalid_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")

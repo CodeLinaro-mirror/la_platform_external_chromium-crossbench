@@ -10,7 +10,7 @@ import datetime as dt
 import enum
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Optional, Self, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Optional, Self, Sequence, Type
 
 from typing_extensions import override
 
@@ -55,12 +55,12 @@ class PowerSamplerProbe(Probe):
   this probe mostly makes sense for long-running benchmarks.
   """
 
-  NAME = "powersampler"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  BATTERY_ONLY: bool = True
-  SAMPLERS: tuple[SamplerType,
-                  ...] = (SamplerType.SMC, SamplerType.USER_IDLE_LEVEL,
-                          SamplerType.MAIN_DISPLAY)
+  NAME: ClassVar = "powersampler"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
+  BATTERY_ONLY: ClassVar[bool] = True
+  SAMPLERS: ClassVar[tuple[SamplerType, ...]] = (SamplerType.SMC,
+                                                 SamplerType.USER_IDLE_LEVEL,
+                                                 SamplerType.MAIN_DISPLAY)
 
   @classmethod
   @override

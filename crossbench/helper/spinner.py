@@ -7,13 +7,13 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from typing import Iterable
+from typing import Final, Iterable
 
 from crossbench.helper import terminal
 
 
 class Spinner:
-  CURSORS = "◐◓◑◒"
+  CURSORS: Final = "◐◓◑◒"
 
   def __init__(self, is_atty: bool, sleep: float, title: str) -> None:
     self._is_running: bool = False

@@ -11,8 +11,10 @@ from unittest import mock
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
+from crossbench.helper.version import VersionParseError
 from crossbench.plt.linux import (SCRIPTS_DIR, LinuxPlatform,
                                   parse_display_xrandr)
+from crossbench.plt.posix import PosixVersion
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
 from tests.crossbench.mock_helper import (LinuxMockPlatform,
@@ -39,6 +41,14 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
+
+  def test_version(self):
+    self.mock_platform.mock_version_str = None
+    self.expect_sh("uname", "-r", result="5.4.0-104-generic")
+    self.assertEqual(self.platform.version_str, "5.4.0-104-generic")
+    version = self.platform.version
+    self.assertEqual(version.parts, (5, 4, 0))
+    self.assertEqual(version.version_str, "5.4.0-104-generic")
 
   @mock.patch("psutil.cpu_count")
   def test_cpu_cores(self, mock_cpu_count):
@@ -78,6 +88,13 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.mock_platform.sh_results = [ShResult()]
     meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
     self.assertEqual(len(meminfo), 0)
+
+  def test_platform_version_cls(self):
+    version = PosixVersion.parse("5.4.0-104-generic")
+    self.assertEqual(version.parts, (5, 4, 0))
+    self.assertEqual(version.version_str, "5.4.0-104-generic")
+    with self.assertRaises(VersionParseError):
+      PosixVersion.parse("foo")
 
   _MEMINFO_SCRIPT_OUTPUT = """
 ==== process 926961 ====

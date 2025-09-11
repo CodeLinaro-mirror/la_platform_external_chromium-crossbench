@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import abc
-import datetime as dt
 import re
 import shlex
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, Set
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Set
 
 from typing_extensions import override
 
@@ -20,6 +19,8 @@ from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -29,8 +30,8 @@ class DownloadsProbe(Probe):
   Probe that captures downloads from websites and allows loading tests to wait
   for a download to complete.
   """
-  NAME = "downloads"
-  RESULT_LOCATION = ResultLocation.BROWSER
+  NAME: ClassVar = "downloads"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   CHROME_OS_DOWNLOADS_DIR = pth.AnyPath("/home/chronos/user/MyFiles/Downloads")
 
@@ -59,7 +60,8 @@ class DownloadsProbe(Probe):
     self._clear_downloads: bool = clear_downloads
     self._save_downlaods: bool = save_downloads
 
-  def get_context(self, run: Run) -> DownloadsProbeContext:
+  @override
+  def create_context(self, run: Run) -> DownloadsProbeContext:
     if run.browser_platform.is_android:
       return AndroidWebDriverDownloadsProbeContext(self, run)
 
@@ -160,8 +162,9 @@ class AndroidDownload:
 
 
 class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
-  CONTENT_QUERY_RE = re.compile(r"Row: \d+ _display_name=(.*), _id=(\d+)")
-  CONTENT_QUERY_NO_RESULTS = "No result found."
+  CONTENT_QUERY_RE: Final[re.Pattern] = re.compile(
+      r"Row: \d+ _display_name=(.*), _id=(\d+)")
+  CONTENT_QUERY_NO_RESULTS: Final = "No result found."
 
   def __init__(self, probe: DownloadsProbe, run: Run) -> None:
     super().__init__(probe, run)

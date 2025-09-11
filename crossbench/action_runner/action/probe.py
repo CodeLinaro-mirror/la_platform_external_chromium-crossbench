@@ -5,22 +5,22 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_probe import BaseProbeAction
 from crossbench.cli.config.probe import PROBE_LOOKUP
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action.action import ActionT
   from crossbench.config import ConfigParser
 
 
 class ProbeAction(BaseProbeAction):
-  TYPE: ActionType = ActionType.PROBE
+  TYPE: ClassVar[ActionType] = ActionType.PROBE
 
   @classmethod
   @override

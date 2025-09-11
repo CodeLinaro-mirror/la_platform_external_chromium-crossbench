@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Type
+from typing import (TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Sequence,
+                    Type)
 
 from typing_extensions import override
 
@@ -267,9 +268,9 @@ class LoadingBenchmark(SubStoryBenchmark):
     --urls=http://cnn.com,10s
     --urls=http://twitter.com,5s,http://cnn.com,10s
   """
-  NAME = "loading"
-  DEFAULT_STORY_CLS = Page
-  STORY_FILTER_CLS: Type[LoadingPageFilter] = LoadingPageFilter
+  NAME: ClassVar = "loading"
+  DEFAULT_STORY_CLS: ClassVar = Page
+  STORY_FILTER_CLS: ClassVar[Type[LoadingPageFilter]] = LoadingPageFilter
 
   @classmethod
   @override

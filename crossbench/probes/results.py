@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, Optional, cast
+from typing import (TYPE_CHECKING, Any, Iterable, Optional, TypeVar, cast,
+                    overload)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -280,6 +281,8 @@ class BrowserProbeResult(ProbeResult):
     return local_result_paths
 
 
+DefaultT = TypeVar("DefaultT")
+
 class ProbeResultDict:
   """
   Maps Probes to their result files Paths.
@@ -308,13 +311,25 @@ class ProbeResultDict:
   def __len__(self) -> int:
     return len(self._dict)
 
-  def get(self, probe: ProbeResultKey, default: Any = None) -> ProbeResult:
+  @overload
+  def get(self, probe: ProbeResultKey, /) -> ProbeResult | None:
+    pass
+
+  @overload
+  def get(self, probe: ProbeResultKey, default: DefaultT,
+          /) -> ProbeResult | DefaultT:
+    pass
+
+  def get(self,
+          probe: ProbeResultKey,
+          default: Optional[DefaultT] = None,
+          /) -> ProbeResult | DefaultT | None:
     return self._dict.get(probe.name, default)
 
-  def get_by_name(self, name: str, default: Any = None) -> ProbeResult:
+  def get_by_name(self, name: str) -> ProbeResult | None:
     # Debug helper only.
     # Use bracket `results[probe]` or `results.get(probe)` instead.
-    return self._dict.get(name, default)
+    return self._dict.get(name)
 
   def to_json(self) -> JsonDict:
     data: JsonDict = {}

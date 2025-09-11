@@ -93,6 +93,7 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
     run = runner.runs[0]
     self.assertTrue(run.is_success)
     results = run.results.get_by_name(ThermalMonitorProbe.NAME)
+    assert results
     with results.json.open() as f:
       thermal_data = json.load(f)
       self.assertIn("max_observed_status", thermal_data)
@@ -101,6 +102,7 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
     run = runner.runs[1]
     self.assertTrue(run.is_success)
     results = run.results.get_by_name(ThermalMonitorProbe.NAME)
+    assert results
     with results.json.open() as f:
       thermal_data = json.load(f)
       self.assertIn("max_observed_status", thermal_data)

@@ -15,12 +15,12 @@ from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
 
 class ChromiumVersion(BrowserVersion):
   _PARTS_LEN: Final[int] = 4
-  _VERSION_RE = re.compile(
+  _VERSION_RE: Final[re.Pattern] = re.compile(
       r"(?P<prefix>[^\d]*)"
       r"(?P<version>(?:\d{2,3}(?:\.(?:\d{1,4}|X)){0,3})|latest)? ?"
       r"(?P<suffix>.*)", re.I)
-  _VALID_SUFFIX_MATCH = re.compile(r"[^.\d]+", re.I)
-  _CHANNEL_LOOKUP: dict[str, BrowserVersionChannel] = {
+  _VALID_SUFFIX_MATCH: Final[re.Pattern] = re.compile(r"[^.\d]+", re.I)
+  _CHANNEL_LOOKUP: Final[dict[str, BrowserVersionChannel]] = {
       "any": BrowserVersionChannel.ANY,
       "extended": BrowserVersionChannel.LTS,
       "stable": BrowserVersionChannel.STABLE,
@@ -28,10 +28,11 @@ class ChromiumVersion(BrowserVersion):
       "dev": BrowserVersionChannel.ALPHA,
       "canary": BrowserVersionChannel.PRE_ALPHA,
   }
-  _CHANNEL_NAME_LOOKUP: dict[BrowserVersionChannel, str] = {
+  _CHANNEL_NAME_LOOKUP: Final[dict[BrowserVersionChannel, str]] = {
       channel: name for name, channel in _CHANNEL_LOOKUP.items()
   }
-  _CHANNEL_RE = re.compile("|".join(_CHANNEL_LOOKUP.keys()), re.I)
+  _CHANNEL_RE: Final[re.Pattern] = re.compile("|".join(_CHANNEL_LOOKUP.keys()),
+                                              re.I)
 
   @classmethod
   @override

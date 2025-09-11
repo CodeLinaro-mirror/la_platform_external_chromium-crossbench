@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import shutil
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Optional, Self, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -42,7 +42,7 @@ class WebPageReplayProbe(Probe):
   https://chromium.googlesource.com/catapult/+/HEAD/web_page_replay_go/README.md
   """
 
-  NAME = "wpr"
+  NAME: ClassVar = "wpr"
 
   @classmethod
   @override

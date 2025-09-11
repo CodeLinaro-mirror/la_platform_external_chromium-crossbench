@@ -71,6 +71,14 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     env = self.platform.environ
     self.assertTrue(env)
 
+  def test_version(self):
+    version_a = self.platform.version
+    version_b = self.platform.version
+    self.assertIs(version_a, version_b)
+    self.assertIsInstance(version_a.parts, tuple)
+    self.assertTrue(len(version_a.parts) >= 1)
+    self.assertGreater(version_a.major, 0)
+
   def test_which_none(self):
     with self.assertRaises(ValueError):
       self.platform.which("")

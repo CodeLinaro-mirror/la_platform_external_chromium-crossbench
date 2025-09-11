@@ -14,21 +14,22 @@ import re
 import socket
 import traceback as tb
 from subprocess import SubprocessError
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Type
+from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Type
 
 import psutil
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.parse import NumberParser
-from crossbench.plt.posix import PosixPlatform
+from crossbench.plt.posix import PosixPlatform, PosixVersion
 from crossbench.plt.signals import MacOSSignals
+from crossbench.plt.version import PlatformVersion
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CPUFreqInfo
   from crossbench.plt.display_info import DisplayInfo
 
-DISPLAY_NDRV_RE = re.compile(
+DISPLAY_NDRV_RE: Final[re.Pattern] = re.compile(
     "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")
 
 
@@ -69,6 +70,9 @@ def parse_display_ndrvs(spdisplays_ndrvs: dict) -> Iterator[DisplayInfo]:
       }
 
 
+class MacOsVersion(PosixVersion):
+  pass
+
 class MacOSPlatform(PosixPlatform):
   SEARCH_PATHS: tuple[pth.AnyPath, ...] = (
       pth.AnyPosixPath("."),
@@ -77,8 +81,8 @@ class MacOSPlatform(PosixPlatform):
       pth.LocalPath.home() / "Applications",
   )
 
-  LSAPPINFO_IN_FRONT_LINE_RE = r".*\(in front\)\s*"
-  LSAPPINFO_PID_LINE_RE = r"\s*pid = ([0-9]+).*"
+  LSAPPINFO_IN_FRONT_LINE_RE: Final = r".*\(in front\)\s*"
+  LSAPPINFO_PID_LINE_RE: Final = r"\s*pid = ([0-9]+).*"
 
   @property
   @override
@@ -100,8 +104,9 @@ class MacOSPlatform(PosixPlatform):
     return self.sh_stdout("sw_vers", "-productVersion").strip()
 
   @functools.cached_property
-  def version_parts(self) -> tuple[int, ...]:
-    return tuple(map(int, self.version_str.split(".")))
+  @override
+  def version(self) -> PlatformVersion:
+    return MacOsVersion.parse(self.version_str)
 
   @functools.cached_property
   @override

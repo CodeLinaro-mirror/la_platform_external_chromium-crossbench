@@ -12,11 +12,12 @@ import argparse
 import os
 import pathlib
 import sys
+from typing import Final
 
 import pytest
 
-END2END_TEST_DIR = pathlib.Path(__file__).absolute().parent
-REPO_DIR = pathlib.Path(__file__).absolute().parents[2]
+END2END_TEST_DIR: Final = pathlib.Path(__file__).absolute().parent
+REPO_DIR: Final = pathlib.Path(__file__).absolute().parents[2]
 
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))

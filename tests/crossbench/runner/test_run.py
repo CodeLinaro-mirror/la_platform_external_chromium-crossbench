@@ -24,8 +24,8 @@ class RunTestCase(BaseRunGroupTestCase):
               "1_default", 1, "test run", dt.timedelta(minutes=1), True)
     session.set_ready()
     with session.open():
-      self.assertIsNotNone(run.find_probe_context(MockProbe))
-      self.assertIsNone(run.find_probe_context(ScreenshotProbe))
+      self.assertIsNotNone(run.get_probe_context(MockProbe))
+      self.assertIsNone(run.get_probe_context(ScreenshotProbe))
 
   def test_annotate(self):
     session = self.default_session()

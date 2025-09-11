@@ -49,7 +49,7 @@ class DevToolsTracer:
             trace_config=config,
             stream_format=self._devtools.tracing.StreamFormat.PROTO))
 
-  def end(self) -> bytes:
+  def end(self) -> bytearray:
     self._websocket.execute(self._devtools.tracing.end())
     for _ in WaitRange().wait_with_backoff():
       if self._out_stream:

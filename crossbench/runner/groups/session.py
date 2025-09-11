@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator, Optional
+from typing import TYPE_CHECKING, Iterable, Iterator
 
 from typing_extensions import override
 
@@ -398,5 +398,6 @@ class ProbeSessionContextManager(ProbeContextManager[BrowserSessionRunGroup,
                probe_results: ProbeResultDict) -> None:
     super().__init__(session, probe_results)
 
-  def get_probe_context(self, probe: Probe) -> Optional[ProbeSessionContext]:
-    return probe.get_session_context(self._origin)
+  @override
+  def _create_probe_context(self, probe: Probe) -> ProbeSessionContext | None:
+    return probe.create_session_context(self._origin)

@@ -27,7 +27,7 @@ if (window.location.href === 'https://en.m.wikipedia.org/wiki/Taylor_Swift') {
     if (!language) {
       return;
     }
-    performance.mark('LoadLine2/wikipedia_article/language_shown');
+    performance.mark('LoadLine2/wikipedia_article/interactive');
     language_observer.disconnect();
   });
 
@@ -37,7 +37,7 @@ if (window.location.href === 'https://en.m.wikipedia.org/wiki/Taylor_Swift') {
       return;
     }
     image_observer.disconnect();
-    performance.mark('LoadLine2/wikipedia_article/image_shown');
+    performance.mark('LoadLine2/wikipedia_article/visual');
   });
 
   button_observer.observe(document, {childList: true, subtree: true});
