@@ -315,8 +315,8 @@ class CrossBenchCLI:
       choices.update(benchmark_cls.aliases())
 
     if not alternative:
-      message, alternative = close_matches_message(subcommand, set(choices))
-      message = f"Unknown subcommand {repr(subcommand)}: {message}"
+      message, alternative = close_matches_message(subcommand, set(choices),
+                                                   "subcommand")
     if not alternative:
       raise argparse.ArgumentError(None, message)
     return [alternative, *argv[1:]]

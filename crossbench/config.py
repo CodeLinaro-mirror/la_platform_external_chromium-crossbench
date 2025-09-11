@@ -229,6 +229,14 @@ class _ConfigArgParser:
 
   @property
   def help_text(self) -> str:
+    items = self.help_text_items
+    text = tabulate.tabulate(items, tablefmt="presto")
+    if self.help:
+      return f"{self.help}\n{text}"
+    return text
+
+  @property
+  def help_text_items(self) -> list[tuple[str, str]]:
     items: list[tuple[str, str]] = []
     if self.type is None:
       if self.is_list:
@@ -250,15 +258,17 @@ class _ConfigArgParser:
     else:
       items.append(("default", str(self.default)))
 
+    if config_type := self.config_object_type:
+      items.extend(config_type.help_text_items())
+
     if self.is_enum:
       items.extend(self._enum_help_text())
     elif self.choices:
       items.append(self._choices_help_text(self.choices))
 
-    text = tabulate.tabulate(items, tablefmt="presto")
-    if self.help:
-      return f"{self.help}\n{text}"
-    return text
+    if self.aliases:
+      items.append(("aliases", ",".join(self.aliases)))
+    return items
 
   def _choices_help_text(self, choices: Iterable) -> tuple[str, str]:
     return ("choices", ", ".join(map(str, choices)))
@@ -618,6 +628,11 @@ class ConfigObject(abc.ABC):
   @classmethod
   def config_parser(cls) -> ConfigParser[Self]:
     return ConfigParser(cls)
+
+  @classmethod
+  def help_text_items(cls) -> list[tuple[str, str]]:
+    """Custom help text that is displayed in the ConfigParser."""
+    return []
 
   @classmethod
   def expect_no_extra_kwargs(cls, kwargs: dict[str, Any]) -> None:
@@ -1223,6 +1238,20 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     parts.append("")
     parts.append(self.args_help)
     return "\n".join(parts)
+
+  @property
+  def help_text_items(self) -> list[tuple[str, str]]:
+    help_items: list[tuple[str, str]] = []
+    help_items.append(("title", self.title))
+    if doc := self.doc:
+      help_items.append(("doc", doc))
+    help_items.append(("cls", txt_helper.type_name(self.cls)))
+    help_items.append(("args", self.args_help))
+    config_cls: type = self.cls
+    if hasattr(config_cls, "help_text_items"):
+      for key, value in config_cls.help_text_items():
+        help_items.append((key, value))
+    return help_items
 
 
 def is_google_env() -> bool:

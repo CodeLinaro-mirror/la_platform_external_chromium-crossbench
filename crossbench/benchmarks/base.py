@@ -383,10 +383,9 @@ class RegexFilter():
     ]
 
   def _handle_no_match(self, original_pattern: str) -> list[str]:
-    choices_ms, alternative = close_matches_message(original_pattern,
-                                                    self._all_names)
-    error_message: str = f"'{original_pattern}' didn't match any stories."
-    error_message += choices_ms
+    error_message, alternative = close_matches_message(original_pattern,
+                                                       self._all_names,
+                                                       "Story name")
     if alternative:
       logging.error(error_message)
       return [alternative]

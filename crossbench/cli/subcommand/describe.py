@@ -169,9 +169,10 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def _process_search_str(self, category: str,
                           search_str: str | None) -> tuple[str, str | None]:
     if category not in self.CATEGORIES:
-      message, alternative = close_matches_message(category, self.CATEGORIES)
+      message, alternative = close_matches_message(category, self.CATEGORIES,
+                                                   "help category")
       if not alternative:
-        self.error(f"Invalid category {repr(category)}. {message}")
+        self.error(message)
       else:
         category = alternative
     if not search_str:
@@ -350,15 +351,9 @@ class DescribeSubcommand(CrossbenchSubcommand):
                                usage_lookup=None) -> dict[str, dict[str, Any]]:
     config_data: dict[str, dict[str, Any]] = {}
     for config_parser in config_parsers:
-      data: dict[str, Any] = {
-          "title": config_parser.title,
-      }
-      if doc := config_parser.doc:
-        data["doc"] = doc
+      help_data = dict(config_parser.help_text_items)
       if usage_lookup:
         if used_in := usage_lookup[config_parser.cls_name]:
-          data["used-in"] = used_in
-      data["cls"] = txt_helper.type_name(config_parser.cls)
-      data["args"] = config_parser.args_help
-      config_data[config_parser.key] = data
+          help_data["used-in"] = used_in
+      config_data[config_parser.key] = help_data
     return config_data
