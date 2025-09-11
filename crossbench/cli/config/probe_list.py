@@ -92,7 +92,8 @@ class ProbeListConfig(ConfigObject):
     return list(self._probes.values())
 
   def _add_probe_config(self, probe_config: ProbeConfig) -> None:
-    probe: Probe = probe_config.probe_cls.from_config(probe_config.config)
+    probe: Probe = probe_config.probe_cls.from_config(
+        probe_config.config_dict or {})
     self._add_probe(probe)
 
   def _add_probe(self, probe: Probe) -> None:

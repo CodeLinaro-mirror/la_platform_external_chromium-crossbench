@@ -70,10 +70,10 @@ class AppendDebuggerProbeAction(argparse.Action):
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
     probes: list[ProbeConfig] = getattr(namespace, self.dest, [])
-    probe_settings = {"debugger": "gdb"}
+    probe_settings: dict[str, str] = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:
       probe_settings["debugger"] = "lldb"
-    probes.append(ProbeConfig(DebuggerProbe, probe_settings))
+    probes.append(ProbeConfig(DebuggerProbe, config_dict=probe_settings))
     if not getattr(namespace, "timeout_unit", None):
       # Set a very large --timeout-unit to allow for very slow debugging without
       # causing timeouts (for instance when waiting on a breakpoint).

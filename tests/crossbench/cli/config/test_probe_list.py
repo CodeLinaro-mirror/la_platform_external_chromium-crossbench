@@ -168,14 +168,16 @@ class TestProbeListConfig(BaseConfigTestCase):
     v8_probe = ProbeConfig.parse("v8.log")
     with self.assertLogs(level="ERROR") as cm:
       v8_close_probe = ProbeConfig.parse("v8_log")
-    self.assertEqual(v8_probe, v8_close_probe)
+    self.assertEqual(v8_probe.probe_cls, v8_close_probe.probe_cls)
+    self.assertEqual(v8_close_probe.probe_cls, V8LogProbe)
     output = "\n".join(cm.output)
     self.assertIn("v8.log", output)
     self.assertIn("v8_log", output)
 
     with self.assertLogs(level="ERROR") as cm:
       v8_close_probe = ProbeConfig.parse("v8_log:{}")
-    self.assertEqual(v8_probe, v8_close_probe)
+    self.assertEqual(v8_probe.probe_cls, v8_close_probe.probe_cls)
+    self.assertEqual(v8_close_probe.probe_cls, V8LogProbe)
     output = "\n".join(cm.output)
     self.assertIn("v8.log", output)
     self.assertIn("v8_log", output)
