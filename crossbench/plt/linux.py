@@ -117,7 +117,7 @@ class LinuxPlatform(PosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     try:
       id_dir = self.path("/sys/devices/virtual/dmi/id")
       vendor = self.cat(id_dir / "sys_vendor").strip()

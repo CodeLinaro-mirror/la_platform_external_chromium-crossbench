@@ -925,8 +925,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertRegex(self.platform.version_str, r"[0-9]+\.[0-9]")
 
   def test_device(self):
-    self.assertTrue(self.platform.device)
-    self.assertRegex(self.platform.device, r"[a-zA-Z]+[0-9]+,[0-9]+")
+    self.assertTrue(self.platform.model)
+    self.assertRegex(self.platform.model, r"[a-zA-Z]+[0-9]+,[0-9]+")
 
   def test_cpu(self):
     self.assertTrue(self.platform.cpu)

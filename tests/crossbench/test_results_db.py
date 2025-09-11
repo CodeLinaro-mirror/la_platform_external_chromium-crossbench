@@ -62,6 +62,15 @@ class ResultsDBTestCase(OpenResultDBMixin, unittest.TestCase):
       with db.session() as session:
         self.assertEqual(session.query(PlatformRecord).count(), 1)
 
+  def test_add_duplicate_platforms(self):
+    with self.open_results_db() as db:
+      with db.session() as session:
+        self.assertEqual(session.query(PlatformRecord).count(), 0)
+      # Auto deduped.
+      db.add_platforms([plt.PLATFORM, plt.PLATFORM])
+      with db.session() as session:
+        self.assertEqual(session.query(PlatformRecord).count(), 1)
+
 
 class ResultDBMockTestCase(OpenResultDBMixin, BaseCrossbenchTestCase):
 

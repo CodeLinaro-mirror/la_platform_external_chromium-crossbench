@@ -149,6 +149,13 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
         "refresh_rate": -1
     })
 
+  def test_unique_name(self):
+    self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
+    self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
+    platform_2 = AndroidAdbPlatform(
+        self.mock_platform, "SomeDeviceId", adb=self.adb)
+    self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)
+
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
 
@@ -297,9 +304,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_device(self):
     self.expect_sh("getprop ro.product.model", result="Pixel 999")
-    self.assertEqual(self.platform.device, "Pixel 999")
+    self.assertEqual(self.platform.model, "Pixel 999")
     # Subsequent calls are cached.
-    self.assertEqual(self.platform.device, "Pixel 999")
+    self.assertEqual(self.platform.model, "Pixel 999")
 
   def test_cpu(self):
     self.expect_sh("getprop dalvik.vm.isa.arm.variant", result="cortex-a999")

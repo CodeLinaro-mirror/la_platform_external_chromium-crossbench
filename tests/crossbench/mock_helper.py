@@ -264,7 +264,7 @@ class MockPlatformMixin:
     return super().version_str
 
   @property
-  def device(self) -> str:
+  def model(self) -> str:
     return "TestBook Pro"
 
   @property

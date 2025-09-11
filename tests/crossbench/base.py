@@ -128,6 +128,14 @@ class BaseCrossbenchTestCase(
     self.platform = MockPlatform()
     self.platform.use_fs = True
     super().setUp()
+    # Reset the platform ID counter for each test
+    # The PLATFORM singleton is created at import time, so we need to patch
+    # the counter in the base module.
+    self.platform_id_patcher = mock.patch(
+        "crossbench.plt.base._NEXT_PLATFORM_ID", 777)
+    self.platform_id_patcher.start()
+    self.addCleanup(self.platform_id_patcher.stop)
+
     self._default_log_level = logging.getLogger().getEffectiveLevel()
     logging.getLogger().setLevel(logging.CRITICAL)
     for mock_browser_cls in mock_browser.ALL:

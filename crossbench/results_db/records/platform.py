@@ -27,7 +27,7 @@ class PlatformRecord(BaseRecord):
     python_details = platform.python_details()
 
     return cls(
-        label=str(platform),
+        label=platform.unique_name,
         name=platform.name,
         os_name=os_details["system"],
         os_version=os_details["release"],
@@ -37,7 +37,7 @@ class PlatformRecord(BaseRecord):
         cpu_logical_cores=cpu_details["logical cores"],
         cpu_max_frequency=cpu_details.get("max frequency", "N/A"),
         cpu_min_frequency=cpu_details.get("min frequency", "N/A"),
-        hw_model=platform.device,
+        hw_model=platform.model,
         python_version=python_details["version"])
 
   label: Mapped[str] = orm.mapped_column(orm_types.String(), primary_key=True)

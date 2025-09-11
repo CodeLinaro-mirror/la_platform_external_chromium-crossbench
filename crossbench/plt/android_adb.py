@@ -593,7 +593,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     return self.adb.getprop("ro.product.model")
 
   @property

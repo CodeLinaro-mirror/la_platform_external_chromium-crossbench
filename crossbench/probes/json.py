@@ -15,7 +15,7 @@ from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional,
 
 import xlsxwriter
 from tabulate import tabulate
-from typing_extensions import override
+from typing_extensions import Final, override
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 from crossbench.probes import helper
@@ -36,7 +36,17 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
-IS_NUMERIC_RE = re.compile(r"[0-9.e+\-]+")
+IS_NUMERIC_RE: Final[re.Pattern] = re.compile(r"[0-9.e+\-]+")
+LOG_SUMMARY_KEYS: Final[tuple[str, ...]] = (
+    "label",
+    "browser",
+    "version",
+    "os",
+    "model",
+    "cpu",
+    "runs",
+    "failed runs",
+)
 
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
@@ -167,13 +177,10 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       writer.writerows(csv_data)
     return LocalProbeResult(json=(merged_json_path,), csv=(merged_csv_path,))
 
-  LOG_SUMMARY_KEYS = ("label", "browser", "version", "os", "device", "cpu",
-                      "runs", "failed runs")
-
   def _log_result_metrics(self, data: dict) -> None:
     table: dict[str, list[str]] = defaultdict(list)
     for browser_result in data.values():
-      for info_key in self.LOG_SUMMARY_KEYS:
+      for info_key in LOG_SUMMARY_KEYS:
         table[info_key].append(browser_result["info"][info_key])
       data = browser_result["data"]
       self._extract_result_metrics_table(data, table)

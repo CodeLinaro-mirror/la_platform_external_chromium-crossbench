@@ -110,7 +110,7 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     return self.sh_stdout("sysctl", "-n", "hw.model").strip()
 
   @functools.cached_property

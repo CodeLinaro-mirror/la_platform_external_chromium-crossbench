@@ -258,7 +258,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             return_value=plt.MachineArch.ARM_64):
       variants = BrowserVariantsConfig.parse_args(args).variants
     self.assertEqual(len(variants), 2)
-    self.assertEqual(variants[0].label, "android.arm64.remote_0")
+    self.assertEqual(variants[0].label, "android.arm64.remote.777_0")
     self.assertEqual(variants[1].label, f"{self.platform}_1")
 
     with self.assertRaises(ConfigError) as cm:

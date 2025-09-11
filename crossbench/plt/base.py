@@ -100,12 +100,22 @@ class CPUFreqInfo:
   current: float
 
 
+_NEXT_PLATFORM_ID = 0
+
+
+def _next_id() -> int:
+  global _NEXT_PLATFORM_ID  # pylint: disable=global-statement
+  new_id = _NEXT_PLATFORM_ID
+  _NEXT_PLATFORM_ID += 1
+  return new_id
+
 DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
 class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin
 
   def __init__(self) -> None:
+    self._id: Final[int] = _next_id()
     self._binary_lookup_override: dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
     self._default_port_manager: PortManager = self._create_port_manager()
@@ -127,8 +137,20 @@ class Platform(abc.ABC):
     pass
 
   @property
+  def id(self) -> int:
+    return self._id
+
+  @property
+  def unique_name(self) -> str:
+    """Unique id per platform."""
+    key_str = ".".join(self.key)
+    remote_str = "remote" if self.is_remote else "local"
+    return f"{key_str}.{remote_str}.{self.id}"
+
+  @property
   @abc.abstractmethod
   def name(self) -> str:
+    """Descriptive name e.g. macos of the platform. non-unique."""
     pass
 
   @property
@@ -147,7 +169,7 @@ class Platform(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def device(self) -> str:
+  def model(self) -> str:
     pass
 
   @property
@@ -167,7 +189,7 @@ class Platform(abc.ABC):
     return f"{self.name} {self.version_str} {self.machine}"
 
   def __str__(self) -> str:
-    return ".".join(self.key) + (".remote" if self.is_remote else ".local")
+    return self.unique_name
 
   @property
   def is_remote(self) -> bool:
@@ -213,6 +235,7 @@ class Platform(abc.ABC):
 
   @property
   def key(self) -> tuple[str, str]:
+    """Key used for looking up platform specific objects."""
     return (self.name, str(self.machine))
 
   @property
@@ -317,7 +340,6 @@ class Platform(abc.ABC):
   def display_details(self) -> tuple[DisplayInfo, ...]:
     # TODO: implement on more platforms
     return tuple()
-
 
   def get_relative_cpu_speed(self) -> float:
     return 1

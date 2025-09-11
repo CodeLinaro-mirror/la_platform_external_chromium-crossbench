@@ -50,7 +50,7 @@ class WinPlatform(Platform):
 
   @property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     # TODO: implement
     return ""
 

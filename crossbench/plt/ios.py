@@ -108,7 +108,7 @@ class IOSPlatform(MacOSPlatform):
 
   @property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     return self._device.name
 
   @property
