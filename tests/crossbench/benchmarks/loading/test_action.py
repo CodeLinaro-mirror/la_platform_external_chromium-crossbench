@@ -13,6 +13,7 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
+from crossbench.action_runner.action.dump_html import DumpHtmlAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
@@ -36,7 +37,9 @@ from crossbench.action_runner.action.wait_for_element import \
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.js import JSProbe
+from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.screenshot import ScreenshotProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -986,12 +989,14 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertDictEqual(action.kwargs, {
-        "browser": True,
-        "system": False,
-        "packages": (),
-        "title": None,
-    })
+    self.assertEqual(action.probe_cls, MeminfoProbe)
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": True,
+            "system": False,
+            "packages": (),
+            "title": None,
+        })
 
     action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
@@ -1002,12 +1007,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertDictEqual(action.kwargs, {
-        "browser": True,
-        "system": False,
-        "packages": (),
-        "title": None,
-    })
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": True,
+            "system": False,
+            "packages": (),
+            "title": None,
+        })
 
     action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
@@ -1018,12 +1024,13 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertDictEqual(action.kwargs, {
-        "browser": True,
-        "system": False,
-        "packages": (),
-        "title": "a_title",
-    })
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": True,
+            "system": False,
+            "packages": (),
+            "title": "a_title",
+        })
 
     action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
@@ -1039,7 +1046,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
     self.assertDictEqual(
-        action.kwargs, {
+        dict(action.kwargs), {
             "browser": False,
             "system": False,
             "packages": ("netflix", "minecraft"),
@@ -1077,7 +1084,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = ProbeAction.parse(config_dict)
     self.assertEqual(action.TYPE, ActionType.PROBE)
     self.assertEqual(action.probe_cls, JSProbe)
-    self.assertDictEqual(action.kwargs, kwargs)
+    self.assertDictEqual(dict(action.kwargs), kwargs)
 
   def test_parse_screenshot(self):
     config_dict = {"action": "screenshot"}
@@ -1086,6 +1093,12 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.probe_cls, ScreenshotProbe)
     self.assertFalse(action.kwargs)
 
+  def test_parse_dump_html(self):
+    config_dict = {"action": "dump_html"}
+    action = DumpHtmlAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.DUMP_HTML)
+    self.assertEqual(action.probe_cls, DumpHtmlProbe)
+    self.assertFalse(action.kwargs)
 
 
 class PositionConfigTestCase(unittest.TestCase):
