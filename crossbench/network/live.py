@@ -13,8 +13,7 @@ from crossbench.network.base import Network
 
 if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-LiveNetworkT = TypeVar("LiveNetworkT", bound="LiveNetwork")
+  LiveNetworkT = TypeVar("LiveNetworkT", bound="LiveNetwork")
 
 class LiveNetwork(Network):
 

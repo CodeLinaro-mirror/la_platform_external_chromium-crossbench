@@ -26,14 +26,16 @@ if TYPE_CHECKING:
   from crossbench.plt import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
+  WprReplayNetworkT = TypeVar("WprReplayNetworkT", bound="WprReplayNetwork")
+
 
 # use value for pylint
 assert GS_PREFIX
 
-WPR_BASE_URL: Final = "gs://chromium-telemetry/binary_dependencies"
+WPR_BASE_URL: Final[str] = "gs://chromium-telemetry/binary_dependencies"
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class WPRCloudBinary:
   file_hash: str
 
@@ -67,8 +69,6 @@ WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], WPRCloudBinary]] = {
 }
 
 
-WprReplayNetworkT = TypeVar("WprReplayNetworkT", bound="WprReplayNetwork")
-
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self, archive: LocalPath | str,
@@ -79,10 +79,11 @@ class WprReplayNetwork(ReplayNetwork):
     super().__init__(archive, traffic_shaper, browser_platform)
     self._server: WprReplayServer | None = None
     self._tmp_dir: AnyPath | None = None
-    self._persist_server = persist_server
-    self._inject_deterministic_script = inject_deterministic_script
-    self._response_transformations_file = response_transformations_file
-    self._ensure_wpr_go(wpr_go_bin)
+    self._persist_server: Final[bool] = persist_server
+    self._inject_deterministic_script: Final[bool] = inject_deterministic_script
+    self._response_transformations_file: Final[
+        LocalPath | None] = response_transformations_file
+    self._wpr_go_bin: Final[LocalPath] = self._ensure_wpr_go(wpr_go_bin)
 
   @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
@@ -108,7 +109,7 @@ class WprReplayNetwork(ReplayNetwork):
     return extra_flags
 
   @abc.abstractmethod
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None):
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
     pass
 
   @abc.abstractmethod
@@ -168,7 +169,7 @@ class WprReplayNetwork(ReplayNetwork):
 class LocalWprReplayNetwork(WprReplayNetwork):
 
   @override
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> None:
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
     if not wpr_go_bin:
       if local_wpr_go := WprGoToolFinder(self.host_platform).local_path:
         wpr_go_bin = local_wpr_go
@@ -177,8 +178,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
           f"Could not find wpr.go binary on {self.host_platform}")
     if wpr_go_bin.suffix == ".go" and not self.host_platform.which("go"):
       raise ValueError(f"'go' binary not found on {self.host_platform}")
-    self._wpr_go_bin: LocalPath = self.host_platform.parse_local_binary_path(
-        wpr_go_bin, "wpr.go source")
+    return self.host_platform.parse_local_binary_path(wpr_go_bin,
+                                                      "wpr.go source")
 
   @contextlib.contextmanager
   @override
@@ -207,8 +208,9 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
-    inject_scripts: list[AnyPath] | None = (
-        None if self._inject_deterministic_script else [])
+    inject_scripts: list[AnyPath] | None = []
+    if self._inject_deterministic_script:
+      inject_scripts = None
     return WprReplayServer(
         self.archive_path,
         self._wpr_go_bin,
@@ -225,18 +227,19 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     return platform.is_android or platform.is_chromeos
 
   @override
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> None:
+  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
     assert RemoteWprReplayNetwork.is_compatible(self.browser_platform)
     if wpr_go_bin:
       if wpr_go_bin.suffix == ".go":
         raise ValueError(f"Can't run .go files on {self.browser_platform}")
     else:
       wpr_go_bin = self._download_prebuilt_wpr()
-    self._wpr_go_bin: LocalPath = self.host_platform.parse_local_binary_path(
-        wpr_go_bin, "wpr.go binary")
+    return self.host_platform.parse_local_binary_path(wpr_go_bin,
+                                                      "wpr.go binary")
 
   def _download_prebuilt_wpr(self) -> LocalPath:
-    wpr_cloud_binary = WPR_PREBUILT_LOOKUP[self.browser_platform.key]
+    wpr_cloud_binary: WPRCloudBinary = WPR_PREBUILT_LOOKUP[
+        self.browser_platform.key]
     local_wpr_go_bin = (
         self.host_platform.local_cache_dir("wpr") /
         str(self.browser_platform.machine) / "wpr_go")
@@ -244,7 +247,6 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
       self.host_platform.download_gcs_file(wpr_cloud_binary.url,
                                            local_wpr_go_bin)
     assert check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash)
-
     return local_wpr_go_bin
 
   @contextlib.contextmanager
@@ -281,12 +283,12 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     archive: AnyPath = self._push_file(self._archive_path)
     key_file: AnyPath = self._push_file(wpr_root / "ecdsa_key.pem")
     cert_file: AnyPath = self._push_file(wpr_root / "ecdsa_cert.pem")
-    inject_scripts: list[AnyPath] = ([
-        self._push_file(wpr_root / "deterministic.js")
-    ] if self._inject_deterministic_script else [])
-    rules_file: AnyPath | None = (
-        self._push_file(self._response_transformations_file)
-        if self._response_transformations_file else None)
+    inject_scripts: list[AnyPath] = []
+    if self._inject_deterministic_script:
+      inject_scripts = [self._push_file(wpr_root / "deterministic.js")]
+    rules_file: AnyPath | None = None
+    if file := self._response_transformations_file:
+      rules_file = self._push_file(file)
     for script in self._get_injected_scripts():
       self._push_file(script)
     return WprReplayServer(
@@ -303,25 +305,19 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     if not self._response_transformations_file:
       return []
 
-    try:
-      transformations = json.loads(
-          self._response_transformations_file.read_text())
-      assert isinstance(transformations, list)
-      assert all(isinstance(t, dict) for t in transformations)
-    except Exception as exception:
-      raise ValueError(
-          f"{self._response_transformations_file} has invalid JSON format"
-      ) from exception
+    with self._response_transformations_file.open() as f:
+      transformations = json.load(f)
+    assert isinstance(transformations, list)
+    assert all(isinstance(t, dict) for t in transformations)
 
+    transformations_dir: LocalPath = self._response_transformations_file.parent
     scripts: list[LocalPath] = []
-    for t in transformations:
-      if "InjectedScript" not in t:
-        continue
-      script = (
-          self._response_transformations_file.parent / t["InjectedScript"])
-      if not script.exists():
-        raise ValueError(
-            f"{self._response_transformations_file} attempts to inject "
-            f"{script} but the script was not found")
-      scripts.append(script)
+    for transformation in transformations:
+      if injected_script := transformation.get("InjectedScript"):
+        script: LocalPath = transformations_dir / injected_script
+        if not script.exists():
+          raise ValueError(
+              f"{self._response_transformations_file} attempts to inject "
+              f"{script} but the script was not found")
+        scripts.append(script)
     return scripts

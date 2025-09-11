@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Iterator, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, TypeVar
 
 from crossbench.flags.base import Flags
 
@@ -15,14 +15,13 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
-
-TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
 class TrafficShaper(abc.ABC):
 
   def __init__(self, browser_platform: Platform) -> None:
-    self._browser_platform = browser_platform
+    self._browser_platform: Final[Platform] = browser_platform
     self._is_running = False
 
   @property

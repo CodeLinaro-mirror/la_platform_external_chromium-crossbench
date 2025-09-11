@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
 from urllib.parse import urlparse
 
 from typing_extensions import override
@@ -22,11 +22,10 @@ if TYPE_CHECKING:
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
+GS_PREFIX: Final[str] = "gs://"
 
-GS_PREFIX = "gs://"
-
-ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
 class ReplayNetwork(Network):
   """ A network implementation that can be used to replay requests
@@ -37,7 +36,7 @@ class ReplayNetwork(Network):
                traffic_shaper: Optional[TrafficShaper] = None,
                browser_platform: Optional[plt.Platform] = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
-    self._archive_path = self._ensure_archive(archive)
+    self._archive_path: Final[LocalPath] = self._ensure_archive(archive)
 
   @property
   @override

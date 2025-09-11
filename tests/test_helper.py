@@ -15,6 +15,7 @@ import pytest
 from immutabledict import immutabledict
 
 from crossbench import config
+from crossbench.cli import exception_formatter
 
 is_google_env = config.is_google_env
 root_dir = config.root_dir
@@ -89,6 +90,7 @@ def to_flags(flag_dict):
       yield k
 
 def run_pytest(path: str | pathlib.Path, *args):
+  sys.excepthook = exception_formatter.excepthook
   extra_args = [*args, *sys.argv[1:]]
   # Run tests single-threaded by default when running the test file directly.
   if "-n" not in extra_args:

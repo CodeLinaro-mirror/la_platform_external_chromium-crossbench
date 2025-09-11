@@ -26,9 +26,10 @@ if TYPE_CHECKING:
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  LocalFileNetworkT = TypeVar("LocalFileNetworkT", bound="LocalFileNetwork")
 
-_DEFAULT_HOST = "localhost"
-_DEFAULT_PORT = 8000
+_DEFAULT_HOST: Final[str] = "localhost"
+_DEFAULT_PORT: Final[int] = 8000
 
 # List of known headers that are served by the default HTTPServer and might
 # be accidentally overridden by provided extra headers.
@@ -70,7 +71,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
                directory: Optional[str] = None,
                extra_headers: Optional[Mapping[str, str]] = None,
                **kwargs) -> None:
-    self._extra_headers: immutabledict[str, str] = (
+    self._extra_headers: Final[immutabledict[str, str]] = (
         immutabledict(extra_headers) if extra_headers else immutabledict())
     super().__init__(*args, directory=directory, **kwargs)
 
@@ -84,8 +85,6 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
       self.send_header(key, value)
 
 
-LocalFileNetworkT = TypeVar("LocalFileNetworkT", bound="LocalFileNetwork")
-
 class LocalFileNetwork(Network):
 
   def __init__(self,
@@ -94,10 +93,13 @@ class LocalFileNetwork(Network):
                traffic_shaper: Optional[TrafficShaper] = None,
                browser_platform: Optional[plt.Platform] = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
-    self._path = path
-    self._host, self._port = self._parse_url(url)
+    self._path: Final[LocalPath] = path
+    (host, port) = self._parse_url(url)
+    self._host: Final[str] = host
+    self._port: int = port
     # TODO: support custom headers via command line
-    self._extra_headers: immutabledict[str, str] = self._try_parse_headers()
+    self._extra_headers: Final[immutabledict[str,
+                                             str]] = self._try_parse_headers()
     if self._extra_headers:
       self._validate_extra_headers()
 

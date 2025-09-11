@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
 
 from crossbench import plt
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
@@ -26,9 +26,10 @@ class Network(abc.ABC):
                traffic_shaper: Optional[TrafficShaper] = None,
                browser_platform: Optional[plt.Platform] = None) -> None:
     browser_platform = browser_platform or plt.PLATFORM
-    self._traffic_shaper = traffic_shaper or NoTrafficShaper(browser_platform)
-    self._browser_platform = browser_platform
-    self._host_platform = browser_platform.host_platform
+    self._traffic_shaper: Final[
+        TrafficShaper] = traffic_shaper or NoTrafficShaper(browser_platform)
+    self._browser_platform: Final[plt.Platform] = browser_platform
+    self._host_platform: Final[plt.Platform] = browser_platform.host_platform
     self._is_running: bool = False
 
   @property

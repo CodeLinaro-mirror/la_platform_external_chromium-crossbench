@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Iterator, Optional, Self, TypeVar
+from typing import IO, TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
 
 from typing_extensions import override
 
@@ -34,13 +34,14 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+  TsProxyTrafficShaperT = TypeVar(
+      "TsProxyTrafficShaperT", bound="TsProxyTrafficShaper")
 
 fcntl = None
 try:
   import fcntl  # type: ignore
 except ModuleNotFoundError as not_found:
   logging.debug("No fcntl support %s", not_found)
-
 
 
 class TsProxyServerError(Exception):
@@ -79,9 +80,10 @@ class TsProxyServer:
                out_kbps: Optional[int] = None,
                window: Optional[int] = None,
                verbose: bool = True) -> None:
-    self._platform = platform
+    self._platform: Final[Platform] = platform
     self._proc: TsProxyProcess | None = None
-    self._ts_proxy_path = PathParser.existing_file_path(ts_proxy_path)
+    self._ts_proxy_path: Final[LocalPath] = PathParser.existing_file_path(
+        ts_proxy_path)
     self._socks_proxy_port = socks_proxy_port
     self._host = host
     self._http_port = http_port
@@ -90,7 +92,7 @@ class TsProxyServer:
     self._in_kbps = in_kbps
     self._out_kbps = out_kbps
     self._window = window
-    self._verbose = verbose
+    self._verbose: Final[bool] = verbose
     self.verify_ports(http_port, https_port)
 
   @classmethod
@@ -366,8 +368,6 @@ class TsProxyProcess:
     return err
 
 
-TsProxyTrafficShaperT = TypeVar(
-    "TsProxyTrafficShaperT", bound="TsProxyTrafficShaper")
 
 class TsProxyTrafficShaper(TrafficShaper):
 

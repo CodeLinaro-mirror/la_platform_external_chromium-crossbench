@@ -41,7 +41,7 @@ def _parse_existing_file_path_and_resolve(value: str):
   # to the original one. Resolving to an absolute path upfront ensures we're
   # always looking at the correct file.
   # It would be best to implement this in PathParser, e.g. crrev.com/c/6713595.
-  return PathParser.existing_file_path(value).resolve()
+  return PathParser.json_file_path(value).resolve()
 
 @enum.unique
 class NetworkType(ConfigEnum):
@@ -129,7 +129,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def parse_local(cls, value: Any) -> Self:
-    config = cls.parse(value, type=NetworkType.LOCAL)
+    config: Self = cls.parse(value, type=NetworkType.LOCAL)
     if config.type != NetworkType.LOCAL:
       raise argparse.ArgumentTypeError(
           f"Expected local file server, but got {config.type}. ")

@@ -326,11 +326,11 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / "perfetto_config.textproto"
+    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / "_perfetto_config.textproto"
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
-    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / "perfetto.trace.pb"
+    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / "_perfetto.trace.pb"
 
   @property
   @override
