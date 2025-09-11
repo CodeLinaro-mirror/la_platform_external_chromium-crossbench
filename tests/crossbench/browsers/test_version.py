@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import unittest
-from typing import cast
+from typing import ClassVar, cast
 
 from typing_extensions import override
 
@@ -102,13 +102,13 @@ class BrowserVersionChannelTestCase(unittest.TestCase):
 
 
 class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
-  ANY_VERSION_STR: str = ""
-  LTS_VERSION_STR: str = ""
-  STABLE_VERSION_STR: str = ""
-  BETA_VERSION_STR: str = ""
-  ALPHA_VERSION_STR: str = ""
-  PRE_ALPHA_VERSION_STR: str = ""
-  VERSION_CLS = BrowserVersion
+  ANY_VERSION_STR: ClassVar[str] = ""
+  LTS_VERSION_STR: ClassVar[str] = ""
+  STABLE_VERSION_STR: ClassVar[str] = ""
+  BETA_VERSION_STR: ClassVar[str] = ""
+  ALPHA_VERSION_STR: ClassVar[str] = ""
+  PRE_ALPHA_VERSION_STR: ClassVar[str] = ""
+  VERSION_CLS: ClassVar = BrowserVersion
 
   @abc.abstractmethod
   def parse(self, value: str) -> BrowserVersion:
@@ -344,7 +344,7 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
 
   def test_init_invalid(self):
     with self.assertRaises(VersionParseError):
-      ChromiumVersion(None)  # pytype: disable=wrong-arg-types
+      ChromiumVersion(None)
     with self.assertRaises(VersionParseError):
       ChromiumVersion((-1, -2))
 

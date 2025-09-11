@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
+from typing import (TYPE_CHECKING, Any, Callable, Final, Optional, Sequence,
+                    cast)
 
 from typing_extensions import override
 
@@ -19,6 +20,8 @@ from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
+from crossbench.runner.probe_context_lookup_error import \
+    ProbeContextLookupError
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
@@ -33,7 +36,7 @@ if TYPE_CHECKING:
 class DefaultActionRunner(ActionRunner):
   """Default action runner that uses JavaScript for most page interactions."""
 
-  XPATH_SELECT_ELEMENT = """
+  XPATH_SELECT_ELEMENT: Final[str] = """
       let elements = [];
       let xpathResult = document.evaluate(arguments[0], document);
       let currentElement = xpathResult.iterateNext();
@@ -44,42 +47,42 @@ class DefaultActionRunner(ActionRunner):
       }
   """
 
-  CSS_SELECT_ELEMENT = """
+  CSS_SELECT_ELEMENT: Final[str] = """
       let elements = document.querySelectorAll(arguments[0]);
       let element = elements[0];
   """
 
-  CHECK_ELEMENT_EXISTS = """
+  CHECK_ELEMENT_EXISTS: Final[str] = """
       if (!element) return 0;
   """
 
-  ELEMENT_SCROLL_INTO_VIEW = """
+  ELEMENT_SCROLL_INTO_VIEW: Final[str] = """
       element.scrollIntoView();
   """
 
-  CHECK_ELEMENT_RECT = """
+  CHECK_ELEMENT_RECT: Final[str] = """
       const rect = element.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return 0;
   """
 
-  ELEMENT_CLICK = """
+  ELEMENT_CLICK: Final[str] = """
       element.click();
   """
 
-  RETURN_SUCCESS = """
+  RETURN_SUCCESS: Final[str] = """
       return elements.length;
   """
 
-  SELECT_WINDOW = """
+  SELECT_WINDOW: Final[str] = """
       let elements = [window];
       let element = window;
   """
 
-  SCROLL_ELEMENT_TO = """
+  SCROLL_ELEMENT_TO: Final[str] = """
       element.scrollTo({top:arguments[1], behavior:'smooth'});
   """
 
-  GET_CURRENT_SCROLL_POSITION = """
+  GET_CURRENT_SCROLL_POSITION: Final[str] = """
       if (!element) return [0, 0];
       return [elements.length, element[arguments[1]]];
   """
@@ -354,11 +357,9 @@ class DefaultActionRunner(ActionRunner):
 
   @override
   def invoke_probe(self, run: Run, action: BaseProbeAction) -> None:
-    ctx = run.find_probe_context(action.probe_cls)
-
+    ctx = run.get_probe_context(action.probe_cls)
     if ctx is None:
-      raise RuntimeError(
-          f"No active probe for probe action: {action.probe_cls}")
+      raise ProbeContextLookupError(action.probe_cls)
 
     with run.actions(f"Invoke Probe ({action.probe_cls.NAME})", measure=False):
       ctx.invoke(
@@ -370,10 +371,11 @@ class DefaultActionRunner(ActionRunner):
       run: Run,
       suffix: str,
       annotations: Optional[Sequence[ScreenshotAnnotation]] = None) -> None:
-    ctx = run.find_probe_context(ScreenshotProbe)
+    # TODO: use invoke_probe helper
+    ctx = run.get_probe_context(ScreenshotProbe)
     if not ctx:
-      logging.warning("No screenshot probe for screenshot on %s",
-                      repr(self.info_stack))
+      logging.debug("No screenshot probe for screenshot on %s",
+                    repr(self.info_stack))
       return
     assert isinstance(ctx, ScreenshotProbeContext)
     ctx.screenshot("_".join(self.info_stack) + f"_{suffix}", annotations)

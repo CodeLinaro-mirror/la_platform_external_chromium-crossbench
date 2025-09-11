@@ -140,8 +140,8 @@ class MockRun:
         timeout=timing.timeout_timedelta(timeout),
         delay=timing.timedelta(delay))
 
-  def find_probe_context(
-      self, probe_cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:
+  def get_probe_context(self,
+                        probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
     del probe_cls
     return self.probe_context
 

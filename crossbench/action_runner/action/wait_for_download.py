@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import functools
 import re
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 # New probe actions should not have individual class implementations.
 # They should just be used as ProbeActions directly.
 class WaitForDownloadAction(BaseProbeAction):
-  TYPE: ActionType = ActionType.WAIT_FOR_DOWNLOAD
+  TYPE: ClassVar[ActionType] = ActionType.WAIT_FOR_DOWNLOAD
 
   @classmethod
   @override

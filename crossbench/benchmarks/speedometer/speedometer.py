@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Mapping, MutableMapping,
+from typing import (TYPE_CHECKING, Any, ClassVar, Mapping, MutableMapping,
                     Optional, Sequence, Type)
 
 from immutabledict import immutabledict
@@ -46,8 +46,8 @@ class SpeedometerProbe(
   Speedometer-specific probe (compatible with v2.X and v3.X).
   Extracts all speedometer times and scores.
   """
-  SORT_KEYS: bool = False
-  SCORE_METRIC_KEY: Final[str] = "Score"
+  SORT_KEYS: ClassVar[bool] = False
+  SCORE_METRIC_KEY: ClassVar[str] = "Score"
 
   @abc.abstractmethod
   @override
@@ -126,7 +126,7 @@ class SpeedometerProbe(
 
 
 class SpeedometerProbeContext(JsonResultProbeContext):
-  JS = "return JSON.stringify(window.suiteValues);"
+  JS: ClassVar = "return JSON.stringify(window.suiteValues);"
 
   @override
   def to_json(self, actions: Actions) -> Json:
@@ -146,8 +146,8 @@ class SpeedometerProbeContext(JsonResultProbeContext):
 
 
 class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
-  URL_LOCAL: str = "http://localhost:8000/"
-  DEFAULT_ITERATIONS: int = 10
+  URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
+  DEFAULT_ITERATIONS: ClassVar[int] = 10
 
   def __init__(self,
                substories: Sequence[str] = (),
@@ -327,8 +327,8 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
 
 class SpeedometerBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
 
-  DEFAULT_STORY_CLS = SpeedometerStory
-  STORY_FILTER_CLS = SpeedometerBenchmarkStoryFilter
+  DEFAULT_STORY_CLS: ClassVar = SpeedometerStory
+  STORY_FILTER_CLS: ClassVar = SpeedometerBenchmarkStoryFilter
 
   @classmethod
   @override

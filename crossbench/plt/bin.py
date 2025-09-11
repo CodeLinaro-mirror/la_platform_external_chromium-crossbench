@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Iterable, Optional, TypeAlias
+from typing import TYPE_CHECKING, ClassVar, Iterable, Optional, TypeAlias
 
 from typing_extensions import override
 
@@ -200,41 +200,41 @@ class ChromeOSBinary(Binary):
 
 
 class Binaries:
-  ADB = Binary("adb", default="adb", win="adb.exe")
-  CPIO = LinuxBinary("cpio")
-  FFMPEG = Binary("ffmpeg", posix="ffmpeg")
-  GCERTSTATUS = Binary("gcertstatus", posix="gcertstatus")
-  GO = Binary("go", posix="go")
-  GSUTIL = Binary("gsutil", posix="gsutil")
-  LSCPU = LinuxBinary("lscpu")
-  MONTAGE = Binary("montage", posix="montage")
-  ON_AC_POWER = LinuxBinary("on_ac_power")
-  PERF = LinuxBinary("perf")
-  PPROF = LinuxBinary("pprof")
-  PYTHON3 = Binary("python3", default="python3", win="python3.exe")
-  RPM2CPIO = LinuxBinary("rpm2cpio")
-  SIMPLEPERF = AndroidBinary("simpleperf")
-  XCTRACE = MacOsBinary("xctrace")
-  CHROMEDRIVER = Binary(
+  ADB: ClassVar = Binary("adb", default="adb", win="adb.exe")
+  CPIO: ClassVar = LinuxBinary("cpio")
+  FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
+  GCERTSTATUS: ClassVar = Binary("gcertstatus", posix="gcertstatus")
+  GO: ClassVar = Binary("go", posix="go")
+  GSUTIL: ClassVar = Binary("gsutil", posix="gsutil")
+  LSCPU: ClassVar = LinuxBinary("lscpu")
+  MONTAGE: ClassVar = Binary("montage", posix="montage")
+  ON_AC_POWER: ClassVar = LinuxBinary("on_ac_power")
+  PERF: ClassVar = LinuxBinary("perf")
+  PPROF: ClassVar = LinuxBinary("pprof")
+  PYTHON3: ClassVar = Binary("python3", default="python3", win="python3.exe")
+  RPM2CPIO: ClassVar = LinuxBinary("rpm2cpio")
+  SIMPLEPERF: ClassVar = AndroidBinary("simpleperf")
+  XCTRACE: ClassVar = MacOsBinary("xctrace")
+  CHROMEDRIVER: ClassVar = Binary(
       "chromedriver",
       chromeos="/usr/local/chromedriver/chromedriver",
       linux="chromedriver")
 
 
 class Browsers:
-  SAFARI = MacOsBinary("Safari.app")
-  SAFARI_TECH_PREVIEW = MacOsBinary("Safari Technology Preview.app")
-  FIREFOX_STABLE = Binary(
+  SAFARI: ClassVar = MacOsBinary("Safari.app")
+  SAFARI_TECH_PREVIEW: ClassVar = MacOsBinary("Safari Technology Preview.app")
+  FIREFOX_STABLE: ClassVar = Binary(
       "firefox stable",
       macos="Firefox.app",
       linux="firefox",
       win="Mozilla Firefox/firefox.exe")
-  FIREFOX_DEV = Binary(
+  FIREFOX_DEV: ClassVar = Binary(
       "firefox developer edition",
       macos="Firefox Developer Edition.app",
       linux="firefox-developer-edition",
       win="Firefox Developer Edition/firefox.exe")
-  FIREFOX_NIGHTLY = Binary(
+  FIREFOX_NIGHTLY: ClassVar = Binary(
       "Firefox nightly",
       macos="Firefox Nightly.app",
       linux=["firefox-nightly", "firefox-trunk"],

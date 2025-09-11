@@ -47,13 +47,15 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_single_v8_log(self):
     js_flags = ["--log-maps", "--log-function-events"]
-    config = self.parse_config(
-        {"probes": {
+    config = self.parse_config({
+        "probes": {
             "v8.log": {
                 "prof": True,
+                "log_all": True,
                 "js_flags": js_flags,
             }
-        }})
+        }
+    })
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     assert isinstance(probe, V8LogProbe)
@@ -67,6 +69,7 @@ class TestProbeListConfig(BaseConfigTestCase):
         "probes": {
             "v8.log": {
                 "prof": True,
+                "log_all": True,
                 "js_flags": js_flags,
             }
         }

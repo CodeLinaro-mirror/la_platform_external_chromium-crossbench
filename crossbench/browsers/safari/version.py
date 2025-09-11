@@ -14,28 +14,29 @@ from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 if TYPE_CHECKING:
   VersionParseResult = tuple[tuple[int, ...], BrowserVersionChannel, str]
 
+_SIMPLE_VERSION_RE: Final[re.Pattern] = re.compile(
+    r"(?P<name>Safari(?: Technology Preview)?) "
+    r"(?P<parts>(?:[\d.]+)+)", re.I)
+_COMPLEX_VERSION_RE: Final[re.Pattern] = re.compile(
+    r"[^\d]*"
+    r"(?P<major_parts>[\d.]+)"
+    r".*\("
+    r"(?P<version>(Release (?P<release>\d+), )?"
+    r"(?P<parts>[\d.]+))"
+    r"\).*")
+
 class SafariVersion(BrowserVersion):
   _MIN_MAJOR_PARTS_LEN: Final[int] = 3
   _MIN_PARTS_LEN: Final[int] = 3
-  _SIMPLE_VERSION_RE = re.compile(
-      r"(?P<name>Safari(?: Technology Preview)?) "
-      r"(?P<parts>(?:[\d.]+)+)", re.I)
-  _COMPLEX_VERSION_RE = re.compile(r"[^\d]*"
-                                   r"(?P<major_parts>[\d.]+)"
-                                   #  r"[^(0-9]+ "
-                                   r".*\("
-                                   r"(?P<version>(Release (?P<release>\d+), )?"
-                                   r"(?P<parts>[\d.]+))"
-                                   r"\).*")
 
   @classmethod
   @override
   def _parse(cls, full_version: str) -> VersionParseResult:
     if "Safari" in full_version:
       full_version = full_version.strip()
-      if matches := cls._SIMPLE_VERSION_RE.fullmatch(full_version):
+      if matches := _SIMPLE_VERSION_RE.fullmatch(full_version):
         return cls._parse_simple_version(full_version, matches)
-      if matches := cls._COMPLEX_VERSION_RE.fullmatch(full_version):
+      if matches := _COMPLEX_VERSION_RE.fullmatch(full_version):
         return cls._parse_complex_version(full_version, matches)
     raise cls.parse_error("Could not extract version number", full_version)
 

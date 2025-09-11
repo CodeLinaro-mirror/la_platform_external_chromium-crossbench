@@ -44,10 +44,8 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
 
   def story_filter(self, patterns: Sequence[str],
                    **kwargs) -> benchmark.StoryFilter:
-    return self.story_filter_cls(  # pytype: disable=not-instantiable
-        story_cls=self.story_cls,
-        patterns=patterns,
-        **kwargs)
+    return self.story_filter_cls(
+        story_cls=self.story_cls, patterns=patterns, **kwargs)
 
   def test_instantiate_no_stories(self):
     with self.assertRaises(AssertionError):

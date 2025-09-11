@@ -17,20 +17,20 @@ from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.path import check_hash
-from crossbench.plt import Platform
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.flags.base import Flags
   from crossbench.network.base import TrafficShaper
   from crossbench.path import AnyPath, LocalPath
+  from crossbench.plt import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 # use value for pylint
 assert GS_PREFIX
 
-WPR_BASE_URL = "gs://chromium-telemetry/binary_dependencies"
+WPR_BASE_URL: Final = "gs://chromium-telemetry/binary_dependencies"
 
 
 @dataclasses.dataclass

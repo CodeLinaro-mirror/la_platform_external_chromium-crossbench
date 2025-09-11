@@ -55,7 +55,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         probe=self.probe)
 
     if not probe_context_cls:
-      self.probe_context = self.probe.get_context(self.mock_run)
+      self.probe_context = self.probe.create_context(self.mock_run)
     else:
       self.probe_context = probe_context_cls(
           self.probe, self.mock_run,

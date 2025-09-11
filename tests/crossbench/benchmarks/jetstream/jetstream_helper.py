@@ -98,7 +98,7 @@ class JetStream2BaseTestCase(
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    benchmark = self.benchmark_cls(stories, custom_url=custom_url)  # pytype: disable=not-instantiable
+    benchmark = self.benchmark_cls(stories, custom_url=custom_url)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

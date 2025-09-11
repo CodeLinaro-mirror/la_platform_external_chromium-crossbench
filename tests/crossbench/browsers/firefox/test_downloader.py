@@ -22,6 +22,9 @@ class AbstractFirefoxDownloaderTestCase(
     AbstractDownloaderTestCase, metaclass=abc.ABCMeta):
   __test__ = False
 
+  def test_name(self) -> None:
+    self.assertEqual(FirefoxDownloader.name(), "Firefox")
+
   def test_wrong_versions(self) -> None:
     with self.assertRaises(ValueError):
       FirefoxDownloader.load("", self.platform)

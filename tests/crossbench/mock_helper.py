@@ -10,8 +10,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping,
-                    Optional, Sequence)
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Mapping,
+                    MutableMapping, Optional, Sequence)
 
 import psutil
 from typing_extensions import override
@@ -147,6 +147,7 @@ class MockPlatformMixin:
     self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
+    self.mock_version_str: str | None = "1.2.3.4.5"
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
@@ -258,7 +259,9 @@ class MockPlatformMixin:
 
   @property
   def version_str(self) -> str:
-    return "1.2.3.4.5"
+    if self.mock_version_str:
+      return self.mock_version_str
+    return super().version_str
 
   @property
   def device(self) -> str:
@@ -555,7 +558,7 @@ class MockStory(Story):
 
 class MockBenchmark(SubStoryBenchmark):
   NAME = "mock-benchmark"
-  DEFAULT_STORY_CLS = MockStory
+  DEFAULT_STORY_CLS: ClassVar = MockStory
 
 
 class MockCLI(CrossBenchCLI):

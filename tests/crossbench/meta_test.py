@@ -4,9 +4,14 @@
 
 from __future__ import annotations
 
+import logging
 import pathlib
 import re
 import unittest
+
+import pytest
+import tomllib
+from tabulate import tabulate
 
 from tests import test_helper
 
@@ -47,6 +52,84 @@ class MetaTestCase(unittest.TestCase):
         if py_file.name == "__init__.py" and COMMENTS_ONLY_RE.fullmatch(text):
           continue
         self.fail(f"{py_file} is missing future annotation")
+
+  @pytest.mark.xfail
+  def test_vpython_poetry_version_match(self):
+    vpython_content = (ROOT_DIR / ".vpython3").read_text()
+    poetry_lock_content = (ROOT_DIR / "poetry.lock").read_text()
+
+    vpython_re = re.compile(
+        r"name: \"infra/python/wheels/(?P<name>[^/\"]+).*?"
+        r"version: \"version:(?P<version>[^\"]+)\"", re.DOTALL)
+    poetry_re = re.compile(
+        r'name = "(?P<name>[^"]+)".*?'
+        r'version = "(?P<version>[^"]+)"', re.DOTALL)
+
+    vpython_packages = {}
+    for wheel_block in vpython_content.split("wheel: <"):
+      if not wheel_block.strip():
+        continue
+      match = vpython_re.search(wheel_block)
+      if match:
+        name = match.group("name").split("-py")[0]
+        version = match.group("version").split(".chromium")[0]
+        vpython_packages[name] = version
+
+    poetry_packages = {}
+    for package_block in poetry_lock_content.split("[[package]]"):
+      if not package_block.strip():
+        continue
+      match = poetry_re.search(package_block)
+      if match:
+        name = match.group("name")
+        version = match.group("version")
+        poetry_packages[name] = version
+
+    self.assertGreater(
+        len(vpython_packages), 0, "No packages found in .vpython3")
+    self.assertGreater(
+        len(poetry_packages), 0, "No packages found in poetry.lock")
+
+    vpython_only = sorted(vpython_packages.keys() - poetry_packages.keys())
+    if vpython_only:
+      logging.warning("Packages only in .vpython3: %s", ", ".join(vpython_only))
+    poetry_only = sorted(poetry_packages.keys() - vpython_packages.keys())
+    if poetry_only:
+      logging.warning("Packages only in poetry.lock: %s",
+                      ", ".join(poetry_only))
+
+    mismatches = []
+    for name, vpython_version_str in vpython_packages.items():
+      if name not in poetry_packages:
+        continue
+      poetry_version_str = poetry_packages[name]
+      if vpython_version_str == poetry_version_str:
+        continue
+      mismatches.append((name, vpython_version_str, poetry_version_str))
+    mismatches.sort(key=lambda row: row[0])
+    if mismatches:
+      headers = ["Package", ".vpython3", "poetry.lock"]
+      self.fail("Version mismatches found:\n" +
+                tabulate(mismatches, headers=headers))
+
+  def test_dependencies_are_sorted(self):
+    pyproject_toml_path = ROOT_DIR / "pyproject.toml"
+    pyproject_toml = tomllib.loads(pyproject_toml_path.read_text())
+    poetry_options = pyproject_toml["tool"]["poetry"]
+    dependencies = poetry_options["dependencies"]
+    sorted_dependencies = sorted(dependencies.keys())
+    self.assertEqual(
+        list(dependencies.keys()),
+        sorted_dependencies,
+        "Dependencies in pyproject.toml are not sorted alphabetically.",
+    )
+    dev_dependencies = poetry_options["group"]["dev"]["dependencies"]
+    sorted_dev_dependencies = sorted(dev_dependencies.keys())
+    self.assertEqual(
+        list(dev_dependencies.keys()),
+        sorted_dev_dependencies,
+        "Dev dependencies in pyproject.toml are not sorted alphabetically.",
+    )
 
 
 if __name__ == "__main__":

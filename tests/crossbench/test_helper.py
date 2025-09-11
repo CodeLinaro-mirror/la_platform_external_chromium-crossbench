@@ -311,8 +311,8 @@ class StrEnumWithHelpTestCase(unittest.TestCase):
     B = ("b", "help b")
 
   def test_lookup(self):
-    self.assertIs(self.TestEnum("a"), self.TestEnum.A)  # pytype: disable=wrong-arg-types
-    self.assertIs(self.TestEnum("b"), self.TestEnum.B)  # pytype: disable=wrong-arg-types
+    self.assertIs(self.TestEnum("a"), self.TestEnum.A)
+    self.assertIs(self.TestEnum("b"), self.TestEnum.B)
     self.assertIs(self.TestEnum["A"], self.TestEnum.A)
     self.assertIs(self.TestEnum["B"], self.TestEnum.B)
 

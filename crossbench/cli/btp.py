@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Sequence
+from typing import Final, Sequence
 
 from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
                                                 BatchTraceProcessorConfig,
@@ -22,9 +22,9 @@ from crossbench.parse import PathParser
 from crossbench.probes.perfetto.trace_processor.trace_processor import (
     _MODULES_DIR, _QUERIES_DIR, TraceProcessorProbe)
 
-ROOT_DIR = pth.LocalPath(__file__).parents[2]
-DEFAULT_RESULT_DIR = ROOT_DIR / "results" / "latest"
-DEFAULT_CONFIG_PATH = (
+ROOT_DIR: Final = pth.LocalPath(__file__).parents[2]
+DEFAULT_RESULT_DIR: Final = ROOT_DIR / "results" / "latest"
+DEFAULT_CONFIG_PATH: Final = (
     ROOT_DIR / "config" / "benchmark" / "loadline" / "probe_config.hjson")
 
 class MergedTraceUriResolver(TraceUriResolver):

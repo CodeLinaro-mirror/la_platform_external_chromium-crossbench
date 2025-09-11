@@ -15,7 +15,7 @@ if (window.location.href ===
     // picked the corresponding LCP element on pixel 9.
     if (document.querySelector(widget_selector)) {
       widget_observer.disconnect();
-      performance.mark('LoadLine2/google_doc/navigation_widget_shown')
+      performance.mark('LoadLine2/google_doc/visual')
     }
   });
 
@@ -63,7 +63,7 @@ if (window.location.href ===
     menu_observer.disconnect();
 
     if (menu.style.display !== 'none') {
-      performance.mark('LoadLine2/google_doc/menu_shown');
+      performance.mark('LoadLine2/google_doc/interactive');
       complete = true;
       return;
     }
@@ -71,7 +71,7 @@ if (window.location.href ===
     const attribute_observer = new MutationObserver(() => {
       if (menu.style.display !== 'none') {
         attribute_observer.disconnect();
-        performance.mark('LoadLine2/google_doc/menu_shown');
+        performance.mark('LoadLine2/google_doc/interactive');
         complete = true;
       }
     });
