@@ -28,7 +28,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
   # Simply tests the communication between FrequencyProbe and CPUFrequencyMap.
   # Details for the latter are tested in CPUFrequencyMapTestCase.
   def test_validate(self):
-    probe = FrequencyProbe.from_config(
+    probe = FrequencyProbe.parse_dict(
         {"cpus": {
             "cpu10": "min",
             "cpu20": 20,

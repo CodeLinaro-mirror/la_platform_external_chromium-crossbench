@@ -19,7 +19,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
 
   def test_missing_config(self):
     with self.assertRaises(ValueError) as cm:
-      PerfettoProbe.from_config({})
+      PerfettoProbe.parse_dict({})
     self.assertIn("config", str(cm.exception))
 
   def test_parse_config(self):
@@ -29,7 +29,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
             fill_policy: DISCARD
         }
     """
-    probe: PerfettoProbe = PerfettoProbe.from_config(
+    probe: PerfettoProbe = PerfettoProbe.parse_dict(
         {"trace_config": trace_config})
     self.assertEqual(probe.trace_config.buffers[0].size_kb, 1234)
     self.assertEqual(pth.AnyPath("perfetto"), probe.perfetto_bin)

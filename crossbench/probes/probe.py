@@ -58,7 +58,6 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
     return self._probe_cls
 
 
-
 ProbeKeyT = tuple[tuple[str, Hashable], ...]
 
 
@@ -102,8 +101,12 @@ class Probe(ProbeResultKey, abc.ABC):
     return ProbeConfigParser(cls)
 
   @classmethod
-  def from_config(cls: Type[ProbeT], config_data: dict) -> ProbeT:
-    return cls.config_parser().parse(config_data)
+  def parse_str(cls: Type[ProbeT], config_str: str) -> ProbeT:
+    return cls.config_parser().parse_str(config_str)
+
+  @classmethod
+  def parse_dict(cls: Type[ProbeT], config_data: dict) -> ProbeT:
+    return cls.config_parser().parse_dict(config_data)
 
   @classmethod
   def help_text(cls) -> str:

@@ -80,7 +80,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DownloadsProbe()
     yield DumpHtmlProbe()
-    yield FrequencyProbe.from_config({})
+    yield FrequencyProbe.parse_dict({})
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
                         pth.LocalPath("tracebox.bin"),
                         trace_browser_startup=False)

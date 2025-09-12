@@ -42,7 +42,7 @@ class ConfigError(argparse.ArgumentTypeError):
 NOT_SET: Final[object] = object()
 
 
-class _ConfigArgParser:
+class ConfigArgParser:
   """
   Parser for a single config arg.
   """
@@ -998,7 +998,7 @@ class _ConfigKwargsParser:
         continue
       self._parse_arg(arg_parser)
 
-  def _parse_arg(self, arg_parser: _ConfigArgParser) -> None:
+  def _parse_arg(self, arg_parser: ConfigArgParser) -> None:
     arg_name: str = arg_parser.name
     if arg_name in self._processed_args:
       raise ValueError(
@@ -1010,7 +1010,7 @@ class _ConfigKwargsParser:
                                                 depending_kwargs)
 
   def _maybe_parse_depending_args(
-      self, arg_parser: _ConfigArgParser) -> dict[str, Any]:
+      self, arg_parser: ConfigArgParser) -> dict[str, Any]:
     depending_args: dict[str, Any] = {}
     if not arg_parser.depends_on:
       return depending_args
@@ -1068,7 +1068,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
         raise TypeError(
             f"Default value '{default}' is not an instance of {cls.__name__}")
     self._default = default
-    self._args: dict[str, _ConfigArgParser] = {}
+    self._args: dict[str, ConfigArgParser] = {}
+    self._default_arg: ConfigArgParser | None = None
     self._arg_names: Set[str] = set()
     self._unused_properties_mode = unused_properties_mode
 
@@ -1087,19 +1088,49 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       is_list: bool = False,
       required: bool = False,
       depends_on: Optional[Iterable[str]] = None) -> None:
+    self._add_argument(name, type, default, choices, aliases, help, is_list,
+                       required, depends_on)
+
+  def _add_argument(  # pylint: disable=redefined-builtin
+      self,
+      name: str,
+      type: Optional[ArgParserType],
+      default: Optional[Any] = NOT_SET,
+      choices: Optional[Iterable[Any]] = None,
+      aliases: tuple[str, ...] = tuple(),
+      help: Optional[str] = None,
+      is_list: bool = False,
+      required: bool = False,
+      depends_on: Optional[Iterable[str]] = None) -> ConfigArgParser:
     if name in self._arg_names:
       raise ValueError(f"Duplicate argument: {name}")
-    arg = self._args[name] = _ConfigArgParser(self, name, type, default,
-                                              choices, aliases, help, is_list,
-                                              required, depends_on)
+    if required and (default_arg := self._default_arg):
+      raise ValueError(f"{repr(name)} is marked as required and conflicts with "
+                       f"existing default argument {repr(default_arg.name)}")
+    arg = self._args[name] = ConfigArgParser(self, name, type, default, choices,
+                                             aliases, help, is_list, required,
+                                             depends_on)
     self._arg_names.add(name)
     for alias in arg.aliases:
       if alias in self._arg_names:
         raise ValueError(f"Argument alias ({alias}) from {name}"
                          " was previously added as argument.")
       self._arg_names.add(alias)
+    return arg
 
-  def get_argument(self, arg_name: str) -> _ConfigArgParser:
+  def add_default_argument(self, name: str, *args, **kwargs) -> None:
+    """ Marked argument that is used for parsing single string values. """
+    if default_arg := self._default_arg:
+      raise ValueError(
+          f"Cannot override existing default argument {repr(default_arg.name)}")
+    for arg_name, arg in self._args.items():
+      if arg.required:
+        raise ValueError(
+            f"Cannot add default argument {repr(name)}, it conflicts with a "
+            f"previously added required argument `{repr(arg_name)}`.")
+    self._default_arg = self._add_argument(name, *args, **kwargs)
+
+  def get_argument(self, arg_name: str) -> ConfigArgParser:
     return self._args[arg_name]
 
   def has_all_required_args(self, config_data: dict[str, Any]) -> bool:
@@ -1142,11 +1173,34 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       return kwargs.as_dict()
     raise exception.UnreachableError()
 
-  def parse(self, config_data: dict[str, Any], **kwargs) -> ConfigResultObjectT:
+  def parse(self, config_data: Any, **kwargs) -> ConfigResultObjectT:
+    if isinstance(config_data, dict):
+      return self.parse_dict(config_data, **kwargs)
+    if isinstance(config_data, str):
+      return self.parse_str(config_data, **kwargs)
+    raise argparse.ArgumentTypeError(
+        f"Unsupported config input type {type(config_data).__name__}: "
+        f"{config_data}")
+
+  def parse_dict(self, config_data: dict[str, Any],
+                 **kwargs) -> ConfigResultObjectT:
     if self._default and config_data == {} and not kwargs:
       return self._default
     kwargs = self.kwargs_from_config(config_data, **kwargs)
     return self.new_instance_from_kwargs(kwargs)
+
+  def parse_str(self, value: str) -> ConfigResultObjectT:
+    if not self._default_arg:
+      if issubclass(self.cls, ConfigObject):
+        return self.cls.parse_str(value)  # type: ignore[return-value]
+      raise ValueError(f"{self.key}: Cannot parse string: {repr(value)}")
+    default_arg_name: str = self._default_arg.name
+    config_data = {default_arg_name: value}
+    with exception.annotate_argparsing(
+        f"Parsing {self._cls.__name__} default argument: "
+        f"{repr(default_arg_name)}"):
+      return self.parse(config_data)
+    raise exception.UnreachableError()
 
   def _prepare_config_data(self, config_data: dict[str, Any],
                            **extra_kwargs) -> dict[str, Any]:
@@ -1186,7 +1240,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     return self._key
 
   @property
-  def arg_parsers(self) -> tuple[_ConfigArgParser, ...]:
+  def arg_parsers(self) -> tuple[ConfigArgParser, ...]:
     return tuple(self._args.values())
 
   @property

@@ -69,7 +69,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
   def test_query_config_duplicate_name_raises(self):
     with self.assertRaisesRegex(ArgumentTypeError,
                                 "Unexpected duplicates in query names"):
-      TraceProcessorProbe.from_config({
+      TraceProcessorProbe.parse_dict({
           "queries": [
               "loadline/benchmark_score",
               {
@@ -88,7 +88,7 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     trace_processor_dir.mkdir(parents=True)
     trace_processor_path.touch()
 
-    config = TraceProcessorProbe.from_config({
+    config = TraceProcessorProbe.parse_dict({
         "trace_processor_bin": str(trace_processor_path),
         "queries": [],
     })
@@ -145,7 +145,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
   def test_merge_browsers(self):
-    probe: TraceProcessorProbe = TraceProcessorProbe.from_config("")
+    probe: TraceProcessorProbe = TraceProcessorProbe.parse_dict({})
 
     browser = unittest.mock.MagicMock()
     browser.label = "browser"

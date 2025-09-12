@@ -36,7 +36,7 @@ class V8LogProbeTestCase(unittest.TestCase):
   def test_parse_invalid_config(self):
     with self.assertRaises(ValueError):
       # No logging enabled
-      V8LogProbe.from_config({
+      V8LogProbe.parse_dict({
           "log_all": False,
           "prof": False,
           "js_flags": [],
@@ -44,62 +44,61 @@ class V8LogProbeTestCase(unittest.TestCase):
       })
     with self.assertRaisesRegex(ValueError, "profview"):
       # profview needs prof
-      V8LogProbe.from_config({
+      V8LogProbe.parse_dict({
           "log_all": False,
           "js_flags": [],
           "prof": False,
           "profview": True
       })
     with self.assertRaises(argparse.ArgumentTypeError):
-      V8LogProbe.from_config({"log_all": []})
+      V8LogProbe.parse_dict({"log_all": []})
     with self.assertRaises(argparse.ArgumentTypeError):
-      V8LogProbe.from_config({"prof": 12})
+      V8LogProbe.parse_dict({"prof": 12})
     with self.assertRaises(ValueError):
-      V8LogProbe.from_config({"js_flags": [1]})
+      V8LogProbe.parse_dict({"js_flags": [1]})
     with self.assertRaises(ValueError):
-      V8LogProbe.from_config({"js_flags": ["--log-all", True]})
+      V8LogProbe.parse_dict({"js_flags": ["--log-all", True]})
 
   def test_parse_config(self):
-    probe: V8LogProbe = V8LogProbe.from_config({})
+    probe: V8LogProbe = V8LogProbe.parse_dict({})
     self.assertSetEqual(DEFAULT_LOG_FLAGS_PROF, set(probe.js_flags.keys()))
 
   def test_parse_config_prof(self):
-    probe = V8LogProbe.from_config({"prof": False, "log_all": True})
+    probe = V8LogProbe.parse_dict({"prof": False, "log_all": True})
     self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config({"prof": False, "log_all": True})
+    probe = V8LogProbe.parse_dict({"prof": False, "log_all": True})
     self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config({"prof": True})
+    probe = V8LogProbe.parse_dict({"prof": True})
     self.assertSetEqual(DEFAULT_LOG_FLAGS_PROF, set(probe.js_flags.keys()))
 
   def test_parse_config_custom_js_flags(self):
-    probe = V8LogProbe.from_config({"js_flags": None})
+    probe = V8LogProbe.parse_dict({"js_flags": None})
     self.assertSetEqual(DEFAULT_LOG_FLAGS_PROF, set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config({"js_flags": []})
+    probe = V8LogProbe.parse_dict({"js_flags": []})
     self.assertSetEqual({"--prof"}, set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config({
+    probe = V8LogProbe.parse_dict({
         "log_all": True,
         "js_flags": ["--no-log-ic", "--no-log-maps"]
     })
     self.assertSetEqual({"--log-all", "--no-log-ic", "--no-log-maps"},
                         set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config({
-        "js_flags": ["--no-log-ic", "--no-log-maps"]
-    })
+    probe = V8LogProbe.parse_dict(
+        {"js_flags": ["--no-log-ic", "--no-log-maps"]})
     self.assertSetEqual({"--prof", "--no-log-ic", "--no-log-maps"},
                         set(probe.js_flags.keys()))
 
   def test_parse_config_prof_sampling_interval(self):
-    probe = V8LogProbe.from_config({"log_all": False, "sampling_interval": 12})
+    probe = V8LogProbe.parse_dict({"log_all": False, "sampling_interval": 12})
     self.assertEqual(
         "--prof,--prof-sampling-interval=12000,--log,--log-code,--log-deopt,"
         "--log-source-code,--log-source-position,--log-code-disassemble",
         str(probe.js_flags))
-    probe = V8LogProbe.from_config({
+    probe = V8LogProbe.parse_dict({
         "log_all": False,
         "sampling_interval": "13us"
     })

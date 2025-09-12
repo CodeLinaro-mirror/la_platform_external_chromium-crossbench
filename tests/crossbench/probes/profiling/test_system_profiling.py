@@ -245,7 +245,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             ])
 
   def test_create_non_defaults(self):
-    probe = ProfilingProbe.from_config({
+    probe = ProfilingProbe.parse_dict({
         "js": False,
         "browser_process": True,
         "spare_renderer_process": True,
@@ -279,16 +279,16 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.add_counters, ("aa", "bb"))
 
   def test_create_custom_frequency(self):
-    probe = ProfilingProbe.from_config({"freq": "max"})
+    probe = ProfilingProbe.parse_dict({"freq": "max"})
     self.assertEqual(probe.frequency, "max")
-    probe = ProfilingProbe.from_config({"freq": 333})
+    probe = ProfilingProbe.parse_dict({"freq": 333})
     self.assertEqual(probe.frequency, 333)
 
   def test_create_invalid_frequency(self):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "frequency"):
-      _ = ProfilingProbe.from_config({"freq": -100})
+      _ = ProfilingProbe.parse_dict({"freq": -100})
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "frequency"):
-      _ = ProfilingProbe.from_config({"freq": "maaaaxxx"})
+      _ = ProfilingProbe.parse_dict({"freq": "maaaaxxx"})
 
   def test_spare_renderer(self):
     browser_a = self.browsers[0]

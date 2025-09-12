@@ -186,7 +186,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.use_baseline, True)
 
   def test_parse_config(self):
-    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.from_config({
+    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.parse_dict({
         "metrics": {
             "PageLoad.PaintTiming.NavigationToFirstContentfulPaint": ["mean"]
         },

@@ -11,16 +11,16 @@ from tests import test_helper
 class V8LogProbeTestCase(unittest.TestCase):
 
   def test_default(self):
-    probe = VideoProbe.from_config({})
+    probe = VideoProbe.parse_dict({})
     self.assertEqual(probe.primary_orientation, Orientation.HORIZONTAL)
     self.assertEqual(probe.secondary_orientation, Orientation.VERTICAL)
 
   def test_from_config(self):
-    probe = VideoProbe.from_config({"orientation": "vertical"})
+    probe = VideoProbe.parse_dict({"orientation": "vertical"})
     self.assertEqual(probe.primary_orientation, Orientation.VERTICAL)
     self.assertEqual(probe.secondary_orientation, Orientation.HORIZONTAL)
 
-    probe = VideoProbe.from_config({"dir": "horizontal"})
+    probe = VideoProbe.parse_dict({"dir": "horizontal"})
     self.assertEqual(probe.primary_orientation, Orientation.HORIZONTAL)
     self.assertEqual(probe.secondary_orientation, Orientation.VERTICAL)
 

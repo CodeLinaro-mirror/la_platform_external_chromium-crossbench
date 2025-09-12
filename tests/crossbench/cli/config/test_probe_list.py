@@ -138,14 +138,14 @@ class TestProbeListConfig(BaseConfigTestCase):
     win_mock_d8_file = "D:/out/d8.exe"
     self.fs.create_file(win_mock_d8_file, contents=b"d8")
     win_config_data = {"d8_binary": win_mock_d8_file}
-    probe_config_path = pth.LocalPath("C:/config/v8.probe.config")
+    win_probe_config_path = pth.AnyWindowsPath("C:/config/v8.probe.config")
+    probe_config_path = pth.LocalPath(str(win_probe_config_path))
     self.fs.create_file(probe_config_path)
     with probe_config_path.open("w", encoding="utf-8") as f:
       hjson.dump(win_config_data, f)
-    probe_config_path = pth.AnyWindowsPath(probe_config_path)
     # with ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log:{probe_config_path}"),
+        ProbeConfig.parse(f"v8.log:{win_probe_config_path}"),
     ]
     config = ProbeListConfig.from_cli_args(args)
     self.assertEqual(len(config.probes), 1)
