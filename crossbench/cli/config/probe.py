@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Self, Type
 
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import ObjectParser
@@ -124,6 +125,16 @@ class ProbeConfig(ConfigObject):
     if alternative:
       return PROBE_LOOKUP[alternative]
     raise ProbeConfigError(error_message)
+
+  def new_instance(self) -> Probe:
+    info: list[str] = []
+    if self.src_str:
+      info.append(f"Parsing: {repr(self.src_str)}")
+    with exception.annotate_argparsing(*info):
+      if config_str := self.config_str:
+        return self.probe_cls.parse_str(config_str)
+      return self.probe_cls.parse_dict(self.config_dict or {})
+    raise exception.UnreachableError()
 
   @property
   def name(self) -> str:

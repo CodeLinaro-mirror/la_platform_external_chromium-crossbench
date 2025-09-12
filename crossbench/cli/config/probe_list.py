@@ -92,10 +92,7 @@ class ProbeListConfig(ConfigObject):
     return list(self._probes.values())
 
   def _add_probe_config(self, probe_config: ProbeConfig) -> None:
-    if config_str := probe_config.config_str:
-      probe: Probe = probe_config.probe_cls.parse_str(config_str)
-    else:
-      probe = probe_config.probe_cls.parse_dict(probe_config.config_dict or {})
+    probe: Probe = probe_config.new_instance()
     self._add_probe(probe)
 
   def _add_probe(self, probe: Probe) -> None:
