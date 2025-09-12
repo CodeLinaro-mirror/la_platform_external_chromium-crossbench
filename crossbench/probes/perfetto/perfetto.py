@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import abc
 import atexit
+import dataclasses
+import functools
 import logging
 import subprocess
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, cast
@@ -14,7 +16,9 @@ import google.protobuf.text_format as proto_text_format
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.config import ConfigObject, config_dir
 from crossbench.helper import fs_helper
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.helper.wait import WaitRange
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -37,6 +41,68 @@ _PERFETTO_CONFIG_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
 _PERFETTO_TRACE_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
     "/data/misc/perfetto-traces/")
 _PERFETTO_REMOTE_DIR_CROS: Final = pth.AnyPath("/usr/local/tmp")
+
+
+@dataclasses.dataclass
+class TraceConfig(ConfigObject):
+  """ See https://perfetto.dev/docs/reference/trace-config-proto for more
+  details."""
+  VALID_EXTENSIONS: ClassVar[tuple[str,
+                                   ...]] = (".pbtx", ".proto", ".textproto")
+  trace_config: trace_config_pb2.TraceConfig
+
+  @classmethod
+  @override
+  def parse_str(cls, value: str) -> Self:
+    if ":" in value:
+      return cls.parse_textproto(value)
+    presets = cls.presets()
+    if preset_file := presets.get(value):
+      return cls.parse_path(preset_file)
+    error_message, alternative = close_matches_message(value, presets.keys(),
+                                                       "TraceConfig preset")
+    if not alternative:
+      raise ValueError(error_message)
+    logging.error(error_message)
+    preset_file = presets[alternative]
+    return cls.parse_path(preset_file)
+
+  @classmethod
+  def parse_textproto(cls, value: str) -> Self:
+    trace_config = trace_config_pb2.TraceConfig()
+    ObjectParser.parse_text_or_binary_proto(trace_config, value.encode("utf-8"))
+    return cls(trace_config)
+
+  @classmethod
+  @override
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    trace_config = trace_config_pb2.TraceConfig()
+    ObjectParser.parse_text_or_binary_proto_file(trace_config, path)
+    return cls(trace_config, **kwargs)
+
+  @classmethod
+  def preset_dir(cls) -> pth.LocalPath:
+    return config_dir() / "probe/perfetto/trace_config"
+
+  @classmethod
+  @functools.cache
+  def presets(cls) -> dict[str, pth.LocalPath]:
+    result: dict[str, pth.LocalPath] = {}
+    for preset_config in cls.preset_dir().glob("*.pbtx"):
+      result[preset_config.stem] = preset_config
+    assert result, f"No trace_config presets found {cls.preset_dir()}"
+    return result
+
+  @override
+  def to_argument_value(self) -> trace_config_pb2.TraceConfig:
+    return self.trace_config
+
+  @classmethod
+  @override
+  def help_text_items(cls) -> list[tuple[str, str]]:
+    help_items = super().help_text_items()
+    help_items.append(("presets", ",".join(cls.presets().keys())))
+    return help_items
 
 
 class PerfettoProbe(Probe):
@@ -63,10 +129,10 @@ class PerfettoProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument(
+    parser.add_default_argument(
         "trace_config",
         aliases=("config", "textproto"),
-        type=ObjectParser.proto_or_file(trace_config_pb2.TraceConfig),
+        type=TraceConfig,
         help=("Serialized perfetto configuration. "
               "See probe instructions for more details"))
     parser.add_argument(

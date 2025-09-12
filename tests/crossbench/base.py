@@ -35,12 +35,15 @@ from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.helper.wake_lock import WakeLock
+from crossbench.probes.perfetto.perfetto import TraceConfig
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
 if TYPE_CHECKING:
+  from pyfakefs import fake_filesystem
+
   from crossbench.browsers.browser import Browser
 
 
@@ -63,7 +66,6 @@ class CrossbenchFakeFsTestCase(
     self.sleep_preventer_patcher = mock.patch.object(WakeLock, "__enter__")
     self.addCleanup(self.sleep_preventer_patcher.stop)
     self.sleep_preventer_patcher.start()
-
 
   def create_file(self, path_str: str, contents: str = "") -> pathlib.Path:
     path = pathlib.Path(path_str)
@@ -114,8 +116,36 @@ class CrossbenchMockArgsMixin:
     return args
 
 
+class CrossbenchConfigTestMixin:
+  fs: fake_filesystem.FakeFilesystem
+
+  def setup_loadline_configs(self):
+    self.setup_config_dir(
+        LoadLine1TabletBenchmark.default_network_config_path().parent)
+    self.setup_config_dir(
+        LoadLine2TabletBenchmark.default_network_config_path().parent)
+
+  def setup_perfetto_config_presets(self):
+    self.setup_config_dir(TraceConfig.preset_dir())
+
+  def setup_config_dir(self, config_dir):
+    self.fs.add_real_directory(
+        config_dir, lazy_read=not test_helper.is_google_env())
+    if test_helper.is_google_env():
+      # On google3, all files have been replaced by symlinks. The link targets
+      # must be added in order for these symlinks to resolve.
+      for child in config_dir.glob("**/*"):
+        if child.is_symlink():
+          link_target = child.readlink()
+          if not link_target.exists():
+            self.fs.add_real_file(link_target)
+
+
 class BaseCrossbenchTestCase(
-    CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+    CrossbenchConfigTestMixin,
+    CrossbenchMockArgsMixin,
+    CrossbenchFakeFsTestCase,
+    metaclass=abc.ABCMeta):
 
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> list[str]:
     return [url for url in urls if not url.startswith("data:")]
@@ -155,24 +185,6 @@ class BaseCrossbenchTestCase(
     for browser in self.browsers:
       self.assertListEqual(browser.expected_js, [])
 
-  def setup_loadline_configs(self):
-    self.setup_config_dir(
-        LoadLine1TabletBenchmark.default_network_config_path().parent)
-    self.setup_config_dir(
-        LoadLine2TabletBenchmark.default_network_config_path().parent)
-
-  def setup_config_dir(self, config_dir):
-    self.fs.add_real_directory(
-        config_dir,
-        lazy_read=not test_helper.is_google_env())
-    if test_helper.is_google_env():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      for child in config_dir.glob("**/*"):
-        if child.is_symlink():
-          link_target = child.readlink()
-          if not link_target.exists():
-            self.fs.add_real_file(link_target)
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
@@ -205,6 +217,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.setup_wrap_patcher()
     self.setup_wait_for_ready_state_patcher()
     self.setup_loadline_configs()
+    self.setup_perfetto_config_presets()
 
   def setup_tabulate_patcher(self) -> None:
     def mock_tabulate(table, *args, **kwargs):

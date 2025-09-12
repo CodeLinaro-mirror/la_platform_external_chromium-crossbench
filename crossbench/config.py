@@ -280,6 +280,7 @@ class ConfigArgParser:
     assert self.choices
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
+
   def parse(self, config_data: dict[str, Any],
             depending_kwargs: dict[str, Any]) -> Any:
     data = None
@@ -702,6 +703,7 @@ class _PrimitiveConfigObject(ConfigObject):
       return cls(str(path.resolve()))
 
     return cls(original_value)
+
 
 @dataclasses.dataclass(frozen=False)
 class TemplateArg:
@@ -1314,8 +1316,8 @@ def is_google_env() -> bool:
 
 def root_dir() -> pth.LocalPath:
   if is_google_env():
-    return pth.LocalPath(__file__).parents[0]
-  return pth.LocalPath(__file__).parents[1]
+    return pth.LocalPath(__file__).parents[0].absolute()
+  return pth.LocalPath(__file__).parents[1].absolute()
 
 
 def config_dir() -> pth.LocalPath:

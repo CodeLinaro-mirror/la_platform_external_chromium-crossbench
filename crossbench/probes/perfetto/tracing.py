@@ -162,6 +162,7 @@ class TracingProbe(ChromiumProbe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
+    # TODO: Create separate TraceConfig object for parsing.
     parser.add_argument(
         "preset",
         type=str,

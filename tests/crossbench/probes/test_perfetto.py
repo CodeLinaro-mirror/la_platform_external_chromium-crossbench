@@ -42,6 +42,27 @@ class PerfettoProbeTestCase(unittest.TestCase):
     probe = probes[0]
     self.assertIsInstance(probe, PerfettoProbe)
 
+  def test_trace_config_preset(self):
+    trace_config_dir = test_helper.config_dir() / "probe/perfetto/trace_config"
+    preset_count = 0
+    for config_file in trace_config_dir.glob("*.pbtx"):
+      preset_count += 1
+      with self.subTest(config_file=str(config_file)):
+        probe_a = PerfettoProbe.parse_dict({"trace_config": config_file.stem})
+        probe_b = PerfettoProbe.parse_str(config_file.stem)
+        self.assertEqual(probe_a.trace_config, probe_b.trace_config)
+        for data_source in probe_b.trace_config.data_sources:
+          config = data_source.config
+          self.assertNotEqual(
+              config.name, "org.chromium.trace_metadata",
+              "Please use the new org.chromium.trace_metadata2 data_source "
+              "without the added json-serialized categories.")
+          self.assertFalse(
+              config.chrome_config and config.chrome_config.trace_config,
+              "Please use the org.chromium.trace_metadata2 data source "
+              "which does not require the json-serialized trace_config")
+    self.assertGreater(preset_count, 0)
+
 
 class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
 

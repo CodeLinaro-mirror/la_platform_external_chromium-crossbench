@@ -363,6 +363,12 @@ class ObjectParser:
     return parser
 
   @classmethod
+  def parse_text_or_binary_proto_file(cls, proto_instance: ProtoClassT,
+                                      value: Any) -> ProtoClassT:
+    data: bytes = ObjectParser.bytes_or_file_contents(value)
+    return cls.parse_text_or_binary_proto(proto_instance, data)
+
+  @classmethod
   def parse_text_or_binary_proto(cls, proto_instance: ProtoClassT,
                                  value: bytes) -> ProtoClassT:
     try:

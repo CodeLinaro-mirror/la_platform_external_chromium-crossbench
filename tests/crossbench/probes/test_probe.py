@@ -43,7 +43,8 @@ from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.base import (CrossbenchConfigTestMixin,
+                                   CrossbenchFakeFsTestCase)
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
@@ -63,7 +64,7 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(probe_list.probes, [])
 
 
-class ProbeTestCase(CrossbenchFakeFsTestCase):
+class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
 
   def probe_instances(self):
     yield from self.internal_probe_instances()
@@ -152,6 +153,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
             set(OPTIONAL_INTERNAL_PROBES)))
 
   def test_help(self):
+    self.setup_perfetto_config_presets()
     for probe_cls in self.probe_classes():
       help_text = probe_cls.help_text()
       self.assertTrue(help)
