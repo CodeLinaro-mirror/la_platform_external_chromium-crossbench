@@ -12,7 +12,7 @@ from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
 
-class TestJSProbe(GenericProbeTestCase):
+class JSProbeTestCase(GenericProbeTestCase):
 
   def test_parse_example_config(self):
     config_file = test_helper.config_dir() / "doc/probe/js.config.hjson"
@@ -30,18 +30,22 @@ class TestJSProbe(GenericProbeTestCase):
         "setup": "globalThis.metrics = {};",
         "js": "return globalThis.metrics;",
     }
-    probe = JSProbe.config_parser().parse(config)
+    probe = JSProbe.parse_dict(config)
     self.assertIsInstance(probe, JSProbe)
     self.assertEqual(probe.setup_js, "globalThis.metrics = {};")
     self.assertEqual(probe.metric_js, "return globalThis.metrics;")
 
+  def test_parse_str(self):
+    probe = JSProbe.parse_str("return globalThis.metrics2;")
+    self.assertIsNone(probe.setup_js)
+    self.assertEqual(probe.metric_js, "return globalThis.metrics2;")
 
   def test_simple_loading_case(self):
     config = {
         "setup": "globalThis.metrics = {};",
         "js": "return globalThis.metrics;",
     }
-    probe = JSProbe.config_parser().parse(config)
+    probe = JSProbe.parse_dict(config)
     stories = [
         LivePage("google", "https://google.com"),
         LivePage("amazon", "https://amazon.com")
@@ -88,7 +92,7 @@ class TestJSProbe(GenericProbeTestCase):
         "setup": "globalThis.metrics = {};",
         "js": "return globalThis.metrics;",
     }
-    probe = JSProbe.config_parser().parse(config)
+    probe = JSProbe.parse_dict(config)
     stories = [
         LivePage("google", "https://google.com"),
         LivePage("amazon", "https://amazon.com")
