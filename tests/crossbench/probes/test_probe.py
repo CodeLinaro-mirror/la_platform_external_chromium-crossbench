@@ -20,6 +20,7 @@ from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.embedder import WebviewEmbedderProbe
 from crossbench.probes.env_modifier import EnvModifier
+from crossbench.probes.etm import EtmProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
@@ -184,6 +185,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
         # TODO: missing wpr, download precompiled wpr from storage
         WebPageReplayProbe,
         WebviewEmbedderProbe,
+        EtmProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:
       if probe_cls in requires_configuration:

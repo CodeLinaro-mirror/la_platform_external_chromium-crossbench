@@ -407,6 +407,26 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number_zero(invalid)
 
+  def test_power_of_two_with_unit(self):
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit("4M"), "4M")
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit("256K"), "256K")
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit("1G"), "1G")
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit(1024), "1024")
+
+  def test_power_of_two_with_unit_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("3M")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("0")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("abc")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("1.5M")
+
   def _json_file_test_helper(self, parser) -> Any:
     with self.assertRaises(argparse.ArgumentTypeError):
       parser("file")

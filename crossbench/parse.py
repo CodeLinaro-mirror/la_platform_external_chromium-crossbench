@@ -719,6 +719,40 @@ class NumberParser:
                        parse_str: bool = True) -> int:
     return cls.int_range(0, 65535, name, parse_str)(value)
 
+  _SIZE_RE: Final[re.Pattern] = re.compile(r"^(?P<value>\d+)(?P<unit>[KMG])?$")
+
+  @classmethod
+  def _parse_power_of_two(cls, value: Any, name: str) -> int:
+    if isinstance(value, int):
+      return value
+    str_value = ObjectParser.non_empty_str(value, name)
+    match = cls._SIZE_RE.fullmatch(str_value)
+    if not match:
+      raise argparse.ArgumentTypeError(
+          f"Invalid {name} format: '{str_value}',"
+          " expected format like '4M' or '256K'")
+    int_value = int(match.group("value"))
+    unit = match.group("unit")
+    if unit == "K":
+      int_value *= 1024
+    elif unit == "M":
+      int_value *= 1024 * 1024
+    elif unit == "G":
+      int_value *= 1024 * 1024 * 1024
+    return int_value
+
+  @classmethod
+  def power_of_two_with_unit(cls, value: Any, name: str = "value") -> str:
+    """
+    Parses a size string (e.g., '4M', '256K') and validates that it's a
+    power of two.
+    """
+    int_value = cls._parse_power_of_two(value, name)
+    if (int_value & (int_value - 1)) != 0 or int_value == 0:
+      raise argparse.ArgumentTypeError(
+          f"Invalid {name}: '{value}' is not a power of two.")
+    return str(value)
+
 
 class LateArgumentError(argparse.ArgumentTypeError):
   """Signals argument parse errors after parser.parse_args().
