@@ -154,8 +154,10 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
   @classmethod
   @override
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    assert browser_attributes.is_chromium_based
-    return Flags(["--request-desktop-sites"])
+    flags: Flags = super().extra_flags(browser_attributes)
+    if browser_attributes.is_chromium_based:
+      flags.set("--request-desktop-sites")
+    return flags
 
 
 class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
