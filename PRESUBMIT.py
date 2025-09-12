@@ -9,7 +9,7 @@ import pathlib
 import platform
 import re
 import subprocess
-from typing import Iterable, Optional
+from typing import Optional
 
 USE_PYTHON3 = True
 
@@ -106,23 +106,11 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   # Unittest:
   # ---------------------------------------------------------------------------
-  test_dirs_to_check, test_file_patterns_to_check = TestFilePatternsToCheck(
-      on_commit, crossbench_test_path)
-  for test_dir_to_check in test_dirs_to_check:
-    # Skip potentially empty dirs
-    if test_dir_to_check.name == "__pycache__":
-      continue
-    # End-to-end tests require custom setup and are not suited for presubmits.
-    if "end2end" in test_dir_to_check.parts:
-      continue
-    tests += input_api.canned_checks.GetUnitTestsInDirectory(
-        input_api,
-        output_api,
-        directory=test_dir_to_check,
-        env=testing_env,
-        files_to_check=test_file_patterns_to_check,
-        skip_shebang_check=True,
-        run_on_python2=False)
+  test_dir, file_pattern = TestFilePatternsToCheck(on_commit,
+                                                   crossbench_test_path)
+  unit_tests = [str(path) for path in test_dir.glob(f"**/{file_pattern}")]
+  tests += input_api.canned_checks.GetUnitTests(
+      input_api, output_api, unit_tests, env=testing_env)
 
   # ---------------------------------------------------------------------------
   # Run all test
@@ -271,13 +259,13 @@ def FormatHjsonFile(input_api, hjson_file: pathlib.Path) -> str:
 def TestFilePatternsToCheck(on_commit, crossbench_test_path):
   # Only run test_cli to speed up the presubmit checks
   if on_commit:
-    test_dirs_to_check: Iterable[pathlib.Path] = crossbench_test_path.glob("**")
-    test_files_to_check = [r".*test_.*\.py$"]
+    test_dir: pathlib.Path = crossbench_test_path
+    file_pattern = "*test_*.py"
   else:
     # Only check a small subset on upload
-    test_dirs_to_check = [crossbench_test_path / "cli"]
-    test_files_to_check = [r".*test_cli_fast_.*\.py$"]
-  return test_dirs_to_check, test_files_to_check
+    test_dir = crossbench_test_path / "cli"
+    file_pattern = "*test_cli_fast_.*.py"
+  return test_dir, file_pattern
 
 
 def CheckChangeOnUpload(input_api, output_api):
