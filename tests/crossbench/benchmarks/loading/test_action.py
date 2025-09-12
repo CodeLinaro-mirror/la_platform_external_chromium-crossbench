@@ -36,7 +36,9 @@ from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
+from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.config import config_dir
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.meminfo import MeminfoProbe
@@ -46,6 +48,19 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ActionTestCase(CrossbenchFakeFsTestCase):
+
+  def test_all_configs(self):
+    actions_config_path = config_dir() / "doc/action/action.config.hjson"
+    self.fs.add_real_directory(actions_config_path.parent)
+    actions_test_config = PagesConfig.parse(actions_config_path)
+    parsed_actions: set[ActionType] = set()
+    for page in actions_test_config.pages:
+      for action in page.actions():
+        parsed_actions.add(action.TYPE)
+    self.assertGreater(len(parsed_actions), 1)
+    self.assertSetEqual(
+        set(ActionType), parsed_actions,
+        f"Missing example action config in {actions_config_path}")
 
   def test_action_type_lookup(self):
     for action_type in ActionType:
