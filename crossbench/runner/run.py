@@ -487,9 +487,9 @@ class Run(ResultOrigin):
     logging.info("- " * 40)
     RunAnnotation.log_all(self.annotations, limit=10)
 
-  def find_probe_context(
-      self, probe_cls: Type[ProbeT]) -> Optional[ProbeContext[ProbeT]]:
-    return self._probe_context_manager.find_probe_context(probe_cls)
+  def get_probe_context(self,
+                        probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
+    return self._probe_context_manager.get_probe_context(probe_cls)
 
 
 class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
@@ -501,8 +501,9 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
   def run(self) -> Run:
     return self._origin
 
-  def get_probe_context(self, probe: Probe) -> Optional[ProbeContext]:
-    return probe.get_context(self.run)
+  @override
+  def _create_probe_context(self, probe: Probe) -> ProbeContext:
+    return probe.create_context(self.run)
 
   def setup_selenium_options(self, options: ArgOptions) -> None:
     for probe_context in self._probe_contexts.values():

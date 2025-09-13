@@ -7,8 +7,10 @@ import datetime as dt
 import unittest
 
 from crossbench.probes.all import V8LogProbe
+from crossbench.probes.v8.log import DEFAULT_LOG_FLAGS
 from tests import test_helper
 
+DEFAULT_LOG_FLAGS_PROF = frozenset(DEFAULT_LOG_FLAGS + ("--prof",))
 
 class V8LogProbeTestCase(unittest.TestCase):
 
@@ -37,12 +39,14 @@ class V8LogProbeTestCase(unittest.TestCase):
       V8LogProbe.from_config({
           "log_all": False,
           "prof": False,
+          "js_flags": [],
           "profview": False
       })
     with self.assertRaisesRegex(ValueError, "profview"):
       # profview needs prof
       V8LogProbe.from_config({
           "log_all": False,
+          "js_flags": [],
           "prof": False,
           "profview": True
       })
@@ -57,27 +61,33 @@ class V8LogProbeTestCase(unittest.TestCase):
 
   def test_parse_config(self):
     probe: V8LogProbe = V8LogProbe.from_config({})
+    self.assertSetEqual(DEFAULT_LOG_FLAGS_PROF, set(probe.js_flags.keys()))
+
+  def test_parse_config_prof(self):
+    probe = V8LogProbe.from_config({"prof": False, "log_all": True})
     self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config({"prof": False})
+    probe = V8LogProbe.from_config({"prof": False, "log_all": True})
     self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
 
     probe = V8LogProbe.from_config({"prof": True})
-    self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
+    self.assertSetEqual(DEFAULT_LOG_FLAGS_PROF, set(probe.js_flags.keys()))
 
+  def test_parse_config_custom_js_flags(self):
     probe = V8LogProbe.from_config({"js_flags": None})
-    self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
+    self.assertSetEqual(DEFAULT_LOG_FLAGS_PROF, set(probe.js_flags.keys()))
 
     probe = V8LogProbe.from_config({"js_flags": []})
-    self.assertSetEqual({"--log-all"}, set(probe.js_flags.keys()))
+    self.assertSetEqual({"--prof"}, set(probe.js_flags.keys()))
 
-    probe = V8LogProbe.from_config(
-        {"js_flags": ["--no-log-ic", "--no-log-maps"]})
+    probe = V8LogProbe.from_config({
+        "log_all": True,
+        "js_flags": ["--no-log-ic", "--no-log-maps"]
+    })
     self.assertSetEqual({"--log-all", "--no-log-ic", "--no-log-maps"},
                         set(probe.js_flags.keys()))
 
     probe = V8LogProbe.from_config({
-        "log_all": False,
         "js_flags": ["--no-log-ic", "--no-log-maps"]
     })
     self.assertSetEqual({"--prof", "--no-log-ic", "--no-log-maps"},
@@ -85,13 +95,18 @@ class V8LogProbeTestCase(unittest.TestCase):
 
   def test_parse_config_prof_sampling_interval(self):
     probe = V8LogProbe.from_config({"log_all": False, "sampling_interval": 12})
-    self.assertEqual("--prof,--prof-sampling-interval=12000",
-                     str(probe.js_flags))
+    self.assertEqual(
+        "--prof,--prof-sampling-interval=12000,--log,--log-code,--log-deopt,"
+        "--log-source-code,--log-source-position,--log-code-disassemble",
+        str(probe.js_flags))
     probe = V8LogProbe.from_config({
         "log_all": False,
-        "sampling_interval": "12us"
+        "sampling_interval": "13us"
     })
-    self.assertEqual("--prof,--prof-sampling-interval=12", str(probe.js_flags))
+    self.assertEqual(
+        "--prof,--prof-sampling-interval=13,--log,--log-code,--log-deopt,"
+        "--log-source-code,--log-source-position,--log-code-disassemble",
+        str(probe.js_flags))
 
 
 if __name__ == "__main__":

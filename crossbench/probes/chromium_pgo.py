@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import TYPE_CHECKING, Final, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Final, Type, cast
 
 from typing_extensions import override
 
@@ -35,7 +35,7 @@ class ChromiumPgoProbe(ChromiumProbe):
     downloads them.
     The resulting data is used to optimize Chromium.
     """
-  NAME = "chromium_pgo"
+  NAME: ClassVar = "chromium_pgo"
 
   _REMOTE_PGO_CACHE_SUFFIX: Final[str] = "cache/pgo_profiles"
 

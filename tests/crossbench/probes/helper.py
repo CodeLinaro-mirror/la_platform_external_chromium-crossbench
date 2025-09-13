@@ -49,7 +49,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    benchmark = LoadingBenchmark(stories)  # pytype: disable=not-instantiable
+    benchmark = LoadingBenchmark(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

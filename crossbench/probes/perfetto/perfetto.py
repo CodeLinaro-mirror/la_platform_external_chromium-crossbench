@@ -8,7 +8,7 @@ import abc
 import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Iterable, Self, cast
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, cast
 
 import google.protobuf.text_format as proto_text_format
 from typing_extensions import override
@@ -32,10 +32,11 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-_PERFETTO_CONFIG_REMOTE_DIR_ANDROID = pth.AnyPath(
+_PERFETTO_CONFIG_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
     "/data/misc/perfetto-configs/")
-_PERFETTO_TRACE_REMOTE_DIR_ANDROID = pth.AnyPath("/data/misc/perfetto-traces/")
-_PERFETTO_REMOTE_DIR_CROS = pth.AnyPath("/usr/local/tmp")
+_PERFETTO_TRACE_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
+    "/data/misc/perfetto-traces/")
+_PERFETTO_REMOTE_DIR_CROS: Final = pth.AnyPath("/usr/local/tmp")
 
 
 class PerfettoProbe(Probe):
@@ -55,10 +56,8 @@ class PerfettoProbe(Probe):
   After the run, the trace will be found among the results as
   "perfetto.trace.pb.gz".
   """
-  NAME = "perfetto"
-  RESULT_LOCATION = ResultLocation.BROWSER
-
-  IS_GENERAL_PURPOSE = True
+  NAME: ClassVar = "perfetto"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   @classmethod
   @override
@@ -154,7 +153,8 @@ class PerfettoProbe(Probe):
       logging.critical("  - %s : %s", result_file,
                        fs_helper.get_file_size(result_file))
 
-  def get_context(self, run: Run) -> PerfettoProbeContext:
+  @override
+  def create_context(self, run: Run) -> PerfettoProbeContext:
     # TODO: support more platforms
     if run.browser_platform.is_chromeos:
       return ChromeOsPerfettoProbeContext(self, run)
@@ -231,11 +231,12 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
         "--out",
         self.result_path,
     )
-    proc = self.browser_platform.sh(*cmd, capture_output=True)
-    if proc.returncode > 0:
-      logging.error("perfetto command failed with stderr: %s", proc.stderr)
-      raise subprocess.CalledProcessError(proc.returncode, proc.args,
-                                          proc.stdout, proc.stderr)
+    try:
+      proc = self.browser_platform.sh(*cmd, capture_output=True)
+    except subprocess.CalledProcessError as e:
+      logging.error("perfetto command failed with stderr: %s",
+                    e.stderr.decode(encoding="utf-8"))
+      raise
 
     self._perfetto_pid = NumberParser.positive_int(
         proc.stdout.decode("utf-8").rstrip(), "perfetto pid")
@@ -336,7 +337,7 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
   def browser_platform(self) -> AndroidAdbPlatform:
     browser_platform = super().browser_platform
     assert isinstance(browser_platform, AndroidAdbPlatform)
-    return cast(AndroidAdbPlatform, browser_platform)
+    return browser_platform
 
 
 class ChromeOsPerfettoProbeContext(PerfettoProbeContext):

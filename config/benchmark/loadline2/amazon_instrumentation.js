@@ -20,7 +20,7 @@ if (window.location.href ===
     const attribute_observer = new MutationObserver(() => {
       if (menu.classList.contains('hmenu-visible')) {
         attribute_observer.disconnect();
-        performance.mark('LoadLine2/amazon_product/menu_shown');
+        performance.mark('LoadLine2/amazon_product/interactive');
       }
     });
     attribute_observer.observe(menu, {attributes: true});
@@ -33,7 +33,7 @@ if (window.location.href ===
       return;
     }
     buy_observer.disconnect();
-    performance.mark('LoadLine2/amazon_product/buy_shown');
+    performance.mark('LoadLine2/amazon_product/visual');
   });
 
   buy_observer.observe(document, {childList: true, subtree: true});

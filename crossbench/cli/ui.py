@@ -27,9 +27,9 @@ COLOR_LOGGING: bool = True
 
 class ColoredLogFormatter(logging.Formatter):
 
-  FORMAT = "%(message)s"
+  FORMAT: Final = "%(message)s"
 
-  FORMATS = {
+  FORMATS: Final = {
       logging.DEBUG:
           FORMAT,
       logging.INFO:

@@ -5,15 +5,14 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Type
 
 from typing_extensions import override
 
-from crossbench import exception
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench import exception
   from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -23,8 +22,7 @@ class DumpHtmlProbe(Probe):
   """
   General-purpose Probe that collects HTML dumps.
   """
-  NAME = "dump_html"
-  RESULT_LOCATION = ResultLocation.LOCAL
+  NAME: ClassVar = "dump_html"
 
   @classmethod
   @override

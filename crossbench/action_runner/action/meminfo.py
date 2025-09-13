@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Optional, Type
 
 from typing_extensions import override
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 # New probe actions should not have individual class implementations.
 # They should just be used as ProbeActions directly.
 class MeminfoAction(BaseProbeAction):
-  TYPE: ActionType = ActionType.MEMINFO
+  TYPE: ClassVar[ActionType] = ActionType.MEMINFO
 
   @classmethod
   @override

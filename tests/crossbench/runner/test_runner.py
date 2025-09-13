@@ -451,7 +451,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     self.assertSequenceEqual(thread.runs, runs)
     self.assertEqual(run_count, 4)
 
-  def test_run_fail_run_probe_get_context(self):
+  def test_run_fail_run_probe_create_context(self):
     # 2 runs, same browser different stories
     runner = self.default_runner(browsers=[self.browsers[1]], throw=False)
     probe = MockProbe("custom_probe_data")
@@ -471,7 +471,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       setup_fail_count += 1
       raise CustomException()
 
-    probe.get_context = mock_get_context_fail
+    probe.create_context = mock_get_context_fail
 
     self.assertEqual(setup_fail_count, 0)
     with self.patch_teardown_run(runner) as teardown_run_mock:
@@ -514,7 +514,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         context.setup = mock_setup_fail
       return context
 
-    probe.get_context = mock_get_context_fail
+    probe.create_context = mock_get_context_fail
 
     self.assertEqual(setup_fail_count, 0)
     with self.patch_teardown_run(runner) as teardown_run_mock:

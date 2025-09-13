@@ -14,8 +14,9 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.helper.version import VersionParseError
 from crossbench.plt.android_adb import (Adb, AndroidAdbPlatform,
-                                        AndroidDeviceInfo)
+                                        AndroidDeviceInfo, AndroidVersion)
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
@@ -279,10 +280,20 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.adb.has_root())
 
   def test_version(self):
-    self.expect_sh("getprop ro.build.version.release", result="999")
-    self.assertEqual(self.platform.version, "999")
-    # Subsequent calls are cached.
-    self.assertEqual(self.platform.version, "999")
+    version_str = "13 (Tiramisu)"
+    self.expect_sh("getprop ro.build.description", result=version_str)
+    version = self.platform.version
+    self.assertEqual(version.parts, (13,))
+    self.assertEqual(version.version_str, version_str)
+    self.assertIs(version, self.platform.version)
+
+  def test_version_long(self):
+    version_str = "oriole-user 13 TQ3A.230805.001 10452339 release-keys"
+    self.expect_sh("getprop ro.build.description", result=version_str)
+    version = self.platform.version
+    self.assertEqual(version.parts, (13,))
+    self.assertEqual(version.version_str, version_str)
+    self.assertIs(version, self.platform.version)
 
   def test_device(self):
     self.expect_sh("getprop ro.product.model", result="Pixel 999")
@@ -680,6 +691,13 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("input keyevent KEYCODE_WAKEUP")
     self.expect_sh("input keyevent KEYCODE_MENU")
     self.platform.unlock_screen()
+
+  def test_platform_version_cls(self):
+    version = AndroidVersion.parse("13 (Tiramisu)")
+    self.assertEqual(version.parts, (13,))
+    self.assertEqual(version.version_str, "13 (Tiramisu)")
+    with self.assertRaises(VersionParseError):
+      AndroidVersion.parse("foo")
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -8,7 +8,7 @@ import hashlib
 import pathlib
 import re
 import unicodedata
-from typing import Optional, TypeAlias
+from typing import Final, Optional, TypeAlias
 
 # A path that can refer to files on a remote platform with potentially
 # a different Path flavour (e.g. Win vs Posix).
@@ -26,9 +26,10 @@ LocalPosixPath: TypeAlias = pathlib.PosixPath
 
 LocalPathLike: TypeAlias = str | LocalPath
 
-MAX_PART_LEN = 255
+MAX_PART_LEN: Final[int] = 255
 
-_UNSAFE_FILENAME_CHARS_RE: re.Pattern[str] = re.compile(r"[^a-zA-Z0-9+\-_.]")
+_UNSAFE_FILENAME_CHARS_RE: Final[re.Pattern[str]] = re.compile(
+    r"[^a-zA-Z0-9+\-_.]")
 
 
 def safe_filename(name: str, strict_len: bool = False) -> str:

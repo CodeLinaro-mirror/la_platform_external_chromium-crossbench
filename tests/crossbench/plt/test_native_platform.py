@@ -71,6 +71,14 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     env = self.platform.environ
     self.assertTrue(env)
 
+  def test_version(self):
+    version_a = self.platform.version
+    version_b = self.platform.version
+    self.assertIs(version_a, version_b)
+    self.assertIsInstance(version_a.parts, tuple)
+    self.assertTrue(len(version_a.parts) >= 1)
+    self.assertGreater(version_a.major, 0)
+
   def test_which_none(self):
     with self.assertRaises(ValueError):
       self.platform.which("")
@@ -913,8 +921,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(self.platform.name, "macos")
 
   def test_version(self):
-    self.assertTrue(self.platform.version)
-    self.assertRegex(self.platform.version, r"[0-9]+\.[0-9]")
+    self.assertTrue(self.platform.version_str)
+    self.assertRegex(self.platform.version_str, r"[0-9]+\.[0-9]")
 
   def test_device(self):
     self.assertTrue(self.platform.device)
@@ -1007,7 +1015,7 @@ class WinNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertIn(self.platform.has_display, (True, False))
 
   def test_version(self):
-    self.assertTrue(self.platform.version)
+    self.assertTrue(self.platform.version_str)
 
 
 if __name__ == "__main__":

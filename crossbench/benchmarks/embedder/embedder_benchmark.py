@@ -8,7 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Optional, Sequence, cast
+from typing import TYPE_CHECKING, ClassVar, Optional, Sequence, cast
 
 from typing_extensions import override
 
@@ -66,8 +66,8 @@ class EmbedderBenchmark(SubStoryBenchmark):
   """
   Benchmark runner for a WV embedder app mode.
   """
-  NAME = "embedder"
-  DEFAULT_STORY_CLS = EmbedderStory
+  NAME: ClassVar = "embedder"
+  DEFAULT_STORY_CLS: ClassVar = EmbedderStory
 
   def __init__(
       self,

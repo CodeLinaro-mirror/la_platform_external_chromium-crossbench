@@ -29,7 +29,7 @@ from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
-from crossbench.probes.probe import Probe
+from crossbench.probes.probe import Probe, ProbeKeyT
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.screenshot import ScreenshotProbe
@@ -193,8 +193,8 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
       self.assertIsInstance(probe, probe_cls)
 
   def test_basic_probe_instances(self):
-    keys = set()
-    names = set()
+    keys: set[ProbeKeyT] = set()
+    names: set[str] = set()
     for probe_instance in self.probe_instances():
       _ = hash(probe_instance)
       key = probe_instance.key

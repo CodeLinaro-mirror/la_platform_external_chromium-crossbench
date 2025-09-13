@@ -23,7 +23,7 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
+from typing import (TYPE_CHECKING, Any, Callable, Final, Generator, Iterable,
                     Iterator, Mapping, Optional, Sequence, Type)
 
 import google.cloud.storage as gcloud_storage
@@ -49,6 +49,7 @@ if TYPE_CHECKING:
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.plt.types import CmdArg, ProcessLike, TupleCmdArgs
+  from crossbench.plt.version import PlatformVersion
   from crossbench.types import JsonDict
 
 
@@ -99,7 +100,7 @@ class CPUFreqInfo:
   current: float
 
 
-DEFAULT_CACHE_DIR = pth.LocalPath(__file__).parents[2] / "cache"
+DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
 class Platform(abc.ABC):
   # pylint: disable=locally-disabled, redefined-builtin
@@ -132,8 +133,17 @@ class Platform(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def version(self) -> str:
+  def version_str(self) -> str:
     pass
+
+  @property
+  @abc.abstractmethod
+  def version(self) -> PlatformVersion:
+    pass
+
+  @property
+  def version_parts(self) -> tuple[int, ...]:
+    return self.version.parts
 
   @property
   @abc.abstractmethod
@@ -154,7 +164,7 @@ class Platform(abc.ABC):
 
   @property
   def full_version(self) -> str:
-    return f"{self.name} {self.version} {self.machine}"
+    return f"{self.name} {self.version_str} {self.machine}"
 
   def __str__(self) -> str:
     return ".".join(self.key) + (".remote" if self.is_remote else ".local")
@@ -252,25 +262,15 @@ class Platform(abc.ABC):
   def cpu_details(self) -> dict[str, Any]:
     self.assert_is_local()
     details = {
-        "physical cores":
-            self.cpu_cores(logical=False),
-        "logical cores":
-            self.cpu_cores(logical=True),
-        "usage":
-            psutil.cpu_percent(  # pytype: disable=attribute-error
-                percpu=True, interval=0.1),
-        "total usage":
-            psutil.cpu_percent(),
-        "system load":
-            psutil.getloadavg(),
-        "info":
-            self.cpu,
-        "min frequency":
-            "N/A",
-        "max frequency":
-            "N/A",
-        "current frequency":
-            "N/A",
+        "physical cores": self.cpu_cores(logical=False),
+        "logical cores": self.cpu_cores(logical=True),
+        "usage": psutil.cpu_percent(percpu=True, interval=0.1),
+        "total usage": psutil.cpu_percent(),
+        "system load": psutil.getloadavg(),
+        "info": self.cpu,
+        "min frequency": "N/A",
+        "max frequency": "N/A",
+        "current frequency": "N/A",
     }
     if cpu_freq := self._cpu_freq():
       details.update({

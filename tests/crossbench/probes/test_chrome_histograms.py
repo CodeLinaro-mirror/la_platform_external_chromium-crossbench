@@ -173,7 +173,6 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     probe = probes[0]
     self.assertIsInstance(probe, ChromeHistogramsProbe)
     isinstance(probe, ChromeHistogramsProbe)
-    probe: ChromeHistogramsProbe = probe
     self.assertListEqual([metric.name for metric in probe.metrics], [
         "WebVitals.FirstContentfulPaint3_count",
         "WebVitals.FirstContentfulPaint3_mean",

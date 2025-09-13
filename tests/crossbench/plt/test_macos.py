@@ -11,6 +11,8 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.helper.version import VersionParseError
+from crossbench.plt.macos import MacOsVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
 from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
@@ -169,6 +171,20 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     with self.assertRaisesRegex(ValueError, "binaries"):
       self.platform.search_binary(app_path)
 
+  def test_version(self):
+    self.platform.mock_version_str = "15.6.1"
+    version = self.platform.version
+    self.assertEqual(version.parts, (15, 6, 1))
+    self.assertEqual(version.version_str, "15.6.1")
+
+  def test_version_sh_call(self):
+    self.platform.mock_version_str = None
+    self.expect_sh("sw_vers", "-productVersion", result="15.6.7")
+    version = self.platform.version
+    self.assertEqual(version.parts, (15, 6, 7))
+    self.assertEqual(version.version_str, "15.6.7")
+
+
   def test_display_details(self):
     system_profiler_output = textwrap.dedent("""{
         "SPDisplaysDataType" : [
@@ -238,6 +254,13 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         self.platform.display_resolution(),
         (1728, 1117),
     )
+
+  def test_platform_version_cls(self):
+    version = MacOsVersion.parse("12.3.4")
+    self.assertEqual(version.parts, (12, 3, 4))
+    self.assertEqual(version.version_str, "12.3.4")
+    with self.assertRaises(VersionParseError):
+      MacOsVersion.parse("foo")
 
 
 

@@ -5,17 +5,17 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
-from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.devtools import DevToolsClient
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 
 if TYPE_CHECKING:
+  from crossbench import exception
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.actions import Actions
@@ -27,7 +27,7 @@ class VideoAccelerationProbe(JsonResultProbe):
   """
   Chromium-only probe to detect if hardware video acceleration is used.
   """
-  NAME = "video_acceleration"
+  NAME: ClassVar = "video_acceleration"
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:

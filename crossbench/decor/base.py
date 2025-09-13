@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, Generic, Set, Type, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Generic, Set, Type, TypeVar
 
 from crossbench import plt
 from crossbench.config import ConfigParser
@@ -34,7 +34,7 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
   temporarily modify Runs or BrowserSessions.
   """
 
-  NAME: str = ""
+  NAME: ClassVar[str] = ""
 
   @classmethod
   def config_parser(cls) -> DecoratorConfigParser:

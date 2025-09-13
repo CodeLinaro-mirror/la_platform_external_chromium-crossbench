@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import contextlib
+import dataclasses
 import datetime as dt
 import io
 import logging
@@ -124,7 +125,7 @@ class BaseCrossbenchTestCase(
     # Instantiate MockPlatform before setting up fake_filesystem so we can
     # still interact with the original, real plt.Platform object for extracting
     # basic system information.
-    self.platform = MockPlatform()  # pytype: disable=not-instantiable
+    self.platform = MockPlatform()
     self.platform.use_fs = True
     super().setUp()
     self._default_log_level = logging.getLogger().getEffectiveLevel()
@@ -178,6 +179,12 @@ class SysExitTestException(Exception):
     self.exit_code = exit_code
 
 
+@dataclasses.dataclass
+class IoCapture:
+  stdout: str = ""
+  stderr: str = ""
+
+
 class BaseCliTestCase(BaseCrossbenchTestCase):
 
   SPLASH_URLS_LEN: Final[int] = 2
@@ -185,13 +192,10 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   @override
   def setUp(self) -> None:
     super().setUp()
-
     # tabulate and textwrap can be slow for tests, let's mock them out.
     self.setup_tabulate_patcher()
     self.setup_wrap_patcher()
-
     self.setup_wait_for_ready_state_patcher()
-
     self.setup_loadline_configs()
 
   def setup_tabulate_patcher(self) -> None:
@@ -218,20 +222,26 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.addCleanup(patcher.stop)
     patcher.start()
 
+  @contextlib.contextmanager
+  def capture_io(self):
+    io_capture = IoCapture()
+    with mock.patch(
+        "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
+            "sys.stderr", new_callable=io.StringIO) as mock_stderr:
+      yield io_capture
+      # Make sure we don't accidentally reuse the buffers across run_cli calls.
+      io_capture.stdout = mock_stdout.getvalue()
+      io_capture.stderr = mock_stderr.getvalue()
+      mock_stdout.close()
+      mock_stderr.close()
+
   def run_cli_output(self,
                      *args,
                      raises=None,
                      enable_logging: bool = True) -> tuple[MockCLI, str, str]:
-    with mock.patch(
-        "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
-            "sys.stderr", new_callable=io.StringIO) as mock_stderr:
+    with self.capture_io() as io_capture:
       cli = self.run_cli(*args, raises=raises, enable_logging=enable_logging)
-    stdout = mock_stdout.getvalue()
-    stderr = mock_stderr.getvalue()
-    # Make sure we don't accidentally reuse the buffers across run_cli calls.
-    mock_stdout.close()
-    mock_stderr.close()
-    return cli, stdout, stderr
+    return cli, io_capture.stdout, io_capture.stderr
 
   @contextlib.contextmanager
   def _patch_get_runner(self):
@@ -274,12 +284,17 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
                            **kwargs) as patcher:
       yield patcher
 
+  @contextlib.contextmanager
+  def cli(self, enable_logging: bool = False):
+    cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
+    with self._patch_sys_exit(), self._patch_get_runner():
+      yield cli
+
   def run_cli(self,
               *args,
               raises=None,
               enable_logging: bool = False) -> MockCLI:
-    cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
-    with self._patch_sys_exit(), self._patch_get_runner():
+    with self.cli(enable_logging=enable_logging) as cli:
       if raises:
         with self.assertRaises(raises):
           cli.run(args)

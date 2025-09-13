@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, MutableMapping
+from typing import Any, ClassVar, MutableMapping
 
 from typing_extensions import override
 
@@ -36,7 +36,7 @@ class Speedometer2ProbeContext(SpeedometerProbeContext):
 
 class Speedometer2Story(SpeedometerStory):
   __doc__ = SpeedometerStory.__doc__
-  SUBSTORIES: tuple[str, ...] = (
+  SUBSTORIES: ClassVar[tuple[str, ...]] = (
       "VanillaJS-TodoMVC",
       "Vanilla-ES2015-TodoMVC",
       "Vanilla-ES2015-Babel-Webpack-TodoMVC",
