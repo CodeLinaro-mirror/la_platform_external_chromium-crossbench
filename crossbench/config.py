@@ -1310,13 +1310,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     return help_items
 
 
-def is_google_env() -> bool:
-  return "/google3/" in __file__
-
 
 def root_dir() -> pth.LocalPath:
-  if is_google_env():
-    return pth.LocalPath(__file__).parents[0].absolute()
   return pth.LocalPath(__file__).parents[1].absolute()
 
 

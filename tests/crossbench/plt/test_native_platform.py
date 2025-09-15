@@ -419,8 +419,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.chmod(tmp_file, mode)
       self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
 
-  @unittest.skipIf(
-      test_helper.is_google_env(), "Source directory is readonly")
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
       try:
@@ -432,8 +430,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
         if self.platform.is_local:
           self.platform.set_cache_dir(DEFAULT_CACHE_DIR)
 
-  @unittest.skipIf(
-      test_helper.is_google_env(), "Source directory is readonly")
   def test_default_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -444,8 +440,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     finally:
       self.platform.rm(cache_dir, dir=True, missing_ok=True)
 
-  @unittest.skipIf(
-      test_helper.is_google_env(), "Source directory is readonly")
   def test_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -474,8 +468,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.skipTest("Not supported yet on remote platforms.")
     if self.platform.is_win:
       self.skipTest("Too Slow on windows")
-    if test_helper.is_google_env():
-      self.skipTest("Not supported yet in google environment.")
     self.assertFalse(self.platform.process_running([]))
     self.assertFalse(
         self.platform.process_running(["crossbench_invalid_test_bin"]))
@@ -485,8 +477,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_process_info(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    if test_helper.is_google_env():
-      self.skipTest("Not supported yet in google environment.")
     process_info = self.platform.process_info(os.getpid())
     self.assertIn("python", process_info["name"].lower())
 
@@ -588,14 +578,11 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   def test_which(self):
     ls_bin = self.platform.which("ls")
     self.assertIsNotNone(ls_bin)
-    # self.known_binary is "python3", which does not exist on google3,
-    # as google3 has its own mechanism to start python scripts.
-    if not test_helper.is_google_env():
-      known_binary = self.platform.which(self.known_binary)
-      self.assertIsNotNone(known_binary)
-      self.assertNotEqual(ls_bin, known_binary)
-      self.assertTrue(self.platform.exists(ls_bin))
-      self.assertTrue(self.platform.exists(known_binary))
+    known_binary = self.platform.which(self.known_binary)
+    self.assertIsNotNone(known_binary)
+    self.assertNotEqual(ls_bin, known_binary)
+    self.assertTrue(self.platform.exists(ls_bin))
+    self.assertTrue(self.platform.exists(known_binary))
 
   def test_system_details(self):
     details = self.platform.system_details()
@@ -677,8 +664,6 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertNotIn(custom_key, env)
 
   def test_app_version(self):
-    if test_helper.is_google_env():
-      self.skipTest("Not supported yet in google environment.")
     python_path = sys.executable
     with self.assertRaises(ValueError):
       self.platform.app_version("path/to/invalid/test/crossbench/bin")

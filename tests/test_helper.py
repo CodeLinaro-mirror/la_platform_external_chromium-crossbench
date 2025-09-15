@@ -17,14 +17,11 @@ from immutabledict import immutabledict
 from crossbench import config
 from crossbench.cli import exception_formatter
 
-is_google_env = config.is_google_env
 root_dir = config.root_dir
 config_dir = config.config_dir
 
 
 def crossbench_dir() -> pathlib.Path:
-  if is_google_env():
-    return root_dir()
   return root_dir() / "crossbench"
 
 

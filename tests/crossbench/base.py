@@ -37,7 +37,6 @@ from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.helper.wake_lock import WakeLock
 from crossbench.probes.perfetto.perfetto import TraceConfig
 from crossbench.runner.runner import Runner
-from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
@@ -129,16 +128,7 @@ class CrossbenchConfigTestMixin:
     self.setup_config_dir(TraceConfig.preset_dir())
 
   def setup_config_dir(self, config_dir):
-    self.fs.add_real_directory(
-        config_dir, lazy_read=not test_helper.is_google_env())
-    if test_helper.is_google_env():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      for child in config_dir.glob("**/*"):
-        if child.is_symlink():
-          link_target = child.readlink()
-          if not link_target.exists():
-            self.fs.add_real_file(link_target)
+    self.fs.add_real_directory(config_dir, lazy_read=True)
 
 
 class BaseCrossbenchTestCase(
@@ -184,7 +174,6 @@ class BaseCrossbenchTestCase(
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.expected_js, [])
-
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)

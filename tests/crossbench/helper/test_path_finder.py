@@ -67,13 +67,10 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
       path = pathlib.Path(__file__)
       self.assertFalse(path.exists())
-      if "google3" in path.parts:
-        fake_chrome_root = path.parents[6]
-      else:
-        # pylint: disable=line-too-long
-        # In:   chromium/src/third_party/crossbench/tests/crossbench/probes/test_helper.py
-        # Out:  chromium/src
-        fake_chrome_root = path.parents[5]
+      # pylint: disable=line-too-long
+      # In:   chromium/src/third_party/crossbench/tests/crossbench/probes/test_helper.py
+      # Out:  chromium/src
+      fake_chrome_root = path.parents[5]
       checkout_dir = fake_chrome_root / "v8"
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
       self._add_chrome_checkout_files(fake_chrome_root)

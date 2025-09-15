@@ -77,25 +77,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     return probes
 
   def _add_real_directory(self, path: crossbench.path.LocalPath) -> None:
-    self.fs.add_real_directory(
-        path, lazy_read=not test_helper.is_google_env())
-    if test_helper.is_google_env():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      for child in path.glob("**/*"):
-        if child.is_symlink():
-          link_target = child.readlink()
-          if not link_target.exists():
-            self.fs.add_real_file(link_target)
-
-  def _add_real_file(self, path: crossbench.path.LocalPath) -> None:
-    self.fs.add_real_file(path)
-    if test_helper.is_google_env() and path.is_symlink():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      link_target = path.readlink()
-      if not link_target.exists():
-        self.fs.add_real_file(link_target)
+    self.fs.add_real_directory(path, lazy_read=True)
 
   def test_parse_example_configs(self):
     probe_config_presets = self.real_config_dir / "probe"
@@ -111,7 +93,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
                 LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
       probe_config = cls.default_probe_config_path()
-      self._add_real_file(probe_config)
+      self.fs.add_real_file(probe_config)
       probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)
 if __name__ == "__main__":
