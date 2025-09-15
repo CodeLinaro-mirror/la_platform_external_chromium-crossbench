@@ -10,8 +10,8 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, Type,
-                    TypeVar)
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional,
+                    Type, TypeVar)
 
 import xlsxwriter
 from tabulate import tabulate
@@ -49,8 +49,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   subclass.
   """
 
-  SORT_KEYS = True
-  AUTO_MERGE_REPETITIONS = True
+  SORT_KEYS: ClassVar[bool] = True
+  AUTO_MERGE_REPETITIONS: ClassVar[bool] = True
 
   @property
   @override
@@ -281,7 +281,7 @@ class JsonResultProbeContext(
     Generic[JsonResultProbeT],
     metaclass=abc.ABCMeta):
 
-  FLATTEN: bool = True
+  FLATTEN: ClassVar[bool] = True
 
   def __init__(self, probe: JsonResultProbeT, run: Run) -> None:
     super().__init__(probe, run)

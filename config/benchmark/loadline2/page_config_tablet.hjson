@@ -2,15 +2,10 @@
   pages: {
     amazon_product: [
       {
-        action: inject_new_document_script
-        script_path: amazon_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
-          performance.mark('LoadLine2/tablet/amazon_product_start');
+          performance.mark('LoadLine2/amazon_product/start');
           window.location.href = 'https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM';
           '''
       }
@@ -18,8 +13,8 @@
         action: wait_for_condition
         condition:
           '''
-          return performance.getEntriesByName('LoadLine2/amazon_product/menu_shown').length > 0
-              && performance.getEntriesByName('LoadLine2/amazon_product/buy_shown').length > 0
+          return performance.getEntriesByName('LoadLine2/amazon_product/interactive').length > 0
+              && performance.getEntriesByName('LoadLine2/amazon_product/visual').length > 0
           '''
         timeout: 20s
       }
@@ -29,20 +24,15 @@
       }
       {
         action: js
-        script: performance.mark('LoadLine2/tablet/amazon_product_finish')
+        script: performance.mark('LoadLine2/amazon_product/finish')
       }
     ]
     google_doc: [
       {
-        action: inject_new_document_script
-        script_path: google_docs_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
-          performance.mark('LoadLine2/tablet/google_doc_start');
+          performance.mark('LoadLine2/google_doc/start');
           window.location.href = 'https://docs.google.com/document/d/13AWeOGqtSkfpPK7meqE_X-GQQggwx4JJ1vc0YGvKg34/edit#heading=h.gjdgxs';
           '''
       }
@@ -50,8 +40,8 @@
         action: wait_for_condition
         condition:
           '''
-          return performance.getEntriesByName('LoadLine2/google_doc/navigation_widget_shown').length > 0
-              && performance.getEntriesByName('LoadLine2/google_doc/menu_shown').length > 0
+          return performance.getEntriesByName('LoadLine2/google_doc/interactive').length > 0
+              && performance.getEntriesByName('LoadLine2/google_doc/visual').length > 0
           '''
         timeout: 10s
       }
@@ -61,20 +51,15 @@
       }
       {
         action: js
-        script: performance.mark('LoadLine2/tablet/google_doc_finish')
+        script: performance.mark('LoadLine2/google_doc/finish')
       }
     ]
     cnn_article: [
       {
-        action: inject_new_document_script
-        script_path: cnn_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
-          performance.mark('LoadLine2/tablet/cnn_article_start');
+          performance.mark('LoadLine2/cnn_article/start');
           window.location.href = 'https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html';
           '''
       }
@@ -82,8 +67,8 @@
         action: wait_for_condition
         condition:
           '''
-          return performance.getEntriesByName('LoadLine2/cnn_article/menu_shown').length > 0
-              && performance.getEntriesByName('LoadLine2/cnn_article/headline_shown').length > 0
+          return performance.getEntriesByName('LoadLine2/cnn_article/interactive').length > 0
+              && performance.getEntriesByName('LoadLine2/cnn_article/visual').length > 0
           '''
         timeout: 10s
       }
@@ -93,20 +78,15 @@
       }
       {
         action: js
-        script: performance.mark('LoadLine2/tablet/cnn_article_finish')
+        script: performance.mark('LoadLine2/cnn_article/finish')
       }
     ]
     google_search_result: [
       {
-        action: inject_new_document_script
-        script_path: google_search_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
-          performance.mark('LoadLine2/tablet/google_search_result_start');
+          performance.mark('LoadLine2/google_search_result/start');
           window.location.href = 'https://www.google.com/search?q=cats';
           '''
       }
@@ -114,8 +94,8 @@
         action: wait_for_condition
         condition:
           '''
-          return performance.getEntriesByName('LoadLine2/google_search_result/menu_shown').length > 0
-              && performance.getEntriesByName('LoadLine2/google_search_result/overview_shown').length > 0
+          return performance.getEntriesByName('LoadLine2/google_search_result/interactive').length > 0
+              && performance.getEntriesByName('LoadLine2/google_search_result/visual').length > 0
           '''
         timeout: 10s
       }
@@ -125,20 +105,15 @@
       }
       {
         action: js
-        script: performance.mark('LoadLine2/tablet/google_search_result_finish')
+        script: performance.mark('LoadLine2/google_search_result/finish')
       }
     ]
     youtube_video: [
       {
-        action: inject_new_document_script
-        script_path: youtube_instrumentation.js
-        timeout: 5s
-      }
-      {
         action: js
         script:
           '''
-          performance.mark('LoadLine2/tablet/youtube_video_start');
+          performance.mark('LoadLine2/youtube_video/start');
           window.location.href = 'https://www.youtube.com/watch?v=WuS9kPNAXHw&themeRefresh=1';
           '''
       }
@@ -146,8 +121,8 @@
         action: wait_for_condition
         condition:
           '''
-          return performance.getEntriesByName('LoadLine2/youtube_video/comment_shown').length > 0
-              && performance.getEntriesByName('LoadLine2/youtube_video/cookie_banner_gone').length > 0
+          return performance.getEntriesByName('LoadLine2/youtube_video/interactive').length > 0
+              && performance.getEntriesByName('LoadLine2/youtube_video/visual').length > 0
           '''
         timeout: 20s
       }
@@ -157,7 +132,7 @@
       }
       {
         action: js
-        script: performance.mark('LoadLine2/tablet/youtube_video_finish');
+        script: performance.mark('LoadLine2/youtube_video/finish');
       }
     ]
   }

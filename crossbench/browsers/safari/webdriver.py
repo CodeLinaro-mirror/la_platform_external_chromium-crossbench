@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Set, Type
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 class SafariWebDriver(WebDriverBrowser, Safari):
 
-  MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=10)
+  MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
   def __init__(self,
                label: str,
@@ -165,7 +165,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
 
 class SafariWebdriverIOS(SafariWebDriver):
-  MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=15)
+  MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=15)
 
   @override
   def _get_driver_options(self,

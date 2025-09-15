@@ -17,7 +17,7 @@ if (window.location.href === 'https://www.google.com/search?q=cats') {
     const attribute_observer = new MutationObserver(() => {
       if (menu.style.display !== 'none') {
         attribute_observer.disconnect();
-        performance.mark('LoadLine2/google_search_result/menu_shown');
+        performance.mark('LoadLine2/google_search_result/interactive');
         complete = true;
       }
     });
@@ -35,7 +35,7 @@ if (window.location.href === 'https://www.google.com/search?q=cats') {
 
   const overview_observer = new MutationObserver(unused => {
     if (document.querySelector('.a-no-hover-decoration')) {
-      performance.mark('LoadLine2/google_search_result/overview_shown');
+      performance.mark('LoadLine2/google_search_result/visual');
       overview_observer.disconnect();
     }
   });

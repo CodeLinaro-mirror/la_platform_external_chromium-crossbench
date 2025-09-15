@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Final, Optional
 
 from typing_extensions import override
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
 
 
-SAFARIDRIVER_PATH = pth.AnyPosixPath("/usr/bin/safaridriver")
+SAFARIDRIVER_PATH: Final = pth.AnyPosixPath("/usr/bin/safaridriver")
 
 
 def find_safaridriver(bin_path: pth.AnyPath,

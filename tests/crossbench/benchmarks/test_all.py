@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import unittest
+from typing import TYPE_CHECKING, MutableSet
 
 from ordered_set import OrderedSet
 
@@ -16,12 +17,16 @@ from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
 from crossbench.benchmarks.jetstream.jetstream_main import \
     JetStreamMainBenchmark
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
-from crossbench.benchmarks.loadline import (
-    LoadLine1PhoneBenchmark, LoadLine1PhoneDebugBenchmark,
-    LoadLine1PhoneFastBenchmark, LoadLine1TabletBenchmark,
-    LoadLine1TabletDebugBenchmark, LoadLine1TabletFastBenchmark,
-    LoadLine2PhoneBenchmark, LoadLine2PhoneDebugBenchmark,
-    LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark)
+from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
+                                            LoadLine1PhoneDebugBenchmark,
+                                            LoadLine1PhoneFastBenchmark,
+                                            LoadLine1TabletBenchmark,
+                                            LoadLine1TabletDebugBenchmark,
+                                            LoadLine1TabletFastBenchmark,
+                                            LoadLine2PhoneBenchmark,
+                                            LoadLine2PhoneDebugBenchmark,
+                                            LoadLine2TabletBenchmark,
+                                            LoadLine2TabletDebugBenchmark)
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark.motionmark_1_0 import \
@@ -49,6 +54,9 @@ from crossbench.benchmarks.speedometer.speedometer_3_1 import \
 from crossbench.benchmarks.speedometer.speedometer_main import \
     SpeedometerMainBenchmark
 from tests import test_helper
+
+if TYPE_CHECKING:
+  from crossbench.stories.story import Story
 
 ALL = (
     JetStream11Benchmark,
@@ -91,8 +99,8 @@ class AllBenchmarksTestCase(unittest.TestCase):
     self.assertTupleEqual(ALL, tuple(OrderedSet(ALL)))
 
   def test_aliases(self):
-    seen_names = OrderedSet()
-    seen_aliases = OrderedSet()
+    seen_names: MutableSet[str] = OrderedSet()
+    seen_aliases: MutableSet[str] = OrderedSet()
     for benchmark_cls in ALL:
       with self.subTest(benchmark_cls=benchmark_cls):
         self.assertNotIn(benchmark_cls.NAME, seen_names)
@@ -102,7 +110,7 @@ class AllBenchmarksTestCase(unittest.TestCase):
           seen_aliases.add(alias)
 
   def test_story_classes(self):
-    seen_story_classes = OrderedSet()
+    seen_story_classes: MutableSet[type[Story]] = OrderedSet()
     for benchmark_cls in ALL:
       if benchmark_cls is MemoryBenchmark:
         continue

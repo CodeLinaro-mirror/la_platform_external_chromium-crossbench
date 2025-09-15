@@ -43,7 +43,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
     config = NetworkSpeedConfig.parse("4G")
     self.assertNotEqual(config, NetworkSpeedConfig.default())
 
-    for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
+    for preset in NetworkSpeedPreset:
       config = NetworkSpeedConfig.parse(str(preset))
       self.assertEqual(config, NetworkSpeedConfig.parse_preset(preset))
 
@@ -161,7 +161,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       _ = NetworkConfig(type=NetworkType.WPR, path=None)
 
   def test_parse_speed_preset(self):
-    for preset in NetworkSpeedPreset:  # pytype: disable=missing-parameter
+    for preset in NetworkSpeedPreset:
       config = NetworkConfig.parse_str(preset.value)
       self.assertEqual(config.speed, NetworkSpeedConfig.parse_preset(preset))
 
@@ -241,7 +241,10 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       NetworkConfig.parse({"type": "live", "run_on_device": True})
     self.assertIn("can only be used for the WPR", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      NetworkConfig.parse({"type": "live", "skip_injection": True})
+      NetworkConfig.parse({
+          "type": "live",
+          "skip_deterministic_script_injection": True
+      })
     self.assertIn("can only be used for the WPR", str(cm.exception))
 
   def test_parse_dict_local(self):

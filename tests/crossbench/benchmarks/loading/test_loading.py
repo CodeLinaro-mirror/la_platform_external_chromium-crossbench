@@ -12,7 +12,7 @@ import json
 import pathlib
 import re
 import unittest
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -505,6 +505,9 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def setup_expected_google_login_js(self):
     expected_scripts: list[JsInvocation] = [
+        # Wait for readystate interactive
+        JsInvocation(True),
+
         # Wait for email field
         JsInvocation(True, re.compile(r".*Email or phone.*")),
         # Click submit email
@@ -636,6 +639,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 class ActionBlockListConfigTestCase(unittest.TestCase):
 
   def test_parse_invalid(self):
+    invalid: Any
     for invalid in ("", (), {}, 1):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):

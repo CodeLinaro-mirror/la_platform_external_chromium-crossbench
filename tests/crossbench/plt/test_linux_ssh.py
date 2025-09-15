@@ -76,9 +76,9 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_version(self):
     self._expect_sh_ssh("uname -r", result="999")
-    self.assertEqual(self.platform.version, "999")
+    self.assertEqual(self.platform.version_str, "999")
     # Subsequent calls are cached.
-    self.assertEqual(self.platform.version, "999")
+    self.assertEqual(self.platform.version_str, "999")
 
   @skipIf(
       tuple(map(int, pyfakefs.__version__.split("."))) < (5, 5),

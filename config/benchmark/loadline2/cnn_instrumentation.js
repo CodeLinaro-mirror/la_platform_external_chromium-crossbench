@@ -33,7 +33,7 @@ if (window.location.href ===
     if (!menu) {
       return;
     }
-    performance.mark('LoadLine2/cnn_article/menu_shown');
+    performance.mark('LoadLine2/cnn_article/interactive');
     menu_observer.disconnect();
     complete = true;
   });
@@ -44,7 +44,7 @@ if (window.location.href ===
       return;
     }
     headline_observer.disconnect();
-    performance.mark('LoadLine2/cnn_article/headline_shown');
+    performance.mark('LoadLine2/cnn_article/visual');
   });
 
   // Make sure the cookie banner doesn't pop up

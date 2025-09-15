@@ -19,7 +19,7 @@ if (window.location.href === 'https://www.globo.com/') {
       for (const mutation of mutations) {
         for (const node of mutation.removedNodes) {
           if (node === banner_node) {
-            performance.mark('LoadLine2/globo_homepage/cookie_banner_gone');
+            performance.mark('LoadLine2/globo_homepage/interactive');
             banner_observer.disconnect();
             return;
           }
@@ -36,7 +36,7 @@ if (window.location.href === 'https://www.globo.com/') {
       return;
     }
     headline_observer.disconnect();
-    performance.mark('LoadLine2/globo_homepage/headline_shown');
+    performance.mark('LoadLine2/globo_homepage/visual');
   });
 
   button_observer.observe(document, {childList: true, subtree: true});

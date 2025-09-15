@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Final, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional
 
 from typing_extensions import override
 
@@ -34,8 +34,8 @@ UNMUTE_AUDIO_SCRIPT: Final[str] = """
 
 class PowerlineStory(Story):
 
-  STORY_NAME="podcast"
-  URL="https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/podcast.html"
+  STORY_NAME: ClassVar = "podcast"
+  URL: ClassVar = "https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/podcast.html"
 
   def __init__(self, duration: Optional[dt.timedelta] = dt.timedelta()):
     duration = (duration or dt.timedelta(seconds=60))
@@ -72,8 +72,8 @@ class PowerlineBenchmark(Benchmark):
   listening to a podcast with the screen off. The test measures the CPU power
   consumption on the Pixel power rails via Perfetto.
   """
-  NAME="powerline"
-  DEFAULT_STORY_CLS = PowerlineStory
+  NAME: ClassVar = "powerline"
+  DEFAULT_STORY_CLS: ClassVar = PowerlineStory
 
   # TODO: we may want to check somehow that the device is a Pixel and therefore
   # has meaningful power rails we can read.

@@ -8,10 +8,10 @@ import abc
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence
 
 import psutil
-from typing_extensions import override
+from typing_extensions import Final, override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser
@@ -31,8 +31,8 @@ class AppleScript:
   @classmethod
   def with_args(cls, app_path: AnyPath, apple_script: str,
                 **kwargs) -> tuple[str, list[str]]:
-    variables = []
-    replacements = {}
+    variables: list[str] = []
+    replacements: dict[str, str] = {}
     args: list[str] = []
     for variable, value in kwargs.items():
       args.append(value)
@@ -100,13 +100,13 @@ def try_get_parent_app_name(platform: plt.Platform) -> str:
   return ""
 
 
-SYSTEM_EVENTS_CHECK = (
+SYSTEM_EVENTS_CHECK: Final[str] = (
     'tell application "System Events" to log (count of windows)')
 
 class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
-  APPLE_SCRIPT_ALLOW_JS_MENU: str = ""
-  APPLE_SCRIPT_JS_COMMAND: str = ""
-  APPLE_SCRIPT_SET_URL: str = ""
+  APPLE_SCRIPT_ALLOW_JS_MENU: ClassVar[str] = ""
+  APPLE_SCRIPT_JS_COMMAND: ClassVar[str] = ""
+  APPLE_SCRIPT_SET_URL: ClassVar[str] = ""
 
   _browser_process: subprocess.Popen
 

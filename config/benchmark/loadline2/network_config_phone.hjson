@@ -1,8 +1,12 @@
 {
-  type: "wpr",
-  url: "gs://chrome-partner-telemetry/loading_benchmark/archive_phone_deterministic.wprgo",
-  persist_server: true,
-  run_on_device: true,
-  // deterministic.js is already injected into archived responses
-  skip_injection: true,
+  type: wpr
+  url: gs://chrome-partner-telemetry/loading_benchmark/archive_phone_deterministic.wprgo
+  persist_server: true
+  run_on_device: true
+  // Injecting deterministic.js in some stories causes errors (see
+  // crbug.com/428945380). archive_phone_deterministic is a prebuilt archive
+  // which skips injection for the problematic stories, and thus fixes the
+  // issue.
+  skip_deterministic_script_injection: true
+  response_transformations_file: webpagereplay_script_injections_phone.json
 }

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Type, cast
 
 from typing_extensions import override
 
@@ -14,7 +14,6 @@ from crossbench.probes.js import parse_javascript
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import ProbeConfigParser, ProbeIncompatibleBrowser
-from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -31,9 +30,7 @@ class WebviewEmbedderProbe(JsonResultProbe):
   """
   Android-only probe to collect performance data from an embedder.
   """
-  NAME = "embedder"
-  RESULT_LOCATION = ResultLocation.LOCAL
-  IS_GENERAL_PURPOSE = True
+  NAME: ClassVar = "embedder"
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
@@ -82,7 +79,7 @@ class WebviewEmbedderProbeContext(JsonResultProbeContext[WebviewEmbedderProbe]):
     # TODO(b/412981884): use BrowserAttributes instead of instance check
     assert isinstance(browser, WebviewEmbedder), (
       "Only supported for WV embedders")
-    return cast("WebviewEmbedder", browser)
+    return browser
 
   @property
   @override

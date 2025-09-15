@@ -4,14 +4,6 @@
 python_version: "3.11"
 
 wheel: <
-  name: "infra/python/wheels/pytype/${vpython_platform}"
-  version: "version:2024.9.13"
-  not_match_tag: <
-    platform: "win_amd64"
-  >
->
-
-wheel: <
   name: "infra/python/wheels/pytest-py3"
   version: "version:8.3.4"
 >
@@ -111,24 +103,10 @@ wheel: <
   version: "version:1.0.0"
 >
 
-wheel: <
-  name: "infra/python/wheels/importlab-py3"
-  version: "version:0.8.1"
->
-
-wheel: <
-  name: "infra/python/wheels/networkx-py3"
-  version: "version:3.1"
->
 
 wheel: <
   name: "infra/python/wheels/ninja/${vpython_platform}"
   version: "version:1.10.2.4.chromium.1"
->
-
-wheel: <
-  name: "infra/python/wheels/libcst/${vpython_platform}"
-  version: "version:1.1.0"
 >
 
 wheel: <
@@ -137,28 +115,13 @@ wheel: <
 >
 
 wheel: <
-  name: "infra/python/wheels/jinja2-py3"
-  version: "version:3.1.4"
->
-
-wheel: <
-  name: "infra/python/wheels/toml-py3"
-  version: "version:0.10.2"
->
-
-wheel: <
   name: "infra/python/wheels/packaging-py3"
-  version: "version:24.1"
->
-
-wheel: <
-  name: "infra/python/wheels/pyparsing-py3"
-  version: "version:3.2.0"
+  version: "version:24.2"
 >
 
 wheel: <
   name: "infra/python/wheels/six-py2_py3"
-  version: "version:1.16.0"
+  version: "version:1.17.0"
 >
 
 wheel: <
@@ -208,7 +171,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/h11-py3"
-  version: "version:0.14.0"
+  version: "version:0.16.0"
 >
 
 wheel: <
@@ -242,11 +205,6 @@ wheel: <
 >
 
 wheel: <
-  name: "infra/python/wheels/pycnite-py3"
-  version: "version:2024.07.31"
->
-
-wheel: <
   name: "infra/python/wheels/requests-py3"
   version: "version:2.31.0"
 >
@@ -264,11 +222,6 @@ wheel: <
 wheel: <
   name: "infra/python/wheels/markupsafe/${vpython_platform}"
   version: "version:2.1.5"
->
-
-wheel: <
-  name: "infra/python/wheels/pydot-py2_py3"
-  version: "version:1.4.2"
 >
 
 wheel: <
@@ -421,4 +374,30 @@ wheel: <
 wheel: <
   name: "infra/python/wheels/proto-plus-py3"
   version: "version:1.26.1"
+>
+
+# Pylint and its dependencies.
+wheel: <
+  name: "infra/python/wheels/pylint-py3"
+  version: "version:3.2.7"
+>
+wheel: <
+  name: "infra/python/wheels/astroid-py3"
+  version: "version:3.2.4"
+>
+wheel: <
+  name: "infra/python/wheels/dill-py3"
+  version: "version:0.3.7"
+>
+wheel: <
+  name: "infra/python/wheels/mccabe-py3"
+  version: "version:0.6.1"
+>
+wheel: <
+  name: "infra/python/wheels/platformdirs-py3"
+  version: "version:2.5.2"
+>
+wheel: <
+  name: "infra/python/wheels/tomlkit-py3"
+  version: "version:0.12.3"
 >

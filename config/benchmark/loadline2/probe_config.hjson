@@ -4,7 +4,8 @@
     // wpr: {},
     trace_processor: {
       queries: [
-        "loadline2/benchmark_score_phone",
+        "loadline2/benchmark_score",
+        "loadline2/breakdown",
       ],
       batch: false,
     },

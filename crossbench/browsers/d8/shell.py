@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 PROMPT: Final[str] = "d8> "
 READ_LEN: Final[int] = len(PROMPT)
-DEFAULT_TIMEOUT = dt.timedelta(seconds=10)
+DEFAULT_TIMEOUT: Final = dt.timedelta(seconds=10)
 
 
 class BackgroundReader(threading.Thread):

@@ -333,7 +333,7 @@ class TraceProcessorFinder(PerfettoToolFinder):
     return "trace_processor"
 
 
-CROSSBENCH_DIR = pth.LocalPath(__file__).parents[2]
+CROSSBENCH_DIR: Final = pth.LocalPath(__file__).parents[2]
 
 
 class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):

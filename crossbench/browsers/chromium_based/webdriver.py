@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
-                    Type, cast)
+                    Type)
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -79,7 +79,7 @@ class ChromiumBasedWebDriver(
   @override
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
-    chrome_flags: ChromeFlags = cast(ChromeFlags, flags)
+    chrome_flags: ChromeFlags = flags
     for flag in self.UNSUPPORTED_FLAGS:
       if flag not in chrome_flags:
         continue
@@ -133,7 +133,7 @@ class ChromiumBasedWebDriver(
     if adb_port and adb_port.isdigit():
       service_args += ["--adb-port=" + adb_port]
 
-    # pytype: disable=wrong-keyword-args
+
     assert self._stdout_log_file is None
     # On desktop platforms service logs contain browser stdout, hence the name.
     self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")

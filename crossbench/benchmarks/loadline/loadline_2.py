@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, Type
+import logging
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
 
 import numpy as np
-import pandas as pd
 from typing_extensions import override
 
 from crossbench import config
@@ -16,12 +16,12 @@ from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
   import argparse
+
+  import pandas as pd
 
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
@@ -31,13 +31,13 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING = "experimental"
+VERSION_STRING: Final[str] = "experimental"
 
 
 class LoadLine2Probe(LoadLineProbe):
-  NAME = "loadline2_probe"
-  BENCHMARK_NAME = "LoadLine2"
-  BENCHMARK_VERSION = VERSION_STRING
+  NAME: ClassVar = "loadline2_probe"
+  BENCHMARK_NAME: ClassVar = "LoadLine2"
+  BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
   def get_context_cls(self,) -> Type[LoadLine2ProbeContext]:
@@ -45,26 +45,28 @@ class LoadLine2Probe(LoadLineProbe):
 
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    loadline2_result: pth.LocalPath | None = None
-    for result in all_results:
-      if result.name.startswith("loadline2_benchmark_score"):
-        loadline2_result = result
-        break
-    assert loadline2_result is not None, "LoadLine 2: query result not found"
-
-    df = pd.read_csv(loadline2_result)
+    df = self._load_query_result(group, "loadline2_benchmark_score")
     total = df.drop(columns=["cb_story", "cb_temperature", "cb_run"]).groupby(
-        ["cb_browser"]).mean()
-    total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
-    transposed = total.transpose()
-    transposed.index.names = ["Metric"]
-    return transposed
+        ["cb_browser", "metric"]).mean().reset_index().pivot(
+            columns="cb_browser", index="metric", values="value")
+    total.loc["TOTAL_SCORE", :] = np.exp(np.log(total).mean())
+    total.index.name = "Metric"
+    return total
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    # TODO(crbug.com/425325733): Implement breakdown for LoadLine 2.
-    return pd.DataFrame(index=pd.Index([], name="Not implemented"))
+    df = self._load_query_result(group, "loadline2_breakdown")
+    if any(df["network"] > df["process_launch"]):
+      logging.warning("Some runs were affected by network latency. "
+                      "Results can be non-representative.")
+
+    df["os"] = df[["network", "process_launch"]].max(axis=1)
+    df = df.groupby(["cb_browser", "page"])[[
+        "os", "renderer_visual", "renderer_interactive", "gpu_visual",
+        "gpu_interactive"
+    ]].mean()
+    df.index.names = ["browser", "story"]
+    return df
 
 
 class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
@@ -80,8 +82,8 @@ class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 
 
 class LoadLine2Benchmark(LoadLineBenchmark):
-  PROBES = (LoadLine2Probe,)
-  DEFAULT_REPETITIONS = 50
+  PROBES: ClassVar = (LoadLine2Probe,)
+  DEFAULT_REPETITIONS: ClassVar = 50
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
@@ -89,15 +91,20 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
   @classmethod
   @override
+  def default_probe_config_path(cls) -> pth.LocalPath:
+    return cls._base_dir() / "probe_config.hjson"
+
+  @classmethod
+  @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
     pages = super().stories_from_cli_args(args)
-    return (CombinedPage(pages),)
+    return (CombinedPage(pages, playback=args.playback),)
 
 
 class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
   """LoadLine 2 benchmark for phones.
   """
-  NAME = "loadline2-phone"
+  NAME: ClassVar = "loadline2-phone"
 
   @classmethod
   @override
@@ -111,11 +118,6 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_phone.hjson"
-
-  @classmethod
-  @override
   def aliases(cls) -> tuple[str, ...]:
     return ("ld2-phone",)
 
@@ -123,7 +125,7 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   """LoadLine 2 benchmark for tablets.
   """
-  NAME = "loadline2-tablet"
+  NAME: ClassVar = "loadline2-tablet"
 
   @classmethod
   @override
@@ -134,11 +136,6 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   @override
   def default_network_config_path(cls) -> pth.LocalPath:
     return cls._base_dir() / "network_config_tablet.hjson"
-
-  @classmethod
-  @override
-  def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_tablet.hjson"
 
   @classmethod
   @override
@@ -156,13 +153,13 @@ class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):
   """LoadLine 2 benchmark for phones, with more tracing categories, for easier
   performance analysis.
   """
-  NAME = "loadline2-phone-debug"
-  DEFAULT_REPETITIONS = 1
+  NAME: ClassVar = "loadline2-phone-debug"
+  DEFAULT_REPETITIONS: ClassVar = 1
 
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_phone_debug.hjson"
+    return cls._base_dir() / "probe_config_debug.hjson"
 
   @classmethod
   @override
@@ -174,13 +171,13 @@ class LoadLine2TabletDebugBenchmark(LoadLine2TabletBenchmark):
   """LoadLine 2 benchmark for tablets, with more tracing categories, for easier
   performance analysis.
   """
-  NAME = "loadline2-tablet-debug"
-  DEFAULT_REPETITIONS = 1
+  NAME: ClassVar = "loadline2-tablet-debug"
+  DEFAULT_REPETITIONS: ClassVar = 1
 
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_tablet_debug.hjson"
+    return cls._base_dir() / "probe_config_debug.hjson"
 
   @classmethod
   @override

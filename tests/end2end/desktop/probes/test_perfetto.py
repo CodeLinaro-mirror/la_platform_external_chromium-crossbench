@@ -32,7 +32,7 @@ def setup_platform_cache_dir():
 @pytest.mark.skipif(
     plt.PLATFORM.is_win, reason="No binary available on windows")
 def test_perfetto_downloader(test_env: TestEnv):
-  if plt.Platform.is_linux and test_env.is_cq:
+  if plt.PLATFORM.is_linux and test_env.is_cq:
     raise pytest.skip("Old glibc on the CQ is too old for tracebox")
   with setup_platform_cache_dir() as platform:
     downloader = PerfettoToolDownloader("tracebox", platform=platform)

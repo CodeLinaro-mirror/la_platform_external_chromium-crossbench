@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import enum
 from argparse import ArgumentTypeError
-from typing import Any
+from typing import Any, ClassVar
 
 
 @enum.unique
@@ -18,10 +18,10 @@ class ViewportMode(enum.StrEnum):
 
 
 class Viewport:
-  DEFAULT: Viewport
-  MAXIMIZED: Viewport
-  FULLSCREEN: Viewport
-  HEADLESS: Viewport
+  DEFAULT: ClassVar[Viewport]
+  MAXIMIZED: ClassVar[Viewport]
+  FULLSCREEN: ClassVar[Viewport]
+  HEADLESS: ClassVar[Viewport]
 
   @classmethod
   def parse_sized(cls, value: Any) -> Viewport:

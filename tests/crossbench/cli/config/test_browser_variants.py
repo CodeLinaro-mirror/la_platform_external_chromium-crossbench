@@ -8,10 +8,11 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Type
 from unittest import mock
 
 import hjson
+import pytest
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -29,6 +30,7 @@ from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
                                                     ChromiumWebDriverAndroid,
                                                     ChromiumWebDriverSsh)
 from crossbench.browsers.safari.safari import Safari
+from crossbench.browsers.webkit.webdriver import WebKitWebDriver
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import (BaseBrowserVariantsConfig,
                                                     BrowserVariantsConfig,
@@ -59,7 +61,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   @override
   def setUp(self):
     super().setUp()
-    self.browser_lookup: dict[str, tuple[
+    self.browser_lookup: Mapping[str, tuple[
         Type[mock_browser.MockBrowser], BrowserConfig]] = {
             "chr-stable":
                 (mock_browser.MockChromeStable,
@@ -279,6 +281,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("chrome-stable-custom", message)
 
   def test_parse_invalid_browser_type(self):
+    invalid: Any
     for invalid in (None, 1, []):
       with self.assertRaises(ConfigError) as cm:
         _ = BrowserVariantsConfigDict(
@@ -1366,6 +1369,31 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browser = config.variants[0]
     self.assertEqual(str(browser.settings.cache_dir), "/var/tmp/override/cache")
     self.assertTrue(browser.settings.clear_cache_dir)
+
+  @pytest.mark.xfail(not plt.PLATFORM.is_macos, reason="Not supported on macos")
+  def test_parse_webkit_download(self):
+    args = self.mock_args(browser=[
+        BrowserConfig.parse("webkit-nightly-299105@main"),
+    ])
+    downloaded_path = self.platform.local_cache_dir(
+        "browser_bin") / "Webkit_Nightly_299105_nightly"
+    app_path = downloaded_path / "Release" / "MiniBrowser.app"
+
+    def mock_load_side_effect(name, platform):
+      del name, platform
+      self.fs.create_file(app_path, st_size=100)
+      return app_path
+
+    with mock.patch(
+        "crossbench.browsers.webkit.downloader.WebKitDownloader.load",
+        side_effect=mock_load_side_effect) as mock_load:
+      config = BrowserVariantsConfig.parse_args(args)
+      mock_load.assert_called_once_with("webkit-nightly-299105@main",
+                                        self.platform)
+    self.assertEqual(len(config.variants), 1)
+    variant = config.variants[0]
+    self.assertEqual(variant.browser_cls, WebKitWebDriver)
+    self.assertEqual(variant.path, app_path)
 
   def test_clear_cache_dir(self):
     args = self.mock_args()

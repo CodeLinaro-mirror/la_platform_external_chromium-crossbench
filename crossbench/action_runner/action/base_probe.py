@@ -13,13 +13,13 @@ from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
                                                     ActionT)
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.cli.config.probe import PROBE_LOOKUP
-from crossbench.probes.probe import Probe
 
 if TYPE_CHECKING:
   import datetime as dt
 
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
+  from crossbench.probes.probe import Probe
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
