@@ -243,6 +243,14 @@ class Platform(abc.ABC):
     return False
 
   @property
+  def is_ios(self) -> bool:
+    return False
+
+  @property
+  def is_apple(self) -> bool:
+    return self.is_macos or self.is_ios
+
+  @property
   def is_linux(self) -> bool:
     return False
 

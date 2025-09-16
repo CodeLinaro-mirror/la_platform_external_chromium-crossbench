@@ -261,6 +261,12 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def current_url(self) -> str:
     return self._current_url
 
+  @override
+  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+    if self.platform.is_ios:
+      return path
+    return super()._init_resolve_binary(path)
+
 
 def app_root(platform: plt.Platform) -> pathlib.Path:
   if platform.is_macos:

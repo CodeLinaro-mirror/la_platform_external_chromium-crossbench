@@ -229,10 +229,10 @@ class RunnerEnv(BaseEnv):
 
   def _check_running_binaries_on_platform(
       self, platform: plt.Platform, platform_browsers: list[Browser]) -> None:
-    # On Android, an app's process lifetime is not controlled by the user or
-    # the app itself. OS can start/terminate processes in the background, so
-    # we don't check for those.
-    if platform.is_android:
+    # On mobile platforms, an app's process lifetime is not controlled by the
+    # user or the app itself. OS can start/terminate processes in the
+    # background, so we don't check for those.
+    if platform.is_android or platform.is_ios:
       return
 
     browser_binaries: dict[str, list[Browser]] = collection_helper.group_by(
@@ -368,9 +368,10 @@ class RunnerEnv(BaseEnv):
 
   def _check_file_access(self) -> None:
     if self._platform.is_macos:
-      has_safari = any(
-          browser.attributes().is_safari for browser in self.browsers)
-      if has_safari:
+      has_desktop_safari = any(
+          browser.attributes().is_safari and not browser.platform.is_ios
+          for browser in self.browsers)
+      if has_desktop_safari:
         self._check_safari_cache_dir_access()
     self._check_results_dir_access()
 
