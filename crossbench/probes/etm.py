@@ -16,9 +16,7 @@ from typing_extensions import override
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.helper import wait
 from crossbench.parse import NumberParser
-from crossbench.plt.types import ListCmdArgs
 from crossbench.probes.chromium_probe import ChromiumProbe
-from crossbench.probes.probe import ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
                                            ProbeValidationError)
@@ -29,6 +27,8 @@ if TYPE_CHECKING:
   import crossbench.path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.plt.types import ListCmdArgs
+  from crossbench.probes.probe import ProbeConfigParser, ProbeKeyT
   from crossbench.runner.run import Run
 
 

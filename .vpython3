@@ -379,6 +379,12 @@ wheel: <
   version: "version:1.26.1"
 >
 
+wheel: <
+  name: "infra/python/wheels/ruff/${vpython_platform}"
+  version: "version:0.13.0"
+>
+
+
 # Pylint and its dependencies.
 wheel: <
   name: "infra/python/wheels/pylint-py3"

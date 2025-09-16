@@ -89,7 +89,10 @@ exclude = [
 target-version = "py311"
 
 [tool.ruff.lint]
-extend-select = ["TCH"]
+extend-select = [
+    "TCH",  # flake8-type-checking
+    # TODO: Add more categories
+]
 ignore = [
     "TC006", # Allow non-string type in casts
 ]

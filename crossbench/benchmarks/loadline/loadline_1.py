@@ -14,13 +14,13 @@ from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
-from crossbench.flags.base import Flags
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
   import pandas as pd
 
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 

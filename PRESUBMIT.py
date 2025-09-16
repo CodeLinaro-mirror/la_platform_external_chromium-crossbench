@@ -61,7 +61,7 @@ def CheckChange(input_api, output_api, on_commit):
   # ---------------------------------------------------------------------------
   # Pylint:
   # ---------------------------------------------------------------------------
-  pylint_file_patterns_to_check: list[str] = PylintFilePatternsToCheck(
+  pylint_file_patterns_to_check: list[str] = LinterFilePatterns(
       on_commit, modified_py_files)
   if pylint_file_patterns_to_check:
     tests += input_api.canned_checks.GetPylint(
@@ -73,10 +73,31 @@ def CheckChange(input_api, output_api, on_commit):
         version="3.2")
 
   # ---------------------------------------------------------------------------
+  # Ruff:
+  # ---------------------------------------------------------------------------
+  # Ruff is fast, let's run it on all sources, excludes are configured
+  # separately in pyproject.toml.
+  tests.append(
+      input_api.Command(
+          name="ruff",
+          cmd=[
+              input_api.python3_executable,
+              "-m",
+              "ruff",
+              "check",
+              str(root_path),
+          ],
+          message=output_api.PresubmitError,
+          kwargs={},
+          python3=True,
+      ))
+
+
+  # ---------------------------------------------------------------------------
   # MyPy:
   # ---------------------------------------------------------------------------
-  mypy_files_to_check: list[str] = MypyFilesToCheck(input_api, on_commit,
-                                                  modified_py_files)
+  mypy_files_to_check: list[str] = TyperPaths(input_api, on_commit,
+                                              modified_py_files)
   if mypy_files_to_check:
     tests.append(
         input_api.Command(
@@ -184,7 +205,7 @@ def ModifiedFiles(input_api,
   return files_to_check
 
 
-def PylintFilePatternsToCheck(on_commit, modified_py_files) -> list[str]:
+def LinterFilePatterns(on_commit, modified_py_files) -> list[str]:
   if on_commit:
     # Test all files on commit
     return [r"^[^\.]+\.py$"]
@@ -194,7 +215,7 @@ def PylintFilePatternsToCheck(on_commit, modified_py_files) -> list[str]:
   return [re.escape(file) for file in modified_py_files]
 
 
-def MypyFilesToCheck(input_api, on_commit, modified_py_files) -> list[str]:
+def TyperPaths(input_api, on_commit, modified_py_files) -> list[str]:
   root_path = pathlib.Path(input_api.PresubmitLocalPath())
   mypy_files_to_check = {"PRESUBMIT.py"}
   crossbench_path = root_path / "crossbench"
