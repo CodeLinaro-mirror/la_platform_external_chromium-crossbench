@@ -74,8 +74,9 @@ class TestEnv():
 DEFAULT_PYTEST_FLAGS: Final[immutabledict[str, str | None]] = immutabledict({
     "--verbose": None,
     "--log-file-level": "DEBUG",
+    "--durations": 5,
+    "--no-fold-skipped": None,
     "-r": "s",
-    "--numprocesses": "1",
 })
 
 
