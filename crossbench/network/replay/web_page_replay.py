@@ -12,7 +12,7 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, ClassVar, Iterable, Optional, TextIO
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, TextIO
 
 from typing_extensions import override
 
@@ -40,8 +40,6 @@ class WprStartupError(RuntimeError):
 class WprBase(abc.ABC):
   NAME: ClassVar[str] = ""
 
-  _key_file: AnyPath
-  _cert_file: AnyPath
 
   def __init__(self,
                archive_path: AnyPath,
@@ -54,70 +52,59 @@ class WprBase(abc.ABC):
                cert_file: Optional[AnyPath] = None,
                log_path: Optional[LocalPath] = None,
                platform: Platform = PLATFORM) -> None:
-    self._platform: Platform = platform
+    self._platform: Final[Platform] = platform
     self._process: subprocess.Popen | None = None
-    self._log_path: LocalPath | None = None
-    if log_path:
-      self._log_path = PathParser.not_existing_path(log_path)
+    self._log_path: LocalPath | None = self._validate_log_path(log_path)
     self._log_file: TextIO | None = None
-    self._bin_path = bin_path
-    self._go_cmd: TupleCmdArgs = ()
+    self._bin_path: Final[AnyPath] = bin_path
+
+    self._num_parsed_ports: int = 0
     self._host_http_port: int = 0
     self._host_https_port: int = 0
 
-    wpr_root: LocalPath
+    (wpr_root, go_cmd) = self._validate_wpr()
+    self._go_cmd: Final[TupleCmdArgs] = go_cmd
+
+    self._archive_path: Final[AnyPath] = self._validate_archive_path(
+        archive_path)
+    (self._device_http_port,
+     self._device_https_port) = self._validate_ports(http_port, https_port)
+
+    self._host: str = self._validate_host(host)
+    self._key_file: Final[AnyPath] = self._validate_key_file(wpr_root, key_file)
+    self._cert_file: Final[AnyPath] = self._validate_cert_file(
+        wpr_root, cert_file)
+    self._inject_scripts: Final[tuple[AnyPath,
+                                      ...]] = self._validate_injected_scripts(
+                                          wpr_root, inject_scripts)
+
+  def _validate_log_path(self, log_path: LocalPath | None) -> LocalPath | None:
+    if log_path:
+      return PathParser.not_existing_path(log_path)
+    return log_path
+
+  def _validate_wpr(self) -> tuple[LocalPath, TupleCmdArgs]:
+    go_cmd: TupleCmdArgs = ()
+    wpr_root: LocalPath = LocalPath()
+
     if self._bin_path.suffix == ".go":
       # `go` binary is required to run a Go source file (`wpr.go`).
       assert self._platform.is_local
       if local_go := self._platform.which("go"):
-        self._go_cmd = (local_go, "run", self._bin_path)
+        go_cmd = (local_go, "run", self._bin_path)
       else:
         raise ValueError(f"'go' binary not available on {self._platform}")
       wpr_root = self._platform.local_path(self._bin_path.parents[1])
-    else:
-      # Assuming the binary path is precompiled and executable.
-      self._go_cmd = (self._bin_path,)
-      if self._platform.is_local:
-        if local_wpr_go := WprGoToolFinder(self._platform).local_path:
-          wpr_root = local_wpr_go.parents[1]
-        else:
-          raise ValueError(
-              f"Could not find webpagereplay on {self._platform}")
+      return wpr_root, go_cmd
+
+    # Assuming the binary path is precompiled and executable.
+    go_cmd = (self._bin_path,)
+    if self._platform.is_local:
+      if local_wpr_go := WprGoToolFinder(self._platform).local_path:
+        wpr_root = local_wpr_go.parents[1]
       else:
-        assert key_file is not None
-        assert cert_file is not None
-        assert inject_scripts is not None
-
-    self._archive_path = self._validate_archive_path(archive_path)
-    (self._device_http_port,
-     self._device_https_port) = self._validate_ports(http_port, https_port)
-    self._num_parsed_ports: int = 0
-    self._host: str = host
-    if self._platform.is_remote:
-      assert self._host == "127.0.0.1"
-
-    if key_file:
-      self._key_file = key_file
-    else:
-      self._key_file = wpr_root / "ecdsa_key.pem"
-    if not self._platform.is_file(self._key_file):
-      raise ValueError(f"Could not find ecdsa_key.pem file: {self._key_file}")
-
-    if cert_file:
-      self._cert_file = cert_file
-    else:
-      self._cert_file = wpr_root / "ecdsa_cert.pem"
-    if not self._platform.is_file(self._cert_file):
-      raise ValueError(f"Could not find ecdsa_cert.pem file: {self._cert_file}")
-
-    if inject_scripts is None:
-      inject_scripts = [wpr_root / "deterministic.js"]
-    for script in inject_scripts:
-      if "," in str(script):
-        raise ValueError(f"Injected script path cannot contain ',': {script}")
-      if not self._platform.is_file(script):
-        raise ValueError(f"Injected script does not exist: {script}")
-    self._inject_scripts: tuple[AnyPath, ...] = tuple(inject_scripts)
+        raise ValueError(f"Could not find webpagereplay on {self._platform}")
+    return wpr_root, go_cmd
 
   def _validate_ports(self, http_port: int, https_port: int) -> tuple[int, int]:
     if http_port == 0:
@@ -132,6 +119,51 @@ class WprBase(abc.ABC):
       raise ValueError("http_port must be different from https_port, "
                        f"but got twice: {http_port}")
     return (http_port, https_port)
+
+  def _validate_host(self, host: str) -> str:
+    if self._platform.is_remote:
+      assert host == "127.0.0.1"
+    return host
+
+  def _validate_key_file(self, wpr_root: LocalPath,
+                         key_file: AnyPath | None) -> AnyPath:
+    if not key_file:
+      key_file = wpr_root / "ecdsa_key.pem"
+      if self._platform.is_remote:
+        raise ValueError(
+            f"Missing key file for remote platform {self._platform}")
+    if not self._platform.is_file(key_file):
+      raise ValueError(f"Could not find ecdsa_key.pem file: {key_file}")
+    return key_file
+
+  def _validate_cert_file(self, wpr_root: LocalPath,
+                          cert_file: AnyPath | None) -> AnyPath:
+    if not cert_file:
+      cert_file = wpr_root / "ecdsa_cert.pem"
+      if self._platform.is_remote:
+        raise ValueError(
+            f"Missing cert file for remote platform {self._platform}")
+    if not self._platform.is_file(cert_file):
+      raise ValueError(f"Could not find ecdsa_cert.pem file: {cert_file}")
+    return cert_file
+
+  def _validate_injected_scripts(
+      self, wpr_root: LocalPath,
+      inject_scripts: Iterable[AnyPath] | None) -> tuple[AnyPath, ...]:
+    if inject_scripts is None:
+      default_script = wpr_root / "deterministic.js"
+      if self._platform.is_remote:
+        raise ValueError("Missing deterministic.js script "
+                         f"for remote platform {self._platform}")
+      inject_scripts = [default_script]
+    scripts = tuple(inject_scripts)
+    for script in scripts:
+      if "," in str(script):
+        raise ValueError(f"Injected script path cannot contain ',': {script}")
+      if not self._platform.is_file(script):
+        raise ValueError(f"Injected script does not exist: {script}")
+    return scripts
+
 
   @abc.abstractmethod
   def _validate_archive_path(self, path: AnyPath) -> AnyPath:
