@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 class LoadLineProbe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE: ClassVar = False
+  PRODUCES_DATA: ClassVar = False
   BENCHMARK_NAME: ClassVar[str] = "LoadLine"
   BENCHMARK_VERSION: ClassVar[str] = ""
 
