@@ -6,15 +6,21 @@ import os
 import pathlib
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench.helper.path_finder import (ChromiumBuildBinaryFinder,
                                            ChromiumCheckoutFinder,
                                            TraceboxFinder, TraceconvFinder,
                                            TraceProcessorFinder,
-                                           V8CheckoutFinder, V8ToolsFinder)
+                                           V8CheckoutFinder, V8ToolsFinder,
+                                           WprCloudBinary, WprGoToolFinder)
+from crossbench.plt import PLATFORM
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
-                                          WinMockPlatform)
+from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
+                                          ChromeOsSshMockPlatform,
+                                          LinuxMockPlatform, MacOsMockPlatform,
+                                          MockAdb, WinMockPlatform)
 
 
 class BaseCheckoutTestCase(BaseCrossbenchTestCase):
@@ -167,6 +173,76 @@ class V8ToolsFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(finder.d8_binary)
       self.assertIsNone(finder.v8_checkout)
       self.assertIsNone(finder.tick_processor)
+
+
+class WprToolsFinderTestCase(BaseCheckoutTestCase):
+
+  __test__ = True
+
+  @override
+  def setUp(self):
+    # Only one of these directories exists, depending on whether crossbench is
+    # checked out standalone or within a different repo. The bots only run tests
+    # on the first case, but it's best to make them pass in both cases to avoid
+    # user surprise.
+    third_party_inside = test_helper.root_dir() / "third_party"
+    third_party_outside = test_helper.root_dir().parents[1] / "third_party"
+    # Must be computed before super().setUp(), otherwise the fake filesystem
+    # will be checked.
+    using_third_party_inside = third_party_inside.exists()
+    super().setUp()
+    if using_third_party_inside:
+      self.fs.add_real_directory(third_party_inside)
+    else:
+      self.fs.add_real_directory(third_party_outside)
+
+  def _with_arch(self, platform, arch):
+    platform.machine = arch
+    platform.use_mock_name = False
+    return platform
+
+  def test_path_exists(self):
+    finder = WprGoToolFinder(PLATFORM)
+    self.assertTrue(finder.local_path.exists(),
+                    f"{finder.local_path} not found")
+
+  def test_cloud_binary(self):
+    for _ in range(3):
+      self.platform.expect_sh(
+          "/usr/bin/adb",
+          "devices",
+          "-l",
+          result="List of devices attached\n123 device usb:0 product:a model:b")
+    platforms = [
+        self._with_arch(
+            AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
+            "arm64"),
+        self._with_arch(
+            AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
+            "arm32"),
+        self._with_arch(
+            AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
+            "x64"),
+        self._with_arch(
+            ChromeOsSshMockPlatform(self.platform, "host", 0, 22, "user"),
+            "arm64"),
+        self._with_arch(
+            ChromeOsSshMockPlatform(self.platform, "host", 0, 22, "user"),
+            "x64"),
+        self._with_arch(LinuxMockPlatform(), "x64"),
+        self._with_arch(MacOsMockPlatform(), "arm64"),
+        self._with_arch(MacOsMockPlatform(), "x64"),
+        self._with_arch(WinMockPlatform(), "x64"),
+    ]
+    self.assertSetEqual(
+        set(p.key for p in platforms),
+        set(WprGoToolFinder.WPR_PREBUILT_LOOKUP.keys()),
+        "Please add any new platform(s) to the list above")
+    for platform in platforms:
+      cloud_binary: WprCloudBinary = WprGoToolFinder(
+          self.platform).cloud_binary(platform)
+      self.assertTrue(cloud_binary.file_hash, f"Empty file hash for {platform}")
+      self.assertTrue(cloud_binary.url, f"Empty url for {platform}")
 
 
 if __name__ == "__main__":

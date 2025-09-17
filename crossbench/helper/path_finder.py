@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
+import json
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence
+from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Sequence
 
 from typing_extensions import override
 
@@ -274,7 +276,7 @@ class V8ToolsFinder:
     return None
 
 
-class BaseChromiumBinaryToolFinder(BaseToolFinder):
+class BaseChromiumToolFinder(BaseToolFinder):
 
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
@@ -292,7 +294,7 @@ class BaseChromiumBinaryToolFinder(BaseToolFinder):
     return (relative_path,)
 
 
-class PerfettoToolFinder(BaseChromiumBinaryToolFinder, metaclass=abc.ABCMeta):
+class PerfettoToolFinder(BaseChromiumToolFinder, metaclass=abc.ABCMeta):
 
   @classmethod
   @abc.abstractmethod
@@ -336,7 +338,7 @@ class TraceProcessorFinder(PerfettoToolFinder):
 CROSSBENCH_DIR: Final = pth.LocalPath(__file__).parents[2]
 
 
-class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):
+class BaseCrossbenchToolFinder(BaseChromiumToolFinder):
 
   @override
   def default_candidates(self) -> tuple[pth.AnyPath, ...]:
@@ -349,7 +351,30 @@ class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):
     pass
 
 
-class WprGoToolFinder(BaseCrossbenchBinaryToolFinder):
+@dataclasses.dataclass(frozen=True)
+class WprCloudBinary:
+  file_hash: str
+
+  @property
+  def url(self) -> str:
+    return ("gs://chromium-telemetry/binary_dependencies/wpr_go_"
+            f"{self.file_hash}")
+
+
+class WprGoToolFinder(BaseCrossbenchToolFinder):
+  # See binary_dependencies.json in the WebPageReplay repo.
+  # Public for testing.
+  WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], str]] = {
+      ("android", "arm64"): "linux_aarch64",
+      ("android", "arm32"): "linux_armv7l",
+      ("android", "x64"): "linux_x86_64",
+      ("chromeos_ssh", "arm64"): "linux_aarch64",
+      ("chromeos_ssh", "x64"): "linux_x86_64",
+      ("linux", "x64"): "linux_x86_64",
+      ("macos", "arm64"): "mac_arm64",
+      ("macos", "x64"): "mac_x86_64",
+      ("win", "x64"): "win_AMD64",
+  }
 
   @classmethod
   @override
@@ -362,7 +387,21 @@ class WprGoToolFinder(BaseCrossbenchBinaryToolFinder):
     return pth.AnyPath("third_party/webpagereplay/src/wpr.go")
 
 
-class TsProxyFinder(BaseCrossbenchBinaryToolFinder):
+  # Info of a prebuilt WPR binary for `browser_platform`, stored in the cloud.
+  def cloud_binary(self, browser_platform: Platform) -> WprCloudBinary:
+    wpr_go_file = self.local_path
+    if not wpr_go_file:
+      raise RuntimeError("Could not find local wpr.go")
+
+    with (wpr_go_file.parents[1] /
+          "scripts/binary_dependencies.json").open() as file:
+      hashes_json = json.load(file)
+    platform_key = self.WPR_PREBUILT_LOOKUP[browser_platform.key]
+    return WprCloudBinary(
+        hashes_json["wpr_go"][platform_key]["cloud_storage_hash"])
+
+
+class TsProxyFinder(BaseCrossbenchToolFinder):
 
   @classmethod
   @override

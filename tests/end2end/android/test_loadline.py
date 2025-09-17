@@ -13,7 +13,6 @@ import pytest
 
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.network.replay.wpr import WPR_PREBUILT_LOOKUP
 from crossbench.path import check_hash
 from crossbench.plt import PLATFORM
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
@@ -56,14 +55,6 @@ def adb_test_env(device_id, adb_path, test_env: TestEnv) -> None:
     assert device_id, "Missing device id"
     adb = Adb(PLATFORM, device_id, adb_path)
     adb.install_apk(local_apk)
-
-  # Download prebuilt wprgo binary to run WPR on the host
-  # TODO(crbug/377290309): Make the test work with on-device WPR.
-  local_wpr = tmp_dir / "wprgo"
-  wpr_cloud_binary = WPR_PREBUILT_LOOKUP[PLATFORM.key]
-  PLATFORM.sh("gsutil", "cp", wpr_cloud_binary.url, local_wpr)
-  assert check_hash(local_wpr, wpr_cloud_binary.file_hash)
-  PLATFORM.sh("chmod", "+x", local_wpr)
 
 
 # TODO(crbug/377290309): Remove the custom browser config when the test passes

@@ -6,14 +6,13 @@ from __future__ import annotations
 
 import abc
 import contextlib
-import dataclasses
 import json
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
 
 from typing_extensions import override
 
-from crossbench.helper.path_finder import WprGoToolFinder
+from crossbench.helper.path_finder import WprCloudBinary, WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.path import check_hash
@@ -31,43 +30,6 @@ if TYPE_CHECKING:
 
 # use value for pylint
 assert GS_PREFIX
-
-WPR_BASE_URL: Final[str] = "gs://chromium-telemetry/binary_dependencies"
-
-
-@dataclasses.dataclass(frozen=True)
-class WPRCloudBinary:
-  file_hash: str
-
-  @property
-  def url(self) -> str:
-    return f"{WPR_BASE_URL}/wpr_go_{self.file_hash}"
-
-
-# See third_party/catapult/telemetry/telemetry/binary_dependencies.json
-WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], WPRCloudBinary]] = {
-    ("android", "arm64"):
-        WPRCloudBinary("8f422f75ae74113ccc12234bf2d1368074754fcb"),
-    ("android", "arm32"):
-        WPRCloudBinary("f0aa37ad758ec972816ee65f446b99bdbd74746b"),
-    ("android", "x64"):
-        WPRCloudBinary("864c50726a8cb5637339ccf2a074ec4b5f413753"),
-    # On arm64 ChromeOS, use the same binary as arm64 Linux.
-    ("chromeos_ssh", "arm64"):
-        WPRCloudBinary("8f422f75ae74113ccc12234bf2d1368074754fcb"),
-    # On x64 ChromeOS, use the same binary as x64 Linux.
-    ("chromeos_ssh", "x64"):
-        WPRCloudBinary("864c50726a8cb5637339ccf2a074ec4b5f413753"),
-    ("linux", "x64"):
-        WPRCloudBinary("864c50726a8cb5637339ccf2a074ec4b5f413753"),
-    ("macos", "arm64"):
-        WPRCloudBinary("a245938846180631dbc9806e90147e3cfbc927fc"),
-    ("macos", "x64"):
-        WPRCloudBinary("613419bc52b357419e7bd7a1158fe257a1b73e97"),
-    ("win", "x64"):
-        WPRCloudBinary("6f67a1c2284bfe2c36824ceecb5b0f456cdd191c"),
-}
-
 
 class WprReplayNetwork(ReplayNetwork):
 
@@ -238,8 +200,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
                                                       "wpr.go binary")
 
   def _download_prebuilt_wpr(self) -> LocalPath:
-    wpr_cloud_binary: WPRCloudBinary = WPR_PREBUILT_LOOKUP[
-        self.browser_platform.key]
+    wpr_cloud_binary: WprCloudBinary = WprGoToolFinder(
+        self.host_platform).cloud_binary(self.browser_platform)
     local_wpr_go_bin = (
         self.host_platform.local_cache_dir("wpr") /
         str(self.browser_platform.machine) / "wpr_go")
